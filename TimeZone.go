@@ -1,20 +1,19 @@
 package zgo
 
+//  Created by Tor Langballe on /3/12/15.
+
 import (
-	"strings"
 	"time"
 )
 
-//  Created by Tor Langballe on /3/12/15.
-
 type TimeZone time.Location
 
-var TimeZoneUTC = time.UTC
-var TimeZoneGMT = time.UTC
+var TimeZoneUTC = (*TimeZone)(time.UTC)
+var TimeZoneGMT = TimeZoneUTC
 
 func TimeZoneNew(id string) (*TimeZone, error) {
-	t, err := time.LoadLocation()
-	return TimeZone(t), err
+	t, err := time.LoadLocation(id)
+	return (*TimeZone)(t), err
 }
 
 func TimeZoneForDevice() *TimeZone {
@@ -22,23 +21,17 @@ func TimeZoneForDevice() *TimeZone {
 }
 
 func (t *TimeZone) Name() string {
-	return t.Str
+	return (*time.Location)(t).String()
 }
 
 func (t *TimeZone) NiceName() string {
-	str := Str.TailUntil(t.Name(), "/")
-	return strings.Replace(str, "_", "", -1)
+	str := StrTailUntil(t.Name(), "/")
+	return StrReplace(str, "_", "", 0)
 }
 
-func (t *TimeZone) HoursFromUTC() float64 {
-	return float64(secondsFromGMT()) / 3600
-}
-
-func (t *TimeZone) CalculateOffsetHours(time Time, localDeltaHours *float64) float64 {
-	// secs := secondsFromGMT(for: time.date)
-	// lsecs := TimeZone.autoupdatingCurrent.secondsFromGMT(for: time.date)
-	// localDeltaHours = float64(secs - lsecs) / 3600
-	// return float64(secs) / 3600
+func (t *TimeZone) HoursFromUTC(at time.Time) float64 {
+	_, offset := at.In((*time.Location)(t)).Zone()
+	return float64(offset) / 3600
 }
 
 func (t *TimeZone) IsUTC() bool {

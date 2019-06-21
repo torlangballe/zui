@@ -159,6 +159,7 @@ func (f FilePath) Walk(options FilePathWalkOptions, wildcard string, foreach fun
 		f := FilePathMake(fpath, info.IsDir(), false)
 		getInfoFromStat(&finfo, info)
 		foreach(f, &finfo)
+		return nil
 	})
 	if err != nil {
 		return ErrorFromErr(err)

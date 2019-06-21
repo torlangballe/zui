@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -25,16 +26,17 @@ func StrRemovedFirst(s []string) []string {
 	return s[1:]
 }
 
-func StrFormat(format string, args []interface{}) string {
+func StrFormat(format string, args ...interface{}) string {
 	return fmt.Sprintf(format, args)
 }
 
 func StrSaveToFile(str string, file FilePath) *Error {
-	return zfile.WriteStringToFile(str, file.fpath)
+	err := zfile.WriteStringToFile(str, file.fpath)
+	return ErrorFromErr(err)
 }
 
 func StrLoadFromFile(file FilePath) (string, *Error) {
-	str, err := zfile.ReadFileToString(file)
+	str, err := zfile.ReadFileToString(file.fpath)
 	return str, ErrorFromErr(err)
 }
 
@@ -70,7 +72,7 @@ func StrSplitInTwo(str string, sep string) (string, string) {
 	if len(parts) == 2 {
 		return parts[0], parts[1]
 	}
-	if parts.count == 1 {
+	if len(parts) == 1 {
 		return parts[0], ""
 	}
 	return "", ""
@@ -81,7 +83,8 @@ func StrSplitIntoLengths(str string, length int) []string {
 }
 
 func StrCountLines(str string) int {
-	lines := ustr.SplitByNewLines(str)
+	skipEmpty := false
+	lines := ustr.SplitByNewLines(str, skipEmpty)
 	return len(lines)
 }
 
@@ -94,7 +97,7 @@ func StrTail(str string, chars int) string {
 }
 
 func StrBody(str string, pos int, length int) string {
-	return ustr.Body(str, pos, size)
+	return ustr.Body(str, pos, length)
 }
 
 func StrHeadUntilWithRest(str string, sep string) (string, string) {
@@ -113,48 +116,49 @@ func StrTailUntil(str, sep string) string {
 
 func StrTailUntilWithRest(str, sep string) (string, string) { // tail, then rest
 	var rest string
-	tail := ustr.TailUntilStringWithRest(str, sep, &rest)
+	tail := ustr.TailUntilWithRest(str, sep, &rest)
 	return tail, rest
 }
 
-func StrHasPrefixWithRest(str string, prefix string) *string {
-	if strings.HasPrefix(prefix) {
-		return Body(str, len(prefix))
+func StrHasPrefixWithRest(str string, prefix string) (bool, string) {
+	if strings.HasPrefix(str, prefix) {
+		return true, StrBody(str, len(prefix), -1)
 	}
-	return nil
+	return false, ""
 }
 
-func StrHasSuffixWithRest(str string, suffix string) *string {
-	if strings.HasSuffic(prefix) {
-		return Body(str, len(prefix))
+func StrHasSuffixWithRest(str string, suffix string) (bool, string) {
+	if strings.HasSuffix(str, suffix) {
+		return true, StrBody(str, len(suffix), -1)
 	}
-	return nil
+	return false, ""
 }
 
 func StrCommonPrefix(a, b string) string {
 	l := umath.IntMin(len(a), len(b))
+	br := []rune(b)
 	for i, r := range a {
-		if r != b[i] || i >= l-1 {
-			return a[:i]
+		if r != br[i] || i >= l-1 {
+			return string(br[:i])
 		}
 	}
 	return ""
 }
 
-func StrTruncatedEnd(str string, subtract int) string {
+func StrTruncatedEnd(str string, subtract int, suffix string) string {
 	sl := len(str)
 	if subtract >= sl {
 		return suffix
 	}
-	return str[:sl-chars]
+	return str[:sl-subtract] + suffix
 }
 
-func StrTruncatedStart(str string, subtract int) string {
+func StrTruncatedStart(str string, subtract int, prefix string) string {
 	sl := len(str)
 	if subtract >= sl {
-		return ""
+		return prefix
 	}
-	return str[sl-chars:]
+	return prefix + str[sl-subtract:]
 }
 
 func StrTruncateMiddle(str string, maxChars int, separator string) string { // sss...eee of longer string
@@ -166,7 +170,7 @@ func StrTruncateMiddle(str string, maxChars int, separator string) string { // s
 	return str
 }
 
-func StrConcat(sep string, items []string) string {
+func StrConcat(sep string, items ...string) string {
 	var str = ""
 	var first = true
 	for _, s := range items {
@@ -192,35 +196,27 @@ func StrCompare(a string, b string, options CompareOptions) bool {
 	return strings.Compare(a, b) > 0
 }
 
-func StrSortedArray(strings []string, options CompareOptions) {
-	strings.Sorted()
+func StrSortedArray(strs []string, options CompareOptions) []string {
+	// TODO: options
+	s := make([]string, len(strs))
+	copy(s, strs)
+	sort.StringSlice(s).Sort()
+
+	return s
+}
+
+func StrMap(str string, convert func(i int, r rune) string) string {
+	return ustr.Map(str, convert)
 }
 
 func StrReplaceWhiteSpaces(str string, replaceWith string) string {
-	var out string
-	var white = false
-	var chars string
-	for _, c := range str {
-		switch c {
-		case " ", "\n", "\r", "\t":
-			white = true
-
-		default:
-			if white {
-				out += chars
-				white = false
-			}
-			out += c
-		}
-	}
-	if white {
-		out += chars
-	}
-	return out
+	// TOD: check if works
+	var reg = regexp.MustCompile(`(\s+)`)
+	return reg.ReplaceAllString(str, str)
 }
 
 func StrReplace(str string, find string, with string, options CompareOptions) string {
-	return string.Replace(str, find, with, -1)
+	return strings.Replace(str, find, with, -1)
 }
 
 func StrTrim(str, cutset string) string {
@@ -231,22 +227,24 @@ func StrCountInstances(str, tocount string) int {
 	return strings.Count(str, tocount)
 }
 
+var regAN = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 func StrFilterToAlphaNumeric(str string) string {
-	const regAN = regexp.MustCompile("[^a-zA-Z0-9]+")
-	return reg.ReplaceAllString(str, "")
+	return regAN.ReplaceAllString(str, "")
 }
 
+var regA = regexp.MustCompile("[^0-9]+")
+
 func StrFilterToNumeric(str string) string {
-	const regA = regexp.MustCompile("[^0-9]+")
-	return reg.ReplaceAllString(str, "")
+	return regA.ReplaceAllString(str, "")
 }
 
 func StrCamelCase(str string) string {
 	isToUpper := false
-
+	var camelCase string
 	for k, v := range str {
 		if k == 0 {
-			camelCase = strings.ToUpper(string(inputUnderScoreStr[0]))
+			camelCase = strings.ToUpper(string(v))
 		} else {
 			if isToUpper {
 				camelCase += strings.ToUpper(string(v))
@@ -260,10 +258,18 @@ func StrCamelCase(str string) string {
 			}
 		}
 	}
-	return
+	return camelCase
 }
 
-func StrIsUpperCase(c rune) bool {
+func StrToUpper(str string) string {
+	return strings.ToUpper(str)
+}
+
+func StrToLower(str string) string {
+	return strings.ToLower(str)
+}
+
+func StrIsUpperCase(r rune) bool {
 	return unicode.IsUpper(r)
 }
 
@@ -274,8 +280,9 @@ func StrTitleCase(str string) string {
 func StrSplitCamelCase(str string) []string {
 	var out []string
 	keep := ""
-	class := 0
-	for _, r := range src {
+	lastClass := 0
+	for _, r := range str {
+		class := 4
 		switch true {
 		case unicode.IsLower(r):
 			class = 1
@@ -283,18 +290,16 @@ func StrSplitCamelCase(str string) []string {
 			class = 2
 		case unicode.IsDigit(r):
 			class = 3
-		default:
-			class = 4
 		}
 		if class == lastClass {
-			keep += r
+			keep += string(r)
 		} else {
 			out = append(out, keep)
-			keep = r
+			keep = string(r)
 		}
 		lastClass = class
 	}
-	if len(keep) {
+	if keep != "" {
 		out = append(out, keep)
 	}
 	return out
@@ -325,8 +330,8 @@ func StrMakeHashTagWord(str string) string {
 //         return vstr
 //     }
 
-func StrForEachLine(str string, forEach func(sline string) bool) {
-	ustr.RangeStringLines(str, forEach)
+func StrForEachLine(str string, skipEmpty bool, forEach func(sline string)) {
+	ustr.RangeStringLines(str, skipEmpty, forEach)
 }
 
 func StrBase64Encode(str string) string {
@@ -338,7 +343,8 @@ func StrUrlEncode(str string) string {
 }
 
 func StrUrlDecode(str string) string {
-	return url.QueryUnescape(str)
+	s, _ := url.QueryUnescape(str)
+	return s
 }
 
 func StrMatchsWildcard(str string, wild string) bool {
@@ -370,20 +376,20 @@ func StrNiceDouble(d float64, maxSig int, separator string) string {
 	return str
 }
 
-func StrToDouble(str string, def *float64) float64 {
+func StrToDouble(str string, def float64) (float64, bool) {
 	d, err := strconv.ParseFloat(str, 10)
 	if err != nil {
-		return def
+		return def, false
 	}
-	return d
+	return d, true
 }
 
-func StrToInt(str string, def *int64) int64 {
-	n, err := strconv.IntFloat(str, 10, 64)
+func StrToInt(str string, def int64) (int64, bool) {
+	n, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return def
+		return def, false
 	}
-	return n
+	return n, true
 }
 
 func GetStemAndExtension(fileName string) (string, string) {
@@ -391,7 +397,7 @@ func GetStemAndExtension(fileName string) (string, string) {
 }
 
 func SplitLines(str string, skipEmpty bool) []string {
-	return ustr.SplitByNewLines()
+	return ustr.SplitByNewLines(str, skipEmpty)
 	// handle empty...
 }
 
