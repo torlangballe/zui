@@ -62,10 +62,10 @@ func (a Alignment) FlippedHorizontal() Alignment {
 	return r
 }
 func (a Alignment) Subtracted(sub Alignment) Alignment {
-	return Alignment(a & Alignment(BitwiseInvert(uint64(sub))))
+	return Alignment(a & Alignment(MathBitwiseInvert(uint64(sub))))
 }
 
-func (a Alignment) Subscript(vertical bool) Alignment {
+func (a Alignment) Only(vertical bool) Alignment {
 	if vertical {
 		return a.Subtracted(AlignmentHorizontal | AlignmentHorExpand | AlignmentHorShrink | AlignmentHorOut)
 	}

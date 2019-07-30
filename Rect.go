@@ -348,7 +348,8 @@ func (r Rect) Divide(a Size) Rect {
 	return RectFromMinMax(r.Min().DividedBy(a.Pos()), r.Max().DividedBy(a.Pos()))
 }
 
-func (r *Rect) Add(a Pos)      { r.Pos.Add(a) }
+func (r *Rect) Add(a Rect)     { r.Pos.Add(a.Pos); r.SetMax(r.Max().Plus(a.Max())) }
+func (r *Rect) AddPos(a Pos)   { r.Pos.Add(a) }
 func (r *Rect) Subtract(a Pos) { r.Pos.Subtract(a) }
 
 func centerToRect(center Pos, radius float64, radiusy float64) Rect {

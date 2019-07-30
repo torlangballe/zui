@@ -2,6 +2,9 @@ package zgo
 
 import (
 	"net/url"
+	"path"
+
+	"github.com/torlangballe/zutil/ustr"
 )
 
 //  Created by Tor Langballe on /30/10/15.
@@ -26,11 +29,11 @@ func (u URL) OpenInBrowser(inApp, notInAppForSocial bool) {
 }
 
 func (u URL) Scheme() string {
-	return u.neturl.Scheme()
+	return u.neturl.Scheme
 }
 
 func (u URL) Host() string {
-	return u.neturl.Host()
+	return u.neturl.Host
 }
 
 func (u URL) Port() string {
@@ -42,23 +45,31 @@ func (u URL) AbsString() string {
 }
 
 func (u URL) ResourcePath() string {
-	return u.neturl.Path()
+	return u.neturl.Path
 }
 
 func (u URL) Extension() string {
-	return u.neturl.Ext()
+	return path.Ext(u.neturl.Path)
 }
 
 func (u URL) Anchor() string {
-	return u.neturl.Anchor()
+	return u.neturl.Fragment
 }
 
 func (u URL) Parameters() map[string]string {
-	return u.neturl.Values()
+	m := map[string]string{}
+	for k, v := range u.neturl.Query() {
+		m[k] = v[0]
+	}
+	return m
 }
 
-func URLParametersFromString(parameters string) map[string]string {
-	m := zstr.GetParametersFromArgString(parameters, ",", "=")
+func (u URL) MultiParameters() map[string][]string {
+	return u.neturl.Query()
+}
+
+func GetParametersFromArgString(parameters string) map[string]string {
+	m := ustr.GetParametersFromArgString(parameters, ",", "=")
 	for k, v := range m {
 		m[k] = StrUrlDecode(v)
 	}

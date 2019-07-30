@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 	"unicode"
 
 	"github.com/torlangballe/zutil/uinteger"
-	"github.com/torlangballe/zutil/umath"
 	"github.com/torlangballe/zutil/ustr"
 	"github.com/torlangballe/zutil/zfile"
 )
@@ -135,7 +133,7 @@ func StrHasSuffixWithRest(str string, suffix string) (bool, string) {
 }
 
 func StrCommonPrefix(a, b string) string {
-	l := umath.IntMin(len(a), len(b))
+	l := uinteger.IntMin(len(a), len(b))
 	br := []rune(b)
 	for i, r := range a {
 		if r != br[i] || i >= l-1 {
@@ -172,7 +170,6 @@ func StrTruncateMiddle(str string, maxChars int, separator string) string { // s
 
 func StrConcat(sep string, items ...string) string {
 	var str = ""
-	var first = true
 	for _, s := range items {
 		if str != "" && s != "" {
 			str += sep
@@ -334,9 +331,10 @@ func StrForEachLine(str string, skipEmpty bool, forEach func(sline string)) {
 	ustr.RangeStringLines(str, skipEmpty, forEach)
 }
 
-func StrBase64Encode(str string) string {
-	return base64.StdEncoding.EncodeToString([]byte(str))
-}
+// this is better in data..
+// func StrBase64Encode(str string) string {
+// 	return base64.StdEncoding.EncodeToString([]byte(str))
+// }
 
 func StrUrlEncode(str string) string {
 	return url.QueryEscape(str)

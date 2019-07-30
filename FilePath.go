@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/torlangballe/zutil/ustr"
 	"github.com/torlangballe/zutil/zfile"
@@ -96,50 +95,9 @@ func FilePathGetPathParts(path string) (string, string, string, string) { // pla
 	return dir, name, stub, ext
 }
 
-func getInfoFromStat(info *FileInfo, stat os.FileInfo) {
-	info.DataSize = stat.Size()
-	info.Modified = Time{stat.ModTime()}
-	//	info.IsLocked = stat.IsLocked
-	info.IsFolder = stat.IsDir()
-	fstat := stat.Sys().(*syscall.Stat_t)
-	info.Created = Time{time.Unix(int64(fstat.Ctimespec.Sec), int64(fstat.Ctimespec.Nsec))}
-}
-
-func (f FilePath) GetInfo() (info FileInfo, err *Error) {
-	stat, e := os.Stat(f.fpath)
-	if e != nil {
-		err = ErrorFromErr(e)
-		return
-	}
-	getInfoFromStat(&info, stat)
-	return info, nil
-}
-
-func (f FilePath) GetModified() Time {
-	info, err := f.GetInfo()
-	if err != nil {
-		return Time{}
-	}
-	return info.Modified
-}
-
-func (f *FilePath) SetModified(t Time) {
-}
-
-func (f FilePath) GetCreated() Time {
-	info, err := f.GetInfo()
-	if err != nil {
-		return Time{}
-	}
-	return info.Created
-}
-
-func (f FilePath) GetDataSizeInBytes() int64 {
-	info, err := f.GetInfo()
-	if err != nil {
-		return -1
-	}
-	return info.DataSize
+func (f *FilePath) SetModified(t Time) *Error {
+	err := zfile.SetModified(f.fpath, t.Time)
+	return ErrorFromErr(err)
 }
 
 func (f FilePath) GetFiles(options FilePathWalkOptions, wildcard string) map[FilePath]FileInfo {
@@ -196,4 +154,47 @@ func (f FilePath) AppendedPath(path string, isDir bool) FilePath {
 	str := filepath.Join(f.fpath, path)
 	fp := FilePathMake(str, false, true)
 	return fp
+}
+
+func getInfoFromStat(info *FileInfo, stat os.FileInfo) {
+	info.DataSize = stat.Size()
+	info.Modified = Time{stat.ModTime()}
+	//	info.IsLocked = stat.IsLocked
+	info.IsFolder = stat.IsDir()
+	fstat := stat.Sys().(*syscall.Stat_t)
+	info.Created = getCreatedTimeFromStatT(fstat)
+}
+
+func (f FilePath) GetInfo() (info FileInfo, err *Error) {
+	stat, e := os.Stat(f.fpath)
+	if e != nil {
+		err = ErrorFromErr(e)
+		return
+	}
+	getInfoFromStat(&info, stat)
+	return info, nil
+}
+
+func (f FilePath) GetModified() Time {
+	info, err := f.GetInfo()
+	if err != nil {
+		return Time{}
+	}
+	return info.Modified
+}
+
+func (f FilePath) GetCreated() Time {
+	info, err := f.GetInfo()
+	if err != nil {
+		return Time{}
+	}
+	return info.Created
+}
+
+func (f FilePath) GetDataSizeInBytes() int64 {
+	info, err := f.GetInfo()
+	if err != nil {
+		return -1
+	}
+	return info.DataSize
 }

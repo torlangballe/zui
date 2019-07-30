@@ -6,7 +6,7 @@ type Matrix struct {
 	A, B, C, D, Tx, Ty float64
 }
 
-var IdentityMatrix = Matrix{1, 0, 0, 1, 0, 0}
+var MatrixIdentity = Matrix{1, 0, 0, 1, 0, 0}
 
 /*
 func SM(w, h Num) *Matrix {
@@ -94,4 +94,11 @@ func (m Matrix) Inverted() (Matrix, bool) {
 		-m.C / det, m.A / det,
 		(m.Ty*m.C - m.Tx*m.D) / det, (m.Tx*m.B - m.Ty*m.A) / det,
 	}, true
+}
+
+func (m Matrix) RotatedAroundPos(pos Pos, angle float64) Matrix {
+	m = m.Translated(pos.Size())
+	m = m.Rotated(angle)
+	m = m.Translated(pos.Size().Negative())
+	return m
 }

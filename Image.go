@@ -4,6 +4,8 @@
 
 package zgo
 
+import "fmt"
+
 type Image struct {
 	size      Size    `json:"size"`
 	scale     float32 `json:"scale"`
@@ -39,7 +41,7 @@ func (i *Image) GetScaledInSize(size Size, proportional bool) *Image {
 	}
 	width := int(vsize.W) / int(i.scale)
 	height := int(vsize.H) / int(i.scale)
-
+	fmt.Println("GetScaledInSize not made yet:", width, height)
 	return nil
 }
 
@@ -69,6 +71,7 @@ func (i *Image) Rotated(deg float64, around *Pos) *Image {
 		pos = *around
 	}
 	transform := MatrixForRotatingAroundPoint(pos, deg)
+	fmt.Println("Image.Rotated not made yet:", transform)
 	return i
 }
 

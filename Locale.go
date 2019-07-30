@@ -2,6 +2,7 @@ package zgo
 
 //  Created by Tor Langballe on /1/11/15.
 
+// https://github.com/RadhiFadlillah/sysloc
 func LocaleGetDeviceLanguageCode() string {
 	return "en"
 }

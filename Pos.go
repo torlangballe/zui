@@ -3,7 +3,7 @@ package zgo
 import (
 	"math"
 
-	"github.com/torlangballe/zutil/umath"
+	"github.com/torlangballe/zutil/zmath"
 )
 
 type Pos struct {
@@ -11,11 +11,18 @@ type Pos struct {
 	Y float64
 }
 
-func (p Pos) Subscript(vertical bool) float64 {
+func (p Pos) Vertice(vertical bool) float64 {
 	if vertical {
 		return p.Y
 	}
 	return p.X
+}
+
+func (p *Pos) VerticeP(vertical bool) *float64 {
+	if vertical {
+		return &p.Y
+	}
+	return &p.X
 }
 
 func (p *Pos) SetOne(vertical bool, v float64) {
@@ -54,7 +61,7 @@ func (p Pos) Dot(a Pos) float64  { return p.X*a.X + p.Y*a.Y }
 func (p Pos) Length() float64    { return math.Sqrt(p.X*p.X + p.Y*p.Y) }
 func (p Pos) IsNull() bool       { return p.X == 0.0 && p.Y == 0.0 }
 func (p Pos) GetNormalized() Pos { return p.DividedByD(p.Length()) }
-func (p Pos) Sign() Pos          { return Pos{umath.Sign(p.X), umath.Sign(p.Y)} }
+func (p Pos) Sign() Pos          { return Pos{zmath.Sign(p.X), zmath.Sign(p.Y)} }
 func (p Pos) Negative() Pos {
 	return Pos{-p.X, -p.Y}
 }
@@ -65,7 +72,7 @@ func (p Pos) IsSameDirection(pos Pos) bool {
 	if p == pos {
 		return true
 	}
-	if umath.Sign(pos.X) != umath.Sign(p.X) || umath.Sign(pos.Y) != umath.Sign(p.Y) {
+	if zmath.Sign(pos.X) != zmath.Sign(p.X) || zmath.Sign(pos.Y) != zmath.Sign(p.Y) {
 		return false
 	}
 	if pos.Y == 0.0 {

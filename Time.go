@@ -37,7 +37,7 @@ func (t Time) SecsSinceUnixEpoc() float64 {
 }
 
 func (t Time) Since() float64 {
-	return ztime.Seconds(time.Since(t.Time))
+	return ztime.DurSeconds(time.Since(t.Time))
 }
 
 func TimeFromDate(year int, month TimeMonth, day, hour, min, second, nano int, timezone *TimeZone) Time {
@@ -92,15 +92,15 @@ func (t Time) GetString(format string, locale string, timezone *TimeZone) string
 }
 
 func (t Time) PlusD(d float64) Time {
-	return Time{Time: t.Time.Add(ztime.Second(d))}
+	return Time{Time: t.Time.Add(ztime.SecondsDur(d))}
 }
 
 func (t Time) Minus(p Time) float64 {
-	return ztime.Seconds(t.Time.Sub(p.Time))
+	return ztime.DurSeconds(t.Time.Sub(p.Time))
 }
 
 func (t Time) MinusD(d float64) Time {
-	return Time{Time: t.Time.Add(-ztime.Second(d))}
+	return Time{Time: t.Time.Add(-ztime.SecondsDur(d))}
 }
 
 func (t Time) IsLessThan(a Time) bool {

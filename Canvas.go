@@ -48,7 +48,7 @@ console.log(getTextWidth("hello there!", "bold 12pt arial"))  // close to 86
 //
 
 func MatrixForRotatingAroundPoint(point Pos, deg float64) Matrix {
-	var transform = IdentityMatrix
+	var transform = MatrixIdentity
 	transform = transform.TranslatedByPos(point)
 	transform = transform.Rotated(MathDegToRad(deg))
 	transform = transform.TranslatedByPos(point.Negative())
@@ -57,7 +57,7 @@ func MatrixForRotatingAroundPoint(point Pos, deg float64) Matrix {
 }
 
 func MatrixForRotationDeg(deg float64) Matrix {
-	var transform = IdentityMatrix
+	var transform = MatrixIdentity
 	transform = transform.Rotated(MathDegToRad(deg))
 	return transform
 }

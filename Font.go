@@ -20,10 +20,22 @@ type Font struct {
 	Size  float64   `json:"size"`
 }
 
+func FontNew(name string, size float64, style FontStyle) *Font {
+	return &Font{Name: name, Size: size * scale, Style: style}
+}
+
 func FontNice(size float64, style FontStyle) *Font {
-	return &Font{Name: "Helvetica", Size: size * scale, Style: style}
+	return FontNew("Helvetica", size, style)
 }
 
 func (f *Font) NewWithSize(size float64) *Font {
-	return &Font{Name: f.Name, Size: size, Style: f.Style}
+	return FontNew(f.Name, size, f.Style)
+}
+
+func (f *Font) LineHeight() float64 {
+	return f.Size * 1.5
+}
+
+func (f *Font) PointSize() float64 {
+	return f.Size
 }

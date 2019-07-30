@@ -158,9 +158,7 @@ func (p *Path) ArcTo(rect Rect, degStart, degDelta float64, clockwise bool) {
 		return
 	}
 	n := math.Ceil(math.Abs(degDelta) / (math.Pi / 2))
-	rm := IdentityMatrix.Translated(circleCenter.Size())
-	rm = rm.Rotated(degDelta / n)
-	rm = rm.Translated(circleCenter.Negative().Size())
+	rm := MatrixIdentity.RotatedAroundPos(circleCenter, degDelta/n)
 	k0, k1 := arcControlPoints(degStart, degDelta/n)
 	c0 := Pos{k0.W*circleRadius + circleCenter.X, k0.H*circleRadius + circleCenter.Y}
 	c1 := Pos{k1.W*circleRadius + circleCenter.X, k1.H*circleRadius + circleCenter.Y}
@@ -199,10 +197,8 @@ func (p *Path) Rotated(deg float64, origin *Pos) *Path {
 	} else {
 		pos = *origin
 	}
-	var m = IdentityMatrix
-	// m = m.translatedBy(x: p.x, y: p.y)
-	// m = m.rotated(by: CGFloat(Float(Math.DegToRad(deg))))
-	// m = m.translatedBy(x: -p.x, y: -p.y)
+	angle := MathDegToRad(deg)
+	m := MatrixIdentity.RotatedAroundPos(pos, angle)
 	return p.Transformed(&m)
 }
 

@@ -7,26 +7,24 @@ package zgo
 
 type Object int
 type AnyObject int
+type Dictionary map[string]interface{}
 
-func IsRunningInSimulator() bool {
+func DefinesIsRunningInSimulator() bool {
 	return false
 }
 
-func IsIOS() bool {
+func DefinesIsIOS() bool {
 	return false
 }
 
-func IsApple() bool {
+func DefinesIsApple() bool {
 	return false
 }
 
-func IsTVBox() bool {
+func DefinesIsTVBox() bool {
 	return false
 }
 
-func BitwiseInvert(v uint64) uint64 {
-	return ^v
-}
 
 /*
 extension String {
@@ -94,9 +92,6 @@ extension ZRange {
 }
 
 extension Array {
-    mutating func removeAt(_ index:Int) {
-        self.remove(at:index)
-    }
 
     func indexWhere(_ w:(Element)bool)  Int? {
         return index(where:w)

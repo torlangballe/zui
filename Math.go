@@ -96,3 +96,7 @@ func MathMixedArrayValueAtIndex(array []float64, index float64) float64 {
 func MathMixedArrayValueAtT(array []float64, t float64) float64 {
 	return MathMixedArrayValueAtIndex(array, float64(len(array)-1)*t)
 }
+
+func MathBitwiseInvert(v uint64) uint64 {
+	return ^v
+}
