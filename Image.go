@@ -4,79 +4,20 @@
 
 package zgo
 
-import "fmt"
-
-type Image struct {
+type imageBase struct {
 	size      Size    `json:"size"`
 	scale     float32 `json:"scale"`
 	capInsets Rect    `json:"capInsets"`
 	hasAlpha  bool    `json:"hasAlpha"`
 }
 
-func ImageNamed(name string) *Image {
-	return nil
-}
-
-func (i *Image) Colored(color Color, size Size) *Image {
-	//	rect := NewRect(0, 0, size.W, size.H)
-	return i
-}
-
-func (i *Image) Size() Size {
-	return i.size
-}
-
-func (i *Image) Make9PatchImage(capInsets Rect) *Image {
-	return i
-}
-
-func (i *Image) TintedWithColor(color Color) *Image {
-	return i
-}
-
-func (i *Image) GetScaledInSize(size Size, proportional bool) *Image {
-	var vsize = size
-	if proportional {
-		vsize = RectFromSize(size).Align(i.Size(), AlignmentCenter|AlignmentShrink|AlignmentScaleToFitProportionally, Size{0, 0}, Size{0, 0}).Size
-	}
-	width := int(vsize.W) / int(i.scale)
-	height := int(vsize.H) / int(i.scale)
-	fmt.Println("GetScaledInSize not made yet:", width, height)
-	return nil
-}
-
-func (i *Image) GetCropped(crop Rect) *Image {
+func (i *Image) CapInsets(capInsets Rect) *Image {
+	i.capInsets = capInsets
 	return i
 }
 
 func (i *Image) HasAlpha() bool {
 	return i.hasAlpha
-}
-
-func (i *Image) GetLeftRightFlipped() *Image {
-	return i
-}
-
-func (i *Image) Normalized() *Image {
-	return i
-}
-
-func (i *Image) GetRotationAdjusted(flip bool) *Image { // adjustForScreenOrientation:bool
-	return i
-}
-
-func (i *Image) Rotated(deg float64, around *Pos) *Image {
-	var pos = i.Size().Pos().DividedByD(2)
-	if around != nil {
-		pos = *around
-	}
-	transform := MatrixForRotatingAroundPoint(pos, deg)
-	fmt.Println("Image.Rotated not made yet:", transform)
-	return i
-}
-
-func (i *Image) FixedOrientation() *Image {
-	return i
 }
 
 /*

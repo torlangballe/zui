@@ -16,16 +16,12 @@ func RectMake(x0, y0, x1, y1 float64) Rect {
 	return r
 }
 
-func RectFromSize(s Size) Rect {
-	return Rect{Size: s}
-}
-
-func RectFromPosSize(p Pos, s Size) Rect {
-	return Rect{p, s}
+func RectFromXYWH(x, y, w, h float64) Rect {
+	return Rect{Pos{x, y}, Size{w, h}}
 }
 
 func RectFromMinMax(min, max Pos) Rect {
-	return RectFromPosSize(min, max.Minus(min).Size())
+	return Rect{min, max.Minus(min).Size()}
 }
 
 var RectNull Rect
@@ -160,7 +156,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 				ns = Size{wa * yratio, hf}
 			}
 		}
-		return RectFromSize(ns).Centered(r.Center())
+		return Rect{Size: (ns)}.Centered(r.Center())
 	}
 	if align&AlignmentHorExpand != 0 && align&AlignmentVertExpand != 0 {
 		if align&AlignmentNonProp != 0 {
@@ -275,7 +271,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 			}
 		}
 	}
-	return RectFromPosSize(Pos{x, y}, Size{wa, ha})
+	return Rect{Pos{x, y}, Size{wa, ha}}
 }
 
 func (r *Rect) MoveInto(rect Rect) {
@@ -357,5 +353,5 @@ func centerToRect(center Pos, radius float64, radiusy float64) Rect {
 	if radiusy != 0 {
 		s.H = radiusy
 	}
-	return RectFromPosSize(center.Minus(s.Pos()), s.TimesD(2.0))
+	return Rect{center.Minus(s.Pos()), s.TimesD(2.0)}
 }

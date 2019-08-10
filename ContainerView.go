@@ -13,14 +13,14 @@ type ContainerType interface {
 type ContainerViewCell struct {
 	Alignment Alignment
 	Margin    Size
-	View      ViewSimple
+	View      View
 	MaxSize   Size
 	Collapsed bool
 	Free      bool
 	//HandleTransition func( size Size,  layout ScreenLayout,  inRect Rect,  alignRect Rect) Rect
 }
 
-func CVCell(view ViewSimple, alignment Alignment) *ContainerViewCell {
+func CVCell(view View, alignment Alignment) *ContainerViewCell {
 	cell := ContainerViewCell{Alignment: alignment, View: view}
 	return &cell
 }
@@ -34,8 +34,71 @@ type ContainerView struct {
 	layoutHandler ViewLayoutProtocol
 }
 
-func ContainerViewNew() *ContainerView {
+func Container(elements ...interface{}) *ContainerView {
+	c := ContainerViewNew(nil)
+	c.SetElements(AlignmentNone, elements...)
+	return c
+}
+
+func calculateAddAlignment(def, a Alignment) Alignment {
+	if a&AlignmentVertical != 0 && def&AlignmentVertical != 0 {
+		def &= ^AlignmentVertical
+	}
+	if a&AlignmentHorizontal != 0 && def&AlignmentHorizontal != 0 {
+		def &= ^AlignmentHorizontal
+	}
+	a |= def
+	if a&AlignmentVertical == 0 {
+		a |= AlignmentTop
+	}
+	if a&AlignmentHorizontal == 0 {
+		a |= AlignmentLeft
+	}
+	return a
+}
+
+func (c *ContainerView) SetElements(defAlignment Alignment, elements ...interface{}) {
+	var gotView *View
+	var gotAlign Alignment
+	var gotMargin Size
+
+	for _, v := range elements {
+		if cell, got := v.(ContainerViewCell); got {
+			c.AddCell(cell, -1)
+			continue
+		}
+		if view, got := v.(View); got {
+			if gotView != nil {
+				a := calculateAddAlignment(defAlignment, gotAlign)
+				c.Add(*gotView, a, gotMargin, Size{}, -1, false)
+				gotView = nil
+				gotAlign = AlignmentNone
+				gotMargin = Size{}
+			}
+			gotView = &view
+			continue
+		}
+		if a, got := v.(Alignment); got {
+			gotAlign = a
+			continue
+		}
+		if m, got := v.(Size); got {
+			gotMargin = m
+			continue
+		}
+	}
+	if gotView != nil {
+		a := calculateAddAlignment(defAlignment, gotAlign)
+		c.Add(*gotView, a, gotMargin, Size{}, -1, false)
+	}
+}
+
+func ContainerViewNew(view View) *ContainerView {
 	c := &ContainerView{}
+	if view == nil {
+		view = c
+	}
+	c.CustomView.Init(view)
 	return c
 }
 
@@ -71,12 +134,13 @@ func (v *ContainerView) AddCell(cell ContainerViewCell, index int) int {
 	}
 }
 
-func (v *ContainerView) Add(view ViewSimple, align Alignment, marg Size, maxSize Size, index int, free bool) int {
+func (v *ContainerView) Add(view View, align Alignment, marg Size, maxSize Size, index int, free bool) int {
 	collapsed := false
+	fmt.Println("add:", view.GetObjectName(), align)
 	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, collapsed, free}, index)
 }
 
-func (v *ContainerView) Contains(view ViewSimple) bool {
+func (v *ContainerView) Contains(view View) bool {
 	for _, c := range v.cells {
 		if c.View == view {
 			return true
@@ -85,7 +149,7 @@ func (v *ContainerView) Contains(view ViewSimple) bool {
 	return false
 }
 
-func (v *ContainerView) CalculateSize(total Size) Size {
+func (v *ContainerView) GetCalculatedSize(total Size) Size {
 	return v.MinSize
 }
 
@@ -113,7 +177,8 @@ func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
 
 func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
-	s := zConvertViewSizeThatFitstToSize(c.View.GetView(), ir.Size)
+	// s := zConvertViewSizeThatFitstToSize(c.View.GetView(), ir.Size)
+	s := c.View.GetCalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
 	// if c.handleTransition != nil {
 	//     if let r = c.handleTransition(s, Screen.Orientation(), r, rv) {
@@ -126,7 +191,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 	fmt.Println("ContainerView ArrangeChildren")
 	v.layoutHandler.HandleBeforeLayout()
-	r := RectFromSize(v.GetView().GetRect().Size).Plus(v.margin)
+	r := Rect{Size: v.GetView().GetRect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
 		if got {
@@ -151,7 +216,7 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 	}
 }
 
-func (v *ContainerView) CollapseChild(view ViewSimple, collapse bool, arrange bool) bool {
+func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
 	i := v.FindCellWithView(view)
 
 	changed := (v.cells[i].Collapsed != collapse)
@@ -178,7 +243,7 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 	return false
 }
 
-func (v *ContainerView) RangeChildren(subViews bool, foreach func(v ViewSimple) bool) {
+func (v *ContainerView) RangeChildren(subViews bool, foreach func(v View) bool) {
 	for _, c := range v.cells {
 		if !foreach(c.View) {
 			return
@@ -204,7 +269,7 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	return false
 }
 
-func (v *ContainerView) FindViewWithName(name string, recursive bool) *ViewSimple {
+func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 	for _, c := range v.cells {
 		if c.View.GetObjectName() == name {
 			return &c.View
@@ -232,7 +297,7 @@ func (v *ContainerView) FindCellWithName(name string) int {
 	return -1
 }
 
-func (v *ContainerView) FindCellWithView(view ViewSimple) int {
+func (v *ContainerView) FindCellWithView(view View) int {
 	for i, c := range v.cells {
 		if c.View == view {
 			return i
@@ -241,7 +306,7 @@ func (v *ContainerView) FindCellWithView(view ViewSimple) int {
 	return -1
 }
 
-func (v *ContainerView) RemoveChild(subView ViewSimple) {
+func (v *ContainerView) RemoveChild(subView View) {
 	detachFromContainer := false
 	zRemoveViewFromSuper(subView.GetView(), detachFromContainer)
 	v.DetachChild(subView)
@@ -255,7 +320,7 @@ func (v *ContainerView) RemoveAllChildren() {
 	}
 }
 
-func (v *ContainerView) DetachChild(subView ViewSimple) {
+func (v *ContainerView) DetachChild(subView View) {
 	for i, c := range v.cells {
 		if c.View == subView {
 			UtilRemoveAt(v.cells, i)

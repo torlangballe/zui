@@ -7,8 +7,8 @@ func (v *ViewNative) GetRect() Rect {
 	return Rect{}
 }
 
-func (v *ViewBaseHandler) ObjectName(name string) ViewSimple {
-	return v
+func (v *ViewBaseHandler) ObjectName(name string) View {
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetObjectName() string {
@@ -16,15 +16,15 @@ func (v *ViewBaseHandler) GetObjectName() string {
 }
 
 func (v *ViewBaseHandler) Color(c Color) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Rect(rect Rect) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Alpha(alpha float32) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetAlpha() float32 {
@@ -32,19 +32,19 @@ func (v *ViewBaseHandler) GetAlpha() float32 {
 }
 
 func (v *ViewBaseHandler) BGColor(c Color) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) CornerRadius(radius float64) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Stroke(width float64, c Color) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Scale(scale float64) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetScale() float64 {
@@ -52,7 +52,7 @@ func (v *ViewBaseHandler) GetScale() float64 {
 }
 
 func (v *ViewBaseHandler) Show(show bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) IsShown() bool {
@@ -60,7 +60,7 @@ func (v *ViewBaseHandler) IsShown() bool {
 }
 
 func (v *ViewBaseHandler) Usable(usable bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) IsUsable() bool {
@@ -72,11 +72,11 @@ func (v *ViewBaseHandler) IsFocused() bool {
 }
 
 func (v *ViewBaseHandler) Focus(focus bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Opaque(opaque bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetChild(path string) *ViewNative {
@@ -94,7 +94,7 @@ func (v *ViewBaseHandler) GetLocalRect() Rect {
 }
 
 func (v *ViewBaseHandler) LocalRect(rect Rect) View {
-	return v
+	return v.view
 }
 
 func (v *TextBaseHandler) Font(font *Font) View {
@@ -119,3 +119,8 @@ func (v *TextBaseHandler) TextAlignment(a Alignment) View {
 func (v *TextBaseHandler) GetTextAlignment() Alignment {
 	return AlignmentLeft
 }
+
+// ??? do we need this?
+// func (v *ViewNative) GetChild(path string) View {
+// 	return nil
+// }

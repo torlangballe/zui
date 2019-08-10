@@ -117,23 +117,27 @@ func (c *Canvas) DrawPath(path *Path, strokeColor Color, width float64, ltype Pa
 	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
 }
 
-func (c *Canvas) DrawImage(image Image, destRect Rect, align Alignment, opacity float32, blendMode CanvasBlendMode, corner float64, margin Size) Rect {
-	var vdestRect = destRect
-	if align != AlignmentNone {
-		vdestRect = vdestRect.Align(Size(image.size), align, margin, Size{0, 0})
-	} else {
-		vdestRect = vdestRect.Expanded(margin.Negative())
-	}
-	if corner != 0 {
-		c.PushState()
-		path := NewRectPath(vdestRect, Size{corner, corner})
-		c.ClipPath(path, false, false)
-	}
+func (c *Canvas) DrawImage(image *Image, destRect Rect, opacity float32, blendMode CanvasBlendMode, sourceRect Rect) Rect {
 	//        image.draw(vdestRect.GetCGRect(), blendMode, opacity)
-	if corner != 0 {
-		c.PopState()
-	}
-	return vdestRect
+	return destRect
+}
+
+func drawInsetRow(canvas *Canvas, image *Image, inset, dest Rect, sy, sh, dy, dh float64, opacity float32, blendMode CanvasBlendMode) {
+	size := image.Size()
+	diff := dest.Size.Minus(size)
+	insetMid := size.Minus(inset.Size.Negative())
+	canvas.DrawImage(image, RectFromXYWH(0, sy, inset.Pos.X, sh), opacity, blendMode, RectFromXYWH(0, dy, inset.Pos.X, dh))
+	canvas.DrawImage(image, RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh), opacity, blendMode, RectFromXYWH(inset.Pos.X, dy, diff.W, dh))
+	canvas.DrawImage(image, RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh), opacity, blendMode, RectFromXYWH(dest.Max().X+inset.Max().X, dy, -inset.Max().X, dh))
+}
+
+func (c *Canvas) drawInsetImage(canvas *Canvas, image *Image, inset, dest Rect, opacity float32, blendMode CanvasBlendMode) {
+	size := image.Size()
+	insetMid := size.Minus(inset.Size.Negative())
+	diff := dest.Size.Minus(size)
+	drawInsetRow(canvas, image, inset, dest, 0, inset.Pos.Y, 0, inset.Pos.Y, opacity, blendMode)
+	drawInsetRow(canvas, image, inset, dest, inset.Pos.Y, insetMid.H, inset.Pos.Y, diff.H, opacity, blendMode)
+	drawInsetRow(canvas, image, inset, dest, inset.Size.H+inset.Max().Y, -inset.Max().X, size.H+inset.Max().Y, -inset.Max().Y, opacity, blendMode)
 }
 
 func (c *Canvas) PushState() {

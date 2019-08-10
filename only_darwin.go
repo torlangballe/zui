@@ -25,5 +25,5 @@ func ScreenMainRect() Rect {
 	return Rect{}
 }
 
-func zViewAddView(parent ViewSimple, child ViewSimple, index int) {
+func zViewAddView(parent View, child View, index int) {
 }

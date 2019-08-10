@@ -5,6 +5,7 @@ package zgo
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"syscall"
 	"syscall/js"
 
@@ -25,7 +26,7 @@ type css js.Value
 func parseCoord(value js.Value) float64 {
 	var s string
 	str := value.String()
-	if ustr.HasSuffix(str, "pt", &s) {
+	if ustr.HasSuffix(str, "px", &s) {
 		n, err := strconv.ParseFloat(s, 32)
 		if err != nil {
 			zlog.Error(err, "not number")
@@ -93,15 +94,44 @@ func (ti *TextInfo) getTextSize(noWidth bool) Size {
 	s.W = measureDiv.Get("clientWidth").Float()
 	s.H = measureDiv.Get("clientHeight").Float()
 
+	s.W += 2 // seems to wrap otherwise, maybe it's rounded down to int somewhere
 	return s
 }
 
+func getFontStyle(font *Font) string {
+	var parts []string
+	if font.Style&FontBold != 0 {
+		parts = append(parts, "bold")
+	}
+	if font.Style&FontItalic != 0 {
+		parts = append(parts, "italic")
+	}
+	parts = append(parts, fmt.Sprintf("%dpx", int(font.Size)))
+	parts = append(parts, font.Name)
+
+	return strings.Join(parts, " ")
+}
+
+// func (ti *TextInfo) getTextSize(noWidth bool) Size {
+// 	var canvas = DocumentJS.Call("createElement", "canvas")
+// 	var context = canvas.Call("getContext", "2d")
+// 	context.Set("font", getFontStyle(ti.Font))
+// 	var metrics = context.Call("measureText", ti.Text)
+// 	fmt.Println("CALCD:", metrics.Get("width"), ti.Font.Name, ti.Font.Size)
+// 	return Size{metrics.Get("width").Float(), metrics.Get("height").Float()}
+// }
+
 // CustomView
 
-func CustomViewInit() *ViewNative {
+func (v *CustomView) Init(view View) {
 	e := DocumentJS.Call("createElement", "div")
 	e.Set("style", "position:absolute")
-	return ViewNative(e)
+	vn := ViewNative(e)
+	vbh := ViewBaseHandler{}
+	v.view = view
+	vbh.native = &vn
+	vbh.view = view
+	v.ViewBaseHandler = vbh // this must be set AFTER vbh is set up!
 }
 
 // Alert
@@ -123,6 +153,6 @@ func ScreenMainRect() Rect {
 	return RectMake(0, 0, 400, 400)
 }
 
-func zViewAddView(parent ViewSimple, child ViewSimple, index int) {
+func zViewAddView(parent View, child View, index int) {
 	parent.GetView().call("appendChild", js.Value(*child.GetView()))
 }

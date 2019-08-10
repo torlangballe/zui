@@ -2,8 +2,8 @@ package zgo
 
 import (
 	"github.com/garyburd/redigo/redis"
-	"github.com/torlangballe/zutil/uredis"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zredis"
 )
 
 //  Created by Tor Langballe on /30/10/15.
@@ -79,7 +79,7 @@ func (k KeyValueStore) getItem(key string, v interface{}) bool {
 	if key[0] != '/' && k.KeyPrefix != "" {
 		key = k.KeyPrefix + "/" + key
 	}
-	got, err := uredis.Get(redisPool, v, key)
+	got, err := zredis.Get(redisPool, v, key)
 	if err != nil {
 		zlog.Error(err, "keyvalstore redis get")
 	}

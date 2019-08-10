@@ -1,14 +1,12 @@
 package zgo
 
-type ViewSimple interface {
-	GetView() *ViewNative
-	GetCalculatedSize(total Size) Size
-	ObjectName(name string) ViewSimple
-	GetObjectName() string
-}
-
 type View interface {
-	ViewSimple
+	GetView() *ViewNative
+
+	GetCalculatedSize(total Size) Size
+
+	ObjectName(name string) View
+	GetObjectName() string
 
 	Usable(usable bool) View
 	IsUsable() bool

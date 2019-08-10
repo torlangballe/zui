@@ -2,7 +2,6 @@ package zgo
 
 import (
 	"fmt"
-	"strconv"
 	"syscall/js"
 )
 
@@ -23,16 +22,16 @@ func (v *ViewNative) GetRect() Rect {
 	pos.X = v.get("offsetLeft").Float()
 	pos.Y = v.get("offsetTop").Float()
 	size := v.GetLocalRect().Size
-	return RectFromPosSize(pos, size)
+	return Rect{pos, size}
 }
 
 func (v *ViewNative) Rect(rect Rect) {
 	style := v.style()
-	style.Set("left", fmt.Sprintf("%fpt", rect.Pos.X))
-	//	jv.GetView().style()).Set("left", fmt.Sprintf("%fpt", rect.Pos.X))
-	style.Set("top", fmt.Sprintf("%fpt", rect.Pos.Y))
-	style.Set("width", fmt.Sprintf("%fpt", rect.Size.W))
-	style.Set("height", fmt.Sprintf("%fpt", rect.Size.H))
+	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
+	//	jv.GetView().style()).Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
+	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))
+	style.Set("width", fmt.Sprintf("%fpx", rect.Size.W))
+	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
 }
 
 func (v *ViewNative) GetLocalRect() Rect {
@@ -47,7 +46,7 @@ func (v *ViewNative) LocalRect(rect Rect) {
 }
 
 func (v *ViewBaseHandler) GetObjectName() string {
-	return v.GetView().get("id").String()
+	return v.view.GetView().get("id").String()
 }
 
 func makeRGBA(c Color) string {
@@ -56,8 +55,8 @@ func makeRGBA(c Color) string {
 }
 
 func (v *ViewBaseHandler) Color(c Color) View {
-	v.GetView().style().Set("color", makeRGBA(c))
-	return v
+	v.view.GetView().style().Set("color", makeRGBA(c))
+	return v.view
 }
 
 func (n *ViewNative) style() js.Value {
@@ -73,42 +72,42 @@ func (v *ViewNative) isUsable() bool {
 }
 
 func (v *ViewBaseHandler) Alpha(alpha float32) View {
-	v.GetView().style().Set("alpha", alpha)
-	return v
+	v.view.GetView().style().Set("alpha", alpha)
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetAlpha() float32 {
-	return float32(v.GetView().style().Get("alpha").Float())
+	return float32(v.view.GetView().style().Get("alpha").Float())
 }
 
-func (v *ViewBaseHandler) ObjectName(name string) ViewSimple {
-	v.GetView().set("id", name)
-	return v
+func (v *ViewBaseHandler) ObjectName(name string) View {
+	v.view.GetView().set("id", name)
+	return v.view
 }
 
 func (v *ViewBaseHandler) BGColor(c Color) View {
-	v.GetView().style().Set("background", makeRGBA(c))
-	return v
+	v.view.GetView().style().Set("background", makeRGBA(c))
+	return v.view
 }
 
 func (v *ViewBaseHandler) CornerRadius(radius float64) View {
-	style := v.GetView().style()
-	s := fmt.Sprintf("%dpt", int(radius))
+	style := v.view.GetView().style()
+	s := fmt.Sprintf("%dpx", int(radius))
 	style.Set("-moz-border-radius", s)
 	style.Set("-webkit-border-radius", s)
 	style.Set("border-radius", s)
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Stroke(width float64, c Color) View {
-	style := v.GetView().style()
+	style := v.view.GetView().style()
 	style.Set("border-color", makeRGBA(c))
 	style.Set("border", "solid 1px transparent")
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Scale(scale float64) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetScale() float64 {
@@ -120,21 +119,21 @@ func (v *ViewBaseHandler) Show(show bool) View {
 	if show {
 		str = "visible"
 	}
-	v.GetView().style().Set("visibility", str)
-	return v
+	v.view.GetView().style().Set("visibility", str)
+	return v.view
 }
 
 func (v *ViewBaseHandler) IsShown() bool {
-	return v.GetView().style().Get("visibility").String() == "visible"
+	return v.view.GetView().style().Get("visibility").String() == "visible"
 }
 
 func (v *ViewBaseHandler) Usable(usable bool) View {
-	v.native.setUsable(usable)
-	return v
+	v.view.GetView().setUsable(usable)
+	return v.view
 }
 
 func (v *ViewBaseHandler) IsUsable() bool {
-	return v.native.isUsable()
+	return v.view.GetView().isUsable()
 }
 
 func (v *ViewBaseHandler) IsFocused() bool {
@@ -142,11 +141,11 @@ func (v *ViewBaseHandler) IsFocused() bool {
 }
 
 func (v *ViewBaseHandler) Focus(focus bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) Opaque(opaque bool) View {
-	return v
+	return v.view
 }
 
 func (v *ViewBaseHandler) GetChild(path string) *ViewNative {
@@ -158,7 +157,7 @@ func (v *ViewBaseHandler) DumpTree() {
 
 func (v *ViewBaseHandler) RemoveFromParent() {
 	if v.parent != nil {
-		v.parent.GetView().call("removeChild", js.Value(*v.native))
+		v.parent.GetView().call("removeChild", js.Value(*v.view.GetView()))
 	}
 }
 
@@ -166,27 +165,23 @@ func (v *ViewBaseHandler) RemoveFromParent() {
 // 	return v.parent
 // }
 
-func (v *ViewBaseHandler) GetCalculatedSize(total Size) Size {
-	fmt.Println("ViewBaseHandler GetCalculatedSize")
-	return Size{10, 10}
-}
-
 func (v *ViewBaseHandler) GetLocalRect() Rect {
-	w := v.GetView().get("offsetHeight").Float()
-	h := v.GetView().get("offsetHeight").Float()
-	return RectFromSize(Size{w, h})
+	w := v.view.GetView().get("offsetHeight").Float()
+	h := v.view.GetView().get("offsetHeight").Float()
+	return Rect{Size: Size{w, h}}
 }
 
 func (v *ViewBaseHandler) LocalRect(rect Rect) View {
-	w := v.GetView().get("width").Float()
-	h := v.GetView().get("height").Float()
-	style := v.GetView().style()
-	style.Set("width", fmt.Sprintf("%fpt", w))
-	style.Set("height", fmt.Sprintf("%fpt", h))
-	return v
+	w := v.view.GetView().get("width").Float()
+	h := v.view.GetView().get("height").Float()
+	style := v.view.GetView().style()
+	style.Set("width", fmt.Sprintf("%fpx", w))
+	style.Set("height", fmt.Sprintf("%fpx", h))
+	return v.view
 }
 
 func (v *TextBaseHandler) Font(font *Font) View {
+	fmt.Println("TextBaseHandler.Font:", v, v.view)
 	style := v.view.GetView().style()
 	style.Set("font-family", font.Name)
 	style.Set("font-size", fmt.Sprintf("%gpx", font.Size))
@@ -196,8 +191,7 @@ func (v *TextBaseHandler) Font(font *Font) View {
 func (v *TextBaseHandler) GetFont() *Font {
 	style := v.view.GetView().style()
 	name := style.Get("font-family").String()
-	ss := style.Get("font-size").String()
-	size, _ := strconv.ParseFloat(ss, 32)
+	size := parseCoord(style.Get("font-size"))
 	return FontNew(name, size, FontNormal)
 }
 

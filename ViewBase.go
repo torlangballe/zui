@@ -1,11 +1,9 @@
 package zgo
 
-import "fmt"
-
 type ViewBaseHandler struct {
-	View
+	view   View
+	parent View
 	native *ViewNative
-	parent *ViewBaseHandler
 }
 
 func (l *ViewBaseHandler) GetView() *ViewNative {
@@ -40,13 +38,12 @@ type TextBaseHandler struct {
 func (v *TextBaseHandler) GetCalculatedSize(total Size) Size {
 	var t TextInfo
 
-	fmt.Println("TextBaseHandler GetCalculatedSize")
 	t.Alignment = v.GetTextAlignment()
 	t.Text = v.GetText()
 	noWidth := false
 	if v.MaxWidth != 0 {
 		noWidth = true
-		t.Rect = RectFromSize(Size{v.MaxWidth, 99999})
+		t.Rect = Rect{Size: Size{v.MaxWidth, 99999}}
 	}
 	t.Font = v.GetFont()
 	if v.MaxLines != 0 {
@@ -55,7 +52,6 @@ func (v *TextBaseHandler) GetCalculatedSize(total Size) Size {
 	t.Wrap = TextInfoWrapWord
 	rect := t.GetBounds(noWidth)
 
-	fmt.Println("CalcSize:", t.Text, t.Font.Size)
 	rect.Size.W += 4
 	return rect.Size
 }

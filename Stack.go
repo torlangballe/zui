@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -14,42 +13,11 @@ type StackView struct {
 }
 
 func Stack(vertical bool, alignment Alignment, elements ...interface{}) *StackView {
-	//	label.native = &v
-
 	s := &StackView{}
+	s.ContainerView = *ContainerViewNew(s)
+	s.SetElements(alignment, elements...)
 	s.Vertical = vertical
 	s.space = 6
-	s.native = CustomViewInit()
-	var gotView *View
-	var gotAlign Alignment
-	var gotMargin Size
-	for _, v := range elements {
-		if cell, got := v.(ContainerViewCell); got {
-			s.AddCell(cell, -1)
-			continue
-		}
-		if view, got := v.(View); got {
-			if gotView != nil {
-				s.Add(*gotView, gotAlign|alignment, gotMargin, Size{}, -1, false)
-				gotView = nil
-				gotAlign = AlignmentNone
-				gotMargin = Size{}
-			}
-			gotView = &view
-			continue
-		}
-		if a, got := v.(Alignment); got {
-			gotAlign = a
-			continue
-		}
-		if m, got := v.(Size); got {
-			gotMargin = m
-			continue
-		}
-	}
-	if gotView != nil {
-		s.Add(*gotView, gotAlign|alignment, gotMargin, Size{}, -1, false)
-	}
 	return s
 }
 
@@ -73,7 +41,7 @@ func (s *StackView) getCellFitSizeInTotal(total Size, cell ContainerViewCell) Si
 	return tot
 }
 
-func (s *StackView) CalculateSize(total Size) Size {
+func (s *StackView) GetCalculatedSize(total Size) Size {
 	var size = s.nettoCalculateSize(total)
 	size.Maximize(s.MinSize)
 	return size
@@ -119,18 +87,18 @@ func (s *StackView) ForceHorizontalFocusNavigation() {
 }
 
 func (s *StackView) ArrangeChildren(onlyChild *View) {
-	fmt.Println("Stack ArrangeChildren")
 	var incs = 0
 	var decs = 0
-	var sizes = map[ViewSimple]Size{}
+	var sizes = map[View]Size{}
 	var ashrink = AlignmentHorShrink
 	var aexpand = AlignmentHorExpand
 	var aless = AlignmentLeft
 	var amore = AlignmentRight
 	var amid = AlignmentHorCenter | AlignmentMarginIsOffset
 
-	s.layoutHandler.HandleBeforeLayout()
-
+	if s.layoutHandler != nil {
+		s.layoutHandler.HandleBeforeLayout()
+	}
 	if s.Vertical {
 		ashrink = AlignmentVertShrink
 		aexpand = AlignmentVertExpand
@@ -152,7 +120,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			}
 		}
 		cv, got := c2.View.(*ContainerView)
-		if got {
+		if got && s.layoutHandler != nil {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
 	}
@@ -173,7 +141,8 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 		if !c3.Collapsed && !c3.Free {
 			lastNoFreeIndex = i
 			tot := s.getCellFitSizeInTotal(r.Size, c3)
-			var size = zConvertViewSizeThatFitstToSize(c3.View.GetView(), tot)
+			// var size = zConvertViewSizeThatFitstToSize(c3.View.GetView(), tot)
+			var size = c3.View.GetCalculatedSize(tot)
 			if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 				*size.VerticeP(s.Vertical) += diff / float64(decs)
 			} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
@@ -186,13 +155,14 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 	var firstCenter = true
 	for i, c4 := range s.cells {
 		if !c4.Collapsed && !c4.Free {
+			DebugPrint("cell ", c4.View.GetObjectName(), c4.Alignment, amore, aless)
 			if (c4.Alignment & (amore | aless)) != 0 {
+				DebugPrint("cell2 ", c4.View.GetObjectName(), sizes[c4.View])
 				var a = c4.Alignment
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(AlignmentExpand.Only(s.Vertical))
 				}
 				vr := s.handleAlign(sizes[c4.View], r, a, c4)
-				DebugPrint("alignx ", c4.View.GetObjectName(), vr)
 				if onlyChild == nil || *onlyChild == c4.View {
 					zViewSetRect(c4.View.GetView(), vr, true)
 				}
@@ -258,7 +228,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 }
 
 func StackRows(alignment Alignment, elements ...interface{}) *StackView {
-	return Stack(false, alignment, elements...)
+	return Stack(true, alignment, elements...)
 }
 
 func StackColumns(alignment Alignment, elements ...interface{}) *StackView {

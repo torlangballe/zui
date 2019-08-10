@@ -2,11 +2,11 @@ package zgo
 
 type CustomView struct {
 	ViewBaseHandler
-	MinSize             Size
-	pressedHandler      ViewPressedProtocol
-	valueChangedHandler ViewValueChangedProtocol
-	drawHandler         ViewDrawProtocol
-	timers              []*Timer
+	MinSize        Size
+	pressedHandler ViewPressedProtocol
+	valueHandler   ViewValueChangedProtocol
+	drawHandler    ViewDrawProtocol
+	timers         []*Timer
 }
 
 func CustomViewNew() *CustomView {
@@ -14,15 +14,15 @@ func CustomViewNew() *CustomView {
 	return c
 }
 
-func (v *CustomView) SetPressedInPosHandler(handler ViewPressedProtocol) {
+func (v *CustomView) PressedHandler(handler ViewPressedProtocol) {
 	v.pressedHandler = handler
 }
 
-func (v *CustomView) SetValueChangedHandler(handler ViewValueChangedProtocol) {
-	v.valueChangedHandler = handler
+func (v *CustomView) ValueHandler(handler ViewValueChangedProtocol) {
+	v.valueHandler = handler
 }
 
-func (v *CustomView) SetDrawHandler(handler ViewDrawProtocol) {
+func (v *CustomView) DrawHandler(handler ViewDrawProtocol) {
 	v.drawHandler = handler
 }
 
@@ -47,4 +47,25 @@ func (v *CustomView) HandleClosing() {
 		t.Stop()
 	}
 	v.timers = v.timers[:]
+}
+
+func (v *CustomView) Activate(activate bool) { // like being activated/deactivated for first time
+}
+
+func (v *CustomView) Rotate(degrees float64) {
+	// r := MathDegToRad(degrees)
+	//self.transform = CGAffineTransform(rotationAngle CGFloat(r))
+}
+
+func zConvertViewSizeThatFitstToSize(view *ViewNative, sizeIn Size) Size {
+	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))
+	return Size{}
+}
+
+func zViewSetRect(view *ViewNative, rect Rect, layout bool) { // layout only used on android
+	view.Rect(rect)
+}
+
+func zRemoveViewFromSuper(view *ViewNative, detachFromContainer bool) {
+	//view.removeFromSuperview()
 }

@@ -4,14 +4,14 @@
 
 package zgo
 
-type FontStyle string
+type FontStyle int
 
 var scale = 1.0
 
 const (
-	FontNormal FontStyle = ""
-	FontBold             = "bold"
-	FontItalic           = "italic"
+	FontNormal FontStyle = 0
+	FontBold             = 1
+	FontItalic           = 2
 )
 
 type Font struct {
