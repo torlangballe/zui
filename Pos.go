@@ -94,6 +94,11 @@ func (p Pos) RotatedCCW(angle float64) Pos {
 	return Pos{p.X*c - p.Y*s, p.X*s + p.Y*c}
 }
 
+func (p *Pos) MultiplyD(a float64) {
+	p.X *= a
+	p.Y *= a
+}
+
 func (p Pos) PlusD(a float64) Pos      { return Pos{p.X + a, p.Y + a} }
 func (p Pos) MinusD(a float64) Pos     { return Pos{p.X - a, p.Y - a} }
 func (p Pos) TimesD(a float64) Pos     { return Pos{p.X * a, p.Y * a} }

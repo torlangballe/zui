@@ -25,7 +25,7 @@ type Color struct {
 	// Tile
 }
 
-func NewGray(white, a float32) (c Color) {
+func ColorNewGray(white, a float32) (c Color) {
 	c.Valid = true
 	c.Rgba.R = white
 	c.Rgba.G = white
@@ -34,7 +34,7 @@ func NewGray(white, a float32) (c Color) {
 	return
 }
 
-func NewColor(r, g, b, a float32) (c Color) {
+func ColorNew(r, g, b, a float32) (c Color) {
 	c.Valid = true
 	c.Rgba.R = r
 	c.Rgba.G = g
@@ -43,7 +43,7 @@ func NewColor(r, g, b, a float32) (c Color) {
 	return
 }
 
-func NewHSBAColor(h, s, b, a float32) (c Color) {
+func ColorNewHSBA(h, s, b, a float32) (c Color) {
 	c.Valid = true
 
 	var i = MathFloor(float64(h * 6))
@@ -113,7 +113,7 @@ func (c Color) Opacity() float32 {
 }
 
 func (c Color) OpacityChanged(opacity float32) Color {
-	return NewColor(c.Rgba.R, c.Rgba.G, c.Rgba.B, opacity)
+	return ColorNew(c.Rgba.R, c.Rgba.G, c.Rgba.B, opacity)
 }
 
 func (c Color) Mix(withColor Color, amount float32) Color {
@@ -123,12 +123,12 @@ func (c Color) Mix(withColor Color, amount float32) Color {
 	g := (1-amount)*col.G + wc.G*amount
 	b := (1-amount)*col.B + wc.B*amount
 	a := (1-amount)*col.A + wc.A*amount
-	return NewColor(r, g, b, a)
+	return ColorNew(r, g, b, a)
 }
 
 func (c Color) MultipliedBrightness(multiply float32) Color {
 	hsba := c.GetHSBA()
-	return NewHSBAColor(hsba.H, hsba.S, hsba.B*multiply, hsba.A)
+	return ColorNewHSBA(hsba.H, hsba.S, hsba.B*multiply, hsba.A)
 }
 
 func (c Color) AlteredContrast(contrast float32) Color {
@@ -137,7 +137,7 @@ func (c Color) AlteredContrast(contrast float32) Color {
 	col.R = (col.R-0.5)*multi + 0.5
 	col.G = (col.G-0.5)*multi + 0.5
 	col.B = (col.B-0.5)*multi + 0.5
-	return NewColor(col.R, col.G, col.B, col.A)
+	return ColorNew(col.R, col.G, col.B, col.A)
 }
 
 func (c Color) GetContrastingGray() Color {
@@ -148,14 +148,14 @@ func (c Color) GetContrastingGray() Color {
 	return ColorBlack
 }
 
-var ColorWhite = NewGray(1, 1)
-var ColorBlack = NewGray(0, 1)
-var ColorGray = NewGray(0.5, 1)
-var ColorClear = NewGray(0, 0)
-var ColorBlue = NewColor(0, 0, 1, 1)
-var ColorRed = NewColor(1, 0, 0, 1)
-var ColorYellow = NewColor(1, 1, 0, 1)
-var ColorGreen = NewColor(0, 1, 0, 1)
-var ColorOrange = NewColor(1, 0.5, 0, 1)
-var ColorCyan = NewColor(0, 1, 1, 1)
-var ColorMagenta = NewColor(1, 0, 1, 1)
+var ColorWhite = ColorNewGray(1, 1)
+var ColorBlack = ColorNewGray(0, 1)
+var ColorGray = ColorNewGray(0.5, 1)
+var ColorClear = ColorNewGray(0, 0)
+var ColorBlue = ColorNew(0, 0, 1, 1)
+var ColorRed = ColorNew(1, 0, 0, 1)
+var ColorYellow = ColorNew(1, 1, 0, 1)
+var ColorGreen = ColorNew(0, 1, 0, 1)
+var ColorOrange = ColorNew(1, 0.5, 0, 1)
+var ColorCyan = ColorNew(0, 1, 1, 1)
+var ColorMagenta = ColorNew(1, 0, 1, 1)

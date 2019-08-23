@@ -1,23 +1,16 @@
-//  Image.go
-//
-//  Created by Tor Langballe on /20/10/15.
-
 package zgo
 
-type imageBase struct {
-	size      Size    `json:"size"`
-	scale     float32 `json:"scale"`
-	capInsets Rect    `json:"capInsets"`
-	hasAlpha  bool    `json:"hasAlpha"`
+//  Created by Tor Langballe on /20/10/15.
+
+type Image struct {
+	imageBase
+	scale   int
+	path    string
+	loading bool
 }
 
-func (i *Image) CapInsets(capInsets Rect) *Image {
-	i.capInsets = capInsets
-	return i
-}
-
-func (i *Image) HasAlpha() bool {
-	return i.hasAlpha
+type ImageOwner interface {
+	GetImage() *Image
 }
 
 /*

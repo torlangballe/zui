@@ -1,29 +1,60 @@
 package zgo
 
+type CustomViewProtocol interface {
+	drawIfExposed()
+	getCanvas() *Canvas
+}
+
 type CustomView struct {
 	ViewBaseHandler
-	MinSize        Size
-	pressedHandler ViewPressedProtocol
-	valueHandler   ViewValueChangedProtocol
-	drawHandler    ViewDrawProtocol
-	timers         []*Timer
+	minSize       Size
+	pressed       func(pos Pos)
+	valueChanged  func(view View)
+	draw          func(rect Rect, canvas *Canvas, view View)
+	exposed       bool
+	canvas        *Canvas
+	timers        []*Timer
+	color         Color
+	IsHighlighted bool
+	exposeTimer   Timer
 }
 
-func CustomViewNew() *CustomView {
-	c := &CustomView{}
-	return c
+func (v *CustomView) getCanvas() *Canvas {
+	return v.canvas
 }
 
-func (v *CustomView) PressedHandler(handler ViewPressedProtocol) {
-	v.pressedHandler = handler
+func (v *CustomView) GetCalculatedSize(total Size) Size {
+	return v.GetMinSize()
 }
 
-func (v *CustomView) ValueHandler(handler ViewValueChangedProtocol) {
-	v.valueHandler = handler
+func (v *CustomView) Expose() {
+	v.exposed = true
+	v.exposeTimer.Stop()
+	v.exposeTimer.Set(0.01, true, func() {
+		v.drawIfExposed()
+	})
 }
 
-func (v *CustomView) DrawHandler(handler ViewDrawProtocol) {
-	v.drawHandler = handler
+func (v *CustomView) Color(color Color) View {
+	v.color = color
+	return v
+}
+
+func (v *CustomView) MinSize(s Size) *CustomView {
+	v.minSize = s
+	return v
+}
+
+func (v *CustomView) GetMinSize() Size {
+	return v.minSize
+}
+
+func (v *CustomView) ValueHandler(handler func(view View)) {
+	v.valueChanged = handler
+}
+
+func (v *CustomView) DrawHandler(handler func(rect Rect, canvas *Canvas, view View)) {
+	v.draw = handler
 }
 
 func (v *CustomView) GetPosFromMe(pos Pos, inView View) Pos {
@@ -36,10 +67,6 @@ func (v *CustomView) GetPosToMe(pos Pos, inView View) Pos {
 
 func (v *CustomView) GetViewsRectInMyCoordinates(view View) Rect {
 	return Rect{}
-}
-
-func (v *CustomView) getStateColor(col Color) Color {
-	return Color{}
 }
 
 func (v *CustomView) HandleClosing() {
@@ -62,10 +89,21 @@ func zConvertViewSizeThatFitstToSize(view *ViewNative, sizeIn Size) Size {
 	return Size{}
 }
 
-func zViewSetRect(view *ViewNative, rect Rect, layout bool) { // layout only used on android
-	view.Rect(rect)
-}
-
 func zRemoveViewFromSuper(view *ViewNative, detachFromContainer bool) {
 	//view.removeFromSuperview()
+}
+
+func (v *CustomView) getStateColor(col Color) Color {
+	if v.IsHighlighted {
+		g := col.GetGrayScale()
+		if g < 0.5 {
+			col = col.Mix(ColorWhite, 0.5)
+		} else {
+			col = col.Mix(ColorBlack, 0.5)
+		}
+	}
+	if !v.IsUsable() {
+		col = col.OpacityChanged(0.3)
+	}
+	return col
 }

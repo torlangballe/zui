@@ -25,6 +25,9 @@ func DefinesIsTVBox() bool {
 	return false
 }
 
+func IsTVBox() bool {
+	return false
+}
 
 /*
 extension String {

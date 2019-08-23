@@ -1,9 +1,9 @@
 package zgo
 
 type ViewBaseHandler struct {
-	view   View
-	parent View
-	native *ViewNative
+	view    View
+	parent  View
+	native  *ViewNative
 }
 
 func (l *ViewBaseHandler) GetView() *ViewNative {

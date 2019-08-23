@@ -2,6 +2,7 @@ package zgo
 
 import (
 	"math"
+	"time"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -43,7 +44,7 @@ func (s *StackView) getCellFitSizeInTotal(total Size, cell ContainerViewCell) Si
 
 func (s *StackView) GetCalculatedSize(total Size) Size {
 	var size = s.nettoCalculateSize(total)
-	size.Maximize(s.MinSize)
+	size.Maximize(s.GetMinSize())
 	return size
 }
 
@@ -67,7 +68,7 @@ func (s *StackView) nettoCalculateSize(total Size) Size { // can force size calc
 	if len(s.cells) > 0 {
 		*size.VerticeP(s.Vertical) -= s.space
 	}
-	*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), s.MinSize.Vertice(!s.Vertical))
+	*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), s.GetMinSize().Vertice(!s.Vertical))
 	return size
 }
 
@@ -87,6 +88,9 @@ func (s *StackView) ForceHorizontalFocusNavigation() {
 }
 
 func (s *StackView) ArrangeChildren(onlyChild *View) {
+	for s.isLoading() {
+		time.Sleep(time.Millisecond * 2)
+	}
 	var incs = 0
 	var decs = 0
 	var sizes = map[View]Size{}
@@ -155,16 +159,15 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 	var firstCenter = true
 	for i, c4 := range s.cells {
 		if !c4.Collapsed && !c4.Free {
-			DebugPrint("cell ", c4.View.GetObjectName(), c4.Alignment, amore, aless)
 			if (c4.Alignment & (amore | aless)) != 0 {
-				DebugPrint("cell2 ", c4.View.GetObjectName(), sizes[c4.View])
 				var a = c4.Alignment
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(AlignmentExpand.Only(s.Vertical))
 				}
 				vr := s.handleAlign(sizes[c4.View], r, a, c4)
+//				DebugPrint("cell2 ", c4.Alignment, r, vr, c4.View.GetObjectName(), sizes[c4.View])
 				if onlyChild == nil || *onlyChild == c4.View {
-					zViewSetRect(c4.View.GetView(), vr, true)
+					zViewSetRect(c4.View, vr, true)
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(s.Vertical), vr.Max().Vertice(s.Vertical)+s.space)
@@ -212,7 +215,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid) | aless
 			vr := s.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				zViewSetRect(c5.View.GetView(), vr, true)
+				zViewSetRect(c5.View, vr, true)
 			}
 			//                ZDebug.Print("alignm ", (c5.view as! ZView).objectName, vr)
 			*r.Pos.VerticeP(s.Vertical) = vr.Max().Vertice(s.Vertical) + s.space

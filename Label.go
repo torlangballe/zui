@@ -9,7 +9,7 @@ type Label struct {
 	MaxWidth  float64
 	MaxHeight *float64
 	Margin    Rect
-	//    var touchInfo = ZTouchInfo()
+	pressed   func(pos Pos)
 }
 
 func (v *Label) GetCalculatedSize(total Size) Size {

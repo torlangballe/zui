@@ -76,12 +76,17 @@ func (s *Size) Minimize(a Size) {
 	s.H = math.Min(s.H, a.H)
 }
 
+func (s *Size) Add(a Size) {
+	s.W += a.W
+	s.H += a.H
+}
+
 func (s *Size) MultiplyD(a float64) {
 	s.W *= a
 	s.H *= a
 }
 
-func (s Size) MultiplyF(a float32) {
+func (s *Size) MultiplyF(a float32) {
 	s.W *= float64(a)
 	s.H *= float64(a)
 }

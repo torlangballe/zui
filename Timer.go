@@ -71,7 +71,10 @@ func (t Timer) Set(secs float64, onMainThread bool, perform func()) {
 }
 
 func (t Timer) Stop() {
-	t.timer.Stop()
+	if t.timer != nil {
+		t.timer.Stop()
+		t.timer = nil
+	}
 }
 
 func TimerPerformAfterDelay(delay float64, perform func()) {

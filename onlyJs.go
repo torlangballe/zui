@@ -44,6 +44,7 @@ func getCreatedTimeFromStatT(fstat *syscall.Stat_t) Time {
 
 var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")
+var WindowJS = js.Global().Get("window")
 
 func AddTextNode(e *ViewNative, text string) {
 	textNode := DocumentJS.Call("createTextNode", text)
@@ -143,14 +144,20 @@ func (a *Alert) Show() {
 
 // Screen
 
-func ScreenMainRect() Rect {
-	// win := js.Global().Get("window")
-	// s := win.Get("screen")
-	// w := s.Get("width").Float()
-	// h := s.Get("height").Float()
-	// fmt.Println("ScreenMainRect:", w, h)
-	// return RectMake(0, 0, w, h)
-	return RectMake(0, 0, 400, 400)
+func ScreenMain() Screen {
+	var m Screen
+
+	s := WindowJS.Get("screen")
+	w := s.Get("width").Float()
+	h := s.Get("height").Float()
+
+	dpr := WindowJS.Get("devicePixelRatio").Float()
+	m.Rect = RectMake(0, 0, w, h)
+	m.Scale = dpr
+	m.SoftScale = 1
+	m.UsableRect = m.Rect
+
+	return m
 }
 
 func zViewAddView(parent View, child View, index int) {

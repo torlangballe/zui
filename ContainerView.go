@@ -2,6 +2,7 @@ package zgo
 
 import (
 	"fmt"
+	"time"
 )
 
 // Created by Tor Langballe on /23/9/14.
@@ -136,7 +137,6 @@ func (v *ContainerView) AddCell(cell ContainerViewCell, index int) int {
 
 func (v *ContainerView) Add(view View, align Alignment, marg Size, maxSize Size, index int, free bool) int {
 	collapsed := false
-	fmt.Println("add:", view.GetObjectName(), align)
 	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, collapsed, free}, index)
 }
 
@@ -150,19 +150,19 @@ func (v *ContainerView) Contains(view View) bool {
 }
 
 func (v *ContainerView) GetCalculatedSize(total Size) Size {
-	return v.MinSize
+	return v.GetMinSize()
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
 	layout := true
-	zViewSetRect(v.GetView(), ScreenMainRect(), layout)
-	v.MinSize = ScreenMainRect().Size
+	zViewSetRect(v, ScreenMain().Rect, layout)
+	v.MinSize(ScreenMain().Rect.Size)
 	if !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
 		r := v.GetView().GetRect()
 		if h > 20 && !ScreenHasNotch() {
 			r.Size.H -= h
-			zViewSetRect(v.GetView(), r, layout)
+			zViewSetRect(v, r, layout)
 		} else if useableArea {
 			v.margin.SetMinY(float64(h))
 		}
@@ -185,11 +185,28 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 	//         rv = r
 	//     }
 	// }
-	zViewSetRect(c.View.GetView(), rv, false)
+	zViewSetRect(c.View, rv, false)
+}
+
+func (v *ContainerView) isLoading() bool {
+	for _, c := range v.cells {
+		io, got := c.View.(ImageOwner)
+		if got {
+			image := io.GetImage()
+			fmt.Println("IO:", c.View.GetObjectName(), io.GetImage(), c.View.GetCalculatedSize(v.GetLocalRect().Size))
+			if image != nil && image.loading {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 	fmt.Println("ContainerView ArrangeChildren")
+	for v.isLoading() {
+		time.Sleep(time.Millisecond * 10)
+	}
 	v.layoutHandler.HandleBeforeLayout()
 	r := Rect{Size: v.GetView().GetRect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
@@ -325,6 +342,22 @@ func (v *ContainerView) DetachChild(subView View) {
 		if c.View == subView {
 			UtilRemoveAt(v.cells, i)
 			break
+		}
+	}
+}
+
+func (v *ContainerView) drawAllIfExposed() {
+	v.drawIfExposed()
+	for _, c := range v.cells {
+		cov, _ := c.View.(*ContainerView)
+		if cov != nil {
+			cov.drawAllIfExposed()
+		} else {
+			cvp, _ := c.View.(CustomViewProtocol)
+			if cvp != nil {
+				fmt.Println("drawAllIfExposed c:", c.View.GetObjectName())
+				cvp.drawIfExposed()
+			}
 		}
 	}
 }

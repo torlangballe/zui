@@ -38,7 +38,7 @@ type TextInfo struct {
 	MaxLines    int
 }
 
-func NewTextInfo() *TextInfo {
+func TextInfoNew() *TextInfo {
 	t := &TextInfo{}
 	t.Type = TextInfoFill
 	t.Wrap = TextInfoWrapWord

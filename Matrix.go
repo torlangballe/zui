@@ -102,3 +102,18 @@ func (m Matrix) RotatedAroundPos(pos Pos, angle float64) Matrix {
 	m = m.Translated(pos.Size().Negative())
 	return m
 }
+
+func MatrixForRotatingAroundPoint(point Pos, deg float64) Matrix {
+	var transform = MatrixIdentity
+	transform = transform.TranslatedByPos(point)
+	transform = transform.Rotated(MathDegToRad(deg))
+	transform = transform.TranslatedByPos(point.Negative())
+
+	return transform
+}
+
+func MatrixForRotationDeg(deg float64) Matrix {
+	var transform = MatrixIdentity
+	transform = transform.Rotated(MathDegToRad(deg))
+	return transform
+}

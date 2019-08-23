@@ -1,6 +1,8 @@
 package zgo
 
-import "math"
+import (
+	"math"
+)
 
 type Rect struct {
 	Pos  Pos  `json:"pos"`
@@ -89,7 +91,7 @@ func MergeAll(rects []Rect) []Rect {
 		for i, r := range rold {
 			var used = false
 			for j := i + 1; j < len(rold); j++ {
-				if r.Overlaps(rold[j].ExpandedF(4)) {
+				if r.Overlaps(rold[j].ExpandedD(4)) {
 					var n = rects[i]
 					n.UnionWith(rold[j])
 					rnew = append(rnew, n)
@@ -109,7 +111,7 @@ func MergeAll(rects []Rect) []Rect {
 func (r Rect) Expanded(e Size) Rect {
 	return Rect{r.Pos.Minus(e.Pos()), r.Size.Plus(e.TimesD(2))}
 }
-func (r Rect) ExpandedF(n float64) Rect { return r.Expanded(Size{n, n}) }
+func (r Rect) ExpandedD(n float64) Rect { return r.Expanded(Size{n, n}) }
 func (r Rect) Centered(center Pos) Rect { return Rect{center.Minus(r.Size.Pos().DividedByD(2)), r.Size} }
 func (r Rect) Overlaps(rect Rect) bool {
 	min := r.Min()
@@ -130,7 +132,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 	var scaley float64
 
 	var wa = float64(s.W)
-	var wf = float64(s.W)
+	var wf = float64(r.Size.W)
 	//        if (align & (AlignmentHorShrink|AlignmentHorExpand)) {
 	if align&AlignmentMarginIsOffset == 0 {
 		wf -= float64(marg.W)
@@ -140,7 +142,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 	}
 	//        }
 	var ha = float64(s.H)
-	var hf = float64(s.H)
+	var hf = float64(r.Size.H)
 	//        if (align & (AlignmentVertShrink|AlignmentVertExpand)) {
 	if align&AlignmentMarginIsOffset == 0 {
 		hf -= float64(marg.H * 2.0)

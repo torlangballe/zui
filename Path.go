@@ -10,9 +10,9 @@ type PathLineType int
 type PathPartType int
 
 const (
-	Square PathLineType = iota
-	Round
-	Butt
+	PathLineSquare PathLineType = iota
+	PathLineRound
+	PathLineButt
 )
 
 const (
@@ -31,25 +31,24 @@ type Path struct {
 	nodes []node
 }
 
-func NewPath() *Path {
+func PathNew() *Path {
 	return new(Path)
 }
 
 func (p *Path) Copy() *Path {
-	n := NewPath()
+	n := PathNew()
 	n.nodes = append(n.nodes, p.nodes...)
 	return n
 }
 
-func NewRectPath(rect Rect, corner Size) *Path {
-	p := NewPath()
-
-	p.AddRect(rect, Size{})
+func PathNewFromRect(rect Rect, corner Size) *Path {
+	p := PathNew()
+	p.AddRect(rect, corner)
 	return p
 }
 
 func NewOvalPath(rect Rect) *Path {
-	p := NewPath()
+	p := PathNew()
 	p.AddOval(rect)
 	return p
 }
@@ -171,7 +170,7 @@ func (p *Path) ArcTo(rect Rect, degStart, degDelta float64, clockwise bool) {
 }
 
 func (p *Path) Transformed(m *Matrix) (newPath *Path) {
-	newPath = NewPath()
+	newPath = PathNew()
 	for _, n := range p.nodes {
 		nn := node{}
 		for _, p := range n.Points {
@@ -209,7 +208,7 @@ func (p *Path) ForEachPart(forPart func(part node)) {
 }
 
 func (p *Path) AddRect(rect Rect, corner Size) {
-	if rect.Size.W != 0 && rect.Size.H != 0 {
+	if !rect.Size.IsNull() {
 		p.MoveTo(rect.TopLeft())
 		if corner.IsNull() || rect.Size.W == 0 || rect.Size.H == 0 {
 			p.LineTo(rect.TopRight())
@@ -230,4 +229,30 @@ func (p *Path) AddRect(rect Rect, corner Size) {
 			p.Close()
 		}
 	}
+}
+
+func (p *Path) AddStar(rect Rect, points int, inRatio float32) {
+	c := rect.Center()
+	delta := (rect.Size.W / 2) - 1
+	inAmount := (1 - inRatio)
+	for i := 0; i < points*2; i++ {
+		deg := float64(360*i+720) / float64(points*2)
+		d := MathAngleDegToPos(deg).TimesD(delta)
+		if i&1 != 0 {
+			d.MultiplyD(float64(inAmount))
+		}
+		pos := c.Plus(d)
+		if i != 0 {
+			p.LineTo(pos)
+		} else {
+			p.MoveTo(pos)
+		}
+	}
+	p.Close()
+}
+
+func (p *Path) ArcDegFromCenter(center Pos, radius Size, degStart float64, degEnd float64) {
+	clockwise := !(degStart > degEnd)
+	rect := Rect{Size: radius.TimesD(2)}.Centered(center)
+	p.ArcTo(rect, degStart, degEnd-degStart, clockwise)
 }

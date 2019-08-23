@@ -1,5 +1,7 @@
 package zgo
 
+import "syscall/js"
+
 func LabelNew(text string) *Label {
 	label := &Label{}
 	vbh := ViewBaseHandler{}
@@ -17,4 +19,14 @@ func LabelNew(text string) *Label {
 	f := FontNice(18, FontNormal)
 	label.Font(f)
 	return label
+}
+
+func (v *Label) PressedHandler(handler func(pos Pos)) {
+	v.pressed = handler
+	v.native.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if v.pressed != nil {
+			v.pressed(Pos{})
+		}
+		return nil
+	}))
 }

@@ -24,8 +24,8 @@ type View interface {
 
 	Opaque(opaque bool) View
 
-	Scale(scale float64) View
-	GetScale() float64
+	// Scale(scale float64) View
+	// GetScale() float64
 
 	Show(show bool) View
 	IsShown() bool
@@ -33,13 +33,6 @@ type View interface {
 
 type AnyView interface {
 	GetView() *ViewNative
-}
-
-type ViewValueChangedProtocol interface {
-}
-
-type ViewPressedProtocol interface {
-	PressedInPos(pos Pos)
 }
 
 type ViewDrawProtocol interface {

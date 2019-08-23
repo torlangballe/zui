@@ -1,7 +1,5 @@
 package zgo
 
-import "fmt"
-
 //  Created by Tor Langballe on /22/9/14.
 
 //var forcingRotationForPortraitOnly = false
@@ -64,20 +62,22 @@ func PresentViewAttributesNew() PresentViewAttributes {
 }
 
 func PresentViewShow(view View, attributes PresentViewAttributes, deleteOld bool, done func()) {
-	mainRect := ScreenMainRect()
+	mainRect := WindowGetCurrent().GetRect()
 	if attributes.MakeFull {
 		view.GetView().Rect(mainRect)
 	} else {
 		size := view.GetCalculatedSize(mainRect.Size)
 		r := mainRect.Align(size, AlignmentCenter, Size{}, Size{})
 		view.GetView().Rect(r)
-		fmt.Println("VIEWRECT2:", view.GetView().GetRect())
 	}
-	if v, got := view.(*StackView); got {
-		fmt.Println("Arrange:", view.GetView().GetRect())
+	v, _ := view.(*StackView)
+	if v != nil {
 		v.ArrangeChildren(nil)
 	}
 	AddViewToRoot(view)
+	if v != nil {
+		v.drawAllIfExposed()
+	}
 }
 
 // func poptop(s  inout Attributes)  View? {

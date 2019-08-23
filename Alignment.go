@@ -72,7 +72,7 @@ func (a Alignment) Only(vertical bool) Alignment {
 	return a.Subtracted(AlignmentVertical | AlignmentVertExpand | AlignmentVertShrink | AlignmentVertOut)
 }
 
-func (a Alignment) stringStorage() string {
+func (a Alignment) String() string {
 	var parts []string
 	if a&AlignmentLeft != 0 {
 		parts = append(parts, "left")

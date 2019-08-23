@@ -12,11 +12,12 @@ const (
 )
 
 type Screen struct {
-	isLocked       bool
-	MainUsableRect Rect    //= ZRect(UIScreen.main.bounds)
-	Scale          float64 //= float64(UIScreen.main.scale)
-	SoftScale      float64 // = 1.0
-	KeyboardRect   *Rect
+	isLocked     bool
+	Rect         Rect
+	UsableRect   Rect    //= ZRect(UIScreen.main.bounds)
+	Scale        float64 //= float64(UIScreen.main.scale)
+	SoftScale    float64 // = 1.0
+	KeyboardRect *Rect
 }
 
 func ScreenStatusBarHeight() float64 {
@@ -24,15 +25,15 @@ func ScreenStatusBarHeight() float64 {
 }
 
 func ScreenIsTall() bool {
-	return ScreenMainRect().Size.H > 568
+	return ScreenMain().Rect.Size.H > 568
 }
 
 func ScreenIsWide() bool {
-	return ScreenMainRect().Size.W > 320
+	return ScreenMain().Rect.Size.W > 320
 }
 
 func ScreenIsPortrait() bool {
-	s := ScreenMainRect().Size
+	s := ScreenMain().Rect.Size
 	return s.H > s.W
 }
 
