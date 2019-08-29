@@ -3,7 +3,6 @@ package zgo
 //  Created by Tor Langballe on /18/11/15.
 
 import (
-	"fmt"
 	"runtime"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func init() {
-	fmt.Println("zgo init()")
+	DebugPrint("zgo init()")
 	runtime.LockOSThread()
 }
 

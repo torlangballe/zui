@@ -133,7 +133,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 
 	var wa = float64(s.W)
 	var wf = float64(r.Size.W)
-	//        if (align & (AlignmentHorShrink|AlignmentHorExpand)) {
+
 	if align&AlignmentMarginIsOffset == 0 {
 		wf -= float64(marg.W)
 		if align&AlignmentHorCenter != 0 {
@@ -188,7 +188,7 @@ func (r Rect) Align(s Size, align Alignment, marg Size, maxSize Size) Rect {
 	if align&AlignmentHorShrink != 0 && align&AlignmentVertShrink != 0 && align&AlignmentNonProp == 0 {
 		scalex = wf / wa
 		scaley = hf / ha
-		if align&AlignmentHorOut != 0 && align&AlignmentHorOut != 0 {
+		if align&AlignmentHorOut != 0 && align&AlignmentVertOut != 0 {
 			if scalex < 1 || scaley < 1 {
 				if scalex > scaley {
 					wa = wf
@@ -342,8 +342,11 @@ func (r *Rect) UnionWithPos(pos Pos) {
 
 func (r Rect) Plus(a Rect) Rect  { return RectFromMinMax(r.Pos.Plus(a.Pos), r.Max().Plus(a.Max())) }
 func (r Rect) Minus(a Rect) Rect { return RectFromMinMax(r.Pos.Minus(a.Pos), r.Max().Minus(a.Max())) }
-func (r Rect) Divide(a Size) Rect {
+func (r Rect) DividedBy(a Size) Rect {
 	return RectFromMinMax(r.Min().DividedBy(a.Pos()), r.Max().DividedBy(a.Pos()))
+}
+func (r Rect) TimesD(d float64) Rect {
+	return RectFromMinMax(r.Min().TimesD(d), r.Max().TimesD(d))
 }
 
 func (r *Rect) Add(a Rect)     { r.Pos.Add(a.Pos); r.SetMax(r.Max().Plus(a.Max())) }

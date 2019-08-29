@@ -1,7 +1,10 @@
 package zgo
 
 import (
+	"fmt"
 	"math"
+
+	"github.com/torlangballe/zutil/ustr"
 )
 
 //  Created by Tor Langballe on /22/10/15.
@@ -32,7 +35,6 @@ type TextInfo struct {
 	Alignment   Alignment
 	Font        *Font
 	Rect        Rect
-	Pos         *Pos
 	LineSpacing float32
 	StrokeWidth float32
 	MaxLines    int
@@ -50,7 +52,7 @@ func TextInfoNew() *TextInfo {
 }
 
 func (ti *TextInfo) GetBounds(noWidth bool) Rect {
-	var size = ti.getTextSize(noWidth)
+	var size = canvasGetTextSize(ti.Text, ti.Font)
 
 	if ti.MaxLines != 0 {
 		size.H = float64(ti.Font.LineHeight()) * float64(ti.MaxLines)
@@ -93,54 +95,66 @@ func (ti *TextInfo) MakeAttributes() Dictionary {
 }
 
 func (ti *TextInfo) Draw(canvas *Canvas) Rect {
-	/*
-		        if text.isEmpty {
-		            return Rect(pos rect.pos, size ZSize(0, 0))
-		        }
+	if ti.Text == "" {
+		return Rect{ti.Rect.Pos, Size{}}
+	}
+	canvas.SetColor(ColorYellow, 0.3)
+	canvas.FillPath(PathNewFromRect(ti.Rect, Size{}))
 
-		        //!        let attributes = MakeAttributes()
+	// switch ti.Type {
+	//     case ZTextDrawType.fill
+	//         //                    CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
+	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.fill)
 
-		        switch type {
-		            case ZTextDrawType.fill
-		                //                    CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
-		                canvas.context.setTextDrawingMode(CGTextDrawingMode.fill)
+	//     case ZTextDrawType.stroke
+	//         canvas.context.setLineWidth(CGFloat(strokeWidth))
+	//         //                CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
+	//         // CGContextSetStrokeColorWithColor(canvas.context, canvaspfcolor)
+	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.stroke)
 
-		            case ZTextDrawType.stroke
-		                canvas.context.setLineWidth(CGFloat(strokeWidth))
-		                //                CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
-		                // CGContextSetStrokeColorWithColor(canvas.context, canvaspfcolor)
-		                canvas.context.setTextDrawingMode(CGTextDrawingMode.stroke)
+	//     case ZTextDrawType.clip
+	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.clip)
+	// }
+	if ti.Rect.Size.IsNull() {
+		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, ti.MakeAttributes())
+		return Rect{}
+	}
+	r := ti.Rect
+	var ts = ti.GetBounds(false).Size
+	ts = Size{math.Ceil(ts.W), math.Ceil(ts.H)}
+	ra := ti.Rect.Align(ts, ti.Alignment, Size{}, Size{})
+	if ti.Alignment&AlignmentTop != 0 {
+		r.SetMaxY(ra.Max().Y)
+	} else if ti.Alignment&AlignmentBottom != 0 {
+		r.Pos.Y = r.Max().Y - ra.Size.H
+	} else {
+		r.Pos.Y = ra.Pos.Y - float64(ti.Font.LineHeight())/20
+	}
 
-		            case ZTextDrawType.clip
-		                canvas.context.setTextDrawingMode(CGTextDrawingMode.clip)
-		        }
-		        if pos == nil {
-		            var r = rect
-		            var ts = GetBounds().size
-		            ts = ZSize(ceil(ts.w), ceil(ts.H))
-		            let ra = rect.Align(ts, align alignment)
-		            if (alignment & AlignmentTop) {
-		                r.Max.y = ra.Max.y
-		            } else if (alignment & AlignmentBottom) {
-		                r.pos.y = r.Max.y - ra.size.H
-		            } else {
-		                r.pos.y = ra.pos.y -float64 (font.lineHeight) / 20
-		            }
+	if ti.Alignment&AlignmentHorCenter != 0 {
+		//        r = r.Expanded(ZSize(1, 0))
+	}
+	if ti.Alignment&AlignmentHorShrink != 0 {
+		//         ScaleFontToFit()
+	}
+	ti.drawTextInRect(canvas, r)
+	return ti.Rect.Align(ts, ti.Alignment, Size{}, Size{})
+}
 
-		            if (alignment & AlignmentHorCenter) {
-		                //        r = r.Expanded(ZSize(1, 0))
-		            }
-		            if (alignment & AlignmentHorShrink) {
-		                //         ScaleFontToFit()
-		            }
-		            NSString(string text).draw(in  r.GetCGRect(), withAttributes MakeAttributes())
-		            return rect.Align(ts, align alignment)
-		        } else {
-		            NSString(string text).draw(at pos!.GetCGPoint(), withAttributes MakeAttributes())
-		            return Rect.Null
-				}
-	*/
-	return Rect{}
+func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect Rect) {
+	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
+	fmt.Println("drawTextInRect:", rect)
+	h := ti.Font.LineHeight()
+	y := rect.Pos.Y + h
+	attributes := ti.MakeAttributes()
+	canvas.SetFont(ti.Font, nil)
+	canvas.SetColor(ColorWhite, 1)
+	ustr.RangeStringLines(ti.Text, false, func(s string) {
+		x := 0.0
+		// tsize := canvasGetTextSize(s, ti.Font)
+		canvas.DrawTextInPos(Pos{x, y}, s, attributes)
+		y += h
+	})
 }
 
 func (ti *TextInfo) ScaleFontToFit(minScale float64) {

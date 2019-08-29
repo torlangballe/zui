@@ -1,5 +1,3 @@
-// +build js
-
 package zgo
 
 import (
@@ -71,32 +69,6 @@ func (n *ViewNative) set(property string, v interface{}) {
 
 func (n *ViewNative) get(property string) js.Value {
 	return js.Value(*n).Get(property)
-}
-
-// Text
-var measureDiv *js.Value
-
-func (ti *TextInfo) getTextSize(noWidth bool) Size {
-	// https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript
-	var s Size
-	if measureDiv == nil {
-		e := DocumentJS.Call("createElement", "div")
-		DocumentElementJS.Call("appendChild", e)
-		measureDiv = &e
-	}
-	style := measureDiv.Get("style")
-
-	style.Set("fontSize", fmt.Sprintf("%dpx", int(ti.Font.Size)))
-	style.Set("position", "absolute")
-	style.Set("left", "-1000")
-	style.Set("top", "-1000")
-	measureDiv.Set("innerHTML", ti.Text)
-
-	s.W = measureDiv.Get("clientWidth").Float()
-	s.H = measureDiv.Get("clientHeight").Float()
-
-	s.W += 2 // seems to wrap otherwise, maybe it's rounded down to int somewhere
-	return s
 }
 
 func getFontStyle(font *Font) string {

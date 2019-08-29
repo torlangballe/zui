@@ -38,7 +38,7 @@ type FilePath struct {
 	fpath string
 }
 
-type FileUrl FilePath
+//type FileUrl FilePath
 
 func FilePathMake(spath string, isDir, dirUnknow bool) FilePath {
 	return FilePath{spath}
@@ -54,6 +54,10 @@ func (f FilePath) ParentPath() string {
 
 func (f FilePath) OpenOutput(append bool) (*OutputStream, *Error) {
 	return nil, ErrorNew("couldn't make stream", 0, "")
+}
+
+func (f FilePath) String() string {
+	return f.fpath
 }
 
 func (f FilePath) IsFolder() bool {

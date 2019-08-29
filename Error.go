@@ -1,5 +1,7 @@
 package zgo
 
+import "errors"
+
 //  Created by Tor Langballe on /5/11/15.
 
 type Error struct {
@@ -12,8 +14,8 @@ func ErrorNew(message string, code int, domain string) *Error {
 	return &Error{message, code, domain}
 }
 
-func (e *Error) Error() string {
-	return e.Message
+func (e *Error) Error() error {
+	return errors.New(e.Message)
 }
 
 func (e *Error) GetMessage() string {

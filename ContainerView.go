@@ -193,7 +193,7 @@ func (v *ContainerView) isLoading() bool {
 		io, got := c.View.(ImageOwner)
 		if got {
 			image := io.GetImage()
-			fmt.Println("IO:", c.View.GetObjectName(), io.GetImage(), c.View.GetCalculatedSize(v.GetLocalRect().Size))
+			//			fmt.Println("IO:", c.View.GetObjectName(), io.GetImage(), c.View.GetCalculatedSize(v.GetLocalRect().Size))
 			if image != nil && image.loading {
 				return true
 			}
@@ -355,7 +355,6 @@ func (v *ContainerView) drawAllIfExposed() {
 		} else {
 			cvp, _ := c.View.(CustomViewProtocol)
 			if cvp != nil {
-				fmt.Println("drawAllIfExposed c:", c.View.GetObjectName())
 				cvp.drawIfExposed()
 			}
 		}

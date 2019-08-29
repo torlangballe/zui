@@ -1,5 +1,7 @@
 package zgo
 
+import "fmt"
+
 type CustomViewProtocol interface {
 	drawIfExposed()
 	getCanvas() *Canvas
@@ -26,11 +28,23 @@ func (v *CustomView) getCanvas() *Canvas {
 func (v *CustomView) GetCalculatedSize(total Size) Size {
 	return v.GetMinSize()
 }
-
 func (v *CustomView) Expose() {
+	v.exposeInSecs(0.01)
+}
+
+func (v *CustomView) exposeInSecs(secs float64) {
+	fmt.Println("CV.Expose:", v.GetObjectName())
 	v.exposed = true
 	v.exposeTimer.Stop()
-	v.exposeTimer.Set(0.01, true, func() {
+	v.exposeTimer.Set(secs, true, func() {
+		io, got := v.view.(ImageOwner)
+		if got {
+			image := io.GetImage()
+			if image != nil && image.loading {
+				v.exposeInSecs(0.1)
+				return
+			}
+		}
 		v.drawIfExposed()
 	})
 }

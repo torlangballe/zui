@@ -1,5 +1,11 @@
 package zgo
 
+import (
+	"strconv"
+
+	"github.com/torlangballe/zutil/ustr"
+)
+
 //  Created by Tor Langballe on /20/10/15.
 
 type Image struct {
@@ -109,40 +115,21 @@ func MakeImageFromDrawFunction(size Size, scale float32, draw func(size Size, ca
 func (i *Image) ForPixels(got func(pos Pos, color Color)) {
 }
 
-/*
-    func ClipToCircle(fit:Size = Size(0, 0))  Image? {
-        var si = Size(size)
-        var s = fit
-
-        if fit.IsNull() {
-            let w = (si.w > si.h) ? si.h : si.w
-            s = Size(w, w)
-        } else {
-            let scale = max(fit.w / float32(size.width), fit.h / float32(size.height))
-            si *= scale
-        }
-        var ir = Rect(size:si)
-        var r = ir.Align(s, align:.Center | .Shrink)
-        return ZMakeImageFromDrawFunction(s) { (size, canvas) in
-            let path = ZPath()
-            ir.pos -= r.pos
-            r.pos = Pos(0, 0)
-            path.AddOval(inrect:r)
-            canvas.ClipPath(path)
-            canvas.DrawImage(self, destRect:ir)
-        }
-    }
-
-    static func GetNamedImagesFromWildcard(_ wild:string)  [Image] {
-        var images = [Image]()
-        let folder = ZGetResourceFileUrl("")
-        folder.Walk(wildcard:wild) { (furl, finfo) in
-            if let image = Image.Named(furl.GetName()) {
-                images.append(image)
-            }
-            return true
-        }
-        return images
-    }
+func (i *Image) CapInsetsCorner(c Size) *Image {
+	r := RectFromMinMax(c.Pos(), c.Pos().Negative())
+	return i.CapInsets(r)
 }
-*/
+
+func imageGetScaleFromPath(path string) int {
+	var n string
+	_, _, m, _ := FilePathGetPathParts(path)
+	if ustr.SplitN(m, "@", &n, &m) {
+		if ustr.HasSuffix(m, "x", &m) {
+			scale, err := strconv.ParseInt(m, 10, 32)
+			if err == nil && scale >= 1 && scale <= 3 {
+				return int(scale)
+			}
+		}
+	}
+	return 1
+}
