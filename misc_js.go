@@ -11,8 +11,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-type ViewNative js.Value
-
 func init() {
 }
 
@@ -44,39 +42,41 @@ var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")
 var WindowJS = js.Global().Get("window")
 
-func AddTextNode(e *ViewNative, text string) {
+func AddTextNode(e *NativeView, text string) {
 	textNode := DocumentJS.Call("createTextNode", text)
 	e.call("appendChild", textNode)
 	//	js.Value(*e).Call("appendChild", textNode)
 }
 
-func addView(parent, child *ViewNative) {
-	parent.call("appendChild", js.Value(*child))
+func addView(parent, child *NativeView) {
+	parent.call("appendChild", child.Element)
 }
 
-func AddViewToRoot(child AnyView) {
-	v := child.GetView()
-	DocumentElementJS.Call("appendChild", js.Value(*v))
+func NativeViewAddToRoot(v View) {
+	n := &NativeView{}
+	n.Element = DocumentElementJS
+	n.View = n
+	n.AddChild(v, -1)
 }
 
-func (n *ViewNative) call(method string, v js.Value) {
-	js.Value(*n).Call(method, v)
+func (n *NativeView) call(method string, v js.Value) {
+	n.Element.Call(method, v)
 }
 
-func (n *ViewNative) set(property string, v interface{}) {
-	js.Value(*n).Set(property, v)
+func (n *NativeView) set(property string, v interface{}) {
+	n.Element.Set(property, v)
 }
 
-func (n *ViewNative) get(property string) js.Value {
-	return js.Value(*n).Get(property)
+func (n *NativeView) get(property string) js.Value {
+	return n.Element.Get(property)
 }
 
 func getFontStyle(font *Font) string {
 	var parts []string
-	if font.Style&FontBold != 0 {
+	if font.Style&FontStyleBold != 0 {
 		parts = append(parts, "bold")
 	}
-	if font.Style&FontItalic != 0 {
+	if font.Style&FontStyleItalic != 0 {
 		parts = append(parts, "italic")
 	}
 	parts = append(parts, fmt.Sprintf("%dpx", int(font.Size)))
@@ -93,19 +93,6 @@ func getFontStyle(font *Font) string {
 // 	fmt.Println("CALCD:", metrics.Get("width"), ti.Font.Name, ti.Font.Size)
 // 	return Size{metrics.Get("width").Float(), metrics.Get("height").Float()}
 // }
-
-// CustomView
-
-func (v *CustomView) Init(view View) {
-	e := DocumentJS.Call("createElement", "div")
-	e.Set("style", "position:absolute")
-	vn := ViewNative(e)
-	vbh := ViewBaseHandler{}
-	v.view = view
-	vbh.native = &vn
-	vbh.view = view
-	v.ViewBaseHandler = vbh // this must be set AFTER vbh is set up!
-}
 
 // Alert
 
@@ -130,8 +117,4 @@ func ScreenMain() Screen {
 	m.UsableRect = m.Rect
 
 	return m
-}
-
-func zViewAddView(parent View, child View, index int) {
-	parent.GetView().call("appendChild", js.Value(*child.GetView()))
 }

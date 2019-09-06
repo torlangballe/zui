@@ -1,12 +1,14 @@
 package zgo
 
 import (
+	"fmt"
 	"syscall/js"
 )
 
 func (v *CustomView) PressedHandler(handler func(pos Pos)) {
 	v.pressed = handler
-	v.native.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.set("className", "widget")
+	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if v.pressed != nil {
 			v.pressed(Pos{})
 		}
@@ -20,36 +22,40 @@ func CustomViewNew(name string) *CustomView {
 	return c
 }
 
-func (c *CustomView) init(view View, name string) {
-	c.exposed = true
-	vbh := ViewBaseHandler{}
-	c.canvas = CanvasNew()
-	v := ViewNative(c.canvas.element)
-	vbh.native = &v
-	vbh.view = view
-	c.ViewBaseHandler = vbh // this must be set after vbh is set up
-	view.ObjectName(name)
-	v.set("disabled", false)
+// func (v *CustomView) Init(view View) {
+// 	v.Element = DocumentJS.Call("createElement", "div")
+// 	v.Element.Set("style", "position:absolute")
+// 	v.View = view
+// 	fmt.Printf("CustomView init %p\n", v)
+// }
+
+func (v *CustomView) init(view View, name string) {
+	v.Element = DocumentJS.Call("createElement", "div")
+	v.Element.Set("style", "position:absolute")
+	v.exposed = true
+	v.View = view
+	v.ObjectName(name)
 }
 
 func (v *CustomView) drawIfExposed() {
 	if v.exposed && v.draw != nil {
+		fmt.Printf("drawIfExposed %p %s\n", v, v.GetObjectName())
 		v.exposeTimer.Stop()
-		s := v.native.GetLocalRect().Size
+		s := v.GetLocalRect().Size
 		r := Rect{Size: s}
-		v.draw(r, v.canvas, v.view)
+		v.draw(r, v.canvas, v.View)
 		v.exposed = false
+		fmt.Println("drawIfExposed2", v.GetObjectName())
 	}
 }
 
-func zViewSetRect(view View, rect Rect, layout bool) { // layout only used on android
-	cv, _ := view.(CustomViewProtocol)
-	if cv != nil {
-		canvas := cv.getCanvas()
+func (v *CustomView) Rect(rect Rect) View {
+	if v.canvas != nil {
 		dpr := WindowJS.Get("devicePixelRatio").Float()
-		canvas.element.Set("width", rect.Size.W*dpr)
-		canvas.element.Set("height", rect.Size.H*dpr)
-		canvas.context.Call("scale", dpr, dpr)
+		v.canvas.element.Set("width", rect.Size.W*dpr)
+		v.canvas.element.Set("height", rect.Size.H*dpr)
+		v.canvas.context.Call("scale", dpr, dpr)
 	}
-	view.GetView().Rect(rect)
+	setElementRect(v.Element, rect)
+	return v
 }

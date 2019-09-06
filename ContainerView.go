@@ -99,7 +99,7 @@ func ContainerViewNew(view View) *ContainerView {
 	if view == nil {
 		view = c
 	}
-	c.CustomView.Init(view)
+	c.CustomView.init(view, "container")
 	return c
 }
 
@@ -126,11 +126,11 @@ func (v *ContainerView) SingleOrientation(single bool) *ContainerView {
 func (v *ContainerView) AddCell(cell ContainerViewCell, index int) int {
 	if index == -1 {
 		v.cells = append(v.cells, cell)
-		zViewAddView(v, cell.View, -1)
+		v.AddChild(cell.View, -1)
 		return len(v.cells) - 1
 	} else {
 		v.cells = append([]ContainerViewCell{cell}, v.cells...)
-		zViewAddView(v, cell.View, index)
+		v.AddChild(cell.View, index)
 		return index
 	}
 }
@@ -154,15 +154,14 @@ func (v *ContainerView) GetCalculatedSize(total Size) Size {
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
-	layout := true
-	zViewSetRect(v, ScreenMain().Rect, layout)
+	v.Rect(ScreenMain().Rect)
 	v.MinSize(ScreenMain().Rect.Size)
 	if !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
-		r := v.GetView().GetRect()
+		r := v.GetRect()
 		if h > 20 && !ScreenHasNotch() {
 			r.Size.H -= h
-			zViewSetRect(v, r, layout)
+			v.Rect(r)
 		} else if useableArea {
 			v.margin.SetMinY(float64(h))
 		}
@@ -177,7 +176,6 @@ func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
 
 func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
-	// s := zConvertViewSizeThatFitstToSize(c.View.GetView(), ir.Size)
 	s := c.View.GetCalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
 	// if c.handleTransition != nil {
@@ -185,7 +183,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 	//         rv = r
 	//     }
 	// }
-	zViewSetRect(c.View, rv, false)
+	c.View.Rect(rv)
 }
 
 func (v *ContainerView) isLoading() bool {
@@ -208,7 +206,7 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 		time.Sleep(time.Millisecond * 10)
 	}
 	v.layoutHandler.HandleBeforeLayout()
-	r := Rect{Size: v.GetView().GetRect().Size}.Plus(v.margin)
+	r := Rect{Size: v.GetRect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
 		if got {
@@ -239,10 +237,10 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 	changed := (v.cells[i].Collapsed != collapse)
 	if changed {
 		if collapse {
-			detachFromContainer := false
-			zRemoveViewFromSuper(v.cells[i].View.GetView(), detachFromContainer)
+			//detachFromContainer := false
+			v.RemoveChild(v.cells[i].View) //, detachFromContainer)
 		} else {
-			zViewAddView(v.cells[i].View, v, -1)
+			v.AddChild(v.cells[i].View, -1)
 		}
 	}
 	v.cells[i].Collapsed = collapse
@@ -324,16 +322,14 @@ func (v *ContainerView) FindCellWithView(view View) int {
 }
 
 func (v *ContainerView) RemoveChild(subView View) {
-	detachFromContainer := false
-	zRemoveViewFromSuper(subView.GetView(), detachFromContainer)
+	v.RemoveChild(subView)
 	v.DetachChild(subView)
 }
 
 func (v *ContainerView) RemoveAllChildren() {
 	for _, c := range v.cells {
 		v.DetachChild(c.View)
-		detachFromContainer := false
-		zRemoveViewFromSuper(c.View.GetView(), detachFromContainer)
+		v.RemoveChild(c.View)
 	}
 }
 

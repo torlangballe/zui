@@ -1,5 +1,9 @@
 package zgo
 
+import (
+	"fmt"
+)
+
 //  Created by Tor Langballe on /20/10/15.
 
 type ImageView struct {
@@ -33,6 +37,7 @@ func (v *ImageView) GetCalculatedSize(total Size) Size {
 	if v.image != nil {
 		s.Maximize(v.image.Size())
 	}
+	fmt.Println("IV.GetCalculatedSize:", s)
 	s.Maximize(v.maxSize)
 	if !v.minSize.IsNull() {
 		s.Minimize(v.minSize)
@@ -71,8 +76,6 @@ func (v *ImageView) SetImage(image *Image, path string, got func()) {
 	} else {
 		v.ObjectName(path)
 		v.image = ImageFromPath(path, func() {
-			//			src := i.image.imageJS.Get("src").String()
-			//			i.GetView().set("src", src)
 			v.Expose()
 			if got != nil {
 				got()
@@ -99,6 +102,8 @@ func imageViewDraw(rect Rect, canvas *Canvas, view View) {
 		// }
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, Size{}, Size{})
+		fmt.Println("IV DRAW:", rect, ir, v.GetObjectName())
+		//		debug.PrintStack()
 		canvas.DrawImage(drawImage, ir, 1, CanvasBlendModeNormal, Rect{})
 	}
 	if v.IsFocused() {

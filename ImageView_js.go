@@ -4,7 +4,7 @@ package zgo
 // 	vbh := ViewBaseHandler{}
 // 	e := DocumentJS.Call("createElement", "img")
 // 	e.Set("style", "position:absolute")
-// 	v := ViewNative(e)
+// 	v := NativeView(e)
 // 	vbh.native = &v
 // 	vbh.view = iv
 // 	iv.ViewBaseHandler = vbh // this must be set after vbh is set up
@@ -17,7 +17,7 @@ package zgo
 // 	}
 // }
 
-// func getImageViewSize(view *ViewNative) Size {
+// func getImageViewSize(view *NativeView) Size {
 // 	w := view.get("naturalWidth").Float()
 // 	h := view.get("naturalHeight").Float()
 // 	return Size{w, h}

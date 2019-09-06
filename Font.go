@@ -9,9 +9,9 @@ type FontStyle int
 var scale = 1.0
 
 const (
-	FontNormal FontStyle = 0
-	FontBold             = 1
-	FontItalic           = 2
+	FontStyleNormal FontStyle = 0
+	FontStyleBold             = 1
+	FontStyleItalic           = 2
 )
 
 type Font struct {
@@ -33,7 +33,7 @@ func (f *Font) NewWithSize(size float64) *Font {
 }
 
 func (f *Font) LineHeight() float64 {
-	return f.Size * 1.5
+	return f.Size
 }
 
 func (f *Font) PointSize() float64 {

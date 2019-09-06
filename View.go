@@ -1,7 +1,7 @@
 package zgo
 
 type View interface {
-	GetView() *ViewNative
+	// GetView() *NativeView
 
 	GetCalculatedSize(total Size) Size
 
@@ -19,20 +19,26 @@ type View interface {
 	CornerRadius(radius float64) View
 	Stroke(width float64, color Color) View
 
+	CanFocus(can bool) View
 	Focus(focus bool) View
 	IsFocused() bool
 
 	Opaque(opaque bool) View
 
+	Rect(rect Rect) View
+	GetRect() Rect
 	// Scale(scale float64) View
 	// GetScale() float64
 
 	Show(show bool) View
 	IsShown() bool
+
+	AddChild(child View, index int) // -1 is add to end
+	RemoveChild(child View)
 }
 
-type AnyView interface {
-	GetView() *ViewNative
+type NativeViewOwner interface {
+	GetNative() *NativeView
 }
 
 type ViewDrawProtocol interface {

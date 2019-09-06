@@ -13,7 +13,7 @@ type ListViewDelegate interface {
 //typealias ZListViewRowAnimation = UIListView.RowAnimation
 
 type ListView struct {
-	ViewBaseHandler
+	NativeView
 	First                   bool
 	TableRowBackgroundColor Color
 	Scrolling               bool

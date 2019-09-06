@@ -9,10 +9,14 @@ import (
 	"image/png"
 	"os"
 
+	"github.com/disintegration/imaging"
+
 	"github.com/nfnt/resize"
-	"github.com/oliamb/cutter"
 	"github.com/torlangballe/zutil/zlog"
 )
+
+// Use instead:
+// https://github.com/disintegration/imaging
 
 type imageBase struct {
 	goimage image.Image
@@ -88,20 +92,23 @@ func (i *Image) ShrunkInto(size Size, proportional bool) *Image {
 }
 
 func (i *Image) Cropped(crop Rect, copy bool) *Image {
-	config := cutter.Config{
-		Width:  int(crop.Size.W),
-		Height: int(crop.Size.H),
-		Anchor: image.Point{int(crop.Pos.X), int(crop.Pos.Y)},
-		Mode:   cutter.TopLeft,
-	}
-	if copy {
-		config.Options = cutter.Copy
-	}
-	newImage, err := cutter.Crop(i.goimage, config)
-	if err != nil {
-		zlog.Error(err, "cutter.Crop")
-		return i
-	}
+	// config := cutter.Config{
+	// 	Width:  int(crop.Size.W),
+	// 	Height: int(crop.Size.H),
+	// 	Anchor: image.Point{int(crop.Pos.X), int(crop.Pos.Y)},
+	// 	Mode:   cutter.TopLeft,
+	// }
+	// if copy {
+	// 	config.Options = cutter.Copy
+	// }
+	// newImage, err := cutter.Crop(i.goimage, config)
+	// if err != nil {
+	// 	zlog.Error(err, "cutter.Crop")
+	// 	return i
+	// }
+
+	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
+	newImage := imaging.Crop(i.goimage, r)
 
 	ni := &Image{}
 	ni.scale = i.scale

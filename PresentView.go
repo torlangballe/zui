@@ -18,7 +18,7 @@ const (
 	PresentViewTransitionReverse
 )
 
-func setTransition(view View, transition PresentViewTransition, screen Rect, fade float32) {
+func setTransition(n *NativeView, transition PresentViewTransition, screen Rect, fade float32) {
 	var me = screen
 	var out = me
 	switch transition {
@@ -37,8 +37,8 @@ func setTransition(view View, transition PresentViewTransition, screen Rect, fad
 	default:
 		break
 	}
-	view.Alpha(fade)
-	view.GetView().Rect(out)
+	n.Alpha(fade)
+	n.Rect(out)
 }
 
 type PresentViewAttributes struct {
@@ -63,23 +63,26 @@ func PresentViewAttributesNew() PresentViewAttributes {
 	return a
 }
 
-func PresentViewShow(view View, attributes PresentViewAttributes, deleteOld bool, done func()) {
+func PresentViewShow(n View, attributes PresentViewAttributes, deleteOld bool, done func()) {
 	fmt.Println("PresentViewShow")
 	mainRect := WindowGetCurrent().GetRect()
 	if attributes.MakeFull {
-		view.GetView().Rect(mainRect)
+		n.Rect(mainRect)
 	} else {
-		size := view.GetCalculatedSize(mainRect.Size)
+		size := n.GetCalculatedSize(mainRect.Size)
 		r := mainRect.Align(size, AlignmentCenter, Size{}, Size{})
-		view.GetView().Rect(r)
+		n.Rect(r)
 	}
-	v, _ := view.(*StackView)
+	v, _ := n.(*StackView)
 	if v != nil {
 		v.ArrangeChildren(nil)
 	}
-	AddViewToRoot(view)
+	NativeViewAddToRoot(n)
 	if v != nil {
 		v.drawAllIfExposed()
+	}
+	if done != nil {
+		done()
 	}
 }
 

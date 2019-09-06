@@ -1,6 +1,8 @@
 package zgo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type CustomViewProtocol interface {
 	drawIfExposed()
@@ -8,7 +10,7 @@ type CustomViewProtocol interface {
 }
 
 type CustomView struct {
-	ViewBaseHandler
+	NativeView
 	minSize       Size
 	pressed       func(pos Pos)
 	valueChanged  func(view View)
@@ -28,16 +30,18 @@ func (v *CustomView) getCanvas() *Canvas {
 func (v *CustomView) GetCalculatedSize(total Size) Size {
 	return v.GetMinSize()
 }
+
 func (v *CustomView) Expose() {
+	fmt.Println("CV EXPOSE:", v.GetObjectName())
 	v.exposeInSecs(0.01)
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {
-	fmt.Println("CV.Expose:", v.GetObjectName())
+	fmt.Println("exposeInSecs", v.GetObjectName())
 	v.exposed = true
 	v.exposeTimer.Stop()
 	v.exposeTimer.Set(secs, true, func() {
-		io, got := v.view.(ImageOwner)
+		io, got := v.View.(ImageOwner)
 		if got {
 			image := io.GetImage()
 			if image != nil && image.loading {
@@ -45,6 +49,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 				return
 			}
 		}
+		fmt.Println("Timed draw:", v.GetObjectName(), v.exposed)
 		v.drawIfExposed()
 	})
 }
@@ -68,6 +73,9 @@ func (v *CustomView) ValueHandler(handler func(view View)) {
 }
 
 func (v *CustomView) DrawHandler(handler func(rect Rect, canvas *Canvas, view View)) {
+	if v.canvas == nil {
+		v.canvas = CanvasNew()
+	}
 	v.draw = handler
 }
 
@@ -98,13 +106,9 @@ func (v *CustomView) Rotate(degrees float64) {
 	//self.transform = CGAffineTransform(rotationAngle CGFloat(r))
 }
 
-func zConvertViewSizeThatFitstToSize(view *ViewNative, sizeIn Size) Size {
+func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn Size) Size {
 	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))
 	return Size{}
-}
-
-func zRemoveViewFromSuper(view *ViewNative, detachFromContainer bool) {
-	//view.removeFromSuperview()
 }
 
 func (v *CustomView) getStateColor(col Color) Color {

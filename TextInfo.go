@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/torlangballe/zutil/ustr"
@@ -46,7 +45,7 @@ func TextInfoNew() *TextInfo {
 	t.Wrap = TextInfoWrapWord
 	t.Color = ColorBlack
 	t.Alignment = AlignmentCenter
-	t.Font = FontNice(18, FontNormal)
+	t.Font = FontNice(18, FontStyleNormal)
 	t.StrokeWidth = 1
 	return t
 }
@@ -98,9 +97,6 @@ func (ti *TextInfo) Draw(canvas *Canvas) Rect {
 	if ti.Text == "" {
 		return Rect{ti.Rect.Pos, Size{}}
 	}
-	canvas.SetColor(ColorYellow, 0.3)
-	canvas.FillPath(PathNewFromRect(ti.Rect, Size{}))
-
 	// switch ti.Type {
 	//     case ZTextDrawType.fill
 	//         //                    CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
@@ -126,9 +122,9 @@ func (ti *TextInfo) Draw(canvas *Canvas) Rect {
 	if ti.Alignment&AlignmentTop != 0 {
 		r.SetMaxY(ra.Max().Y)
 	} else if ti.Alignment&AlignmentBottom != 0 {
-		r.Pos.Y = r.Max().Y - ra.Size.H
+		r.SetMinY(r.Max().Y - ra.Size.H)
 	} else {
-		r.Pos.Y = ra.Pos.Y - float64(ti.Font.LineHeight())/20
+		//r.SetMinY(ra.Pos.Y - float64(ti.Font.LineHeight())/20)
 	}
 
 	if ti.Alignment&AlignmentHorCenter != 0 {
@@ -137,24 +133,28 @@ func (ti *TextInfo) Draw(canvas *Canvas) Rect {
 	if ti.Alignment&AlignmentHorShrink != 0 {
 		//         ScaleFontToFit()
 	}
-	ti.drawTextInRect(canvas, r)
-	return ti.Rect.Align(ts, ti.Alignment, Size{}, Size{})
+	// canvas.SetColor(ColorYellow, 0.3)
+	// canvas.FillPath(PathNewFromRect(ra, Size{}))
+
+	//	fmt.Println("drawTextInRect:", ts, ra, ti.Rect, ti.Alignment)
+
+	return ti.drawTextInRect(canvas, ra)
 }
 
-func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect Rect) {
+func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect Rect) Rect {
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
-	fmt.Println("drawTextInRect:", rect)
 	h := ti.Font.LineHeight()
-	y := rect.Pos.Y + h
+	y := rect.Pos.Y + h*0.9
 	attributes := ti.MakeAttributes()
 	canvas.SetFont(ti.Font, nil)
 	canvas.SetColor(ColorWhite, 1)
 	ustr.RangeStringLines(ti.Text, false, func(s string) {
-		x := 0.0
+		x := rect.Pos.X
 		// tsize := canvasGetTextSize(s, ti.Font)
 		canvas.DrawTextInPos(Pos{x, y}, s, attributes)
 		y += h
 	})
+	return rect
 }
 
 func (ti *TextInfo) ScaleFontToFit(minScale float64) {

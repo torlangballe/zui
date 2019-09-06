@@ -113,7 +113,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 	for _, c2 := range s.cells {
 		if !c2.Free {
 			if c2.Collapsed {
-				zRemoveViewFromSuper(c2.View.GetView(), false)
+				s.RemoveChild(c2.View)
 			} else {
 				if c2.Alignment&ashrink != 0 {
 					decs++
@@ -128,7 +128,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
 	}
-	var r = s.GetView().GetRect()
+	var r = s.GetRect()
 	r.Pos = Pos{} // translate to 0,0 cause children are in parent
 	r.Add(s.margin)
 	for _, c1 := range s.cells {
@@ -145,7 +145,6 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 		if !c3.Collapsed && !c3.Free {
 			lastNoFreeIndex = i
 			tot := s.getCellFitSizeInTotal(r.Size, c3)
-			// var size = zConvertViewSizeThatFitstToSize(c3.View.GetView(), tot)
 			var size = c3.View.GetCalculatedSize(tot)
 			if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 				*size.VerticeP(s.Vertical) += diff / float64(decs)
@@ -165,9 +164,9 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 					a = a.Subtracted(AlignmentExpand.Only(s.Vertical))
 				}
 				vr := s.handleAlign(sizes[c4.View], r, a, c4)
-//				DebugPrint("cell2 ", c4.Alignment, r, vr, c4.View.GetObjectName(), sizes[c4.View])
+				//				DebugPrint("cell2 ", c4.Alignment, r, vr, c4.View.GetObjectName(), sizes[c4.View])
 				if onlyChild == nil || *onlyChild == c4.View {
-					zViewSetRect(c4.View, vr, true)
+					c4.View.Rect(vr)
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(s.Vertical), vr.Max().Vertice(s.Vertical)+s.space)
@@ -215,7 +214,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid) | aless
 			vr := s.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				zViewSetRect(c5.View, vr, true)
+				c5.View.Rect(vr)
 			}
 			//                ZDebug.Print("alignm ", (c5.view as! ZView).objectName, vr)
 			*r.Pos.VerticeP(s.Vertical) = vr.Max().Vertice(s.Vertical) + s.space

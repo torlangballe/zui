@@ -2,11 +2,8 @@ package zgo
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"syscall/js"
-
-	"github.com/torlangballe/zutil/ustr"
 )
 
 type imageBase struct {
@@ -30,14 +27,14 @@ func ImageFromPath(path string, got func()) *Image {
 func (i *Image) load(path string, done func()) {
 	i.path = path
 	i.loading = true
-	i.scale = getScaleFromPath(path)
+	i.scale = imageGetScaleFromPath(path)
 	imageF := js.Global().Get("Image")
 	i.imageJS = imageF.New()
 	i.imageJS.Set("onload", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		fmt.Println("image loaded:", path)
+		fmt.Println("image loaded:", path, i.size)
 		if done != nil {
 			done()
 		}

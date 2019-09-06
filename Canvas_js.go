@@ -15,10 +15,6 @@ func CanvasNew() *Canvas {
 	c.element = DocumentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute")
 	c.context = c.element.Call("getContext", "2d")
-
-	// p := parent.GetView()
-	// p.call("appendChild", c.element)
-
 	return &c
 }
 
@@ -31,13 +27,11 @@ func (c *Canvas) SetRect(rect Rect) {
 }
 
 func (c *Canvas) SetColor(color Color, opacity float32) {
-
 	var vcolor = color
 	if opacity != -1 {
 		vcolor = vcolor.OpacityChanged(opacity)
 	}
 	str := makeRGBAString(vcolor)
-	fmt.Println("SetColor:", opacity, vcolor, str)
 	c.context.Set("fillStyle", str)
 }
 
@@ -51,7 +45,7 @@ func (c *Canvas) FillPathEO(path *Path) {
 
 func (c *Canvas) SetFont(font *Font, matrix *Matrix) {
 	str := getFontStyle(font)
-	c.element.Set("font", str)
+	c.context.Set("font", str)
 	//    state.font = afontCreateTransformed(amatrix)
 }
 
@@ -92,7 +86,7 @@ func (c *Canvas) DrawPath(path *Path, strokeColor Color, width float64, ltype Pa
 }
 
 func (c *Canvas) drawPlainImage(image *Image, destRect Rect, opacity float32, blendMode CanvasBlendMode, sourceRect Rect) {
-	//	fmt.Println("drawPlainImage:", destRect, sourceRect)
+	// fmt.Println("drawPlainImage:", destRect, sourceRect)
 	sr := sourceRect.TimesD(float64(image.scale))
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
@@ -102,7 +96,7 @@ func (c *Canvas) DrawImage(image *Image, destRect Rect, opacity float32, blendMo
 	if image != nil {
 		if image.GetCapInsets().IsNull() {
 			if sourceRect.IsNull() {
-				sourceRect = Rect{Size: image.size}
+				sourceRect = Rect{Size: image.Size()}
 			}
 			c.drawPlainImage(image, destRect, opacity, blendMode, sourceRect)
 		} else {
@@ -228,6 +222,7 @@ func canvasGetTextSize(text string, font *Font) Size {
 	var s Size
 	if measureDiv == nil {
 		e := DocumentJS.Call("createElement", "div")
+		e.Set("hidden", "true")
 		DocumentElementJS.Call("appendChild", e)
 		measureDiv = &e
 	}
