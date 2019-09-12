@@ -30,7 +30,7 @@ func parseCoord(value js.Value) float64 {
 		}
 		return n
 	}
-	zlog.Error(nil, "not handled type")
+	zlog.Error(nil, "not handled type: "+str)
 	return 0
 }
 

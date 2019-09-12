@@ -1,43 +1,64 @@
 package zgo
 
+import "fmt"
+
 //  Created by Tor Langballe on /13/11/15.
 
 type ScrollView struct {
 	CustomView
-	Margin Rect
-	Child  *ContainerView
+	Margin       Rect
+	HandleScroll func(pos Pos)
+	child        View
 }
 
 func ScrollViewNew() *ScrollView {
 	v := &ScrollView{}
-	v.CustomView.init(v, "scrollview")
+	v.init(v, "scrollview")
 	return v
+}
+
+func (v *ScrollView) SetChild(child View) {
+	v.child = child
+	v.AddChild(child, -1)
+}
+
+func (v *ScrollView) GetCalculatedSize(total Size) Size {
+	s := v.minSize
+	if v.child != nil {
+		cs := v.child.GetCalculatedSize(total)
+		s.W = cs.W
+	}
+	fmt.Println("ScrollView.GetCalculatedSize:", s)
+	return s
 }
 
 func (v *ScrollView) SetContentOffset(offset Pos, animated bool) {
 }
 
 func (v *ScrollView) Rect(rect Rect) View {
-
-	if v.Child != nil {
-		s := Size{v.GetLocalRect().Size.W, 3000}
-		size := v.Child.GetCalculatedSize(s)
-		size.W = s.W
-		r := Rect{Size: size}
+	v.CustomView.Rect(rect)
+	if v.child != nil {
+		ls := rect.Size
+		ls.H = 20000
+		cs := v.child.GetCalculatedSize(ls)
+		cs.W = ls.W
+		r := Rect{Size: cs}
 		r.Add(v.Margin)
-		v.Child.Rect(r)
-		//self.contentSize = size.GetCGSize()
-		v.Child.ArrangeChildren(nil)
+		v.child.Rect(r)
+		fmt.Println("scrollview rect:", r)
 	}
 	return v
 }
 
-func (v *ScrollView) SetChild(view *ContainerView) {
-	// if child != nil {
-	//     child?.RemoveFromParent()
-	// }
-	v.Child = view
-	v.AddChild(v.Child, -1)
+func (v *ScrollView) drawIfExposed() {
+	v.CustomView.drawIfExposed()
+	if v.child != nil {
+		et, _ := v.child.(ExposableType)
+		if et != nil {
+			et.drawIfExposed()
+		}
+
+	}
 }
 
 func ScrollViewToMakeItVisible(view View) {

@@ -6,7 +6,6 @@ type Label struct {
 	NativeView
 	minWidth  float64
 	maxWidth  float64
-	maxHeight float64
 	maxLines  int
 	alignment Alignment
 	Margin    Rect
@@ -16,7 +15,8 @@ type Label struct {
 func (v *Label) GetCalculatedSize(total Size) Size {
 	var o TextLayoutOwner
 	o = v
-	return CalculateSize(o, total)
+	s := CalculateSize(o, total)
+	return s
 }
 
 func (l *Label) TextAlignment(a Alignment) View {

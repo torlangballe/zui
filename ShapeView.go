@@ -3,7 +3,6 @@ package zgo
 //  Created by Tor Langballe on /22/10/15.
 
 import (
-	"fmt"
 	"math"
 	"path"
 
@@ -96,12 +95,14 @@ func (v *ShapeView) GetCalculatedSize(total Size) Size {
 
 func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 	v.image = image
+	v.exposed = false
 	if v.GetObjectName() == "" {
 		_, name := path.Split(spath)
 		v.ObjectName(name)
 	}
 	if image == nil && spath != "" {
 		v.image = ImageFromPath(spath, func() {
+			//			println("sv image loaded: " + v.GetObjectName())
 			v.Expose()
 			if done != nil {
 				done()
@@ -114,7 +115,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 	path := PathNew()
 	v := view.(*ShapeView)
-	fmt.Println("shapeViewDraw:", v.Element)
+
 	switch v.Type {
 	case ShapeViewTypeStar:
 		path.AddStar(rect, v.Count, v.Ratio)
@@ -196,7 +197,7 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 		t := v.TextInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
 		t.Rect = textRect.Expanded(Size{-v.TextXMargin * ScreenMain().SoftScale, 0})
-		//		t.Rect.Pos.Y += 2
+		t.Rect.Pos.Y -= 2
 		if v.IsImageFill {
 			canvas.SetDropShadow(Size{}, 2, ColorBlack)
 		}

@@ -44,9 +44,17 @@ func (v *NativeView) Rect(rect Rect) View {
 }
 
 func (v *NativeView) GetLocalRect() Rect {
+	var w, h float64
 	style := v.style()
-	w := parseCoord(style.Get("width"))
-	h := parseCoord(style.Get("height"))
+	sw := style.Get("width")
+	sh := style.Get("height")
+	if sw.String() != "" {
+		h = parseCoord(sh)
+		w = parseCoord(sw)
+	} else {
+		println("parse empty Coord: " + v.GetObjectName())
+	}
+
 	return RectMake(0, 0, w, h)
 }
 
@@ -187,7 +195,8 @@ func (v *NativeView) Font(font *Font) View {
 func (v *NativeView) GetFont() *Font {
 	style := v.style()
 	name := style.Get("font-family").String()
-	size := parseCoord(style.Get("font-size"))
+	ss := style.Get("font-size")
+	size := parseCoord(ss)
 	return FontNew(name, size, FontStyleNormal)
 }
 
@@ -207,7 +216,6 @@ func (v *NativeView) AddChild(child View, index int) {
 		panic("NativeView AddChild child not native")
 	}
 	n := o.GetNative()
-	fmt.Println("NativeView AddChild:", v, n)
 	v.call("appendChild", n.Element)
 }
 

@@ -27,8 +27,6 @@ type View interface {
 
 	Rect(rect Rect) View
 	GetRect() Rect
-	// Scale(scale float64) View
-	// GetScale() float64
 
 	Show(show bool) View
 	IsShown() bool
@@ -43,6 +41,10 @@ type NativeViewOwner interface {
 
 type ViewDrawProtocol interface {
 	Draw(rect Rect, canvas Canvas, view View)
+}
+
+type ExposableType interface {
+	drawIfExposed()
 }
 
 type ViewLayoutProtocol interface {

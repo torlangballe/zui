@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"fmt"
 	"syscall/js"
 )
 
@@ -38,24 +37,17 @@ func (v *CustomView) init(view View, name string) {
 }
 
 func (v *CustomView) drawIfExposed() {
-	if v.exposed && v.draw != nil {
-		fmt.Printf("drawIfExposed %p %s\n", v, v.GetObjectName())
+	r := v.GetLocalRect()
+	if v.exposed && v.draw != nil && !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
+		//		println("CV drawIfExposed: " + v.GetObjectName())
+		canvas := CanvasNew()
+		canvas.SetRect(r)
 		v.exposeTimer.Stop()
-		s := v.GetLocalRect().Size
-		r := Rect{Size: s}
-		v.draw(r, v.canvas, v.View)
+		v.draw(r, canvas, v.View)
+		url := canvas.element.Call("toDataURL").String()
 		v.exposed = false
-		fmt.Println("drawIfExposed2", v.GetObjectName())
+		v.style().Set("backgroundImage", "url("+url+")")
+		v.style().Set("background-repeat", "no-repeat")
+		//		println("CV drawIfExposed end: " + v.GetObjectName() + " " + time.Since(start).String())
 	}
-}
-
-func (v *CustomView) Rect(rect Rect) View {
-	if v.canvas != nil {
-		dpr := WindowJS.Get("devicePixelRatio").Float()
-		v.canvas.element.Set("width", rect.Size.W*dpr)
-		v.canvas.element.Set("height", rect.Size.H*dpr)
-		v.canvas.context.Call("scale", dpr, dpr)
-	}
-	setElementRect(v.Element, rect)
-	return v
 }

@@ -1,6 +1,7 @@
 package zgo
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -9,26 +10,26 @@ import (
 
 type StackView struct {
 	ContainerView
-	space    float64
+	spacing  float64
 	Vertical bool
 }
 
-func Stack(vertical bool, alignment Alignment, elements ...interface{}) *StackView {
+func StackViewNew(vertical bool, alignment Alignment, elements ...interface{}) *StackView {
 	s := &StackView{}
-	s.ContainerView = *ContainerViewNew(s)
-	s.SetElements(alignment, elements...)
+	s.ContainerView.init(s, "stack")
+	s.AddElements(alignment, elements...)
 	s.Vertical = vertical
-	s.space = 6
+	s.spacing = 6
 	return s
 }
 
-func (s *StackView) Space(space float64) *StackView {
-	s.space = space
+func (s *StackView) Spacing(spacing float64) *StackView {
+	s.spacing = spacing
 	return s
 }
 
-func (s *StackView) GetSpace() float64 {
-	return s.space
+func (s *StackView) GetSpacing() float64 {
+	return s.spacing
 }
 
 func (s *StackView) getCellFitSizeInTotal(total Size, cell ContainerViewCell) Size {
@@ -61,12 +62,12 @@ func (s *StackView) nettoCalculateSize(total Size) Size { // can force size calc
 			}
 			*size.VerticeP(s.Vertical) += fs.Vertice(s.Vertical) + m.Vertice(s.Vertical)
 			*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), fs.Vertice(!s.Vertical)-m.Vertice(!s.Vertical))
-			*size.VerticeP(s.Vertical) += s.space
+			*size.VerticeP(s.Vertical) += s.spacing
 		}
 	}
 	size.Subtract(s.margin.Size)
 	if len(s.cells) > 0 {
-		*size.VerticeP(s.Vertical) -= s.space
+		*size.VerticeP(s.Vertical) -= s.spacing
 	}
 	*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), s.GetMinSize().Vertice(!s.Vertical))
 	return size
@@ -87,6 +88,16 @@ func (s *StackView) handleAlign(size Size, inRect Rect, a Alignment, cell Contai
 func (s *StackView) ForceHorizontalFocusNavigation() {
 }
 
+func (v *StackView) Rect(rect Rect) View {
+	v.CustomView.Rect(rect)
+	v.ArrangeChildren(nil)
+	return v
+}
+
+func addDiff(size *Size, vertical bool, diff *float64, count *int) {
+	*(*size).VerticeP(vertical) += *diff / float64(*count)
+}
+
 func (s *StackView) ArrangeChildren(onlyChild *View) {
 	for s.isLoading() {
 		time.Sleep(time.Millisecond * 2)
@@ -99,6 +110,9 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 	var aless = AlignmentLeft
 	var amore = AlignmentRight
 	var amid = AlignmentHorCenter | AlignmentMarginIsOffset
+
+	var r = s.GetRect()
+	r.Pos = Pos{} // translate to 0,0 cause children are in parent
 
 	if s.layoutHandler != nil {
 		s.layoutHandler.HandleBeforeLayout()
@@ -128,8 +142,6 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
 	}
-	var r = s.GetRect()
-	r.Pos = Pos{} // translate to 0,0 cause children are in parent
 	r.Add(s.margin)
 	for _, c1 := range s.cells {
 		if c1.Free {
@@ -146,16 +158,18 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			lastNoFreeIndex = i
 			tot := s.getCellFitSizeInTotal(r.Size, c3)
 			var size = c3.View.GetCalculatedSize(tot)
+			fmt.Println("size add:", c3.View, size)
 			if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
-				*size.VerticeP(s.Vertical) += diff / float64(decs)
+				addDiff(&size, s.Vertical, &diff, &decs)
 			} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-				*size.VerticeP(s.Vertical) += diff / float64(incs)
+				addDiff(&size, s.Vertical, &diff, &incs)
 			}
 			sizes[c3.View] = size
 		}
 	}
 	var centerDim = 0.0
 	var firstCenter = true
+
 	for i, c4 := range s.cells {
 		if !c4.Collapsed && !c4.Free {
 			if (c4.Alignment & (amore | aless)) != 0 {
@@ -164,12 +178,12 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 					a = a.Subtracted(AlignmentExpand.Only(s.Vertical))
 				}
 				vr := s.handleAlign(sizes[c4.View], r, a, c4)
-				//				DebugPrint("cell2 ", c4.Alignment, r, vr, c4.View.GetObjectName(), sizes[c4.View])
+				DebugPrint("cell2 ", i, c4.View.GetObjectName(), sizes[c4.View])
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.Rect(vr)
 				}
 				if c4.Alignment&aless != 0 {
-					m := math.Max(r.Min().Vertice(s.Vertical), vr.Max().Vertice(s.Vertical)+s.space)
+					m := math.Max(r.Min().Vertice(s.Vertical), vr.Max().Vertice(s.Vertical)+s.spacing)
 					if s.Vertical {
 						r.SetMinY(m)
 					} else {
@@ -177,7 +191,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 					}
 				}
 				if c4.Alignment&amore != 0 {
-					m := math.Min(r.Max().Vertice(s.Vertical), vr.Pos.Vertice(s.Vertical)-s.space)
+					m := math.Min(r.Max().Vertice(s.Vertical), vr.Pos.Vertice(s.Vertical)-s.spacing)
 					if s.Vertical {
 						r.SetMaxY(m)
 					} else {
@@ -193,7 +207,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			} else {
 				centerDim += sizes[c4.View].Vertice(s.Vertical)
 				if !firstCenter {
-					centerDim += s.space
+					centerDim += s.spacing
 				}
 				firstCenter = false
 			}
@@ -216,8 +230,7 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.Rect(vr)
 			}
-			//                ZDebug.Print("alignm ", (c5.view as! ZView).objectName, vr)
-			*r.Pos.VerticeP(s.Vertical) = vr.Max().Vertice(s.Vertical) + s.space
+			*r.Pos.VerticeP(s.Vertical) = vr.Max().Vertice(s.Vertical) + s.spacing
 			cv, got := c5.View.(*ContainerView)
 			if got {
 				cv.ArrangeChildren(nil)
@@ -230,38 +243,9 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 }
 
 func StackRows(alignment Alignment, elements ...interface{}) *StackView {
-	return Stack(true, alignment, elements...)
+	return StackViewNew(true, alignment, elements...)
 }
 
 func StackColumns(alignment Alignment, elements ...interface{}) *StackView {
-	return Stack(false, alignment, elements...)
+	return StackViewNew(false, alignment, elements...)
 }
-
-/*
-open class ZColumnStack   ZStackView {
-    var vstack  ZStackView? = nil
-    var max Int = 0
-
-    init(max Int, horSpace float64) {
-        self.max = max
-        super.init(name "zcolumnstack")
-        space = horSpace
-        vertical = false
-    }
-
-    // #swift-only
-    required public init?(coder aDecoder  NSCoder) { fatalError("init(coder )") }
-    // #end
-
-    @discardableResult override open func Add( view  ZNativeView, align Alignment, marg  Size  = Size (), maxSize Size  = Size (), index Int = -1, free Bool = false)  Int {
-        if vstack == nil || vstack!.cells.count == max {
-            vstack = ZVStackView(space space)
-            return super.Add(vstack!, align AlignmentLeft | AlignmentBottom, marg Size (), maxSize Size (), index -1, free false)
-        }
-        return vstack!.Add(view, align align, marg marg, maxSize maxSize, index index, free free) // need all args specified for kotlin super call
-    }
-}
-
-
-
-*/

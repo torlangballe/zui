@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"fmt"
 	"syscall/js"
 )
 
@@ -215,28 +214,22 @@ func (c *Canvas) DrawTextInPos(pos Pos, text string, attributes Dictionary) {
 	c.context.Call("fillText", text, pos.X, pos.Y)
 }
 
-var measureDiv *js.Value
+var measureTextCanvas *Canvas
 
 func canvasGetTextSize(text string, font *Font) Size {
 	// https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript
+
 	var s Size
-	if measureDiv == nil {
-		e := DocumentJS.Call("createElement", "div")
-		e.Set("hidden", "true")
-		DocumentElementJS.Call("appendChild", e)
-		measureDiv = &e
+	if measureTextCanvas == nil {
+		measureTextCanvas = CanvasNew()
 	}
-	style := measureDiv.Get("style")
+	measureTextCanvas.SetFont(font, nil)
+	var metrics = measureTextCanvas.context.Call("measureText", text)
 
-	style.Set("fontSize", fmt.Sprintf("%dpx", int(font.Size)))
-	style.Set("position", "absolute")
-	style.Set("left", "-1000")
-	style.Set("top", "-1000")
-	measureDiv.Set("innerHTML", text)
+	s.W = metrics.Get("width").Float()
+	//	s.H = metrics.Get("height").Float()
 
-	s.W = measureDiv.Get("clientWidth").Float()
-	s.H = measureDiv.Get("clientHeight").Float()
-
-	s.W += 2 // seems to wrap otherwise, maybe it's rounded down to int somewhere
+	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
+	s.H = font.LineHeight()
 	return s
 }

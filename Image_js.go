@@ -34,7 +34,6 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		fmt.Println("image loaded:", path, i.size)
 		if done != nil {
 			done()
 		}

@@ -1,15 +1,14 @@
 package zgo
 
 import (
-	"fmt"
 	"time"
 )
 
 // Created by Tor Langballe on /23/9/14.
 
-type ContainerType interface {
-	ArrangeChildren(onlyChild *View)
-}
+// type ContainerViewType interface {
+// 	ArrangeChildren(onlyChild *View)
+// }
 
 type ContainerViewCell struct {
 	Alignment Alignment
@@ -36,8 +35,8 @@ type ContainerView struct {
 }
 
 func Container(elements ...interface{}) *ContainerView {
-	c := ContainerViewNew(nil)
-	c.SetElements(AlignmentNone, elements...)
+	c := ContainerViewNew(nil, "container")
+	c.AddElements(AlignmentNone, elements...)
 	return c
 }
 
@@ -58,7 +57,7 @@ func calculateAddAlignment(def, a Alignment) Alignment {
 	return a
 }
 
-func (c *ContainerView) SetElements(defAlignment Alignment, elements ...interface{}) {
+func (c *ContainerView) AddElements(defAlignment Alignment, elements ...interface{}) {
 	var gotView *View
 	var gotAlign Alignment
 	var gotMargin Size
@@ -71,7 +70,7 @@ func (c *ContainerView) SetElements(defAlignment Alignment, elements ...interfac
 		if view, got := v.(View); got {
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
-				c.Add(*gotView, a, gotMargin, Size{}, -1, false)
+				c.AddAdvanced(*gotView, a, gotMargin, Size{}, -1, false)
 				gotView = nil
 				gotAlign = AlignmentNone
 				gotMargin = Size{}
@@ -90,17 +89,21 @@ func (c *ContainerView) SetElements(defAlignment Alignment, elements ...interfac
 	}
 	if gotView != nil {
 		a := calculateAddAlignment(defAlignment, gotAlign)
-		c.Add(*gotView, a, gotMargin, Size{}, -1, false)
+		c.AddAdvanced(*gotView, a, gotMargin, Size{}, -1, false)
 	}
 }
 
-func ContainerViewNew(view View) *ContainerView {
-	c := &ContainerView{}
+func ContainerViewNew(view View, name string) *ContainerView {
+	v := &ContainerView{}
 	if view == nil {
-		view = c
+		view = v
 	}
-	c.CustomView.init(view, "container")
-	return c
+	v.init(view, name)
+	return v
+}
+
+func (v *ContainerView) init(view View, name string) {
+	v.CustomView.init(v, name)
 }
 
 func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) *ContainerView {
@@ -135,7 +138,11 @@ func (v *ContainerView) AddCell(cell ContainerViewCell, index int) int {
 	}
 }
 
-func (v *ContainerView) Add(view View, align Alignment, marg Size, maxSize Size, index int, free bool) int {
+func (v *ContainerView) Add(view View, align Alignment) int {
+	return v.AddAdvanced(view, align, Size{}, Size{}, -1, false)
+}
+
+func (v *ContainerView) AddAdvanced(view View, align Alignment, marg Size, maxSize Size, index int, free bool) int {
 	collapsed := false
 	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, collapsed, free}, index)
 }
@@ -147,6 +154,12 @@ func (v *ContainerView) Contains(view View) bool {
 		}
 	}
 	return false
+}
+
+func (v *ContainerView) Rect(rect Rect) View {
+	v.CustomView.Rect(rect)
+	v.ArrangeChildren(nil)
+	return v
 }
 
 func (v *ContainerView) GetCalculatedSize(total Size) Size {
@@ -201,15 +214,16 @@ func (v *ContainerView) isLoading() bool {
 }
 
 func (v *ContainerView) ArrangeChildren(onlyChild *View) {
-	fmt.Println("ContainerView ArrangeChildren")
 	for v.isLoading() {
 		time.Sleep(time.Millisecond * 10)
 	}
-	v.layoutHandler.HandleBeforeLayout()
+	if v.layoutHandler != nil {
+		v.layoutHandler.HandleBeforeLayout()
+	}
 	r := Rect{Size: v.GetRect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
-		if got {
+		if got && v.layoutHandler != nil {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
 		if c.Alignment != AlignmentNone {
@@ -222,7 +236,9 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 			}
 		}
 	}
-	v.layoutHandler.HandleAfterLayout()
+	if v.layoutHandler != nil {
+		v.layoutHandler.HandleAfterLayout()
+	}
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
 		if got {
@@ -322,7 +338,7 @@ func (v *ContainerView) FindCellWithView(view View) int {
 }
 
 func (v *ContainerView) RemoveChild(subView View) {
-	v.RemoveChild(subView)
+	v.CustomView.RemoveChild(subView)
 	v.DetachChild(subView)
 }
 
@@ -342,17 +358,12 @@ func (v *ContainerView) DetachChild(subView View) {
 	}
 }
 
-func (v *ContainerView) drawAllIfExposed() {
-	v.drawIfExposed()
+func (v *ContainerView) drawIfExposed() {
+	v.CustomView.drawIfExposed()
 	for _, c := range v.cells {
-		cov, _ := c.View.(*ContainerView)
-		if cov != nil {
-			cov.drawAllIfExposed()
-		} else {
-			cvp, _ := c.View.(CustomViewProtocol)
-			if cvp != nil {
-				cvp.drawIfExposed()
-			}
+		et, _ := c.View.(ExposableType)
+		if et != nil {
+			et.drawIfExposed()
 		}
 	}
 }

@@ -15,14 +15,14 @@ func ButtonNew(title, colorName string, size Size, insets Size) *Button {
 		insets = Size{6, 13}
 	}
 	b.CanFocus(true)
-	b.ImageAlign = AlignmentHorExpand | AlignmentCenter | AlignmentNonProp
+	b.ImageAlign = AlignmentExpand | AlignmentCenter | AlignmentNonProp
 	b.Color(Color{})
 	b.SetNamedColor(colorName, insets)
 	b.TextInfo.Text = title
 	b.TextInfo.Font = FontNice(18, FontStyleNormal)
 	b.TextInfo.Color = ColorWhite
 	//    b.FillBox = true
-	b.ImageMargin = Size{0, 5}.TimesD(ScreenMain().SoftScale)
+	b.ImageMargin = Size{}
 	b.GetImage()
 	return b
 }

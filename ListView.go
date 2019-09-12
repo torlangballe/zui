@@ -1,58 +1,115 @@
 package zgo
 
+import "fmt"
+
 //  Created by Tor Langballe on /4/12/15.
 
-type ListViewDelegate interface {
-	ListViewGetRowCount() int
-	ListViewGetHeightOfItem(index int) float64
-	ListViewSetupCell(cellSize Size, index int) *CustomView
-	HandleRowSelected(index int)
-	//    GetAccessibilityForCell( index int, prefixString)  [ZAccessibilty]
-}
-
-//typealias ZListViewRowAnimation = UIListView.RowAnimation
-
 type ListView struct {
-	NativeView
-	First                   bool
-	TableRowBackgroundColor Color
-	Scrolling               bool
-	DrawHandler             *func(rect Rect, canvas Canvas)
-	Margins                 Size
-	Spacing                 float64
-	FocusedRow              *int
+	ScrollView
+	//ListViewNative
+	//	Scrolling bool
+	spacing float64
+
+	GetRowCount       func() int
+	GetRowHeight      func(i int) float64
+	CreateRow         func(rowSize Size, i int) View
+	HandleRowSelected func(i int)
 
 	selectionIndex int
-	owner          ListViewDelegate
-	selectable     bool
+	Selectable     bool
 	selectedColor  Color
+
+	topPos float64
+	stack  *CustomView
+	rows   map[int]View
 }
 
-func ListViewNew() *ListView {
+func ListViewNew(name string) *ListView {
 	v := &ListView{}
-	v.selectable = true
-	v.selectionIndex = -1
+	v.init(v, name)
 	return v
 	//        allowsSelection = true // selectable
 }
 
-//     override func layoutSubviews() {
-// //        let tvOsInsetCGFloat = ZIsTVBox() ? 174  0
-// //        let tvOsInsetCGFloat = ZIsTVBox() ? 87  0
-//         if first {
-//             allowsSelection = true // selectable
-//             if selectionIndex != -1 {
-//                 Select(selectionIndex);
-//             }
-//   //        contentInset = UIEdgeInsets(top CGFloat(margins.h), left -tvOsInset, bottom CGFloat(margins.h), right tvOsInset)
-//             first = false
-//         }
-//         super.layoutSubviews()
-//     }
+func (v *ListView) Spacing(spacing float64) *ListView {
+	v.spacing = spacing
+	return v
+}
 
-//     override func draw( rect CGRect) {
-//         drawHandler?(Rect(rect), Canvas(context UIGraphicsGetCurrentContext()!))
-//     }
+func (v *ListView) GetSpacing() float64 {
+	return v.spacing
+}
+
+func (v *ListView) init(view View, name string) {
+	v.ScrollView.init(view, name)
+	v.Selectable = true
+	v.selectionIndex = -1
+	v.rows = map[int]View{}
+	v.HandleScroll = func(pos Pos) {
+		v.topPos = pos.Y
+		v.layoutRows()
+	}
+}
+
+func (v *ListView) Rect(rect Rect) View {
+	fmt.Println("ListView:Rect", rect, v.GetRowHeight)
+	v.ScrollView.Rect(rect)
+	if v.stack == nil {
+		v.stack = CustomViewNew("listview.stack")
+		v.AddChild(v.stack, -1)
+	}
+	count := v.GetRowCount()
+	pos := v.Margin.Min()
+	h := 0.0
+	for i := 0; i < count; i++ {
+		h += v.GetRowHeight(i)
+		if i != 0 {
+			h += v.spacing
+		}
+	}
+	w := rect.Size.W + v.Margin.Size.W
+	r := Rect{pos, Size{w, h}}
+	v.stack.Rect(r)
+	v.layoutRows()
+	return v
+}
+
+func (v *ListView) layoutRows() {
+	count := v.GetRowCount()
+	ls := v.GetLocalRect().Size
+	oldRows := map[int]View{}
+	y := 0.0
+	for k, v := range v.rows {
+		oldRows[k] = v
+	}
+	//	fmt.Println("\nlayout rows")
+	for i := 0; i < count; i++ {
+		var s Size
+		s.H = v.GetRowHeight(i)
+		s.W = ls.W + v.Margin.Size.W
+		r := Rect{Pos{0, y}, s}
+		if r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
+			//			fmt.Println("visible row:", i)
+			row := v.rows[i]
+			if row != nil {
+				if row.GetRect() != r {
+					row.Rect(r)
+				}
+				delete(oldRows, i)
+			} else {
+				row = v.CreateRow(s, i)
+				v.AddChild(row, -1)
+				v.rows[i] = row
+				row.Rect(r)
+			}
+		}
+		y += s.H + v.spacing
+	}
+	for i, view := range oldRows {
+		v.RemoveChild(view)
+		delete(v.rows, i)
+	}
+}
 
 func (v *ListView) ExposeRows() {
 	// for i in indexPathsForVisibleRows ?? [] {
@@ -78,21 +135,7 @@ func (v *ListView) ReloadData(animate bool) {
 func (v *ListView) MoveRow(fromIndex int, toIndex int) {
 }
 
-// private func getZViewChild( vUIView)  ZView? {
-//     for c in v.subviews {
-//         if let z = c as? ZView {
-//             return z
-//         }
-//     }
-//     for c in v.subviews {
-//         if let z = getZViewChild(c) {
-//             return z
-//         }
-//     }
-//     return nil
-// }
-
-func (v *ListView) GetRowViewFromIndex(index int) *View {
+func (v *ListView) GetRowViewFromIndex(i int) *View {
 	return nil
 }
 
@@ -100,128 +143,16 @@ func (v *ListView) GetIndexFromRowView(view View) *int {
 	return nil
 }
 
-func LiistViewGetParentListViewFromRow(child *ContainerView) *ListView {
-	return nil
-}
-
-func ListViewGetIndexFromRowView(view *ContainerView) int {
+func ListViewGetIndexFromRowView(view View) int {
 	return -1
 }
 
 func (v *ListView) Select(row int) {
 }
 
-func (v *ListView) DeleteChildRow(index int, transition PresentViewTransition) { // call this after removing data
+func (v *ListView) DeleteChildRow(i int, transition PresentViewTransition) { // call this after removing data
 }
 
-// func scrollViewWillBeginDragging( scrollView UIScrollView) {
-//     scrolling = true
-// }
-
-// func scrollViewDidEndDragging( scrollView UIScrollView, willDecelerate decelerate bool) {
-//     if !decelerate {
-//         scrolling = false
-//     }
-// }
-
-// func scrollViewDidEndDecelerating( scrollView UIScrollView) {
-//     scrolling = false
-// }
-
-func (v *ListView) IsFocused(row *CustomView) bool {
+func (v *ListView) IsFocused() bool {
 	return false
 }
-
-// func ListView( ListView UIListView, didSelectRowAt indexPath IndexPath) {
-//     let index = pathToRow(indexPath)
-//     owner!.HandleRowSelected(index)
-//     selectionIndex = index
-// }
-
-// func ListView( ListView UIListView, heightForRowAt indexPath IndexPath)  CGFloat {
-//     let index = pathToRow(indexPath)
-//     return CGFloat(owner!.ListViewGetHeightOfItem(index))
-// }
-
-// func numberOfSections(in ListView UIListView)  int {
-//     return 1
-// }
-
-// func ListView( ListViewUIListView, numberOfRowsInSection sectionint)  int {
-//     let c = owner!.ListViewGetRowCount()
-//     return c
-// }
-
-// func ListView( ListView UIListView, cellForRowAt indexPath IndexPath)  UIListViewCell {
-//     //        let cell  UIListViewCell = self.dequeueReusableCellWithIdentifier("ZListView", forIndexPathindexPath) as UIListViewCell
-//     let cell = zUIListViewCell()
-//     cell.isEditing = true
-//     let index = pathToRow(indexPath)
-//     var r = Rect(sizeSize(Rect.size.w, owner!.ListViewGetHeightOfItem(index)))
-//     var m = margins.w
-//     if ZIsTVBox() {
-//         m = 87
-//     }
-//     r = r.Expanded(Size(-m, 0))
-//     if ZIsTVBox() {
-//         cell.focusStyle = UIListViewCell.FocusStyle.custom
-//     }
-//     cell.frame = r.GetCGRect()
-//     cell.backgroundColor = UIColor.clear
-//     let s = Size(cell.frame.size)
-//     let customView = owner!.ListViewSetupCell(s, indexindex)
-//     customView?.frame = Rect(sizes).GetCGRect()
-//     if !ZIsTVBox() {
-//         customView!.minSize.h -= spacing
-//     }
-//     customView?.frame.size.height = CGFloat(customView!.minSize.h)
-//     if let cv = customView as? ZContainerView {
-//         cv.ArrangeChildren()
-//     }
-//     cell.isUserinteractionEnabled = true //cell.Usable
-//     if selectable {
-//         if !selectedColor.undefined {
-//             let bgColorView = UIView()
-//             bgColorView.backgroundColor = selectedColor.rawColor
-//             cell.selectedBackgroundView = bgColorView
-//         } else {
-//             cell.selectedBackgroundView = UIView()
-//         }
-//     }
-//     if customView != nil {
-//         cell.contentView.addSubview(customView!)
-//         cell.isOpaque = customView!.isOpaque
-//         cell.backgroundColor = customView!.backgroundColor
-//     }
-//     if cell.backgroundColor != nil && cell.backgroundView != nil && ZColor(colorcell.backgroundColor!).Opacity == 0.0 {
-//         cell.backgroundView!.backgroundColor = UIColor.clear
-//         cell.contentView.backgroundColor = UIColor.clear
-//         cell.backgroundColor = UIColor.clear
-//     }
-//     return cell
-// }
-
-// func ListView( ListView UIListView, willDisplay willDisplayCellUIListViewCell, forRowAt forRowAtIndexPathIndexPath) {
-//     //        ZDebug.Print("willDisplayCell", forRowAtIndexPath.row)
-// }
-
-// func ListView( ListView UIListView, shouldHighlightRowAt indexPath IndexPath)  bool {
-//     return true
-// }
-
-// func ListView( ListView UIListView, willSelectRowAt indexPath IndexPath)  IndexPath? {
-//     return indexPath
-// }
-
-// func ListView( ListView UIListView, canEditRowAt indexPath IndexPath)  bool {
-//     return false
-// }
-
-// func ListView( ListView UIListView, canMoveRowAt indexPath IndexPath)  bool {
-//     return false
-// }
-
-// fileprivate func makeIndexPathFromIndex( indexint)  IndexPath {
-//     let indexes[int] = [ 0, index]
-//     return (NSIndexPath(indexesindexes, length2) as IndexPath)
-// }
