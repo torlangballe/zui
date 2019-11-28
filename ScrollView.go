@@ -1,7 +1,5 @@
 package zgo
 
-import "fmt"
-
 //  Created by Tor Langballe on /13/11/15.
 
 type ScrollView struct {
@@ -17,9 +15,25 @@ func ScrollViewNew() *ScrollView {
 	return v
 }
 
-func (v *ScrollView) SetChild(child View) {
+func (v *ScrollView) AddChild(child View, index int) {
 	v.child = child
-	v.AddChild(child, -1)
+	v.CustomView.AddChild(child, index)
+}
+
+func (v *ScrollView) GetChildren() []View {
+	if v.child != nil {
+		return []View{v.child}
+	}
+	return []View{}
+}
+
+func (v *ScrollView) ArrangeChildren(onlyChild *View) {
+	if v.child != nil {
+		ct, got := v.child.(ContainerType)
+		if got {
+			ct.ArrangeChildren(onlyChild)
+		}
+	}
 }
 
 func (v *ScrollView) GetCalculatedSize(total Size) Size {
@@ -28,7 +42,6 @@ func (v *ScrollView) GetCalculatedSize(total Size) Size {
 		cs := v.child.GetCalculatedSize(total)
 		s.W = cs.W
 	}
-	fmt.Println("ScrollView.GetCalculatedSize:", s)
 	return s
 }
 
@@ -45,7 +58,6 @@ func (v *ScrollView) Rect(rect Rect) View {
 		r := Rect{Size: cs}
 		r.Add(v.Margin)
 		v.child.Rect(r)
-		fmt.Println("scrollview rect:", r)
 	}
 	return v
 }
@@ -53,11 +65,10 @@ func (v *ScrollView) Rect(rect Rect) View {
 func (v *ScrollView) drawIfExposed() {
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
-		et, _ := v.child.(ExposableType)
-		if et != nil {
+		et, got := v.child.(ExposableType)
+		if got {
 			et.drawIfExposed()
 		}
-
 	}
 }
 

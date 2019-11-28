@@ -1,33 +1,27 @@
 package zgo
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 //  Created by Tor Langballe on /5/11/15.
 
-type Error struct {
+type CodeDomainError struct {
 	Message string
 	Code    int
 	Domain  string
 }
 
-func ErrorNew(message string, code int, domain string) *Error {
-	return &Error{message, code, domain}
-}
-
-func (e *Error) Error() error {
+func (e *CodeDomainError) Error() error {
 	return errors.New(e.Message)
 }
 
-func (e *Error) GetMessage() string {
-	return e.Message
+func ErrorNew(parts ...interface{}) error {
+	p := strings.TrimSpace(fmt.Sprintln(parts...))
+	return errors.New(p)
 }
 
-func ErrorFromErr(err error) *Error {
-	if err == nil {
-		return nil
-	}
-	return ErrorNew(err.Error(), 0, "")
-}
-
-var ErrorGeneral = ErrorNew("Zed", 1, "Zetrus")
-var ErrorUrlDomain = "url"
+// var ErrorGeneral = ErrorNew("Zed", 1, "Zetrus")
+// var ErrorUrlDomain = "url"

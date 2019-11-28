@@ -26,6 +26,10 @@ func RectFromMinMax(min, max Pos) Rect {
 	return Rect{min, max.Minus(min).Size()}
 }
 
+func RectFromXY2(x, y, x2, y2 float64) Rect {
+	return Rect{Pos{x, y}, Size{x2 - x, y2 - y}}
+}
+
 var RectNull Rect
 
 func (r Rect) IsNull() bool {
@@ -349,7 +353,7 @@ func (r Rect) TimesD(d float64) Rect {
 	return RectFromMinMax(r.Min().TimesD(d), r.Max().TimesD(d))
 }
 
-func (r *Rect) Add(a Rect)     { r.Pos.Add(a.Pos); r.SetMax(r.Max().Plus(a.Max())) }
+func (r *Rect) Add(a Rect)     { r.SetMin(r.Min().Plus(a.Pos)); r.SetMax(r.Max().Plus(a.Max())) }
 func (r *Rect) AddPos(a Pos)   { r.Pos.Add(a) }
 func (r *Rect) Subtract(a Pos) { r.Pos.Subtract(a) }
 
@@ -359,4 +363,11 @@ func centerToRect(center Pos, radius float64, radiusy float64) Rect {
 		s.H = radiusy
 	}
 	return Rect{center.Minus(s.Pos()), s.TimesD(2.0)}
+}
+
+func (r *Rect) MakeInteger() {
+	r.Pos.X = math.Floor(r.Pos.X)
+	r.Pos.Y = math.Floor(r.Pos.Y)
+	r.Size.W = math.Ceil(r.Size.W)
+	r.Size.H = math.Ceil(r.Size.H)
 }

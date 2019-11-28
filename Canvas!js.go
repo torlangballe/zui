@@ -2,8 +2,6 @@
 
 package zgo
 
-import "fmt"
-
 type canvasNative struct {
 }
 
@@ -70,30 +68,6 @@ func (c *Canvas) DrawPath(path *Path, strokeColor Color, width float64, ltype Pa
 	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
 }
 
-func (c *Canvas) DrawImage(image *Image, destRect Rect, opacity float32, blendMode CanvasBlendMode, sourceRect Rect) Rect {
-	fmt.Println("Canvas.DrawImage darwin", image)
-	//        image.draw(vdestRect.GetCGRect(), blendMode, opacity)
-	return destRect
-}
-
-func drawInsetRow(canvas *Canvas, image *Image, inset, dest Rect, sy, sh, dy, dh float64, opacity float32, blendMode CanvasBlendMode) {
-	size := image.Size()
-	diff := dest.Size.Minus(size)
-	insetMid := size.Minus(inset.Size.Negative())
-	canvas.DrawImage(image, RectFromXYWH(0, sy, inset.Pos.X, sh), opacity, blendMode, RectFromXYWH(0, dy, inset.Pos.X, dh))
-	canvas.DrawImage(image, RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh), opacity, blendMode, RectFromXYWH(inset.Pos.X, dy, diff.W, dh))
-	canvas.DrawImage(image, RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh), opacity, blendMode, RectFromXYWH(dest.Max().X+inset.Max().X, dy, -inset.Max().X, dh))
-}
-
-func (c *Canvas) drawInsetImage(canvas *Canvas, image *Image, inset, dest Rect, opacity float32, blendMode CanvasBlendMode) {
-	size := image.Size()
-	insetMid := size.Minus(inset.Size.Negative())
-	diff := dest.Size.Minus(size)
-	drawInsetRow(canvas, image, inset, dest, 0, inset.Pos.Y, 0, inset.Pos.Y, opacity, blendMode)
-	drawInsetRow(canvas, image, inset, dest, inset.Pos.Y, insetMid.H, inset.Pos.Y, diff.H, opacity, blendMode)
-	drawInsetRow(canvas, image, inset, dest, inset.Size.H+inset.Max().Y, -inset.Max().X, size.H+inset.Max().Y, -inset.Max().Y, opacity, blendMode)
-}
-
 func (c *Canvas) PushState() {
 	//      context.saveGState()
 }
@@ -103,7 +77,7 @@ func (c *Canvas) PopState() {
 }
 
 func (c *Canvas) ClearRect(rect Rect) {
-	//      context.clear(rect.GetCGRect())
+	//      context.clear(Rectrect.GetCGRect())
 }
 
 func (c *Canvas) SetDropShadow(deltaSize Size, blur float32, color Color) {
@@ -163,4 +137,7 @@ func (c *Canvas) DrawTextInPos(pos Pos, text string, attributes Dictionary) {
 
 func canvasGetTextSize(text string, font *Font) Size {
 	return Size{}
+}
+
+func (c *Canvas) drawPlainImage(image *Image, destRect Rect, opacity float32, blendMode CanvasBlendMode, sourceRect Rect) {
 }

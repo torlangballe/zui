@@ -1,23 +1,18 @@
 package zgo
 
-import (
-	"time"
-)
+import "github.com/torlangballe/zutil/zslice"
 
-// Created by Tor Langballe on /23/9/14.
-
-// type ContainerViewType interface {
-// 	ArrangeChildren(onlyChild *View)
-// }
+// Original class created by Tor Langballe on 23-sept-2014.
 
 type ContainerViewCell struct {
 	Alignment Alignment
 	Margin    Size
 	View      View
-	MaxSize   Size
+	MaxSize   Size // MaxSize is maximum size of child-view including margin
+	MinSize   Size // MinSize is minimum size of child-view including margin
 	Collapsed bool
-	Free      bool
-	//HandleTransition func( size Size,  layout ScreenLayout,  inRect Rect,  alignRect Rect) Rect
+	Free      bool // Free Cells are placed using ContainerView method, not using any
+	Weight    float64
 }
 
 func CVCell(view View, alignment Alignment) *ContainerViewCell {
@@ -38,6 +33,13 @@ func Container(elements ...interface{}) *ContainerView {
 	c := ContainerViewNew(nil, "container")
 	c.AddElements(AlignmentNone, elements...)
 	return c
+}
+
+func (v *ContainerView) GetChildren() (children []View) {
+	for _, c := range v.cells {
+		children = append(children, c.View)
+	}
+	return
 }
 
 func calculateAddAlignment(def, a Alignment) Alignment {
@@ -103,7 +105,7 @@ func ContainerViewNew(view View, name string) *ContainerView {
 }
 
 func (v *ContainerView) init(view View, name string) {
-	v.CustomView.init(v, name)
+	v.CustomView.init(view, name)
 }
 
 func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) *ContainerView {
@@ -126,25 +128,25 @@ func (v *ContainerView) SingleOrientation(single bool) *ContainerView {
 	return v
 }
 
-func (v *ContainerView) AddCell(cell ContainerViewCell, index int) int {
+func (v *ContainerView) AddCell(cell ContainerViewCell, index int) *ContainerViewCell {
 	if index == -1 {
 		v.cells = append(v.cells, cell)
 		v.AddChild(cell.View, -1)
-		return len(v.cells) - 1
+		return &v.cells[len(v.cells)-1]
 	} else {
 		v.cells = append([]ContainerViewCell{cell}, v.cells...)
 		v.AddChild(cell.View, index)
-		return index
+		return &v.cells[index]
 	}
 }
 
-func (v *ContainerView) Add(view View, align Alignment) int {
+func (v *ContainerView) Add(view View, align Alignment) *ContainerViewCell {
 	return v.AddAdvanced(view, align, Size{}, Size{}, -1, false)
 }
 
-func (v *ContainerView) AddAdvanced(view View, align Alignment, marg Size, maxSize Size, index int, free bool) int {
+func (v *ContainerView) AddAdvanced(view View, align Alignment, marg Size, maxSize Size, index int, free bool) *ContainerViewCell {
 	collapsed := false
-	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, collapsed, free}, index)
+	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, Size{}, collapsed, free, 0.0}, index)
 }
 
 func (v *ContainerView) Contains(view View) bool {
@@ -158,7 +160,11 @@ func (v *ContainerView) Contains(view View) bool {
 
 func (v *ContainerView) Rect(rect Rect) View {
 	v.CustomView.Rect(rect)
-	v.ArrangeChildren(nil)
+	ct, got := v.View.(ContainerType)
+	//	fmt.Println("CV: Rect", got)
+	if got {
+		ct.ArrangeChildren(nil)
+	}
 	return v
 }
 
@@ -191,11 +197,6 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
 	s := c.View.GetCalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
-	// if c.handleTransition != nil {
-	//     if let r = c.handleTransition(s, Screen.Orientation(), r, rv) {
-	//         rv = r
-	//     }
-	// }
 	c.View.Rect(rv)
 }
 
@@ -204,7 +205,6 @@ func (v *ContainerView) isLoading() bool {
 		io, got := c.View.(ImageOwner)
 		if got {
 			image := io.GetImage()
-			//			fmt.Println("IO:", c.View.GetObjectName(), io.GetImage(), c.View.GetCalculatedSize(v.GetLocalRect().Size))
 			if image != nil && image.loading {
 				return true
 			}
@@ -213,10 +213,19 @@ func (v *ContainerView) isLoading() bool {
 	return false
 }
 
+func (v *ContainerView) WhenLoaded(done func()) {
+	RepeaterSet(0.1, true, true, func() bool {
+		if v.isLoading() {
+			return true
+		}
+		if done != nil {
+			done()
+		}
+		return false
+	})
+}
+
 func (v *ContainerView) ArrangeChildren(onlyChild *View) {
-	for v.isLoading() {
-		time.Sleep(time.Millisecond * 10)
-	}
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
@@ -274,15 +283,17 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 	return false
 }
 
-func (v *ContainerView) RangeChildren(subViews bool, foreach func(v View) bool) {
-	for _, c := range v.cells {
-		if !foreach(c.View) {
+func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(view View) bool) {
+	for _, c := range ct.GetChildren() {
+		// fmt.Println("ContainerViewRangeChildren1:", c.GetObjectName(), subViews)
+		if !foreach(c) {
 			return
 		}
 		if subViews {
-			cv, got := c.View.(*ContainerView)
+			sub, got := c.(ContainerType)
+			// fmt.Println("ContainerViewRangeChildren:", c.GetObjectName(), got)
 			if got {
-				cv.RangeChildren(subViews, foreach)
+				ContainerTypeRangeChildren(sub, subViews, foreach)
 			}
 		}
 	}
@@ -302,6 +313,7 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 
 func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 	for _, c := range v.cells {
+		// fmt.Println("FindViewWithName", name, c.View.GetObjectName())
 		if c.View.GetObjectName() == name {
 			return &c.View
 		}
@@ -345,24 +357,28 @@ func (v *ContainerView) RemoveChild(subView View) {
 func (v *ContainerView) RemoveAllChildren() {
 	for _, c := range v.cells {
 		v.DetachChild(c.View)
-		v.RemoveChild(c.View)
+		v.CustomView.RemoveChild(c.View)
 	}
 }
 
 func (v *ContainerView) DetachChild(subView View) {
 	for i, c := range v.cells {
+		// fmt.Println("detach?:", c.View.GetObjectName(), c.View == subView, len(v.cells))
 		if c.View == subView {
-			UtilRemoveAt(v.cells, i)
+			zslice.RemoveAt(&v.cells, i)
+			// fmt.Println("detach2:", c.View.GetObjectName(), len(v.cells))
 			break
 		}
 	}
 }
 
 func (v *ContainerView) drawIfExposed() {
+	// fmt.Println("CoV drawIf:", v.GetObjectName())
 	v.CustomView.drawIfExposed()
 	for _, c := range v.cells {
-		et, _ := c.View.(ExposableType)
-		if et != nil {
+		et, got := c.View.(ExposableType)
+		// fmt.Println("CoV drawIf:", c.View.GetObjectName(), got)
+		if got {
 			et.drawIfExposed()
 		}
 	}

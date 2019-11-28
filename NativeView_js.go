@@ -6,15 +6,29 @@ import (
 )
 
 type NativeView struct {
-	Element js.Value
-	View    View
+	Element   js.Value
+	View      View
+	presented bool
 }
 
 func (v *NativeView) Parent() *NativeView {
-	return nil
+	e := v.get("parentElement")
+	if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
+		return nil
+	}
+	//	fmt.Println("ParentElement:", v.GetObjectName(), e)
+	n := &NativeView{}
+	n.Element = e
+	n.View = v
+	return n
 }
 
 func (v *NativeView) GetNative() *NativeView {
+	return v
+}
+
+func (v *NativeView) Rect(rect Rect) View {
+	setElementRect(v.Element, rect)
 	return v
 }
 
@@ -38,11 +52,6 @@ func (v *NativeView) GetCalculatedSize(total Size) Size {
 	return Size{10, 10}
 }
 
-func (v *NativeView) Rect(rect Rect) View {
-	setElementRect(v.Element, rect)
-	return v
-}
-
 func (v *NativeView) GetLocalRect() Rect {
 	var w, h float64
 	style := v.style()
@@ -53,6 +62,7 @@ func (v *NativeView) GetLocalRect() Rect {
 		w = parseCoord(sw)
 	} else {
 		println("parse empty Coord: " + v.GetObjectName())
+		panic("parse empty Coord")
 	}
 
 	return RectMake(0, 0, w, h)
@@ -166,6 +176,7 @@ func (v *NativeView) Focus(focus bool) View {
 }
 
 func (v *NativeView) CanFocus(can bool) View {
+	v.set("tabindex", "0")
 	return v
 }
 
@@ -197,6 +208,7 @@ func (v *NativeView) GetFont() *Font {
 	name := style.Get("font-family").String()
 	ss := style.Get("font-size")
 	size := parseCoord(ss)
+
 	return FontNew(name, size, FontStyleNormal)
 }
 
@@ -220,4 +232,14 @@ func (v *NativeView) AddChild(child View, index int) {
 }
 
 func (v *NativeView) RemoveChild(child View) {
+	o, _ := child.(NativeViewOwner)
+	if o == nil {
+		panic("NativeView AddChild child not native")
+	}
+	v.call("removeChild", o.GetNative().Element)
+}
+
+func (v *NativeView) SetDropShadow(deltaSize Size, blur float32, color Color) {
+	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(deltaSize.W), int(deltaSize.H), int(blur), makeRGBAString(color))
+	v.style().Set("boxShadow", str)
 }

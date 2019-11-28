@@ -1,6 +1,8 @@
 package zgo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 //  Created by Tor Langballe on /14/12/17.
 
@@ -10,7 +12,7 @@ type Button struct {
 
 func ButtonNew(title, colorName string, size Size, insets Size) *Button {
 	b := &Button{}
-	b.ShapeView.init(ShapeViewTypeNone, size)
+	b.ShapeView.init(ShapeViewTypeNone, size, title)
 	if insets.IsNull() {
 		insets = Size{6, 13}
 	}
@@ -19,11 +21,11 @@ func ButtonNew(title, colorName string, size Size, insets Size) *Button {
 	b.Color(Color{})
 	b.SetNamedColor(colorName, insets)
 	b.TextInfo.Text = title
-	b.TextInfo.Font = FontNice(18, FontStyleNormal)
-	b.TextInfo.Color = ColorWhite
-	//    b.FillBox = true
+	b.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
+	b.TextInfo.Color = ColorBlack //White
 	b.ImageMargin = Size{}
 	b.GetImage()
+	b.TextXMargin = 16
 	return b
 }
 

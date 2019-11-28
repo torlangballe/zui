@@ -116,27 +116,25 @@ func (i *Image) Cropped(crop Rect, copy bool) *Image {
 	return ni
 }
 
-func (i *Image) SaveToPNG(file FilePath) *Error {
+func (i *Image) SaveToPNG(file FilePath) error {
 	out, err := os.Create(file.String())
 	if err != nil {
-		zlog.Error(err, "os.create")
-		return ErrorFromErr(err)
+		return zlog.Error(err, "os.create")
 	}
 	defer out.Close()
 	err = png.Encode(out, i.goimage)
 	if err != nil {
-		zlog.Error(err, "encode")
-		return ErrorFromErr(err)
+		return zlog.Error(err, "encode")
 	}
 	return nil
 }
 
-func (i *Image) PNGData() ([]byte, *Error) {
+func (i *Image) PNGData() ([]byte, error) {
 	out := bytes.NewBuffer([]byte{})
 	err := png.Encode(out, i.goimage)
 	if err != nil {
-		zlog.Error(err, "encode")
-		return []byte{}, ErrorFromErr(err)
+		err = zlog.Error(err, "encode")
+		return []byte{}, err
 	}
 	return out.Bytes(), nil
 }

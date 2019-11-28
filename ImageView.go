@@ -9,7 +9,7 @@ type ImageView struct {
 	alignment Alignment
 }
 
-func ImageViewFromPath(path string, minSize Size) *ImageView {
+func ImageViewNew(path string, minSize Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.init(v, path)
 	v.CustomView.MinSize(minSize)
@@ -29,13 +29,15 @@ func (v *ImageView) GetImage() *Image {
 }
 
 func (v *ImageView) GetCalculatedSize(total Size) Size {
-	s := Size{0, 0}
+	var s Size
 	if v.image != nil {
-		s.Maximize(v.image.Size())
+		s = v.image.Size()
 	}
-	s.Maximize(v.maxSize)
+	if !v.maxSize.IsNull() {
+		s.Minimize(v.maxSize)
+	}
 	if !v.minSize.IsNull() {
-		s.Minimize(v.minSize)
+		s.Maximize(v.minSize)
 	}
 	return s
 }
@@ -56,7 +58,7 @@ func (v *ImageView) Alignment(a Alignment) *ImageView {
 }
 
 func ImageViewFromImage(image *Image) *ImageView {
-	v := ImageViewFromPath("", Size{})
+	v := ImageViewNew("", Size{})
 	v.SetImage(image, "", nil)
 
 	return v
@@ -66,11 +68,9 @@ func (v *ImageView) SetImage(image *Image, path string, got func()) {
 	v.exposed = false
 	if image != nil {
 		v.image = image
-		v.ObjectName(image.path)
 		v.Expose()
 		got()
 	} else {
-		v.ObjectName(path)
 		v.image = ImageFromPath(path, func() {
 			v.Expose()
 			if got != nil {

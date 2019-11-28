@@ -21,12 +21,12 @@ func CountDownLatchNew(count int) CountDownLatch {
 	return cdl
 }
 
-func (cdl CountDownLatch) Wait(timeoutSecs float64) *Error {
-	var err *Error
+func (cdl CountDownLatch) Wait(timeoutSecs float64) error {
+	var err error
 	timer := time.NewTimer(ztime.SecondsDur(timeoutSecs))
 	go func() {
 		<-timer.C
-		err = ErrorNew("countdownlatch timeout", 0, "")
+		err = ErrorNew("countdownlatch timeout")
 		cdl.Done()
 	}()
 	cdl.WaitGroup.Wait()

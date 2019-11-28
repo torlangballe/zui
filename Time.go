@@ -46,7 +46,7 @@ func TimeFromDate(year int, month TimeMonth, day, hour, min, second, nano int, t
 }
 
 // Converts from ISO8601Z with msecs if contains '.'
-func TimeFromIsoStr(isoStr string) (Time, *Error) {
+func TimeFromIsoStr(isoStr string) (Time, error) {
 	format := TimeIsoFormat
 	if strings.Contains(isoStr, ".") {
 		format = TimeIsoFormatWithMSecs
@@ -54,12 +54,12 @@ func TimeFromIsoStr(isoStr string) (Time, *Error) {
 	return FromFormat(format, isoStr, "", nil)
 }
 
-func FromFormat(format, timestring, locale string, timezone *TimeZone) (Time, *Error) {
+func FromFormat(format, timestring, locale string, timezone *TimeZone) (Time, error) {
 	if timezone == nil {
 		timezone, _ = TimeZoneNew("UTC")
 	}
 	t, err := time.Parse(format, timestring)
-	return Time{Time: t}, ErrorFromErr(err)
+	return Time{Time: t}, err
 }
 
 func (t Time) GetGregorianParts(useAm bool, timezone *TimeZone) GregorianParts {

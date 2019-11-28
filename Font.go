@@ -10,8 +10,8 @@ var scale = 1.0
 
 const (
 	FontStyleNormal FontStyle = 0
-	FontStyleBold             = 1
-	FontStyleItalic           = 2
+	FontStyleBold   FontStyle = 1
+	FontStyleItalic FontStyle = 2
 )
 
 type Font struct {
@@ -19,6 +19,9 @@ type Font struct {
 	Style FontStyle `json:"style"`
 	Size  float64   `json:"size"`
 }
+
+// DefaultSize This is used
+var FontDefaultSize = 16.0
 
 func FontNew(name string, size float64, style FontStyle) *Font {
 	return &Font{Name: name, Size: size * scale, Style: style}

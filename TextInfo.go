@@ -45,7 +45,7 @@ func TextInfoNew() *TextInfo {
 	t.Wrap = TextInfoWrapWord
 	t.Color = ColorBlack
 	t.Alignment = AlignmentCenter
-	t.Font = FontNice(18, FontStyleNormal)
+	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	t.StrokeWidth = 1
 	return t
 }

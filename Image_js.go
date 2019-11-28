@@ -14,6 +14,12 @@ type imageBase struct {
 }
 
 func ImageFromPath(path string, got func()) *Image {
+	if path == "" {
+		if got != nil {
+			got()
+		}
+		return nil
+	}
 	i := Image{}
 	i.load(path, func() {
 		i.loading = false
@@ -25,6 +31,9 @@ func ImageFromPath(path string, got func()) *Image {
 }
 
 func (i *Image) load(path string, done func()) {
+	if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
+		path = "www/images/" + path
+	}
 	i.path = path
 	i.loading = true
 	i.scale = imageGetScaleFromPath(path)
@@ -40,9 +49,6 @@ func (i *Image) load(path string, done func()) {
 		return nil
 	}))
 
-	if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
-		path = "www/images/" + path
-	}
 	i.imageJS.Set("src", path)
 }
 

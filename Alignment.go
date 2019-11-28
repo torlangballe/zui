@@ -1,6 +1,9 @@
 package zgo
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 type Alignment uint64
 
@@ -33,6 +36,26 @@ const (
 	AlignmentVertical   = AlignmentTop | AlignmentVertCenter | AlignmentBottom | AlignmentVertExpand | AlignmentVertShrink | AlignmentVertOut
 	AlignmentHorizontal = AlignmentLeft | AlignmentHorCenter | AlignmentRight | AlignmentHorExpand | AlignmentHorShrink | AlignmentHorOut
 )
+
+var alignmentNames = map[string]Alignment{
+	"none":                     AlignmentNone,
+	"left":                     AlignmentLeft,
+	"horCenter":                AlignmentHorCenter,
+	"right":                    AlignmentRight,
+	"top":                      AlignmentTop,
+	"vertCenter":               AlignmentVertCenter,
+	"bottom":                   AlignmentBottom,
+	"horExpand":                AlignmentHorExpand,
+	"vertExpand":               AlignmentVertExpand,
+	"horShrink":                AlignmentHorShrink,
+	"vertShrink":               AlignmentVertShrink,
+	"horOut":                   AlignmentHorOut,
+	"vertOut":                  AlignmentVertOut,
+	"nonProp":                  AlignmentNonProp,
+	"horJustify":               AlignmentHorJustify,
+	"marginIsOffset":           AlignmentMarginIsOffset,
+	"scaleToFitProportionally": AlignmentScaleToFitProportionally,
+}
 
 func AlignmentFromVector(fromVector Pos) Alignment {
 	//        a.init(rawValue rawFromVector(fromVector))
@@ -73,50 +96,35 @@ func (a Alignment) Only(vertical bool) Alignment {
 }
 
 func (a Alignment) String() string {
-	var parts []string
-	if a&AlignmentLeft != 0 {
-		parts = append(parts, "left")
+	var array []string
+
+	center := (a&AlignmentCenter == AlignmentCenter)
+	if center {
+		array = append(array, "center")
 	}
-	if a&AlignmentHorCenter != 0 {
-		parts = append(parts, "horcenter")
+	for k, v := range alignmentNames {
+		if center && v&AlignmentCenter != 0 {
+			continue
+		}
+		if a&v != 0 {
+			array = append(array, k)
+		}
 	}
-	if a&AlignmentRight != 0 {
-		parts = append(parts, "right")
+	sort.Strings(array)
+
+	return strings.Join(array, "|")
+}
+
+func AlignmentFromString(str string) Alignment {
+	var a Alignment
+	for _, s := range strings.Split(str, "|") {
+		if s == "center" {
+			a |= AlignmentCenter
+		} else {
+			a |= alignmentNames[s]
+		}
 	}
-	if a&AlignmentTop != 0 {
-		parts = append(parts, "top")
-	}
-	if a&AlignmentVertCenter != 0 {
-		parts = append(parts, "vertcenter")
-	}
-	if a&AlignmentBottom != 0 {
-		parts = append(parts, "bottom")
-	}
-	if a&AlignmentHorExpand != 0 {
-		parts = append(parts, "horexpand")
-	}
-	if a&AlignmentVertExpand != 0 {
-		parts = append(parts, "vertexpand")
-	}
-	if a&AlignmentHorShrink != 0 {
-		parts = append(parts, "horshrink")
-	}
-	if a&AlignmentVertShrink != 0 {
-		parts = append(parts, "vertshrink")
-	}
-	if a&AlignmentHorOut != 0 {
-		parts = append(parts, "horout")
-	}
-	if a&AlignmentVertOut != 0 {
-		parts = append(parts, "vertout")
-	}
-	if a&AlignmentNonProp != 0 {
-		parts = append(parts, "nonprop")
-	}
-	if a&AlignmentHorJustify != 0 {
-		parts = append(parts, "horjustify")
-	}
-	return strings.Join(parts, " ")
+	return a
 }
 
 func (a Alignment) UnionWith(b Alignment) Alignment {
@@ -130,38 +138,7 @@ func (a Alignment) AndWith(b Alignment) Alignment {
 func stringToRaw(str string) uint64 {
 	var a = Alignment(0)
 	for _, s := range strings.Split(str, " ") {
-		switch s {
-		case "left":
-			a = a | AlignmentLeft
-		case "horcenter":
-			a = a | AlignmentHorCenter
-		case "right":
-			a = a | AlignmentRight
-		case "top":
-			a = a | AlignmentTop
-		case "vertcenter":
-			a = a | AlignmentVertCenter
-		case "bottom":
-			a = a | AlignmentBottom
-		case "horexpand":
-			a = a | AlignmentHorExpand
-		case "vertexpand":
-			a = a | AlignmentVertExpand
-		case "horshrink":
-			a = a | AlignmentHorShrink
-		case "vertshrink":
-			a = a | AlignmentVertShrink
-		case "horout":
-			a = a | AlignmentHorOut
-		case "vertout":
-			a = a | AlignmentVertOut
-		case "nonprop":
-			a = a | AlignmentNonProp
-		case "horjustify":
-			a = a | AlignmentHorJustify
-		default:
-			break
-		}
+		a |= alignmentNames[s]
 	}
 	return uint64(a)
 }

@@ -19,26 +19,26 @@ const (
 )
 
 func FoldersGetFileInFolderType(ftype FolderType, addPath string) FilePath {
-	dir := (addPath == "")
+	dir := false
 	if ftype == FoldersTemporaryUniqueFolder {
 		f := zfile.CreateTempFilePath(addPath)
-		fp := FilePathMake(f, dir, !dir)
+		fp := FilePathMake(f, dir)
 		return fp
 	}
 
 	switch ftype {
 	case FoldersAppSupport:
-		return FilePathMake("~/"+addPath, dir, !dir)
+		return FilePathMake("~/"+addPath, dir)
 
 	case FoldersCaches:
 		udir, _ := os.UserCacheDir()
-		return FilePathMake(udir+addPath, dir, !dir)
+		return FilePathMake(udir+addPath, dir)
 
 	case FoldersTemporary:
-		return FilePathMake(os.TempDir()+addPath, dir, !dir)
+		return FilePathMake(os.TempDir()+addPath, dir)
 
 	case FoldersPreferences:
-		return FilePathMake("~/"+addPath, dir, !dir)
+		return FilePathMake("~/"+addPath, dir)
 	}
 	return FilePath{}
 }

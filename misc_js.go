@@ -11,13 +11,17 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-func init() {
-}
+// https://github.com/siongui/godom
+// https://medium.zenika.com/go-1-11-webassembly-for-the-gophers-ae4bb8b1ee03
+
+var DocumentJS = js.Global().Get("document")
+var DocumentElementJS = DocumentJS.Get("documentElement")
+var WindowJS = js.Global().Get("window")
 
 type css js.Value
 
-// https://github.com/siongui/godom
-// https://medium.zenika.com/go-1-11-webassembly-for-the-gophers-ae4bb8b1ee03
+func init() {
+}
 
 func parseCoord(value js.Value) float64 {
 	var s string
@@ -38,10 +42,6 @@ func getCreatedTimeFromStatT(fstat *syscall.Stat_t) Time {
 	return TimeNull
 }
 
-var DocumentJS = js.Global().Get("document")
-var DocumentElementJS = DocumentJS.Get("documentElement")
-var WindowJS = js.Global().Get("window")
-
 func AddTextNode(e *NativeView, text string) {
 	textNode := DocumentJS.Call("createTextNode", text)
 	e.call("appendChild", textNode)
@@ -52,10 +52,37 @@ func addView(parent, child *NativeView) {
 	parent.call("appendChild", child.Element)
 }
 
+func jsAddEventListener(e js.Value, name string, handler func()) {
+	err := e.Call("addEventListener", name, js.FuncOf(func(js.Value, []js.Value) interface{} {
+		fmt.Println("event listener")
+		return nil
+	}))
+	fmt.Println("jsAddEventListener err:", err)
+}
+
 func NativeViewAddToRoot(v View) {
+	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
+	// 	return nil
+	// })
+
 	n := &NativeView{}
 	n.Element = DocumentElementJS
 	n.View = n
+	// s := WindowGetCurrent().GetRect().Size.DividedByD(2)
+
+	// o, _ := v.(NativeViewOwner)
+	// if o == nil {
+	// 	panic("NativeView AddChild child not native")
+	// }
+	// nv := o.GetNative()
+	// nv.style().Set("display", "inline-block")
+
+	// scale := fmt.Sprintf("scale(%f)", ScreenMain().Scale)
+	// n.style().Set("-webkit-transform", scale)
+
+	// trans := fmt.Sprintf("translate(-%f,%f)", s.W, 0.0)
+	// fmt.Println("TRANS:", trans)
+	// n.style().Set("-webkit-transform", trans)
 	n.AddChild(v, -1)
 }
 
@@ -95,11 +122,6 @@ func getFontStyle(font *Font) string {
 // }
 
 // Alert
-
-func (a *Alert) Show() {
-	alert := js.Global().Get("alert")
-	alert.Invoke("hello")
-}
 
 // Screen
 

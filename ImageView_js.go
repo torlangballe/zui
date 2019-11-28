@@ -23,7 +23,7 @@ package zgo
 // 	return Size{w, h}
 // }
 
-// func (v *ImageView) PressedHandler(handler func(pos Pos)) {
+// func (v *ImageView) PressedHandler(handler func()) {
 // 	v.pressed = handler
 // 	v.native.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 // 		if v.pressed != nil {

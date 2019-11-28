@@ -65,7 +65,7 @@ func ErrorOnRelease() {
 
 func DebugLoadSavedLog(prefix string) {
 	file := FoldersGetFileInFolderType(FoldersTemporary, prefix+"/zdebuglog.txt")
-	str, _ := StrLoadFromFile(file)
+	str, _ := file.LoadString()
 	storedLines = StrSplit(str, "\n")
 }
 

@@ -1,6 +1,8 @@
 package zgo
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +42,10 @@ type FilePath struct {
 
 //type FileUrl FilePath
 
-func FilePathMake(spath string, isDir, dirUnknow bool) FilePath {
+func FilePathMake(spath string, isDir bool) FilePath {
+	if isDir && ustr.LastLetter(spath) != "/" {
+		spath += "/"
+	}
 	return FilePath{spath}
 }
 
@@ -52,8 +57,8 @@ func (f FilePath) ParentPath() string {
 	return filepath.Dir(f.fpath)
 }
 
-func (f FilePath) OpenOutput(append bool) (*OutputStream, *Error) {
-	return nil, ErrorNew("couldn't make stream", 0, "")
+func (f FilePath) OpenOutput(append bool) (*OutputStream, error) {
+	return nil, ErrorNew("couldn't make stream")
 }
 
 func (f FilePath) String() string {
@@ -72,11 +77,11 @@ func (f FilePath) Exists() bool {
 	return zfile.DoesFileExist(f.fpath)
 }
 
-func (f FilePath) CreateFolder(withIntermediates bool) (err *Error) {
+func (f FilePath) CreateFolder(withIntermediates bool) (err error) {
 	if withIntermediates {
-		return ErrorFromErr(os.MkdirAll(f.fpath, 0775|os.ModeDir))
+		return os.MkdirAll(f.fpath, 0775|os.ModeDir)
 	}
-	return ErrorFromErr(os.Mkdir(f.fpath, 0775|os.ModeDir))
+	return os.Mkdir(f.fpath, 0775|os.ModeDir)
 }
 
 func (f FilePath) GetDisplayName() string {
@@ -99,9 +104,8 @@ func FilePathGetPathParts(path string) (string, string, string, string) { // pla
 	return dir, name, stub, ext
 }
 
-func (f *FilePath) SetModified(t Time) *Error {
-	err := zfile.SetModified(f.fpath, t.Time)
-	return ErrorFromErr(err)
+func (f *FilePath) SetModified(t Time) error {
+	return zfile.SetModified(f.fpath, t.Time)
 }
 
 func (f FilePath) GetFiles(options FilePathWalkOptions, wildcard string) map[FilePath]FileInfo {
@@ -109,7 +113,7 @@ func (f FilePath) GetFiles(options FilePathWalkOptions, wildcard string) map[Fil
 	return m
 }
 
-func (f FilePath) Walk(options FilePathWalkOptions, wildcard string, foreach func(FilePath, *FileInfo) bool) *Error {
+func (f FilePath) Walk(options FilePathWalkOptions, wildcard string, foreach func(FilePath, *FileInfo) bool) error {
 	err := filepath.Walk(f.fpath, func(fpath string, info os.FileInfo, err error) error {
 		if options&FilePathWalkGetInvisible == 0 && strings.HasPrefix(fpath, ".") {
 			return nil
@@ -118,27 +122,71 @@ func (f FilePath) Walk(options FilePathWalkOptions, wildcard string, foreach fun
 			return nil
 		}
 		var finfo FileInfo
-		f := FilePathMake(fpath, info.IsDir(), false)
+		f := FilePathMake(fpath, info.IsDir())
 		getInfoFromStat(&finfo, info)
 		foreach(f, &finfo)
 		return nil
 	})
 	if err != nil {
-		return ErrorFromErr(err)
+		return err
 	}
 
 	return nil
 }
 
-func (f FilePath) CopyTo(to FilePath) *Error {
+func (f FilePath) CopyTo(to FilePath) error {
+	sourceFileStat, err := os.Stat(f.fpath)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return ErrorNew("%s is not a regular file.", f)
+	}
+
+	source, err := os.Open(f.fpath)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	_, err = os.Stat(to.fpath)
+	if err == nil {
+		return fmt.Errorf("file %s already exists", to)
+	}
+
+	destination, err := os.Create(to.fpath)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	buf := make([]byte, 4096)
+	for {
+		n, err := source.Read(buf)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if n == 0 {
+			break
+		}
+
+		if _, err := destination.Write(buf[:n]); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (f FilePath) MoveTo(to FilePath) error {
 	return nil
 }
 
-func (f FilePath) MoveTo(to FilePath) *Error {
-	return nil
-}
-
-func (f FilePath) LinkTo(to FilePath) *Error {
+func (f FilePath) LinkTo(to FilePath) error {
 	return nil
 }
 
@@ -146,17 +194,17 @@ func (f FilePath) ResolveSimlinkOrSelf() FilePath {
 	return FilePath{}
 }
 
-func (f FilePath) Remove() *Error {
+func (f FilePath) Remove() error {
 	return nil
 }
 
-func (f FilePath) RemoveContents() (err *Error, errors []*Error) {
+func (f FilePath) RemoveContents() (err error, errors []error) {
 	return
 }
 
 func (f FilePath) AppendedPath(path string, isDir bool) FilePath {
 	str := filepath.Join(f.fpath, path)
-	fp := FilePathMake(str, false, true)
+	fp := FilePathMake(str, isDir)
 	return fp
 }
 
@@ -169,10 +217,9 @@ func getInfoFromStat(info *FileInfo, stat os.FileInfo) {
 	info.Created = getCreatedTimeFromStatT(fstat)
 }
 
-func (f FilePath) GetInfo() (info FileInfo, err *Error) {
-	stat, e := os.Stat(f.fpath)
-	if e != nil {
-		err = ErrorFromErr(e)
+func (f FilePath) GetInfo() (info FileInfo, err error) {
+	stat, err := os.Stat(f.fpath)
+	if err != nil {
 		return
 	}
 	getInfoFromStat(&info, stat)
@@ -201,4 +248,12 @@ func (f FilePath) GetDataSizeInBytes() int64 {
 		return -1
 	}
 	return info.DataSize
+}
+
+func (f FilePath) SaveString(str string) error {
+	return zfile.WriteStringToFile(str, f.fpath)
+}
+
+func (f FilePath) LoadString() (string, error) {
+	return zfile.ReadFileToString(f.fpath)
 }

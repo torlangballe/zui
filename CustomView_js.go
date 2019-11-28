@@ -4,50 +4,58 @@ import (
 	"syscall/js"
 )
 
-func (v *CustomView) PressedHandler(handler func(pos Pos)) {
-	v.pressed = handler
-	v.set("className", "widget")
-	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if v.pressed != nil {
-			v.pressed(Pos{})
-		}
-		return nil
-	}))
-}
-
-func CustomViewNew(name string) *CustomView {
-	c := &CustomView{}
-	c.init(c, name)
-	return c
-}
-
-// func (v *CustomView) Init(view View) {
-// 	v.Element = DocumentJS.Call("createElement", "div")
-// 	v.Element.Set("style", "position:absolute")
-// 	v.View = view
-// 	fmt.Printf("CustomView init %p\n", v)
-// }
-
 func (v *CustomView) init(view View, name string) {
 	v.Element = DocumentJS.Call("createElement", "div")
 	v.Element.Set("style", "position:absolute")
 	v.exposed = true
 	v.View = view
 	v.ObjectName(name)
+	v.Font(FontNice(FontDefaultSize, FontStyleNormal))
+}
+
+func (v *CustomView) PressedHandler(handler func()) {
+	v.pressed = handler
+	v.set("className", "widget")
+	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if v.pressed != nil {
+			v.pressed()
+		}
+		return nil
+	}))
+}
+
+func (v *CustomView) Rect(rect Rect) View {
+	v.NativeView.Rect(rect)
+	if !v.isSetup {
+		if v.canvas != nil {
+			s := v.GetLocalRect().Size
+			setElementRect(v.canvas.element, Rect{Size: s})
+			v.canvas.element.Set("width", s.W*2) // scale?
+			v.canvas.element.Set("height", s.H*2)
+			v.canvas.context.Call("scale", 2, 2)
+		}
+	}
+	v.isSetup = true
+	return v
+}
+
+func (v *CustomView) makeCanvas() {
+	v.canvas = CanvasNew()
+	v.call("appendChild", v.canvas.element)
+	// set z index!!
 }
 
 func (v *CustomView) drawIfExposed() {
-	r := v.GetLocalRect()
-	if v.exposed && v.draw != nil && !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
-		//		println("CV drawIfExposed: " + v.GetObjectName())
-		canvas := CanvasNew()
-		canvas.SetRect(r)
-		v.exposeTimer.Stop()
-		v.draw(r, canvas, v.View)
-		url := canvas.element.Call("toDataURL").String()
-		v.exposed = false
-		v.style().Set("backgroundImage", "url("+url+")")
-		v.style().Set("background-repeat", "no-repeat")
-		//		println("CV drawIfExposed end: " + v.GetObjectName() + " " + time.Since(start).String())
+	// fmt.Println("CV drawIfExposed", v.GetObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
+	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
+		r := v.GetLocalRect()
+		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
+			// println("CV drawIfExposed2:", v.GetObjectName())
+			v.exposeTimer.Stop()
+			v.canvas.ClearRect(Rect{})
+			v.draw(r, v.canvas, v.View)
+			v.exposed = false
+			//		println("CV drawIfExposed end: " + v.GetObjectName() + " " + time.Since(start).String())
+		}
 	}
 }

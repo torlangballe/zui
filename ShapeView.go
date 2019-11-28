@@ -43,14 +43,13 @@ type ShapeView struct {
 
 func ShapeViewNew(shapeType ShapeViewType, minSize Size) *ShapeView {
 	v := &ShapeView{}
-	v.init(shapeType, minSize)
+	v.init(shapeType, minSize, string(shapeType))
 	return v
 }
 
-func (v *ShapeView) init(shapeType ShapeViewType, minSize Size) {
-	v.CustomView.init(v, string(shapeType))
+func (v *ShapeView) init(shapeType ShapeViewType, minSize Size, name string) {
+	v.CustomView.init(v, name)
 	v.TextInfo = *TextInfoNew()
-	v.CustomView.MinSize(minSize)
 	v.Type = shapeType
 	v.ImageMargin = Size{4, 1}.TimesD(ScreenMain().SoftScale)
 	v.ImageOpacity = 1
@@ -70,6 +69,14 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize Size) {
 		v.Ratio = 0.3
 	}
 	v.DrawHandler(shapeViewDraw)
+	v.CustomView.MinSize(minSize)
+}
+
+// Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView Text() method being used
+func (v *ShapeView) Text(text string) View {
+	v.TextInfo.Text = text
+	v.Expose()
+	return v
 }
 
 func (v *ShapeView) GetImage() *Image {
@@ -84,12 +91,14 @@ func (v *ShapeView) GetCalculatedSize(total Size) Size {
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
 	}
+	s.Add(v.margin.Size.Negative())
 	if v.MaxWidth != 0.0 {
-		zmath.Float64Maximize(&s.W, v.MaxWidth)
+		zmath.Maximize(&s.W, v.MaxWidth)
 	}
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
+	s.MakeInteger()
 	return s
 }
 
@@ -102,7 +111,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 	}
 	if image == nil && spath != "" {
 		v.image = ImageFromPath(spath, func() {
-			//			println("sv image loaded: " + v.GetObjectName())
+			// println("sv image loaded: " + spath + ": " + v.GetObjectName())
 			v.Expose()
 			if done != nil {
 				done()
@@ -115,6 +124,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 	path := PathNew()
 	v := view.(*ShapeView)
+	// fmt.Println("shapeViewDraw:", v.GetMinSize(), rect, view.GetObjectName())
 
 	switch v.Type {
 	case ShapeViewTypeStar:

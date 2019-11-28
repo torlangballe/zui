@@ -270,3 +270,27 @@ func ZIsAnyObjectReal(_ a:ZAnyObject)  bool {
 }
 
 */
+
+type BoolInd int
+
+const (
+	BoolTrue    BoolInd = 1
+	BoolFalse           = 0
+	BoolUnknown         = -1
+)
+
+func BoolIndFromBool(b bool) BoolInd {
+	if b {
+		return BoolTrue
+	}
+	return BoolFalse
+}
+
+func (b BoolInd) Value() bool {
+	return b == 1
+}
+
+func (b BoolInd) IsIndetermed() bool {
+	return b == -1
+}
+

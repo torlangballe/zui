@@ -9,19 +9,16 @@ type Label struct {
 	maxLines  int
 	alignment Alignment
 	Margin    Rect
-	pressed   func(pos Pos)
+	pressed   func()
 }
 
 func (v *Label) GetCalculatedSize(total Size) Size {
 	var o TextLayoutOwner
 	o = v
-	s := CalculateSize(o, total)
+	s := TextLayoutOwnerCalculateSize(o)
+	s.MakeInteger()
+	//	fmt.Println("label calcedsize:", v.GetText(), s)
 	return s
-}
-
-func (l *Label) TextAlignment(a Alignment) View {
-	l.alignment = a
-	return l
 }
 
 func (l *Label) GetTextAlignment() Alignment {

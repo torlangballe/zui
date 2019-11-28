@@ -3,7 +3,8 @@
 package zgo
 
 type NativeView struct {
-	View View
+	View      View
+	presented bool
 }
 
 func (v *NativeView) GetView() *NativeView {
@@ -125,4 +126,13 @@ func (v *NativeView) Text(text string) View {
 
 func (v *NativeView) GetText() string {
 	return ""
+}
+
+func (v *NativeView) AddChild(child View, index int) {
+}
+
+func (v *NativeView) RemoveChild(child View) {
+}
+
+func (v *NativeView) SetDropShadow(deltaSize Size, blur float32, color Color) {
 }

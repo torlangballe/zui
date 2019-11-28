@@ -1,6 +1,6 @@
 package zgo
 
-func NativeViewAddToRoot(n *NativeView) {
+func NativeViewAddToRoot(v View) {
 }
 
 // TextInfo
@@ -16,7 +16,7 @@ func CustomViewInit() *NativeView {
 
 // Alert
 
-func (a *Alert) Show() {
+func (a *Alert) Show(handle func(result AlertResult)) {
 }
 
 // Screen

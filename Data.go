@@ -6,7 +6,7 @@ type Data struct {
 	buffer []byte
 }
 
-func DataFromUrl(surl string, got func(data *Data, err *Error)) {
+func DataFromUrl(surl string, got func(data *Data, err error)) {
 
 }
 
@@ -34,10 +34,10 @@ func (d *Data) GetBase64() string {
 	return ""
 }
 
-func (d *Data) SaveToFile(file FilePath) *Error {
+func (d *Data) SaveToFile(file FilePath) error {
 	return nil
 }
 
-func LoadFromFile(file FilePath) *Error {
+func LoadFromFile(file FilePath) error {
 	return nil
 }

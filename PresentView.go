@@ -48,6 +48,7 @@ type PresentViewAttributes struct {
 	MakeFull      bool
 	PortraitOnly  bool
 	FadeToo       bool
+	DeleteOld     bool
 }
 
 var stack []PresentViewAttributes
@@ -61,27 +62,63 @@ func PresentViewAttributesNew() PresentViewAttributes {
 	return a
 }
 
-func PresentViewShow(n View, attributes PresentViewAttributes, deleteOld bool, done func()) {
+func presentViewCallReady(v View) {
+	o := v.(NativeViewOwner)
+	if o != nil {
+		nv := o.GetNative()
+		if nv.presented {
+			return
+		}
+		nv.presented = true
+	}
+	r, got := v.(ReadyToShowType)
+	if got {
+		r.ReadyToShow()
+	}
+	ct, got := v.(ContainerType)
+	if got {
+		for _, c := range ct.GetChildren() {
+			presentViewCallReady(c)
+		}
+	}
+}
+
+var presentViewPresenting = true
+
+func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
+	presentViewPresenting = true
 	mainRect := WindowGetCurrent().GetRect()
-	if attributes.MakeFull {
-		n.Rect(mainRect)
-	} else {
-		size := n.GetCalculatedSize(mainRect.Size)
-		r := mainRect.Align(size, AlignmentCenter, Size{}, Size{})
-		n.Rect(r)
-	}
-	// cvt, _ := n.(ContainerViewType)
-	// if cvt != nil {
-	// 	cvt.ArrangeChildren(nil)
-	// }
-	NativeViewAddToRoot(n)
-	et, _ := n.(ExposableType)
-	if et != nil {
-		et.drawIfExposed()
-	}
-	if done != nil {
-		done()
-	}
+	presentViewCallReady(n)
+	ct := n.(ContainerType)
+	ct.WhenLoaded(func() {
+		if attributes.MakeFull {
+			// fmt.Println("Present:", mainRect, presentViewPresenting)
+			n.Rect(mainRect)
+		} else {
+			size := n.GetCalculatedSize(mainRect.Size)
+			r := mainRect.Align(size, AlignmentCenter, Size{}, Size{})
+			n.Rect(r)
+			n.BGColor(ColorNewGray(0.8, 1))
+			n.CornerRadius(10)
+			no := n.(NativeViewOwner)
+			if no != nil {
+				no.GetNative().SetDropShadow(Size{4, 4}, 8, ColorBlack)
+			}
+		}
+		// cvt, _ := n.(ContainerViewType)
+		// if cvt != nil {
+		// 	cvt.ArrangeChildren(nil)
+		// }
+		NativeViewAddToRoot(n)
+		presentViewPresenting = false
+		et, _ := n.(ExposableType)
+		if et != nil {
+			et.drawIfExposed()
+		}
+		if done != nil {
+			done()
+		}
+	})
 }
 
 // func poptop(s  inout Attributes)  View? {

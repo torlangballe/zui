@@ -1,107 +1,177 @@
 package zgo
 
 import (
-	"fmt"
 	"math"
-	"time"
+
+	"github.com/torlangballe/zutil/zfloat"
+
+	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zmath"
 )
 
 //  Created by Tor Langballe on /20/10/15.
 
 type StackView struct {
 	ContainerView
-	spacing  float64
-	Vertical bool
+	spacing        float64
+	Vertical       bool
+	weightMinSizes []float64
 }
 
-func StackViewNew(vertical bool, alignment Alignment, elements ...interface{}) *StackView {
+func StackViewNew(vertical bool, alignment Alignment, name string, elements ...interface{}) *StackView {
 	s := &StackView{}
-	s.ContainerView.init(s, "stack")
+	s.ContainerView.init(s, name)
 	s.AddElements(alignment, elements...)
 	s.Vertical = vertical
 	s.spacing = 6
 	return s
 }
 
-func (s *StackView) Spacing(spacing float64) *StackView {
-	s.spacing = spacing
-	return s
+func (v *StackView) Spacing(spacing float64) *StackView {
+	v.spacing = spacing
+	return v
 }
 
-func (s *StackView) GetSpacing() float64 {
-	return s.spacing
+func (v *StackView) GetSpacing() float64 {
+	return v.spacing
 }
 
-func (s *StackView) getCellFitSizeInTotal(total Size, cell ContainerViewCell) Size {
-	var tot = total.Minus(cell.Margin)
-	if cell.Alignment&AlignmentHorCenter != 0 {
-		tot.W -= cell.Margin.W
-	}
-	if cell.Alignment&AlignmentVertCenter != 0 {
-		tot.H -= cell.Margin.H
-	}
-	return tot
-}
-
-func (s *StackView) GetCalculatedSize(total Size) Size {
-	var size = s.nettoCalculateSize(total)
-	size.Maximize(s.GetMinSize())
-	return size
-}
-
-func (s *StackView) nettoCalculateSize(total Size) Size { // can force size calc without needed result
-	var size = Size{}
-	for _, c1 := range s.cells {
-		if !c1.Collapsed && !c1.Free {
-			tot := s.getCellFitSizeInTotal(total, c1)
-			fs := c1.View.GetCalculatedSize(tot)
-			//                var fs = zConvertViewSizeThatFitstToSize (c1.view!, sizeIn tot)
-			var m = c1.Margin
-			if c1.Alignment&AlignmentMarginIsOffset != 0 {
-				m = Size{0, 0}
+func (v *StackView) calcWeightMins() {
+	v.weightMinSizes = make([]float64, len(v.cells), len(v.cells))
+	var weights []float64
+	sizes := make([]float64, len(v.cells), len(v.cells))
+	minWeight := -1.0
+	for i, c := range v.cells {
+		if !c.Collapsed && !c.Free && c.Weight > 0 {
+			if minWeight != -1 && c.Weight < minWeight {
+				minWeight = c.Weight
 			}
-			*size.VerticeP(s.Vertical) += fs.Vertice(s.Vertical) + m.Vertice(s.Vertical)
-			*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), fs.Vertice(!s.Vertical)-m.Vertice(!s.Vertical))
-			*size.VerticeP(s.Vertical) += s.spacing
+			zfloat.AddIntFloat64ToSet(c.Weight, &weights)
+			sizes[i] = v.getCellSize(c, nil).Vertice(v.Vertical)
 		}
 	}
-	size.Subtract(s.margin.Size)
-	if len(s.cells) > 0 {
-		*size.VerticeP(s.Vertical) -= s.spacing
+	for _, w := range weights {
+		max := 0.0
+		for i, c := range v.cells {
+			if !c.Collapsed && !c.Free && c.Weight == w {
+				zmath.Maximize(&max, sizes[i])
+			}
+		}
+		for i, c := range v.cells {
+			if !c.Collapsed && !c.Free && c.Weight == w {
+				v.weightMinSizes[i] = max
+			}
+		}
 	}
-	*size.VerticeP(!s.Vertical) = math.Max(size.Vertice(!s.Vertical), s.GetMinSize().Vertice(!s.Vertical))
+}
+
+func (v *StackView) GetCalculatedSize(total Size) Size {
+	v.calcWeightMins()
+	// for i, c := range v.cells {
+	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
+	// 		fmt.Println("weight size:", c.View.GetObjectName(), v.weightMinSizes[i])
+	// 	}
+	// }
+	var size = Size{}
+	for i, c := range v.cells {
+		if !c.Collapsed && !c.Free {
+			fs := v.getCellSize(c, &i)
+			m := calcMarginAdd(c)
+			//			fmt.Println("calcsize:", c.View.GetObjectName(), fs, m)
+			*size.VerticeP(v.Vertical) += fs.Vertice(v.Vertical)
+			//			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)-m.Vertice(!v.Vertical))
+			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
+			*size.VerticeP(v.Vertical) += v.spacing
+		}
+	}
+	size.Subtract(v.margin.Size)
+	if len(v.cells) > 0 {
+		*size.VerticeP(v.Vertical) -= v.spacing
+	}
+	zmath.Maximize(size.VerticeP(!v.Vertical), v.GetMinSize().Vertice(!v.Vertical))
+	size.Maximize(v.GetMinSize())
 	return size
 }
 
-func (s *StackView) handleAlign(size Size, inRect Rect, a Alignment, cell ContainerViewCell) Rect {
-	var vr = inRect.Align(size, a, cell.Margin, cell.MaxSize)
-	// if cell.handleTransition != nil {
-	//     let r := cell.handleTransition!(size, ZScreen.Orientation(), inRect, vr) {
-	//         vr = r
-	//     }
+func (v *StackView) handleAlign(size Size, inRect Rect, a Alignment, cell ContainerViewCell) (Rect, Rect) {
+	max := cell.MaxSize
+	// if max.W != 0 {
+	// 	zmath.Maximize(&max.W, size.W)
 	// }
-	return vr
+	// if max.H != 0 {
+	// 	zmath.Maximize(&max.H, size.H)
+	// }
+	var box = inRect.Align(size, a, Size{}, max)
+	var vr Rect
+	if cell.Alignment.Only(v.Vertical)&AlignmentShrink != 0 {
+		s := cell.View.GetCalculatedSize(inRect.Size)
+		vr = box.Align(s, cell.Alignment, cell.Margin, max)
+	} else {
+		vr = box.Expanded(cell.Margin.Negative())
+	}
+	// fmt.Println("handleAlign:", box, cell.View.GetObjectName(), inRect, size, a, max, vr, cell.Margin)
+	return box, vr
 }
 
 // Function for setting better focus on Android, due to bug with ScrollViews.
 // Does nothing elsewhere
-func (s *StackView) ForceHorizontalFocusNavigation() {
+func (v *StackView) ForceHorizontalFocusNavigation() {
 }
 
-func (v *StackView) Rect(rect Rect) View {
-	v.CustomView.Rect(rect)
-	v.ArrangeChildren(nil)
-	return v
-}
+// func (v *StackView) Rect(rect Rect) View {
+// 	v.CustomView.Rect(rect)
+// 	v.ArrangeChildren(nil)
+// 	return v
+// }
 
-func addDiff(size *Size, vertical bool, diff *float64, count *int) {
-	*(*size).VerticeP(vertical) += *diff / float64(*count)
-}
-
-func (s *StackView) ArrangeChildren(onlyChild *View) {
-	for s.isLoading() {
-		time.Sleep(time.Millisecond * 2)
+func addDiff(size *Size, maxSize float64, vertical bool, diff *float64, count *int) {
+	d := math.Floor(*diff / float64(*count))
+	if maxSize != 0 {
+		zmath.Minimize(&d, math.Max(maxSize-size.W, 0))
+		*diff -= d
+		(*count)--
 	}
+	// fmt.Println("addDiff:", size.W, d, maxSize)
+	*(*size).VerticeP(vertical) += d
+}
+
+func calcMarginAdd(c ContainerViewCell) Size {
+	var m = c.Margin
+	if c.Alignment&AlignmentMarginIsOffset != 0 {
+		m = Size{0, 0}
+	} else {
+		if c.Alignment&AlignmentHorCenter != 0 {
+			m.W *= 2
+		}
+		if c.Alignment&AlignmentVertCenter != 0 {
+			m.H *= 2
+		}
+	}
+	return m
+}
+
+func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) Size {
+	//	tot := v.getCellFitSizeInTotal(total, c)
+	var size = c.View.GetCalculatedSize(Size{})
+	// fmt.Println("get cell size:", c.View.GetObjectName(), size.W)
+	m := calcMarginAdd(c)
+	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
+	if c.MinSize.W != 0 {
+		zmath.Maximize(&size.W, c.MinSize.W)
+	}
+	if c.MinSize.H != 0 {
+		zmath.Maximize(&size.H, c.MinSize.H)
+	}
+	if weightIndex != nil {
+		len := v.weightMinSizes[*weightIndex]
+		if len != 0 {
+			*size.VerticeP(v.Vertical) = len
+		}
+	}
+	return size
+}
+
+func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var incs = 0
 	var decs = 0
 	var sizes = map[View]Size{}
@@ -111,23 +181,28 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = AlignmentRight
 	var amid = AlignmentHorCenter | AlignmentMarginIsOffset
 
-	var r = s.GetRect()
+	// fmt.Println("Stack ArrangeChildren:", v.GetObjectName())
+	var r = v.GetRect()
 	r.Pos = Pos{} // translate to 0,0 cause children are in parent
 
-	if s.layoutHandler != nil {
-		s.layoutHandler.HandleBeforeLayout()
+	if v.layoutHandler != nil {
+		v.layoutHandler.HandleBeforeLayout()
 	}
-	if s.Vertical {
+	if v.Vertical {
 		ashrink = AlignmentVertShrink
 		aexpand = AlignmentVertExpand
 		aless = AlignmentTop
 		amore = AlignmentBottom
 		amid = AlignmentVertCenter
 	}
-	for _, c2 := range s.cells {
+	for _, c2 := range v.cells {
+		if c2.Alignment&AlignmentHorizontal == 0 || c2.Alignment&AlignmentVertical == 0 {
+			zlog.Error(nil, "\n\nStack Align: No vertical or horizontal component:", c2.View.GetObjectName(), c2.Alignment, "\n\n")
+			return
+		}
 		if !c2.Free {
 			if c2.Collapsed {
-				s.RemoveChild(c2.View)
+				v.RemoveChild(c2.View)
 			} else {
 				if c2.Alignment&ashrink != 0 {
 					decs++
@@ -138,61 +213,65 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			}
 		}
 		cv, got := c2.View.(*ContainerView)
-		if got && s.layoutHandler != nil {
+		if got && v.layoutHandler != nil {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
 	}
-	r.Add(s.margin)
-	for _, c1 := range s.cells {
+	r.Add(v.margin)
+	for _, c1 := range v.cells {
 		if c1.Free {
-			s.arrangeChild(c1, r)
+			v.arrangeChild(c1, r)
 		}
 	}
-	cn := r.Center().Vertice(s.Vertical)
-	var cs = s.GetCalculatedSize(r.Size).Vertice(s.Vertical)
-	cs += s.margin.Size.Vertice(s.Vertical) // subtracts Margin, since we've already indented for that
-	diff := r.Size.Vertice(s.Vertical) - cs
+	cn := r.Center().Vertice(v.Vertical)
+	var cs = v.GetCalculatedSize(Size{}).Vertice(v.Vertical)
+	cs += v.margin.Size.Vertice(v.Vertical)
+
+	diff := r.Size.Vertice(v.Vertical) - cs
 	var lastNoFreeIndex = -1
-	for i, c3 := range s.cells {
-		if !c3.Collapsed && !c3.Free {
-			lastNoFreeIndex = i
-			tot := s.getCellFitSizeInTotal(r.Size, c3)
-			var size = c3.View.GetCalculatedSize(tot)
-			fmt.Println("size add:", c3.View, size)
-			if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
-				addDiff(&size, s.Vertical, &diff, &decs)
-			} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-				addDiff(&size, s.Vertical, &diff, &incs)
+	for _, useMaxSize := range []bool{true, false} {
+		for i, c3 := range v.cells {
+			if !c3.Collapsed && !c3.Free && (c3.MaxSize.W != 0) == useMaxSize {
+				lastNoFreeIndex = i
+				size := v.getCellSize(c3, &i)
+				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
+					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
+				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
+					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
+				}
+				//				fmt.Println("cellsize:", c3.MaxSize.W, c3.View.GetObjectName(), size, c3.Alignment)
+				sizes[c3.View] = size
 			}
-			sizes[c3.View] = size
 		}
 	}
 	var centerDim = 0.0
 	var firstCenter = true
 
-	for i, c4 := range s.cells {
+	// Not-centered children:
+	for i, c4 := range v.cells {
+		// fmt.Println("cell:", c4.View.GetObjectName(), c4.Alignment, c4.Collapsed, c4.Free)
 		if !c4.Collapsed && !c4.Free {
 			if (c4.Alignment & (amore | aless)) != 0 {
 				var a = c4.Alignment
 				if i != lastNoFreeIndex {
-					a = a.Subtracted(AlignmentExpand.Only(s.Vertical))
+					a = a.Subtracted(AlignmentExpand.Only(v.Vertical))
 				}
-				vr := s.handleAlign(sizes[c4.View], r, a, c4)
-				DebugPrint("cell2 ", i, c4.View.GetObjectName(), sizes[c4.View])
+				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.Rect(vr)
+					// fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.GetRect())
 				}
 				if c4.Alignment&aless != 0 {
-					m := math.Max(r.Min().Vertice(s.Vertical), vr.Max().Vertice(s.Vertical)+s.spacing)
-					if s.Vertical {
+					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
+					if v.Vertical {
 						r.SetMinY(m)
 					} else {
 						r.SetMinX(m)
 					}
 				}
 				if c4.Alignment&amore != 0 {
-					m := math.Min(r.Max().Vertice(s.Vertical), vr.Pos.Vertice(s.Vertical)-s.spacing)
-					if s.Vertical {
+					m := math.Min(r.Max().Vertice(v.Vertical), box.Pos.Vertice(v.Vertical)-v.spacing)
+					if v.Vertical {
 						r.SetMaxY(m)
 					} else {
 						r.SetMaxX(m)
@@ -205,32 +284,34 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 					//! (c4.view as? ZCustomView)?.HandleAfterLayout()
 				}
 			} else {
-				centerDim += sizes[c4.View].Vertice(s.Vertical)
+				centerDim += sizes[c4.View].Vertice(v.Vertical)
 				if !firstCenter {
-					centerDim += s.spacing
+					centerDim += v.spacing
 				}
 				firstCenter = false
 			}
 		}
 	}
-	if s.Vertical {
+	if v.Vertical {
 		r.SetMinY(math.Max(r.Min().Y, cn-centerDim/2))
 	} else {
 		r.SetMinX(math.Max(r.Min().X, cn-centerDim/2))
 	}
-	if s.Vertical {
+	if v.Vertical {
 		r.SetMaxY(math.Min(r.Max().Y, cn+centerDim/2))
 	} else {
 		r.SetMaxX(math.Min(r.Max().X, cn+centerDim/2))
 	}
-	for _, c5 := range s.cells {
+	// Centered children:
+	for _, c5 := range v.cells {
 		if !c5.Collapsed && c5.Alignment&amid != 0 && !c5.Free { // .reversed()
 			a := c5.Alignment.Subtracted(amid) | aless
-			vr := s.handleAlign(sizes[c5.View], r, a, c5)
+			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
+				// fmt.Println("cellmid:", c5.View.GetObjectName(), vr)
 				c5.View.Rect(vr)
 			}
-			*r.Pos.VerticeP(s.Vertical) = vr.Max().Vertice(s.Vertical) + s.spacing
+			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			cv, got := c5.View.(*ContainerView)
 			if got {
 				cv.ArrangeChildren(nil)
@@ -239,13 +320,14 @@ func (s *StackView) ArrangeChildren(onlyChild *View) {
 			}
 		}
 	}
+
 	//        HandleAfterLayout()
 }
 
-func StackRows(alignment Alignment, elements ...interface{}) *StackView {
-	return StackViewNew(true, alignment, elements...)
+func StackRows(alignment Alignment, name string, elements ...interface{}) *StackView {
+	return StackViewNew(true, alignment, name, elements...)
 }
 
-func StackColumns(alignment Alignment, elements ...interface{}) *StackView {
-	return StackViewNew(false, alignment, elements...)
+func StackColumns(alignment Alignment, name string, elements ...interface{}) *StackView {
+	return StackViewNew(false, alignment, name, elements...)
 }

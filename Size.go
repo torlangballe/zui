@@ -1,7 +1,12 @@
 package zgo
 
 import (
+	"fmt"
 	"math"
+	"strconv"
+
+	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type Size struct {
@@ -17,6 +22,11 @@ func SizeF(w, h float32) Size {
 // SizeI creates a Size from integer w and h
 func SizeI(w, h int) Size {
 	return Size{float64(w), float64(h)}
+}
+
+// SizeBoth uses a for W and H
+func SizeBoth(a float64) Size {
+	return Size{a, a}
 }
 
 // Pos converts a size to a Pos
@@ -55,6 +65,12 @@ func (s Size) Min() float64 {
 	return math.Min(s.W, s.H)
 }
 
+func (s Size) Maxed(a Size) Size {
+	w := math.Max(s.W, a.W)
+	h := math.Max(s.H, a.H)
+	return Size{w, h}
+}
+
 // EqualSided returns a Size where W and H are largest of the two
 func (s Size) EqualSided() Size {
 	m := s.Max()
@@ -84,6 +100,11 @@ func (s *Size) Add(a Size) {
 func (s *Size) MultiplyD(a float64) {
 	s.W *= a
 	s.H *= a
+}
+
+func (s *Size) DivideD(a float64) {
+	s.W /= a
+	s.H /= a
 }
 
 func (s *Size) MultiplyF(a float32) {
@@ -122,4 +143,32 @@ func (s Size) ScaledInto(in Size) Size {
 	scaled := s.TimesD(min)
 
 	return scaled
+}
+
+func (s *Size) MakeInteger() {
+	s.W = math.Ceil(s.W)
+	s.H = math.Ceil(s.H)
+}
+
+func (s Size) GetString() string { // we don't use String() since we're doing that as set methods in zui
+	return fmt.Sprintf("%gx%g", s.W, s.H)
+}
+
+func (s *Size) FromString(str string) bool { // we don't use String() since that's special in Go
+	var sw, sh string
+	if ustr.SplitN(str, "x", &sw, &sh) {
+		w, err := strconv.ParseFloat(sw, 64)
+		if err != nil {
+			zlog.Error(err, zlog.StackAdjust(1), "parse w", sw)
+			return false
+		}
+		h, err := strconv.ParseFloat(sh, 64)
+		if err != nil {
+			zlog.Error(err, zlog.StackAdjust(1), "parse h", sh)
+			return false
+		}
+		s.W = w
+		s.H = h
+	}
+	return true
 }

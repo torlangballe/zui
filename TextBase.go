@@ -34,21 +34,26 @@ type TextLayoutOwner interface {
 	MaxLines(max int) View
 }
 
-func CalculateSize(o TextLayoutOwner, total Size) Size {
+func TextLayoutOwnerCalculateSize(o TextLayoutOwner) Size {
+	return TextLayoutCalculateSize(o.GetTextAlignment(), o.GetFont(), o.GetText(), o.GetMaxLines(), o.GetMaxWidth())
+}
+
+func TextLayoutCalculateSize(alignment Alignment, font *Font, text string, maxLines int, maxWidth float64) Size {
 	var t TextInfo
-	t.Alignment = o.GetTextAlignment()
-	t.Text = o.GetText()
+	t.Alignment = alignment
+	t.Text = text
 	noWidth := false
-	if o.GetMaxWidth() != 0 {
+	if maxWidth != 0 {
 		noWidth = true
-		t.Rect = Rect{Size: Size{o.GetMaxWidth(), 99999}}
+		t.Rect = Rect{Size: Size{maxWidth, 99999}}
 	}
-	t.Font = o.GetFont()
-	if o.GetMaxLines() != 0 {
-		t.MaxLines = o.GetMaxLines()
+	t.Font = font
+	if maxLines != 0 {
+		t.MaxLines = maxLines
 	}
 	t.Wrap = TextInfoWrapWord
 	rect := t.GetBounds(noWidth)
+	// fmt.Println("TextLayoutCalculateSize:", rect, text, font.Size, font.Name)
 
 	rect.Size.W += 4
 	return rect.Size

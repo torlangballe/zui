@@ -10,9 +10,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/torlangballe/zutil/uinteger"
+	"github.com/torlangballe/zutil/zinteger"
 	"github.com/torlangballe/zutil/ustr"
-	"github.com/torlangballe/zutil/zfile"
 )
 
 //  Created by Tor Langballe on /23/9/14.
@@ -26,16 +25,6 @@ func StrRemovedFirst(s []string) []string {
 
 func StrFormat(format string, args ...interface{}) string {
 	return fmt.Sprintf(format, args)
-}
-
-func StrSaveToFile(str string, file FilePath) *Error {
-	err := zfile.WriteStringToFile(str, file.fpath)
-	return ErrorFromErr(err)
-}
-
-func StrLoadFromFile(file FilePath) (string, *Error) {
-	str, err := zfile.ReadFileToString(file.fpath)
-	return str, ErrorFromErr(err)
 }
 
 func StrFindFirstOfChars(str string, charset string) int {
@@ -133,7 +122,7 @@ func StrHasSuffixWithRest(str string, suffix string) (bool, string) {
 }
 
 func StrCommonPrefix(a, b string) string {
-	l := uinteger.IntMin(len(a), len(b))
+	l := zinteger.IntMin(len(a), len(b))
 	br := []rune(b)
 	for i, r := range a {
 		if r != br[i] || i >= l-1 {
@@ -302,7 +291,7 @@ func StrSplitCamelCase(str string) []string {
 	return out
 }
 func StrHashToU64(str string) uint64 {
-	return uinteger.HashTo64(str)
+	return zinteger.HashTo64(str)
 }
 
 func StrMakeHashTagWord(str string) string {

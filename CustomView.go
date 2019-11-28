@@ -2,8 +2,9 @@ package zgo
 
 type CustomView struct {
 	NativeView
+	canvas        *Canvas
 	minSize       Size
-	pressed       func(pos Pos)
+	pressed       func()
 	valueChanged  func(view View)
 	draw          func(rect Rect, canvas *Canvas, view View)
 	exposed       bool
@@ -11,6 +12,13 @@ type CustomView struct {
 	color         Color
 	IsHighlighted bool
 	exposeTimer   Timer
+	isSetup       bool
+}
+
+func CustomViewNew(name string) *CustomView {
+	c := &CustomView{}
+	c.init(c, name)
+	return c
 }
 
 func (v *CustomView) GetCalculatedSize(total Size) Size {
@@ -22,7 +30,10 @@ func (v *CustomView) Expose() {
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {
-	//	fmt.Println("exposeInSecs", v.GetObjectName())
+	if v.exposed || presentViewPresenting {
+		return
+	}
+	// fmt.Println("exposeInSecs", v.GetObjectName())
 	v.exposed = true
 	v.exposeTimer.Stop()
 	v.exposeTimer.Set(secs, true, func() {
@@ -34,7 +45,11 @@ func (v *CustomView) exposeInSecs(secs float64) {
 				return
 			}
 		}
-		v.drawIfExposed()
+		et, _ := v.View.(ExposableType)
+		if et != nil {
+			// fmt.Println("CV exposeInSecs draw", v.GetObjectName())
+			et.drawIfExposed()
+		}
 	})
 }
 
@@ -57,6 +72,7 @@ func (v *CustomView) ValueHandler(handler func(view View)) {
 }
 
 func (v *CustomView) DrawHandler(handler func(rect Rect, canvas *Canvas, view View)) {
+	v.makeCanvas()
 	v.draw = handler
 }
 
