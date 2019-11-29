@@ -6,7 +6,7 @@ import (
 	"math"
 	"path"
 
-	"github.com/torlangballe/zutil/zmath"
+	"github.com/torlangballe/zutil/zfloat"
 )
 
 type ShapeViewType string
@@ -93,7 +93,7 @@ func (v *ShapeView) GetCalculatedSize(total Size) Size {
 	}
 	s.Add(v.margin.Size.Negative())
 	if v.MaxWidth != 0.0 {
-		zmath.Maximize(&s.W, v.MaxWidth)
+		zfloat.Maximize(&s.W, v.MaxWidth)
 	}
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)

@@ -184,3 +184,28 @@ func GetTPositionInPosPath(path []Pos, t float64, close bool) Pos {
 func (p Pos) Copy() Pos {
 	return p
 }
+
+func PosFromAngleDeg(deg float64) Pos {
+	return Pos{math.Sin(zmath.DegToRad(deg)), -math.Cos(zmath.DegToRad(deg))}
+}
+
+func (p Pos) ToAngleDeg() float64 {
+	return zmath.RadToDeg(p.ArcTanToRad())
+}
+
+func PosLongLatToMeters(pos1 Pos, pos2 Pos) float64 {
+	R := 6371.0 // Radius of the earth in km
+	dLat := zmath.DegToRad(pos2.Y - pos1.Y)
+	dLon := zmath.DegToRad(pos2.X - pos1.X)
+	a := (math.Pow(math.Sin(dLat/2.0), 2.0) + math.Cos(zmath.DegToRad(pos1.Y))) * math.Cos(zmath.DegToRad(pos2.Y)) * math.Pow(math.Sin(dLon/2.0), 2.0)
+	c := 2.0 * float64(math.Asin(math.Sqrt(math.Abs(a))))
+	return c * R * 1000.0
+}
+
+func (pos Pos) ArcTanToRad() float64 {
+	var a = float64(math.Atan2(pos.Y, pos.X))
+	if a < 0 {
+		a += math.Pi * 2
+	}
+	return a
+}

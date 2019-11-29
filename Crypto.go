@@ -2,6 +2,7 @@ package zgo
 
 //  Created by Tor Langballe on 06/02/2019.
 
+/*
 import (
 	"crypto/hmac"
 	"crypto/md5"
@@ -44,3 +45,4 @@ func CryptoMD5ToHex(data *Data) string {
 func CryptoCrc32(crc uint32, bytes []byte) uint32 {
 	return crc32.Checksum(bytes, crc32q)
 }
+*/

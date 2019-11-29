@@ -1,6 +1,8 @@
 package zgo
 
 import (
+	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -283,10 +285,10 @@ func WordsGetDistance(meters float64, metric bool, langCode string, round bool) 
 		if d >= 1760 {
 			dtype = Mile
 			d /= 1760
-			distance = StrFormat("%.1lf", d)
+			distance = fmt.Sprintf("%.1lf", d)
 		} else {
 			dtype = Yard
-			d = MathFloor(d)
+			d = math.Floor(d)
 			distance = strconv.Itoa(int(d))
 		}
 	}
@@ -304,12 +306,12 @@ func WordsGetDistance(meters float64, metric bool, langCode string, round bool) 
 		word = WordsGetYard(true, langCode)
 	}
 	if dtype == Meter || dtype == Yard && round {
-		d = MathCeil(((MathCeil(d) + 9) / 10) * 10)
+		d = math.Ceil(((math.Ceil(d) + 9) / 10) * 10)
 		distance = strconv.Itoa(int(d))
 	} else if round && d > 50 {
-		distance = StrFormat("%d", int(d))
+		distance = fmt.Sprintf("%d", int(d))
 	} else {
-		distance = StrFormat("%.1lf", d)
+		distance = fmt.Sprintf("%.1lf", d)
 	}
 	return distance + " " + word
 }

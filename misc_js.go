@@ -120,23 +120,3 @@ func getFontStyle(font *Font) string {
 // 	fmt.Println("CALCD:", metrics.Get("width"), ti.Font.Name, ti.Font.Size)
 // 	return Size{metrics.Get("width").Float(), metrics.Get("height").Float()}
 // }
-
-// Alert
-
-// Screen
-
-func ScreenMain() Screen {
-	var m Screen
-
-	s := WindowJS.Get("screen")
-	w := s.Get("width").Float()
-	h := s.Get("height").Float()
-
-	dpr := WindowJS.Get("devicePixelRatio").Float()
-	m.Rect = RectMake(0, 0, w, h)
-	m.Scale = dpr
-	m.SoftScale = 1
-	m.UsableRect = m.Rect
-
-	return m
-}

@@ -46,7 +46,7 @@ func ColorNew(r, g, b, a float32) (c Color) {
 func ColorNewHSBA(h, s, b, a float32) (c Color) {
 	c.Valid = true
 
-	var i = MathFloor(float64(h * 6))
+	i, _ := math.Modf(float64(h * 6))
 	var f = h*6 - float32(i)
 	var p = b * (1 - s)
 	var q = b * (1 - f*s)

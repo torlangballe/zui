@@ -57,7 +57,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 			str += "Dark"
 			style = FontStyleBold
 		}
-		button.SetNamedColor(str, Size{11, 13})
+		button.SetImageName(str, Size{11, 13})
 		button.TextInfo.Font = FontNice(FontDefaultSize, style)
 	}
 }

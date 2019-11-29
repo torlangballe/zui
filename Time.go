@@ -1,6 +1,7 @@
 package zgo
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -192,7 +193,7 @@ func (t Time) GetNiceDaysSince(locale string, timezone *TimeZone) string {
 		}
 		return WordsGetTomorrow()
 	case 2, 3, 4, 5, 6, 7:
-		return StrFormat("%d %s %s", g.Day, WordsGetDay(true), preposition)
+		return fmt.Sprintf("%d %s %s", g.Day, WordsGetDay(true), preposition)
 	default:
 		return t.GetString("MMM dd", locale, timezone)
 	}
@@ -214,10 +215,10 @@ func GetDurationSecsAsHMSstring(dur float64) string {
 	var m = int(dur) / 60
 	if h > 0 {
 		m %= 60
-		str = StrFormat("%d:", h)
+		str = fmt.Sprintf("%d:", h)
 	}
 	s := int(dur) % 60
-	str += StrFormat("%02d:%02d", m, s)
+	str += fmt.Sprintf("%02d:%02d", m, s)
 	return str
 }
 

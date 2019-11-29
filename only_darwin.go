@@ -1,5 +1,21 @@
 package zgo
 
+import "runtime"
+
+func init() {
+	DebugPrint("zgo init()")
+	runtime.LockOSThread()
+}
+
+// func TimerInitBlockingDispatchFromMain() {
+// 	runtime.LockOSThread()
+// 	for f := range mainfunc {
+// 		f()
+// 	}
+// }
+
+// var mainfunc = make(chan func())
+
 func NativeViewAddToRoot(v View) {
 }
 

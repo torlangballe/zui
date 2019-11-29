@@ -85,7 +85,7 @@ func (a Alignment) FlippedHorizontal() Alignment {
 	return r
 }
 func (a Alignment) Subtracted(sub Alignment) Alignment {
-	return Alignment(a & Alignment(MathBitwiseInvert(uint64(sub))))
+	return Alignment(a & Alignment(^uint64(sub)))
 }
 
 func (a Alignment) Only(vertical bool) Alignment {
@@ -145,7 +145,7 @@ func stringToRaw(str string) uint64 {
 
 func rawFromVector(vector Pos) uint64 {
 	var raw = Alignment(0)
-	var angle = MathPosToAngleDeg(vector)
+	var angle = vector.ToAngleDeg()
 	if angle < 0 {
 		angle += 360
 	}

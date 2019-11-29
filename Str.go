@@ -1,7 +1,6 @@
 package zgo
 
 import (
-	"fmt"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -10,12 +9,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/torlangballe/zutil/zinteger"
 	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zint"
 )
 
 //  Created by Tor Langballe on /23/9/14.
-
+/**
 func StrRemovedFirst(s []string) []string {
 	if len(s) == 0 {
 		return s
@@ -49,7 +48,7 @@ func StrSplitByChars(str string, chars string) []string {
 	})
 
 }
-
+*/
 func StrSplitN(str string, sep string, n int) []string {
 	return strings.SplitN(str, sep, n)
 }
@@ -122,7 +121,7 @@ func StrHasSuffixWithRest(str string, suffix string) (bool, string) {
 }
 
 func StrCommonPrefix(a, b string) string {
-	l := zinteger.IntMin(len(a), len(b))
+	l := zint.Min(len(a), len(b))
 	br := []rune(b)
 	for i, r := range a {
 		if r != br[i] || i >= l-1 {
@@ -291,7 +290,7 @@ func StrSplitCamelCase(str string) []string {
 	return out
 }
 func StrHashToU64(str string) uint64 {
-	return zinteger.HashTo64(str)
+	return zint.HashTo64(str)
 }
 
 func StrMakeHashTagWord(str string) string {

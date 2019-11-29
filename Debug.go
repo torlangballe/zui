@@ -3,7 +3,10 @@ package zgo
 import (
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"sync"
+
+	"github.com/torlangballe/zutil/zslice"
 )
 
 var mutex sync.Mutex
@@ -41,7 +44,7 @@ func DebugPrint(items ...interface{}) {
 	if !logAllOutput {
 		if storePrintLines != 0 {
 			if len(storedLines) > storePrintLines {
-				storedLines = StrRemovedFirst(storedLines)
+				zslice.Behead(&storedLines)
 			}
 			storedLines = append(storedLines, str)
 		}
@@ -66,7 +69,7 @@ func ErrorOnRelease() {
 func DebugLoadSavedLog(prefix string) {
 	file := FoldersGetFileInFolderType(FoldersTemporary, prefix+"/zdebuglog.txt")
 	str, _ := file.LoadString()
-	storedLines = StrSplit(str, "\n")
+	storedLines = strings.Split(str, "\n")
 }
 
 func DebugAppendToFileAndClearLog(prefix string) {

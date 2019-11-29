@@ -28,11 +28,6 @@ func (k KeyValueStore) DictionaryForKey(key string) (dict Dictionary, got bool) 
 	return
 }
 
-func (k KeyValueStore) DataForKey(key string) (data *Data, got bool) {
-	got = k.getItem(key, &data)
-	return
-}
-
 func (k KeyValueStore) IntForKey(key string) (int64, bool) {
 	return 0, false
 }
@@ -59,7 +54,6 @@ func (k KeyValueStore) RemoveForKey(key string, sync bool) {
 
 func (k KeyValueStore) SetObject(object interface{}, key string)                         {}
 func (k KeyValueStore) SetString(string, key string, sync bool)                          {}
-func (k KeyValueStore) SetData(data *Data, key string, sync bool)                        {}
 func (k KeyValueStore) SetDictionary(dict map[string]interface{}, key string, sync bool) {}
 func (k KeyValueStore) SetInt(value int64, key string, sync bool)                        {}
 func (k KeyValueStore) SetDouble(value float64, key string, sync bool)                   {}

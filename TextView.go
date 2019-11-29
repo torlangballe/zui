@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/ztimer"
+
 //  Oriiginally created by Tor Langballe on /2/11/15.
 
 type TextView struct {
@@ -9,7 +11,7 @@ type TextView struct {
 	maxLines    int
 	alignment   Alignment
 	changed     func(view View)
-	updateTimer *Timer
+	updateTimer *ztimer.Timer
 
 	Margin     Size
 	UpdateSecs float64

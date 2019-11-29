@@ -1,6 +1,10 @@
 package zgo
 
-import "math"
+import (
+	"math"
+
+	"github.com/torlangballe/zutil/zmath"
+)
 
 type Matrix struct {
 	A, B, C, D, Tx, Ty float64
@@ -106,7 +110,7 @@ func (m Matrix) RotatedAroundPos(pos Pos, angle float64) Matrix {
 func MatrixForRotatingAroundPoint(point Pos, deg float64) Matrix {
 	var transform = MatrixIdentity
 	transform = transform.TranslatedByPos(point)
-	transform = transform.Rotated(MathDegToRad(deg))
+	transform = transform.Rotated(zmath.DegToRad(deg))
 	transform = transform.TranslatedByPos(point.Negative())
 
 	return transform
@@ -114,6 +118,6 @@ func MatrixForRotatingAroundPoint(point Pos, deg float64) Matrix {
 
 func MatrixForRotationDeg(deg float64) Matrix {
 	var transform = MatrixIdentity
-	transform = transform.Rotated(MathDegToRad(deg))
+	transform = transform.Rotated(zmath.DegToRad(deg))
 	return transform
 }

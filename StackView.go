@@ -6,7 +6,6 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zmath"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -54,7 +53,7 @@ func (v *StackView) calcWeightMins() {
 		max := 0.0
 		for i, c := range v.cells {
 			if !c.Collapsed && !c.Free && c.Weight == w {
-				zmath.Maximize(&max, sizes[i])
+				zfloat.Maximize(&max, sizes[i])
 			}
 		}
 		for i, c := range v.cells {
@@ -80,7 +79,7 @@ func (v *StackView) GetCalculatedSize(total Size) Size {
 			//			fmt.Println("calcsize:", c.View.GetObjectName(), fs, m)
 			*size.VerticeP(v.Vertical) += fs.Vertice(v.Vertical)
 			//			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)-m.Vertice(!v.Vertical))
-			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
+			zfloat.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
 			*size.VerticeP(v.Vertical) += v.spacing
 		}
 	}
@@ -88,7 +87,7 @@ func (v *StackView) GetCalculatedSize(total Size) Size {
 	if len(v.cells) > 0 {
 		*size.VerticeP(v.Vertical) -= v.spacing
 	}
-	zmath.Maximize(size.VerticeP(!v.Vertical), v.GetMinSize().Vertice(!v.Vertical))
+	zfloat.Maximize(size.VerticeP(!v.Vertical), v.GetMinSize().Vertice(!v.Vertical))
 	size.Maximize(v.GetMinSize())
 	return size
 }
@@ -127,7 +126,7 @@ func (v *StackView) ForceHorizontalFocusNavigation() {
 func addDiff(size *Size, maxSize float64, vertical bool, diff *float64, count *int) {
 	d := math.Floor(*diff / float64(*count))
 	if maxSize != 0 {
-		zmath.Minimize(&d, math.Max(maxSize-size.W, 0))
+		zfloat.Minimize(&d, math.Max(maxSize-size.W, 0))
 		*diff -= d
 		(*count)--
 	}
@@ -157,10 +156,10 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) Size {
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	if c.MinSize.W != 0 {
-		zmath.Maximize(&size.W, c.MinSize.W)
+		zfloat.Maximize(&size.W, c.MinSize.W)
 	}
 	if c.MinSize.H != 0 {
-		zmath.Maximize(&size.H, c.MinSize.H)
+		zfloat.Maximize(&size.H, c.MinSize.H)
 	}
 	if weightIndex != nil {
 		len := v.weightMinSizes[*weightIndex]

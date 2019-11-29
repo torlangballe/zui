@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zfloat"
-	"github.com/torlangballe/zutil/zinteger"
+	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 
@@ -448,8 +448,10 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			f.MaxWidth = 80
 		}
 	case zreflect.KindFunc:
-		if f.MinWidth == 0 && f.Flags&fieldIsImage != 0 {
-			f.MinWidth = 100
+		if f.MinWidth == 0 {
+			if f.Flags&fieldIsImage != 0 {
+				f.MinWidth = f.Size.W * ScreenMain().Scale
+			}
 		}
 	}
 	return true
@@ -554,7 +556,6 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 					if item.Package == "time" && item.TypeName == "Duration" {
 						var secs float64
 						secs, err = ztime.GetSecsFromHMSString(str, f.Flags&fieldHasHours != 0, f.Flags&fieldHasMinutes != 0, f.Flags&fieldHasSeconds != 0)
-						fmt.Println("DUR:", secs, err, f.Flags)
 						if err != nil {
 							break
 						}
@@ -568,7 +569,7 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 					if err != nil {
 						break
 					}
-					zinteger.SetAnyInt(item.Address, i64)
+					zint.SetAny(item.Address, i64)
 				}
 			}
 

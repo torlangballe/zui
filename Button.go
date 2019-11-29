@@ -10,7 +10,7 @@ type Button struct {
 	ShapeView
 }
 
-func ButtonNew(title, colorName string, size Size, insets Size) *Button {
+func ButtonNew(title, imageName string, size Size, insets Size) *Button {
 	b := &Button{}
 	b.ShapeView.init(ShapeViewTypeNone, size, title)
 	if insets.IsNull() {
@@ -19,7 +19,7 @@ func ButtonNew(title, colorName string, size Size, insets Size) *Button {
 	b.CanFocus(true)
 	b.ImageAlign = AlignmentExpand | AlignmentCenter | AlignmentNonProp
 	b.Color(Color{})
-	b.SetNamedColor(colorName, insets)
+	b.SetImageName(imageName, insets)
 	b.TextInfo.Text = title
 	b.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	b.TextInfo.Color = ColorBlack //White
@@ -29,11 +29,11 @@ func ButtonNew(title, colorName string, size Size, insets Size) *Button {
 	return b
 }
 
-func (b *Button) SetNamedColor(col string, insets Size) {
+func (b *Button) SetImageName(name string, insets Size) {
 	s := ""
 	if ScreenMain().Scale > 1 {
 		s = fmt.Sprintf("@%dx", int(ScreenMain().Scale))
 	}
-	cimage := b.SetImage(nil, col+"Button"+s+".png", nil)
+	cimage := b.SetImage(nil, "buttons/"+name+s+".png", nil)
 	cimage.CapInsets(RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

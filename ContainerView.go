@@ -1,6 +1,9 @@
 package zgo
 
-import "github.com/torlangballe/zutil/zslice"
+import (
+	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/ztimer"
+)
 
 // Original class created by Tor Langballe on 23-sept-2014.
 
@@ -214,7 +217,7 @@ func (v *ContainerView) isLoading() bool {
 }
 
 func (v *ContainerView) WhenLoaded(done func()) {
-	RepeaterSet(0.1, true, true, func() bool {
+	ztimer.RepeaterSet(0.1, true, true, func() bool {
 		if v.isLoading() {
 			return true
 		}

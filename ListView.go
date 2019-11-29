@@ -1,6 +1,6 @@
 package zgo
 
-import "fmt"
+import "github.com/torlangballe/zutil/ztimer"
 
 //  Created by Tor Langballe on /4/12/15.
 
@@ -31,6 +31,7 @@ func ListViewNew(name string) *ListView {
 	v := &ListView{}
 	v.init(v, name)
 	v.RowColors = []Color{ColorWhite}
+	v.selectedColor = ColorNew(0.6, 0.6, 0.8, 1)
 	return v
 	//        allowsSelection = true // selectable
 }
@@ -186,13 +187,27 @@ func (v *ListView) setRowBGColor(i int) {
 }
 
 func (v *ListView) Select(i int) {
+	v.ScrollToMakeRowVisible(i, false)
 	old := v.selectionIndex
 	v.selectionIndex = i
 	if old != -1 {
 		v.setRowBGColor(old)
 	}
-	fmt.Println("List Select:", i)
 	v.setRowBGColor(i)
+}
+
+func (v *ListView) FlashSelect(i int) {
+	count := 0
+	v.Select(i)
+	ztimer.RepeaterSet(0.1, true, true, func() bool {
+		if count%2 == 0 {
+			v.Select(i)
+		} else {
+			v.Select(-1)
+		}
+		count++
+		return (count < 8)
+	})
 }
 
 func (v *ListView) DeleteChildRow(i int, transition PresentViewTransition) { // call this after removing data

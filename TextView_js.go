@@ -2,6 +2,8 @@ package zgo
 
 import (
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 const jsTextMargin = 3
@@ -73,7 +75,7 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 				if v.updateTimer != nil {
 					v.updateTimer.Stop()
 				}
-				v.updateTimer = TimerSet(v.UpdateSecs, true, func() {
+				v.updateTimer = ztimer.TimerSet(v.UpdateSecs, true, func() {
 					v.changed(v)
 				})
 			}

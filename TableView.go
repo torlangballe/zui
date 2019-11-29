@@ -5,7 +5,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/torlangballe/zutil/zmath"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zreflect"
 )
 
@@ -81,7 +81,7 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	}
 	if header {
 		v.Header = StackViewNew(false, 0, "header")
-		v.Header.BGColor(ColorBlue)
+		//		v.Header.BGColor(ColorBlue)
 		v.Header.Spacing(0)
 		v.AddElements(AlignmentLeft|AlignmentTop|AlignmentHorExpand|AlignmentNonProp, v.Header)
 	}
@@ -134,7 +134,7 @@ func (v *TableView) ReadyToShow() {
 		button := ButtonNew(t, "grayHeader", s, Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		//		button.Text(f.name)
 		cell.View = button
-		zmath.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(Size{}).W)
+		zfloat.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(Size{}).W)
 		if f.MaxWidth != 0 {
 			cell.MaxSize.W = math.Max(f.MaxWidth, v.fields[i].MinWidth)
 

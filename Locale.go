@@ -1,5 +1,7 @@
 package zgo
 
+import "strings"
+
 //  Created by Tor Langballe on /1/11/15.
 
 // https://github.com/RadhiFadlillah/sysloc
@@ -12,7 +14,7 @@ func LocaleGetLangCodeAndCountryFromLocaleId(bcp string, forceNo bool) (string, 
 	if ccode == "" {
 		_, ccode := StrSplitInTwo(bcp, "_")
 		if ccode == "" {
-			parts := StrSplit(bcp, "-")
+			parts := strings.Split(bcp, "-")
 			if len(parts) > 2 {
 				return parts[0], parts[len(parts)-1]
 			}

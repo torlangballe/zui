@@ -2,6 +2,8 @@ package zgo
 
 import (
 	"math"
+
+	"github.com/torlangballe/zutil/zmath"
 )
 
 //  Created by Tor Langballe on /21/10/15.
@@ -196,7 +198,7 @@ func (p *Path) Rotated(deg float64, origin *Pos) *Path {
 	} else {
 		pos = *origin
 	}
-	angle := MathDegToRad(deg)
+	angle := zmath.DegToRad(deg)
 	m := MatrixIdentity.RotatedAroundPos(pos, angle)
 	return p.Transformed(&m)
 }
@@ -237,7 +239,7 @@ func (p *Path) AddStar(rect Rect, points int, inRatio float32) {
 	inAmount := (1 - inRatio)
 	for i := 0; i < points*2; i++ {
 		deg := float64(360*i+720) / float64(points*2)
-		d := MathAngleDegToPos(deg).TimesD(delta)
+		d := PosFromAngleDeg(deg).TimesD(delta)
 		if i&1 != 0 {
 			d.MultiplyD(float64(inAmount))
 		}

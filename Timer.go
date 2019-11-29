@@ -1,5 +1,6 @@
 package zgo
 
+/*
 //  Created by Tor Langballe on /18/11/15.
 
 import (
@@ -13,11 +14,6 @@ func init() {
 	DebugPrint("zgo init()")
 	runtime.LockOSThread()
 }
-
-// /*
-// #include "bridge.h"
-// */
-// import "C"
 
 var mainfunc = make(chan func())
 
@@ -99,3 +95,5 @@ func (t *Timer) Stop() {
 		t.timer = nil
 	}
 }
+
+*/

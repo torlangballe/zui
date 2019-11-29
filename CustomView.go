@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/ztimer"
+
 type CustomView struct {
 	NativeView
 	canvas        *Canvas
@@ -8,10 +10,10 @@ type CustomView struct {
 	valueChanged  func(view View)
 	draw          func(rect Rect, canvas *Canvas, view View)
 	exposed       bool
-	timers        []*Timer
+	timers        []*ztimer.Timer
 	color         Color
 	IsHighlighted bool
-	exposeTimer   Timer
+	exposeTimer   ztimer.Timer
 	isSetup       bool
 }
 
