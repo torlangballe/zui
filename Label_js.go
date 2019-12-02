@@ -2,6 +2,8 @@ package zgo
 
 import (
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 func LabelNew(text string) *Label {
@@ -26,12 +28,12 @@ func (v *Label) PressedHandler(handler func()) {
 	}))
 }
 
-func (l *Label) TextAlignment(a Alignment) View {
+func (l *Label) TextAlignment(a zgeo.Alignment) View {
 	l.alignment = a
 	str := "left"
-	if a&AlignmentRight != 0 {
+	if a&zgeo.AlignmentRight != 0 {
 		str = "right"
-	} else if a&AlignmentHorCenter != 0 {
+	} else if a&zgeo.AlignmentHorCenter != 0 {
 		str = "center"
 	}
 	l.style().Set("textAlign", str)

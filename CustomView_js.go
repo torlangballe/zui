@@ -2,6 +2,8 @@ package zgo
 
 import (
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 func (v *CustomView) init(view View, name string) {
@@ -24,12 +26,12 @@ func (v *CustomView) PressedHandler(handler func()) {
 	}))
 }
 
-func (v *CustomView) Rect(rect Rect) View {
+func (v *CustomView) Rect(rect zgeo.Rect) View {
 	v.NativeView.Rect(rect)
 	if !v.isSetup {
 		if v.canvas != nil {
 			s := v.GetLocalRect().Size
-			setElementRect(v.canvas.element, Rect{Size: s})
+			setElementRect(v.canvas.element, zgeo.Rect{Size: s})
 			v.canvas.element.Set("width", s.W*2) // scale?
 			v.canvas.element.Set("height", s.H*2)
 			v.canvas.context.Call("scale", 2, 2)
@@ -52,7 +54,7 @@ func (v *CustomView) drawIfExposed() {
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
 			// println("CV drawIfExposed2:", v.GetObjectName())
 			v.exposeTimer.Stop()
-			v.canvas.ClearRect(Rect{})
+			v.canvas.ClearRect(zgeo.Rect{})
 			v.draw(r, v.canvas, v.View)
 			v.exposed = false
 			//		println("CV drawIfExposed end: " + v.GetObjectName() + " " + time.Since(start).String())

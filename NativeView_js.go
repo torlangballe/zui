@@ -3,6 +3,8 @@ package zgo
 import (
 	"fmt"
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 type NativeView struct {
@@ -27,20 +29,20 @@ func (v *NativeView) GetNative() *NativeView {
 	return v
 }
 
-func (v *NativeView) Rect(rect Rect) View {
+func (v *NativeView) Rect(rect zgeo.Rect) View {
 	setElementRect(v.Element, rect)
 	return v
 }
 
-func (v *NativeView) GetRect() Rect {
-	var pos Pos
+func (v *NativeView) GetRect() zgeo.Rect {
+	var pos zgeo.Pos
 	pos.X = v.Element.Get("offsetLeft").Float()
 	pos.Y = v.Element.Get("offsetTop").Float()
 	size := v.GetLocalRect().Size
-	return Rect{pos, size}
+	return zgeo.Rect{pos, size}
 }
 
-func setElementRect(e js.Value, rect Rect) {
+func setElementRect(e js.Value, rect zgeo.Rect) {
 	style := e.Get("style")
 	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
 	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))
@@ -48,11 +50,11 @@ func setElementRect(e js.Value, rect Rect) {
 	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
 }
 
-func (v *NativeView) GetCalculatedSize(total Size) Size {
-	return Size{10, 10}
+func (v *NativeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+	return zgeo.Size{10, 10}
 }
 
-func (v *NativeView) GetLocalRect() Rect {
+func (v *NativeView) GetLocalRect() zgeo.Rect {
 	var w, h float64
 	style := v.style()
 	sw := style.Get("width")
@@ -65,10 +67,10 @@ func (v *NativeView) GetLocalRect() Rect {
 		panic("parse empty Coord")
 	}
 
-	return RectMake(0, 0, w, h)
+	return zgeo.RectMake(0, 0, w, h)
 }
 
-func (v *NativeView) LocalRect(rect Rect) {
+func (v *NativeView) LocalRect(rect zgeo.Rect) {
 
 }
 
@@ -76,12 +78,12 @@ func (v *NativeView) GetObjectName() string {
 	return v.get("id").String()
 }
 
-func makeRGBAString(c Color) string {
+func makeRGBAString(c zgeo.Color) string {
 	rgba := c.GetRGBA()
 	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }
 
-func (v *NativeView) Color(c Color) View {
+func (v *NativeView) Color(c zgeo.Color) View {
 	v.style().Set("color", makeRGBAString(c))
 	return v
 }
@@ -116,7 +118,7 @@ func (v *NativeView) ObjectName(name string) View {
 	return v
 }
 
-func (v *NativeView) BGColor(c Color) View {
+func (v *NativeView) BGColor(c zgeo.Color) View {
 	v.style().Set("background", makeRGBAString(c))
 	return v
 }
@@ -130,7 +132,7 @@ func (v *NativeView) CornerRadius(radius float64) View {
 	return v
 }
 
-func (v *NativeView) Stroke(width float64, c Color) View {
+func (v *NativeView) Stroke(width float64, c zgeo.Color) View {
 	style := v.style()
 	style.Set("border-color", makeRGBAString(c))
 	style.Set("border", "solid 1px transparent")
@@ -239,7 +241,7 @@ func (v *NativeView) RemoveChild(child View) {
 	v.call("removeChild", o.GetNative().Element)
 }
 
-func (v *NativeView) SetDropShadow(deltaSize Size, blur float32, color Color) {
+func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
 	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(deltaSize.W), int(deltaSize.H), int(blur), makeRGBAString(color))
 	v.style().Set("boxShadow", str)
 }

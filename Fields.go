@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zfloat"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
@@ -23,8 +24,15 @@ const (
 	fieldHasSeconds
 	fieldHasMinutes
 	fieldHasHours
+	fieldHasDays
+	fieldHasMonths
+	fieldHasYears
 	fieldIsImage
 	fieldsNoHeader
+)
+const (
+	fieldTimeFlags = fieldHasSeconds | fieldHasMinutes | fieldHasHours
+	fieldDateFlags = fieldHasDays | fieldHasMonths | fieldHasYears
 )
 
 type FieldsActionFunc func(i int, rowPtr interface{})
@@ -42,8 +50,8 @@ type field struct {
 	MaxWidth      float64
 	MinWidth      float64
 	Kind          zreflect.TypeKind
-	Alignment     Alignment
-	Justify       Alignment
+	Alignment     zgeo.Alignment
+	Justify       zgeo.Alignment
 	Format        string
 	Color         string
 	FixedPath     string
@@ -51,7 +59,7 @@ type field struct {
 	Height        float64
 	Weight        float64
 	Enum          Dictionary
-	Size          Size
+	Size          zgeo.Size
 	Flags         int
 	DefaultWeight float64
 	// Type          fieldType
@@ -99,8 +107,8 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *field, i
 	if f.Title != "" {
 		name = f.Title
 	}
-	button := ButtonNew(name, color, Size{40, height}, Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
-	button.TextInfo.Color = ColorRed
+	button := ButtonNew(name, color, zgeo.Size{40, height}, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+	button.TextInfo.Color = zgeo.ColorRed
 	button.PressedHandler(func() {
 		callFieldFunc(i, structData, f)
 	})
@@ -115,6 +123,17 @@ func fieldsMakeMenu(f *field, item zreflect.Item, i int, handleUpdate func(i int
 		}
 	})
 	return menu
+}
+
+func fieldsMakeTimeView(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
+	t := item.Interface.(time.Time)
+	format := f.Format
+	if format == "" {
+		format = "2006-01-02 15:04:05"
+	}
+	str := t.Format(format)
+	tv := TextViewNew(str)
+	return tv
 }
 
 func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
@@ -132,10 +151,10 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 	if f.Flags&fieldIsStatic != 0 {
 		label := LabelNew(str)
 		j := f.Justify
-		if j == AlignmentNone {
-			j = f.Alignment & (AlignmentLeft | AlignmentHorCenter | AlignmentRight)
-			if j == AlignmentNone {
-				j = AlignmentLeft
+		if j == zgeo.AlignmentNone {
+			j = f.Alignment & (zgeo.AlignmentLeft | zgeo.AlignmentHorCenter | zgeo.AlignmentRight)
+			if j == zgeo.AlignmentNone {
+				j = zgeo.AlignmentLeft
 			}
 		}
 		label.TextAlignment(j)
@@ -206,6 +225,7 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 			if v != b {
 				cv.Value(b)
 			}
+
 		case zreflect.KindString, zreflect.KindFunc:
 			if f.Flags&fieldIsImage != 0 {
 				path := ""
@@ -225,7 +245,7 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 	}
 }
 
-func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, parentField *field, fields *[]field, defaultAlign Alignment, cellMargin Size, useMinWidth bool, inset float64, i int, handleUpdate func(i int)) {
+func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, parentField *field, fields *[]field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool, inset float64, i int, handleUpdate func(i int)) {
 	// if fv != nil && fv.parentField != nil {
 	// 	fmt.Println("fieldsBuildStack2:", fv.GetObjectName())
 	// }
@@ -236,7 +256,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 		panic(err)
 	}
 	for j, item := range rootItems.Children {
-		exp := AlignmentNone
+		exp := zgeo.AlignmentNone
 		var view View
 		f := findFieldWithIndex(fields, j)
 		if f == nil {
@@ -244,16 +264,16 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 		}
 		if f.Enum != nil {
 			view = fieldsMakeMenu(f, item, i, handleUpdate)
-			exp = AlignmentHorShrink
+			exp = zgeo.AlignmentHorShrink
 		} else {
 			switch f.Kind {
 			case zreflect.KindStruct:
 				// fmt.Println("struct:", f.Kind, j, item.Value)
 				childStruct := item.Address
-				fieldView := fieldViewNew(f.Name, false, childStruct, 10, Size{})
+				fieldView := fieldViewNew(f.Name, false, childStruct, 10, zgeo.Size{})
 				fieldView.parentField = f
 				view = fieldView
-				fieldsBuildStack(fieldView, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, AlignmentLeft|AlignmentTop, Size{}, true, 5, 0, handleUpdate)
+				fieldsBuildStack(fieldView, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, zgeo.AlignmentLeft|zgeo.AlignmentTop, zgeo.Size{}, true, 5, 0, handleUpdate)
 
 			case zreflect.KindBool:
 				b := BoolIndFromBool(item.Value.Interface().(bool))
@@ -261,20 +281,20 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 
 			case zreflect.KindInt:
 				if item.TypeName == "BoolInd" {
-					exp = AlignmentHorShrink
+					exp = zgeo.AlignmentHorShrink
 					view = fieldsMakeCheckbox(BoolInd(item.Value.Int()), i, handleUpdate)
 				} else {
 					view = fieldsMakeText(f, item, i, handleUpdate)
 				}
 
-			case zreflect.KindFloat, zreflect.KindTime:
+			case zreflect.KindFloat:
 				view = fieldsMakeText(f, item, i, handleUpdate)
 
 			case zreflect.KindString:
 				if f.Flags&fieldIsImage != 0 {
 					view = fieldsMakeImage(structData, f, i)
 				} else {
-					exp = AlignmentHorExpand
+					exp = zgeo.AlignmentHorExpand
 					view = fieldsMakeText(f, item, i, handleUpdate)
 				}
 
@@ -285,15 +305,22 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 					view = fieldsMakeButton(i, structData, f.Height, f, item)
 				}
 
+			case zreflect.KindSlice:
+				view = fieldsMakeText(f, item, i, handleUpdate)
+				break
+
+			case zreflect.KindTime:
+				view = fieldsMakeTimeView(f, item, i, handleUpdate)
+
 			default:
-				panic(fmt.Sprint("bad type: ", f.Kind))
+				panic(fmt.Sprint("fieldsBuildStack bad type: ", f.Kind))
 			}
 		}
 		view.ObjectName(f.ID)
 		cell := ContainerViewCell{}
 		cell.Margin = cellMargin
 		def := defaultAlign
-		all := AlignmentLeft | AlignmentHorCenter | AlignmentRight
+		all := zgeo.AlignmentLeft | zgeo.AlignmentHorCenter | zgeo.AlignmentRight
 		if f.Alignment&all != 0 {
 			def &= ^all
 		}
@@ -309,7 +336,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 		cell.View = view
 		cell.MinSize.W = f.MinWidth //- v.ColumnMargin*2
 		cell.MaxSize.W = f.MaxWidth
-		if exp != AlignmentHorExpand && (j == 0 || j == len(rootItems.Children)-1) {
+		if exp != zgeo.AlignmentHorExpand && (j == 0 || j == len(rootItems.Children)-1) {
 			cell.MinSize.W -= inset
 		}
 		//		fmt.Println("Add Field Item:", cell.View.GetObjectName(), cell.Alignment, f.MinWidth, cell.MinSize.W)
@@ -322,7 +349,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	f.ID = ustr.FirstToLower(item.FieldName)
 	f.Name = item.FieldName
 	f.Kind = item.Kind
-	f.Alignment = AlignmentNone
+	f.Alignment = zgeo.AlignmentNone
 
 	for _, tp := range zreflect.GetTagAsFields(item.Tag) {
 		if tp.Label == "zui" {
@@ -336,17 +363,17 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 				}
 				key = strings.TrimSpace(key)
 				val = strings.TrimSpace(val)
-				align := AlignmentFromString(val)
+				align := zgeo.AlignmentFromString(val)
 				n, floatErr := strconv.ParseFloat(val, 32)
 				flag := ustr.StrToBool(val, false)
 				switch key {
 				case "align":
-					if align != AlignmentNone {
+					if align != zgeo.AlignmentNone {
 						f.Alignment = align
 					}
 					// fmt.Println("ALIGN:", f.Name, val, a)
 				case "justify":
-					if align != AlignmentNone {
+					if align != zgeo.AlignmentNone {
 						f.Justify = align
 					}
 				case "title":
@@ -364,6 +391,10 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 				case "weights":
 					if floatErr == nil {
 						f.DefaultWeight = n
+					}
+				case "minwidth":
+					if floatErr == nil {
+						f.MinWidth = n
 					}
 				case "static":
 					if flag || val == "" {
@@ -415,8 +446,8 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	case zreflect.KindInt:
 		if item.TypeName != "BoolInd" {
 			if item.Package == "time" && item.TypeName == "Duration" {
-				if f.Flags&fieldHasHours == 0 && f.Flags&fieldHasMinutes == 0 && f.Flags&fieldHasSeconds == 0 {
-					f.Flags |= (fieldHasHours | fieldHasMinutes | fieldHasSeconds)
+				if f.Flags&fieldTimeFlags == 0 {
+					f.Flags |= fieldTimeFlags
 				}
 			}
 			if f.MaxWidth == 0 {
@@ -428,6 +459,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			break
 		}
 		fallthrough
+
 	case zreflect.KindBool:
 		if f.MinWidth == 0 {
 			f.MinWidth = 20
@@ -444,9 +476,37 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 		if f.MinWidth == 0 {
 			f.MinWidth = 80
 		}
-		if f.MaxWidth == 0 {
-			f.MaxWidth = 80
+		if f.Flags&(fieldTimeFlags|fieldDateFlags) == 0 {
+			f.Flags |= fieldTimeFlags | fieldDateFlags
 		}
+		dig2 := 20.0
+		if f.MinWidth == 0 {
+			if f.Flags&fieldHasSeconds != 0 {
+				f.MaxWidth += dig2
+
+			}
+			if f.Flags&fieldHasMinutes != 0 {
+				f.MaxWidth += dig2
+
+			}
+			if f.Flags&fieldHasHours != 0 {
+				f.MaxWidth += dig2
+
+			}
+			if f.Flags&fieldHasDays != 0 {
+				f.MaxWidth += dig2
+
+			}
+			if f.Flags&fieldHasMonths != 0 {
+				f.MaxWidth += dig2
+
+			}
+			if f.Flags&fieldHasYears != 0 {
+				f.MaxWidth += dig2 * 2
+			}
+		}
+		fmt.Println("Time max:", f.MaxWidth)
+
 	case zreflect.KindFunc:
 		if f.MinWidth == 0 {
 			if f.Flags&fieldIsImage != 0 {
@@ -457,12 +517,12 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	return true
 }
 
-func fieldViewNew(name string, vertical bool, structure interface{}, spacing float64, marg Size) *FieldView {
+func fieldViewNew(name string, vertical bool, structure interface{}, spacing float64, marg zgeo.Size) *FieldView {
 	// fmt.Println("FieldViewNew", name)
 	v := &FieldView{}
 	v.StackView.init(v, name)
 	v.Spacing(12)
-	v.Margin(RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
+	v.Margin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	v.Vertical = vertical
 	v.structure = structure
 	unnestAnon := false
@@ -481,11 +541,11 @@ func fieldViewNew(name string, vertical bool, structure interface{}, spacing flo
 }
 
 func (v *FieldView) Build(handleUpdate func(i int)) {
-	fieldsBuildStack(v, &v.StackView, v.structure, v.parentField, &v.fields, AlignmentLeft|AlignmentTop, Size{}, true, 5, 0, handleUpdate) // Size{6, 4}
+	fieldsBuildStack(v, &v.StackView, v.structure, v.parentField, &v.fields, zgeo.AlignmentLeft|zgeo.AlignmentTop, zgeo.Size{}, true, 5, 0, handleUpdate) // Size{6, 4}
 }
 
 func FieldViewNew(name string, structure interface{}) *FieldView {
-	v := fieldViewNew(name, true, structure, 12, Size{10, 10})
+	v := fieldViewNew(name, true, structure, 12, zgeo.Size{10, 10})
 	return v
 }
 
@@ -563,6 +623,7 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 						if d != nil {
 							*d = ztime.SecondsDur(secs)
 						}
+						return nil
 					}
 					var i64 int64
 					i64, err = strconv.ParseInt(str, 10, 64)

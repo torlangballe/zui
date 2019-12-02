@@ -1,6 +1,9 @@
 package zgo
 
-import "github.com/torlangballe/zutil/ztimer"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
+)
 
 //  Oriiginally created by Tor Langballe on /2/11/15.
 
@@ -9,17 +12,17 @@ type TextView struct {
 	minWidth    float64
 	maxWidth    float64
 	maxLines    int
-	alignment   Alignment
+	alignment   zgeo.Alignment
 	changed     func(view View)
 	updateTimer *ztimer.Timer
 
-	Margin     Size
+	Margin     zgeo.Size
 	UpdateSecs float64
 }
 
 const TextViewDefaultMargin = 3.0
 
-func (v *TextView) GetCalculatedSize(total Size) Size {
+func (v *TextView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	var o TextLayoutOwner
 	o = v
 	s := TextLayoutOwnerCalculateSize(o)
@@ -28,7 +31,7 @@ func (v *TextView) GetCalculatedSize(total Size) Size {
 	return s
 }
 
-func (l *TextView) GetTextAlignment() Alignment {
+func (l *TextView) GetTextAlignment() zgeo.Alignment {
 	return l.alignment
 }
 

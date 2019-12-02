@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/torlangballe/zutil/zfloat"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 type ShapeViewType string
@@ -25,39 +26,39 @@ type ShapeView struct {
 	Type         ShapeViewType
 	StrokeWidth  float64
 	TextInfo     TextInfo
-	ImageMargin  Size //  ZSize(4.0, 1.0) * ZScreen.SoftScale
+	ImageMargin  zgeo.Size //  ZSize(4.0, 1.0) * ZScreen.SoftScale
 	TextXMargin  float64
-	IsImageFill  bool    //
-	ImageOpacity float32 // Float = Float(1)
-	Ratio        float32 // = 0.3
-	Count        int     // = 5
-	StrokeColor  Color   // = ZColor.White()
+	IsImageFill  bool       //
+	ImageOpacity float32    // Float = Float(1)
+	Ratio        float32    // = 0.3
+	Count        int        // = 5
+	StrokeColor  zgeo.Color // = ZColor.White()
 	MaxWidth     float64
-	ImageAlign   Alignment // .Center
+	ImageAlign   zgeo.Alignment // .Center
 	IsFillBox    bool
 	IsRoundImage bool
 	Value        float64
-	PathLineType PathLineType
+	PathLineType zgeo.PathLineType
 	Proportional bool
 }
 
-func ShapeViewNew(shapeType ShapeViewType, minSize Size) *ShapeView {
+func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
 	v := &ShapeView{}
 	v.init(shapeType, minSize, string(shapeType))
 	return v
 }
 
-func (v *ShapeView) init(shapeType ShapeViewType, minSize Size, name string) {
+func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string) {
 	v.CustomView.init(v, name)
 	v.TextInfo = *TextInfoNew()
 	v.Type = shapeType
-	v.ImageMargin = Size{4, 1}.TimesD(ScreenMain().SoftScale)
+	v.ImageMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
 	v.ImageOpacity = 1
 	v.Count = 5
-	v.StrokeColor = ColorWhite
-	v.ImageAlign = AlignmentCenter
-	v.PathLineType = PathLineRound
-	v.Color(ColorGray)
+	v.StrokeColor = zgeo.ColorWhite
+	v.ImageAlign = zgeo.AlignmentCenter
+	v.PathLineType = zgeo.PathLineRound
+	v.Color(zgeo.ColorGray)
 	v.Proportional = true
 
 	switch shapeType {
@@ -83,11 +84,11 @@ func (v *ShapeView) GetImage() *Image {
 	return v.image
 }
 
-func (v *ShapeView) GetCalculatedSize(total Size) Size {
+func (v *ShapeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.GetMinSize()
 	if v.TextInfo.Text != "" {
 		ts := v.TextInfo.GetBounds(false).Size
-		ts.Add(Size{16, 6})
+		ts.Add(zgeo.Size{16, 6})
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
 	}
@@ -121,8 +122,8 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 	return v.image
 }
 
-func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
-	path := PathNew()
+func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
+	path := zgeo.PathNew()
 	v := view.(*ShapeView)
 	// fmt.Println("shapeViewDraw:", v.GetMinSize(), rect, view.GetObjectName())
 
@@ -133,15 +134,15 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 	case ShapeViewTypeCircle:
 		s := rect.Size.MinusD(v.StrokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
 		w := s.Min()
-		path.ArcDegFromCenter(rect.Center(), Size{w, w}, 0, 360)
+		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
 
 	case ShapeViewTypeRoundRect:
-		r := rect.Expanded(Size{-1, -1}.TimesD(ScreenMain().SoftScale))
+		r := rect.Expanded(zgeo.Size{-1, -1}.TimesD(ScreenMain().SoftScale))
 		corner := math.Min(math.Min(r.Size.W, r.Size.H)*float64(v.Ratio), 15)
-		path.AddRect(r, Size{corner, corner})
+		path.AddRect(r, zgeo.Size{corner, corner})
 
 	case ShapeViewTypeRectangle:
-		path.AddRect(rect, Size{})
+		path.AddRect(rect, zgeo.Size{})
 	}
 	col := v.color
 	if col.Valid {
@@ -168,7 +169,7 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 	if v.image != nil {
 		drawImage := v.image
 		if v.IsHighlighted {
-			drawImage = drawImage.TintedWithColor(ColorNewGray(0.2, 1))
+			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
 		}
 		o := v.ImageOpacity
 		if !v.IsUsable() {
@@ -177,14 +178,14 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.PushState()
 			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, rect, o, CanvasBlendModeNormal, Rect{})
+			canvas.DrawImage(drawImage, rect, o, CanvasBlendModeNormal, zgeo.Rect{})
 			canvas.PopState()
 		} else {
-			a := v.ImageAlign | AlignmentShrink
+			a := v.ImageAlign | zgeo.AlignmentShrink
 			// if v.IsFillBox {
 			// 	a = AlignmentNone
 			// }
-			ir := rect.Align(v.image.Size(), a, v.ImageMargin, Size{})
+			ir := rect.Align(v.image.Size(), a, v.ImageMargin, zgeo.Size{})
 			var corner float64
 			if v.IsRoundImage {
 				if v.Type == ShapeViewTypeRoundRect {
@@ -192,12 +193,12 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 				} else if v.Type == ShapeViewTypeCircle {
 					corner = v.image.Size().Max() / 2
 				}
-				clipPath := PathNewFromRect(ir, Size{corner, corner})
+				clipPath := zgeo.PathNewFromRect(ir, zgeo.Size{corner, corner})
 				canvas.PushState()
 				canvas.ClipPath(clipPath, false, false)
 			}
 			textRect = ir
-			canvas.DrawImage(drawImage, ir, o, CanvasBlendModeNormal, Rect{})
+			canvas.DrawImage(drawImage, ir, o, CanvasBlendModeNormal, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
 			}
@@ -206,10 +207,10 @@ func shapeViewDraw(rect Rect, canvas *Canvas, view View) {
 	if v.TextInfo.Text != "" {
 		t := v.TextInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
-		t.Rect = textRect.Expanded(Size{-v.TextXMargin * ScreenMain().SoftScale, 0})
+		t.Rect = textRect.Expanded(zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0})
 		t.Rect.Pos.Y -= 2
 		if v.IsImageFill {
-			canvas.SetDropShadow(Size{}, 2, ColorBlack)
+			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack)
 		}
 		t.Draw(canvas)
 		if v.IsImageFill {

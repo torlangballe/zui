@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 //  Created by Tor Langballe on /2/11/15.
 
 type Label struct {
@@ -7,12 +9,12 @@ type Label struct {
 	minWidth  float64
 	maxWidth  float64
 	maxLines  int
-	alignment Alignment
-	Margin    Rect
+	alignment zgeo.Alignment
+	Margin    zgeo.Rect
 	pressed   func()
 }
 
-func (v *Label) GetCalculatedSize(total Size) Size {
+func (v *Label) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	var o TextLayoutOwner
 	o = v
 	s := TextLayoutOwnerCalculateSize(o)
@@ -21,7 +23,7 @@ func (v *Label) GetCalculatedSize(total Size) Size {
 	return s
 }
 
-func (l *Label) GetTextAlignment() Alignment {
+func (l *Label) GetTextAlignment() zgeo.Alignment {
 	return l.alignment
 }
 

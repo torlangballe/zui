@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 //  Created by Tor Langballe on /12/11/15.
 
 type ScreenLayout int
@@ -13,11 +15,11 @@ const (
 
 type Screen struct {
 	isLocked     bool
-	Rect         Rect
-	UsableRect   Rect    //= ZRect(UIScreen.main.bounds)
-	Scale        float64 //= float64(UIScreen.main.scale)
-	SoftScale    float64 // = 1.0
-	KeyboardRect *Rect
+	Rect         zgeo.Rect
+	UsableRect   zgeo.Rect //= ZRect(UIScreen.main.bounds)
+	Scale        float64   //= float64(UIScreen.main.scale)
+	SoftScale    float64   // = 1.0
+	KeyboardRect *zgeo.Rect
 }
 
 func ScreenStatusBarHeight() float64 {

@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 //  Created by Tor Langballe on /22/10/15.
@@ -30,10 +31,10 @@ type TextInfo struct {
 	Type        TextInfoType
 	Wrap        TextInfoWrap
 	Text        string
-	Color       Color
-	Alignment   Alignment
+	Color       zgeo.Color
+	Alignment   zgeo.Alignment
 	Font        *Font
-	Rect        Rect
+	Rect        zgeo.Rect
 	LineSpacing float32
 	StrokeWidth float32
 	MaxLines    int
@@ -43,20 +44,20 @@ func TextInfoNew() *TextInfo {
 	t := &TextInfo{}
 	t.Type = TextInfoFill
 	t.Wrap = TextInfoWrapWord
-	t.Color = ColorBlack
-	t.Alignment = AlignmentCenter
+	t.Color = zgeo.ColorBlack
+	t.Alignment = zgeo.AlignmentCenter
 	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	t.StrokeWidth = 1
 	return t
 }
 
-func (ti *TextInfo) GetBounds(noWidth bool) Rect {
+func (ti *TextInfo) GetBounds(noWidth bool) zgeo.Rect {
 	var size = canvasGetTextSize(ti.Text, ti.Font)
 
 	if ti.MaxLines != 0 {
 		size.H = float64(ti.Font.LineHeight()) * float64(ti.MaxLines)
 	}
-	return ti.Rect.Align(size, ti.Alignment, Size{}, Size{})
+	return ti.Rect.Align(size, ti.Alignment, zgeo.Size{}, zgeo.Size{})
 }
 
 func (ti *TextInfo) getNativeWrapMode(w TextInfoWrap) int {
@@ -76,14 +77,14 @@ func (ti *TextInfo) getNativeWrapMode(w TextInfoWrap) int {
 	}
 }
 
-func getNativeTextAdjustment(style Alignment) int {
-	if style&AlignmentLeft != 0 {
+func getNativeTextAdjustment(style zgeo.Alignment) int {
+	if style&zgeo.AlignmentLeft != 0 {
 		return 0
-	} else if style&AlignmentRight != 0 {
+	} else if style&zgeo.AlignmentRight != 0 {
 		return 0
-	} else if style&AlignmentHorCenter != 0 {
+	} else if style&zgeo.AlignmentHorCenter != 0 {
 		return 0
-	} else if style&AlignmentHorJustify != 0 {
+	} else if style&zgeo.AlignmentHorJustify != 0 {
 		panic("bad text adjust")
 	}
 	return 0 //NSTextAlignment.left
@@ -93,9 +94,9 @@ func (ti *TextInfo) MakeAttributes() Dictionary {
 	return Dictionary{}
 }
 
-func (ti *TextInfo) Draw(canvas *Canvas) Rect {
+func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	if ti.Text == "" {
-		return Rect{ti.Rect.Pos, Size{}}
+		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
 	}
 	// switch ti.Type {
 	//     case ZTextDrawType.fill
@@ -113,24 +114,24 @@ func (ti *TextInfo) Draw(canvas *Canvas) Rect {
 	// }
 	if ti.Rect.Size.IsNull() {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, ti.MakeAttributes())
-		return Rect{}
+		return zgeo.Rect{}
 	}
 	r := ti.Rect
 	var ts = ti.GetBounds(false).Size
-	ts = Size{math.Ceil(ts.W), math.Ceil(ts.H)}
-	ra := ti.Rect.Align(ts, ti.Alignment, Size{}, Size{})
-	if ti.Alignment&AlignmentTop != 0 {
+	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
+	ra := ti.Rect.Align(ts, ti.Alignment, zgeo.Size{}, zgeo.Size{})
+	if ti.Alignment&zgeo.AlignmentTop != 0 {
 		r.SetMaxY(ra.Max().Y)
-	} else if ti.Alignment&AlignmentBottom != 0 {
+	} else if ti.Alignment&zgeo.AlignmentBottom != 0 {
 		r.SetMinY(r.Max().Y - ra.Size.H)
 	} else {
 		//r.SetMinY(ra.Pos.Y - float64(ti.Font.LineHeight())/20)
 	}
 
-	if ti.Alignment&AlignmentHorCenter != 0 {
+	if ti.Alignment&zgeo.AlignmentHorCenter != 0 {
 		//        r = r.Expanded(ZSize(1, 0))
 	}
-	if ti.Alignment&AlignmentHorShrink != 0 {
+	if ti.Alignment&zgeo.AlignmentHorShrink != 0 {
 		//         ScaleFontToFit()
 	}
 	// canvas.SetColor(ColorYellow, 0.3)
@@ -141,17 +142,17 @@ func (ti *TextInfo) Draw(canvas *Canvas) Rect {
 	return ti.drawTextInRect(canvas, ra)
 }
 
-func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect Rect) Rect {
+func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect zgeo.Rect) zgeo.Rect {
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := ti.Font.LineHeight()
 	y := rect.Pos.Y + h*0.9
 	attributes := ti.MakeAttributes()
 	canvas.SetFont(ti.Font, nil)
-	canvas.SetColor(ColorWhite, 1)
+	canvas.SetColor(zgeo.ColorWhite, 1)
 	ustr.RangeStringLines(ti.Text, false, func(s string) {
 		x := rect.Pos.X
 		// tsize := canvasGetTextSize(s, ti.Font)
-		canvas.DrawTextInPos(Pos{x, y}, s, attributes)
+		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, attributes)
 		y += h
 	})
 	return rect
@@ -173,30 +174,3 @@ func (ti *TextInfo) ScaleFontToFit(minScale float64) {
 	}
 	ti.Font = FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
 }
-
-/*
-    #if os(iOS)
-    func CreateLayer(margin Rect = Rect())  ZTextLayer {
-        let textLayer = ZTextLayer()
-        textLayer.font = font
-        textLayer.fontSize = font.pointSize
-        textLayer.string = text
-        textLayer.contentsScale = CGFloat(ZScreen.Scale)
-
-        if alignment & .HorCenter {
-          textLayer.alignmentMode = CATextLayerAlignmentMode.center
-        }
-        if alignment & .Left {
-          textLayer.alignmentMode = CATextLayerAlignmentMode.left
-        }
-        if alignment & .Right {
-          textLayer.alignmentMode = CATextLayerAlignmentMode.right
-        }
-        textLayer.foregroundColor = color.color.cgColor
-        let s = (GetBounds().size + margin.size)
-        textLayer.frame = Rect(size s).GetCGRect()
-
-        return textLayer
-    }
-	#endif
-*/

@@ -1,11 +1,13 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type TabsView struct {
 	StackView
 	header    *StackView
 	childView View
 	creators  map[string]func() View
-	currentID string
+	CurrentID string
 }
 
 func TabsViewNew(name string) *TabsView {
@@ -13,12 +15,12 @@ func TabsViewNew(name string) *TabsView {
 	v.StackView.init(v, name)
 	v.Vertical = true
 	v.Spacing(0)
-	v.Margin(RectFromXY2(0, 4, 0, 0))
+	v.Margin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func() View{}
-	v.header = StackViewNew(false, AlignmentNone, "header")
+	v.header = StackViewNew(false, zgeo.AlignmentNone, "header")
 	v.header.Spacing(0)
 
-	v.Add(v.header, AlignmentLeft|AlignmentTop)
+	v.Add(v.header, zgeo.AlignmentLeft|zgeo.AlignmentTop)
 	return v
 }
 
@@ -26,16 +28,16 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
 	if title == "" {
 		title = id
 	}
-	button := ButtonNew(title, "grayTab", Size{20, 28}, Size{11, 13})
+	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
 	button.ObjectName(id)
-	button.MarginS(Size{10, 0})
-	button.TextInfo.Color = ColorWhite
+	button.MarginS(zgeo.Size{10, 0})
+	button.TextInfo.Color = zgeo.ColorWhite
 	button.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	v.creators[id] = creator
 	button.PressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.header.Add(button, AlignmentLeft|AlignmentVertCenter)
+	v.header.Add(button, zgeo.AlignmentLeft|zgeo.AlignmentVertCenter)
 	if set {
 		v.SetTab(id)
 	}
@@ -57,21 +59,21 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 			str += "Dark"
 			style = FontStyleBold
 		}
-		button.SetImageName(str, Size{11, 13})
+		button.SetImageName(str, zgeo.Size{11, 13})
 		button.TextInfo.Font = FontNice(FontDefaultSize, style)
 	}
 }
 func (v *TabsView) SetTab(id string) {
-	if v.currentID != id {
-		if v.currentID != "" {
-			v.setButtonOn(v.currentID, false)
+	if v.CurrentID != id {
+		if v.CurrentID != "" {
+			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.childView != nil {
 			v.RemoveChild(v.childView)
 		}
 		v.childView = v.creators[id]()
-		v.Add(v.childView, AlignmentLeft|AlignmentTop|AlignmentExpand|AlignmentNonProp)
-		v.currentID = id
+		v.Add(v.childView, zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp)
+		v.CurrentID = id
 		v.setButtonOn(id, true)
 		o := v.View.(NativeViewOwner)
 		if o != nil {

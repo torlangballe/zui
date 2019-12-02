@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/torlangballe/zutil/zfloat"
+	"github.com/torlangballe/zutil/zgeo"
 
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -17,7 +18,7 @@ type StackView struct {
 	weightMinSizes []float64
 }
 
-func StackViewNew(vertical bool, alignment Alignment, name string, elements ...interface{}) *StackView {
+func StackViewNew(vertical bool, alignment zgeo.Alignment, name string, elements ...interface{}) *StackView {
 	s := &StackView{}
 	s.ContainerView.init(s, name)
 	s.AddElements(alignment, elements...)
@@ -64,14 +65,14 @@ func (v *StackView) calcWeightMins() {
 	}
 }
 
-func (v *StackView) GetCalculatedSize(total Size) Size {
+func (v *StackView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	v.calcWeightMins()
 	// for i, c := range v.cells {
 	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
 	// 		fmt.Println("weight size:", c.View.GetObjectName(), v.weightMinSizes[i])
 	// 	}
 	// }
-	var size = Size{}
+	var size = zgeo.Size{}
 	for i, c := range v.cells {
 		if !c.Collapsed && !c.Free {
 			fs := v.getCellSize(c, &i)
@@ -92,7 +93,7 @@ func (v *StackView) GetCalculatedSize(total Size) Size {
 	return size
 }
 
-func (v *StackView) handleAlign(size Size, inRect Rect, a Alignment, cell ContainerViewCell) (Rect, Rect) {
+func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignment, cell ContainerViewCell) (zgeo.Rect, zgeo.Rect) {
 	max := cell.MaxSize
 	// if max.W != 0 {
 	// 	zmath.Maximize(&max.W, size.W)
@@ -100,9 +101,9 @@ func (v *StackView) handleAlign(size Size, inRect Rect, a Alignment, cell Contai
 	// if max.H != 0 {
 	// 	zmath.Maximize(&max.H, size.H)
 	// }
-	var box = inRect.Align(size, a, Size{}, max)
-	var vr Rect
-	if cell.Alignment.Only(v.Vertical)&AlignmentShrink != 0 {
+	var box = inRect.Align(size, a, zgeo.Size{}, max)
+	var vr zgeo.Rect
+	if cell.Alignment.Only(v.Vertical)&zgeo.AlignmentShrink != 0 {
 		s := cell.View.GetCalculatedSize(inRect.Size)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
@@ -123,7 +124,7 @@ func (v *StackView) ForceHorizontalFocusNavigation() {
 // 	return v
 // }
 
-func addDiff(size *Size, maxSize float64, vertical bool, diff *float64, count *int) {
+func addDiff(size *zgeo.Size, maxSize float64, vertical bool, diff *float64, count *int) {
 	d := math.Floor(*diff / float64(*count))
 	if maxSize != 0 {
 		zfloat.Minimize(&d, math.Max(maxSize-size.W, 0))
@@ -134,24 +135,24 @@ func addDiff(size *Size, maxSize float64, vertical bool, diff *float64, count *i
 	*(*size).VerticeP(vertical) += d
 }
 
-func calcMarginAdd(c ContainerViewCell) Size {
+func calcMarginAdd(c ContainerViewCell) zgeo.Size {
 	var m = c.Margin
-	if c.Alignment&AlignmentMarginIsOffset != 0 {
-		m = Size{0, 0}
+	if c.Alignment&zgeo.AlignmentMarginIsOffset != 0 {
+		m = zgeo.Size{0, 0}
 	} else {
-		if c.Alignment&AlignmentHorCenter != 0 {
+		if c.Alignment&zgeo.AlignmentHorCenter != 0 {
 			m.W *= 2
 		}
-		if c.Alignment&AlignmentVertCenter != 0 {
+		if c.Alignment&zgeo.AlignmentVertCenter != 0 {
 			m.H *= 2
 		}
 	}
 	return m
 }
 
-func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) Size {
+func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size {
 	//	tot := v.getCellFitSizeInTotal(total, c)
-	var size = c.View.GetCalculatedSize(Size{})
+	var size = c.View.GetCalculatedSize(zgeo.Size{})
 	// fmt.Println("get cell size:", c.View.GetObjectName(), size.W)
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
@@ -173,29 +174,29 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) Size {
 func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var incs = 0
 	var decs = 0
-	var sizes = map[View]Size{}
-	var ashrink = AlignmentHorShrink
-	var aexpand = AlignmentHorExpand
-	var aless = AlignmentLeft
-	var amore = AlignmentRight
-	var amid = AlignmentHorCenter | AlignmentMarginIsOffset
+	var sizes = map[View]zgeo.Size{}
+	var ashrink = zgeo.AlignmentHorShrink
+	var aexpand = zgeo.AlignmentHorExpand
+	var aless = zgeo.AlignmentLeft
+	var amore = zgeo.AlignmentRight
+	var amid = zgeo.AlignmentHorCenter | zgeo.AlignmentMarginIsOffset
 
 	// fmt.Println("Stack ArrangeChildren:", v.GetObjectName())
 	var r = v.GetRect()
-	r.Pos = Pos{} // translate to 0,0 cause children are in parent
+	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
 	if v.Vertical {
-		ashrink = AlignmentVertShrink
-		aexpand = AlignmentVertExpand
-		aless = AlignmentTop
-		amore = AlignmentBottom
-		amid = AlignmentVertCenter
+		ashrink = zgeo.AlignmentVertShrink
+		aexpand = zgeo.AlignmentVertExpand
+		aless = zgeo.AlignmentTop
+		amore = zgeo.AlignmentBottom
+		amid = zgeo.AlignmentVertCenter
 	}
 	for _, c2 := range v.cells {
-		if c2.Alignment&AlignmentHorizontal == 0 || c2.Alignment&AlignmentVertical == 0 {
+		if c2.Alignment&zgeo.AlignmentHorizontal == 0 || c2.Alignment&zgeo.AlignmentVertical == 0 {
 			zlog.Error(nil, "\n\nStack Align: No vertical or horizontal component:", c2.View.GetObjectName(), c2.Alignment, "\n\n")
 			return
 		}
@@ -223,7 +224,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 	}
 	cn := r.Center().Vertice(v.Vertical)
-	var cs = v.GetCalculatedSize(Size{}).Vertice(v.Vertical)
+	var cs = v.GetCalculatedSize(zgeo.Size{}).Vertice(v.Vertical)
 	cs += v.margin.Size.Vertice(v.Vertical)
 
 	diff := r.Size.Vertice(v.Vertical) - cs
@@ -253,7 +254,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if (c4.Alignment & (amore | aless)) != 0 {
 				var a = c4.Alignment
 				if i != lastNoFreeIndex {
-					a = a.Subtracted(AlignmentExpand.Only(v.Vertical))
+					a = a.Subtracted(zgeo.AlignmentExpand.Only(v.Vertical))
 				}
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
@@ -323,10 +324,10 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	//        HandleAfterLayout()
 }
 
-func StackRows(alignment Alignment, name string, elements ...interface{}) *StackView {
+func StackRows(alignment zgeo.Alignment, name string, elements ...interface{}) *StackView {
 	return StackViewNew(true, alignment, name, elements...)
 }
 
-func StackColumns(alignment Alignment, name string, elements ...interface{}) *StackView {
+func StackColumns(alignment zgeo.Alignment, name string, elements ...interface{}) *StackView {
 	return StackViewNew(false, alignment, name, elements...)
 }

@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 //  Created by Tor Langballe on /9/11/15.
 
 const AnimationDefaultSecs = 0.8
@@ -34,7 +36,7 @@ func AnimationPulseOpacity(view *NativeView, to float64, durationSecs float64, f
 func AnimationRippleWidget(view *NativeView, durationSecs float64) {
 }
 
-func AnimationMoveViewOnPath(view *NativeView, path *Path, float64, repeatCount float64, begin float64) {
+func AnimationMoveViewOnPath(view *NativeView, path *zgeo.Path, float64, repeatCount float64, begin float64) {
 }
 
 func AnimationRotateView(view *NativeView, degreesClockwise float64, secs float64, repeatCount float64) {
@@ -42,7 +44,7 @@ func AnimationRotateView(view *NativeView, degreesClockwise float64, secs float6
 
 type GradientLayer int
 
-func AnimationAddGradientToView(view *NativeView, colors []Color, locations [][]float64, durationSecs float64, autoReverse bool, speed float64, opacity float64, min, max Pos) *GradientLayer {
+func AnimationAddGradientToView(view *NativeView, colors []zgeo.Color, locations [][]float64, durationSecs float64, autoReverse bool, speed float64, opacity float64, min, max zgeo.Pos) *GradientLayer {
 	return nil
 }
 

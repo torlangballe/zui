@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/torlangballe/zutil/zfloat"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zreflect"
 )
 
@@ -83,20 +84,20 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		v.Header = StackViewNew(false, 0, "header")
 		//		v.Header.BGColor(ColorBlue)
 		v.Header.Spacing(0)
-		v.AddElements(AlignmentLeft|AlignmentTop|AlignmentHorExpand|AlignmentNonProp, v.Header)
+		v.AddElements(zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentHorExpand|zgeo.AlignmentNonProp, v.Header)
 	}
 	v.List = ListViewNew(name + ".list")
-	v.List.MinSize(Size{50, 50})
-	v.List.RowColors = []Color{ColorNewGray(0.97, 1), ColorNewGray(0.85, 1)}
+	v.List.MinSize(zgeo.Size{50, 50})
+	v.List.RowColors = []zgeo.Color{zgeo.ColorNewGray(0.97, 1), zgeo.ColorNewGray(0.85, 1)}
 	v.List.HandleScrolledToRows = func(y float64, first, last int) {
 		v.ArrangeChildren(nil)
 	}
-	v.AddElements(AlignmentLeft|AlignmentTop|AlignmentExpand|AlignmentNonProp, v.List)
+	v.AddElements(zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp, v.List)
 
 	v.GetRowHeight = func(i int) float64 { // default height
 		return 50
 	}
-	v.List.CreateRow = func(rowSize Size, i int) View {
+	v.List.CreateRow = func(rowSize zgeo.Size, i int) View {
 		return createRow(v, rowSize, i)
 	}
 	v.List.GetRowHeight = func(i int) float64 {
@@ -117,11 +118,11 @@ func (v *TableView) ReadyToShow() {
 		if f.Height == 0 {
 			v.fields[i].Height = v.GetRowHeight(i) - 6
 		}
-		s := Size{f.MinWidth, 28}
+		s := zgeo.Size{f.MinWidth, 28}
 		cell := ContainerViewCell{}
-		exp := AlignmentNone
+		exp := zgeo.AlignmentNone
 		if f.Kind == zreflect.KindString && f.Enum == nil {
-			exp = AlignmentHorExpand
+			exp = zgeo.AlignmentHorExpand
 		}
 		t := ""
 		if f.Flags&fieldsNoHeader == 0 {
@@ -130,11 +131,11 @@ func (v *TableView) ReadyToShow() {
 				t = f.Name
 			}
 		}
-		cell.Alignment = AlignmentLeft | AlignmentVertCenter | exp
-		button := ButtonNew(t, "grayHeader", s, Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+		cell.Alignment = zgeo.AlignmentLeft | zgeo.AlignmentVertCenter | exp
+		button := ButtonNew(t, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		//		button.Text(f.name)
 		cell.View = button
-		zfloat.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(Size{}).W)
+		zfloat.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(zgeo.Size{}).W)
 		if f.MaxWidth != 0 {
 			cell.MaxSize.W = math.Max(f.MaxWidth, v.fields[i].MinWidth)
 
@@ -147,7 +148,7 @@ func (v *TableView) Reload() {
 	v.List.ReloadData()
 }
 
-func (v *TableView) Margin(r Rect) *TableView {
+func (v *TableView) Margin(r zgeo.Rect) *TableView {
 	v.List.ScrollView.Margin = r
 	return v
 }
@@ -169,15 +170,15 @@ func (v *TableView) FlashRow() {
 
 }
 
-func createRow(v *TableView, rowSize Size, i int) View {
+func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	name := fmt.Sprintf("row %d", i)
-	rowStack := StackViewNew(false, AlignmentNone, name)
+	rowStack := StackViewNew(false, zgeo.AlignmentNone, name)
 	rowStack.Spacing(0)
 	rowStack.CanFocus(true)
-	rowStack.Margin(RectMake(v.RowInset, 0, -v.RowInset, 0))
+	rowStack.Margin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
 	rowStruct := v.GetRow(i)
 	useWidth := (v.Header != nil)
-	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, AlignmentCenter, Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
+	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.AlignmentCenter, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
 		rowStruct := v.GetRow(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
 		if v.RowUpdated != nil {

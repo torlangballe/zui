@@ -2,6 +2,8 @@
 
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 func TextViewNew(text string) *TextView {
 	tv := &TextView{}
 	// tv.Element = DocumentJS.Call("createElement", "INPUT")
@@ -14,7 +16,7 @@ func TextViewNew(text string) *TextView {
 	return tv
 }
 
-func (v *TextView) TextAlignment(a Alignment) View {
+func (v *TextView) TextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	return v
 }

@@ -1,11 +1,13 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 //  Created by Tor Langballe on /13/11/15.
 
 type ScrollView struct {
 	CustomView
-	Margin       Rect
-	HandleScroll func(pos Pos)
+	Margin       zgeo.Rect
+	HandleScroll func(pos zgeo.Pos)
 	child        View
 }
 
@@ -36,7 +38,7 @@ func (v *ScrollView) ArrangeChildren(onlyChild *View) {
 	}
 }
 
-func (v *ScrollView) GetCalculatedSize(total Size) Size {
+func (v *ScrollView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.minSize
 	if v.child != nil {
 		cs := v.child.GetCalculatedSize(total)
@@ -45,17 +47,17 @@ func (v *ScrollView) GetCalculatedSize(total Size) Size {
 	return s
 }
 
-func (v *ScrollView) SetContentOffset(offset Pos, animated bool) {
+func (v *ScrollView) SetContentOffset(offset zgeo.Pos, animated bool) {
 }
 
-func (v *ScrollView) Rect(rect Rect) View {
+func (v *ScrollView) Rect(rect zgeo.Rect) View {
 	v.CustomView.Rect(rect)
 	if v.child != nil {
 		ls := rect.Size
 		ls.H = 20000
 		cs := v.child.GetCalculatedSize(ls)
 		cs.W = ls.W
-		r := Rect{Size: cs}
+		r := zgeo.Rect{Size: cs}
 		r.Add(v.Margin)
 		v.child.Rect(r)
 	}

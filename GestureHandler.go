@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type GestureHandlerType int
 type GestureHandlerState int
 
@@ -22,6 +24,6 @@ const (
 )
 
 type GestureHandler interface {
-	AddGestureTo(view View, gtype GestureHandlerType, taps int, touches int, duration float32, movement float32, dir Alignment)
-	HandleGestureType(gtype GestureHandlerType, view View, pos Pos, delta Pos, state GestureHandlerState, taps int, touches int, dir Alignment, velocity Pos, gvalue float32, name string) bool
+	AddGestureTo(view View, gtype GestureHandlerType, taps int, touches int, duration float32, movement float32, dir zgeo.Alignment)
+	HandleGestureType(gtype GestureHandlerType, view View, pos zgeo.Pos, delta zgeo.Pos, state GestureHandlerState, taps int, touches int, dir zgeo.Alignment, velocity zgeo.Pos, gvalue float32, name string) bool
 }

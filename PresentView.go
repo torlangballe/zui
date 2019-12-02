@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 //  Created by Tor Langballe on /22/9/14.
 
 //var forcingRotationForPortraitOnly = false
@@ -16,7 +18,7 @@ const (
 	PresentViewTransitionReverse
 )
 
-func setTransition(n *NativeView, transition PresentViewTransition, screen Rect, fade float32) {
+func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.Rect, fade float32) {
 	var me = screen
 	var out = me
 	switch transition {
@@ -96,13 +98,13 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 			n.Rect(mainRect)
 		} else {
 			size := n.GetCalculatedSize(mainRect.Size)
-			r := mainRect.Align(size, AlignmentCenter, Size{}, Size{})
+			r := mainRect.Align(size, zgeo.AlignmentCenter, zgeo.Size{}, zgeo.Size{})
 			n.Rect(r)
-			n.BGColor(ColorNewGray(0.8, 1))
+			n.BGColor(zgeo.ColorNewGray(0.8, 1))
 			n.CornerRadius(10)
 			no := n.(NativeViewOwner)
 			if no != nil {
-				no.GetNative().SetDropShadow(Size{4, 4}, 8, ColorBlack)
+				no.GetNative().SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorBlack)
 			}
 		}
 		// cvt, _ := n.(ContainerViewType)

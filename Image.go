@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -108,15 +109,15 @@ type ImageOwner interface {
 }
 */
 
-func MakeImageFromDrawFunction(size Size, scale float32, draw func(size Size, canvas Canvas)) *Image {
+func MakeImageFromDrawFunction(size zgeo.Size, scale float32, draw func(size zgeo.Size, canvas Canvas)) *Image {
 	return nil
 }
 
-func (i *Image) ForPixels(got func(pos Pos, color Color)) {
+func (i *Image) ForPixels(got func(pos zgeo.Pos, color zgeo.Color)) {
 }
 
-func (i *Image) CapInsetsCorner(c Size) *Image {
-	r := RectFromMinMax(c.Pos(), c.Pos().Negative())
+func (i *Image) CapInsetsCorner(c zgeo.Size) *Image {
+	r := zgeo.RectFromMinMax(c.Pos(), c.Pos().Negative())
 	return i.CapInsets(r)
 }
 

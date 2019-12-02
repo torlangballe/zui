@@ -2,6 +2,8 @@ package zgo
 
 import (
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 func (v *ScrollView) init(view View, name string) {
@@ -12,7 +14,7 @@ func (v *ScrollView) init(view View, name string) {
 	v.set("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		y := v.get("scrollTop").Float()
 		if v.HandleScroll != nil {
-			v.HandleScroll(Pos{0, y})
+			v.HandleScroll(zgeo.Pos{0, y})
 		}
 		return nil
 	}))

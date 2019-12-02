@@ -12,6 +12,7 @@ import (
 	"github.com/disintegration/imaging"
 
 	"github.com/nfnt/resize"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -45,40 +46,40 @@ func ImageFromPath(path string, got func()) *Image {
 	return i
 }
 
-func (i *Image) Colored(color Color, size Size) *Image {
+func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
 	//	rect := NewRect(0, 0, size.W, size.H)
 	return i
 }
 
-func (i *Image) Size() Size {
+func (i *Image) Size() zgeo.Size {
 	if i.goimage == nil {
-		return Size{}
+		return zgeo.Size{}
 	}
 	s := i.goimage.Bounds().Size()
-	return Size{float64(s.X), float64(s.Y)}
+	return zgeo.Size{float64(s.X), float64(s.Y)}
 }
 
-func (i *Image) CapInsets(capInsets Rect) *Image {
+func (i *Image) CapInsets(capInsets zgeo.Rect) *Image {
 	//	i.capInsets = capInsets
 	return i
 }
 
-func (i *Image) GetCapInsets() Rect {
-	return Rect{}
+func (i *Image) GetCapInsets() zgeo.Rect {
+	return zgeo.Rect{}
 }
 
 func (i *Image) HasAlpha() bool {
 	return true
 }
 
-func (i *Image) TintedWithColor(color Color) *Image {
+func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 	return i
 }
 
-func (i *Image) ShrunkInto(size Size, proportional bool) *Image {
+func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	var vsize = size
 	if proportional {
-		vsize = Rect{Size: size}.Align(i.Size(), AlignmentCenter|AlignmentShrink|AlignmentScaleToFitProportionally, Size{0, 0}, Size{0, 0}).Size
+		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.AlignmentCenter|zgeo.AlignmentShrink|zgeo.AlignmentScaleToFitProportionally, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
 	}
 	scale := float64(i.scale)
 	width := uint(vsize.W * scale)
@@ -91,7 +92,7 @@ func (i *Image) ShrunkInto(size Size, proportional bool) *Image {
 	return ni
 }
 
-func (i *Image) Cropped(crop Rect, copy bool) *Image {
+func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
 	// config := cutter.Config{
 	// 	Width:  int(crop.Size.W),
 	// 	Height: int(crop.Size.H),
@@ -151,12 +152,12 @@ func (i *Image) GetRotationAdjusted(flip bool) *Image { // adjustForScreenOrient
 	return i
 }
 
-func (i *Image) Rotated(deg float64, around *Pos) *Image {
+func (i *Image) Rotated(deg float64, around *zgeo.Pos) *Image {
 	var pos = i.Size().Pos().DividedByD(2)
 	if around != nil {
 		pos = *around
 	}
-	transform := MatrixForRotatingAroundPoint(pos, deg)
+	transform := zgeo.MatrixForRotatingAroundPoint(pos, deg)
 	fmt.Println("Image.Rotated not made yet:", transform)
 	return i
 }

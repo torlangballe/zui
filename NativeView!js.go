@@ -2,6 +2,8 @@
 
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type NativeView struct {
 	View      View
 	presented bool
@@ -11,23 +13,23 @@ func (v *NativeView) GetView() *NativeView {
 	return v
 }
 
-func (v *NativeView) Rect(rect Rect) View {
+func (v *NativeView) Rect(rect zgeo.Rect) View {
 	return v
 }
 
-func (v *NativeView) GetRect() Rect {
-	return Rect{}
+func (v *NativeView) GetRect() zgeo.Rect {
+	return zgeo.Rect{}
 }
 
-func (v *NativeView) GetLocalRect() Rect {
-	return Rect{}
+func (v *NativeView) GetLocalRect() zgeo.Rect {
+	return zgeo.Rect{}
 }
 
-func (v *NativeView) LocalRect(rect Rect) {
+func (v *NativeView) LocalRect(rect zgeo.Rect) {
 }
 
-func (v *NativeView) GetCalculatedSize(total Size) Size {
-	return Size{10, 10}
+func (v *NativeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+	return zgeo.Size{10, 10}
 }
 
 func (v *NativeView) ObjectName(name string) View {
@@ -38,7 +40,7 @@ func (v *NativeView) GetObjectName() string {
 	return ""
 }
 
-func (v *NativeView) Color(c Color) View {
+func (v *NativeView) Color(c zgeo.Color) View {
 	return v
 }
 
@@ -50,7 +52,7 @@ func (v *NativeView) GetAlpha() float32 {
 	return 1
 }
 
-func (v *NativeView) BGColor(c Color) View {
+func (v *NativeView) BGColor(c zgeo.Color) View {
 	return v
 }
 
@@ -58,7 +60,7 @@ func (v *NativeView) CornerRadius(radius float64) View {
 	return v
 }
 
-func (v *NativeView) Stroke(width float64, c Color) View {
+func (v *NativeView) Stroke(width float64, c zgeo.Color) View {
 	return v
 }
 
@@ -134,5 +136,5 @@ func (v *NativeView) AddChild(child View, index int) {
 func (v *NativeView) RemoveChild(child View) {
 }
 
-func (v *NativeView) SetDropShadow(deltaSize Size, blur float32, color Color) {
+func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
 }

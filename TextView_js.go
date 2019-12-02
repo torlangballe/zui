@@ -3,6 +3,7 @@ package zgo
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -11,7 +12,7 @@ const jsTextMargin = 3
 func TextViewNew(text string) *TextView {
 	tv := &TextView{}
 	tv.Element = DocumentJS.Call("createElement", "INPUT")
-	tv.Margin = SizeBoth(TextViewDefaultMargin)
+	tv.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
 	tv.set("style", "position:absolute")
 	tv.set("type", "text")
 	tv.set("value", text)
@@ -22,12 +23,12 @@ func TextViewNew(text string) *TextView {
 	return tv
 }
 
-func (v *TextView) TextAlignment(a Alignment) View {
+func (v *TextView) TextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	str := "left"
-	if a&AlignmentRight != 0 {
+	if a&zgeo.AlignmentRight != 0 {
 		str = "right"
-	} else if a&AlignmentHorCenter != 0 {
+	} else if a&zgeo.AlignmentHorCenter != 0 {
 		str = "center"
 	}
 	v.style().Set("textAlign", str)
@@ -49,8 +50,8 @@ func (v *TextView) IsPassword(is bool) *TextView {
 	return v
 }
 
-func (v *TextView) Rect(rect Rect) View {
-	m := v.Margin.Maxed(SizeBoth(jsTextMargin))
+func (v *TextView) Rect(rect zgeo.Rect) View {
+	m := v.Margin.Maxed(zgeo.SizeBoth(jsTextMargin))
 	rect = rect.Expanded(m.Negative())
 	rect.Pos.Y -= 3
 	// fmt.Println("TV: Rect:", v.GetObjectName(), rect)
@@ -75,7 +76,7 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 				if v.updateTimer != nil {
 					v.updateTimer.Stop()
 				}
-				v.updateTimer = ztimer.TimerSet(v.UpdateSecs, true, func() {
+				v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
 					v.changed(v)
 				})
 			}

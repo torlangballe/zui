@@ -1,6 +1,9 @@
 package zgo
 
-import "github.com/torlangballe/zutil/ztimer"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
+)
 
 //  Created by Tor Langballe on /4/12/15.
 
@@ -12,15 +15,15 @@ type ListView struct {
 
 	GetRowCount          func() int
 	GetRowHeight         func(i int) float64
-	CreateRow            func(rowSize Size, i int) View
+	CreateRow            func(rowSize zgeo.Size, i int) View
 	HandleRowSelected    func(i int)
 	HandleScrolledToRows func(y float64, first, last int)
 
-	RowColors []Color
+	RowColors []zgeo.Color
 
 	selectionIndex int
 	Selectable     bool
-	selectedColor  Color
+	selectedColor  zgeo.Color
 
 	topPos float64
 	stack  *CustomView
@@ -30,8 +33,8 @@ type ListView struct {
 func ListViewNew(name string) *ListView {
 	v := &ListView{}
 	v.init(v, name)
-	v.RowColors = []Color{ColorWhite}
-	v.selectedColor = ColorNew(0.6, 0.6, 0.8, 1)
+	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
+	v.selectedColor = zgeo.ColorNew(0.6, 0.6, 0.8, 1)
 	return v
 	//        allowsSelection = true // selectable
 }
@@ -54,7 +57,7 @@ func (v *ListView) GetSpacing() float64 {
 	return v.spacing
 }
 
-func (v *ListView) SelectedColor(col Color) *ListView {
+func (v *ListView) SelectedColor(col zgeo.Color) *ListView {
 	v.selectedColor = col
 	return v
 }
@@ -64,7 +67,7 @@ func (v *ListView) init(view View, name string) {
 	v.Selectable = true
 	v.selectionIndex = -1
 	v.rows = map[int]View{}
-	v.HandleScroll = func(pos Pos) {
+	v.HandleScroll = func(pos zgeo.Pos) {
 		v.topPos = pos.Y
 		first, last := v.layoutRows()
 		if v.HandleScrolledToRows != nil {
@@ -73,7 +76,7 @@ func (v *ListView) init(view View, name string) {
 	}
 }
 
-func (v *ListView) Rect(rect Rect) View {
+func (v *ListView) Rect(rect zgeo.Rect) View {
 	v.ScrollView.Rect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
@@ -89,7 +92,7 @@ func (v *ListView) Rect(rect Rect) View {
 		}
 	}
 	w := rect.Size.W + v.Margin.Size.W
-	r := Rect{pos, Size{w, h}}
+	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.Rect(r)
 	v.layoutRows()
 	return v
@@ -106,10 +109,10 @@ func (v *ListView) layoutRows() (first, last int) {
 	first = -1
 	//	fmt.Println("\nlayout rows")
 	for i := 0; i < count; i++ {
-		var s Size
+		var s zgeo.Size
 		s.H = v.GetRowHeight(i)
 		s.W = ls.W + v.Margin.Size.W
-		r := Rect{Pos{0, y}, s}
+		r := zgeo.Rect{zgeo.Pos{0, y}, s}
 		if r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
 			if first == -1 {
 				first = i
@@ -199,7 +202,7 @@ func (v *ListView) Select(i int) {
 func (v *ListView) FlashSelect(i int) {
 	count := 0
 	v.Select(i)
-	ztimer.RepeaterSet(0.1, true, true, func() bool {
+	ztimer.Repeat(0.1, true, true, func() bool {
 		if count%2 == 0 {
 			v.Select(i)
 		} else {

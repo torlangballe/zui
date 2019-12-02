@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 func ScreenMain() Screen {
 	var m Screen
 
@@ -8,7 +10,7 @@ func ScreenMain() Screen {
 	h := s.Get("height").Float()
 
 	dpr := WindowJS.Get("devicePixelRatio").Float()
-	m.Rect = RectMake(0, 0, w, h)
+	m.Rect = zgeo.RectMake(0, 0, w, h)
 	m.Scale = dpr
 	m.SoftScale = 1
 	m.UsableRect = m.Rect

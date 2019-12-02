@@ -1,17 +1,20 @@
 package zgo
 
-import "github.com/torlangballe/zutil/ztimer"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
+)
 
 type CustomView struct {
 	NativeView
 	canvas        *Canvas
-	minSize       Size
+	minSize       zgeo.Size
 	pressed       func()
 	valueChanged  func(view View)
-	draw          func(rect Rect, canvas *Canvas, view View)
+	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
 	timers        []*ztimer.Timer
-	color         Color
+	color         zgeo.Color
 	IsHighlighted bool
 	exposeTimer   ztimer.Timer
 	isSetup       bool
@@ -23,7 +26,7 @@ func CustomViewNew(name string) *CustomView {
 	return c
 }
 
-func (v *CustomView) GetCalculatedSize(total Size) Size {
+func (v *CustomView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.GetMinSize()
 }
 
@@ -38,7 +41,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	// fmt.Println("exposeInSecs", v.GetObjectName())
 	v.exposed = true
 	v.exposeTimer.Stop()
-	v.exposeTimer.Set(secs, true, func() {
+	v.exposeTimer.StartIn(secs, true, func() {
 		io, got := v.View.(ImageOwner)
 		if got {
 			image := io.GetImage()
@@ -55,17 +58,17 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	})
 }
 
-func (v *CustomView) Color(color Color) View {
+func (v *CustomView) Color(color zgeo.Color) View {
 	v.color = color
 	return v
 }
 
-func (v *CustomView) MinSize(s Size) *CustomView {
+func (v *CustomView) MinSize(s zgeo.Size) *CustomView {
 	v.minSize = s
 	return v
 }
 
-func (v *CustomView) GetMinSize() Size {
+func (v *CustomView) GetMinSize() zgeo.Size {
 	return v.minSize
 }
 
@@ -73,21 +76,21 @@ func (v *CustomView) ValueHandler(handler func(view View)) {
 	v.valueChanged = handler
 }
 
-func (v *CustomView) DrawHandler(handler func(rect Rect, canvas *Canvas, view View)) {
+func (v *CustomView) DrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
 	v.makeCanvas()
 	v.draw = handler
 }
 
-func (v *CustomView) GetPosFromMe(pos Pos, inView View) Pos {
-	return Pos{}
+func (v *CustomView) GetPosFromMe(pos zgeo.Pos, inView View) zgeo.Pos {
+	return zgeo.Pos{}
 }
 
-func (v *CustomView) GetPosToMe(pos Pos, inView View) Pos {
-	return Pos{}
+func (v *CustomView) GetPosToMe(pos zgeo.Pos, inView View) zgeo.Pos {
+	return zgeo.Pos{}
 }
 
-func (v *CustomView) GetViewsRectInMyCoordinates(view View) Rect {
-	return Rect{}
+func (v *CustomView) GetViewsRectInMyCoordinates(view View) zgeo.Rect {
+	return zgeo.Rect{}
 }
 
 func (v *CustomView) HandleClosing() {
@@ -105,18 +108,18 @@ func (v *CustomView) Rotate(degrees float64) {
 	//self.transform = CGAffineTransform(rotationAngle CGFloat(r))
 }
 
-func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn Size) Size {
+func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn zgeo.Size) zgeo.Size {
 	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))
-	return Size{}
+	return zgeo.Size{}
 }
 
-func (v *CustomView) getStateColor(col Color) Color {
+func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
 	if v.IsHighlighted {
 		g := col.GetGrayScale()
 		if g < 0.5 {
-			col = col.Mix(ColorWhite, 0.5)
+			col = col.Mix(zgeo.ColorWhite, 0.5)
 		} else {
-			col = col.Mix(ColorBlack, 0.5)
+			col = col.Mix(zgeo.ColorBlack, 0.5)
 		}
 	}
 	if !v.IsUsable() {

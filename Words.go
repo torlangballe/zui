@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 //  Created by Tor Langballe on /11/8/18.
@@ -346,18 +348,18 @@ func WordsMemorySizeAsstring(b int64, langCode string, maxSignificant int, isBit
 	return str
 }
 
-func WordsGetHemisphereDirectionsFromGeoAlignment(alignment Alignment, separator, langCode string) string {
+func WordsGetHemisphereDirectionsFromGeoAlignment(alignment zgeo.Alignment, separator, langCode string) string {
 	var str = ""
-	if alignment&AlignmentTop != 0 {
+	if alignment&zgeo.AlignmentTop != 0 {
 		str = TSL("North", langCode) // General name for north as in north-east wind etc
 	}
-	if alignment&AlignmentBottom != 0 {
+	if alignment&zgeo.AlignmentBottom != 0 {
 		str = StrConcat(separator, str, TSL("South", langCode)) // General name for south as in south-east wind etc
 	}
-	if alignment&AlignmentLeft != 0 {
+	if alignment&zgeo.AlignmentLeft != 0 {
 		str = StrConcat(separator, str, TSL("West", langCode)) // General name for west as in north-west wind etc
 	}
-	if alignment&AlignmentRight != 0 {
+	if alignment&zgeo.AlignmentRight != 0 {
 		str = StrConcat(separator, str, TSL("East", langCode)) // General name for north as in north-east wind etc
 	}
 	return str

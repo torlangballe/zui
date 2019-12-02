@@ -2,10 +2,12 @@ package zgo
 
 import (
 	"strings"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 type View interface {
-	GetCalculatedSize(total Size) Size
+	GetCalculatedSize(total zgeo.Size) zgeo.Size
 
 	ObjectName(name string) View
 	GetObjectName() string
@@ -16,10 +18,10 @@ type View interface {
 	Alpha(alpha float32) View
 	GetAlpha() float32
 
-	Color(color Color) View
-	BGColor(color Color) View
+	Color(color zgeo.Color) View
+	BGColor(color zgeo.Color) View
 	CornerRadius(radius float64) View
-	Stroke(width float64, color Color) View
+	Stroke(width float64, color zgeo.Color) View
 
 	CanFocus(can bool) View
 	Focus(focus bool) View
@@ -27,8 +29,8 @@ type View interface {
 
 	Opaque(opaque bool) View
 
-	Rect(rect Rect) View
-	GetRect() Rect
+	Rect(rect zgeo.Rect) View
+	GetRect() zgeo.Rect
 
 	Show(show bool) View
 	IsShown() bool
@@ -42,7 +44,7 @@ type NativeViewOwner interface {
 }
 
 type ViewDrawProtocol interface {
-	Draw(rect Rect, canvas Canvas, view View)
+	Draw(rect zgeo.Rect, canvas Canvas, view View)
 }
 
 type ExposableType interface {

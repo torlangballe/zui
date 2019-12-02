@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 // type ViewBaseHandler struct {
 // 	view    View
 // 	parent  View
@@ -24,8 +26,8 @@ type TextLayoutOwner interface {
 	GetFont() *Font
 	Text(text string) View
 	GetText() string
-	TextAlignment(a Alignment) View
-	GetTextAlignment() Alignment
+	TextAlignment(a zgeo.Alignment) View
+	GetTextAlignment() zgeo.Alignment
 	GetMinWidth() float64
 	GetMaxWidth() float64
 	GetMaxLines() int
@@ -34,18 +36,18 @@ type TextLayoutOwner interface {
 	MaxLines(max int) View
 }
 
-func TextLayoutOwnerCalculateSize(o TextLayoutOwner) Size {
+func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {
 	return TextLayoutCalculateSize(o.GetTextAlignment(), o.GetFont(), o.GetText(), o.GetMaxLines(), o.GetMaxWidth())
 }
 
-func TextLayoutCalculateSize(alignment Alignment, font *Font, text string, maxLines int, maxWidth float64) Size {
+func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64) zgeo.Size {
 	var t TextInfo
 	t.Alignment = alignment
 	t.Text = text
 	noWidth := false
 	if maxWidth != 0 {
 		noWidth = true
-		t.Rect = Rect{Size: Size{maxWidth, 99999}}
+		t.Rect = zgeo.Rect{Size: zgeo.Size{maxWidth, 99999}}
 	}
 	t.Font = font
 	if maxLines != 0 {

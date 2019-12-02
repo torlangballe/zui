@@ -2,13 +2,15 @@ package zgo
 
 import (
 	"math"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 //  Created by Tor Langballe on /21/10/15.
 
 type Canvas struct {
 	canvasNative
-	currentMatrix Matrix // is currentTransform...
+	currentMatrix zgeo.Matrix // is currentTransform...
 }
 
 type CanvasBlendMode int
@@ -32,12 +34,12 @@ const (
 	CanvasBlendModeLuminosity
 )
 
-func (c *Canvas) DrawImage(image *Image, destRect Rect, opacity float32, blendMode CanvasBlendMode, sourceRect Rect) {
+func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, blendMode CanvasBlendMode, sourceRect zgeo.Rect) {
 	//	fmt.Println("Canvas.DrawImage", sourceRect, image.path, destRect, image.Size())
 	if image != nil {
 		if image.GetCapInsets().IsNull() {
 			if sourceRect.IsNull() {
-				sourceRect = Rect{Size: image.Size()}
+				sourceRect = zgeo.Rect{Size: image.Size()}
 			}
 			c.drawPlainImage(image, destRect, opacity, blendMode, sourceRect)
 		} else {
@@ -46,18 +48,18 @@ func (c *Canvas) DrawImage(image *Image, destRect Rect, opacity float32, blendMo
 	}
 }
 
-func (c *Canvas) drawInsetRow(image *Image, inset, dest Rect, sy, sh, dy, dh float64, opacity float32, blendMode CanvasBlendMode) {
+func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, dh float64, opacity float32, blendMode CanvasBlendMode) {
 	size := image.Size()
 	// diff := dest.Size.Minus(size)
 	insetMid := size.Minus(inset.Size.Negative())
-	c.drawPlainImage(image, RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, blendMode, RectFromXYWH(0, sy, inset.Pos.X, sh))
+	c.drawPlainImage(image, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, blendMode, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
 	// fmt.Println("drawInsetRow:", RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh))
-	c.drawPlainImage(image, RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, blendMode, RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
-	c.drawPlainImage(image, RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, blendMode, RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
+	c.drawPlainImage(image, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, blendMode, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
+	c.drawPlainImage(image, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, blendMode, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
 
-func (c *Canvas) drawInsetImage(image *Image, inset, dest Rect, opacity float32, blendMode CanvasBlendMode) {
+func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity float32, blendMode CanvasBlendMode) {
 	size := image.Size()
 	insetMid := size.Minus(inset.Size.Negative())
 	diff := dest.Size.Minus(size).Plus(insetMid)

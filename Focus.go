@@ -1,8 +1,10 @@
 package zgo
 
-var focusColor = ColorNew(0.5, 0.5, 1, 1)
+import "github.com/torlangballe/zutil/zgeo"
 
-func FocusDraw(canvas *Canvas, rect Rect, corner, width float64, opacity float32) {
+var focusColor = zgeo.ColorNew(0.5, 0.5, 1, 1)
+
+func FocusDraw(canvas *Canvas, rect zgeo.Rect, corner, width float64, opacity float32) {
 	if corner == 0 {
 		corner = 7
 	}
@@ -12,7 +14,7 @@ func FocusDraw(canvas *Canvas, rect Rect, corner, width float64, opacity float32
 	ss := ScreenMain().SoftScale
 	w := width * ss
 	r := rect.ExpandedD(-width / 2 * ss)
-	path := PathNewFromRect(r, Size{corner, corner})
+	path := zgeo.PathNewFromRect(r, zgeo.Size{corner, corner})
 	canvas.SetColor(focusColor, opacity)
-	canvas.StrokePath(path, w, PathLineRound)
+	canvas.StrokePath(path, w, zgeo.PathLineRound)
 }

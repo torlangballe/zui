@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type MenuView struct {
 	NativeView
 	maxWidth float64
@@ -7,16 +9,16 @@ type MenuView struct {
 	keyVals  Dictionary
 }
 
-func (v *MenuView) GetCalculatedSize(total Size) Size {
+func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	maxString := ""
 	for s := range v.keyVals {
 		if len(s) > len(maxString) {
 			maxString = s
 		}
 	}
-	s := TextLayoutCalculateSize(AlignmentLeft, v.GetFont(), maxString, 1, v.maxWidth)
+	s := TextLayoutCalculateSize(zgeo.AlignmentLeft, v.GetFont(), maxString, 1, v.maxWidth)
 	// fmt.Println("MenuView calcedsize:", s)
-	s.Add(Size{20, 4})
+	s.Add(zgeo.Size{20, 4})
 	return s
 }
 

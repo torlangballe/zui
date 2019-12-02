@@ -1,6 +1,7 @@
 package zgo
 
 import (
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -8,24 +9,24 @@ import (
 // Original class created by Tor Langballe on 23-sept-2014.
 
 type ContainerViewCell struct {
-	Alignment Alignment
-	Margin    Size
+	Alignment zgeo.Alignment
+	Margin    zgeo.Size
 	View      View
-	MaxSize   Size // MaxSize is maximum size of child-view including margin
-	MinSize   Size // MinSize is minimum size of child-view including margin
+	MaxSize   zgeo.Size // MaxSize is maximum size of child-view including margin
+	MinSize   zgeo.Size // MinSize is minimum size of child-view including margin
 	Collapsed bool
 	Free      bool // Free Cells are placed using ContainerView method, not using any
 	Weight    float64
 }
 
-func CVCell(view View, alignment Alignment) *ContainerViewCell {
+func CVCell(view View, alignment zgeo.Alignment) *ContainerViewCell {
 	cell := ContainerViewCell{Alignment: alignment, View: view}
 	return &cell
 }
 
 type ContainerView struct {
 	CustomView
-	margin            Rect
+	margin            zgeo.Rect
 	singleOrientation bool
 	//	view              *CustomView
 	cells         []ContainerViewCell
@@ -34,7 +35,7 @@ type ContainerView struct {
 
 func Container(elements ...interface{}) *ContainerView {
 	c := ContainerViewNew(nil, "container")
-	c.AddElements(AlignmentNone, elements...)
+	c.AddElements(zgeo.AlignmentNone, elements...)
 	return c
 }
 
@@ -45,27 +46,27 @@ func (v *ContainerView) GetChildren() (children []View) {
 	return
 }
 
-func calculateAddAlignment(def, a Alignment) Alignment {
-	if a&AlignmentVertical != 0 && def&AlignmentVertical != 0 {
-		def &= ^AlignmentVertical
+func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
+	if a&zgeo.AlignmentVertical != 0 && def&zgeo.AlignmentVertical != 0 {
+		def &= ^zgeo.AlignmentVertical
 	}
-	if a&AlignmentHorizontal != 0 && def&AlignmentHorizontal != 0 {
-		def &= ^AlignmentHorizontal
+	if a&zgeo.AlignmentHorizontal != 0 && def&zgeo.AlignmentHorizontal != 0 {
+		def &= ^zgeo.AlignmentHorizontal
 	}
 	a |= def
-	if a&AlignmentVertical == 0 {
-		a |= AlignmentTop
+	if a&zgeo.AlignmentVertical == 0 {
+		a |= zgeo.AlignmentTop
 	}
-	if a&AlignmentHorizontal == 0 {
-		a |= AlignmentLeft
+	if a&zgeo.AlignmentHorizontal == 0 {
+		a |= zgeo.AlignmentLeft
 	}
 	return a
 }
 
-func (c *ContainerView) AddElements(defAlignment Alignment, elements ...interface{}) {
+func (c *ContainerView) AddElements(defAlignment zgeo.Alignment, elements ...interface{}) {
 	var gotView *View
-	var gotAlign Alignment
-	var gotMargin Size
+	var gotAlign zgeo.Alignment
+	var gotMargin zgeo.Size
 
 	for _, v := range elements {
 		if cell, got := v.(ContainerViewCell); got {
@@ -75,26 +76,26 @@ func (c *ContainerView) AddElements(defAlignment Alignment, elements ...interfac
 		if view, got := v.(View); got {
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
-				c.AddAdvanced(*gotView, a, gotMargin, Size{}, -1, false)
+				c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, -1, false)
 				gotView = nil
-				gotAlign = AlignmentNone
-				gotMargin = Size{}
+				gotAlign = zgeo.AlignmentNone
+				gotMargin = zgeo.Size{}
 			}
 			gotView = &view
 			continue
 		}
-		if a, got := v.(Alignment); got {
+		if a, got := v.(zgeo.Alignment); got {
 			gotAlign = a
 			continue
 		}
-		if m, got := v.(Size); got {
+		if m, got := v.(zgeo.Size); got {
 			gotMargin = m
 			continue
 		}
 	}
 	if gotView != nil {
 		a := calculateAddAlignment(defAlignment, gotAlign)
-		c.AddAdvanced(*gotView, a, gotMargin, Size{}, -1, false)
+		c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, -1, false)
 	}
 }
 
@@ -116,13 +117,13 @@ func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) *ContainerView
 	return v
 }
 
-func (v *ContainerView) Margin(margin Rect) *ContainerView {
+func (v *ContainerView) Margin(margin zgeo.Rect) *ContainerView {
 	v.margin = margin
 	return v
 }
 
-func (v *ContainerView) MarginS(margin Size) *ContainerView {
-	v.margin = RectFromMinMax(margin.Pos(), margin.Pos().Negative())
+func (v *ContainerView) MarginS(margin zgeo.Size) *ContainerView {
+	v.margin = zgeo.RectFromMinMax(margin.Pos(), margin.Pos().Negative())
 	return v
 }
 
@@ -143,13 +144,13 @@ func (v *ContainerView) AddCell(cell ContainerViewCell, index int) *ContainerVie
 	}
 }
 
-func (v *ContainerView) Add(view View, align Alignment) *ContainerViewCell {
-	return v.AddAdvanced(view, align, Size{}, Size{}, -1, false)
+func (v *ContainerView) Add(view View, align zgeo.Alignment) *ContainerViewCell {
+	return v.AddAdvanced(view, align, zgeo.Size{}, zgeo.Size{}, -1, false)
 }
 
-func (v *ContainerView) AddAdvanced(view View, align Alignment, marg Size, maxSize Size, index int, free bool) *ContainerViewCell {
+func (v *ContainerView) AddAdvanced(view View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *ContainerViewCell {
 	collapsed := false
-	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, Size{}, collapsed, free, 0.0}, index)
+	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, zgeo.Size{}, collapsed, free, 0.0}, index)
 }
 
 func (v *ContainerView) Contains(view View) bool {
@@ -161,7 +162,7 @@ func (v *ContainerView) Contains(view View) bool {
 	return false
 }
 
-func (v *ContainerView) Rect(rect Rect) View {
+func (v *ContainerView) Rect(rect zgeo.Rect) View {
 	v.CustomView.Rect(rect)
 	ct, got := v.View.(ContainerType)
 	//	fmt.Println("CV: Rect", got)
@@ -171,7 +172,7 @@ func (v *ContainerView) Rect(rect Rect) View {
 	return v
 }
 
-func (v *ContainerView) GetCalculatedSize(total Size) Size {
+func (v *ContainerView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.GetMinSize()
 }
 
@@ -196,7 +197,7 @@ func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
 	//        })
 }
 
-func (v *ContainerView) arrangeChild(c ContainerViewCell, r Rect) {
+func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
 	s := c.View.GetCalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
@@ -217,7 +218,7 @@ func (v *ContainerView) isLoading() bool {
 }
 
 func (v *ContainerView) WhenLoaded(done func()) {
-	ztimer.RepeaterSet(0.1, true, true, func() bool {
+	ztimer.Repeat(0.1, true, true, func() bool {
 		if v.isLoading() {
 			return true
 		}
@@ -232,13 +233,13 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
-	r := Rect{Size: v.GetRect().Size}.Plus(v.margin)
+	r := zgeo.Rect{Size: v.GetRect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
 		if got && v.layoutHandler != nil {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
-		if c.Alignment != AlignmentNone {
+		if c.Alignment != zgeo.AlignmentNone {
 			if onlyChild == nil || c.View == *onlyChild {
 				v.arrangeChild(c, r)
 			}
