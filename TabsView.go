@@ -5,7 +5,7 @@ import "github.com/torlangballe/zutil/zgeo"
 type TabsView struct {
 	StackView
 	header    *StackView
-	childView View
+	ChildView View
 	creators  map[string]func() View
 	CurrentID string
 }
@@ -68,11 +68,11 @@ func (v *TabsView) SetTab(id string) {
 		if v.CurrentID != "" {
 			v.setButtonOn(v.CurrentID, false)
 		}
-		if v.childView != nil {
-			v.RemoveChild(v.childView)
+		if v.ChildView != nil {
+			v.RemoveChild(v.ChildView)
 		}
-		v.childView = v.creators[id]()
-		v.Add(v.childView, zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp)
+		v.ChildView = v.creators[id]()
+		v.Add(v.ChildView, zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		o := v.View.(NativeViewOwner)
@@ -81,12 +81,12 @@ func (v *TabsView) SetTab(id string) {
 				return
 			}
 		}
-		presentViewCallReady(v.childView)
+		presentViewCallReady(v.ChildView)
 		if v.presented { // don't do if not first set up yet
 			v.header.ArrangeChildren(nil)
 			v.ArrangeChildren(nil)
 		}
-		et, _ := v.childView.(ExposableType)
+		et, _ := v.ChildView.(ExposableType)
 		if et != nil {
 			et.Expose()
 		}

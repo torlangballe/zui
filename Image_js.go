@@ -34,7 +34,7 @@ func ImageFromPath(path string, got func()) *Image {
 
 func (i *Image) load(path string, done func()) {
 	if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
-		path = "www/images/" + path
+		path = "images/" + path
 	}
 	i.path = path
 	i.loading = true

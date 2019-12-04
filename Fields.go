@@ -117,6 +117,11 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *field, i
 
 func fieldsMakeMenu(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
 	menu := MenuViewNew(f.Enum, item.Value)
+	// for k, v := range menu.keyVals {
+	// 	r := reflect.ValueOf(v)
+	// 	fmt.Println("VALTYPE:", k, r.Kind(), r.Type())
+	// }
+
 	menu.ChangedHandler(func(key string, val interface{}) {
 		if handleUpdate != nil {
 			handleUpdate(i)
@@ -505,7 +510,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 				f.MaxWidth += dig2 * 2
 			}
 		}
-		fmt.Println("Time max:", f.MaxWidth)
+		//		fmt.Println("Time max:", f.MaxWidth)
 
 	case zreflect.KindFunc:
 		if f.MinWidth == 0 {
@@ -568,6 +573,7 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 		if f == nil {
 			continue
 		}
+
 		view := children[j]
 		j++
 		if f.Flags&fieldIsStatic != 0 {
@@ -649,7 +655,7 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 			break
 
 		case zreflect.KindString:
-			if f.Flags&fieldIsStatic != 0 && f.Flags&fieldIsImage != 0 {
+			if f.Flags&fieldIsStatic == 0 && f.Flags&fieldIsImage == 0 {
 				tv, _ := view.(*TextView)
 				text := tv.GetText()
 				str := item.Address.(*string)
@@ -676,10 +682,11 @@ func FieldsAddEnum(name string, nameVals Dictionary) {
 	fieldEnums[name] = nameVals
 }
 
-func FieldsAddStringEnum(name string, vals []string) {
+func FieldsAddStringBasedEnum(name string, vals ...interface{}) {
 	m := Dictionary{}
 	for _, v := range vals {
-		m[v] = v
+		n := fmt.Sprintf("%v", v)
+		m[n] = v
 	}
 	fieldEnums[name] = m
 }

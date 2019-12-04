@@ -36,8 +36,9 @@ func (v *MenuView) updateVals(vals Dictionary, setFirst bool, value interface{})
 	for _, k := range zmap.GetSortedKeysFromSIMap(vals) {
 		val := vals[k]
 		option := DocumentJS.Call("createElement", "option")
-		option.Set("value", val)
-		if setFirst || fmt.Sprint(value) == fmt.Sprint(val) {
+		sval := fmt.Sprint(val)
+		option.Set("value", sval)
+		if setFirst || fmt.Sprint(value) == sval {
 			option.Set("selected", "true")
 		}
 		option.Set("innerHTML", k)

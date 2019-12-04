@@ -160,6 +160,7 @@ func (v *ListView) UpdateRow(row int) {
 }
 
 func (v *ListView) ReloadData() {
+	v.rows = map[int]View{}
 	v.layoutRows()
 }
 
