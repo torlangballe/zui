@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
@@ -58,7 +59,8 @@ type field struct {
 	Password      bool
 	Height        float64
 	Weight        float64
-	Enum          Dictionary
+	Enum          zdict.Dict
+	LocalEnum     string
 	Size          zgeo.Size
 	Flags         int
 	DefaultWeight float64
@@ -115,16 +117,21 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *field, i
 	return button
 }
 
-func fieldsMakeMenu(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
+func fieldsMakeEnumMenu(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
 	menu := MenuViewNew(f.Enum, item.Value)
-	// for k, v := range menu.keyVals {
-	// 	r := reflect.ValueOf(v)
-	// 	fmt.Println("VALTYPE:", k, r.Kind(), r.Type())
-	// }
-
 	menu.ChangedHandler(func(key string, val interface{}) {
 		if handleUpdate != nil {
 			handleUpdate(i)
+		}
+	})
+	return menu
+}
+
+func fieldsMakeLocalEnumMenu(item zreflect.Item, enumIndex int, enum zdict.Dict, handleUpdate func(i int)) View {
+	menu := MenuViewNew(enum, item.Value)
+	menu.ChangedHandler(func(key string, val interface{}) {
+		if handleUpdate != nil {
+			handleUpdate(enumIndex)
 		}
 	})
 	return menu
@@ -171,6 +178,9 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 			handleUpdate(i)
 		})
 	}
+	tv.KeyHandler(func(view View, key int) {
+		fmt.Println("keyup!")
+	})
 	return tv
 }
 
@@ -267,8 +277,20 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 		if f == nil {
 			continue
 		}
-		if f.Enum != nil {
-			view = fieldsMakeMenu(f, item, i, handleUpdate)
+		if f.LocalEnum != "" {
+			for eIndex, ei := range rootItems.Children {
+				if ei.FieldName == f.LocalEnum {
+					enum := ei.Interface.(zdict.Dict)
+					zlog.Assert(enum != nil)
+					view = fieldsMakeLocalEnumMenu(item, eIndex, enum, handleUpdate)
+				}
+			}
+			if view == nil {
+				zlog.Error(nil, "no local enum for", f.LocalEnum)
+				continue
+			}
+		} else if f.Enum != nil {
+			view = fieldsMakeEnumMenu(f, item, i, handleUpdate)
 			exp = zgeo.AlignmentHorShrink
 		} else {
 			switch f.Kind {
@@ -356,81 +378,80 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	f.Kind = item.Kind
 	f.Alignment = zgeo.AlignmentNone
 
-	for _, tp := range zreflect.GetTagAsFields(item.Tag) {
-		if tp.Label == "zui" {
-			for _, part := range tp.Vars {
-				if part == "-" {
-					return false
-				}
-				var key, val string
-				if !ustr.SplitN(part, ":", &key, &val) {
-					key = part
-				}
-				key = strings.TrimSpace(key)
-				val = strings.TrimSpace(val)
-				align := zgeo.AlignmentFromString(val)
-				n, floatErr := strconv.ParseFloat(val, 32)
-				flag := ustr.StrToBool(val, false)
-				switch key {
-				case "align":
-					if align != zgeo.AlignmentNone {
-						f.Alignment = align
-					}
-					// fmt.Println("ALIGN:", f.Name, val, a)
-				case "justify":
-					if align != zgeo.AlignmentNone {
-						f.Justify = align
-					}
-				case "title":
-					f.Title = val
-				case "color":
-					f.Color = val
-				case "height":
-					if floatErr == nil {
-						f.Height = n
-					}
-				case "weight":
-					if floatErr == nil {
-						f.Weight = n
-					}
-				case "weights":
-					if floatErr == nil {
-						f.DefaultWeight = n
-					}
-				case "minwidth":
-					if floatErr == nil {
-						f.MinWidth = n
-					}
-				case "static":
-					if flag || val == "" {
-						f.Flags |= fieldIsStatic
-					}
-				case "secs":
-					f.Flags |= fieldHasSeconds
-				case "mins":
-					f.Flags |= fieldHasMinutes
-				case "hours":
-					f.Flags |= fieldHasHours
-				case "maxwidth":
-					if floatErr == nil {
-						f.MaxWidth = n
-					}
-				case "image":
-					var ssize string
-					if !ustr.SplitN(val, "/", &ssize, &f.FixedPath) {
-						ssize = val
-					}
-					f.Flags |= fieldIsImage
-					f.Size.FromString(ssize)
-				case "enum":
-					if fieldEnums[val] == nil {
-						zlog.Error(nil, "no such enum:", val)
-					}
-					f.Enum, _ = fieldEnums[val]
-				case "noheader":
-					f.Flags |= fieldsNoHeader
-				}
+	for _, part := range zreflect.GetTagAsMap(item.Tag)["zui"] {
+		if part == "-" {
+			return false
+		}
+		var key, val string
+		if !ustr.SplitN(part, ":", &key, &val) {
+			key = part
+		}
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+		align := zgeo.AlignmentFromString(val)
+		n, floatErr := strconv.ParseFloat(val, 32)
+		flag := ustr.StrToBool(val, false)
+		switch key {
+		case "align":
+			if align != zgeo.AlignmentNone {
+				f.Alignment = align
 			}
+			// fmt.Println("ALIGN:", f.Name, val, a)
+		case "justify":
+			if align != zgeo.AlignmentNone {
+				f.Justify = align
+			}
+		case "title":
+			f.Title = val
+		case "color":
+			f.Color = val
+		case "height":
+			if floatErr == nil {
+				f.Height = n
+			}
+		case "weight":
+			if floatErr == nil {
+				f.Weight = n
+			}
+		case "weights":
+			if floatErr == nil {
+				f.DefaultWeight = n
+			}
+		case "minwidth":
+			if floatErr == nil {
+				f.MinWidth = n
+			}
+		case "static":
+			if flag || val == "" {
+				f.Flags |= fieldIsStatic
+			}
+		case "secs":
+			f.Flags |= fieldHasSeconds
+		case "mins":
+			f.Flags |= fieldHasMinutes
+		case "hours":
+			f.Flags |= fieldHasHours
+		case "maxwidth":
+			if floatErr == nil {
+				f.MaxWidth = n
+			}
+		case "image":
+			var ssize string
+			if !ustr.SplitN(val, "/", &ssize, &f.FixedPath) {
+				ssize = val
+			}
+			f.Flags |= fieldIsImage
+			f.Size.FromString(ssize)
+		case "enum":
+			if ustr.HasPrefix(val, ".", &f.LocalEnum) {
+			} else {
+				if fieldEnums[val] == nil {
+					zlog.Error(nil, "no such enum:", val)
+				}
+				f.Enum, _ = fieldEnums[val]
+			}
+		case "noheader":
+			f.Flags |= fieldsNoHeader
 		}
 	}
 	if f.Title == "" {
@@ -648,7 +669,7 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 				if err != nil {
 					break
 				}
-				zfloat.SetAnyFloat(item.Address, f64)
+				zfloat.SetAny(item.Address, f64)
 			}
 
 		case zreflect.KindTime:
@@ -676,14 +697,14 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 	return nil
 }
 
-var fieldEnums = map[string]Dictionary{}
+var fieldEnums = map[string]zdict.Dict{}
 
-func FieldsAddEnum(name string, nameVals Dictionary) {
+func FieldsAddEnum(name string, nameVals zdict.Dict) {
 	fieldEnums[name] = nameVals
 }
 
 func FieldsAddStringBasedEnum(name string, vals ...interface{}) {
-	m := Dictionary{}
+	m := zdict.Dict{}
 	for _, v := range vals {
 		n := fmt.Sprintf("%v", v)
 		m[n] = v

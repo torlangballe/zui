@@ -1,15 +1,23 @@
 package zgo
 
-import "syscall/js"
+import (
+	"fmt"
+	"syscall/js"
+)
 
 func (a *Alert) Show(handle func(result AlertResult)) {
 	r := true
+	str := a.Text
+	if a.SubText != "" {
+		str += "\n\n" + a.SubText
+	}
+	fmt.Println("alert:", str)
 	if a.CancelButton != "" {
 		alert := js.Global().Get("confirm")
-		r = alert.Invoke(a.Text).Bool()
+		r = alert.Invoke(str).Bool()
 	} else {
 		alert := js.Global().Get("alert")
-		alert.Invoke(a.Text)
+		alert.Invoke(str)
 	}
 	go func() {
 		if handle != nil {

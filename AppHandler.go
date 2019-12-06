@@ -1,11 +1,15 @@
 package zgo
 
+import (
+	"github.com/torlangballe/zutil/zdict"
+)
+
 type Notification struct {
 }
 
 type AppHandler interface {
 	HandleAppNotification(notification Notification, action string)
-	HandlePushNotificationWithDictionary(dict Dictionary, fromStartup bool, whileActive bool)
+	HandlePushNotificationWithDictionary(dict zdict.Dict, fromStartup bool, whileActive bool)
 	HandleLocationRegionCross(regionId string, enter bool, fromAdd bool)
 	HandleMemoryNearFull()
 	HandleAudiointerrupted()

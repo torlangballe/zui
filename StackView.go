@@ -46,7 +46,7 @@ func (v *StackView) calcWeightMins() {
 			if minWeight != -1 && c.Weight < minWeight {
 				minWeight = c.Weight
 			}
-			zfloat.AddIntFloat64ToSet(c.Weight, &weights)
+			zfloat.AddToSet(c.Weight, &weights)
 			sizes[i] = v.getCellSize(c, nil).Vertice(v.Vertical)
 		}
 	}

@@ -1,5 +1,7 @@
 package zgo
 
+import "github.com/torlangballe/zutil/zdict"
+
 //  Created by Tor Langballe on /30/10/15.
 
 // For storage:
@@ -23,7 +25,7 @@ func (k KeyValueStore) StringForKey(key string) (str string, got bool) {
 	return
 }
 
-func (k KeyValueStore) DictionaryForKey(key string) (dict Dictionary, got bool) {
+func (k KeyValueStore) DictForKey(key string) (dict zdict.Dict, got bool) {
 	got = k.getItem(key, &dict)
 	return
 }
@@ -52,14 +54,14 @@ func (k KeyValueStore) RemoveForKey(key string, sync bool) {
 
 }
 
-func (k KeyValueStore) SetObject(object interface{}, key string)                         {}
-func (k KeyValueStore) SetString(string, key string, sync bool)                          {}
-func (k KeyValueStore) SetDictionary(dict map[string]interface{}, key string, sync bool) {}
-func (k KeyValueStore) SetInt(value int64, key string, sync bool)                        {}
-func (k KeyValueStore) SetDouble(value float64, key string, sync bool)                   {}
-func (k KeyValueStore) Setbool(value bool, key string, sync bool)                        {}
-func (k KeyValueStore) SetTime(value Time, key string, sync bool)                        {}
-func (k KeyValueStore) ForAllKeys(got func(key string))                                  {}
+func (k KeyValueStore) SetObject(object interface{}, key string)       {}
+func (k KeyValueStore) SetString(string, key string, sync bool)        {}
+func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) {}
+func (k KeyValueStore) SetInt(value int64, key string, sync bool)      {}
+func (k KeyValueStore) SetDouble(value float64, key string, sync bool) {}
+func (k KeyValueStore) Setbool(value bool, key string, sync bool)      {}
+func (k KeyValueStore) SetTime(value Time, key string, sync bool)      {}
+func (k KeyValueStore) ForAllKeys(got func(key string))                {}
 
 func (k KeyValueStore) prefixKey(key *string) {
 	if (*key)[0] != '/' && k.KeyPrefix != "" {

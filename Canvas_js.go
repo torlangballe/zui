@@ -3,6 +3,7 @@ package zgo
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -185,7 +186,7 @@ func (c *Canvas) setMatrix(m zgeo.Matrix) {
 func (c *Canvas) setLineType(ltype zgeo.PathLineType) {
 }
 
-func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, attributes Dictionary) {
+func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, attributes zdict.Dict) {
 	c.context.Call("fillText", text, pos.X, pos.Y)
 }
 

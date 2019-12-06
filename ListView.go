@@ -107,7 +107,7 @@ func (v *ListView) layoutRows() (first, last int) {
 		oldRows[k] = v
 	}
 	first = -1
-	//	fmt.Println("\nlayout rows")
+	// fmt.Println("\nlayout rows", len(oldRows), count)
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
 		s.H = v.GetRowHeight(i)
@@ -160,6 +160,9 @@ func (v *ListView) UpdateRow(row int) {
 }
 
 func (v *ListView) ReloadData() {
+	for _, view := range v.rows {
+		v.stack.RemoveChild(view)
+	}
 	v.rows = map[int]View{}
 	v.layoutRows()
 }

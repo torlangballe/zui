@@ -21,8 +21,8 @@ type TableView struct {
 	GetRowCount   func() int
 	GetRowHeight  func(i int) float64
 	GetRow        func(i int) interface{}
-	HeaderPressed func(id string, i int)
 	RowUpdated    func(edited bool, i int) bool
+	HeaderPressed func(id string)
 
 	fields []field
 }
@@ -135,6 +135,12 @@ func (v *TableView) ReadyToShow() {
 		button := ButtonNew(t, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		//		button.Text(f.name)
 		cell.View = button
+		if v.HeaderPressed != nil {
+			id := f.ID // nned to get actual ID here, not just f.ID (f is pointer)
+			button.PressedHandler(func() {
+				v.HeaderPressed(id)
+			})
+		}
 		zfloat.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(zgeo.Size{}).W)
 		if f.MaxWidth != 0 {
 			cell.MaxSize.W = math.Max(f.MaxWidth, v.fields[i].MinWidth)

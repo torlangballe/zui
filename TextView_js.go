@@ -1,6 +1,7 @@
 package zgo
 
 import (
+	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -80,6 +81,16 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 					v.changed(v)
 				})
 			}
+			return nil
+		}))
+	}
+}
+
+func (v *TextView) KeyHandler(handler func(view View, key int)) {
+	v.keyPressed = handler
+	if handler != nil {
+		v.set("onkeyup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+			fmt.Println("KeyUp!")
 			return nil
 		}))
 	}

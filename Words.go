@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
+
+	"github.com/torlangballe/zutil/ustr"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /11/8/18.
 
 func WordsPluralize(word string, count float64, langCode string, pluralWord string) string {
 	var lang = LocaleGetDeviceLanguageCode()
-	if langCode != "" {
+	if lang != "" {
 		lang = langCode
 	}
 	if pluralWord != "" {
@@ -44,6 +48,47 @@ func WordsPluralize(word string, count float64, langCode string, pluralWord stri
 		return word + "es"
 	}
 	return word + "s"
+}
+
+var wordsWithPlurals = map[string]map[string]string{
+	"en": {
+		"is": "are",
+	},
+}
+
+func WordsAddPlural(word, plural, lang string) {
+	zlog.Assert(lang != "")
+	wordsWithPlurals[lang][word] = plural
+}
+
+func WordsPluralizeString(str, lang string, count float64, words ...string) string {
+	if lang == "" {
+		lang = LocaleGetDeviceLanguageCode()
+	}
+	var scount string
+	if math.Ceil(count) == count {
+		scount = WordsForOneDigitNumber(int(count), lang)
+		fmt.Println("plur:", scount)
+	} else {
+		scount = ustr.NiceFloat(count, 2)
+	}
+	str = strings.Replace(str, "%d", scount, -1)
+	if count != 1 {
+		lang := LocaleGetDeviceLanguageCode()
+		zlog.Assert(lang != "")
+		for w, p := range wordsWithPlurals[lang] {
+			str = strings.Replace(str, w, p, -1)
+		}
+	}
+	for _, w := range words {
+		if count != 1 {
+			var p string
+			ustr.SplitN(w, ":", &w, &p)
+			w = WordsPluralize(w, count, lang, p)
+		}
+		str = strings.Replace(str, "%s", w, 1)
+	}
+	return str
 }
 
 func WordsGetLogin() string {
@@ -167,6 +212,13 @@ func WordsGetDayOfMonth() string { return TS("Day") }   // generic name for the 
 func WordsGetMonth() string      { return TS("Month") } // generic name for month.
 func WordsGetYear() string       { return TS("Year") }  // generic name for year.
 
+func WordsGetIs(count int) string {
+	if count == 1 {
+		return TS("is") // there IS a dog at school
+	}
+	return TS("are") // there ARE 5 dogs at school
+}
+
 func WordsGetDay(plural bool) string {
 	if plural {
 		return TS("Days") // generic name for the plural of a number of days since/until etc
@@ -264,6 +316,35 @@ func WordsGetNameOfLanguageCode(langCode, inLanguage string) string {
 	default:
 		return ""
 	}
+}
+
+func WordsForOneDigitNumber(n int, lang string) string {
+	switch lang {
+	case "en", "":
+		switch n {
+		case 0:
+			return "zero"
+		case 1:
+			return "one"
+		case 2:
+			return "two"
+		case 3:
+			return "three"
+		case 4:
+			return "four"
+		case 5:
+			return "five"
+		case 6:
+			return "six"
+		case 7:
+			return "seven"
+		case 8:
+			return "eight"
+		case 9:
+			return "nine"
+		}
+	}
+	return strconv.Itoa(n)
 }
 
 func WordsGetDistance(meters float64, metric bool, langCode string, round bool) string {

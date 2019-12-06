@@ -1,12 +1,15 @@
 package zgo
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type MenuView struct {
 	NativeView
 	maxWidth float64
 	changed  func(key string, val interface{})
-	keyVals  Dictionary
+	keyVals  zdict.Dict
 }
 
 func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {

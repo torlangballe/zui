@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -90,8 +91,8 @@ func getNativeTextAdjustment(style zgeo.Alignment) int {
 	return 0 //NSTextAlignment.left
 }
 
-func (ti *TextInfo) MakeAttributes() Dictionary {
-	return Dictionary{}
+func (ti *TextInfo) MakeAttributes() zdict.Dict {
+	return zdict.Dict{}
 }
 
 func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {

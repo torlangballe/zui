@@ -7,7 +7,6 @@ package zgo
 
 type Object int
 type AnyObject int
-type Dictionary map[string]interface{}
 
 func DefinesIsRunningInSimulator() bool {
 	return false
@@ -293,4 +292,3 @@ func (b BoolInd) Value() bool {
 func (b BoolInd) IsIndetermed() bool {
 	return b == -1
 }
-

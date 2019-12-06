@@ -2,7 +2,9 @@
 
 package zgo
 
-func MenuViewNew(vals Dictionary, value interface{}) *MenuView {
+import "github.com/torlangballe/zutil/zdict"
+
+func MenuViewNew(vals zdict.Dict, value interface{}) *MenuView {
 	return &MenuView{}
 }
 

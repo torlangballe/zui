@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"syscall/js"
 
-	"github.com/torlangballe/zutil/zmap"
+	"github.com/torlangballe/zutil/zdict"
 )
 
-func MenuViewNew(vals Dictionary, value interface{}) *MenuView {
+func MenuViewNew(vals zdict.Dict, value interface{}) *MenuView {
 	m := &MenuView{}
 	m.keyVals = vals
 	sel := DocumentJS.Call("createElement", "select")
@@ -23,7 +23,7 @@ func MenuViewNew(vals Dictionary, value interface{}) *MenuView {
 	return m
 }
 
-func (v *MenuView) UpdateValues(vals Dictionary) {
+func (v *MenuView) UpdateValues(vals zdict.Dict) {
 	if !reflect.DeepEqual(v.keyVals, vals) {
 		options := v.get("options")
 		options.Set("length", 0)
@@ -32,8 +32,8 @@ func (v *MenuView) UpdateValues(vals Dictionary) {
 	}
 }
 
-func (v *MenuView) updateVals(vals Dictionary, setFirst bool, value interface{}) {
-	for _, k := range zmap.GetSortedKeysFromSIMap(vals) {
+func (v *MenuView) updateVals(vals zdict.Dict, setFirst bool, value interface{}) {
+	for _, k := range vals.SortedKeys() {
 		val := vals[k]
 		option := DocumentJS.Call("createElement", "option")
 		sval := fmt.Sprint(val)
