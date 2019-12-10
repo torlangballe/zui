@@ -117,8 +117,8 @@ func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
 	return ni
 }
 
-func (i *Image) SaveToPNG(file FilePath) error {
-	out, err := os.Create(file.String())
+func (i *Image) SaveToPNG(file string) error {
+	out, err := os.Create(file)
 	if err != nil {
 		return zlog.Error(err, "os.create")
 	}

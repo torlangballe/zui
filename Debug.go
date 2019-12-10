@@ -2,10 +2,12 @@ package zgo
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
 
+	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zslice"
 )
 
@@ -68,14 +70,14 @@ func ErrorOnRelease() {
 
 func DebugLoadSavedLog(prefix string) {
 	file := FoldersGetFileInFolderType(FoldersTemporary, prefix+"/zdebuglog.txt")
-	str, _ := file.LoadString()
+	str, _ := zfile.ReadFromFile(file)
 	storedLines = strings.Split(str, "\n")
 }
 
 func DebugAppendToFileAndClearLog(prefix string) {
 	file := FoldersGetFileInFolderType(FoldersTemporary, prefix+"/zdebuglog.txt")
-	if file.GetDataSizeInBytes() > 5*1024*1024 {
-		file.Remove()
+	if zfile.GetSize(file) > 5*1024*1024 {
+		os.Remove(file)
 		storedLines = append([]string{"--- ZDebug Cleared early part of large stored log."}, storedLines...)
 	}
 	storedLines = storedLines[:0]

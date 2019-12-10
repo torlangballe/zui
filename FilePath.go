@@ -1,19 +1,8 @@
 package zgo
 
-import (
-	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-	"syscall"
-
-	"github.com/torlangballe/zutil/ustr"
-	"github.com/torlangballe/zutil/zfile"
-)
-
 //  Created by Tor Langballe on /31/10/15.
 
+/*
 type OutputStream int
 
 type FileInfo struct {
@@ -257,3 +246,5 @@ func (f FilePath) SaveString(str string) error {
 func (f FilePath) LoadString() (string, error) {
 	return zfile.ReadFileToString(f.fpath)
 }
+
+*/

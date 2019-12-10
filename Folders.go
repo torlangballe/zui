@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/torlangballe/zutil/zfile"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /30/10/15.
@@ -18,31 +19,30 @@ const (
 	FoldersTemporaryUniqueFolder            = 32
 )
 
-func FoldersGetFileInFolderType(ftype FolderType, addPath string) FilePath {
-	dir := false
+func FoldersGetFileInFolderType(ftype FolderType, addPath string) string {
 	if ftype == FoldersTemporaryUniqueFolder {
 		f := zfile.CreateTempFilePath(addPath)
-		fp := FilePathMake(f, dir)
-		return fp
+		return f
 	}
 
 	switch ftype {
 	case FoldersAppSupport:
-		return FilePathMake("~/"+addPath, dir)
+		return zfile.ExpandTildeInFilepath("~/" + addPath)
 
 	case FoldersCaches:
 		udir, _ := os.UserCacheDir()
-		return FilePathMake(udir+addPath, dir)
+		return udir + addPath
 
 	case FoldersTemporary:
-		return FilePathMake(os.TempDir()+addPath, dir)
+		return os.TempDir() + addPath
 
 	case FoldersPreferences:
-		return FilePathMake("~/"+addPath, dir)
+		return zfile.ExpandTildeInFilepath("~/" + addPath)
 	}
-	return FilePath{}
+	zlog.Fatal(nil, "wrong type:", ftype)
+	return ""
 }
 
-func ZGetResourceFilePath(subPath string) FilePath {
-	return FilePath{}
+func ZGetResourceFilePath(subPath string) string {
+	return ""
 }

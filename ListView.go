@@ -69,7 +69,7 @@ func (v *ListView) init(view View, name string) {
 	v.rows = map[int]View{}
 	v.HandleScroll = func(pos zgeo.Pos) {
 		v.topPos = pos.Y
-		first, last := v.layoutRows()
+		first, last := v.layoutRows(-1)
 		if v.HandleScrolledToRows != nil {
 			v.HandleScrolledToRows(pos.Y, first, last)
 		}
@@ -94,17 +94,19 @@ func (v *ListView) Rect(rect zgeo.Rect) View {
 	w := rect.Size.W + v.Margin.Size.W
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.Rect(r)
-	v.layoutRows()
+	v.layoutRows(-1)
 	return v
 }
 
-func (v *ListView) layoutRows() (first, last int) {
+func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	count := v.GetRowCount()
 	ls := v.GetLocalRect().Size
 	oldRows := map[int]View{}
 	y := 0.0
 	for k, v := range v.rows {
-		oldRows[k] = v
+		if onlyIndex == -1 || k == onlyIndex {
+			oldRows[k] = v
+		}
 	}
 	first = -1
 	// fmt.Println("\nlayout rows", len(oldRows), count)
@@ -113,7 +115,7 @@ func (v *ListView) layoutRows() (first, last int) {
 		s.H = v.GetRowHeight(i)
 		s.W = ls.W + v.Margin.Size.W
 		r := zgeo.Rect{zgeo.Pos{0, y}, s}
-		if r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
+		if (onlyIndex == -1 || i == onlyIndex) && r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
 			if first == -1 {
 				first = i
 			}
@@ -156,7 +158,8 @@ func (v *ListView) UpdateVisibleRows(animate bool) {
 func (v *ListView) ScrollToMakeRowVisible(row int, animate bool) {
 }
 
-func (v *ListView) UpdateRow(row int) {
+func (v *ListView) ReloadRow(row int) {
+	v.layoutRows(row)
 }
 
 func (v *ListView) ReloadData() {
@@ -164,7 +167,7 @@ func (v *ListView) ReloadData() {
 		v.stack.RemoveChild(view)
 	}
 	v.rows = map[int]View{}
-	v.layoutRows()
+	v.layoutRows(-1)
 }
 
 func (v *ListView) MoveRow(fromIndex int, toIndex int) {

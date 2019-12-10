@@ -387,3 +387,15 @@ func (v *ContainerView) drawIfExposed() {
 		}
 	}
 }
+
+func (v *ContainerView) ReplaceView(oldView, newView View) {
+	i := v.FindCellWithView(oldView)
+	if i != -1 {
+		c := v.cells[i]
+		r := v.GetRect()
+		newView.Rect(r)
+		v.AddChild(newView, -1)
+		v.RemoveChild(c.View)
+		c.View = newView
+	}
+}

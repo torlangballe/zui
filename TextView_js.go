@@ -86,11 +86,12 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 	}
 }
 
-func (v *TextView) KeyHandler(handler func(view View, key int)) {
+func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
 	if handler != nil {
-		v.set("onkeyup", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			fmt.Println("KeyUp!")
+		v.set("onkeyup", js.FuncOf(func(v js.Value, vs []js.Value) interface{} {
+			event := vs[0]
+			fmt.Println("KeyUp:", event.Get("which"), event.Get("altKey"), event.Get("ctrlKey"), event.Get("metaKey"), event.Get("shiftKey"))
 			return nil
 		}))
 	}

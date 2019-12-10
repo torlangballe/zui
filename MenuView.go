@@ -8,15 +8,18 @@ import (
 type MenuView struct {
 	NativeView
 	maxWidth float64
-	changed  func(key string, val interface{})
-	keyVals  zdict.Dict
+	changed  func(item zdict.Item)
+	keyVals  zdict.Items
+	oldValue *zdict.Item
+
+	IsStatic bool // if static, user can't set a different value, but can press and see them
 }
 
 func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	maxString := ""
-	for s := range v.keyVals {
-		if len(s) > len(maxString) {
-			maxString = s
+	for _, di := range v.keyVals {
+		if len(di.Name) > len(maxString) {
+			maxString = di.Name
 		}
 	}
 	s := TextLayoutCalculateSize(zgeo.AlignmentLeft, v.GetFont(), maxString, 1, v.maxWidth)

@@ -14,7 +14,7 @@ type TextView struct {
 	maxLines    int
 	alignment   zgeo.Alignment
 	changed     func(view View)
-	keyPressed  func(view View, key int)
+	keyPressed  func(view View, key KeyboardKey, mods KeyboardModifier)
 	updateTimer *ztimer.Timer
 
 	Margin     zgeo.Size

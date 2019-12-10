@@ -59,7 +59,7 @@ type field struct {
 	Password      bool
 	Height        float64
 	Weight        float64
-	Enum          zdict.Dict
+	Enum          zdict.Items
 	LocalEnum     string
 	Size          zgeo.Size
 	Flags         int
@@ -96,6 +96,10 @@ func callFieldFunc(i int, structData interface{}, f *field) {
 	}
 }
 
+func (f field) IsStatic() bool {
+	return (f.Flags&fieldIsStatic != 0)
+}
+
 func fieldsMakeButton(i int, structData interface{}, height float64, f *field, item zreflect.Item) *Button {
 	format := f.Format
 	if format == "" {
@@ -117,21 +121,12 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *field, i
 	return button
 }
 
-func fieldsMakeEnumMenu(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
-	menu := MenuViewNew(f.Enum, item.Value)
-	menu.ChangedHandler(func(key string, val interface{}) {
+func fieldsMakeEnumMenu(item zreflect.Item, i int, enum zdict.Items, handleUpdate func(i int)) *MenuView {
+	menu := MenuViewNew(enum, item.Value)
+	fmt.Println("fieldsMakeEnumMenu:", i)
+	menu.ChangedHandler(func(item zdict.Item) {
 		if handleUpdate != nil {
 			handleUpdate(i)
-		}
-	})
-	return menu
-}
-
-func fieldsMakeLocalEnumMenu(item zreflect.Item, enumIndex int, enum zdict.Dict, handleUpdate func(i int)) View {
-	menu := MenuViewNew(enum, item.Value)
-	menu.ChangedHandler(func(key string, val interface{}) {
-		if handleUpdate != nil {
-			handleUpdate(enumIndex)
 		}
 	})
 	return menu
@@ -178,7 +173,7 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 			handleUpdate(i)
 		})
 	}
-	tv.KeyHandler(func(view View, key int) {
+	tv.KeyHandler(func(view View, key KeyboardKey, mods KeyboardModifier) {
 		fmt.Println("keyup!")
 	})
 	return tv
@@ -231,6 +226,16 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 		}
 		view := *fview
 		switch f.Kind {
+		case zreflect.KindSlice:
+			items, got := item.Interface.(zdict.Items)
+			if got {
+				if f.IsStatic() {
+					items.AddAtStart(f.Name, nil)
+				}
+				menu := view.(*MenuView)
+				menu.UpdateValues(items)
+			}
+
 		case zreflect.KindStruct:
 			break
 		case zreflect.KindBool:
@@ -278,11 +283,13 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			continue
 		}
 		if f.LocalEnum != "" {
-			for eIndex, ei := range rootItems.Children {
+			for _, ei := range rootItems.Children {
 				if ei.FieldName == f.LocalEnum {
-					enum := ei.Interface.(zdict.Dict)
-					zlog.Assert(enum != nil)
-					view = fieldsMakeLocalEnumMenu(item, eIndex, enum, handleUpdate)
+					enum := ei.Interface.(zdict.Items)
+					if enum == nil {
+						enum = zdict.Items{}
+					}
+					view = fieldsMakeEnumMenu(item, i, enum, handleUpdate)
 				}
 			}
 			if view == nil {
@@ -290,7 +297,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				continue
 			}
 		} else if f.Enum != nil {
-			view = fieldsMakeEnumMenu(f, item, i, handleUpdate)
+			view = fieldsMakeEnumMenu(item, i, f.Enum, handleUpdate)
 			exp = zgeo.AlignmentHorShrink
 		} else {
 			switch f.Kind {
@@ -333,6 +340,16 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				}
 
 			case zreflect.KindSlice:
+				items, got := item.Interface.(zdict.Items)
+				if got {
+					if f.IsStatic() {
+						items.AddAtStart(f.Name, nil)
+					}
+					menu := fieldsMakeEnumMenu(item, i, items, handleUpdate)
+					menu.IsStatic = (f.Flags&fieldIsStatic != 0)
+					view = menu
+					break
+				}
 				view = fieldsMakeText(f, item, i, handleUpdate)
 				break
 
@@ -600,12 +617,12 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 		if f.Flags&fieldIsStatic != 0 {
 			continue
 		}
-		if f.Enum != nil {
+		if f.Enum != nil && !f.IsStatic() {
 			mv, _ := view.(*MenuView)
 			if mv != nil {
-				_, val := mv.NameAndValue()
+				di := mv.NameAndValue()
 				a := reflect.ValueOf(item.Address).Elem()
-				rval := reflect.ValueOf(val)
+				rval := reflect.ValueOf(di.Value)
 				a.Set(rval)
 			}
 			continue
@@ -697,17 +714,30 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 	return nil
 }
 
-var fieldEnums = map[string]zdict.Dict{}
+var fieldEnums = map[string]zdict.Items{}
 
-func FieldsAddEnum(name string, nameVals zdict.Dict) {
-	fieldEnums[name] = nameVals
+func FieldsAddEnum(name string, enum zdict.Items) {
+	fieldEnums[name] = enum
+}
+
+func FieldsAddEnumItems(name string, nameValPairs ...interface{}) {
+	var dis zdict.Items
+
+	for i := 0; i < len(nameValPairs); i += 2 {
+		var di zdict.Item
+		di.Name = nameValPairs[i].(string)
+		di.Value = nameValPairs[i+1]
+		dis = append(dis, di)
+	}
+	fieldEnums[name] = dis
 }
 
 func FieldsAddStringBasedEnum(name string, vals ...interface{}) {
-	m := zdict.Dict{}
+	var items zdict.Items
 	for _, v := range vals {
 		n := fmt.Sprintf("%v", v)
-		m[n] = v
+		i := zdict.Item{n, v}
+		items = append(items, i)
 	}
-	fieldEnums[name] = m
+	fieldEnums[name] = items
 }

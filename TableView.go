@@ -27,7 +27,7 @@ type TableView struct {
 	fields []field
 }
 
-func tableGetSliceFromPonter(structure interface{}) reflect.Value {
+func tableGetSliceFromPointer(structure interface{}) reflect.Value {
 	rval := reflect.ValueOf(structure)
 	if rval.Kind() == reflect.Ptr {
 		rval = rval.Elem()
@@ -51,13 +51,13 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	unnestAnon := true
 	recursive := false
 
-	rval := tableGetSliceFromPonter(inStruct)
+	rval := tableGetSliceFromPointer(inStruct)
 	if !rval.IsNil() {
 		v.GetRowCount = func() int {
-			return tableGetSliceFromPonter(inStruct).Len()
+			return tableGetSliceFromPointer(inStruct).Len()
 		}
 		v.GetRow = func(i int) interface{} {
-			val := tableGetSliceFromPonter(inStruct)
+			val := tableGetSliceFromPointer(inStruct)
 			if val.Len() != 0 {
 				return val.Index(i).Addr().Interface()
 			}
@@ -185,6 +185,7 @@ func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	rowStruct := v.GetRow(i)
 	useWidth := (v.Header != nil)
 	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.AlignmentCenter, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
+		fmt.Println("createRow:", i, name)
 		rowStruct := v.GetRow(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
 		if v.RowUpdated != nil {

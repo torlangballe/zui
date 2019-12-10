@@ -33,6 +33,5 @@ func (v *TextView) IsPassword(is bool) *TextView {
 	return v
 }
 
-func (v *TextView) ChangedHandler(handler func(view View)) {}
-
-func (v *TextView) KeyHandler(handler func(view View, key int)) {}
+func (v *TextView) ChangedHandler(handler func(view View))                                     {}
+func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {}

@@ -20,7 +20,7 @@ type AppHandler interface {
 	HandleVoiceOverStatusChanged()
 	HandleBackgrounded(background bool)
 	HandleActivated(activated bool)
-	HandleOpenedFiles(files []FilePath, modifiers int)
+	HandleOpenedFiles(files []string, modifiers int)
 	ShowDebugText(str string)
 	HandleGotPushToken(token string)
 	HandleLanguageBCPChanged(bcp string)
