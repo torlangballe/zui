@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ func ButtonNew(title, imageName string, size zgeo.Size, insets zgeo.Size) *Butto
 		insets = zgeo.Size{6, 13}
 	}
 	b.CanFocus(true)
-	b.ImageAlign = zgeo.AlignmentExpand | zgeo.AlignmentCenter | zgeo.AlignmentNonProp
+	b.ImageAlign = zgeo.Expand | zgeo.Center
 	b.Color(zgeo.Color{})
 	b.SetImageName(imageName, insets)
 	b.TextInfo.Text = title

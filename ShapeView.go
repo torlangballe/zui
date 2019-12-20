@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 //  Created by Tor Langballe on /22/10/15.
 
@@ -56,7 +56,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.ImageOpacity = 1
 	v.Count = 5
 	v.StrokeColor = zgeo.ColorWhite
-	v.ImageAlign = zgeo.AlignmentCenter
+	v.ImageAlign = zgeo.Center
 	v.PathLineType = zgeo.PathLineRound
 	v.Color(zgeo.ColorGray)
 	v.Proportional = true
@@ -181,7 +181,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			canvas.DrawImage(drawImage, rect, o, CanvasBlendModeNormal, zgeo.Rect{})
 			canvas.PopState()
 		} else {
-			a := v.ImageAlign | zgeo.AlignmentShrink
+			a := v.ImageAlign | zgeo.Shrink
 			// if v.IsFillBox {
 			// 	a = AlignmentNone
 			// }

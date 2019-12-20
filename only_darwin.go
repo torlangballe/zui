@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"runtime"
@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	DebugPrint("zgo init()")
+	DebugPrint("zui init()")
 	runtime.LockOSThread()
 }
 

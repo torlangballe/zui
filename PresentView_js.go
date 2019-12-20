@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 func PresentViewURL(surl string) {
 	WindowJS.Get("location").Call("assign", surl)

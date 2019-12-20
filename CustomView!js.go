@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 func (v *CustomView) drawIfExposed() {
 }

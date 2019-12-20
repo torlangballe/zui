@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"strings"
@@ -41,6 +41,14 @@ type View interface {
 
 type NativeViewOwner interface {
 	GetNative() *NativeView
+}
+
+func ViewGetNative(view View) *NativeView {
+	o := view.(NativeViewOwner)
+	if o != nil {
+		return o.GetNative()
+	}
+	return nil
 }
 
 type ViewDrawProtocol interface {

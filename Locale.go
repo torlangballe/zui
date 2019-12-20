@@ -1,6 +1,10 @@
-package zgo
+package zui
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/torlangballe/zutil/ustr"
+)
 
 //  Created by Tor Langballe on /1/11/15.
 
@@ -10,9 +14,9 @@ func LocaleGetDeviceLanguageCode() string {
 }
 
 func LocaleGetLangCodeAndCountryFromLocaleId(bcp string, forceNo bool) (string, string) { // lang, country-code
-	lang, ccode := StrSplitInTwo(bcp, "-")
+	lang, ccode := ustr.SplitInTwo(bcp, "-")
 	if ccode == "" {
-		_, ccode := StrSplitInTwo(bcp, "_")
+		_, ccode := ustr.SplitInTwo(bcp, "_")
 		if ccode == "" {
 			parts := strings.Split(bcp, "-")
 			if len(parts) > 2 {

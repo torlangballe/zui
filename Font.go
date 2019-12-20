@@ -2,7 +2,9 @@
 //
 //  Created by Tor Langballe on /22/10/15.
 
-package zgo
+package zui
+
+import "strings"
 
 type FontStyle int
 
@@ -22,6 +24,19 @@ type Font struct {
 
 // DefaultSize This is used
 var FontDefaultSize = 16.0
+
+func (s FontStyle) String() string {
+	var parts []string
+	switch s {
+	case FontStyleNormal:
+		parts = append(parts, "normal")
+	case FontStyleBold:
+		parts = append(parts, "bold")
+	case FontStyleItalic:
+		parts = append(parts, "italic")
+	}
+	return strings.Join(parts, " ")
+}
 
 func FontNew(name string, size float64, style FontStyle) *Font {
 	return &Font{Name: name, Size: size * scale, Style: style}

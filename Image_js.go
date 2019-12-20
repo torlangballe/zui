@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -83,7 +83,7 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 func (i *Image) GetScaledInSize(size zgeo.Size, proportional bool) *Image {
 	var vsize = size
 	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.AlignmentCenter|zgeo.AlignmentShrink|zgeo.AlignmentScaleToFitProportionally, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
+		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.ScaleToFitProp, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
 	}
 	width := int(vsize.W) / int(i.scale)
 	height := int(vsize.H) / int(i.scale)

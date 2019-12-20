@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"math"
@@ -46,7 +46,7 @@ func TextInfoNew() *TextInfo {
 	t.Type = TextInfoFill
 	t.Wrap = TextInfoWrapWord
 	t.Color = zgeo.ColorBlack
-	t.Alignment = zgeo.AlignmentCenter
+	t.Alignment = zgeo.Center
 	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	t.StrokeWidth = 1
 	return t
@@ -79,13 +79,13 @@ func (ti *TextInfo) getNativeWrapMode(w TextInfoWrap) int {
 }
 
 func getNativeTextAdjustment(style zgeo.Alignment) int {
-	if style&zgeo.AlignmentLeft != 0 {
+	if style&zgeo.Left != 0 {
 		return 0
-	} else if style&zgeo.AlignmentRight != 0 {
+	} else if style&zgeo.Right != 0 {
 		return 0
-	} else if style&zgeo.AlignmentHorCenter != 0 {
+	} else if style&zgeo.HorCenter != 0 {
 		return 0
-	} else if style&zgeo.AlignmentHorJustify != 0 {
+	} else if style&zgeo.HorJustify != 0 {
 		panic("bad text adjust")
 	}
 	return 0 //NSTextAlignment.left
@@ -121,18 +121,18 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	var ts = ti.GetBounds(false).Size
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, zgeo.Size{}, zgeo.Size{})
-	if ti.Alignment&zgeo.AlignmentTop != 0 {
+	if ti.Alignment&zgeo.Top != 0 {
 		r.SetMaxY(ra.Max().Y)
-	} else if ti.Alignment&zgeo.AlignmentBottom != 0 {
+	} else if ti.Alignment&zgeo.Bottom != 0 {
 		r.SetMinY(r.Max().Y - ra.Size.H)
 	} else {
 		//r.SetMinY(ra.Pos.Y - float64(ti.Font.LineHeight())/20)
 	}
 
-	if ti.Alignment&zgeo.AlignmentHorCenter != 0 {
+	if ti.Alignment&zgeo.HorCenter != 0 {
 		//        r = r.Expanded(ZSize(1, 0))
 	}
-	if ti.Alignment&zgeo.AlignmentHorShrink != 0 {
+	if ti.Alignment&zgeo.HorShrink != 0 {
 		//         ScaleFontToFit()
 	}
 	// canvas.SetColor(ColorYellow, 0.3)

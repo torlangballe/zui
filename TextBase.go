@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -22,8 +22,8 @@ import "github.com/torlangballe/zutil/zgeo"
 // }
 
 type TextLayoutOwner interface {
-	Font(font *Font) View
-	GetFont() *Font
+	SetFont(font *Font) View
+	Font() *Font
 	Text(text string) View
 	GetText() string
 	TextAlignment(a zgeo.Alignment) View
@@ -37,7 +37,7 @@ type TextLayoutOwner interface {
 }
 
 func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {
-	return TextLayoutCalculateSize(o.GetTextAlignment(), o.GetFont(), o.GetText(), o.GetMaxLines(), o.GetMaxWidth())
+	return TextLayoutCalculateSize(o.GetTextAlignment(), o.Font(), o.GetText(), o.GetMaxLines(), o.GetMaxWidth())
 }
 
 func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64) zgeo.Size {

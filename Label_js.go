@@ -1,6 +1,7 @@
-package zgo
+package zui
 
 import (
+	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -9,12 +10,17 @@ import (
 func LabelNew(text string) *Label {
 	label := &Label{}
 	label.Element = DocumentJS.Call("createElement", "label")
-	label.set("style", "position:absolute")
+	style := label.style()
+	style.Set("position", "absolute")
+	style.Set("textAlign", "left")
+	style.Set("display", "block")
+	style.Set("padding-top", "3px")
+
 	label.View = label
 	textNode := DocumentJS.Call("createTextNode", text)
 	label.call("appendChild", textNode)
 	f := FontNice(FontDefaultSize, FontStyleNormal)
-	label.Font(f)
+	label.SetFont(f)
 	return label
 }
 
@@ -28,14 +34,24 @@ func (v *Label) PressedHandler(handler func()) {
 	}))
 }
 
-func (l *Label) TextAlignment(a zgeo.Alignment) View {
-	l.alignment = a
+func (v *Label) TextAlignment(a zgeo.Alignment) View {
+	v.alignment = a
 	str := "left"
-	if a&zgeo.AlignmentRight != 0 {
+	if a&zgeo.Right != 0 {
 		str = "right"
-	} else if a&zgeo.AlignmentHorCenter != 0 {
+	} else if a&zgeo.HorCenter != 0 {
 		str = "center"
 	}
-	l.style().Set("textAlign", str)
-	return l
+	v.style().Set("textAlign", str)
+	return v
+}
+
+func (v *Label) SetMargin(m zgeo.Rect) *Label {
+	v.margin = m
+	style := v.style()
+	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
+	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
+	style.Set("padding-bottom", fmt.Sprintf("%dpx", int(m.Max().Y)))
+	style.Set("padding-right", fmt.Sprintf("%dpx", int(m.Max().X)))
+	return v
 }

@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 import (
 	"github.com/torlangballe/zutil/zdict"

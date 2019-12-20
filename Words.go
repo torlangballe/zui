@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zwords"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -44,7 +45,7 @@ func WordsPluralize(word string, count float64, langCode string, pluralWord stri
 	if count == 1.0 {
 		return word
 	}
-	if StrTail(word, 1) == "s" {
+	if ustr.Tail(word, 1) == "s" {
 		return word + "es"
 	}
 	return word + "s"
@@ -70,7 +71,7 @@ func WordsPluralizeString(str, lang string, count float64, words ...string) stri
 		scount = WordsForOneDigitNumber(int(count), lang)
 		fmt.Println("plur:", scount)
 	} else {
-		scount = ustr.NiceFloat(count, 2)
+		scount = zwords.NiceFloat(count, 2)
 	}
 	str = strings.Replace(str, "%d", scount, -1)
 	if count != 1 {
@@ -265,7 +266,7 @@ func WordsGetMonthFromNumber(m, chars int) string {
 		break
 	}
 	if chars != -1 {
-		str = StrHead(str, chars)
+		str = ustr.Head(str, chars)
 	}
 	return str
 } // generic name for year.
@@ -274,7 +275,7 @@ func WordsGetNameOfLanguageCode(langCode, inLanguage string) string {
 	if inLanguage == "" {
 		inLanguage = "en"
 	}
-	switch StrToLower(langCode) {
+	switch strings.ToLower(langCode) {
 	case "en":
 		return TS("English") // name of english language
 	case "de":
@@ -425,23 +426,23 @@ func WordsMemorySizeAsstring(b int64, langCode string, maxSignificant int, isBit
 	} else {
 		word += "B"
 	}
-	str := StrNiceDouble(n, maxSignificant, "") + " " + word
+	str := zwords.NiceFloat(n, maxSignificant) + " " + word
 	return str
 }
 
 func WordsGetHemisphereDirectionsFromGeoAlignment(alignment zgeo.Alignment, separator, langCode string) string {
 	var str = ""
-	if alignment&zgeo.AlignmentTop != 0 {
+	if alignment&zgeo.Top != 0 {
 		str = TSL("North", langCode) // General name for north as in north-east wind etc
 	}
-	if alignment&zgeo.AlignmentBottom != 0 {
-		str = StrConcat(separator, str, TSL("South", langCode)) // General name for south as in south-east wind etc
+	if alignment&zgeo.Bottom != 0 {
+		ustr.Concat(&str, separator, TSL("South", langCode)) // General name for south as in south-east wind etc
 	}
-	if alignment&zgeo.AlignmentLeft != 0 {
-		str = StrConcat(separator, str, TSL("West", langCode)) // General name for west as in north-west wind etc
+	if alignment&zgeo.Left != 0 {
+		ustr.Concat(&str, separator, TSL("West", langCode)) // General name for west as in north-west wind etc
 	}
-	if alignment&zgeo.AlignmentRight != 0 {
-		str = StrConcat(separator, str, TSL("East", langCode)) // General name for north as in north-east wind etc
+	if alignment&zgeo.Right != 0 {
+		ustr.Concat(&str, separator, TSL("East", langCode)) // General name for north as in north-east wind etc
 	}
 	return str
 }

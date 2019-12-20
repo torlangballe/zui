@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -98,7 +98,7 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 			n.Rect(mainRect)
 		} else {
 			size := n.GetCalculatedSize(mainRect.Size)
-			r := mainRect.Align(size, zgeo.AlignmentCenter, zgeo.Size{}, zgeo.Size{})
+			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
 			n.Rect(r)
 			n.BGColor(zgeo.ColorNewGray(0.8, 1))
 			n.CornerRadius(10)

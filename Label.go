@@ -1,6 +1,8 @@
-package zgo
+package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 //  Created by Tor Langballe on /2/11/15.
 
@@ -9,8 +11,8 @@ type Label struct {
 	minWidth  float64
 	maxWidth  float64
 	maxLines  int
+	margin    zgeo.Rect
 	alignment zgeo.Alignment
-	Margin    zgeo.Rect
 	pressed   func()
 }
 
@@ -18,8 +20,9 @@ func (v *Label) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	var o TextLayoutOwner
 	o = v
 	s := TextLayoutOwnerCalculateSize(o)
+	s.Add(v.margin.Size.Negative())
 	s.MakeInteger()
-	//	fmt.Println("label calcedsize:", v.GetText(), s)
+	// fmt.Println("label calcedsize:", v.GetText(), s, o.Font())
 	return s
 }
 
@@ -52,4 +55,21 @@ func (l *Label) MaxWidth(max float64) View {
 func (l *Label) MaxLines(max int) View {
 	l.maxLines = max
 	return l
+}
+
+func Labelize(grid *StackView, view View, prefix string, minWidth float64) *Label {
+	font := FontNice(FontDefaultSize, FontStyleBold)
+	o := view.(TextLayoutOwner)
+	if o != nil {
+		font = o.Font()
+		font.Style = FontStyleBold
+	}
+	label := LabelNew(prefix)
+	label.TextAlignment(zgeo.Right)
+	label.SetFont(font).Color(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
+	stack := StackNewHor("labelize: " + prefix)
+	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
+	stack.AddView(view, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
+	grid.AddView(stack, zgeo.Left|zgeo.VertCenter)
+	return label
 }

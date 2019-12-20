@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -15,12 +15,12 @@ func TabsViewNew(name string) *TabsView {
 	v.StackView.init(v, name)
 	v.Vertical = true
 	v.Spacing(0)
-	v.Margin(zgeo.RectFromXY2(0, 4, 0, 0))
+	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func() View{}
-	v.header = StackViewNew(false, zgeo.AlignmentNone, "header")
+	v.header = StackNewHor("header")
 	v.header.Spacing(0)
 
-	v.Add(v.header, zgeo.AlignmentLeft|zgeo.AlignmentTop)
+	v.Add(zgeo.Left|zgeo.Top, v.header)
 	return v
 }
 
@@ -30,14 +30,14 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
 	}
 	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
 	button.ObjectName(id)
-	button.MarginS(zgeo.Size{10, 0})
+	button.SetMarginS(zgeo.Size{10, 0})
 	button.TextInfo.Color = zgeo.ColorWhite
 	button.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	v.creators[id] = creator
 	button.PressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.header.Add(button, zgeo.AlignmentLeft|zgeo.AlignmentVertCenter)
+	v.header.Add(zgeo.Left|zgeo.VertCenter, button)
 	if set {
 		v.SetTab(id)
 	}
@@ -72,7 +72,7 @@ func (v *TabsView) SetTab(id string) {
 			v.RemoveChild(v.ChildView)
 		}
 		v.ChildView = v.creators[id]()
-		v.Add(v.ChildView, zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp)
+		v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		o := v.View.(NativeViewOwner)

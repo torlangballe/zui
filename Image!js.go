@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 import (
 	"bytes"
@@ -79,7 +79,7 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	var vsize = size
 	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.AlignmentCenter|zgeo.AlignmentShrink|zgeo.AlignmentScaleToFitProportionally, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
+		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.ScaleToFitProp, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
 	}
 	scale := float64(i.scale)
 	width := uint(vsize.W * scale)

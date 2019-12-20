@@ -1,9 +1,12 @@
-package zgo
+package zui
 
 //  Created by Tor Langballe on /3/12/15.
 
 import (
+	"strings"
 	"time"
+
+	"github.com/torlangballe/zutil/ustr"
 )
 
 type TimeZone time.Location
@@ -25,8 +28,8 @@ func (t *TimeZone) Name() string {
 }
 
 func (t *TimeZone) NiceName() string {
-	str := StrTailUntil(t.Name(), "/")
-	return StrReplace(str, "_", "", 0)
+	str := ustr.TailUntil(t.Name(), "/")
+	return strings.Replace(str, "_", "", -1)
 }
 
 func (t *TimeZone) HoursFromUTC(at time.Time) float64 {

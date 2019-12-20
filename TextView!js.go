@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -12,7 +12,7 @@ func TextViewNew(text string) *TextView {
 	// tv.set("value", text)
 	tv.View = tv
 	f := FontNice(FontDefaultSize, FontStyleNormal)
-	tv.Font(f)
+	tv.SetFont(f)
 	return tv
 }
 

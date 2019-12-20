@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -9,4 +9,9 @@ func LabelNew(text string) *Label {
 func (l *Label) TextAlignment(a zgeo.Alignment) View {
 	l.alignment = a
 	return l
+}
+
+func (v *Label) SetMargin(m zgeo.Rect) *Label {
+	v.margin = m
+	return v
 }

@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -9,60 +9,79 @@ import (
 )
 
 func MenuViewNew(vals zdict.Items, value interface{}) *MenuView {
-	m := &MenuView{}
-	m.keyVals = vals
+	v := &MenuView{}
+	v.keyVals = vals
 	sel := DocumentJS.Call("createElement", "select")
-	m.Element = sel
+	v.Element = sel
 	sel.Set("style", "position:absolute")
-	m.View = m
+	v.View = v
 	f := FontNice(18, FontStyleNormal)
-	m.Font(f)
-	setFirst := (value == nil)
-	//	m.style().Set("webkitAppearance", "none") -- to set to non-system look
-	m.updateVals(vals, setFirst, value)
-	fmt.Println("NVAL:", m.oldValue)
+	v.SetFont(f)
+	//	v.style().Set("webkitAppearance", "none") -- to set to non-system look
+	v.updateVals(vals, value)
+	// fmt.Println("NVAL:", v.oldValue)
 
-	return m
+	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+		if v.IsStatic && v.oldValue != nil {
+			v.SetValue(v.oldValue)
+			return nil
+		}
+		sval := args[0].Get("currentTarget").Get("value").String()
+		for i, kv := range v.keyVals {
+			if fmt.Sprint(kv.Value) == sval {
+				okv := v.keyVals[i]
+				v.oldValue = &okv
+				if v.changed != nil {
+					v.changed(*v.oldValue)
+				}
+				break
+			}
+		}
+		return nil
+	}))
+	return v
 }
 
 func (v *MenuView) UpdateValues(vals zdict.Items) {
 	if !reflect.DeepEqual(v.keyVals, vals) {
 		options := v.get("options")
 		options.Set("length", 0)
-		setFirst := (len(v.keyVals) == 0)
-		v.updateVals(vals, setFirst, nil)
+		v.updateVals(vals, nil)
 	}
 }
 
-func (v *MenuView) updateVals(vals zdict.Items, setFirst bool, value interface{}) {
+func (v *MenuView) updateVals(vals zdict.Items, value interface{}) {
+	// fmt.Println("updateVals:", value)
 	for _, di := range vals {
-		option := DocumentJS.Call("createElement", "option")
 		sval := fmt.Sprint(di.Value)
+		option := DocumentJS.Call("createElement", "option")
 		option.Set("value", sval)
-		if setFirst || fmt.Sprint(value) == sval {
-			option.Set("selected", "true")
-			o := di
-			v.oldValue = &o
-		}
 		option.Set("innerHTML", di.Name)
 		v.call("appendChild", option)
 	}
-	fmt.Println("NVAL:", v.oldValue)
+	v.SetValue(value)
 }
 
 func (v *MenuView) SetValue(val interface{}) *MenuView {
+	if len(v.keyVals) == 0 {
+		return v
+	}
 	sval := fmt.Sprint(val)
+	index := -1
 	for i, kv := range v.keyVals {
 		if fmt.Sprint(kv.Value) == sval {
-			okv := kv
-			v.oldValue = &okv
-			options := v.get("options")
-			o := options.Index(i)
-			fmt.Println("MV Set:", i, o, val)
-			o.Set("selected", "true")
+			index = i
 			break
 		}
 	}
+	if index == -1 {
+		index = 0
+	}
+	okv := v.keyVals[index]
+	v.oldValue = &okv
+	options := v.get("options")
+	o := options.Index(index)
+	o.Set("selected", "true")
 
 	return v
 }
@@ -81,21 +100,6 @@ func (v *MenuView) NameAndValue() *zdict.Item {
 
 func (v *MenuView) ChangedHandler(handler func(item zdict.Item)) {
 	v.changed = handler
-	v.set("onchange", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		old := v.NameAndValue()
-		fmt.Println("Change:", old, v.IsStatic)
-		if v.IsStatic && old != nil {
-			v.SetValue(old.Value)
-			return nil
-		}
-		if v.changed != nil {
-			nv := v.NameAndValue()
-			if nv != nil {
-				v.changed(*nv)
-			}
-		}
-		return nil
-	}))
 }
 
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value

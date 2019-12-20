@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ const (
 	fieldHasYears
 	fieldIsImage
 	fieldsNoHeader
+	fieldsLive
 )
 const (
 	fieldTimeFlags = fieldHasSeconds | fieldHasMinutes | fieldHasHours
@@ -64,6 +65,7 @@ type field struct {
 	Size          zgeo.Size
 	Flags         int
 	DefaultWeight float64
+	Tooltip       string
 	// Type          fieldType
 }
 
@@ -123,7 +125,7 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *field, i
 
 func fieldsMakeEnumMenu(item zreflect.Item, i int, enum zdict.Items, handleUpdate func(i int)) *MenuView {
 	menu := MenuViewNew(enum, item.Value)
-	fmt.Println("fieldsMakeEnumMenu:", i)
+	// fmt.Println("fieldsMakeEnumMenu:", i, len(enum), enum)
 	menu.ChangedHandler(func(item zdict.Item) {
 		if handleUpdate != nil {
 			handleUpdate(i)
@@ -159,15 +161,18 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 		label := LabelNew(str)
 		j := f.Justify
 		if j == zgeo.AlignmentNone {
-			j = f.Alignment & (zgeo.AlignmentLeft | zgeo.AlignmentHorCenter | zgeo.AlignmentRight)
+			j = f.Alignment & (zgeo.Left | zgeo.HorCenter | zgeo.Right)
 			if j == zgeo.AlignmentNone {
-				j = zgeo.AlignmentLeft
+				j = zgeo.Left
 			}
 		}
 		label.TextAlignment(j)
 		return label
 	}
 	tv := TextViewNew(str)
+	if f.Flags&fieldsLive != 0 {
+		tv.ContinuousUpdateCalls = true
+	}
 	if handleUpdate != nil {
 		tv.ChangedHandler(func(view View) {
 			handleUpdate(i)
@@ -298,7 +303,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			}
 		} else if f.Enum != nil {
 			view = fieldsMakeEnumMenu(item, i, f.Enum, handleUpdate)
-			exp = zgeo.AlignmentHorShrink
+			exp = zgeo.HorShrink
 		} else {
 			switch f.Kind {
 			case zreflect.KindStruct:
@@ -307,7 +312,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				fieldView := fieldViewNew(f.Name, false, childStruct, 10, zgeo.Size{})
 				fieldView.parentField = f
 				view = fieldView
-				fieldsBuildStack(fieldView, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, zgeo.AlignmentLeft|zgeo.AlignmentTop, zgeo.Size{}, true, 5, 0, handleUpdate)
+				fieldsBuildStack(fieldView, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, zgeo.Left|zgeo.Top, zgeo.Size{}, true, 5, 0, handleUpdate)
 
 			case zreflect.KindBool:
 				b := BoolIndFromBool(item.Value.Interface().(bool))
@@ -315,7 +320,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 
 			case zreflect.KindInt:
 				if item.TypeName == "BoolInd" {
-					exp = zgeo.AlignmentHorShrink
+					exp = zgeo.HorShrink
 					view = fieldsMakeCheckbox(BoolInd(item.Value.Int()), i, handleUpdate)
 				} else {
 					view = fieldsMakeText(f, item, i, handleUpdate)
@@ -328,7 +333,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				if f.Flags&fieldIsImage != 0 {
 					view = fieldsMakeImage(structData, f, i)
 				} else {
-					exp = zgeo.AlignmentHorExpand
+					exp = zgeo.HorExpand
 					view = fieldsMakeText(f, item, i, handleUpdate)
 				}
 
@@ -360,11 +365,25 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				panic(fmt.Sprint("fieldsBuildStack bad type: ", f.Kind))
 			}
 		}
+		var tipField, tip string
+		if ustr.HasPrefix(f.Tooltip, ".", &tipField) {
+			for _, ei := range rootItems.Children {
+				if ei.FieldName == tipField {
+					tip = fmt.Sprint(ei.Interface)
+					break
+				}
+			}
+		} else if f.Tooltip != "" {
+			tip = f.Tooltip
+		}
+		if tip != "" {
+			ViewGetNative(view).SetToolTip(tip)
+		}
 		view.ObjectName(f.ID)
 		cell := ContainerViewCell{}
 		cell.Margin = cellMargin
 		def := defaultAlign
-		all := zgeo.AlignmentLeft | zgeo.AlignmentHorCenter | zgeo.AlignmentRight
+		all := zgeo.Left | zgeo.HorCenter | zgeo.Right
 		if f.Alignment&all != 0 {
 			def &= ^all
 		}
@@ -376,12 +395,12 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 		}
 		if useMinWidth {
 			cell.MinSize.W = f.MinWidth
+			// fmt.Println("Cell Width:", f.Name, cell.MinSize.W)
 		}
 		cell.View = view
-		cell.MinSize.W = f.MinWidth //- v.ColumnMargin*2
 		cell.MaxSize.W = f.MaxWidth
-		if exp != zgeo.AlignmentHorExpand && (j == 0 || j == len(rootItems.Children)-1) {
-			cell.MinSize.W -= inset
+		if cell.MinSize.W != 0 && (j == 0 || j == len(rootItems.Children)-1) {
+			cell.MinSize.W += inset
 		}
 		//		fmt.Println("Add Field Item:", cell.View.GetObjectName(), cell.Alignment, f.MinWidth, cell.MinSize.W)
 		stack.AddCell(cell, -1)
@@ -404,6 +423,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			key = part
 		}
 		key = strings.TrimSpace(key)
+		origVal := val
 		val = strings.TrimSpace(val)
 		align := zgeo.AlignmentFromString(val)
 		n, floatErr := strconv.ParseFloat(val, 32)
@@ -419,7 +439,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 				f.Justify = align
 			}
 		case "title":
-			f.Title = val
+			f.Title = origVal
 		case "color":
 			f.Color = val
 		case "height":
@@ -454,7 +474,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			}
 		case "image":
 			var ssize string
-			if !ustr.SplitN(val, "/", &ssize, &f.FixedPath) {
+			if !ustr.SplitN(val, "|", &ssize, &f.FixedPath) {
 				ssize = val
 			}
 			f.Flags |= fieldIsImage
@@ -469,6 +489,10 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			}
 		case "noheader":
 			f.Flags |= fieldsNoHeader
+		case "tip":
+			f.Tooltip = val
+		case "live":
+			f.Flags |= fieldsLive
 		}
 	}
 	if f.Title == "" {
@@ -493,11 +517,11 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 					f.Flags |= fieldTimeFlags
 				}
 			}
-			if f.MaxWidth == 0 {
-				f.MinWidth = 64
-			}
 			if f.MinWidth == 0 {
-				f.MaxWidth = 64
+				f.MinWidth = 80
+			}
+			if f.MaxWidth == 0 {
+				f.MaxWidth = 100
 			}
 			break
 		}
@@ -553,7 +577,9 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	case zreflect.KindFunc:
 		if f.MinWidth == 0 {
 			if f.Flags&fieldIsImage != 0 {
-				f.MinWidth = f.Size.W * ScreenMain().Scale
+				min := f.Size.W // * ScreenMain().Scale
+				min += ImageViewDefaultMargin.W * 2
+				zfloat.Maximize(&f.MinWidth, min)
 			}
 		}
 	}
@@ -565,7 +591,7 @@ func fieldViewNew(name string, vertical bool, structure interface{}, spacing flo
 	v := &FieldView{}
 	v.StackView.init(v, name)
 	v.Spacing(12)
-	v.Margin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
+	v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	v.Vertical = vertical
 	v.structure = structure
 	unnestAnon := false
@@ -584,7 +610,7 @@ func fieldViewNew(name string, vertical bool, structure interface{}, spacing flo
 }
 
 func (v *FieldView) Build(handleUpdate func(i int)) {
-	fieldsBuildStack(v, &v.StackView, v.structure, v.parentField, &v.fields, zgeo.AlignmentLeft|zgeo.AlignmentTop, zgeo.Size{}, true, 5, 0, handleUpdate) // Size{6, 4}
+	fieldsBuildStack(v, &v.StackView, v.structure, v.parentField, &v.fields, zgeo.Left|zgeo.Top, zgeo.Size{}, true, 5, 0, handleUpdate) // Size{6, 4}
 }
 
 func FieldViewNew(name string, structure interface{}) *FieldView {
@@ -716,11 +742,11 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 
 var fieldEnums = map[string]zdict.Items{}
 
-func FieldsAddEnum(name string, enum zdict.Items) {
+func FieldsSetEnum(name string, enum zdict.Items) {
 	fieldEnums[name] = enum
 }
 
-func FieldsAddEnumItems(name string, nameValPairs ...interface{}) {
+func FieldsSetEnumItems(name string, nameValPairs ...interface{}) {
 	var dis zdict.Items
 
 	for i := 0; i < len(nameValPairs); i += 2 {

@@ -1,10 +1,10 @@
-package zgo
+package zui
 
 import (
-	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -20,16 +20,16 @@ func TextViewNew(text string) *TextView {
 	tv.View = tv
 	tv.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
-	tv.Font(f)
+	tv.SetFont(f)
 	return tv
 }
 
 func (v *TextView) TextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	str := "left"
-	if a&zgeo.AlignmentRight != 0 {
+	if a&zgeo.Right != 0 {
 		str = "right"
-	} else if a&zgeo.AlignmentHorCenter != 0 {
+	} else if a&zgeo.HorCenter != 0 {
 		str = "center"
 	}
 	v.style().Set("textAlign", str)
@@ -65,21 +65,42 @@ func (v *TextView) GetText() string {
 	return text
 }
 
+func (v *TextView) callUpdate() {
+	zlog.Info("callUpdate")
+	if v.changed != nil {
+		if v.UpdateSecs == 0 {
+			v.changed(v)
+		}
+		if v.updateTimer != nil {
+			v.updateTimer.Stop()
+		}
+		v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
+			v.changed(v)
+		})
+	}
+	v.updated = false
+}
+
 func (v *TextView) ChangedHandler(handler func(view View)) {
 	v.changed = handler
 	if handler != nil {
+		v.set("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+			if !v.ContinuousUpdateCalls && v.updated {
+				event := vs[0]
+				key := event.Get("which").Int()
+				//				zlog.Info("down-key:", key, v.GetObjectName())
+				if key == KeyboardKeyReturn || key == KeyboardKeyTab {
+					//					zlog.Info("push:", v.ContinuousUpdateCalls, v.updated)
+					v.callUpdate()
+				}
+			}
+			return nil
+		}))
 		v.set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			if v.changed != nil {
-				if v.UpdateSecs == 0 {
-					v.changed(v)
-					return nil
-				}
-				if v.updateTimer != nil {
-					v.updateTimer.Stop()
-				}
-				v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
-					v.changed(v)
-				})
+			v.updated = true
+			//			zlog.Info("UPDATED", v.updated)
+			if v.ContinuousUpdateCalls {
+				v.callUpdate()
 			}
 			return nil
 		}))
@@ -88,11 +109,25 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 
 func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
-	if handler != nil {
-		v.set("onkeyup", js.FuncOf(func(v js.Value, vs []js.Value) interface{} {
+	v.set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		if handler != nil {
 			event := vs[0]
-			fmt.Println("KeyUp:", event.Get("which"), event.Get("altKey"), event.Get("ctrlKey"), event.Get("metaKey"), event.Get("shiftKey"))
-			return nil
-		}))
-	}
+			key := event.Get("which").Int()
+			var mods KeyboardModifier
+			if event.Get("altKey").Bool() {
+				mods |= KeyboardModifierAlt
+			}
+			if event.Get("ctrlKey").Bool() {
+				mods |= KeyboardModifierControl
+			}
+			if event.Get("metaKey").Bool() {
+				mods |= KeyboardModifierMeta
+			}
+			if event.Get("shiftKey").Bool() {
+				mods |= KeyboardModifierShift
+			}
+			zlog.Dummy("KeyUp:", key, mods)
+		}
+		return nil
+	}))
 }

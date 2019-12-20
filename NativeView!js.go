@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
@@ -114,11 +114,11 @@ func (v *NativeView) DumpTree() {
 func (v *NativeView) RemoveFromParent() {
 }
 
-func (v *NativeView) Font(font *Font) View {
+func (v *NativeView) SetFont(font *Font) View {
 	return v
 }
 
-func (v *NativeView) GetFont() *Font {
+func (v *NativeView) Font() *Font {
 	return nil
 }
 
@@ -129,12 +129,7 @@ func (v *NativeView) Text(text string) View {
 func (v *NativeView) GetText() string {
 	return ""
 }
-
-func (v *NativeView) AddChild(child View, index int) {
-}
-
-func (v *NativeView) RemoveChild(child View) {
-}
-
-func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
-}
+func (v *NativeView) AddChild(child View, index int)                                    {}
+func (v *NativeView) RemoveChild(child View)                                            {}
+func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {}
+func (v *NativeView) SetToolTip(str string)                                             {}

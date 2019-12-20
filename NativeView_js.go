@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -30,6 +30,7 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) Rect(rect zgeo.Rect) View {
+	// fmt.Println("NV Rect", v.GetObjectName())
 	setElementRect(v.Element, rect)
 	return v
 }
@@ -196,22 +197,30 @@ func (v *NativeView) DumpTree() {
 func (v *NativeView) RemoveFromParent() {
 }
 
-func (v *NativeView) Font(font *Font) View {
-	//	str := getFontStyle(font)
-	//	v.set("font", str)
-	style := v.style()
-	style.Set("font-family", font.Name)
-	style.Set("font-size", fmt.Sprintf("%gpx", font.Size))
+func (v *NativeView) SetFont(font *Font) View {
+	cssStyle := v.style()
+	cssStyle.Set("font-style", string(font.Style&FontStyleItalic))
+	// zlog.Debug("font:", v.GetObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
+	cssStyle.Set("font-weight", (font.Style & FontStyleBold).String())
+	cssStyle.Set("font-family", font.Name)
+	cssStyle.Set("font-size", fmt.Sprintf("%gpx", font.Size))
 	return v
 }
 
-func (v *NativeView) GetFont() *Font {
-	style := v.style()
-	name := style.Get("font-family").String()
-	ss := style.Get("font-size")
+func (v *NativeView) Font() *Font {
+	cssStyle := v.style()
+	fstyle := FontStyleNormal
+	name := cssStyle.Get("font-family").String()
+	if cssStyle.Get("font-weight").String() == "bold" {
+		fstyle |= FontStyleBold
+	}
+	if cssStyle.Get("font-style").String() == "italic" {
+		fstyle |= FontStyleItalic
+	}
+	ss := cssStyle.Get("font-size")
 	size := parseCoord(ss)
 
-	return FontNew(name, size, FontStyleNormal)
+	return FontNew(name, size, fstyle)
 }
 
 func (v *NativeView) Text(text string) View {
@@ -244,4 +253,8 @@ func (v *NativeView) RemoveChild(child View) {
 func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
 	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(deltaSize.W), int(deltaSize.H), int(blur), makeRGBAString(color))
 	v.style().Set("boxShadow", str)
+}
+
+func (v *NativeView) SetToolTip(str string) {
+	v.set("title", str)
 }

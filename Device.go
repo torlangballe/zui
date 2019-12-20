@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 type DeviceCellularNetworkType int
 

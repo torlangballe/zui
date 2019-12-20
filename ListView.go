@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
@@ -20,6 +20,7 @@ type ListView struct {
 	HandleScrolledToRows func(y float64, first, last int)
 
 	RowColors []zgeo.Color
+	MinRows   int
 
 	selectionIndex int
 	Selectable     bool
@@ -37,6 +38,18 @@ func ListViewNew(name string) *ListView {
 	v.selectedColor = zgeo.ColorNew(0.6, 0.6, 0.8, 1)
 	return v
 	//        allowsSelection = true // selectable
+}
+
+func (v *ListView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+	s := v.ScrollView.GetCalculatedSize(total)
+	h := 0.0
+	count := v.GetRowCount()
+	for i := 0; i < v.MinRows && i < count; i++ {
+		h += v.GetRowHeight(i)
+	}
+	s.H = h
+
+	return s
 }
 
 func (v *ListView) drawIfExposed() {

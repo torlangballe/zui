@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 func TS(str string) string {
 	return str

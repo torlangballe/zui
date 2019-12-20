@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
@@ -16,9 +16,11 @@ type TextView struct {
 	changed     func(view View)
 	keyPressed  func(view View, key KeyboardKey, mods KeyboardModifier)
 	updateTimer *ztimer.Timer
+	updated     bool
 
-	Margin     zgeo.Size
-	UpdateSecs float64
+	Margin                zgeo.Size
+	ContinuousUpdateCalls bool
+	UpdateSecs            float64
 }
 
 const TextViewDefaultMargin = 3.0

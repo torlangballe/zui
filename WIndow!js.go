@@ -2,7 +2,7 @@
 
 // https://github.com/golang/mobile/tree/master/app
 
-package zgo
+package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 

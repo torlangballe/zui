@@ -1,6 +1,8 @@
-package zgo
+package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 //  Created by Tor Langballe on /20/10/15.
 
@@ -11,13 +13,15 @@ type ImageView struct {
 	alignment zgeo.Alignment
 }
 
+var ImageViewDefaultMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
+
 func ImageViewNew(path string, minSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.init(v, path)
 	v.CustomView.MinSize(minSize)
-	s := zgeo.Pos{4, 1}.TimesD(ScreenMain().SoftScale)
-	v.margin = zgeo.RectFromMinMax(s, s.Negative())
-	v.alignment = zgeo.AlignmentCenter
+	p := ImageViewDefaultMargin.Pos()
+	v.margin = zgeo.RectFromMinMax(p, p.Negative())
+	v.alignment = zgeo.Center | zgeo.Proportional
 	v.DrawHandler(imageViewDraw)
 	if path != "" {
 		v.SetImage(nil, path, nil)
@@ -94,12 +98,13 @@ func imageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// if !v.IsUsable() {
 		// 	o *= 0.6
 		// }
-		a := v.alignment | zgeo.AlignmentShrink
+		a := v.alignment | zgeo.Shrink
 		// if v.IsFillBox {
 		// 	a = AlignmentNone
 		// }
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
+		// fmt.Println("IV Draw:", v.margin, r, v.image.path, rect, "->", ir)
 		canvas.DrawImage(drawImage, ir, 1, CanvasBlendModeNormal, zgeo.Rect{})
 	}
 	if v.IsFocused() {

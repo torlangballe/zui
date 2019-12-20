@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 /*
 //  Created by Tor Langballe on /18/11/15.
@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	DebugPrint("zgo init()")
+	DebugPrint("zui init()")
 	runtime.LockOSThread()
 }
 

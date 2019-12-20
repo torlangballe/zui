@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 //  Defines.go
 //

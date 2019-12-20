@@ -1,6 +1,6 @@
 // +build !js
 
-package zgo
+package zui
 
 func (c *CheckBox) GetValue() BoolInd {
 	return BoolFalse

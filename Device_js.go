@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	ua "github.com/mileusna/useragent"

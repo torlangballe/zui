@@ -1,17 +1,4 @@
-package zgo
-
-import (
-	"net/url"
-	"path/filepath"
-	"regexp"
-	"sort"
-	"strconv"
-	"strings"
-	"unicode"
-
-	"github.com/torlangballe/zutil/ustr"
-	"github.com/torlangballe/zutil/zint"
-)
+package zui
 
 //  Created by Tor Langballe on /23/9/14.
 /**
@@ -49,6 +36,8 @@ func StrSplitByChars(str string, chars string) []string {
 
 }
 */
+
+/**
 func StrSplitN(str string, sep string, n int) []string {
 	return strings.SplitN(str, sep, n)
 }
@@ -429,3 +418,5 @@ func NumberToBase64Char(num int) int {
 	}
 	return -1
 }
+
+*/

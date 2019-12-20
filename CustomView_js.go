@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"syscall/js"
@@ -12,7 +12,7 @@ func (v *CustomView) init(view View, name string) {
 	v.exposed = true
 	v.View = view
 	v.ObjectName(name)
-	v.Font(FontNice(FontDefaultSize, FontStyleNormal))
+	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 }
 
 func (v *CustomView) PressedHandler(handler func()) {

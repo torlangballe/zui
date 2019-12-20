@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 func imageViewInit(iv *ImageView, path string) {
 }

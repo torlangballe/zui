@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 type KeyboardKey int
 type KeyboardModifier int
@@ -7,7 +7,7 @@ const (
 	KeyboardModifierShift KeyboardModifier = 1 << iota
 	KeyboardModifierControl
 	KeyboardModifierAlt
-	KeyboardModifierCommand
+	KeyboardModifierMeta
 )
 
 const (
@@ -15,4 +15,3 @@ const (
 	KeyboardKeyTab       = 9
 	KeyboardKeyBackspace = 8
 )
-

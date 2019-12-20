@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"github.com/torlangballe/zutil/zdict"
@@ -21,8 +21,12 @@ func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 		if len(di.Name) > len(maxString) {
 			maxString = di.Name
 		}
+		if v.IsStatic {
+			break
+		}
 	}
-	s := TextLayoutCalculateSize(zgeo.AlignmentLeft, v.GetFont(), maxString, 1, v.maxWidth)
+	maxString += "m"
+	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth)
 	// fmt.Println("MenuView calcedsize:", s)
 	s.Add(zgeo.Size{20, 4})
 	return s

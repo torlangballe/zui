@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"net/url"
@@ -71,7 +71,7 @@ func (u URL) MultiParameters() map[string][]string {
 func GetParametersFromArgString(parameters string) map[string]string {
 	m := ustr.GetParametersFromArgString(parameters, ",", "=")
 	for k, v := range m {
-		m[k] = StrUrlDecode(v)
+		m[k], _ = url.QueryUnescape(v)
 	}
 	return m
 }

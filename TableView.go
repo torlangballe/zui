@@ -1,4 +1,4 @@
-package zgo
+package zui
 
 import (
 	"fmt"
@@ -81,10 +81,9 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		}
 	}
 	if header {
-		v.Header = StackViewNew(false, 0, "header")
-		//		v.Header.BGColor(ColorBlue)
+		v.Header = StackNewHor("header")
 		v.Header.Spacing(0)
-		v.AddElements(zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentHorExpand|zgeo.AlignmentNonProp, v.Header)
+		v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	}
 	v.List = ListViewNew(name + ".list")
 	v.List.MinSize(zgeo.Size{50, 50})
@@ -92,7 +91,7 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	v.List.HandleScrolledToRows = func(y float64, first, last int) {
 		v.ArrangeChildren(nil)
 	}
-	v.AddElements(zgeo.AlignmentLeft|zgeo.AlignmentTop|zgeo.AlignmentExpand|zgeo.AlignmentNonProp, v.List)
+	v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.List)
 
 	v.GetRowHeight = func(i int) float64 { // default height
 		return 50
@@ -122,7 +121,7 @@ func (v *TableView) ReadyToShow() {
 		cell := ContainerViewCell{}
 		exp := zgeo.AlignmentNone
 		if f.Kind == zreflect.KindString && f.Enum == nil {
-			exp = zgeo.AlignmentHorExpand
+			exp = zgeo.HorExpand
 		}
 		t := ""
 		if f.Flags&fieldsNoHeader == 0 {
@@ -131,7 +130,7 @@ func (v *TableView) ReadyToShow() {
 				t = f.Name
 			}
 		}
-		cell.Alignment = zgeo.AlignmentLeft | zgeo.AlignmentVertCenter | exp
+		cell.Alignment = zgeo.Left | zgeo.VertCenter | exp
 		button := ButtonNew(t, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		//		button.Text(f.name)
 		cell.View = button
@@ -178,13 +177,13 @@ func (v *TableView) FlashRow() {
 
 func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	name := fmt.Sprintf("row %d", i)
-	rowStack := StackViewNew(false, zgeo.AlignmentNone, name)
+	rowStack := StackNewHor(name)
 	rowStack.Spacing(0)
 	rowStack.CanFocus(true)
-	rowStack.Margin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
+	rowStack.SetMargin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
 	rowStruct := v.GetRow(i)
-	useWidth := (v.Header != nil)
-	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.AlignmentCenter, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
+	useWidth := true //(v.Header != nil)
+	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
 		fmt.Println("createRow:", i, name)
 		rowStruct := v.GetRow(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
