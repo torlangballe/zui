@@ -1,8 +1,6 @@
 package zui
 
 import (
-	"fmt"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
@@ -43,7 +41,6 @@ func (v *ContainerView) GetChildren() (children []View) {
 }
 
 func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
-	fmt.Println("calculateAddAlignment1", def, a)
 	if a&zgeo.VertPos != 0 && def&zgeo.VertPos != 0 {
 		def &= ^zgeo.Vertical
 	}
@@ -57,7 +54,6 @@ func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
 	if a&zgeo.HorPos == 0 {
 		a |= zgeo.Left
 	}
-	fmt.Println("calculateAddAlignment2", a)
 	return a
 }
 
@@ -160,8 +156,8 @@ func (v *ContainerView) Contains(view View) bool {
 	return false
 }
 
-func (v *ContainerView) Rect(rect zgeo.Rect) View {
-	v.CustomView.Rect(rect)
+func (v *ContainerView) SetRect(rect zgeo.Rect) View {
+	v.CustomView.SetRect(rect)
 	ct, got := v.View.(ContainerType)
 	//	fmt.Println("CV: Rect", got)
 	if got {
@@ -175,14 +171,14 @@ func (v *ContainerView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
-	v.Rect(ScreenMain().Rect)
+	v.SetRect(ScreenMain().Rect)
 	v.MinSize(ScreenMain().Rect.Size)
 	if !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
 		r := v.GetRect()
 		if h > 20 && !ScreenHasNotch() {
 			r.Size.H -= h
-			v.Rect(r)
+			v.SetRect(r)
 		} else if useableArea {
 			v.margin.SetMinY(float64(h))
 		}
@@ -199,7 +195,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
 	s := c.View.GetCalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
-	c.View.Rect(rv)
+	c.View.SetRect(rv)
 }
 
 func (v *ContainerView) isLoading() bool {
@@ -391,7 +387,7 @@ func (v *ContainerView) ReplaceView(oldView, newView View) {
 	if i != -1 {
 		c := v.cells[i]
 		r := v.GetRect()
-		newView.Rect(r)
+		newView.SetRect(r)
 		v.AddChild(newView, -1)
 		v.RemoveChild(c.View)
 		c.View = newView

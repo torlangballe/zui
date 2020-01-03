@@ -1,7 +1,6 @@
 package zui
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -11,6 +10,8 @@ import (
 )
 
 //  Created by Tor Langballe on /20/10/15.
+
+var debugHints = true
 
 type StackView struct {
 	ContainerView
@@ -126,8 +127,8 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 func (v *StackView) ForceHorizontalFocusNavigation() {
 }
 
-// func (v *StackView) Rect(rect Rect) View {
-// 	v.CustomView.Rect(rect)
+// func (v *StackView) SetRect(rect Rect) View {
+// 	v.CustomView.SetRect(rect)
 // 	v.ArrangeChildren(nil)
 // 	return v
 // }
@@ -258,7 +259,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 
 	// Not-centered children:
 	for i, c4 := range v.cells {
-		fmt.Println("cell:", c4.View.GetObjectName(), c4.Alignment, c4.Collapsed, c4.Free)
+		// fmt.Println("cell:", c4.View.GetObjectName(), c4.Alignment, c4.Collapsed, c4.Free)
 		if !c4.Collapsed && !c4.Free {
 			if (c4.Alignment & (amore | aless)) != 0 {
 				var a = c4.Alignment
@@ -267,8 +268,8 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				}
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
-					c4.View.Rect(vr)
-					fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.GetRect())
+					c4.View.SetRect(vr)
+					// fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.GetRect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
@@ -317,8 +318,8 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				fmt.Println("cellmid:", a, c5.MinSize, c5.View.GetObjectName(), vr, r)
-				c5.View.Rect(vr)
+				// fmt.Println("cellmid:", a, c5.MinSize, c5.View.GetObjectName(), vr, r)
+				c5.View.SetRect(vr)
 			}
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			cv, got := c5.View.(*ContainerView)

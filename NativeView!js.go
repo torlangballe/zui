@@ -13,7 +13,7 @@ func (v *NativeView) GetView() *NativeView {
 	return v
 }
 
-func (v *NativeView) Rect(rect zgeo.Rect) View {
+func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	return v
 }
 

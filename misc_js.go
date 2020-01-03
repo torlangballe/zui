@@ -6,6 +6,7 @@ import (
 	"strings"
 	"syscall"
 	"syscall/js"
+	"time"
 
 	"github.com/torlangballe/zutil/ustr"
 	"github.com/torlangballe/zutil/zlog"
@@ -23,7 +24,7 @@ type css js.Value
 func init() {
 }
 
-func parseCoord(value js.Value) float64 {
+func parseElementCoord(value js.Value) float64 {
 	var s string
 	str := value.String()
 	if ustr.HasSuffix(str, "px", &s) {
@@ -38,8 +39,8 @@ func parseCoord(value js.Value) float64 {
 	return 0
 }
 
-func getCreatedTimeFromStatT(fstat *syscall.Stat_t) Time {
-	return TimeNull
+func getCreatedTimeFromStatT(fstat *syscall.Stat_t) time.Time {
+	return time.Time{}
 }
 
 func AddTextNode(e *NativeView, text string) {

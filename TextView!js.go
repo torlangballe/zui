@@ -4,7 +4,7 @@ package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
-func TextViewNew(text string) *TextView {
+func TextViewNew(text string, style TextViewStyle) *TextView {
 	tv := &TextView{}
 	// tv.Element = DocumentJS.Call("createElement", "INPUT")
 	// tv.set("style", "position:absolute")

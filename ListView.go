@@ -89,8 +89,8 @@ func (v *ListView) init(view View, name string) {
 	}
 }
 
-func (v *ListView) Rect(rect zgeo.Rect) View {
-	v.ScrollView.Rect(rect)
+func (v *ListView) SetRect(rect zgeo.Rect) View {
+	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
 		v.AddChild(v.stack, -1)
@@ -106,7 +106,7 @@ func (v *ListView) Rect(rect zgeo.Rect) View {
 	}
 	w := rect.Size.W + v.Margin.Size.W
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
-	v.stack.Rect(r)
+	v.stack.SetRect(r)
 	v.layoutRows(-1)
 	return v
 }
@@ -136,7 +136,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 			row := v.rows[i]
 			if row != nil {
 				if row.GetRect() != r {
-					row.Rect(r)
+					row.SetRect(r)
 				}
 				delete(oldRows, i)
 			} else {
@@ -144,7 +144,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				v.stack.AddChild(row, -1)
 				v.rows[i] = row
 				v.setRowBGColor(i)
-				row.Rect(r)
+				row.SetRect(r)
 			}
 		}
 		y += s.H + v.spacing
@@ -186,8 +186,8 @@ func (v *ListView) ReloadData() {
 func (v *ListView) MoveRow(fromIndex int, toIndex int) {
 }
 
-func (v *ListView) GetRowViewFromIndex(i int) *View {
-	return nil
+func (v *ListView) GetVisibleRowViewFromIndex(i int) View {
+	return v.rows[i]
 }
 
 func (v *ListView) GetIndexFromRowView(view View) *int {

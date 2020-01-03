@@ -71,7 +71,7 @@ func (c *Canvas) ClipPath(path *zgeo.Path, exclude bool, eofill bool) {
 
 func (c *Canvas) GetClipRect() zgeo.Rect {
 	return zgeo.Rect{}
-	//        return Rect(context.boundingBoxOfClipPath)
+	//        return SetRect(context.boundingBoxOfClipPath)
 }
 
 func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineType) {

@@ -29,6 +29,7 @@ const (
 	fieldHasMonths
 	fieldHasYears
 	fieldIsImage
+	fieldHasHeaderImage
 	fieldsNoHeader
 	fieldsLive
 )
@@ -140,8 +141,9 @@ func fieldsMakeTimeView(f *field, item zreflect.Item, i int, handleUpdate func(i
 	if format == "" {
 		format = "2006-01-02 15:04:05"
 	}
+	var style TextViewStyle
 	str := t.Format(format)
-	tv := TextViewNew(str)
+	tv := TextViewNew(str, style)
 	return tv
 }
 
@@ -169,7 +171,8 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 		label.TextAlignment(j)
 		return label
 	}
-	tv := TextViewNew(str)
+	var style TextViewStyle
+	tv := TextViewNew(str, style)
 	if f.Flags&fieldsLive != 0 {
 		tv.ContinuousUpdateCalls = true
 	}
@@ -472,12 +475,16 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			if floatErr == nil {
 				f.MaxWidth = n
 			}
-		case "image":
+		case "image", "himage":
 			var ssize string
 			if !ustr.SplitN(val, "|", &ssize, &f.FixedPath) {
 				ssize = val
 			}
-			f.Flags |= fieldIsImage
+			if key == "image" {
+				f.Flags |= fieldIsImage
+			} else {
+				f.Flags |= fieldHasHeaderImage
+			}
 			f.Size.FromString(ssize)
 		case "enum":
 			if ustr.HasPrefix(val, ".", &f.LocalEnum) {
@@ -532,7 +539,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			f.MinWidth = 20
 		}
 	case zreflect.KindString:
-		if f.Flags&fieldIsImage != 0 {
+		if f.Flags&(fieldHasHeaderImage|fieldIsImage) != 0 {
 			f.MinWidth = f.Size.W
 			f.MaxWidth = f.Size.W
 		}

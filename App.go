@@ -2,15 +2,18 @@ package zui
 
 import (
 	"os"
+	"time"
+
+	"github.com/torlangballe/zutil/ztime"
 )
 
 //  Created by Tor Langballe on /15/11/15.
 
 type App struct {
 	//    static var appFile  ZFileUrl? = nil
-	activationTime Time
-	backgroundTime Time // IsNull if not in background
-	startTime      Time
+	activationTime time.Time
+	backgroundTime time.Time // IsNull if not in background
+	startTime      time.Time
 	startedCount   int
 	oldVersion     float32
 	handler        AppHandler
@@ -21,11 +24,11 @@ func (a *App) SetHandler(handler AppHandler) {
 }
 
 func (a *App) IsActive() bool {
-	return !a.activationTime.IsNull()
+	return !a.activationTime.IsZero()
 }
 
 func (a *App) IsBackgrounded() bool {
-	return !a.backgroundTime.IsNull()
+	return !a.backgroundTime.IsZero()
 }
 
 func AppVersion() (string, float32, int) { // version string, version with comma 1.2, build
@@ -41,16 +44,16 @@ func AppQuit() {
 }
 
 func (a *App) GetRuntimeSecs() float64 {
-	return a.activationTime.Since()
+	return ztime.DurSeconds(time.Since(a.activationTime))
 }
 
 func (a *App) GetbackgroundTimeSecs() float64 {
-	return a.backgroundTime.Since()
+	return ztime.DurSeconds(time.Since(a.backgroundTime))
 }
 
 func AppNew() *App {
 	a := &App{}
-	a.activationTime = TimeNow()
+	a.activationTime = time.Now()
 	AppMain = a
 	return a
 }

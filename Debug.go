@@ -6,15 +6,17 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/ztime"
 )
 
 var mutex sync.Mutex
 var storePrintLines = 0
 var storedLines []string
-var lastStampTime Time
+var lastStampTime time.Time
 var printHooks []func(s string)
 var logAllOutput bool
 
@@ -28,9 +30,9 @@ func IsMinIOS11() bool {
 
 func DebugPrint(items ...interface{}) {
 	var str = ""
-	if lastStampTime.Since() > 3.0 {
-		lastStampTime = TimeNow()
-		str = lastStampTime.GetString("============= yy-MM-dd' 'HH:mm:ssZZ =============\n", "", nil)
+	if ztime.Since(lastStampTime) > 3.0 {
+		lastStampTime = time.Now()
+		str = lastStampTime.Format("============= 06-01-02' '15:04:05 =============\n")
 	}
 	for i, item := range items {
 		if i != 0 {

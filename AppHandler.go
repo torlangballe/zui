@@ -27,5 +27,5 @@ type AppHandler interface {
 	HandleAppWillTerminate()
 	HandleShake()
 	HandleExit()
-	HandleOpenUrl(url URL, showMessage bool, done *func()) bool
+	HandleOpenUrl(url string, showMessage bool, done *func()) bool
 }

@@ -1,6 +1,10 @@
 package zui
 
-import "github.com/torlangballe/zutil/zdict"
+import (
+	"time"
+
+	"github.com/torlangballe/zutil/zdict"
+)
 
 //  Created by Tor Langballe on /30/10/15.
 
@@ -38,8 +42,8 @@ func (k KeyValueStore) DoubleForKey(key string) (float64, bool) {
 	return 0, false
 }
 
-func (k KeyValueStore) TimeForKey(key string) (Time, bool) {
-	return TimeNull, false
+func (k KeyValueStore) TimeForKey(key string) (time.Time, bool) {
+	return time.Time{}, false
 }
 
 func (k KeyValueStore) BoolForKey(key string) (bool, bool) {
@@ -60,7 +64,7 @@ func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) {}
 func (k KeyValueStore) SetInt(value int64, key string, sync bool)      {}
 func (k KeyValueStore) SetDouble(value float64, key string, sync bool) {}
 func (k KeyValueStore) Setbool(value bool, key string, sync bool)      {}
-func (k KeyValueStore) SetTime(value Time, key string, sync bool)      {}
+func (k KeyValueStore) SetTime(value time.Time, key string, sync bool) {}
 func (k KeyValueStore) ForAllKeys(got func(key string))                {}
 
 func (k KeyValueStore) prefixKey(key *string) {

@@ -26,8 +26,8 @@ func (v *CustomView) PressedHandler(handler func()) {
 	}))
 }
 
-func (v *CustomView) Rect(rect zgeo.Rect) View {
-	v.NativeView.Rect(rect)
+func (v *CustomView) SetRect(rect zgeo.Rect) View {
+	v.NativeView.SetRect(rect)
 	if !v.isSetup {
 		if v.canvas != nil {
 			s := v.GetLocalRect().Size

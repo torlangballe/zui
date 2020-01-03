@@ -50,8 +50,8 @@ func (v *ScrollView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *ScrollView) SetContentOffset(offset zgeo.Pos, animated bool) {
 }
 
-func (v *ScrollView) Rect(rect zgeo.Rect) View {
-	v.CustomView.Rect(rect)
+func (v *ScrollView) SetRect(rect zgeo.Rect) View {
+	v.CustomView.SetRect(rect)
 	if v.child != nil {
 		ls := rect.Size
 		ls.H = 20000
@@ -59,7 +59,7 @@ func (v *ScrollView) Rect(rect zgeo.Rect) View {
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
 		r.Add(v.Margin)
-		v.child.Rect(r)
+		v.child.SetRect(r)
 	}
 	return v
 }

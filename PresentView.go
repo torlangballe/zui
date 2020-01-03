@@ -38,7 +38,7 @@ func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.
 		break
 	}
 	n.Alpha(fade)
-	n.Rect(out)
+	n.SetRect(out)
 }
 
 type PresentViewAttributes struct {
@@ -95,11 +95,11 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 	ct.WhenLoaded(func() {
 		if attributes.MakeFull {
 			// fmt.Println("Present:", mainRect, presentViewPresenting)
-			n.Rect(mainRect)
+			n.SetRect(mainRect)
 		} else {
 			size := n.GetCalculatedSize(mainRect.Size)
 			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
-			n.Rect(r)
+			n.SetRect(r)
 			n.BGColor(zgeo.ColorNewGray(0.8, 1))
 			n.CornerRadius(10)
 			no := n.(NativeViewOwner)

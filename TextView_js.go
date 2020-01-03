@@ -10,12 +10,16 @@ import (
 
 const jsTextMargin = 3
 
-func TextViewNew(text string) *TextView {
+func TextViewNew(text string, style TextViewStyle) *TextView {
 	tv := &TextView{}
+	stype := "text"
 	tv.Element = DocumentJS.Call("createElement", "INPUT")
 	tv.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
 	tv.set("style", "position:absolute")
-	tv.set("type", "text")
+	if style.KeyboardType == KeyboardTypePassword {
+		stype = "password"
+	}
+	tv.set("type", stype)
 	tv.set("value", text)
 	tv.View = tv
 	tv.UpdateSecs = 1
@@ -36,27 +40,37 @@ func (v *TextView) TextAlignment(a zgeo.Alignment) View {
 	return v
 }
 
-func (v *TextView) IsReadOnly(is bool) *TextView {
-	v.set("readOnly", is)
+func (v *TextView) SetReadOnly(is bool) *TextView {
+	v.set("readonly", is)
 	return v
 }
 
-func (v *TextView) Placeholder(str string) *TextView {
+func (v *TextView) SetMin(min float64) *TextView {
+	v.set("min", min)
+	return v
+}
+
+func (v *TextView) SetMax(max float64) *TextView {
+	v.set("max", max)
+	return v
+}
+
+func (v *TextView) SetStep(step float64) *TextView {
+	v.set("step", step)
+	return v
+}
+
+func (v *TextView) SetPlaceholder(str string) *TextView {
 	v.set("placeholder", str)
 	return v
 }
 
-func (v *TextView) IsPassword(is bool) *TextView {
-	v.set("type", "password")
-	return v
-}
-
-func (v *TextView) Rect(rect zgeo.Rect) View {
+func (v *TextView) SetRect(rect zgeo.Rect) View {
 	m := v.Margin.Maxed(zgeo.SizeBoth(jsTextMargin))
 	rect = rect.Expanded(m.Negative())
 	rect.Pos.Y -= 3
 	// fmt.Println("TV: Rect:", v.GetObjectName(), rect)
-	v.NativeView.Rect(rect)
+	v.NativeView.SetRect(rect)
 	return v
 }
 

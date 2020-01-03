@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"time"
+
 	ua "github.com/mileusna/useragent"
 )
 
@@ -50,8 +52,8 @@ func DeviceOSVersionstring() string {
 	return ""
 }
 
-func DeviceTimeZone() TimeZone {
-	return TimeZone{}
+func DeviceTimeZone() *time.Location {
+	return time.UTC
 }
 
 func DeviceDeviceType() string {

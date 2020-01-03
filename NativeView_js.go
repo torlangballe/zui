@@ -29,7 +29,7 @@ func (v *NativeView) GetNative() *NativeView {
 	return v
 }
 
-func (v *NativeView) Rect(rect zgeo.Rect) View {
+func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	// fmt.Println("NV Rect", v.GetObjectName())
 	setElementRect(v.Element, rect)
 	return v
@@ -37,8 +37,11 @@ func (v *NativeView) Rect(rect zgeo.Rect) View {
 
 func (v *NativeView) GetRect() zgeo.Rect {
 	var pos zgeo.Pos
-	pos.X = v.Element.Get("offsetLeft").Float()
-	pos.Y = v.Element.Get("offsetTop").Float()
+	style := v.style()
+	// pos.X = v.Element.Get("offsetLeft").Float()
+	// pos.Y = v.Element.Get("offsetTop").Float()
+	pos.X = parseElementCoord(style.Get("left"))
+	pos.Y = parseElementCoord(style.Get("top"))
 	size := v.GetLocalRect().Size
 	return zgeo.Rect{pos, size}
 }
@@ -61,8 +64,8 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 	sw := style.Get("width")
 	sh := style.Get("height")
 	if sw.String() != "" {
-		h = parseCoord(sh)
-		w = parseCoord(sw)
+		h = parseElementCoord(sh)
+		w = parseElementCoord(sw)
 	} else {
 		println("parse empty Coord: " + v.GetObjectName())
 		panic("parse empty Coord")
@@ -218,7 +221,7 @@ func (v *NativeView) Font() *Font {
 		fstyle |= FontStyleItalic
 	}
 	ss := cssStyle.Get("font-size")
-	size := parseCoord(ss)
+	size := parseElementCoord(ss)
 
 	return FontNew(name, size, fstyle)
 }
@@ -257,4 +260,8 @@ func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo
 
 func (v *NativeView) SetToolTip(str string) {
 	v.set("title", str)
+}
+
+func (v *NativeView) Child(path string) View {
+	return ViewChild(v.View, path)
 }

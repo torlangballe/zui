@@ -7,6 +7,13 @@ import (
 
 //  Oriiginally created by Tor Langballe on /2/11/15.
 
+type TextViewStyle struct {
+	KeyboardType  KeyboardType
+	AutoCapType   KeyboardAutoCapType
+	ReturnKeyType KeyboardReturnKeyType
+	IsAutoCorrect bool
+}
+
 type TextView struct {
 	NativeView
 	minWidth    float64
