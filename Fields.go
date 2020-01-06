@@ -168,7 +168,7 @@ func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int
 				j = zgeo.Left
 			}
 		}
-		label.TextAlignment(j)
+		label.SetTextAlignment(j)
 		return label
 	}
 	var style TextViewStyle
@@ -242,6 +242,18 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 				}
 				menu := view.(*MenuView)
 				menu.UpdateValues(items)
+			} else if f.IsStatic() {
+				var dict zdict.Items
+				val := reflect.ValueOf(item.Interface)
+				len := val.Len()
+				for i := 0; i < len; i++ {
+					v := val.Index(i).Interface()
+					str := fmt.Sprint(v)
+					// fmt.Println("slice update enum:", str)
+					dict.Add(str, v)
+				}
+				menu := view.(*MenuView)
+				menu.UpdateValues(dict)
 			}
 
 		case zreflect.KindStruct:
@@ -255,10 +267,11 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 			}
 
 		case zreflect.KindString, zreflect.KindFunc:
+			str := item.Value.String()
 			if f.Flags&fieldIsImage != 0 {
 				path := ""
 				if f.Kind == zreflect.KindString {
-					path = item.Value.String()
+					path = str
 				}
 				if path == "" {
 					path = f.FixedPath
@@ -266,7 +279,20 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 				iv := view.(*ImageView)
 				iv.SetImage(nil, path, nil)
 			} else {
-
+				if f.Kind == zreflect.KindString {
+					if f.LocalEnum == "" && f.Enum == nil {
+						if f.IsStatic() {
+							label, _ := view.(*Label)
+							zlog.Assert(label != nil)
+							label.SetText(str)
+						} else {
+							tv, _ := view.(*TextView)
+							// fmt.Println("fields set text:", f.Name, str)
+							zlog.Assert(tv != nil)
+							tv.SetText(str)
+						}
+					}
+				}
 			}
 		}
 
@@ -358,6 +384,10 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 					view = menu
 					break
 				}
+				if f.IsStatic() {
+					view = fieldsMakeEnumMenu(item, i, nil, handleUpdate)
+					break
+				}
 				view = fieldsMakeText(f, item, i, handleUpdate)
 				break
 
@@ -365,7 +395,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 				view = fieldsMakeTimeView(f, item, i, handleUpdate)
 
 			default:
-				panic(fmt.Sprint("fieldsBuildStack bad type: ", f.Kind))
+				panic(fmt.Sprintln("fieldsBuildStack bad type:", f.Name, f.Kind))
 			}
 		}
 		var tipField, tip string
@@ -525,10 +555,10 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 				}
 			}
 			if f.MinWidth == 0 {
-				f.MinWidth = 80
+				f.MinWidth = 60
 			}
 			if f.MaxWidth == 0 {
-				f.MaxWidth = 100
+				f.MaxWidth = 80
 			}
 			break
 		}
@@ -650,7 +680,8 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 		if f.Flags&fieldIsStatic != 0 {
 			continue
 		}
-		if f.Enum != nil && !f.IsStatic() {
+		fmt.Println("FieldsCopyBack:", f.Enum != nil, !f.IsStatic())
+		if (f.Enum != nil || f.LocalEnum != "") && !f.IsStatic() {
 			mv, _ := view.(*MenuView)
 			if mv != nil {
 				di := mv.NameAndValue()
@@ -728,6 +759,9 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 		case zreflect.KindString:
 			if f.Flags&fieldIsStatic == 0 && f.Flags&fieldIsImage == 0 {
 				tv, _ := view.(*TextView)
+				if tv == nil {
+					zlog.Fatal(nil, "Copy Back string not TV:", f.Name)
+				}
 				text := tv.GetText()
 				str := item.Address.(*string)
 				*str = text

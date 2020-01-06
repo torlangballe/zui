@@ -6,7 +6,7 @@ func LabelNew(text string) *Label {
 	return nil
 }
 
-func (l *Label) TextAlignment(a zgeo.Alignment) View {
+func (l *Label) SetTextAlignment(a zgeo.Alignment) View {
 	l.alignment = a
 	return l
 }

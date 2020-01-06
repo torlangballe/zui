@@ -42,17 +42,17 @@ func (l *Label) GetMaxLines() int {
 	return l.maxLines
 }
 
-func (l *Label) MinWidth(min float64) View {
+func (l *Label) SetMinWidth(min float64) View {
 	l.minWidth = min
 	return l
 }
 
-func (l *Label) MaxWidth(max float64) View {
+func (l *Label) SetMaxWidth(max float64) View {
 	l.maxWidth = max
 	return l
 }
 
-func (l *Label) MaxLines(max int) View {
+func (l *Label) SetMaxLines(max int) View {
 	l.maxLines = max
 	return l
 }
@@ -65,7 +65,7 @@ func Labelize(grid *StackView, view View, prefix string, minWidth float64) *Labe
 		font.Style = FontStyleBold
 	}
 	label := LabelNew(prefix)
-	label.TextAlignment(zgeo.Right)
+	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font).Color(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
 	stack := StackNewHor("labelize: " + prefix)
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth

@@ -57,17 +57,17 @@ func (l *TextView) GetMaxLines() int {
 	return l.maxLines
 }
 
-func (l *TextView) MinWidth(min float64) View {
+func (l *TextView) SetMinWidth(min float64) View {
 	l.minWidth = min
 	return l
 }
 
-func (l *TextView) MaxWidth(max float64) View {
+func (l *TextView) SetMaxWidth(max float64) View {
 	l.maxWidth = max
 	return l
 }
 
-func (l *TextView) MaxLines(max int) View {
+func (l *TextView) SetMaxLines(max int) View {
 	l.maxLines = max
 	return l
 }

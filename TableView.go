@@ -19,12 +19,12 @@ type TableView struct {
 	RowInset      float64
 	DefaultHeight float64
 
-	GetRowCount    func() int
-	GetRowHeight   func(i int) float64
-	CreateRow      func(i int) interface{}
-	RowUpdated     func(edited bool, i int, rowView *StackView) bool
-	RowDataUpdated func(i int)
-	HeaderPressed  func(id string)
+	GetRowCount  func() int
+	GetRowHeight func(i int) float64
+	GetRowData   func(i int) interface{}
+	RowUpdated   func(edited bool, i int, rowView *StackView) bool
+	//	RowDataUpdated func(i int)
+	HeaderPressed func(id string)
 
 	fields []field
 }
@@ -58,7 +58,7 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		v.GetRowCount = func() int {
 			return tableGetSliceFromPointer(inStruct).Len()
 		}
-		v.CreateRow = func(i int) interface{} {
+		v.GetRowData = func(i int) interface{} {
 			val := tableGetSliceFromPointer(inStruct)
 			if val.Len() != 0 {
 				return val.Index(i).Addr().Interface()
@@ -119,14 +119,22 @@ func (v *TableView) SetRect(rect zgeo.Rect) View {
 	if v.GetRowCount() > 0 && v.Header != nil {
 		stack := v.List.GetVisibleRowViewFromIndex(0).(*StackView)
 		children := stack.GetChildren()
-		for i, child := range children {
-			cr := child.GetRect()
+		x := 0.0
+		for i := range children {
+			var e float64
+			if i < len(children)-1 {
+				e = children[i+1].Rect().Pos.X
+				e -= v.ColumnMargin
+			} else {
+				e = rect.Max().X
+			}
 			hv := v.Header.cells[i].View
-			hr := hv.GetRect()
-			hr.Pos.X = cr.Pos.X
-			hr.Size.W = cr.Size.W
+			hr := hv.Rect()
+			hr.Pos.X = x
+			hr.SetMaxX(e)
+			x = e
 			hv.SetRect(hr)
-			fmt.Println("TABLE View rect item:", child.GetObjectName(), hv.GetRect())
+			// fmt.Println("TABLE View rect item:", child.GetObjectName(), hv.Rect())
 		}
 	}
 	return v
@@ -195,7 +203,7 @@ func (v *TableView) SetStructureList(list interface{}) {
 	v.GetRowCount = func() int {
 		return vs.Len()
 	}
-	v.CreateRow = func(i int) interface{} {
+	v.GetRowData = func(i int) interface{} {
 		if vs.Len() != 0 {
 			return vs.Index(i).Addr().Interface()
 		}
@@ -207,17 +215,25 @@ func (v *TableView) FlashRow() {
 
 }
 
+func (v *TableView) FlushDataToRow(i int) {
+	rowStack := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
+	if rowStack != nil {
+		rowStruct := v.GetRowData(i)
+		fieldsUpdateStack(rowStack, rowStruct, &v.fields)
+	}
+}
+
 func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	name := fmt.Sprintf("row %d", i)
 	rowStack := StackNewHor(name)
 	rowStack.Spacing(0)
 	rowStack.CanFocus(true)
 	rowStack.SetMargin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
-	rowStruct := v.CreateRow(i)
+	rowStruct := v.GetRowData(i)
 	useWidth := true //(v.Header != nil)
 	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
 		fmt.Println("createRow:", i, name)
-		rowStruct := v.CreateRow(i)
+		rowStruct := v.GetRowData(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
 		if v.RowUpdated != nil {
 			edited := true
@@ -228,6 +244,6 @@ func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	})
 	edited := false
 	v.RowUpdated(edited, i, rowStack)
-	fieldsUpdateStack(rowStack, v.CreateRow(i), &v.fields)
+	fieldsUpdateStack(rowStack, v.GetRowData(i), &v.fields)
 	return rowStack
 }

@@ -28,7 +28,7 @@ func TextViewNew(text string, style TextViewStyle) *TextView {
 	return tv
 }
 
-func (v *TextView) TextAlignment(a zgeo.Alignment) View {
+func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	str := "left"
 	if a&zgeo.Right != 0 {
@@ -71,6 +71,11 @@ func (v *TextView) SetRect(rect zgeo.Rect) View {
 	rect.Pos.Y -= 3
 	// fmt.Println("TV: Rect:", v.GetObjectName(), rect)
 	v.NativeView.SetRect(rect)
+	return v
+}
+
+func (v *TextView) SetText(str string) View {
+	v.set("value", str)
 	return v
 }
 

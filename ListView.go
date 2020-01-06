@@ -135,7 +135,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 			last = i
 			row := v.rows[i]
 			if row != nil {
-				if row.GetRect() != r {
+				if row.Rect() != r {
 					row.SetRect(r)
 				}
 				delete(oldRows, i)
@@ -205,7 +205,7 @@ func (v *ListView) setRowBGColor(i int) {
 		if !v.Selectable || v.selectionIndex == -1 || v.selectionIndex != i {
 			col = v.RowColors[i%len(v.RowColors)]
 		}
-		row.BGColor(col)
+		row.SetBGColor(col)
 	}
 }
 

@@ -175,7 +175,7 @@ func (v *ContainerView) SetAsFullView(useableArea bool) {
 	v.MinSize(ScreenMain().Rect.Size)
 	if !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
-		r := v.GetRect()
+		r := v.Rect()
 		if h > 20 && !ScreenHasNotch() {
 			r.Size.H -= h
 			v.SetRect(r)
@@ -227,7 +227,7 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
-	r := zgeo.Rect{Size: v.GetRect().Size}.Plus(v.margin)
+	r := zgeo.Rect{Size: v.Rect().Size}.Plus(v.margin)
 	for _, c := range v.cells {
 		cv, got := c.View.(*ContainerView)
 		if got && v.layoutHandler != nil {
@@ -386,7 +386,7 @@ func (v *ContainerView) ReplaceView(oldView, newView View) {
 	i := v.FindCellWithView(oldView)
 	if i != -1 {
 		c := v.cells[i]
-		r := v.GetRect()
+		r := v.Rect()
 		newView.SetRect(r)
 		v.AddChild(newView, -1)
 		v.RemoveChild(c.View)

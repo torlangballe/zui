@@ -16,7 +16,7 @@ func TextViewNew(text string, style TextViewStyle) *TextView {
 	return tv
 }
 
-func (v *TextView) TextAlignment(a zgeo.Alignment) View {
+func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	return v
 }

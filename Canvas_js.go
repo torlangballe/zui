@@ -93,7 +93,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 
 func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, blendMode CanvasBlendMode, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
-	// fmt.Println("drawPlainImage:", destRect, sourceRect, sr)
+	// fmt.Println("drawPlainImage:", destRect, sourceRect, sr, c)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
 
@@ -206,6 +206,6 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	//	s.H = metrics.Get("height").Float()
 
 	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
-	s.H = font.LineHeight()
+	s.H = font.LineHeight() * 0.8
 	return s
 }

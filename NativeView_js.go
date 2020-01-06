@@ -35,7 +35,7 @@ func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	return v
 }
 
-func (v *NativeView) GetRect() zgeo.Rect {
+func (v *NativeView) Rect() zgeo.Rect {
 	var pos zgeo.Pos
 	style := v.style()
 	// pos.X = v.Element.Get("offsetLeft").Float()
@@ -122,7 +122,7 @@ func (v *NativeView) ObjectName(name string) View {
 	return v
 }
 
-func (v *NativeView) BGColor(c zgeo.Color) View {
+func (v *NativeView) SetBGColor(c zgeo.Color) View {
 	v.style().Set("background", makeRGBAString(c))
 	return v
 }
@@ -226,7 +226,7 @@ func (v *NativeView) Font() *Font {
 	return FontNew(name, size, fstyle)
 }
 
-func (v *NativeView) Text(text string) View {
+func (v *NativeView) SetText(text string) View {
 	v.set("innerHTML", text)
 	return v
 }

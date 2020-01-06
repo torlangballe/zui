@@ -17,7 +17,7 @@ func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	return v
 }
 
-func (v *NativeView) GetRect() zgeo.Rect {
+func (v *NativeView) Rect() zgeo.Rect {
 	return zgeo.Rect{}
 }
 
@@ -52,7 +52,7 @@ func (v *NativeView) GetAlpha() float32 {
 	return 1
 }
 
-func (v *NativeView) BGColor(c zgeo.Color) View {
+func (v *NativeView) SetBGColor(c zgeo.Color) View {
 	return v
 }
 
@@ -122,7 +122,7 @@ func (v *NativeView) Font() *Font {
 	return nil
 }
 
-func (v *NativeView) Text(text string) View {
+func (v *NativeView) SetText(text string) View {
 	return v
 }
 

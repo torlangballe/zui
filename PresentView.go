@@ -89,7 +89,7 @@ var presentViewPresenting = true
 
 func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 	presentViewPresenting = true
-	mainRect := WindowGetCurrent().GetRect()
+	mainRect := WindowGetCurrent().Rect()
 	presentViewCallReady(n)
 	ct := n.(ContainerType)
 	ct.WhenLoaded(func() {
@@ -100,7 +100,7 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 			size := n.GetCalculatedSize(mainRect.Size)
 			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
 			n.SetRect(r)
-			n.BGColor(zgeo.ColorNewGray(0.8, 1))
+			n.SetBGColor(zgeo.ColorNewGray(0.8, 1))
 			n.CornerRadius(10)
 			no := n.(NativeViewOwner)
 			if no != nil {

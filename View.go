@@ -19,7 +19,7 @@ type View interface {
 	GetAlpha() float32
 
 	Color(color zgeo.Color) View
-	BGColor(color zgeo.Color) View
+	SetBGColor(color zgeo.Color) View
 	CornerRadius(radius float64) View
 	Stroke(width float64, color zgeo.Color) View
 
@@ -30,7 +30,7 @@ type View interface {
 	Opaque(opaque bool) View
 
 	SetRect(rect zgeo.Rect) View
-	GetRect() zgeo.Rect
+	Rect() zgeo.Rect
 
 	Show(show bool) View
 	IsShown() bool

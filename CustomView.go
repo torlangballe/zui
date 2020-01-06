@@ -77,8 +77,11 @@ func (v *CustomView) ValueHandler(handler func(view View)) {
 }
 
 func (v *CustomView) DrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
-	v.makeCanvas()
-	v.draw = handler
+	v.draw = func(rect zgeo.Rect, canvas *Canvas, view View) {
+		if handler != nil {
+			handler(rect, canvas, view)
+		}
+	}
 }
 
 func (v *CustomView) GetPosFromMe(pos zgeo.Pos, inView View) zgeo.Pos {

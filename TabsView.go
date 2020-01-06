@@ -1,6 +1,10 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"fmt"
+
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type TabsView struct {
 	StackView
@@ -51,6 +55,7 @@ func (v *TabsView) AddTab(title, id string, set bool, view View) {
 
 func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.header.FindViewWithName(id, false)
+	fmt.Println("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button := (*view).(*Button)
 		str := "grayTab"
@@ -84,7 +89,7 @@ func (v *TabsView) SetTab(id string) {
 		presentViewCallReady(v.ChildView)
 		if v.presented { // don't do if not first set up yet
 			v.header.ArrangeChildren(nil)
-			v.ArrangeChildren(nil)
+			v.ArrangeChildren(&v.ChildView)
 		}
 		et, _ := v.ChildView.(ExposableType)
 		if et != nil {

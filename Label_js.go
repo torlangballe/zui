@@ -24,6 +24,13 @@ func LabelNew(text string) *Label {
 	return label
 }
 
+func (v *Label) SetRect(r zgeo.Rect) View {
+	//	fmt.Println("Label SetRect:", v.GetObjectName(), r)
+	r.Pos.Y -= 6
+	v.NativeView.SetRect(r)
+	return v
+}
+
 func (v *Label) PressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
@@ -34,7 +41,7 @@ func (v *Label) PressedHandler(handler func()) {
 	}))
 }
 
-func (v *Label) TextAlignment(a zgeo.Alignment) View {
+func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
 	v.alignment = a
 	str := "left"
 	if a&zgeo.Right != 0 {
@@ -49,6 +56,7 @@ func (v *Label) TextAlignment(a zgeo.Alignment) View {
 func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m
 	style := v.style()
+	fmt.Println("Label SetMarg:", v.GetObjectName(), m)
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
 	style.Set("padding-bottom", fmt.Sprintf("%dpx", int(m.Max().Y)))

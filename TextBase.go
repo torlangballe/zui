@@ -24,16 +24,16 @@ import "github.com/torlangballe/zutil/zgeo"
 type TextLayoutOwner interface {
 	SetFont(font *Font) View
 	Font() *Font
-	Text(text string) View
+	SetText(text string) View
 	GetText() string
-	TextAlignment(a zgeo.Alignment) View
+	SetTextAlignment(a zgeo.Alignment) View
 	GetTextAlignment() zgeo.Alignment
 	GetMinWidth() float64
 	GetMaxWidth() float64
 	GetMaxLines() int
-	MinWidth(min float64) View
-	MaxWidth(max float64) View
-	MaxLines(max int) View
+	SetMinWidth(min float64) View
+	SetMaxWidth(max float64) View
+	SetMaxLines(max int) View
 }
 
 func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {

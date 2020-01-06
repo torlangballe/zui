@@ -73,8 +73,8 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.CustomView.MinSize(minSize)
 }
 
-// Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView Text() method being used
-func (v *ShapeView) Text(text string) View {
+// Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
+func (v *ShapeView) SetText(text string) View {
 	v.TextInfo.Text = text
 	v.Expose()
 	return v
@@ -125,7 +125,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
 	v := view.(*ShapeView)
-	// fmt.Println("shapeViewDraw:", v.GetMinSize(), rect, view.GetObjectName())
+	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.GetMinSize(), rect, view.GetObjectName())
 
 	switch v.Type {
 	case ShapeViewTypeStar:

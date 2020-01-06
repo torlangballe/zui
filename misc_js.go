@@ -69,7 +69,7 @@ func NativeViewAddToRoot(v View) {
 	n := &NativeView{}
 	n.Element = DocumentElementJS
 	n.View = n
-	// s := WindowGetCurrent().GetRect().Size.DividedByD(2)
+	// s := WindowGetCurrent().Rect().Size.DividedByD(2)
 
 	// o, _ := v.(NativeViewOwner)
 	// if o == nil {

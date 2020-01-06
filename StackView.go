@@ -191,7 +191,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
 	// fmt.Println("Stack ArrangeChildren:", v.GetObjectName())
-	var r = v.GetRect()
+	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
 	if v.layoutHandler != nil {
@@ -269,7 +269,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
-					// fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.GetRect())
+					// fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
