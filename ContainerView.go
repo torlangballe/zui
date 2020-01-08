@@ -172,7 +172,7 @@ func (v *ContainerView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
 	v.SetRect(ScreenMain().Rect)
-	v.MinSize(ScreenMain().Rect.Size)
+	v.SetMinSize(ScreenMain().Rect.Size)
 	if !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
 		r := v.Rect()

@@ -63,7 +63,7 @@ func (v *CustomView) Color(color zgeo.Color) View {
 	return v
 }
 
-func (v *CustomView) MinSize(s zgeo.Size) *CustomView {
+func (v *CustomView) SetMinSize(s zgeo.Size) *CustomView {
 	v.minSize = s
 	return v
 }

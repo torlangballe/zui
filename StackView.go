@@ -36,12 +36,12 @@ func StackNewHor(name string) *StackView {
 	return StackViewNew(false, name)
 }
 
-func (v *StackView) Spacing(spacing float64) *StackView {
+func (v *StackView) SetSpacing(spacing float64) *StackView {
 	v.spacing = spacing
 	return v
 }
 
-func (v *StackView) GetSpacing() float64 {
+func (v *StackView) Spacing() float64 {
 	return v.spacing
 }
 

@@ -44,7 +44,7 @@ type FieldsActionType interface {
 	Action(i int, rowPtr interface{})
 }
 
-type field struct {
+type Field struct {
 	Index         int
 	ID            string
 	Name          string
@@ -72,12 +72,12 @@ type field struct {
 
 type FieldView struct {
 	StackView
-	parentField *field
-	fields      []field
+	parentField *Field
+	fields      []Field
 	structure   interface{}
 }
 
-func callFieldFunc(i int, structData interface{}, f *field) {
+func callFieldFunc(i int, structData interface{}, f *Field) {
 	unnestAnon := true
 	recursive := false
 	rootItems, _ := zreflect.ItterateStruct(structData, unnestAnon, recursive)
@@ -99,11 +99,11 @@ func callFieldFunc(i int, structData interface{}, f *field) {
 	}
 }
 
-func (f field) IsStatic() bool {
+func (f Field) IsStatic() bool {
 	return (f.Flags&fieldIsStatic != 0)
 }
 
-func fieldsMakeButton(i int, structData interface{}, height float64, f *field, item zreflect.Item) *Button {
+func fieldsMakeButton(i int, structData interface{}, height float64, f *Field, item zreflect.Item) *Button {
 	format := f.Format
 	if format == "" {
 		format = "%v"
@@ -135,7 +135,7 @@ func fieldsMakeEnumMenu(item zreflect.Item, i int, enum zdict.Items, handleUpdat
 	return menu
 }
 
-func fieldsMakeTimeView(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
+func fieldsMakeTimeView(f *Field, item zreflect.Item, i int, handleUpdate func(i int)) View {
 	t := item.Interface.(time.Time)
 	format := f.Format
 	if format == "" {
@@ -147,7 +147,7 @@ func fieldsMakeTimeView(f *field, item zreflect.Item, i int, handleUpdate func(i
 	return tv
 }
 
-func fieldsMakeText(f *field, item zreflect.Item, i int, handleUpdate func(i int)) View {
+func fieldsMakeText(f *Field, item zreflect.Item, i int, handleUpdate func(i int)) View {
 	str := ""
 	if item.Package == "time" && item.TypeName == "Duration" {
 		t := ztime.DurSeconds(time.Duration(item.Value.Int()))
@@ -197,7 +197,7 @@ func fieldsMakeCheckbox(b BoolInd, i int, handleUpdate func(i int)) View {
 	return c
 }
 
-func fieldsMakeImage(structData interface{}, f *field, i int) View {
+func fieldsMakeImage(structData interface{}, f *Field, i int) View {
 	iv := ImageViewNew("", f.Size)
 	iv.ObjectName(f.ID)
 	iv.PressedHandler(func() {
@@ -206,7 +206,7 @@ func fieldsMakeImage(structData interface{}, f *field, i int) View {
 	return iv
 }
 
-func findFieldWithIndex(fields *[]field, index int) *field {
+func findFieldWithIndex(fields *[]Field, index int) *Field {
 	for i, f := range *fields {
 		if f.Index == index {
 			return &(*fields)[i]
@@ -215,7 +215,7 @@ func findFieldWithIndex(fields *[]field, index int) *field {
 	return nil
 }
 
-func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field) {
+func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]Field) {
 	unnestAnon := true
 	recursive := true
 	rootItems, err := zreflect.ItterateStruct(structData, unnestAnon, recursive)
@@ -299,7 +299,17 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]field
 	}
 }
 
-func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, parentField *field, fields *[]field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool, inset float64, i int, handleUpdate func(i int)) {
+func findLocalEnum(children *[]zreflect.Item, name string) *zreflect.Item {
+	name = ustr.HeadUntilString(name, ".")
+	for i, c := range *children {
+		if c.FieldName == name {
+			return &(*children)[i]
+		}
+	}
+	return nil
+}
+
+func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, parentField *Field, fields *[]Field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool, inset float64, i int, handleUpdate func(i int)) {
 	// if fv != nil && fv.parentField != nil {
 	// 	fmt.Println("fieldsBuildStack2:", fv.GetObjectName())
 	// }
@@ -317,18 +327,14 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			continue
 		}
 		if f.LocalEnum != "" {
-			for _, ei := range rootItems.Children {
-				if ei.FieldName == f.LocalEnum {
-					enum := ei.Interface.(zdict.Items)
-					if enum == nil {
-						enum = zdict.Items{}
-					}
-					view = fieldsMakeEnumMenu(item, i, enum, handleUpdate)
+			ei := findLocalEnum(&rootItems.Children, f.LocalEnum)
+			if ei != nil {
+				enum := ei.Interface.(zdict.Items)
+				view = fieldsMakeEnumMenu(item, i, enum, handleUpdate)
+				if view == nil {
+					zlog.Error(nil, "no local enum for", f.LocalEnum)
+					continue
 				}
-			}
-			if view == nil {
-				zlog.Error(nil, "no local enum for", f.LocalEnum)
-				continue
 			}
 		} else if f.Enum != nil {
 			view = fieldsMakeEnumMenu(item, i, f.Enum, handleUpdate)
@@ -440,7 +446,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 	}
 }
 
-func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
+func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	f.Index = index
 	f.ID = ustr.FirstToLower(item.FieldName)
 	f.Name = item.FieldName
@@ -615,7 +621,7 @@ func (f *field) makeFromReflectItem(item zreflect.Item, index int) bool {
 		if f.MinWidth == 0 {
 			if f.Flags&fieldIsImage != 0 {
 				min := f.Size.W // * ScreenMain().Scale
-				min += ImageViewDefaultMargin.W * 2
+				//				min += ImageViewDefaultMargin.W * 2
 				zfloat.Maximize(&f.MinWidth, min)
 			}
 		}
@@ -627,7 +633,7 @@ func fieldViewNew(name string, vertical bool, structure interface{}, spacing flo
 	// fmt.Println("FieldViewNew", name)
 	v := &FieldView{}
 	v.StackView.init(v, name)
-	v.Spacing(12)
+	v.SetSpacing(12)
 	v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	v.Vertical = vertical
 	v.structure = structure
@@ -638,7 +644,7 @@ func fieldViewNew(name string, vertical bool, structure interface{}, spacing flo
 		panic(err)
 	}
 	for i, item := range froot.Children {
-		var f field
+		var f Field
 		if f.makeFromReflectItem(item, i) {
 			v.fields = append(v.fields, f)
 		}
@@ -659,7 +665,7 @@ func (v *FieldView) CopyBack(showError bool) error {
 	return FieldsCopyBack(v.structure, v.fields, v, showError)
 }
 
-func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, showError bool) error {
+func FieldsCopyBack(structure interface{}, fields []Field, ct ContainerType, showError bool) error {
 	var err error
 	unnestAnon := true
 	recursive := true
@@ -680,13 +686,24 @@ func FieldsCopyBack(structure interface{}, fields []field, ct ContainerType, sho
 		if f.Flags&fieldIsStatic != 0 {
 			continue
 		}
-		fmt.Println("FieldsCopyBack:", f.Enum != nil, !f.IsStatic())
 		if (f.Enum != nil || f.LocalEnum != "") && !f.IsStatic() {
 			mv, _ := view.(*MenuView)
 			if mv != nil {
 				di := mv.NameAndValue()
-				a := reflect.ValueOf(item.Address).Elem()
+				fmt.Println("FieldsCopyBack:", f.Name, item.FieldName, f.LocalEnum, di)
+				var sub string
 				rval := reflect.ValueOf(di.Value)
+				if ustr.SplitN(f.LocalEnum, ".", nil, &sub) {
+					dict := di.Value.(map[string]interface{})
+					fmt.Println("FieldsCopyBack2:", f.Name, item.FieldName, sub, dict)
+					if dict != nil {
+						v, got := dict[sub]
+						if got {
+							rval = reflect.ValueOf(v)
+						}
+					}
+				}
+				a := reflect.ValueOf(item.Address).Elem()
 				a.Set(rval)
 			}
 			continue

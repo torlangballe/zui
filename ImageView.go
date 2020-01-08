@@ -13,14 +13,10 @@ type ImageView struct {
 	alignment zgeo.Alignment
 }
 
-var ImageViewDefaultMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
-
 func ImageViewNew(path string, minSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.init(v, path)
-	v.CustomView.MinSize(minSize)
-	p := ImageViewDefaultMargin.Pos()
-	v.margin = zgeo.RectFromMinMax(p, p.Negative())
+	v.CustomView.SetMinSize(minSize)
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.DrawHandler(imageViewDraw)
 	if path != "" {
@@ -48,7 +44,7 @@ func (v *ImageView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ImageView) MinSize(s zgeo.Size) *ImageView {
+func (v *ImageView) GetMinSize(s zgeo.Size) *ImageView {
 	v.minSize = s
 	return v
 }

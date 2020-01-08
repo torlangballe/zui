@@ -70,7 +70,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 		v.Ratio = 0.3
 	}
 	v.DrawHandler(shapeViewDraw)
-	v.CustomView.MinSize(minSize)
+	v.CustomView.SetMinSize(minSize)
 }
 
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used

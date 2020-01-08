@@ -7,7 +7,7 @@ import (
 )
 
 //  Created by Tor Langballe on /21/10/15.
-
+// Check out: https://github.com/tdewolff/canvas
 type Canvas struct {
 	canvasNative
 	currentMatrix zgeo.Matrix // is currentTransform...

@@ -61,12 +61,12 @@ func (v *ListView) drawIfExposed() {
 	}
 }
 
-func (v *ListView) Spacing(spacing float64) *ListView {
+func (v *ListView) SetSpacing(spacing float64) *ListView {
 	v.spacing = spacing
 	return v
 }
 
-func (v *ListView) GetSpacing() float64 {
+func (v *ListView) Spacing() float64 {
 	return v.spacing
 }
 

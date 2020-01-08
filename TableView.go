@@ -2,22 +2,20 @@ package zui
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 
-	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 )
 
 type TableView struct {
 	StackView
 	List          *ListView
-	Header        *StackView
+	Header        *HeaderView
 	ColumnMargin  float64
 	RowInset      float64
 	DefaultHeight float64
+	HeaderHeight  float64
 
 	GetRowCount  func() int
 	GetRowHeight func(i int) float64
@@ -26,7 +24,7 @@ type TableView struct {
 	//	RowDataUpdated func(i int)
 	HeaderPressed func(id string)
 
-	fields []field
+	fields []Field
 }
 
 func tableGetSliceFromPointer(structure interface{}) reflect.Value {
@@ -49,6 +47,7 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	v.Vertical = true
 	v.ColumnMargin = 3
 	v.RowInset = 7
+	v.HeaderHeight = 28
 	v.DefaultHeight = 34
 	unnestAnon := true
 	recursive := false
@@ -77,18 +76,17 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		panic(err)
 	}
 	for i, item := range froot.Children {
-		var f field
+		var f Field
 		if f.makeFromReflectItem(item, i) {
 			v.fields = append(v.fields, f)
 		}
 	}
 	if header {
-		v.Header = StackNewHor("header")
-		v.Header.Spacing(0)
+		v.Header = HeaderViewNew()
 		v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	}
 	v.List = ListViewNew(name + ".list")
-	v.List.MinSize(zgeo.Size{50, 50})
+	v.List.SetMinSize(zgeo.Size{50, 50})
 	v.List.RowColors = []zgeo.Color{zgeo.ColorNewGray(0.97, 1), zgeo.ColorNewGray(0.85, 1)}
 	v.List.HandleScrolledToRows = func(y float64, first, last int) {
 		v.ArrangeChildren(nil)
@@ -118,74 +116,14 @@ func (v *TableView) SetRect(rect zgeo.Rect) View {
 	v.StackView.SetRect(rect)
 	if v.GetRowCount() > 0 && v.Header != nil {
 		stack := v.List.GetVisibleRowViewFromIndex(0).(*StackView)
-		children := stack.GetChildren()
-		x := 0.0
-		for i := range children {
-			var e float64
-			if i < len(children)-1 {
-				e = children[i+1].Rect().Pos.X
-				e -= v.ColumnMargin
-			} else {
-				e = rect.Max().X
-			}
-			hv := v.Header.cells[i].View
-			hr := hv.Rect()
-			hr.Pos.X = x
-			hr.SetMaxX(e)
-			x = e
-			hv.SetRect(hr)
-			// fmt.Println("TABLE View rect item:", child.GetObjectName(), hv.Rect())
-		}
+		v.Header.FitToRowStack(stack, v.ColumnMargin)
 	}
 	return v
 }
 
 func (v *TableView) ReadyToShow() {
-	for i, f := range v.fields {
-		if f.Height == 0 {
-			v.fields[i].Height = v.GetRowHeight(i) - 6
-		}
-		s := zgeo.Size{f.MinWidth, 28}
-		cell := ContainerViewCell{}
-		exp := zgeo.AlignmentNone
-		if f.Kind == zreflect.KindString && f.Enum == nil {
-			exp = zgeo.HorExpand
-		}
-		t := ""
-		if f.Flags&(fieldHasHeaderImage|fieldsNoHeader) == 0 {
-			t = f.Title
-			if t == "" {
-				t = f.Name
-			}
-		}
-		cell.Alignment = zgeo.Left | zgeo.VertCenter | exp
-
-		button := ButtonNew(t, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
-		if f.Flags&fieldHasHeaderImage != 0 {
-			if f.FixedPath == "" {
-				zlog.Error(nil, "no image path for header image field", f.Name)
-			} else {
-				iv := ImageViewNew(f.FixedPath, f.Size)
-				iv.ObjectName(f.ID + ".image")
-				button.Add(zgeo.Center, iv)
-			}
-		}
-		//		button.Text(f.name)
-		cell.View = button
-		if v.HeaderPressed != nil {
-			id := f.ID // nned to get actual ID here, not just f.ID (f is pointer)
-			button.PressedHandler(func() {
-				v.HeaderPressed(id)
-			})
-		}
-		zfloat.Maximize(&v.fields[i].MinWidth, button.GetCalculatedSize(zgeo.Size{}).W)
-		if f.MaxWidth != 0 {
-			cell.MaxSize.W = math.Max(f.MaxWidth, f.MinWidth)
-		}
-		// if f.MinWidth != 0 {
-		// 	cell.MinSize.W = math.Max(f.MinWidth, v.fields[i].MinWidth)
-		// }
-		v.Header.AddCell(cell, -1)
+	if v.Header != nil {
+		v.Header.Populate(v.fields, v.HeaderHeight, v.HeaderPressed)
 	}
 }
 
@@ -226,13 +164,12 @@ func (v *TableView) FlushDataToRow(i int) {
 func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	name := fmt.Sprintf("row %d", i)
 	rowStack := StackNewHor(name)
-	rowStack.Spacing(0)
+	rowStack.SetSpacing(0)
 	rowStack.CanFocus(true)
 	rowStack.SetMargin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
 	rowStruct := v.GetRowData(i)
 	useWidth := true //(v.Header != nil)
 	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
-		fmt.Println("createRow:", i, name)
 		rowStruct := v.GetRowData(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
 		if v.RowUpdated != nil {

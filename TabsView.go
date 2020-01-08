@@ -1,8 +1,6 @@
 package zui
 
 import (
-	"fmt"
-
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -18,11 +16,11 @@ func TabsViewNew(name string) *TabsView {
 	v := &TabsView{}
 	v.StackView.init(v, name)
 	v.Vertical = true
-	v.Spacing(0)
+	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func() View{}
 	v.header = StackNewHor("header")
-	v.header.Spacing(0)
+	v.header.SetSpacing(0)
 
 	v.Add(zgeo.Left|zgeo.Top, v.header)
 	return v
@@ -55,7 +53,7 @@ func (v *TabsView) AddTab(title, id string, set bool, view View) {
 
 func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.header.FindViewWithName(id, false)
-	fmt.Println("setButtonOn:", id, on, view != nil)
+	// fmt.Println("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button := (*view).(*Button)
 		str := "grayTab"
