@@ -3,7 +3,7 @@ package zui
 import (
 	"strconv"
 
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -125,8 +125,8 @@ func (i *Image) CapInsetsCorner(c zgeo.Size) *Image {
 func imageGetScaleFromPath(path string) int {
 	var n string
 	_, _, m, _ := zfile.Split(path)
-	if ustr.SplitN(m, "@", &n, &m) {
-		if ustr.HasSuffix(m, "x", &m) {
+	if zstr.SplitN(m, "@", &n, &m) {
+		if zstr.HasSuffix(m, "x", &m) {
 			scale, err := strconv.ParseInt(m, 10, 32)
 			if err == nil && scale >= 1 && scale <= 3 {
 				return int(scale)

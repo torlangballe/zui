@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -16,6 +18,7 @@ type ListView struct {
 	GetRowCount          func() int
 	GetRowHeight         func(i int) float64
 	CreateRow            func(rowSize zgeo.Size, i int) View
+	RowUpdater           func(i int)
 	HandleRowSelected    func(i int)
 	HandleScrolledToRows func(y float64, first, last int)
 
@@ -164,15 +167,7 @@ func (v *ListView) ExposeRows() {
 	// }
 }
 
-func (v *ListView) UpdateVisibleRows(animate bool) {
-	//  reloadRows(at indexPathsForVisibleRows ?? [], withanimate ? UIListView.RowAnimation.automatic  UIListView.RowAnimation.none)
-}
-
 func (v *ListView) ScrollToMakeRowVisible(row int, animate bool) {
-}
-
-func (v *ListView) ReloadRow(row int) {
-	v.layoutRows(row)
 }
 
 func (v *ListView) ReloadData() {
@@ -233,9 +228,66 @@ func (v *ListView) FlashSelect(i int) {
 	})
 }
 
+func (v *ListView) UpdateRow(i int) {
+	if v.RowUpdater != nil {
+		v.RowUpdater(i)
+	}
+}
+
 func (v *ListView) DeleteChildRow(i int, transition PresentViewTransition) { // call this after removing data
 }
 
 func (v *ListView) IsFocused() bool {
 	return false
+}
+
+type ListViewIDGetter interface {
+	GetID(index int) string
+}
+
+func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
+	i := 0
+	reload := false
+	for {
+		oid := oldSlice.GetID(i)
+		nid := newSlice.GetID(i)
+		if nid != oid {
+			reload = true
+			break
+		}
+		if oid == "" || nid == "" {
+			break
+		}
+		i++
+	}
+	fmt.Println(" UpdateWithOldNewSlice:", reload)
+	if reload {
+		v.ReloadData()
+	} else {
+		v.UpdateVisibleRows()
+	}
+}
+
+func (v *ListView) UpdateVisibleRows() {
+	first := -1
+	last := -1
+	y := 0.0
+	count := v.GetRowCount()
+	ls := v.GetLocalRect().Size
+	for i := 0; i < count; i++ {
+		e := y + v.GetRowHeight(i)
+		if e >= v.topPos && y <= v.topPos+ls.H {
+			if first == -1 {
+				first = i
+			}
+			last = i
+		}
+		if y > v.topPos+ls.H {
+			break
+		}
+		y = e + v.spacing
+	}
+	for i := first; i <= last; i++ {
+		v.UpdateRow(i)
+	}
 }

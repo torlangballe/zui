@@ -8,7 +8,7 @@ import (
 	"syscall/js"
 	"time"
 
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -27,7 +27,7 @@ func init() {
 func parseElementCoord(value js.Value) float64 {
 	var s string
 	str := value.String()
-	if ustr.HasSuffix(str, "px", &s) {
+	if zstr.HasSuffix(str, "px", &s) {
 		n, err := strconv.ParseFloat(s, 32)
 		if err != nil {
 			zlog.Error(err, "not number")

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -45,7 +45,7 @@ func WordsPluralize(word string, count float64, langCode string, pluralWord stri
 	if count == 1.0 {
 		return word
 	}
-	if ustr.Tail(word, 1) == "s" {
+	if zstr.Tail(word, 1) == "s" {
 		return word + "es"
 	}
 	return word + "s"
@@ -84,7 +84,7 @@ func WordsPluralizeString(str, lang string, count float64, words ...string) stri
 	for _, w := range words {
 		if count != 1 {
 			var p string
-			ustr.SplitN(w, ":", &w, &p)
+			zstr.SplitN(w, ":", &w, &p)
 			w = WordsPluralize(w, count, lang, p)
 		}
 		str = strings.Replace(str, "%s", w, 1)
@@ -266,7 +266,7 @@ func WordsGetMonthFromNumber(m, chars int) string {
 		break
 	}
 	if chars != -1 {
-		str = ustr.Head(str, chars)
+		str = zstr.Head(str, chars)
 	}
 	return str
 } // generic name for year.
@@ -436,13 +436,13 @@ func WordsGetHemisphereDirectionsFromGeoAlignment(alignment zgeo.Alignment, sepa
 		str = TSL("North", langCode) // General name for north as in north-east wind etc
 	}
 	if alignment&zgeo.Bottom != 0 {
-		ustr.Concat(&str, separator, TSL("South", langCode)) // General name for south as in south-east wind etc
+		zstr.Concat(&str, separator, TSL("South", langCode)) // General name for south as in south-east wind etc
 	}
 	if alignment&zgeo.Left != 0 {
-		ustr.Concat(&str, separator, TSL("West", langCode)) // General name for west as in north-west wind etc
+		zstr.Concat(&str, separator, TSL("West", langCode)) // General name for west as in north-west wind etc
 	}
 	if alignment&zgeo.Right != 0 {
-		ustr.Concat(&str, separator, TSL("East", langCode)) // General name for north as in north-east wind etc
+		zstr.Concat(&str, separator, TSL("East", langCode)) // General name for north as in north-east wind etc
 	}
 	return str
 }

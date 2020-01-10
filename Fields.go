@@ -14,8 +14,8 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 
-	"github.com/torlangballe/zutil/ustr"
 	"github.com/torlangballe/zutil/zreflect"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 type fieldType int
@@ -249,7 +249,7 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]Field
 				for i := 0; i < len; i++ {
 					v := val.Index(i).Interface()
 					str := fmt.Sprint(v)
-					// fmt.Println("slice update enum:", str)
+					fmt.Println("slice update enum:", str)
 					dict.Add(str, v)
 				}
 				menu := view.(*MenuView)
@@ -280,17 +280,24 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]Field
 				iv.SetImage(nil, path, nil)
 			} else {
 				if f.Kind == zreflect.KindString {
-					if f.LocalEnum == "" && f.Enum == nil {
-						if f.IsStatic() {
-							label, _ := view.(*Label)
-							zlog.Assert(label != nil)
-							label.SetText(str)
-						} else {
-							tv, _ := view.(*TextView)
-							// fmt.Println("fields set text:", f.Name, str)
-							zlog.Assert(tv != nil)
-							tv.SetText(str)
-						}
+					if f.LocalEnum != "" {
+						menu := view.(*MenuView)
+						setLocalEnumSubValue(menu, item, f)
+						continue
+					}
+					if f.Enum != nil {
+						// handle regular enum writebacl
+						continue
+					}
+					if f.IsStatic() {
+						label, _ := view.(*Label)
+						zlog.Assert(label != nil)
+						label.SetText(str)
+					} else {
+						tv, _ := view.(*TextView)
+						// fmt.Println("fields set text:", f.Name, str)
+						zlog.Assert(tv != nil)
+						tv.SetText(str)
 					}
 				}
 			}
@@ -300,13 +307,29 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]Field
 }
 
 func findLocalEnum(children *[]zreflect.Item, name string) *zreflect.Item {
-	name = ustr.HeadUntilString(name, ".")
+	name = zstr.HeadUntilString(name, ".")
 	for i, c := range *children {
 		if c.FieldName == name {
 			return &(*children)[i]
 		}
 	}
 	return nil
+}
+
+func setLocalEnumSubValue(menu *MenuView, item zreflect.Item, field *Field) {
+	var sub string
+	if zstr.SplitN(field.LocalEnum, ".", nil, &sub) {
+		for _, ditem := range menu.keyVals {
+			dict, _ := ditem.Value.(map[string]interface{})
+			if dict != nil {
+				//				fmt.Println("setLocalEnumSubValue:", field.Name, item.FieldName, sub, dict)
+				v, got := dict[sub]
+				if got && reflect.DeepEqual(item.Interface, v) {
+					menu.SetValue(ditem.Value)
+				}
+			}
+		}
+	}
 }
 
 func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, parentField *Field, fields *[]Field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool, inset float64, i int, handleUpdate func(i int)) {
@@ -330,11 +353,14 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			ei := findLocalEnum(&rootItems.Children, f.LocalEnum)
 			if ei != nil {
 				enum := ei.Interface.(zdict.Items)
-				view = fieldsMakeEnumMenu(item, i, enum, handleUpdate)
-				if view == nil {
+				// fmt.Printf("make local enum: %s %s %d %p\n", f.Name, f.LocalEnum, len(enum), ei.Address)
+				menu := fieldsMakeEnumMenu(item, i, enum, handleUpdate)
+				if menu == nil {
 					zlog.Error(nil, "no local enum for", f.LocalEnum)
 					continue
 				}
+				view = menu
+				setLocalEnumSubValue(menu, item, f)
 			}
 		} else if f.Enum != nil {
 			view = fieldsMakeEnumMenu(item, i, f.Enum, handleUpdate)
@@ -405,7 +431,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			}
 		}
 		var tipField, tip string
-		if ustr.HasPrefix(f.Tooltip, ".", &tipField) {
+		if zstr.HasPrefix(f.Tooltip, ".", &tipField) {
 			for _, ei := range rootItems.Children {
 				if ei.FieldName == tipField {
 					tip = fmt.Sprint(ei.Interface)
@@ -448,7 +474,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 
 func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 	f.Index = index
-	f.ID = ustr.FirstToLower(item.FieldName)
+	f.ID = zstr.FirstToLower(item.FieldName)
 	f.Name = item.FieldName
 	f.Kind = item.Kind
 	f.Alignment = zgeo.AlignmentNone
@@ -458,7 +484,7 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			return false
 		}
 		var key, val string
-		if !ustr.SplitN(part, ":", &key, &val) {
+		if !zstr.SplitN(part, ":", &key, &val) {
 			key = part
 		}
 		key = strings.TrimSpace(key)
@@ -466,7 +492,7 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 		val = strings.TrimSpace(val)
 		align := zgeo.AlignmentFromString(val)
 		n, floatErr := strconv.ParseFloat(val, 32)
-		flag := ustr.StrToBool(val, false)
+		flag := zstr.StrToBool(val, false)
 		switch key {
 		case "align":
 			if align != zgeo.AlignmentNone {
@@ -493,6 +519,11 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			if floatErr == nil {
 				f.DefaultWeight = n
 			}
+		case "width":
+			if floatErr == nil {
+				// f.MinWidth = n
+				// f.MaxWidth = n
+			}
 		case "minwidth":
 			if floatErr == nil {
 				f.MinWidth = n
@@ -513,7 +544,7 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			}
 		case "image", "himage":
 			var ssize string
-			if !ustr.SplitN(val, "|", &ssize, &f.FixedPath) {
+			if !zstr.SplitN(val, "|", &ssize, &f.FixedPath) {
 				ssize = val
 			}
 			if key == "image" {
@@ -523,7 +554,7 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 			}
 			f.Size.FromString(ssize)
 		case "enum":
-			if ustr.HasPrefix(val, ".", &f.LocalEnum) {
+			if zstr.HasPrefix(val, ".", &f.LocalEnum) {
 			} else {
 				if fieldEnums[val] == nil {
 					zlog.Error(nil, "no such enum:", val)
@@ -539,8 +570,8 @@ func (f *Field) makeFromReflectItem(item zreflect.Item, index int) bool {
 		}
 	}
 	if f.Title == "" {
-		str := ustr.PadCamelCase(f.Name, " ")
-		str = ustr.FirstToTitleCase(str)
+		str := zstr.PadCamelCase(f.Name, " ")
+		str = zstr.FirstToTitleCase(str)
 		f.Title = str
 
 	}
@@ -690,10 +721,14 @@ func FieldsCopyBack(structure interface{}, fields []Field, ct ContainerType, sho
 			mv, _ := view.(*MenuView)
 			if mv != nil {
 				di := mv.NameAndValue()
+				if di == nil {
+					zlog.Error(nil, "enum value is nil", f.Name)
+					continue
+				}
 				fmt.Println("FieldsCopyBack:", f.Name, item.FieldName, f.LocalEnum, di)
 				var sub string
 				rval := reflect.ValueOf(di.Value)
-				if ustr.SplitN(f.LocalEnum, ".", nil, &sub) {
+				if zstr.SplitN(f.LocalEnum, ".", nil, &sub) {
 					dict := di.Value.(map[string]interface{})
 					fmt.Println("FieldsCopyBack2:", f.Name, item.FieldName, sub, dict)
 					if dict != nil {

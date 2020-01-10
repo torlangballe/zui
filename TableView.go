@@ -92,7 +92,11 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		v.ArrangeChildren(nil)
 	}
 	v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.List)
-
+	if !rval.IsNil() {
+		v.List.RowUpdater = func(i int) {
+			v.FlushDataToRow(i)
+		}
+	}
 	v.GetRowHeight = func(i int) float64 { // default height
 		return 50
 	}

@@ -3,7 +3,7 @@ package zui
 import (
 	"strings"
 
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /1/11/15.
@@ -14,9 +14,9 @@ func LocaleGetDeviceLanguageCode() string {
 }
 
 func LocaleGetLangCodeAndCountryFromLocaleId(bcp string, forceNo bool) (string, string) { // lang, country-code
-	lang, ccode := ustr.SplitInTwo(bcp, "-")
+	lang, ccode := zstr.SplitInTwo(bcp, "-")
 	if ccode == "" {
-		_, ccode := ustr.SplitInTwo(bcp, "_")
+		_, ccode := zstr.SplitInTwo(bcp, "_")
 		if ccode == "" {
 			parts := strings.Split(bcp, "-")
 			if len(parts) > 2 {

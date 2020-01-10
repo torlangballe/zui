@@ -3,7 +3,7 @@ package zui
 import (
 	"math"
 
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -150,7 +150,7 @@ func (ti *TextInfo) drawTextInRect(canvas *Canvas, rect zgeo.Rect) zgeo.Rect {
 	attributes := ti.MakeAttributes()
 	canvas.SetFont(ti.Font, nil)
 	canvas.SetColor(zgeo.ColorWhite, 1)
-	ustr.RangeStringLines(ti.Text, false, func(s string) {
+	zstr.RangeStringLines(ti.Text, false, func(s string) {
 		x := rect.Pos.X
 		// tsize := canvasGetTextSize(s, ti.Font)
 		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, attributes)

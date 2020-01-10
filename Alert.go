@@ -1,7 +1,7 @@
 package zui
 
 import (
-	"github.com/torlangballe/zutil/ustr"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -27,7 +27,7 @@ type Alert struct {
 
 func AlertNew(items ...interface{}) *Alert {
 	a := &Alert{}
-	str := ustr.SprintSpaced(items...)
+	str := zstr.SprintSpaced(items...)
 	a.OKButton = WordsGetOK()
 	a.Text = str
 	return a
