@@ -2,19 +2,25 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zdict"
-
-func MenuViewNew(vals zdict.Items, value interface{}) *MenuView {
+func MenuViewNew(name string, items MenuItems, value interface{}, staticName string) *MenuView {
 	return &MenuView{}
 }
 
-func (v *MenuView) NameAndValue() *zdict.Item {
-	return &zdict.Item{}
+func (v *MenuView) IDAndValue() (id string, value interface{}) {
+	return "", nil
 }
 
-func (v *MenuView) SetValue(val interface{}) *MenuView {
+func (v *MenuView) SetWithID(id string) *MenuView {
 	return v
 }
 
-func (v *MenuView) ChangedHandler(handler func(item zdict.Item)) {}
-func (v *MenuView) UpdateValues(vals zdict.Items)                {}
+func (v *MenuView) ChangedHandler(handler func(id, name string, value interface{})) {}
+func (v *MenuView) UpdateValues(items MenuItems)                                    {}
+
+func menuViewGetHackedFontForSize(font *Font) *Font {
+	return font
+}
+
+func (v *MenuView) SetFont(font *Font) View {
+	return v
+}

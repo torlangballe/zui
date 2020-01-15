@@ -1,7 +1,6 @@
 package zui
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -165,19 +164,14 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	var size = c.View.GetCalculatedSize(zgeo.Size{})
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
-	if c.MinSize.W != 0 {
-		zfloat.Maximize(&size.W, c.MinSize.W)
-	}
-	// fmt.Println("get cell size:", c.View.GetObjectName(), size.W, c.MinSize.W)
-	if c.MinSize.H != 0 {
-		zfloat.Maximize(&size.H, c.MinSize.H)
-	}
+	size.Maximize(c.MinSize)
 	if weightIndex != nil {
 		len := v.weightMinSizes[*weightIndex]
 		if len != 0 {
 			*size.VerticeP(v.Vertical) = len
 		}
 	}
+	// fmt.Println("get cell size:", c.View.GetObjectName(), size.W, c.MinSize.W)
 	return size
 }
 
@@ -260,7 +254,6 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 
 	// Not-centered children:
 	for i, c4 := range v.cells {
-		// fmt.Println("cell:", c4.View.GetObjectName(), c4.Alignment, c4.Collapsed, c4.Free)
 		if !c4.Collapsed && !c4.Free {
 			if (c4.Alignment & (amore | aless)) != 0 {
 				var a = c4.Alignment
@@ -319,7 +312,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				fmt.Println("cellmid:", a, c5.MinSize, c5.View.GetObjectName(), vr, r)
+				// fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.GetObjectName(), vr, r)
 				c5.View.SetRect(vr)
 			}
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing

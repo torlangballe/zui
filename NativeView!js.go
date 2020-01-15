@@ -32,7 +32,7 @@ func (v *NativeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{10, 10}
 }
 
-func (v *NativeView) ObjectName(name string) View {
+func (v *NativeView) SetObjectName(name string) View {
 	return v
 }
 
@@ -40,7 +40,7 @@ func (v *NativeView) GetObjectName() string {
 	return ""
 }
 
-func (v *NativeView) Color(c zgeo.Color) View {
+func (v *NativeView) SetColor(c zgeo.Color) View {
 	return v
 }
 

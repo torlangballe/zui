@@ -87,7 +87,7 @@ func makeRGBAString(c zgeo.Color) string {
 	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }
 
-func (v *NativeView) Color(c zgeo.Color) View {
+func (v *NativeView) SetColor(c zgeo.Color) View {
 	v.style().Set("color", makeRGBAString(c))
 	return v
 }
@@ -117,7 +117,7 @@ func (v *NativeView) GetAlpha() float32 {
 	return float32(v.style().Get("alpha").Float())
 }
 
-func (v *NativeView) ObjectName(name string) View {
+func (v *NativeView) SetObjectName(name string) View {
 	v.set("id", name)
 	return v
 }

@@ -9,7 +9,7 @@ import (
 type View interface {
 	GetCalculatedSize(total zgeo.Size) zgeo.Size
 
-	ObjectName(name string) View
+	SetObjectName(name string) View
 	GetObjectName() string
 
 	Usable(usable bool) View
@@ -18,8 +18,8 @@ type View interface {
 	Alpha(alpha float32) View
 	GetAlpha() float32
 
-	Color(color zgeo.Color) View
-	SetBGColor(color zgeo.Color) View
+	SetColor(color zgeo.Color) View   // Color is the main color of a view. If it is stroked and filled, it is fill color
+	SetBGColor(color zgeo.Color) View // BGColor is all color in background of view, not just fill color
 	CornerRadius(radius float64) View
 	Stroke(width float64, color zgeo.Color) View
 

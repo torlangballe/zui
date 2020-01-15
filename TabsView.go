@@ -31,7 +31,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
 		title = id
 	}
 	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
-	button.ObjectName(id)
+	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
 	button.TextInfo.Color = zgeo.ColorWhite
 	button.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)

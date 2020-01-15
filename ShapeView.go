@@ -58,7 +58,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.StrokeColor = zgeo.ColorWhite
 	v.ImageAlign = zgeo.Center
 	v.PathLineType = zgeo.PathLineRound
-	v.Color(zgeo.ColorGray)
+	v.SetColor(zgeo.ColorGray)
 	v.Proportional = true
 
 	switch shapeType {
@@ -108,7 +108,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 	v.exposed = false
 	if v.GetObjectName() == "" {
 		_, name := path.Split(spath)
-		v.ObjectName(name)
+		v.SetObjectName(name)
 	}
 	if image == nil && spath != "" {
 		v.image = ImageFromPath(spath, func() {

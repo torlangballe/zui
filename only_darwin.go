@@ -4,10 +4,11 @@ import (
 	"runtime"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 func init() {
-	DebugPrint("zui init()")
+	zlog.Info("zui init()")
 	runtime.LockOSThread()
 }
 

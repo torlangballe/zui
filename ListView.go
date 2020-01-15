@@ -1,8 +1,6 @@
 package zui
 
 import (
-	"fmt"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -260,7 +258,6 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		}
 		i++
 	}
-	fmt.Println(" UpdateWithOldNewSlice:", reload)
 	if reload {
 		v.ReloadData()
 	} else {

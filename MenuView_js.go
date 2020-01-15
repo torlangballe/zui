@@ -1,38 +1,43 @@
 package zui
 
 import (
-	"fmt"
 	"reflect"
 	"syscall/js"
 
-	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zlog"
 )
 
-func MenuViewNew(vals zdict.Items, value interface{}) *MenuView {
+func MenuViewNew(name string, items MenuItems, value interface{}, staticName string) *MenuView {
 	v := &MenuView{}
-	v.keyVals = vals
+	v.items = items
+	v.StaticName = staticName
 	sel := DocumentJS.Call("createElement", "select")
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
-	f := FontNice(18, FontStyleNormal)
+	f := FontNice(16, FontStyleNormal)
 	v.SetFont(f)
-	//	v.style().Set("webkitAppearance", "none") -- to set to non-system look
-	v.updateVals(vals, value)
-	// fmt.Println("NVAL:", v.oldValue)
+	// v.style().Set("webkitAppearance", "none") // to set to non-system look
+	v.SetObjectName(name)
+	v.updateVals(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
-		if v.IsStatic && v.oldValue != nil {
-			v.SetValue(v.oldValue)
+		if v.StaticName != "" && v.oldValue != nil {
+			v.SetWithID(v.oldID)
 			return nil
 		}
-		sval := args[0].Get("currentTarget").Get("value").String()
-		for i, kv := range v.keyVals {
-			if fmt.Sprint(kv.Value) == sval {
-				okv := v.keyVals[i]
-				v.oldValue = &okv
+		sid := args[0].Get("currentTarget").Get("value").String()
+		for i := 0; ; i++ {
+			id, in, iv := v.items.GetItem(i)
+			if id == "" {
+				break
+			}
+			zlog.Info("menuview changed", v.GetObjectName(), id, sid)
+			if id == sid {
+				v.oldID = id
+				v.oldValue = iv
 				if v.changed != nil {
-					v.changed(*v.oldValue)
+					v.changed(id, in, iv)
 				}
 				break
 			}
@@ -42,52 +47,94 @@ func MenuViewNew(vals zdict.Items, value interface{}) *MenuView {
 	return v
 }
 
-func (v *MenuView) UpdateValues(vals zdict.Items) {
-	if !reflect.DeepEqual(v.keyVals, vals) {
+func (v *MenuView) UpdateValues(items MenuItems) {
+	if !menuItemsAreEqual(v.items, items) {
 		options := v.get("options")
 		options.Set("length", 0)
-		v.updateVals(vals, nil)
+		v.updateVals(items, nil)
 	}
 }
 
-func (v *MenuView) updateVals(vals zdict.Items, value interface{}) {
-	// fmt.Println("updateVals:", value)
-	for _, di := range vals {
-		sval := fmt.Sprint(di.Value)
-		option := DocumentJS.Call("createElement", "option")
-		option.Set("value", sval)
-		option.Set("innerHTML", di.Name)
-		v.call("appendChild", option)
-	}
-	v.SetValue(value)
+func (v *MenuView) menuViewAddItem(id, name string) {
+	option := DocumentJS.Call("createElement", "option")
+	option.Set("value", id)
+	option.Set("innerHTML", name)
+	v.call("appendChild", option)
 }
 
-func (v *MenuView) SetValue(val interface{}) *MenuView {
-	if len(v.keyVals) == 0 {
+func (v *MenuView) updateVals(items MenuItems, value interface{}) {
+	var setID string
+	if v.StaticName != "" {
+		v.menuViewAddItem("$STATICNAME", v.StaticName)
+	}
+	if items == nil {
+		return
+	}
+	for i := 0; ; i++ {
+		in, id, iv := items.GetItem(i)
+		if id == "" {
+			break
+		}
+		if reflect.DeepEqual(value, iv) {
+			setID = id
+		}
+		v.menuViewAddItem(in, id)
+	}
+	v.items = items
+	// fmt.Println("updateVals:", v.GetObjectName(), value, setID)
+	if setID != "" {
+		v.SetWithID(setID)
+	}
+}
+
+func (v *MenuView) SetWithID(setID string) *MenuView {
+	if zlog.ErrorIf(setID == "", v.GetObjectName()) {
+		zlog.Info(zlog.GetCallingStackString())
 		return v
 	}
-	sval := fmt.Sprint(val)
-	index := -1
-	for i, kv := range v.keyVals {
-		if fmt.Sprint(kv.Value) == sval {
-			index = i
+	// fmt.Println("mv:setwithid:", setID, v.GetObjectName())
+	for i := 0; ; i++ {
+		id, _, iv := v.items.GetItem(i)
+		if id == setID {
+			v.oldValue = iv
+			v.oldID = id
+			options := v.get("options")
+			o := options.Index(i)
+			o.Set("selected", "true")
 			break
 		}
 	}
-	if index == -1 {
-		index = 0
-	}
-	okv := v.keyVals[index]
-	v.oldValue = &okv
-	options := v.get("options")
-	o := options.Index(index)
-	o.Set("selected", "true")
-
 	return v
 }
 
-func (v *MenuView) NameAndValue() *zdict.Item {
-	return v.oldValue
+// func (v *MenuView) SetValue(val interface{}) *MenuView {
+// 	oi, on, ov := v.items.GetItem(0)
+// 	if oi == "" {
+// 		return v
+// 	}
+// 	index := 0
+// 	for i := 0; ; i++ {
+// 		id, _, iv := v.items.GetItem(i)
+// 		if id == "" {
+// 			break
+// 		}
+// 		if oi == id {
+// 			ov = iv
+// 			index = i
+// 			break
+// 		}
+// 	}
+// 	v.oldValue = ov
+// 	v.oldID = oi
+// 	options := v.get("options")
+// 	o := options.Index(index)
+// 	o.Set("selected", "true")
+
+// 	return v
+// }
+
+func (v *MenuView) IDAndValue() (id string, value interface{}) {
+	return v.oldID, v.oldValue
 	// index := v.get("selectedIndex").Int()
 	// if index == -1 {
 	// 	return nil
@@ -98,9 +145,21 @@ func (v *MenuView) NameAndValue() *zdict.Item {
 	// return v.keyVals.FindName(name)
 }
 
-func (v *MenuView) ChangedHandler(handler func(item zdict.Item)) {
+func (v *MenuView) ChangedHandler(handler func(id, name string, value interface{})) {
 	v.changed = handler
 }
 
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value
 // https://stackoverflow.com/questions/17001961/how-to-add-drop-down-list-select-programmatically
+
+func menuViewGetHackedFontForSize(font *Font) *Font {
+	return font.NewWithSize(14)
+}
+
+func (v *MenuView) SetFont(font *Font) View {
+	if font.Size != 16 {
+		panic("can't set menu view font size to anything except 16 in js")
+	}
+	v.NativeView.SetFont(font)
+	return v
+}

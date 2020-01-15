@@ -48,7 +48,7 @@ func (v *HeaderView) Populate(fields []Field, height float64, pressed func(id st
 				zlog.Error(nil, "no image path for header image field", f.Name)
 			} else {
 				iv := ImageViewNew(f.FixedPath, f.Size)
-				iv.ObjectName(f.ID + ".image")
+				iv.SetObjectName(f.ID + ".image")
 				button.Add(zgeo.Center, iv)
 			}
 		}

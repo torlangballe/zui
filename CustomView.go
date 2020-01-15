@@ -31,7 +31,7 @@ func (v *CustomView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *CustomView) Expose() {
-	v.exposeInSecs(0.01)
+	v.exposeInSecs(0.1) //0.01)
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {

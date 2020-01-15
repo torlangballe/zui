@@ -23,6 +23,7 @@ type TableView struct {
 	RowUpdated   func(edited bool, i int, rowView *StackView) bool
 	//	RowDataUpdated func(i int)
 	HeaderPressed func(id string)
+	CellPressed   func(i int, id string)
 
 	fields []Field
 }
@@ -173,13 +174,20 @@ func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	rowStack.SetMargin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
 	rowStruct := v.GetRowData(i)
 	useWidth := true //(v.Header != nil)
-	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int) {
+	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int, a FieldActionType, id string) {
 		rowStruct := v.GetRowData(i)
 		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
-		if v.RowUpdated != nil {
-			edited := true
-			if v.RowUpdated(edited, i, rowStack) {
-				fieldsUpdateStack(rowStack, rowStruct, &v.fields)
+		switch a {
+		case FieldUpdateAction:
+			if v.RowUpdated != nil {
+				edited := true
+				if v.RowUpdated(edited, i, rowStack) {
+					fieldsUpdateStack(rowStack, rowStruct, &v.fields)
+				}
+			}
+		case FieldPressedAction:
+			if v.CellPressed != nil {
+				v.CellPressed(i, id)
 			}
 		}
 	})

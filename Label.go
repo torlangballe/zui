@@ -66,7 +66,7 @@ func Labelize(grid *StackView, view View, prefix string, minWidth float64) *Labe
 	}
 	label := LabelNew(prefix)
 	label.SetTextAlignment(zgeo.Right)
-	label.SetFont(font).Color(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
+	label.SetFont(font).SetColor(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
 	stack := StackNewHor("labelize: " + prefix)
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
 	stack.AddView(view, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth

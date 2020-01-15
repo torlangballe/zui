@@ -12,7 +12,7 @@ func (v *CustomView) init(view View, name string) {
 	v.Element.Set("style", "position:absolute")
 	v.exposed = true
 	v.View = view
-	v.ObjectName(name)
+	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 }
 

@@ -8,8 +8,8 @@ import (
 	"syscall/js"
 	"time"
 
-	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 // https://github.com/siongui/godom
@@ -35,7 +35,7 @@ func parseElementCoord(value js.Value) float64 {
 		}
 		return n
 	}
-	zlog.Error(nil, "not handled type: "+str)
+	panic("parseElementCoord: not handled type: " + str)
 	return 0
 }
 

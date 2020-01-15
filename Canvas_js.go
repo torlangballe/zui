@@ -51,6 +51,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 
 func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) {
 	str := getFontStyle(font)
+	// fmt.Println("canvas set font:", str)
 	c.context.Set("font", str)
 	//    state.font = afontCreateTransformed(amatrix)
 }
@@ -205,6 +206,7 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	s.W = metrics.Get("width").Float()
 	//	s.H = metrics.Get("height").Float()
 
+	// fmt.Println("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
 	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
 	s.H = font.LineHeight() * 0.8
 	return s

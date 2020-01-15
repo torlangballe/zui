@@ -20,7 +20,7 @@ func ButtonNew(title, imageName string, size zgeo.Size, insets zgeo.Size) *Butto
 	}
 	b.CanFocus(true)
 	b.ImageAlign = zgeo.Expand | zgeo.Center
-	b.Color(zgeo.Color{})
+	b.SetColor(zgeo.Color{})
 	b.SetImageName(imageName, insets)
 	b.TextInfo.Text = title
 	b.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
