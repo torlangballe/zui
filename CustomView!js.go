@@ -12,5 +12,5 @@ func (c *CustomView) init(view View, name string) {
 func (v *CustomView) makeCanvas() {
 }
 
-func (v *CustomView) PressedHandler(handler func()) {
+func (v *CustomView) SetPressedHandler(handler func()) {
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/jpeg"
 	"image/png"
 	"os"
 
@@ -124,6 +125,19 @@ func (i *Image) SaveToPNG(file string) error {
 	}
 	defer out.Close()
 	err = png.Encode(out, i.goimage)
+	if err != nil {
+		return zlog.Error(err, "encode")
+	}
+	return nil
+}
+
+func (i *Image) SaveToJPEG(file string) error {
+	out, err := os.Create(file)
+	if err != nil {
+		return zlog.Error(err, "os.create")
+	}
+	defer out.Close()
+	err = jpeg.Encode(out, i.goimage, &jpeg.Options{Quality: 1})
 	if err != nil {
 		return zlog.Error(err, "encode")
 	}

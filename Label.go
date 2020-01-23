@@ -34,7 +34,7 @@ func (l *Label) GetMinWidth() float64 {
 	return l.minWidth
 }
 
-func (l *Label) GetMaxWidth() float64 {
+func (l *Label) MaxWidth() float64 {
 	return l.maxWidth
 }
 

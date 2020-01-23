@@ -125,22 +125,23 @@ func fieldsMakeButton(i int, structData interface{}, height float64, f *Field, i
 	}
 	button := ButtonNew(name, color, zgeo.Size{40, height}, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 	button.TextInfo.Color = zgeo.ColorRed
-	button.PressedHandler(func() {
+	button.SetPressedHandler(func() {
 		callFieldFunc(i, structData, f)
 	})
 	return button
 }
 
-func fieldsMakeEnumMenu(item zreflect.Item, i int, items MenuItems, f *Field, handleAction func(i int, a FieldActionType, id string)) *MenuView {
+func fieldsMakeMenu(item zreflect.Item, i int, items MenuItems, f *Field, handleAction func(i int, a FieldActionType, id string)) *MenuView {
 	sn := ""
 	if f.IsStatic() {
 		sn = f.Name
 	}
 	menu := MenuViewNew(f.Name+"Menu", items, item.Value, sn)
-	// fmt.Println("fieldsMakeEnumMenu:", f.IsStatic(), i, f.Name, menu.StaticName, MenuItemsLength(items))
+	menu.SetMaxWidth(f.MaxWidth)
+	// fmt.Println("fieldsMakeMenu:", f.IsStatic(), i, f.Name, menu.StaticName, MenuItemsLength(items))
 	menu.ChangedHandler(func(id, name string, value interface{}) {
 		if handleAction != nil {
-			handleAction(i, FieldPressedAction, f.ID)
+			handleAction(i, FieldUpdateAction, f.ID)
 		}
 	})
 	return menu
@@ -180,7 +181,7 @@ func fieldsMakeText(f *Field, item zreflect.Item, i int, handleAction func(i int
 			}
 		}
 		label.SetTextAlignment(j)
-		label.PressedHandler(func() {
+		label.SetPressedHandler(func() {
 			handleAction(i, FieldPressedAction, f.ID)
 		})
 		return label
@@ -214,7 +215,7 @@ func fieldsMakeCheckbox(b BoolInd, i int, handleAction func(i int, a FieldAction
 func fieldsMakeImage(structData interface{}, f *Field, i int) View {
 	iv := ImageViewNew("", f.Size)
 	iv.SetObjectName(f.ID)
-	iv.PressedHandler(func() {
+	iv.SetPressedHandler(func() {
 		callFieldFunc(i, structData, f)
 	})
 	return iv
@@ -341,7 +342,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 					continue
 				}
 				// fmt.Println("make local enum:", f.Name, f.LocalEnum, i, MenuItemsLength(enum))
-				menu := fieldsMakeEnumMenu(item, i, enum, f, handleAction)
+				menu := fieldsMakeMenu(item, i, enum, f, handleAction)
 				if menu == nil {
 					zlog.Error(nil, "no local enum for", f.LocalEnum)
 					continue
@@ -351,7 +352,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			}
 		} else if f.Enum != nil {
 			// fmt.Printf("make enum: %s %v %v\n", f.Name, f.Enum, item)
-			view = fieldsMakeEnumMenu(item, i, f.Enum, f, handleAction)
+			view = fieldsMakeMenu(item, i, f.Enum, f, handleAction)
 			exp = zgeo.AlignmentNone
 		} else {
 			switch f.Kind {
@@ -396,7 +397,7 @@ func fieldsBuildStack(fv *FieldView, stack *StackView, structData interface{}, p
 			case zreflect.KindSlice:
 				items, got := item.Interface.(MenuItems)
 				if got {
-					menu := fieldsMakeEnumMenu(item, i, items, f, handleAction)
+					menu := fieldsMakeMenu(item, i, items, f, handleAction)
 					view = menu
 					break
 				}
@@ -703,6 +704,7 @@ func FieldsCopyBack(structure interface{}, fields []Field, ct ContainerType, sho
 			mv, _ := view.(*MenuView)
 			if mv != nil {
 				iface := mv.GetCurrentIdOrValue()
+				zlog.Debug(iface, f.Name)
 				item.Value.Set(reflect.ValueOf(iface))
 			}
 			continue

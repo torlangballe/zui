@@ -22,6 +22,9 @@ var WindowJS = js.Global().Get("window")
 type css js.Value
 
 func init() {
+	if DeviceWasmBrowser() != "Safari" {
+		menuViewHeight = 25
+	}
 }
 
 func parseElementCoord(value js.Value) float64 {

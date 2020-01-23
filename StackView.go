@@ -86,7 +86,7 @@ func (v *StackView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 		if !c.Collapsed && !c.Free {
 			fs := v.getCellSize(c, &i)
 			m := calcMarginAdd(c)
-			//			fmt.Println("calcsize:", c.View.GetObjectName(), fs, m)
+			// fmt.Println("calcsize:", c.View.GetObjectName(), fs, m)
 			*size.VerticeP(v.Vertical) += fs.Vertice(v.Vertical)
 			//			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)-m.Vertice(!v.Vertical))
 			zfloat.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
@@ -312,7 +312,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				// fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.GetObjectName(), vr, r)
+				// if c5.View.GetObjectName() == "outURL" {
+				// 	fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.GetObjectName(), vr, r)
+				// }
 				c5.View.SetRect(vr)
 			}
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing

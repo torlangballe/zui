@@ -21,6 +21,23 @@ func init() {
 
 // var mainfunc = make(chan func())
 
+// var backgroundIndex = 0
+// var backgroundFuncs = map[int]func(){}
+
+// //export runFuncFromQue
+// func runFuncFromQue(i int32) {
+
+// }
+
+// func MainQueAsync(do func()) {
+// 	i := rand.Int31()
+// 	backgroundFuncs[int(i)] = do
+// 	//C.runOnMain(i)
+// 	// go func() {
+// 	// 	mainfunc <- do
+// 	// }()
+// }
+
 func NativeViewAddToRoot(v View) {
 }
 

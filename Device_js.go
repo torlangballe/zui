@@ -1,23 +1,43 @@
 package zui
 
 import (
+	"strconv"
+	"syscall/js"
 	"time"
 
 	ua "github.com/mileusna/useragent"
 )
 
+// https://developer.mozilla.org/en-US/docs/Web/API/Navigator - info about browser/dev
+
 var userAgent *ua.UserAgent
 
 func getUserAgentInfo() *ua.UserAgent {
 	if userAgent == nil {
-		u := ua.Parse("")
+		ustr := js.Global().Get("navigator").Get("userAgent").String()
+		u := ua.Parse(ustr)
 		userAgent = &u
 	}
-	return nil
+	return userAgent
 }
 
 func DeviceIsIPad() bool {
 	return false
+}
+
+func DeviceBrowserLocation() (protocol, hostname string, port int) {
+	loc := WindowJS.Get("location")
+	protocol = loc.Get("protocol").String()
+	hostname = loc.Get("hostname").String()
+	port, _ = strconv.Atoi(loc.Get("port").String())
+	return
+}
+func DeviceIsBrowser() bool {
+	return true
+}
+
+func DeviceWasmBrowser() string {
+	return getUserAgentInfo().Name
 }
 
 func DeviceIsIPhone() bool {
@@ -62,10 +82,6 @@ func DeviceDeviceType() string {
 
 func DeviceDeviceCodeNumbered() (string, int, string) {
 	return "", 0, ""
-}
-
-func DeviceHardwareType() string {
-	return ""
 }
 
 func DeviceHardwareModel() string {
@@ -126,4 +142,8 @@ func DeviceWifiLinkSpeed() string {
 
 func DeviceCellularNetwork() DeviceCellularNetworkType {
 	return DeviceCellularUnknown
+}
+
+func DeviceHardwareTypeAndVersion() (string, float32) {
+	return getUserAgentInfo().Device, 1
 }

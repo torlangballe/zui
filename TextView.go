@@ -49,7 +49,7 @@ func (l *TextView) GetMinWidth() float64 {
 	return l.minWidth
 }
 
-func (l *TextView) GetMaxWidth() float64 {
+func (l *TextView) MaxWidth() float64 {
 	return l.maxWidth
 }
 

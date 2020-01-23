@@ -3,6 +3,7 @@ package zui
 import (
 	"reflect"
 
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -16,6 +17,8 @@ type MenuView struct {
 
 	StaticName string // if set, user can't set a different value, but can press and see them. Adds StaticName as first item
 }
+
+var menuViewHeight = 22.0
 
 type MenuItem struct {
 	ID    string
@@ -83,13 +86,17 @@ func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 		}
 	}
 	maxString += "m"
-	s := TextLayoutCalculateSize(zgeo.Left, menuViewGetHackedFontForSize(v.Font()), maxString, 1, v.maxWidth)
+	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth)
 	// fmt.Println("MenuView calcedsize:", v.Font().Size, v.GetObjectName(), maxString, s)
-	s.Add(zgeo.Size{32, 4})
+	s.W += 32
+	s.H = menuViewHeight
+	if v.maxWidth != 0 {
+		zfloat.Minimize(&s.W, v.maxWidth)
+	}
 	return s
 }
 
-func (v *MenuView) GetMaxWidth() float64 {
+func (v *MenuView) MaxWidth() float64 {
 	return v.maxWidth
 }
 

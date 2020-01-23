@@ -31,7 +31,7 @@ type TextLayoutOwner interface {
 	SetTextAlignment(a zgeo.Alignment) View
 	GetTextAlignment() zgeo.Alignment
 	GetMinWidth() float64
-	GetMaxWidth() float64
+	MaxWidth() float64
 	GetMaxLines() int
 	SetMinWidth(min float64) View
 	SetMaxWidth(max float64) View
@@ -39,7 +39,7 @@ type TextLayoutOwner interface {
 }
 
 func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {
-	return TextLayoutCalculateSize(o.GetTextAlignment(), o.Font(), o.GetText(), o.GetMaxLines(), o.GetMaxWidth())
+	return TextLayoutCalculateSize(o.GetTextAlignment(), o.Font(), o.GetText(), o.GetMaxLines(), o.MaxWidth())
 }
 
 func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64) zgeo.Size {

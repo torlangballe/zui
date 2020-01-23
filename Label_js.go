@@ -31,7 +31,7 @@ func (v *Label) SetRect(r zgeo.Rect) View {
 	return v
 }
 
-func (v *Label) PressedHandler(handler func()) {
+func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if v.pressed != nil {

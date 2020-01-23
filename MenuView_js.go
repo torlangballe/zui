@@ -1,10 +1,9 @@
 package zui
 
 import (
+	"github.com/torlangballe/zutil/zlog"
 	"reflect"
 	"syscall/js"
-
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func MenuViewNew(name string, items MenuItems, value interface{}, staticName string) *MenuView {
@@ -15,8 +14,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, staticName str
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
-	f := FontNice(16, FontStyleNormal)
-	v.SetFont(f)
+	v.SetFont(FontNice(14, FontStyleNormal))
 	// v.style().Set("webkitAppearance", "none") // to set to non-system look
 	v.SetObjectName(name)
 	v.updateVals(items, value)
@@ -72,6 +70,9 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 	}
 	for i := 0; ; i++ {
 		in, id, iv := items.GetItem(i)
+		if i == 0 {
+			setID = id
+		}
 		if id == "" {
 			break
 		}
@@ -81,7 +82,7 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 		v.menuViewAddItem(in, id)
 	}
 	v.items = items
-	// fmt.Println("updateVals:", v.GetObjectName(), value, setID)
+	//  fmt.Println("updateVals:", v.GetObjectName(), value, setID)
 	if setID != "" {
 		v.SetWithID(setID)
 	}
@@ -92,9 +93,12 @@ func (v *MenuView) SetWithID(setID string) *MenuView {
 		zlog.Info(zlog.GetCallingStackString())
 		return v
 	}
-	// fmt.Println("mv:setwithid:", setID, v.GetObjectName())
+	//  fmt.Println("mv:setwithid:", setID, v.GetObjectName())
 	for i := 0; ; i++ {
 		id, _, iv := v.items.GetItem(i)
+		if id == "" {
+			break
+		}
 		if id == setID {
 			v.oldValue = iv
 			v.oldID = id
@@ -152,14 +156,14 @@ func (v *MenuView) ChangedHandler(handler func(id, name string, value interface{
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value
 // https://stackoverflow.com/questions/17001961/how-to-add-drop-down-list-select-programmatically
 
-func menuViewGetHackedFontForSize(font *Font) *Font {
-	return font.NewWithSize(14)
-}
-
 func (v *MenuView) SetFont(font *Font) View {
-	if font.Size != 16 {
-		panic("can't set menu view font size to anything except 16 in js")
+	if font.Size != 14 {
+		panic("can't set menu view font size to anything except 14 in js")
 	}
-	v.NativeView.SetFont(font)
+	f := *font
+	if DeviceWasmBrowser() == "Safari" {
+		f.Size = 16
+	}
+	v.NativeView.SetFont(&f)
 	return v
 }

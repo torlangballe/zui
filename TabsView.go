@@ -36,7 +36,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
 	button.TextInfo.Color = zgeo.ColorWhite
 	button.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	v.creators[id] = creator
-	button.PressedHandler(func() {
+	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
 	v.header.Add(zgeo.Left|zgeo.VertCenter, button)

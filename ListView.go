@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -16,7 +17,7 @@ type ListView struct {
 	GetRowCount          func() int
 	GetRowHeight         func(i int) float64
 	CreateRow            func(rowSize zgeo.Size, i int) View
-	RowUpdater           func(i int)
+	RowUpdater           func(i int, edited bool)
 	HandleRowSelected    func(i int)
 	HandleScrolledToRows func(y float64, first, last int)
 
@@ -226,9 +227,9 @@ func (v *ListView) FlashSelect(i int) {
 	})
 }
 
-func (v *ListView) UpdateRow(i int) {
+func (v *ListView) UpdateRow(i int, edited bool) {
 	if v.RowUpdater != nil {
-		v.RowUpdater(i)
+		v.RowUpdater(i, edited)
 	}
 }
 
@@ -258,6 +259,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		}
 		i++
 	}
+	zlog.Info("UpdateWithOldNewSlice", reload)
 	if reload {
 		v.ReloadData()
 	} else {
@@ -266,6 +268,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 }
 
 func (v *ListView) UpdateVisibleRows() {
+	zlog.Info("ListView UpdateVisibleRows")
 	first := -1
 	last := -1
 	y := 0.0
@@ -285,6 +288,7 @@ func (v *ListView) UpdateVisibleRows() {
 		y = e + v.spacing
 	}
 	for i := first; i <= last; i++ {
-		v.UpdateRow(i)
+		edited := false
+		v.UpdateRow(i, edited)
 	}
 }

@@ -56,7 +56,7 @@ func (v *HeaderView) Populate(fields []Field, height float64, pressed func(id st
 		cell.View = button
 		if pressed != nil {
 			id := f.ID // nned to get actual ID here, not just f.ID (f is pointer)
-			button.PressedHandler(func() {
+			button.SetPressedHandler(func() {
 				pressed(id)
 			})
 		}

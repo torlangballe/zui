@@ -94,8 +94,15 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	}
 	v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.List)
 	if !rval.IsNil() {
-		v.List.RowUpdater = func(i int) {
+		v.List.RowUpdater = func(i int, edited bool) {
 			v.FlushDataToRow(i)
+			rowStack := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
+			if rowStack != nil {
+				rowStruct := v.GetRowData(i)
+				if v.RowUpdated(edited, i, rowStack) {
+					fieldsUpdateStack(rowStack, rowStruct, &v.fields)
+				}
+			}
 		}
 	}
 	v.GetRowHeight = func(i int) float64 { // default height
@@ -181,9 +188,7 @@ func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 		case FieldUpdateAction:
 			if v.RowUpdated != nil {
 				edited := true
-				if v.RowUpdated(edited, i, rowStack) {
-					fieldsUpdateStack(rowStack, rowStruct, &v.fields)
-				}
+				v.List.UpdateRow(i, edited)
 			}
 		case FieldPressedAction:
 			if v.CellPressed != nil {

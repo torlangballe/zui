@@ -16,7 +16,7 @@ func (v *CustomView) init(view View, name string) {
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 }
 
-func (v *CustomView) PressedHandler(handler func()) {
+func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("className", "widget")
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {

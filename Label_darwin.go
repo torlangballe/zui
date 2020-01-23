@@ -15,3 +15,6 @@ func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m
 	return v
 }
+
+func (v *Label) SetPressedHandler(handler func()) {
+}
