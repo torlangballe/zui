@@ -25,6 +25,7 @@ type MenuItem struct {
 	Name  string
 	Value interface{}
 }
+
 type MenuItems interface {
 	GetItem(i int) (id, name string, value interface{}) // name=="" is past end
 }

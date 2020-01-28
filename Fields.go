@@ -308,7 +308,7 @@ func fieldsUpdateStack(stack *StackView, structData interface{}, fields *[]Field
 }
 
 func findLocalEnum(children *[]zreflect.Item, name string) *zreflect.Item {
-	name = zstr.HeadUntilString(name, ".")
+	name = zstr.HeadUntil(name, ".")
 	for i, c := range *children {
 		if c.FieldName == name {
 			return &(*children)[i]
