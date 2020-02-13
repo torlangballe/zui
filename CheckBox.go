@@ -7,6 +7,6 @@ type CheckBox struct {
 	valueChanged func(view View)
 }
 
-func (s *CheckBox) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (s *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{20, 20}
 }

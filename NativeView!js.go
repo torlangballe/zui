@@ -28,7 +28,7 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 func (v *NativeView) LocalRect(rect zgeo.Rect) {
 }
 
-func (v *NativeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{10, 10}
 }
 
@@ -36,7 +36,7 @@ func (v *NativeView) SetObjectName(name string) View {
 	return v
 }
 
-func (v *NativeView) GetObjectName() string {
+func (v *NativeView) ObjectName() string {
 	return ""
 }
 

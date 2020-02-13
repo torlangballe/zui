@@ -2,7 +2,7 @@
 
 package zui
 
-func MenuViewNew(name string, items MenuItems, value interface{}, staticName string) *MenuView {
+func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
 	return &MenuView{}
 }
 

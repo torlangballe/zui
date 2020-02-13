@@ -19,7 +19,7 @@ func TabsViewNew(name string) *TabsView {
 	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func() View{}
-	v.header = StackNewHor("header")
+	v.header = StackViewHor("header")
 	v.header.SetSpacing(0)
 
 	v.Add(zgeo.Left|zgeo.Top, v.header)

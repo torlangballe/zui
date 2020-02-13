@@ -18,7 +18,7 @@ func ImageViewNew(path string, minSize zgeo.Size) *ImageView {
 	v.CustomView.init(v, path)
 	v.CustomView.SetMinSize(minSize)
 	v.alignment = zgeo.Center | zgeo.Proportional
-	v.DrawHandler(imageViewDraw)
+	v.SetDrawHandler(imageViewDraw)
 	if path != "" {
 		v.SetImage(nil, path, nil)
 	}
@@ -30,7 +30,7 @@ func (v *ImageView) GetImage() *Image {
 	return v.image
 }
 
-func (v *ImageView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
 	if v.image != nil {
 		s = v.image.Size()
@@ -67,6 +67,7 @@ func ImageViewFromImage(image *Image) *ImageView {
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func()) {
+	// fmt.Println("IV SetImage", path)
 	v.exposed = false
 	if image != nil {
 		v.image = image

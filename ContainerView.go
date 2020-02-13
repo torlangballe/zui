@@ -166,8 +166,8 @@ func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	return v
 }
 
-func (v *ContainerView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.GetMinSize()
+func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	return v.MinSize()
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
@@ -193,7 +193,7 @@ func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
 
 func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	ir := r.Expanded(c.Margin.MinusD(2.0))
-	s := c.View.GetCalculatedSize(ir.Size)
+	s := c.View.CalculatedSize(ir.Size)
 	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
 	c.View.SetRect(rv)
 }
@@ -283,13 +283,13 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 
 func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(view View) bool) {
 	for _, c := range ct.GetChildren() {
-		// fmt.Println("ContainerViewRangeChildren1:", c.GetObjectName(), subViews)
+		// fmt.Println("ContainerViewRangeChildren1:", c.ObjectName(), subViews)
 		if !foreach(c) {
 			return
 		}
 		if subViews {
 			sub, got := c.(ContainerType)
-			// fmt.Println("ContainerViewRangeChildren:", c.GetObjectName(), got)
+			// fmt.Println("ContainerViewRangeChildren:", c.ObjectName(), got)
 			if got {
 				ContainerTypeRangeChildren(sub, subViews, foreach)
 			}
@@ -299,7 +299,7 @@ func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(vi
 
 func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	for _, c := range v.cells {
-		if c.View.GetObjectName() == name {
+		if c.View.ObjectName() == name {
 			v.RemoveChild(c.View)
 			if !all {
 				return true
@@ -311,8 +311,8 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 
 func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 	for _, c := range v.cells {
-		// fmt.Println("FindViewWithName", name, c.View.GetObjectName())
-		if c.View.GetObjectName() == name {
+		// fmt.Println("FindViewWithName", name, c.View.ObjectName())
+		if c.View.ObjectName() == name {
 			return &c.View
 		}
 		if recursive {
@@ -331,7 +331,7 @@ func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 
 func (v *ContainerView) FindCellWithName(name string) int {
 	for i, c := range v.cells {
-		if c.View.GetObjectName() == name {
+		if c.View.ObjectName() == name {
 			return i
 		}
 	}
@@ -361,21 +361,21 @@ func (v *ContainerView) RemoveAllChildren() {
 
 func (v *ContainerView) DetachChild(subView View) {
 	for i, c := range v.cells {
-		// fmt.Println("detach?:", c.View.GetObjectName(), c.View == subView, len(v.cells))
+		// fmt.Println("detach?:", c.View.ObjectName(), c.View == subView, len(v.cells))
 		if c.View == subView {
 			zslice.RemoveAt(&v.cells, i)
-			// fmt.Println("detach2:", c.View.GetObjectName(), len(v.cells))
+			// fmt.Println("detach2:", c.View.ObjectName(), len(v.cells))
 			break
 		}
 	}
 }
 
 func (v *ContainerView) drawIfExposed() {
-	// fmt.Println("CoV drawIf:", v.GetObjectName())
+	// fmt.Println("CoV drawIf:", v.ObjectName())
 	v.CustomView.drawIfExposed()
 	for _, c := range v.cells {
 		et, got := c.View.(ExposableType)
-		// fmt.Println("CoV drawIf:", c.View.GetObjectName(), got)
+		// fmt.Println("CoV drawIf:", c.View.ObjectName(), got)
 		if got {
 			et.drawIfExposed()
 		}

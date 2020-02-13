@@ -18,7 +18,7 @@ func (v *NativeView) Parent() *NativeView {
 	if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
 		return nil
 	}
-	//	fmt.Println("ParentElement:", v.GetObjectName(), e)
+	//	fmt.Println("ParentElement:", v.ObjectName(), e)
 	n := &NativeView{}
 	n.Element = e
 	n.View = v
@@ -30,7 +30,7 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) View {
-	// fmt.Println("NV Rect", v.GetObjectName())
+	// fmt.Println("NV Rect", v.ObjectName())
 	setElementRect(v.Element, rect)
 	return v
 }
@@ -54,7 +54,7 @@ func setElementRect(e js.Value, rect zgeo.Rect) {
 	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
 }
 
-func (v *NativeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{10, 10}
 }
 
@@ -67,7 +67,7 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 		h = parseElementCoord(sh)
 		w = parseElementCoord(sw)
 	} else {
-		println("parse empty Coord: " + v.GetObjectName())
+		println("parse empty Coord: " + v.ObjectName())
 		panic("parse empty Coord")
 	}
 
@@ -78,7 +78,7 @@ func (v *NativeView) LocalRect(rect zgeo.Rect) {
 
 }
 
-func (v *NativeView) GetObjectName() string {
+func (v *NativeView) ObjectName() string {
 	return v.get("id").String()
 }
 
@@ -203,7 +203,7 @@ func (v *NativeView) RemoveFromParent() {
 func (v *NativeView) SetFont(font *Font) View {
 	cssStyle := v.style()
 	cssStyle.Set("font-style", string(font.Style&FontStyleItalic))
-	// zlog.Debug("font:", v.GetObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
+	// zlog.Debug("font:", v.ObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
 	cssStyle.Set("font-weight", (font.Style & FontStyleBold).String())
 	cssStyle.Set("font-family", font.Name)
 	cssStyle.Set("font-size", fmt.Sprintf("%gpx", font.Size))

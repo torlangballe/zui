@@ -6,10 +6,10 @@ import (
 	"syscall/js"
 )
 
-func MenuViewNew(name string, items MenuItems, value interface{}, staticName string) *MenuView {
+func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
-	v.StaticName = staticName
+	v.IsStatic = isStatic
 	sel := DocumentJS.Call("createElement", "select")
 	v.Element = sel
 	sel.Set("style", "position:absolute")
@@ -20,7 +20,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, staticName str
 	v.updateVals(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
-		if v.StaticName != "" && v.oldValue != nil {
+		if v.IsStatic && v.oldValue != nil {
 			v.SetWithID(v.oldID)
 			return nil
 		}
@@ -30,7 +30,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, staticName str
 			if id == "" {
 				break
 			}
-			zlog.Info("menuview changed", v.GetObjectName(), id, sid)
+			zlog.Info("menuview changed", v.ObjectName(), id, sid)
 			if id == sid {
 				v.oldID = id
 				v.oldValue = iv
@@ -46,6 +46,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, staticName str
 }
 
 func (v *MenuView) UpdateValues(items MenuItems) {
+	// fmt.Println("MV UpdateValues", MenuItemsLength(items))
 	if !menuItemsAreEqual(v.items, items) {
 		options := v.get("options")
 		options.Set("length", 0)
@@ -56,14 +57,15 @@ func (v *MenuView) UpdateValues(items MenuItems) {
 func (v *MenuView) menuViewAddItem(id, name string) {
 	option := DocumentJS.Call("createElement", "option")
 	option.Set("value", id)
+	option.Set("title", id)
 	option.Set("innerHTML", name)
 	v.call("appendChild", option)
 }
 
 func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 	var setID string
-	if v.StaticName != "" {
-		v.menuViewAddItem("$STATICNAME", v.StaticName)
+	if v.IsStatic {
+		v.menuViewAddItem("$STATICNAME", v.getNumberOfItemsString())
 	}
 	if items == nil {
 		return
@@ -82,18 +84,18 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 		v.menuViewAddItem(in, id)
 	}
 	v.items = items
-	//  fmt.Println("updateVals:", v.GetObjectName(), value, setID)
+	//  fmt.Println("updateVals:", v.ObjectName(), value, setID)
 	if setID != "" {
 		v.SetWithID(setID)
 	}
 }
 
 func (v *MenuView) SetWithID(setID string) *MenuView {
-	if zlog.ErrorIf(setID == "", v.GetObjectName()) {
+	if zlog.ErrorIf(setID == "", v.ObjectName()) {
 		zlog.Info(zlog.GetCallingStackString())
 		return v
 	}
-	//  fmt.Println("mv:setwithid:", setID, v.GetObjectName())
+	//  fmt.Println("mv:setwithid:", setID, v.ObjectName())
 	for i := 0; ; i++ {
 		id, _, iv := v.items.GetItem(i)
 		if id == "" {

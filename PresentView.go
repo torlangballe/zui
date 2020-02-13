@@ -97,7 +97,7 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 			// fmt.Println("Present:", mainRect, presentViewPresenting)
 			n.SetRect(mainRect)
 		} else {
-			size := n.GetCalculatedSize(mainRect.Size)
+			size := n.CalculatedSize(mainRect.Size)
 			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
 			n.SetRect(r)
 			n.SetBGColor(zgeo.ColorNewGray(0.8, 1))

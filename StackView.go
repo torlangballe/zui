@@ -28,11 +28,11 @@ func StackViewNew(vertical bool, name string) *StackView {
 	return s
 }
 
-func StackNew(name string) *StackView {
+func StackViewVert(name string) *StackView {
 	return StackViewNew(true, name)
 }
 
-func StackNewHor(name string) *StackView {
+func StackViewHor(name string) *StackView {
 	return StackViewNew(false, name)
 }
 
@@ -74,11 +74,11 @@ func (v *StackView) calcWeightMins() {
 	}
 }
 
-func (v *StackView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	v.calcWeightMins()
 	// for i, c := range v.cells {
 	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
-	// 		fmt.Println("weight size:", c.View.GetObjectName(), v.weightMinSizes[i])
+	// 		fmt.Println("weight size:", c.View.ObjectName(), v.weightMinSizes[i])
 	// 	}
 	// }
 	var size = zgeo.Size{}
@@ -86,7 +86,7 @@ func (v *StackView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 		if !c.Collapsed && !c.Free {
 			fs := v.getCellSize(c, &i)
 			m := calcMarginAdd(c)
-			// fmt.Println("calcsize:", c.View.GetObjectName(), fs, m)
+			// fmt.Println("calcsize:", c.View.ObjectName(), fs, m)
 			*size.VerticeP(v.Vertical) += fs.Vertice(v.Vertical)
 			//			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)-m.Vertice(!v.Vertical))
 			zfloat.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
@@ -97,8 +97,8 @@ func (v *StackView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	if len(v.cells) > 0 {
 		*size.VerticeP(v.Vertical) -= v.spacing
 	}
-	zfloat.Maximize(size.VerticeP(!v.Vertical), v.GetMinSize().Vertice(!v.Vertical))
-	size.Maximize(v.GetMinSize())
+	zfloat.Maximize(size.VerticeP(!v.Vertical), v.MinSize().Vertice(!v.Vertical))
+	size.Maximize(v.MinSize())
 	return size
 }
 
@@ -113,12 +113,12 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 	var box = inRect.Align(size, a, zgeo.Size{}, max)
 	var vr zgeo.Rect
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
-		s := cell.View.GetCalculatedSize(inRect.Size)
+		s := cell.View.CalculatedSize(inRect.Size)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
 		vr = box.Expanded(cell.Margin.Negative())
 	}
-	// fmt.Println("handleAlign:", box, cell.View.GetObjectName(), inRect, size, a, max, vr, cell.Margin)
+	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	return box, vr
 }
 
@@ -161,17 +161,23 @@ func calcMarginAdd(c ContainerViewCell) zgeo.Size {
 
 func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size {
 	//	tot := v.getCellFitSizeInTotal(total, c)
-	var size = c.View.GetCalculatedSize(zgeo.Size{})
+	var size = c.View.CalculatedSize(zgeo.Size{})
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	size.Maximize(c.MinSize)
+	if c.MaxSize.W != 0 {
+		zfloat.Minimize(&size.W, c.MaxSize.W)
+	}
+	if c.MaxSize.H != 0 {
+		zfloat.Minimize(&size.H, c.MaxSize.H)
+	}
 	if weightIndex != nil {
 		len := v.weightMinSizes[*weightIndex]
 		if len != 0 {
 			*size.VerticeP(v.Vertical) = len
 		}
 	}
-	// fmt.Println("get cell size:", c.View.GetObjectName(), size.W, c.MinSize.W)
+	// fmt.Println("get cell size:", c.View.ObjectName(), size.W, c.MinSize.W)
 	return size
 }
 
@@ -185,7 +191,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
-	// fmt.Println("Stack ArrangeChildren:", v.GetObjectName())
+	// fmt.Println("Stack ArrangeChildren:", v.ObjectName())
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
@@ -201,7 +207,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	}
 	for _, c2 := range v.cells {
 		if c2.Alignment&zgeo.Horizontal == 0 || c2.Alignment&zgeo.Vertical == 0 {
-			zlog.Error(nil, "\n\nStack Align: No vertical or horizontal component:", c2.View.GetObjectName(), c2.Alignment, "\n\n")
+			zlog.Error(nil, "\n\nStack Align: No vertical or horizontal component:", c2.View.ObjectName(), c2.Alignment, "\n\n")
 			return
 		}
 		if !c2.Free {
@@ -228,7 +234,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 	}
 	cn := r.Center().Vertice(v.Vertical)
-	var cs = v.GetCalculatedSize(zgeo.Size{}).Vertice(v.Vertical)
+	var cs = v.CalculatedSize(zgeo.Size{}).Vertice(v.Vertical)
 	cs += v.margin.Size.Vertice(v.Vertical)
 
 	diff := r.Size.Vertice(v.Vertical) - cs
@@ -241,10 +247,10 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
 				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-					// fmt.Println("addDiff:", c3.View.GetObjectName(), size.W, diff, r.Size.W)
+					// fmt.Println("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W)
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
-				// fmt.Println("cellsize:", c3.MinSize.W, c3.MaxSize.W, c3.View.GetObjectName(), size, c3.Alignment)
+				// fmt.Println("cellsize:", c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
 				sizes[c3.View] = size
 			}
 		}
@@ -263,7 +269,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
-					// fmt.Println("cellsides:", c4.View.GetObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
+					// fmt.Println("cellsides:", c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
@@ -312,8 +318,8 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				// if c5.View.GetObjectName() == "outURL" {
-				// 	fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.GetObjectName(), vr, r)
+				// if c5.View.ObjectName() == "outURL" {
+				// 	fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.ObjectName(), vr, r)
 				// }
 				c5.View.SetRect(vr)
 			}

@@ -7,10 +7,10 @@ import (
 )
 
 type View interface {
-	GetCalculatedSize(total zgeo.Size) zgeo.Size
+	CalculatedSize(total zgeo.Size) zgeo.Size
 
 	SetObjectName(name string) View
-	GetObjectName() string
+	ObjectName() string
 
 	Usable(usable bool) View
 	IsUsable() bool
@@ -86,7 +86,7 @@ func ViewChild(v View, path string) View {
 	ct := v.(ContainerType)
 	if ct != nil {
 		for _, ch := range ct.GetChildren() {
-			if ch.GetObjectName() == name {
+			if ch.ObjectName() == name {
 				if len(parts) == 1 {
 					return ch
 				}

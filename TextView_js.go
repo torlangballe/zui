@@ -69,7 +69,7 @@ func (v *TextView) SetRect(rect zgeo.Rect) View {
 	m := v.Margin.Maxed(zgeo.SizeBoth(jsTextMargin))
 	rect = rect.Expanded(m.Negative())
 	rect.Pos.Y -= 3
-	// fmt.Println("TV: Rect:", v.GetObjectName(), rect)
+	// fmt.Println("TV: Rect:", v.ObjectName(), rect)
 	v.NativeView.SetRect(rect)
 	return v
 }
@@ -85,7 +85,7 @@ func (v *TextView) GetText() string {
 }
 
 func (v *TextView) callUpdate() {
-	zlog.Info("callUpdate")
+	// zlog.Info("call Text Update")
 	if v.changed != nil {
 		if v.UpdateSecs == 0 {
 			v.changed(v)
@@ -107,7 +107,7 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 			if !v.ContinuousUpdateCalls && v.updated {
 				event := vs[0]
 				key := event.Get("which").Int()
-				//				zlog.Info("down-key:", key, v.GetObjectName())
+				//				zlog.Info("down-key:", key, v.ObjectName())
 				if key == KeyboardKeyReturn || key == KeyboardKeyTab {
 					//					zlog.Info("push:", v.ContinuousUpdateCalls, v.updated)
 					v.callUpdate()

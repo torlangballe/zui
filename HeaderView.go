@@ -60,7 +60,7 @@ func (v *HeaderView) Populate(fields []Field, height float64, pressed func(id st
 				pressed(id)
 			})
 		}
-		zfloat.Maximize(&fields[i].MinWidth, button.GetCalculatedSize(zgeo.Size{}).W)
+		zfloat.Maximize(&fields[i].MinWidth, button.CalculatedSize(zgeo.Size{}).W)
 		if f.MaxWidth != 0 {
 			cell.MaxSize.W = math.Max(f.MaxWidth, f.MinWidth)
 		}
@@ -89,6 +89,6 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 		hr.SetMaxX(e)
 		x = e
 		hv.SetRect(hr)
-		// fmt.Println("TABLE View rect item:", child.GetObjectName(), hv.Rect())
+		// fmt.Println("TABLE View rect item:", child.ObjectName(), hv.Rect())
 	}
 }

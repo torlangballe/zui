@@ -69,7 +69,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	default:
 		v.Ratio = 0.3
 	}
-	v.DrawHandler(shapeViewDraw)
+	v.SetDrawHandler(shapeViewDraw)
 	v.CustomView.SetMinSize(minSize)
 }
 
@@ -84,8 +84,8 @@ func (v *ShapeView) GetImage() *Image {
 	return v.image
 }
 
-func (v *ShapeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
-	s := v.GetMinSize()
+func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	s := v.MinSize()
 	if v.TextInfo.Text != "" {
 		ts := v.TextInfo.GetBounds(false).Size
 		ts.Add(zgeo.Size{16, 6})
@@ -106,13 +106,13 @@ func (v *ShapeView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 	v.image = image
 	v.exposed = false
-	if v.GetObjectName() == "" {
+	if v.ObjectName() == "" {
 		_, name := path.Split(spath)
 		v.SetObjectName(name)
 	}
 	if image == nil && spath != "" {
 		v.image = ImageFromPath(spath, func() {
-			// println("sv image loaded: " + spath + ": " + v.GetObjectName())
+			// println("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.Expose()
 			if done != nil {
 				done()
@@ -125,7 +125,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
 	v := view.(*ShapeView)
-	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.GetMinSize(), rect, view.GetObjectName())
+	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.GetMinSize(), rect, view.ObjectName())
 
 	switch v.Type {
 	case ShapeViewTypeStar:

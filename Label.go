@@ -16,7 +16,7 @@ type Label struct {
 	pressed   func()
 }
 
-func (v *Label) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var o TextLayoutOwner
 	o = v
 	s := TextLayoutOwnerCalculateSize(o)
@@ -67,7 +67,7 @@ func Labelize(grid *StackView, view View, prefix string, minWidth float64) *Labe
 	label := LabelNew(prefix)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font).SetColor(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
-	stack := StackNewHor("labelize: " + prefix)
+	stack := StackViewHor("labelize: " + prefix)
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
 	stack.AddView(view, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
 	grid.AddView(stack, zgeo.Left|zgeo.VertCenter)

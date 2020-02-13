@@ -10,6 +10,7 @@ import (
 
 type TableView struct {
 	StackView
+	FieldOwner
 	List          *ListView
 	Header        *HeaderView
 	ColumnMargin  float64
@@ -20,18 +21,17 @@ type TableView struct {
 	GetRowCount  func() int
 	GetRowHeight func(i int) float64
 	GetRowData   func(i int) interface{}
-	RowUpdated   func(edited bool, i int, rowView *StackView) bool
+	// RowUpdated   func(edited bool, i int, rowView *StackView) bool
 	//	RowDataUpdated func(i int)
 	HeaderPressed func(id string)
-	CellPressed   func(i int, id string)
-
-	fields []Field
 }
 
 func tableGetSliceFromPointer(structure interface{}) reflect.Value {
 	rval := reflect.ValueOf(structure)
+	// fmt.Println("tableGetSliceFromPointer:", structure, rval.Kind())
 	if rval.Kind() == reflect.Ptr {
 		rval = rval.Elem()
+	// fmt.Println("tableGetSliceFromPointer2:", rval.Kind())
 		if rval.Kind() == reflect.Slice {
 			return rval
 		}
@@ -40,9 +40,7 @@ func tableGetSliceFromPointer(structure interface{}) reflect.Value {
 	return reflect.ValueOf(n)
 }
 
-func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
-	var structure interface{}
-
+func TableViewNew(name string, header bool, structData interface{}) *TableView {
 	v := &TableView{}
 	v.StackView.init(v, name)
 	v.Vertical = true
@@ -50,16 +48,15 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	v.RowInset = 7
 	v.HeaderHeight = 28
 	v.DefaultHeight = 34
-	unnestAnon := true
-	recursive := false
 
-	rval := tableGetSliceFromPointer(inStruct)
+	var structure interface{}
+	rval := tableGetSliceFromPointer(structData)
 	if !rval.IsNil() {
 		v.GetRowCount = func() int {
-			return tableGetSliceFromPointer(inStruct).Len()
+			return tableGetSliceFromPointer(structData).Len()
 		}
 		v.GetRowData = func(i int) interface{} {
-			val := tableGetSliceFromPointer(inStruct)
+			val := tableGetSliceFromPointer(structData)
 			if val.Len() != 0 {
 				return val.Index(i).Addr().Interface()
 			}
@@ -72,13 +69,15 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		}
 	}
 
+	unnestAnon := true
+	recursive := false
 	froot, err := zreflect.ItterateStruct(structure, unnestAnon, recursive)
 	if err != nil {
 		panic(err)
 	}
 	for i, item := range froot.Children {
 		var f Field
-		if f.makeFromReflectItem(item, i) {
+		if f.makeFromReflectItem(v.FieldOwner, structure, item, i) {
 			v.fields = append(v.fields, f)
 		}
 	}
@@ -86,7 +85,7 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 		v.Header = HeaderViewNew()
 		v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	}
-	v.List = ListViewNew(name + ".list")
+	v.List = ListViewNew(v.ObjectName() + ".list")
 	v.List.SetMinSize(zgeo.Size{50, 50})
 	v.List.RowColors = []zgeo.Color{zgeo.ColorNewGray(0.97, 1), zgeo.ColorNewGray(0.85, 1)}
 	v.List.HandleScrolledToRows = func(y float64, first, last int) {
@@ -96,12 +95,12 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	if !rval.IsNil() {
 		v.List.RowUpdater = func(i int, edited bool) {
 			v.FlushDataToRow(i)
-			rowStack := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
+			rowStack, _ := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
 			if rowStack != nil {
 				rowStruct := v.GetRowData(i)
-				if v.RowUpdated(edited, i, rowStack) {
-					fieldsUpdateStack(rowStack, rowStruct, &v.fields)
-				}
+				fmt.Println("table list row update", 1)
+//				v.handleUpdate(edited, i)
+				fieldsUpdateStack(v.FieldOwner, rowStack, rowStruct)
 			}
 		}
 	}
@@ -120,7 +119,17 @@ func TableViewNew(name string, header bool, inStruct interface{}) *TableView {
 	v.List.GetRowCount = func() int {
 		return v.GetRowCount()
 	}
-
+	
+	// v.handleUpdate = func(edited bool, i int) {
+	// 	rowStruct := v.GetRowData(i)
+	// 	showError := true
+	// 	 fmt.Println("table handleUpdate:", i, edited)
+	// 	rowStack, _ := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
+	// 	if rowStack != nil {
+	// 		FieldsCopyBack(rowStruct, v.fields, rowStack, showError)
+	// 	}
+	// 	v.List.UpdateRow(i, edited)
+	// }
 	return v
 }
 
@@ -166,38 +175,24 @@ func (v *TableView) FlashRow() {
 }
 
 func (v *TableView) FlushDataToRow(i int) {
-	rowStack := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
+	rowStack, _ := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
 	if rowStack != nil {
 		rowStruct := v.GetRowData(i)
-		fieldsUpdateStack(rowStack, rowStruct, &v.fields)
+		fieldsUpdateStack(v.FieldOwner, rowStack, rowStruct)
 	}
 }
 
 func createRow(v *TableView, rowSize zgeo.Size, i int) View {
 	name := fmt.Sprintf("row %d", i)
-	rowStack := StackNewHor(name)
+	rowStack := StackViewHor(name)
 	rowStack.SetSpacing(0)
 	rowStack.CanFocus(true)
 	rowStack.SetMargin(zgeo.RectMake(v.RowInset, 0, -v.RowInset, 0))
 	rowStruct := v.GetRowData(i)
 	useWidth := true //(v.Header != nil)
-	fieldsBuildStack(nil, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i, func(i int, a FieldActionType, id string) {
-		rowStruct := v.GetRowData(i)
-		FieldsCopyBack(rowStruct, v.fields, rowStack, true)
-		switch a {
-		case FieldUpdateAction:
-			if v.RowUpdated != nil {
-				edited := true
-				v.List.UpdateRow(i, edited)
-			}
-		case FieldPressedAction:
-			if v.CellPressed != nil {
-				v.CellPressed(i, id)
-			}
-		}
-	})
-	edited := false
-	v.RowUpdated(edited, i, rowStack)
-	fieldsUpdateStack(rowStack, v.GetRowData(i), &v.fields)
+	fieldsBuildStack(v.FieldOwner, rowStack, rowStruct, nil, &v.fields, zgeo.Center, zgeo.Size{v.ColumnMargin, 0}, useWidth, v.RowInset, i)
+	// edited := false
+	// v.handleUpdate(edited, i)
+	fieldsUpdateStack(v.FieldOwner, rowStack, v.GetRowData(i))
 	return rowStack
 }

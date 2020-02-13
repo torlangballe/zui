@@ -32,7 +32,7 @@ type TextView struct {
 
 const TextViewDefaultMargin = 3.0
 
-func (v *TextView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var o TextLayoutOwner
 	o = v
 	s := TextLayoutOwnerCalculateSize(o)

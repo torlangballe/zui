@@ -68,8 +68,7 @@ func WordsPluralizeString(str, lang string, count float64, words ...string) stri
 	}
 	var scount string
 	if math.Ceil(count) == count {
-		scount = WordsForOneDigitNumber(int(count), lang)
-		fmt.Println("plur:", scount)
+		scount = strconv.Itoa(int(count))
 	} else {
 		scount = zwords.NiceFloat(count, 2)
 	}

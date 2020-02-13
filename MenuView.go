@@ -15,7 +15,7 @@ type MenuView struct {
 	oldID    string
 	oldValue interface{}
 
-	StaticName string // if set, user can't set a different value, but can press and see them. Adds StaticName as first item
+	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
 }
 
 var menuViewHeight = 22.0
@@ -73,9 +73,16 @@ func menuItemsAreEqual(a, b MenuItems) bool {
 	return false
 }
 
-func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
-	maxString := v.StaticName
-	if v.StaticName == "" {
+func (v *MenuView) getNumberOfItemsString() string {
+	count := MenuItemsLength(v.items)	
+	return WordsPluralizeString("%d %s", "en", float64(count), "item")
+}
+
+func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	var maxString string
+	if v.IsStatic {
+		maxString = "658 items" // make it big enough to not need to resize much
+	} else {
 		for i := 0; ; i++ {
 			id, name, _ := v.items.GetItem(i)
 			if id == "" {
@@ -88,7 +95,7 @@ func (v *MenuView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	maxString += "m"
 	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth)
-	// fmt.Println("MenuView calcedsize:", v.Font().Size, v.GetObjectName(), maxString, s)
+	// fmt.Println("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
 	s.W += 32
 	s.H = menuViewHeight
 	if v.maxWidth != 0 {

@@ -38,7 +38,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 	r := v.Rect()
 	if rect != r {
 		if v.canvas != nil {
-			zlog.Debug("set", v.GetObjectName(), rect)
+			zlog.Debug("set", v.ObjectName(), rect)
 			s := v.GetLocalRect().Size
 			v.setCanvasSize(s)
 			v.Expose()
@@ -50,7 +50,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
-		// fmt.Println("makeCanvas:", v.GetObjectName())
+		// fmt.Println("makeCanvas:", v.ObjectName())
 		v.canvas = CanvasNew()
 		v.call("appendChild", v.canvas.element)
 		s := v.GetLocalRect().Size
@@ -61,17 +61,17 @@ func (v *CustomView) makeCanvas() {
 }
 
 func (v *CustomView) drawIfExposed() {
-	// fmt.Println("CV drawIfExposed", v.GetObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
+	// fmt.Println("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
 		r := v.GetLocalRect()
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
-			// println("CV drawIfExposed2:", v.GetObjectName())
+			// println("CV drawIfExposed2:", v.ObjectName())
 			v.exposeTimer.Stop()
 			v.makeCanvas()
 			v.canvas.ClearRect(zgeo.Rect{})
 			v.draw(r, v.canvas, v.View)
 			v.exposed = false
-			//		println("CV drawIfExposed end: " + v.GetObjectName() + " " + time.Since(start).String())
+			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}
 	}
 }

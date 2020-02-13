@@ -42,8 +42,8 @@ func ListViewNew(name string) *ListView {
 	//        allowsSelection = true // selectable
 }
 
-func (v *ListView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
-	s := v.ScrollView.GetCalculatedSize(total)
+func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	s := v.ScrollView.CalculatedSize(total)
 	h := 0.0
 	count := v.GetRowCount()
 	for i := 0; i < v.MinRows && i < count; i++ {
@@ -259,7 +259,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		}
 		i++
 	}
-	zlog.Info("UpdateWithOldNewSlice", reload)
+	// zlog.Info("UpdateWithOldNewSlice", reload)
 	if reload {
 		v.ReloadData()
 	} else {

@@ -26,8 +26,8 @@ func CustomViewNew(name string) *CustomView {
 	return c
 }
 
-func (v *CustomView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.GetMinSize()
+func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	return v.MinSize()
 }
 
 func (v *CustomView) Expose() {
@@ -38,7 +38,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	if v.exposed || presentViewPresenting {
 		return
 	}
-	// fmt.Println("exposeInSecs", v.GetObjectName())
+	// fmt.Println("exposeInSecs", v.ObjectName())
 	v.exposed = true
 	v.exposeTimer.Stop()
 	v.exposeTimer.StartIn(secs, true, func() {
@@ -52,15 +52,21 @@ func (v *CustomView) exposeInSecs(secs float64) {
 		}
 		et, _ := v.View.(ExposableType)
 		if et != nil {
-			// fmt.Println("CV exposeInSecs draw", v.GetObjectName())
+			// fmt.Println("CV exposeInSecs draw", v.ObjectName())
 			et.drawIfExposed()
 		}
 	})
 }
 
-func (v *CustomView) Color(color zgeo.Color) View {
-	v.color = color
+func (v *CustomView) SetColor(c zgeo.Color) View {
+	v.NativeView.SetColor(c)
+	v.color = c
+
 	return v
+}
+
+func (v *CustomView) Color() zgeo.Color {
+	return v.color
 }
 
 func (v *CustomView) SetMinSize(s zgeo.Size) *CustomView {
@@ -68,15 +74,15 @@ func (v *CustomView) SetMinSize(s zgeo.Size) *CustomView {
 	return v
 }
 
-func (v *CustomView) GetMinSize() zgeo.Size {
+func (v *CustomView) MinSize() zgeo.Size {
 	return v.minSize
 }
 
-func (v *CustomView) ValueHandler(handler func(view View)) {
+func (v *CustomView) SetValueHandler(handler func(view View)) {
 	v.valueChanged = handler
 }
 
-func (v *CustomView) DrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
+func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
 	v.draw = func(rect zgeo.Rect, canvas *Canvas, view View) {
 		if handler != nil {
 			handler(rect, canvas, view)

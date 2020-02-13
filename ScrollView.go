@@ -38,10 +38,10 @@ func (v *ScrollView) ArrangeChildren(onlyChild *View) {
 	}
 }
 
-func (v *ScrollView) GetCalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.minSize
 	if v.child != nil {
-		cs := v.child.GetCalculatedSize(total)
+		cs := v.child.CalculatedSize(total)
 		s.W = cs.W
 	}
 	return s
@@ -55,7 +55,7 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 	if v.child != nil {
 		ls := rect.Size
 		ls.H = 20000
-		cs := v.child.GetCalculatedSize(ls)
+		cs := v.child.CalculatedSize(ls)
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
 		r.Add(v.Margin)
