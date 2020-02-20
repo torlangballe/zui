@@ -46,8 +46,9 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 }
 
 func (v *MenuView) UpdateValues(items MenuItems) {
-	// fmt.Println("MV UpdateValues", MenuItemsLength(items))
+//	zlog.Info("MV UpdateValues", MenuItemsLength(items), v.IsStatic)
 	if !menuItemsAreEqual(v.items, items) {
+	// zlog.Info("MV UpdateValues2")
 		options := v.get("options")
 		options.Set("length", 0)
 		v.updateVals(items, nil)
@@ -64,8 +65,12 @@ func (v *MenuView) menuViewAddItem(id, name string) {
 
 func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 	var setID string
+
+	v.items = items // must be before v.getNumberOfItemsString
 	if v.IsStatic {
+		// zlog.Info("Items:", v.getNumberOfItemsString())
 		v.menuViewAddItem("$STATICNAME", v.getNumberOfItemsString())
+		v.SetWithID("$STATICNAME")
 	}
 	if items == nil {
 		return
@@ -83,7 +88,6 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 		}
 		v.menuViewAddItem(in, id)
 	}
-	v.items = items
 	//  fmt.Println("updateVals:", v.ObjectName(), value, setID)
 	if setID != "" {
 		v.SetWithID(setID)

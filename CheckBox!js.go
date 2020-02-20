@@ -2,7 +2,7 @@
 
 package zui
 
-func (c *CheckBox) GetValue() BoolInd {
+func (c *CheckBox) Value() BoolInd {
 	return BoolFalse
 }
 
@@ -13,6 +13,6 @@ func CheckBoxNew(on BoolInd) *CheckBox {
 
 func (c *CheckBox) ValueHandler(handler func(view View)) {}
 
-func (c *CheckBox) Value(b BoolInd) *CheckBox {
+func (c *CheckBox) SetValue(b BoolInd) *CheckBox {
 	return c
 }

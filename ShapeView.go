@@ -3,6 +3,7 @@ package zui
 //  Created by Tor Langballe on /22/10/15.
 
 import (
+	"fmt"
 	"math"
 	"path"
 
@@ -154,6 +155,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
+		fmt.Println("shapeViewDraw stroke:", view.ObjectName())
 		var o = v.StrokeColor.Opacity()
 		if !v.IsUsable() {
 			o *= 0.6

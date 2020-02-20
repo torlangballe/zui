@@ -96,10 +96,6 @@ func DeviceOSPlatform() string {
 	return ""
 }
 
-func DeviceCpuUsage() []float32 {
-	return []float32{}
-}
-
 func DeviceFreeAndUsedDiskSpace() (int64, int64) {
 	return 0, 0
 }

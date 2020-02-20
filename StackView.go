@@ -318,9 +318,6 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				// if c5.View.ObjectName() == "outURL" {
-				// 	fmt.Println("cellmid:", sizes[c5.View], a, c5.MinSize, c5.View.ObjectName(), vr, r)
-				// }
 				c5.View.SetRect(vr)
 			}
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing

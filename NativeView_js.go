@@ -2,9 +2,12 @@ package zui
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"syscall/js"
-
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 type NativeView struct {
@@ -83,13 +86,48 @@ func (v *NativeView) ObjectName() string {
 }
 
 func makeRGBAString(c zgeo.Color) string {
+	if !c.Valid {
+		return "initial"
+	}
 	rgba := c.GetRGBA()
 	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
+}
+
+func makeRGBAFromString(str string) zgeo.Color {
+	var c zgeo.Color
+
+	if !zstr.HasPrefix(str, "rgba(", &str) && !zstr.HasPrefix(str, "rgb(", &str) {
+		return c
+	}
+	if !zstr.HasSuffix(str, ")", &str) {
+		return c
+	}
+	parts := strings.Split(str, ",")
+	if len(parts) != 4 && len(parts) != 3 {
+		return c
+	}
+	var cols = make([]float32, len(parts), len(parts))
+	for i, p := range parts {
+		p = strings.TrimSpace(p)
+		f, err := strconv.ParseFloat(p, 32)
+		if err != nil {
+			zlog.Error(err)
+			return c
+		}
+		cols[i] = float32(f) / 255
+	}
+	c = zgeo.ColorFromSlice(cols)
+	return c
 }
 
 func (v *NativeView) SetColor(c zgeo.Color) View {
 	v.style().Set("color", makeRGBAString(c))
 	return v
+}
+
+func (v *NativeView) Color() zgeo.Color{
+	str := v.style().Get("color").String()
+	return makeRGBAFromString(str)
 }
 
 func (n *NativeView) style() js.Value {
@@ -123,8 +161,14 @@ func (v *NativeView) SetObjectName(name string) View {
 }
 
 func (v *NativeView) SetBGColor(c zgeo.Color) View {
-	v.style().Set("background", makeRGBAString(c))
+	v.style().Set("backgroundColor", makeRGBAString(c))
 	return v
+}
+
+func (v *NativeView) BGColor() zgeo.Color {
+	str := v.style().Get("backgroundColor").String()
+	fmt.Println("nv bgcolor", str)
+	return makeRGBAFromString(str)
 }
 
 func (v *NativeView) CornerRadius(radius float64) View {
@@ -174,7 +218,7 @@ func (v *NativeView) IsUsable() bool {
 }
 
 func (v *NativeView) IsFocused() bool {
-	return true
+	return false
 }
 
 func (v *NativeView) Focus(focus bool) View {
@@ -231,7 +275,7 @@ func (v *NativeView) SetText(text string) View {
 	return v
 }
 
-func (v *NativeView) GetText() string {
+func (v *NativeView) Text() string {
 	text := v.get("innerHTML").String()
 	return text
 }

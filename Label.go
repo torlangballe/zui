@@ -22,15 +22,15 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := TextLayoutOwnerCalculateSize(o)
 	s.Add(v.margin.Size.Negative())
 	s.MakeInteger()
-	// fmt.Println("label calcedsize:", v.GetText(), s, o.Font())
+	// fmt.Println("label calcedsize:", v.Text(), s, o.Font())
 	return s
 }
 
-func (l *Label) GetTextAlignment() zgeo.Alignment {
+func (l *Label) TextAlignment() zgeo.Alignment {
 	return l.alignment
 }
 
-func (l *Label) GetMinWidth() float64 {
+func (l *Label) MinWidth() float64 {
 	return l.minWidth
 }
 
@@ -38,7 +38,7 @@ func (l *Label) MaxWidth() float64 {
 	return l.maxWidth
 }
 
-func (l *Label) GetMaxLines() int {
+func (l *Label) MaxLines() int {
 	return l.maxLines
 }
 

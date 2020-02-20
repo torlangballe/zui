@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -268,7 +267,6 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 }
 
 func (v *ListView) UpdateVisibleRows() {
-	zlog.Info("ListView UpdateVisibleRows")
 	first := -1
 	last := -1
 	y := 0.0

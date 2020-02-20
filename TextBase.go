@@ -27,19 +27,19 @@ type TextLayoutOwner interface {
 	SetFont(font *Font) View
 	Font() *Font
 	SetText(text string) View
-	GetText() string
+	Text() string
 	SetTextAlignment(a zgeo.Alignment) View
-	GetTextAlignment() zgeo.Alignment
-	GetMinWidth() float64
+	TextAlignment() zgeo.Alignment
+	MinWidth() float64
 	MaxWidth() float64
-	GetMaxLines() int
+	MaxLines() int
 	SetMinWidth(min float64) View
 	SetMaxWidth(max float64) View
 	SetMaxLines(max int) View
 }
 
 func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {
-	return TextLayoutCalculateSize(o.GetTextAlignment(), o.Font(), o.GetText(), o.GetMaxLines(), o.MaxWidth())
+	return TextLayoutCalculateSize(o.TextAlignment(), o.Font(), o.Text(), o.MaxLines(), o.MaxWidth())
 }
 
 func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64) zgeo.Size {

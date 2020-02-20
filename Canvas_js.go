@@ -32,13 +32,22 @@ func (c *Canvas) SetRect(rect zgeo.Rect) {
 	setElementRect(c.element, rect)
 }
 
-func (c *Canvas) SetColor(color zgeo.Color, opacity float32) {
+func (c *Canvas) setColor(color zgeo.Color, opacity float32, stroke bool) {
 	var vcolor = color
 	if opacity != -1 {
 		vcolor = vcolor.OpacityChanged(opacity)
 	}
 	str := makeRGBAString(vcolor)
-	c.context.Set("fillStyle", str)
+	name := "fillStyle"
+	if stroke {
+		name = "strokeStyle"
+	}
+	c.context.Set(name, str)
+}
+
+func (c *Canvas) SetColor(color zgeo.Color, opacity float32) {
+	c.setColor(color, opacity, false)
+	c.setColor(color, opacity, true)
 }
 
 func (c *Canvas) FillPath(path *zgeo.Path) {
@@ -78,15 +87,20 @@ func (c *Canvas) GetClipRect() zgeo.Rect {
 func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineType) {
 	c.setPath(path)
 	c.setLineType(ltype)
+	c.context.Call("stroke")
+
 	// context.setLineWidth(CGFloat(width))
-	// context.strokePath()
 }
 
 func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64, ltype zgeo.PathLineType, eofill bool) {
 	c.setPath(path)
-	//        context.setStrokeColor(strokeColor.color.cgColor)
-
+	c.context.Call("fill")
+	c.PushState()
+	c.setColor(strokeColor, 1, true)
 	c.setLineType(ltype)
+	c.context.Call("stroke")
+	c.PopState()
+
 	//        context.setLineWidth(CGFloat(width))
 
 	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
@@ -156,11 +170,12 @@ func (c *Canvas) DrawRadialGradient(path *zgeo.Path, colors []zgeo.Color, center
 }
 
 func (c *Canvas) setPath(path *zgeo.Path) {
+	// fmt.Println("\n\nsetPath")
 	c.context.Call("beginPath")
 	path.ForEachPart(func(part zgeo.PathNode) {
 		switch part.Type {
 		case zgeo.PathMove:
-			// fmt.Println("moveTo", part.Points[0].X, part.Points[0].Y)
+			//  fmt.Println("moveTo", part.Points[0].X, part.Points[0].Y)
 			c.context.Call("moveTo", part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathLine:
 			// fmt.Println("lineTo", part.Points[0].X, part.Points[0].Y)
@@ -174,7 +189,7 @@ func (c *Canvas) setPath(path *zgeo.Path) {
 			break
 		case zgeo.PathCurve:
 			c.context.Call("bezierCurveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
-			// fmt.Println("curveTo")
+			// fmt.Println("curveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
 			break
 		}
 	})

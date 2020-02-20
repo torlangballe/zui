@@ -126,7 +126,7 @@ func (v *NativeView) SetText(text string) View {
 	return v
 }
 
-func (v *NativeView) GetText() string {
+func (v *NativeView) Text() string {
 	return ""
 }
 func (v *NativeView) AddChild(child View, index int)                                    {}

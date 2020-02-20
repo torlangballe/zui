@@ -79,47 +79,63 @@ func (v *TextView) SetText(str string) View {
 	return v
 }
 
-func (v *TextView) GetText() string {
+func (v *TextView) Text() string {
 	text := v.get("value").String()
 	return text
 }
 
-func (v *TextView) callUpdate() {
-	// zlog.Info("call Text Update")
-	if v.changed != nil {
-		if v.UpdateSecs == 0 {
-			v.changed(v)
-		}
-		if v.updateTimer != nil {
-			v.updateTimer.Stop()
-		}
-		v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
-			v.changed(v)
-		})
+func (v *TextView) BGColor() zgeo.Color {
+	str := v.style().Get("backgroundColor").String()
+	if str == "" || str == "initial" { // hack since it is white but has no value, so it isn't "initall", which is transparent
+		return zgeo.ColorWhite
 	}
-	v.updated = false
+	return makeRGBAFromString(str)
+}
+
+func (v *TextView) updateDone() {
+	if v.UpdateSecs > 1 {
+		v.SetBGColor(v.pushedBGColor)
+		v.pushedBGColor = zgeo.Color{}
+	}
+	v.changed(v)
+}
+
+func (v *TextView) startUpdate() {
+	if v.UpdateSecs > 1 && !v.pushedBGColor.Valid {
+		v.pushedBGColor = v.BGColor()
+		v.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
+	}
+	if v.updateTimer != nil {
+		v.updateTimer.Stop()
+	}
+	// zlog.Info("call Text Update", v.UpdateSecs)
+	v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
+		v.updateDone()
+	})
+	//	v.updated = false
 }
 
 func (v *TextView) ChangedHandler(handler func(view View)) {
 	v.changed = handler
 	if handler != nil {
 		v.set("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-			if !v.ContinuousUpdateCalls && v.updated {
+			if v.UpdateSecs != 0 { //  && v.updated
 				event := vs[0]
 				key := event.Get("which").Int()
 				//				zlog.Info("down-key:", key, v.ObjectName())
 				if key == KeyboardKeyReturn || key == KeyboardKeyTab {
 					//					zlog.Info("push:", v.ContinuousUpdateCalls, v.updated)
-					v.callUpdate()
+					v.updateDone()
 				}
 			}
 			return nil
 		}))
 		v.set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			v.updated = true
-			//			zlog.Info("UPDATED", v.updated)
-			if v.ContinuousUpdateCalls {
-				v.callUpdate()
+			// v.updated = true
+			if v.UpdateSecs == 0 {
+				v.changed(v)
+			} else {
+				v.startUpdate()
 			}
 			return nil
 		}))

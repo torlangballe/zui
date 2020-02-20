@@ -16,18 +16,19 @@ type TextViewStyle struct {
 
 type TextView struct {
 	NativeView
-	minWidth    float64
-	maxWidth    float64
-	maxLines    int
-	alignment   zgeo.Alignment
-	changed     func(view View)
-	keyPressed  func(view View, key KeyboardKey, mods KeyboardModifier)
-	updateTimer *ztimer.Timer
-	updated     bool
+	minWidth      float64
+	maxWidth      float64
+	maxLines      int
+	alignment     zgeo.Alignment
+	changed       func(view View)
+	pushedBGColor zgeo.Color
+	keyPressed    func(view View, key KeyboardKey, mods KeyboardModifier)
+	updateTimer   *ztimer.Timer
+	//	updated       bool
 
-	Margin                zgeo.Size
-	ContinuousUpdateCalls bool
-	UpdateSecs            float64
+	Margin zgeo.Size
+	// ContinuousUpdateCalls bool
+	UpdateSecs float64
 }
 
 const TextViewDefaultMargin = 3.0
@@ -41,11 +42,11 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (l *TextView) GetTextAlignment() zgeo.Alignment {
+func (l *TextView) TextAlignment() zgeo.Alignment {
 	return l.alignment
 }
 
-func (l *TextView) GetMinWidth() float64 {
+func (l *TextView) MinWidth() float64 {
 	return l.minWidth
 }
 
@@ -53,7 +54,7 @@ func (l *TextView) MaxWidth() float64 {
 	return l.maxWidth
 }
 
-func (l *TextView) GetMaxLines() int {
+func (l *TextView) MaxLines() int {
 	return l.maxLines
 }
 

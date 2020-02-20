@@ -94,11 +94,11 @@ func TableViewNew(name string, header bool, structData interface{}) *TableView {
 	v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.List)
 	if !rval.IsNil() {
 		v.List.RowUpdater = func(i int, edited bool) {
+			// fmt.Println("table list rowupdater", i, edited)
 			v.FlushDataToRow(i)
 			rowStack, _ := v.List.GetVisibleRowViewFromIndex(i).(*StackView)
 			if rowStack != nil {
 				rowStruct := v.GetRowData(i)
-				fmt.Println("table list row update", 1)
 //				v.handleUpdate(edited, i)
 				fieldsUpdateStack(v.FieldOwner, rowStack, rowStruct)
 			}

@@ -9,7 +9,7 @@ func CheckBoxNew(on BoolInd) *CheckBox {
 	s.set("type", "checkbox")
 	s.CanFocus(true)
 	s.View = s
-	s.Value(on)
+	s.SetValue(on)
 	return s
 }
 
@@ -23,7 +23,7 @@ func (s *CheckBox) ValueHandler(handler func(view View)) {
 	}))
 }
 
-func (s *CheckBox) GetValue() BoolInd {
+func (s *CheckBox) Value() BoolInd {
 	b := s.get("checked").Bool()
 	i := s.get("indeterminate").Bool()
 	if i {
@@ -32,7 +32,7 @@ func (s *CheckBox) GetValue() BoolInd {
 	return BoolIndFromBool(b)
 }
 
-func (s *CheckBox) Value(b BoolInd) *CheckBox {
+func (s *CheckBox) SetValue(b BoolInd) *CheckBox {
 	if b.IsIndetermed() {
 		s.set("indeterminate", true)
 	} else {
