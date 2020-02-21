@@ -6,6 +6,8 @@ import (
 	"syscall/js"
 )
 
+const separatorID = "$sep"
+
 func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
@@ -55,11 +57,24 @@ func (v *MenuView) UpdateValues(items MenuItems) {
 	}
 }
 
+func (v *MenuView) AddSeparator() {
+	v.menuViewAddItem(separatorID, "")
+}
+
+func (v *MenuView) AddAction(id, name string) {
+	v.menuViewAddItem(id, name)
+}
+
 func (v *MenuView) menuViewAddItem(id, name string) {
 	option := DocumentJS.Call("createElement", "option")
-	option.Set("value", id)
-	option.Set("title", id)
-	option.Set("innerHTML", name)
+	if id == separatorID {
+		option.Set("disabled", true)
+		option.Set("class", "separator")
+	} else {
+		option.Set("value", id)
+		option.Set("title", id)
+		option.Set("innerHTML", name)
+	}
 	v.call("appendChild", option)
 }
 
@@ -69,7 +84,7 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 	v.items = items // must be before v.getNumberOfItemsString
 	if v.IsStatic {
 		// zlog.Info("Items:", v.getNumberOfItemsString())
-		v.menuViewAddItem("$STATICNAME", v.getNumberOfItemsString())
+		v.AddAction("$STATICNAME", v.getNumberOfItemsString())
 		v.SetWithID("$STATICNAME")
 	}
 	if items == nil {
@@ -117,42 +132,8 @@ func (v *MenuView) SetWithID(setID string) *MenuView {
 	return v
 }
 
-// func (v *MenuView) SetValue(val interface{}) *MenuView {
-// 	oi, on, ov := v.items.GetItem(0)
-// 	if oi == "" {
-// 		return v
-// 	}
-// 	index := 0
-// 	for i := 0; ; i++ {
-// 		id, _, iv := v.items.GetItem(i)
-// 		if id == "" {
-// 			break
-// 		}
-// 		if oi == id {
-// 			ov = iv
-// 			index = i
-// 			break
-// 		}
-// 	}
-// 	v.oldValue = ov
-// 	v.oldID = oi
-// 	options := v.get("options")
-// 	o := options.Index(index)
-// 	o.Set("selected", "true")
-
-// 	return v
-// }
-
 func (v *MenuView) IDAndValue() (id string, value interface{}) {
 	return v.oldID, v.oldValue
-	// index := v.get("selectedIndex").Int()
-	// if index == -1 {
-	// 	return nil
-	// }
-	// options := v.get("options")
-	// o := options.Index(index)
-	// name := o.Get("innerHTML").String()
-	// return v.keyVals.FindName(name)
 }
 
 func (v *MenuView) ChangedHandler(handler func(id, name string, value interface{})) {

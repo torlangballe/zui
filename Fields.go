@@ -41,7 +41,9 @@ const (
 	fieldIsImage
 	fieldHasHeaderImage
 	fieldsNoHeader
-	fieldsToClipboard
+	fieldToClipboard
+	fieldIsGroup
+	fieldGroupMenu
 )
 const (
 	fieldTimeFlags = fieldHasSeconds | fieldHasMinutes | fieldHasHours
@@ -216,7 +218,7 @@ func fieldsMakeText(structure interface{}, item zreflect.Item, f *Field, i int) 
 			view := View(label)
 			callFieldHandlerFunc(structure, f.ID, i, f, FieldPressedAction, &view)
 		})
-		if f.Flags&fieldsToClipboard != 0 {
+		if f.Flags&fieldToClipboard != 0 {
 			label.SetPressedHandler(func() {
 				text := label.Text()
 				PasteboardSetString(text)
@@ -274,7 +276,7 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 
 func fieldsUpdateStack(fo FieldOwner, stack *StackView, structData interface{}) {
 	unnestAnon := true
-	recursive := true
+	recursive := false
 	rootItems, err := zreflect.ItterateStruct(structData, unnestAnon, recursive)
 
 	if err != nil {
@@ -363,11 +365,46 @@ func findLocalEnum(children *[]zreflect.Item, name string) *zreflect.Item {
 	return nil
 }
 
+func makeFieldGroup(fo FieldOwner, stack *StackView, item zreflect.Item, f *Field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size) View {
+	const titleAction = "$title"
+	fmt.Println("makeFieldGroup", f.Name)
+	vert := StackViewVert("group-vert")
+	bar := StackViewHor("group-bar")
+	vert.Add(zgeo.Left | zgeo.Top | zgeo.HorExpand, bar)
+
+	mItems, _ := item.Interface.(MenuItems)		
+
+	menu := MenuViewNew("group-menu", mItems, nil, false)
+
+	menu.AddAction(titleAction, item.FieldName + ":")
+	menu.AddAction("add", "Add")
+	menu.AddAction("remove", "Remove Current")
+	menu.SetWithID(titleAction)
+
+	menu.AddSeparator()
+
+	bar.Add(zgeo.Left | zgeo.VertCenter | zgeo.HorExpand, menu)
+
+	var s interface{}
+	if item.Value.Len() == 0 {
+		s = reflect.New(item.Value.Type().Elem()).Interface()
+		// zlog.Info("new item", item.Value.Kind(), item.Value.Type().Elem(), reflect.ValueOf(s).Type(), reflect.ValueOf(s).Kind())
+	} else {
+		s = item.Value.Index(0).Addr().Interface()
+		// zlog.Info("slice item", s)
+	}
+	fv := FieldViewNew(item.FieldName, s)
+	fv.Build()
+	vert.Add(zgeo.Left | zgeo.Top | zgeo.Expand, fv)
+
+	return vert
+}
+
 func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, parentField *Field, fields *[]Field, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool, inset float64, i int) {
 	unnestAnon := true
-	recursive := true
+	recursive := false
 	rootItems, err := zreflect.ItterateStruct(structData, unnestAnon, recursive)
-	// fmt.Println("fieldsBuildStack", len(rootItems.Children), err)
+	 fmt.Println("fieldsBuildStack", len(rootItems.Children), err, len(*fields))
 	if err != nil {
 		panic(err)
 	}
@@ -375,10 +412,17 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 		exp := zgeo.AlignmentNone
 		f := findFieldWithIndex(fields, j)
 		if f == nil {
+			zlog.Error(nil, "no field for index", j)
 			continue
 		}
+		fmt.Println("   fieldsBuildStack2", j, f.Name)
+
 		var view View
-		callFieldHandlerFunc(item, f.ID, i, f, FieldCreateAction, &view) // this sees if actual ITEM is a field handler
+		if f.Flags & fieldIsGroup != 0 {
+			view = makeFieldGroup(fo, stack, item, f, defaultAlign, cellMargin)
+		} else {
+			callFieldHandlerFunc(item, f.ID, i, f, FieldCreateAction, &view) // this sees if actual ITEM is a field handler
+		}
 		if view == nil {
 			callFieldHandlerFunc(structData, f.ID, i, f, FieldCreateAction, &view)
 		}
@@ -604,10 +648,15 @@ func (f *Field) makeFromReflectItem(fo FieldOwner, structure interface{}, item z
 				f.UpdateSecs = n
 			}
 		case "2clip":
-			f.Flags |= fieldsToClipboard
+			f.Flags |= fieldToClipboard
+		case "menu-group":
+			mi, _ := item.Interface.(MenuItems)		
+			zlog.Assert(mi != nil)
+			f.Flags |= fieldIsGroup
+			f.Flags |= fieldGroupMenu
 		}
 	}
-	if f.Flags&fieldsToClipboard != 0 && f.Tooltip == "" {
+	if f.Flags&fieldToClipboard != 0 && f.Tooltip == "" {
 		f.Tooltip = "press to copy to pasteboard"
 	}
 	zfloat.Maximize(&f.MaxWidth, f.MinWidth)
@@ -705,19 +754,19 @@ func (f *Field) makeFromReflectItem(fo FieldOwner, structure interface{}, item z
 }
 
 func fieldViewNew(name string, vertical bool, structure interface{}, spacing float64, marg zgeo.Size) *FieldView {
-	// fmt.Println("FieldViewNew", name)
 	v := &FieldView{}
 	v.StackView.init(v, name)
 	v.SetSpacing(12)
 	v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	v.Vertical = vertical
 	v.structure = structure
-	unnestAnon := false
+	unnestAnon := true
 	recursive := false
 	froot, err := zreflect.ItterateStruct(structure, unnestAnon, recursive)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("FieldViewNew", name, len(froot.Children))
 	for i, item := range froot.Children {
 		var f Field
 		if f.makeFromReflectItem(v.FieldOwner, structure, item, i) {
