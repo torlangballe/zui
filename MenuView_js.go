@@ -11,6 +11,8 @@ const separatorID = "$sep"
 func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
+	v.otherItems = map[string]string{}
+
 	v.IsStatic = isStatic
 	sel := DocumentJS.Call("createElement", "select")
 	v.Element = sel
@@ -22,16 +24,14 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 	v.updateVals(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+			zlog.Info("menuview changed", v.ObjectName())
 		if v.IsStatic && v.oldValue != nil {
 			v.SetWithID(v.oldID)
 			return nil
 		}
 		sid := args[0].Get("currentTarget").Get("value").String()
-		for i := 0; ; i++ {
+		for i := 0; i < v.items.Count(); i++ {
 			id, in, iv := v.items.GetItem(i)
-			if id == "" {
-				break
-			}
 			zlog.Info("menuview changed", v.ObjectName(), id, sid)
 			if id == sid {
 				v.oldID = id
@@ -39,12 +39,30 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 				if v.changed != nil {
 					v.changed(id, in, iv)
 				}
-				break
+				return v
+			}
+		}
+		for id, in := range v.otherItems {
+			if id == sid {
+				v.oldID = id
+				v.oldValue = nil
+				if v.changed != nil {
+					v.changed(id, in, nil)
+				}
 			}
 		}
 		return nil
 	}))
 	return v
+}
+
+func (v *MenuView) Empty() {
+	options := v.get("options")
+	options.Set("length", 0)
+	v.items = nil
+	v.otherItems = map[string]string{}
+	v.oldID = ""
+	v.oldValue = nil
 }
 
 func (v *MenuView) UpdateValues(items MenuItems) {
@@ -62,6 +80,7 @@ func (v *MenuView) AddSeparator() {
 }
 
 func (v *MenuView) AddAction(id, name string) {
+	v.otherItems[id] = name
 	v.menuViewAddItem(id, name)
 }
 
@@ -90,13 +109,10 @@ func (v *MenuView) updateVals(items MenuItems, value interface{}) {
 	if items == nil {
 		return
 	}
-	for i := 0; ; i++ {
+	for i := 0; i < v.items.Count(); i++ {
 		in, id, iv := items.GetItem(i)
 		if i == 0 {
 			setID = id
-		}
-		if id == "" {
-			break
 		}
 		if reflect.DeepEqual(value, iv) {
 			setID = id
@@ -115,11 +131,8 @@ func (v *MenuView) SetWithID(setID string) *MenuView {
 		return v
 	}
 	//  fmt.Println("mv:setwithid:", setID, v.ObjectName())
-	for i := 0; ; i++ {
+	for i := 0; i < v.items.Count(); i++ {
 		id, _, iv := v.items.GetItem(i)
-		if id == "" {
-			break
-		}
 		if id == setID {
 			v.oldValue = iv
 			v.oldID = id

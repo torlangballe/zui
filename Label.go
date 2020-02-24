@@ -57,19 +57,20 @@ func (l *Label) SetMaxLines(max int) View {
 	return l
 }
 
-func Labelize(grid *StackView, view View, prefix string, minWidth float64) *Label {
+func Labelize(parent *StackView, view View, prefix string, minWidth float64) (label *Label, labelCell *ContainerViewCell) {
 	font := FontNice(FontDefaultSize, FontStyleBold)
-	o := view.(TextLayoutOwner)
+	o, _ := view.(TextLayoutOwner)
 	if o != nil {
 		font = o.Font()
 		font.Style = FontStyleBold
 	}
-	label := LabelNew(prefix)
+	label = LabelNew(prefix)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font).SetColor(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
-	stack := StackViewHor("labelize: " + prefix)
+	stack := StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
+
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
-	stack.AddView(view, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
-	grid.AddView(stack, zgeo.Left|zgeo.VertCenter)
-	return label
+	labelCell = stack.AddView(view, zgeo.Left|zgeo.VertCenter)
+	parent.AddView(stack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
+	return
 }

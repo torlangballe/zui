@@ -14,6 +14,7 @@ type MenuView struct {
 	items    MenuItems
 	oldID    string
 	oldValue interface{}
+	otherItems map[string]string
 
 	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
 }
@@ -28,24 +29,12 @@ type MenuItem struct {
 
 type MenuItems interface {
 	GetItem(i int) (id, name string, value interface{}) // name=="" is past end
-}
-
-func MenuItemsLength(m MenuItems) int {
-	for i := 0; ; i++ {
-		id, _, _ := m.GetItem(i)
-		if id == "" {
-			return i
-		}
-	}
-	return -1
+	Count() int
 }
 
 func menuItemsIDForValue(m MenuItems, val interface{}) string {
-	for i := 0; ; i++ {
+	for i := 0; i < m.Count(); i++ {
 		id, _, v := m.GetItem(i)
-		if id == "" {
-			return ""
-		}
 		if reflect.DeepEqual(val, v) {
 			return id
 		}
@@ -54,15 +43,14 @@ func menuItemsIDForValue(m MenuItems, val interface{}) string {
 }
 
 func menuItemsAreEqual(a, b MenuItems) bool {
-	for i := 0; ; i++ {
+	ac := a.Count()
+	bc := b.Count()
+	if ac != bc {
+		return false
+	}
+	for i := 0; i < ac; i++ {
 		ai, _, av := a.GetItem(i)
 		bi, _, bv := b.GetItem(i)
-		if ai == "" && bi == "" {
-			return true
-		}
-		if ai == "" || bi == "" {
-			return false
-		}
 		if ai != bi {
 			return false
 		}
@@ -70,12 +58,11 @@ func menuItemsAreEqual(a, b MenuItems) bool {
 			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (v *MenuView) getNumberOfItemsString() string {
-	count := MenuItemsLength(v.items)	
-	return WordsPluralizeString("%d %s", "en", float64(count), "item")
+	return WordsPluralizeString("%d %s", "en", float64(v.items.Count()), "item")
 }
 
 func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -83,11 +70,13 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.IsStatic {
 		maxString = "658 items" // make it big enough to not need to resize much
 	} else {
-		for i := 0; ; i++ {
-			id, name, _ := v.items.GetItem(i)
-			if id == "" {
-				break
+		for i := 0; i < v.items.Count(); i++ {
+			_, name, _ := v.items.GetItem(i)
+			if len(name) > len(maxString) {
+				maxString = name
 			}
+		}
+		for _, name := range v.otherItems {
 			if len(name) > len(maxString) {
 				maxString = name
 			}
@@ -121,10 +110,11 @@ func isSimpleValue(v interface{}) bool {
 }
 
 func (v *MenuView) SetWithIdOrValue(o interface{}) {
-	id, _, val := v.items.GetItem(0)
-	if id == "" {
+	if v.items.Count() == 0 {
 		return
 	}
+	_, _, val := v.items.GetItem(0)
+	var id string
 	if isSimpleValue(val) {
 		id = menuItemsIDForValue(v.items, o)
 	} else {

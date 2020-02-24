@@ -320,6 +320,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
+			// fmt.Println("cellmid:", c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect())
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			cv, got := c5.View.(*ContainerView)
 			if got {
