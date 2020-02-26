@@ -8,7 +8,7 @@ type TabsView struct {
 	StackView
 	header    *StackView
 	ChildView View
-	creators  map[string]func() View
+	creators  map[string]func(bool) View
 	CurrentID string
 }
 
@@ -18,7 +18,7 @@ func TabsViewNew(name string) *TabsView {
 	v.Vertical = true
 	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
-	v.creators = map[string]func() View{}
+	v.creators = map[string]func(bool) View{}
 	v.header = StackViewHor("header")
 	v.header.SetSpacing(0)
 
@@ -26,7 +26,7 @@ func TabsViewNew(name string) *TabsView {
 	return v
 }
 
-func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
+func (v *TabsView) AddTabFunc(id, title string, set bool, creator func(del bool) View) {
 	if title == "" {
 		title = id
 	}
@@ -46,7 +46,10 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func() View) {
 }
 
 func (v *TabsView) AddTab(title, id string, set bool, view View) {
-	v.AddTabFunc(title, id, set, func() View {
+	v.AddTabFunc(title, id, set, func(del bool) View {
+		if del {
+			return nil
+		}
 		return view
 	})
 }
@@ -69,12 +72,13 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 func (v *TabsView) SetTab(id string) {
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
+			v.creators[id](true)
 			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.ChildView != nil {
 			v.RemoveChild(v.ChildView)
 		}
-		v.ChildView = v.creators[id]()
+		v.ChildView = v.creators[id](false)
 		v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
