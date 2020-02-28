@@ -162,6 +162,7 @@ func calcMarginAdd(c ContainerViewCell) zgeo.Size {
 func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size {
 	//	tot := v.getCellFitSizeInTotal(total, c)
 	var size = c.View.CalculatedSize(zgeo.Size{})
+	// fmt.Println("get cell size:", v.ObjectName(), c.View.ObjectName(), size)
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	size.Maximize(c.MinSize)
@@ -250,7 +251,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 					// fmt.Println("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W)
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
-				// fmt.Println("cellsize:", c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
+				// fmt.Println("cellsize:", v.ObjectName(), c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
 				sizes[c3.View] = size
 			}
 		}
@@ -269,7 +270,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
-					// fmt.Println("cellsides:", c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
+					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)

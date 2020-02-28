@@ -19,6 +19,12 @@ type KeyValueStore struct {
 	KeyPrefix string // this can be a user id. Not used if key starts with /
 }
 
+var DefaultLocalKeyValueStore *KeyValueStore
+
+func KeyValueStoreNew(local bool) *KeyValueStore {
+	return &KeyValueStore{Local: local}
+}
+
 func (k KeyValueStore) ObjectForKey(key string) (object interface{}, got bool) {
 	got = k.getItem(key, &object)
 	return
@@ -34,8 +40,13 @@ func (k KeyValueStore) DictForKey(key string) (dict zdict.Dict, got bool) {
 	return
 }
 
-func (k KeyValueStore) IntForKey(key string) (int64, bool) {
+func (k KeyValueStore) Int64ForKey(key string) (int64, bool) {
 	return 0, false
+}
+
+func (k KeyValueStore) IntForKey(key string) (int, bool) {
+	n, got := k.Int64ForKey(key)
+	return int(n), got
 }
 
 func (k KeyValueStore) DoubleForKey(key string) (float64, bool) {
@@ -58,13 +69,16 @@ func (k KeyValueStore) RemoveForKey(key string, sync bool) {
 
 }
 
-func (k KeyValueStore) SetObject(object interface{}, key string)       {}
-func (k KeyValueStore) SetString(string, key string, sync bool)        {}
-func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) {}
-func (k KeyValueStore) SetInt(value int64, key string, sync bool)      {}
-func (k KeyValueStore) SetDouble(value float64, key string, sync bool) {}
-func (k KeyValueStore) Setbool(value bool, key string, sync bool)      {}
-func (k KeyValueStore) SetTime(value time.Time, key string, sync bool) {}
+func (k KeyValueStore) SetObject(object interface{}, key string, sync bool) {
+	k.setItem(key, object, sync)
+}
+func (k KeyValueStore) SetString(value string, key string, sync bool)  { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.setItem(key, dict, sync) }
+func (k KeyValueStore) SetInt64(value int64, key string, sync bool)    { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetInt(value int, key string, sync bool)        { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetDouble(value float64, key string, sync bool) { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetBool(value bool, key string, sync bool)      { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetTime(value time.Time, key string, sync bool) { k.setItem(key, value, sync) }
 func (k KeyValueStore) ForAllKeys(got func(key string))                {}
 
 func (k KeyValueStore) prefixKey(key *string) {

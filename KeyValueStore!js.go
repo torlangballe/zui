@@ -20,3 +20,7 @@ func (k KeyValueStore) getItem(key string, v interface{}) bool {
 	}
 	return got
 }
+
+func (k *KeyValueStore) setItem(key string, v interface{}, sync bool) error {
+	return nil
+}

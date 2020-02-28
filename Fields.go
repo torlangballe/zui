@@ -44,6 +44,7 @@ const (
 	fieldToClipboard
 	fieldIsMenuedGroup
 	fieldIsTabGroup
+	fieldIsStringer
 )
 const (
 	fieldTimeFlags = fieldHasSeconds | fieldHasMinutes | fieldHasHours
@@ -84,6 +85,12 @@ type Field struct {
 	// Type          fieldType
 }
 
+// FieldStringer is an interface that allows simple structs to be displayed like labels in fields and menus.
+// We don't want to use String() as complex structs can have these for debugging
+type FieldStringer interface {
+	ZFieldString() string
+}
+
 type FieldActionHandler interface {
 	HandleAction(id string, i int, f *Field, action FieldActionType, view *View) bool
 }
@@ -91,16 +98,18 @@ type FieldActionHandler interface {
 type FieldOwner struct {
 	fields        []Field
 	structure     interface{} // structure of ALL, not just a row
+	id            string
 	handleUpdate  func(edited bool, i int)
 	labelizeWidth float64
 }
 
 func callFieldHandlerFunc(structure interface{}, fid string, i int, f *Field, action FieldActionType, view *View) bool {
 	fh, _ := structure.(FieldActionHandler)
-	fmt.Println("callFieldHandler1", fh)
-	fmt.Printf("callFieldHandler: %+v\n", structure)
+	// fmt.Println("callFieldHandler1", fh)
+	// fmt.Printf("callFieldHandler: %+v\n", structure)
 	if fh != nil {
-		return fh.HandleAction(fid, i, f, action, view)
+		result := fh.HandleAction(fid, i, f, action, view)
+		return result
 	}
 	return false
 }
@@ -171,9 +180,11 @@ func fieldsMakeButton(structure interface{}, item zreflect.Item, f *Field, i int
 }
 
 func fieldsMakeMenu(structure interface{}, item zreflect.Item, f *Field, i int, items MenuItems) *MenuView {
-	menu := MenuViewNew(f.Name+"Menu", items, item.Value, f.IsStatic())
+	menu := MenuViewNew(f.Name+"Menu", items, item.Interface, f.IsStatic())
 	menu.SetMaxWidth(f.MaxWidth)
-	// fmt.Println("fieldsMakeMenu:", f.IsStatic(), i, f.Name, menu.StaticName, MenuItemsLength(items))
+
+	fmt.Println("fieldsMakeMenu:", f.Name, items.Count(), item.Interface, item.TypeName, item.Kind)
+
 	menu.ChangedHandler(func(id, name string, value interface{}) {
 		iface := menu.GetCurrentIdOrValue()
 		//		zlog.Debug(iface, f.Name)
@@ -207,7 +218,7 @@ func fieldsMakeText(structure interface{}, item zreflect.Item, f *Field, i int) 
 		}
 		str = fmt.Sprintf(format, item.Value.Interface())
 	}
-	if f.Flags&fieldIsStatic != 0 {
+	if f.IsStatic() {
 		label := LabelNew(str)
 		j := f.Justify
 		if j == zgeo.AlignmentNone {
@@ -279,7 +290,7 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 }
 
 func updateMenuedGroup(view View, structData interface{}, item zreflect.Item) {
-//	menu := ViewChild(view, "bar/menu")
+	//	menu := ViewChild(view, "bar/menu")
 	id := zstr.FirstToLowerWithAcronyms(item.FieldName)
 
 	// fv := ViewChild(view, id)
@@ -315,7 +326,7 @@ func fieldsUpdateStack(fo FieldOwner, stack *StackView, structData interface{}) 
 			menu.SetWithIdOrValue(item.Interface)
 			continue
 		}
-		if f.Flags & fieldIsMenuedGroup != 0 {
+		if f.Flags&fieldIsMenuedGroup != 0 {
 			updateMenuedGroup(view, structData, item)
 			continue
 		}
@@ -381,63 +392,100 @@ func findLocalEnum(children *[]zreflect.Item, name string) *zreflect.Item {
 	return nil
 }
 
-func refreshFieldMenuedGroup(name string, menu *MenuView, fieldView *FieldView, item interface{}) {
+func fieldsRefreshMenuedGroup(key, name string, menu *MenuView, fieldView *FieldView, item interface{}, setSliceItem bool) {
 	menu.Empty()
 
-	mItems, _ := item.(MenuItems)		
+	mItems, _ := item.(MenuItems)
 
 	menu.items = mItems
-	menu.AddAction("$title",  name + ":")
-	menu.AddAction("add", "Add")
+	menu.AddAction("$title", name+":")
+	menu.AddAction("$add", "Add")
 
 	c := mItems.Count()
 	if c > 0 {
-		menu.AddAction("remove", "Remove Current")
-		menu.SetWithID("$title")
+		menu.AddAction("$remove", "Remove Current")
 		menu.AddSeparator()
 	}
 	fieldView.Show(c != 0)
 
+	currentID, _ := DefaultLocalKeyValueStore.StringForKey(key)
+	if currentID != "" {
+		fmt.Println("Set current:", currentID)
+		menu.SetWithID(currentID)
+		if setSliceItem {
+			fieldView.structure = fieldsGetSliceElementOfMenuedGroup(item, key)
+		}
+	} else {
+		menu.SetWithID("$title")
+	}
 	menu.updateVals(mItems, nil)
 }
 
-func makeFieldMenuedGroup(fo FieldOwner, stack *StackView, item zreflect.Item, f *Field, i int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size) View {
-	fmt.Println("makeFieldMenuedGroup", f.Name, f.LabelizeWidth)
+func fieldsMakeMenuedGroupKey(id string, item zreflect.Item) string {
+	return id + "." + item.FieldName + ".MenuedGroupIndex"
+}
+
+func fieldsGetSliceElementOfMenuedGroup(item interface{}, idKey string) interface{} {
+	mItems, _ := item.(MenuItems)
+	iv := reflect.ValueOf(item)
+	if iv.Len() == 0 {
+		return reflect.New(iv.Type().Elem()).Interface()
+		// zlog.Info("new item", item.Value.Kind(), item.Value.Type().Elem(), reflect.ValueOf(s).Type(), reflect.ValueOf(s).Kind())
+	}
+	currentID, _ := DefaultLocalKeyValueStore.StringForKey(idKey)
+	index := MenuItemsIndexOfID(mItems, currentID)
+	if index == -1 {
+		index = 0
+	}
+	return iv.Index(index).Addr().Interface()
+}
+
+func fieldsMakeMenuedGroup(fo FieldOwner, stack *StackView, item zreflect.Item, f *Field, i int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size) View {
+	fmt.Println("fieldsMakeMenuedGroup", f.Name, f.LabelizeWidth)
 	vert := StackViewVert("mgv")
 	bar := StackViewHor("bar")
-	vert.Add(zgeo.Left | zgeo.Top | zgeo.HorExpand, bar)
+	vert.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, bar)
 
-
+	key := fieldsMakeMenuedGroupKey(fo.id, item)
 	menu := MenuViewNew("menu", nil, nil, false)
-	var s interface{}
-	if item.Value.Len() == 0 {
-		s = reflect.New(item.Value.Type().Elem()).Interface()
-		// zlog.Info("new item", item.Value.Kind(), item.Value.Type().Elem(), reflect.ValueOf(s).Type(), reflect.ValueOf(s).Kind())
-	} else {
-		s = item.Value.Index(0).Addr().Interface()
-		// zlog.Info("slice item", s)
-	}
+	s := fieldsGetSliceElementOfMenuedGroup(item, key)
 	id := zstr.FirstToLowerWithAcronyms(item.FieldName)
 	fv := FieldViewNew(id, s, f.LabelizeWidth)
+
+	fmt.Println("fieldsMakeMenuedGroup Build:", key)
+
 	fv.Build()
 
 	menu.ChangedHandler(func(id string, name string, value interface{}) {
+		fmt.Println("fieldsMakeMenuedGroup changed:", id)
 		switch id {
-		case "add":
+		case "$add":
 			iv := item.Value
 			a := reflect.New(iv.Type().Elem()).Elem()
-			nv := reflect.Append(iv, a) 
+			nv := reflect.Append(iv, a)
 			iv.Addr().Elem().Set(nv)
-			added := iv.Index(iv.Len()-1)
+			added := iv.Index(iv.Len() - 1)
 			callFieldHandlerFunc(added.Addr().Interface(), f.ID, i, f, FieldCreateAction, nil)
-			refreshFieldMenuedGroup(item.FieldName, menu, fv, iv.Interface())
+			DefaultLocalKeyValueStore.SetInt(iv.Len()-1, key, true)
+			setSliceItem := true
+			fieldsRefreshMenuedGroup(key, item.FieldName, menu, fv, iv.Interface(), setSliceItem)
+		case "$remove":
+			break
+		case "$title":
+			break
+
+		default:
+			fmt.Println("Changed to id:", id)
+			DefaultLocalKeyValueStore.SetString(id, key, true)
+			break
 		}
 	})
 
-	bar.Add(zgeo.Left | zgeo.VertCenter, menu) //  | zgeo.HorExpand
+	bar.Add(zgeo.Left|zgeo.VertCenter, menu) //  | zgeo.HorExpand
 
-	vert.Add(zgeo.Left | zgeo.Top | zgeo.Expand, fv)
-	refreshFieldMenuedGroup(item.FieldName, menu, fv, item.Interface)
+	vert.Add(zgeo.Left|zgeo.Top|zgeo.Expand, fv)
+	setSliceItem := false
+	fieldsRefreshMenuedGroup(key, item.FieldName, menu, fv, item.Interface, setSliceItem)
 
 	return vert
 }
@@ -454,14 +502,14 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 		exp := zgeo.AlignmentNone
 		f := findFieldWithIndex(fields, j)
 		if f == nil {
-			zlog.Error(nil, "no field for index", j)
+			//			zlog.Error(nil, "no field for index", j)
 			continue
 		}
-		// fmt.Println("   fieldsBuildStack2", j, f.Name)
+		// fmt.Println("   fieldsBuildStack2", j, f.Name, f.Kind, f.Enum)
 
 		var view View
-		if f.Flags & fieldIsMenuedGroup != 0 {
-			view = makeFieldMenuedGroup(fo, stack, item, f, i, defaultAlign, cellMargin)
+		if f.Flags&fieldIsMenuedGroup != 0 {
+			view = fieldsMakeMenuedGroup(fo, stack, item, f, i, defaultAlign, cellMargin)
 		} else {
 			callFieldHandlerFunc(item, f.ID, i, f, FieldCreateAction, &view) // this sees if actual ITEM is a field handler
 		}
@@ -473,7 +521,8 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 			ei := findLocalEnum(&rootItems.Children, f.LocalEnum)
 			if !zlog.ErrorIf(ei == nil, f.Name, f.LocalEnum) {
 				enum, _ := ei.Interface.(MenuItems)
-				if zlog.ErrorIf(enum == nil) {
+				fmt.Println("make local enum:", f.Name, f.LocalEnum, i, enum, ei)
+				if zlog.ErrorIf(enum == nil, "field isn't enum, not MenuItems type", f.Name, f.LocalEnum) {
 					continue
 				}
 				// fmt.Println("make local enum:", f.Name, f.LocalEnum, i, MenuItemsLength(enum))
@@ -486,18 +535,24 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 				menu.SetWithIdOrValue(item.Interface)
 			}
 		} else if f.Enum != nil {
-			// fmt.Printf("make enum: %s %v %v\n", f.Name, f.Enum, item)
+			//			fmt.Printf("make enum: %s %v\n", f.Name, item)
 			view = fieldsMakeMenu(structData, item, f, i, f.Enum)
 			exp = zgeo.AlignmentNone
 		} else {
 			switch f.Kind {
 			case zreflect.KindStruct:
-				// fmt.Println("struct:", f.Kind, j, item.Value)
-				childStruct := item.Address
-				fieldView := fieldViewNew(f.Name, false, childStruct, 10, zgeo.Size{}, f.LabelizeWidth)
-				fieldView.parentField = f
-				view = fieldView
-				fieldsBuildStack(fo, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, zgeo.Left|zgeo.Top, zgeo.Size{}, true, 5, 0)
+				_, got := item.Interface.(FieldStringer)
+				fmt.Println("make stringer?:", f.Name, got)
+				if got && f.IsStatic() {
+					view = fieldsMakeText(structData, item, f, i)
+				} else {
+					// fmt.Println("struct:", f.Kind, j, item.Value)
+					childStruct := item.Address
+					fieldView := fieldViewNew(f.ID, false, childStruct, 10, zgeo.Size{}, f.LabelizeWidth)
+					fieldView.parentField = f
+					view = fieldView
+					fieldsBuildStack(fo, &fieldView.StackView, fieldView.structure, fieldView.parentField, &fieldView.fields, zgeo.Left|zgeo.Top, zgeo.Size{}, true, 5, 0)
+				}
 
 			case zreflect.KindBool:
 				b := BoolIndFromBool(item.Value.Interface().(bool))
@@ -564,7 +619,7 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 
 		cell := &ContainerViewCell{}
 		if fo.labelizeWidth != 0 {
-			_, cell = Labelize(stack, view, f.Title, fo.labelizeWidth)			
+			_, cell = Labelize(stack, view, f.Title, fo.labelizeWidth)
 		}
 		cell.Margin = cellMargin
 		def := defaultAlign
@@ -698,7 +753,7 @@ func (f *Field) makeFromReflectItem(fo FieldOwner, structure interface{}, item z
 		case "2clip":
 			f.Flags |= fieldToClipboard
 		case "menued-group":
-			mi, _ := item.Interface.(MenuItems)		
+			mi, _ := item.Interface.(MenuItems)
 			zlog.Assert(mi != nil)
 			f.Flags |= fieldIsMenuedGroup
 		case "labelize":
@@ -805,21 +860,22 @@ func (f *Field) makeFromReflectItem(fo FieldOwner, structure interface{}, item z
 	return true
 }
 
-func fieldViewNew(name string, vertical bool, structure interface{}, spacing float64, marg zgeo.Size, labelizeWidth float64) *FieldView {
+func fieldViewNew(id string, vertical bool, structure interface{}, spacing float64, marg zgeo.Size, labelizeWidth float64) *FieldView {
 	v := &FieldView{}
-	v.StackView.init(v, name)
+	v.StackView.init(v, id)
 	v.SetSpacing(12)
 	v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	v.Vertical = vertical
 	v.structure = structure
 	v.FieldOwner.labelizeWidth = labelizeWidth
+	v.FieldOwner.id = id
 	unnestAnon := true
 	recursive := false
 	froot, err := zreflect.ItterateStruct(structure, unnestAnon, recursive)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("FieldViewNew", name, len(froot.Children), labelizeWidth)
+	fmt.Println("FieldViewNew", id, len(froot.Children), labelizeWidth)
 	for i, item := range froot.Children {
 		var f Field
 		if f.makeFromReflectItem(v.FieldOwner, structure, item, i) {
@@ -838,8 +894,8 @@ func (v *FieldView) Update() {
 	fieldsUpdateStack(v.FieldOwner, &v.StackView, v.structure)
 }
 
-func FieldViewNew(name string, structure interface{}, labelizeWidth float64) *FieldView {
-	v := fieldViewNew(name, true, structure, 12, zgeo.Size{10, 10}, labelizeWidth)
+func FieldViewNew(id string, structure interface{}, labelizeWidth float64) *FieldView {
+	v := fieldViewNew(id, true, structure, 12, zgeo.Size{10, 10}, labelizeWidth)
 	return v
 }
 

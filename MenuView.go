@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -9,11 +10,11 @@ import (
 
 type MenuView struct {
 	NativeView
-	maxWidth float64
-	changed  func(id, name string, value interface{})
-	items    MenuItems
-	oldID    string
-	oldValue interface{}
+	maxWidth   float64
+	changed    func(id, name string, value interface{})
+	items      MenuItems
+	oldID      string
+	oldValue   interface{}
 	otherItems map[string]string
 
 	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
@@ -28,8 +29,19 @@ type MenuItem struct {
 }
 
 type MenuItems interface {
-	GetItem(i int) (id, name string, value interface{}) // name=="" is past end
+	GetItem(i int) (id, name string, value interface{})
 	Count() int
+}
+
+// MenuItemsIndexOfID loops through items and returns index of one with id. -1 if none
+func MenuItemsIndexOfID(m MenuItems, findID string) int {
+	for i := 0; i < m.Count(); i++ {
+		id, _, _ := m.GetItem(i)
+		if findID == id {
+			return i
+		}
+	}
+	return -1
 }
 
 func menuItemsIDForValue(m MenuItems, val interface{}) string {
@@ -105,8 +117,11 @@ func (v *MenuView) SetMaxWidth(max float64) View {
 func isSimpleValue(v interface{}) bool {
 	rval := reflect.ValueOf(v)
 	k := rval.Kind()
+	_, is := v.(FieldStringer)
+	if is {
+		return true
+	}
 	return k != reflect.Slice && k != reflect.Struct && k != reflect.Map
-
 }
 
 func (v *MenuView) SetWithIdOrValue(o interface{}) {
@@ -118,7 +133,7 @@ func (v *MenuView) SetWithIdOrValue(o interface{}) {
 	if isSimpleValue(val) {
 		id = menuItemsIDForValue(v.items, o)
 	} else {
-		id = o.(string)
+		id = fmt.Sprint(o)
 	}
 	// zlog.Debug("set", o, reflect.ValueOf(o).Type(), id)
 	v.SetWithID(id)

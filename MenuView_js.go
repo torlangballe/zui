@@ -24,7 +24,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 	v.updateVals(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
-			zlog.Info("menuview changed", v.ObjectName())
+//			zlog.Info("menuview changed", v.ObjectName())
 		if v.IsStatic && v.oldValue != nil {
 			v.SetWithID(v.oldID)
 			return nil
@@ -32,14 +32,13 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 		sid := args[0].Get("currentTarget").Get("value").String()
 		for i := 0; i < v.items.Count(); i++ {
 			id, in, iv := v.items.GetItem(i)
-			zlog.Info("menuview changed", v.ObjectName(), id, sid)
 			if id == sid {
 				v.oldID = id
 				v.oldValue = iv
 				if v.changed != nil {
 					v.changed(id, in, iv)
 				}
-				return v
+				return nil
 			}
 		}
 		for id, in := range v.otherItems {

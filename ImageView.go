@@ -54,8 +54,13 @@ func (v *ImageView) MaxSize(s zgeo.Size) *ImageView {
 	return v
 }
 
-func (v *ImageView) Alignment(a zgeo.Alignment) *ImageView {
+func (v *ImageView) Alignment() zgeo.Alignment {
+	return v.alignment
+}
+
+func (v *ImageView) SetAlignment(a zgeo.Alignment) *ImageView {
 	v.alignment = a
+	v.Expose()
 	return v
 }
 
