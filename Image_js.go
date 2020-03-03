@@ -41,12 +41,14 @@ func (i *Image) load(path string, done func()) {
 	i.path = path
 	i.loading = true
 	i.scale = imageGetScaleFromPath(path)
+
 	imageF := js.Global().Get("Image")
 	i.imageJS = imageF.New()
 	i.imageJS.Set("onload", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
+		// fmt.Println("Image Load scale:", i.scale, path, i.Size())	
 		if done != nil {
 			done()
 		}

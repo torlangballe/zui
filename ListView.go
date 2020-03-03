@@ -45,10 +45,16 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.ScrollView.CalculatedSize(total)
 	h := 0.0
 	count := v.GetRowCount()
-	for i := 0; i < v.MinRows && i < count; i++ {
+	for i := 0; i < count; i++ {
+		if v.MinRows != 0 && i >= v.MinRows {
+			break
+			//!!!!			something happening here, no size calculated in table when nested in something
+		}
 		h += v.GetRowHeight(i)
+		// zlog.Info("ListView.CalculatedSize2:", v.ObjectName(), i, h)
 	}
 	s.H = h
+	// zlog.Info("ListView.CalculatedSize:", v.ObjectName(), s, count, v.MinRows)
 
 	return s
 }

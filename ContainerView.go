@@ -15,7 +15,7 @@ type ContainerViewCell struct {
 	MaxSize   zgeo.Size // MaxSize is maximum size of child-view including margin
 	MinSize   zgeo.Size // MinSize is minimum size of child-view including margin
 	Collapsed bool
-	Free      bool // Free Cells are placed using ContainerView method, not using any
+	Free      bool // Free Cells are placed using ContainerView method, not "inherited" ArrangeChildren method
 	Weight    float64
 }
 
@@ -159,7 +159,7 @@ func (v *ContainerView) Contains(view View) bool {
 func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
 	ct, got := v.View.(ContainerType)
-	//	fmt.Println("CV: Rect", got)
+	// fmt.Println("CV: Rect", got)
 	if got {
 		ct.ArrangeChildren(nil)
 	}
@@ -200,11 +200,19 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 
 func (v *ContainerView) isLoading() bool {
 	for _, c := range v.cells {
-		io, got := c.View.(ImageOwner)
+		iowner, got := c.View.(ImageOwner)
 		if got {
-			image := io.GetImage()
+			image := iowner.GetImage()
 			if image != nil && image.loading {
 				return true
+			}
+		} else {
+			ct, _ := c.View.(ContainerType)
+			// fmt.Println("CV IsLoading:", c.View.ObjectName(), v.ObjectName(), ct != nil)
+			if ct != nil {
+				if ct.isLoading() {
+					return true
+				}
 			}
 		}
 	}
@@ -224,6 +232,7 @@ func (v *ContainerView) WhenLoaded(done func()) {
 }
 
 func (v *ContainerView) ArrangeChildren(onlyChild *View) {
+	// fmt.Println("CV ArrangeChildren", v.ObjectName())
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}

@@ -1,10 +1,9 @@
 package zui
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"syscall/js"
 )
 
 // interesting: https://github.com/markfarnan/go-canvas
@@ -140,31 +139,29 @@ func (c *Canvas) SetDropShadowOff(opacity float64) {
 	}
 }
 
-func (c *Canvas) createGradient(colors []zgeo.Color, locations []float32) *int { // returns int for now...
-	return nil
-}
-
 func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float32) {
+	// make this a color type instead?? Maybe no point, as it has fixed start/end pos for gradient
 	c.PushState()
-	if path != nil {
-		c.ClipPath(path, false, false)
+	c.ClipPath(path, false, false)
+	gradient := c.context.Call("createLinearGradient", pos1.X, pos1.Y, pos2.X, pos2.Y)
+	if len(locations) == 0 {
+		last := len(colors) - 1
+		for i := 0; i <= last; i++ {
+			locations = append(locations, float32(i)/float32(last))
+		}
 	}
-	gradient := c.createGradient(colors, locations)
-	if gradient != nil {
-		//            context.drawLinearGradient(gradient, start pos1.GetCGPoint(), end pos2.GetCGPoint(), options CGGradientDrawingOptions(rawValueCGGradientDrawingOptions.drawsBeforeStartLocation.rawValue | CGGradientDrawingOptions.drawsBeforeStartLocation.rawValue))
-		c.PopState()
+	for i, c := range colors {
+		gradient.Call("addColorStop", locations[i], makeRGBAString(c))
 	}
+	c.context.Set("fillStyle", gradient)
+	c.FillPath(path)
+	c.PopState()
 }
 
 func (c *Canvas) DrawRadialGradient(path *zgeo.Path, colors []zgeo.Color, center zgeo.Pos, radius float64, endCenter *zgeo.Pos, startRadius float64, locations []float32) {
 	c.PushState()
 	if path != nil {
-		//            self.ClipPath(path!)
-	}
-	gradient := c.createGradient(colors, locations)
-	if gradient != nil {
-		//            let c = UIGraphicsGetCurrentContext()
-		//            context.drawRadialGradient(gradient, startCentercenter.GetCGPoint(), startRadiusCGFloat(startRadius), endCenter(endCenter == nil ? center  endCenter!).GetCGPoint(), endRadiusCGFloat(radius), options CGGradientDrawingOptions())
+		c.ClipPath(path, false, false)
 	}
 	c.PopState()
 }
@@ -222,7 +219,9 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	//	s.H = metrics.Get("height").Float()
 
 	// fmt.Println("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
-	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
-	s.H = font.LineHeight() * 0.8
+	//	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
+	s.H = font.LineHeight() * 0.85
+
+	// fmt.Println("canvasGetTextSize:", text, font, s)
 	return s
 }

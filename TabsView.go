@@ -6,10 +6,11 @@ import (
 
 type TabsView struct {
 	StackView
-	header    *StackView
-	ChildView View
-	creators  map[string]func(bool) View
-	CurrentID string
+	header         *StackView
+	ChildView      View
+	creators       map[string]func(bool) View
+	CurrentID      string
+	childAlignmens map[string]zgeo.Alignment
 }
 
 func TabsViewNew(name string) *TabsView {
@@ -21,15 +22,20 @@ func TabsViewNew(name string) *TabsView {
 	v.creators = map[string]func(bool) View{}
 	v.header = StackViewHor("header")
 	v.header.SetSpacing(0)
+	v.childAlignmens = map[string]zgeo.Alignment{}
 
 	v.Add(zgeo.Left|zgeo.Top, v.header)
 	return v
 }
 
-func (v *TabsView) AddTabFunc(id, title string, set bool, creator func(del bool) View) {
+func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, creator func(del bool) View) {
 	if title == "" {
 		title = id
 	}
+	if align == zgeo.AlignmentNone {
+		align = zgeo.Left | zgeo.Top | zgeo.Expand
+	}
+	v.childAlignmens[id] = align
 	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
@@ -45,8 +51,8 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, creator func(del bool)
 	}
 }
 
-func (v *TabsView) AddTab(title, id string, set bool, view View) {
-	v.AddTabFunc(title, id, set, func(del bool) View {
+func (v *TabsView) AddTab(title, id string, set bool, align zgeo.Alignment, view View) {
+	v.AddTabFunc(title, id, set, align, func(del bool) View {
 		if del {
 			return nil
 		}
@@ -79,7 +85,7 @@ func (v *TabsView) SetTab(id string) {
 			v.RemoveChild(v.ChildView)
 		}
 		v.ChildView = v.creators[id](false)
-		v.Add(zgeo.Left|zgeo.Top|zgeo.Expand, v.ChildView)
+		v.Add(v.childAlignmens[id], v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		o := v.View.(NativeViewOwner)
@@ -89,7 +95,7 @@ func (v *TabsView) SetTab(id string) {
 			}
 		}
 		presentViewCallReady(v.ChildView)
-		if v.presented { // don't do if not first set up yet
+		if v.presented { // don't do if not first set up yet, not surer why we do this on header/child separately
 			v.header.ArrangeChildren(nil)
 			v.ArrangeChildren(&v.ChildView)
 		}

@@ -56,6 +56,7 @@ func (v *CustomView) makeCanvas() {
 		s := v.GetLocalRect().Size
 		v.setCanvasSize(s)
 		v.canvas.context.Call("scale", 2, 2) // this must be AFTER setElementRect, doesn't do anything!
+		v.canvas.element.Get("style").Set("zIndex", 0)
 	}
 	// set z index!!
 }

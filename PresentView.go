@@ -1,6 +1,8 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 //  Created by Tor Langballe on /22/9/14.
 
@@ -87,33 +89,33 @@ func presentViewCallReady(v View) {
 
 var presentViewPresenting = true
 
-func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
+func PresentViewShow(v View, attributes PresentViewAttributes, done func()) {
 	presentViewPresenting = true
 	mainRect := WindowGetCurrent().Rect()
-	presentViewCallReady(n)
-	ct := n.(ContainerType)
+	presentViewCallReady(v)
+	ct := v.(ContainerType)
 	ct.WhenLoaded(func() {
 		if attributes.MakeFull {
 			// fmt.Println("Present:", mainRect, presentViewPresenting)
-			n.SetRect(mainRect)
+			v.SetRect(mainRect)
 		} else {
-			size := n.CalculatedSize(mainRect.Size)
+			size := v.CalculatedSize(mainRect.Size)
 			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
-			n.SetRect(r)
-			n.SetBGColor(zgeo.ColorNewGray(0.8, 1))
-			n.CornerRadius(10)
-			no := n.(NativeViewOwner)
+			v.SetRect(r)
+			v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
+			v.SetCorner(10)
+			no := v.(NativeViewOwner)
 			if no != nil {
 				no.GetNative().SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorBlack)
 			}
 		}
-		// cvt, _ := n.(ContainerViewType)
+		// cvt, _ := v.(ContainerViewType)
 		// if cvt != nil {
 		// 	cvt.ArrangeChildren(nil)
 		// }
-		NativeViewAddToRoot(n)
+		NativeViewAddToRoot(v)
 		presentViewPresenting = false
-		et, _ := n.(ExposableType)
+		et, _ := v.(ExposableType)
 		if et != nil {
 			et.drawIfExposed()
 		}
@@ -122,16 +124,6 @@ func PresentViewShow(n View, attributes PresentViewAttributes, done func()) {
 		}
 	})
 }
-
-// func poptop(s  inout Attributes)  View? {
-//     let win = UIApplication.shared.keyWindow
-//     assert(stack.count > 0)
-//     s = stack.last ?? Attributes()
-//     ZScreen.SetStatusBarForLightContent(s.lightContent)
-//     stack.removeLast()
-
-//     return  win!.subviews.first
-// }
 
 func PresentViewPop(namedView string, animated bool, overrideDurationSecs float64, overrideTransition PresentViewTransition, done *func()) {
 }

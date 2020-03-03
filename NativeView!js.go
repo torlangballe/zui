@@ -56,11 +56,11 @@ func (v *NativeView) SetBGColor(c zgeo.Color) View {
 	return v
 }
 
-func (v *NativeView) CornerRadius(radius float64) View {
+func (v *NativeView) SetCorner(radius float64) View {
 	return v
 }
 
-func (v *NativeView) Stroke(width float64, c zgeo.Color) View {
+func (v *NativeView) SetStroke(width float64, c zgeo.Color) View {
 	return v
 }
 

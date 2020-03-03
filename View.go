@@ -20,8 +20,8 @@ type View interface {
 
 	SetColor(color zgeo.Color) View   // Color is the main color of a view. If it is stroked and filled, it is fill color
 	SetBGColor(color zgeo.Color) View // BGColor is all color in background of view, not just fill color
-	CornerRadius(radius float64) View
-	Stroke(width float64, color zgeo.Color) View
+	SetCorner(radius float64) View
+	SetStroke(width float64, color zgeo.Color) View
 
 	CanFocus(can bool) View
 	Focus(focus bool) View
@@ -68,6 +68,7 @@ type ContainerType interface {
 	GetChildren() []View
 	ArrangeChildren(onlyChild *View)
 	WhenLoaded(done func())
+	isLoading() bool
 }
 
 type ViewLayoutProtocol interface {

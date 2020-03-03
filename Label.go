@@ -22,6 +22,9 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := TextLayoutOwnerCalculateSize(o)
 	s.Add(v.margin.Size.Negative())
 	s.MakeInteger()
+
+	// s.W += 10
+	s.H += 3
 	// fmt.Println("label calcedsize:", v.Text(), s, o.Font())
 	return s
 }

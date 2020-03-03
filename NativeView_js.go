@@ -11,21 +11,23 @@ import (
 )
 
 type NativeView struct {
-	Element   js.Value
-	View      View
-	presented bool
+	Element    js.Value
+	View       View
+	presented  bool
+	parent     *NativeView
 }
 
 func (v *NativeView) Parent() *NativeView {
-	e := v.get("parentElement")
-	if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
-		return nil
-	}
-	//	fmt.Println("ParentElement:", v.ObjectName(), e)
-	n := &NativeView{}
-	n.Element = e
-	n.View = v
-	return n
+	// e := v.get("parentElement")
+	// if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
+	// 	return nil
+	// }
+	// //	fmt.Println("ParentElement:", v.ObjectName(), e)
+	// n := &NativeView{}
+	// n.Element = e
+	// n.View = n
+	// return n
+	return v.parent
 }
 
 func (v *NativeView) GetNative() *NativeView {
@@ -171,7 +173,7 @@ func (v *NativeView) BGColor() zgeo.Color {
 	return makeRGBAFromString(str)
 }
 
-func (v *NativeView) CornerRadius(radius float64) View {
+func (v *NativeView) SetCorner(radius float64) View {
 	style := v.style()
 	s := fmt.Sprintf("%dpx", int(radius))
 	style.Set("-moz-border-radius", s)
@@ -180,10 +182,9 @@ func (v *NativeView) CornerRadius(radius float64) View {
 	return v
 }
 
-func (v *NativeView) Stroke(width float64, c zgeo.Color) View {
-	style := v.style()
-	style.Set("border-color", makeRGBAString(c))
-	style.Set("border", "solid 1px transparent")
+func (v *NativeView) SetStroke(width float64, c zgeo.Color) View {
+	str := fmt.Sprintf("%dpx solid %s", int(width), makeRGBAString(c))
+	v.style().Set("border", str)
 	return v
 }
 
@@ -286,7 +287,18 @@ func (v *NativeView) AddChild(child View, index int) {
 		panic("NativeView AddChild child not native")
 	}
 	n := o.GetNative()
+	n.parent = v
 	v.call("appendChild", n.Element)
+	n.style().Set("zIndex", 100)
+}
+
+func (v *NativeView) SetStokeWidth(width float64) *NativeView {
+	
+	return v
+}
+
+func (v *NativeView) SetZIndex(index int) {
+	v.style().Set("zIndex", index)
 }
 
 func (v *NativeView) RemoveChild(child View) {

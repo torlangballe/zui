@@ -75,7 +75,7 @@ func (v *StackView) calcWeightMins() {
 }
 
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	v.calcWeightMins()
+	//	v.calcWeightMins()
 	// for i, c := range v.cells {
 	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
 	// 		fmt.Println("weight size:", c.View.ObjectName(), v.weightMinSizes[i])
@@ -114,6 +114,8 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 	var vr zgeo.Rect
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
 		s := cell.View.CalculatedSize(inRect.Size)
+		zlog.Fatal(nil, "strange align")
+		// fmt.Println("handleAlign", s, cell.Alignment, cell.Margin, max)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
 		vr = box.Expanded(cell.Margin.Negative())
@@ -162,7 +164,7 @@ func calcMarginAdd(c ContainerViewCell) zgeo.Size {
 func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size {
 	//	tot := v.getCellFitSizeInTotal(total, c)
 	var size = c.View.CalculatedSize(zgeo.Size{})
-	// fmt.Println("get cell size:", v.ObjectName(), c.View.ObjectName(), size)
+	// fmt.Println("get cell size1:", v.ObjectName(), c.View.ObjectName(), size)
 	m := calcMarginAdd(c)
 	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	size.Maximize(c.MinSize)
@@ -172,13 +174,13 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	if c.MaxSize.H != 0 {
 		zfloat.Minimize(&size.H, c.MaxSize.H)
 	}
-	if weightIndex != nil {
-		len := v.weightMinSizes[*weightIndex]
-		if len != 0 {
-			*size.VerticeP(v.Vertical) = len
-		}
-	}
-	// fmt.Println("get cell size:", c.View.ObjectName(), size.W, c.MinSize.W)
+	// if weightIndex != nil {
+	// 	len := v.weightMinSizes[*weightIndex]
+	// 	if len != 0 {
+	// 		*size.VerticeP(v.Vertical) = len
+	// 	}
+	// }
+	// fmt.Println("get cell size2:", c.View.ObjectName(), size, c.MinSize, c.MaxSize)
 	return size
 }
 
@@ -192,7 +194,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
-	// fmt.Println("Stack ArrangeChildren:", v.ObjectName())
+	// fmt.Println("*********** Stack.ArrangeChildren:", v.ObjectName())
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
@@ -239,6 +241,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	cs += v.margin.Size.Vertice(v.Vertical)
 
 	diff := r.Size.Vertice(v.Vertical) - cs
+	//	fmt.Println("DIFF:", v.ObjectName(), diff, r.Size, cs)
 	var lastNoFreeIndex = -1
 	for _, useMaxSize := range []bool{true, false} {
 		for i, c3 := range v.cells {
