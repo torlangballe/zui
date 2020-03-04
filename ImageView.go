@@ -99,7 +99,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		}
 		// o := 1.0
 		// v.ImageOpacity
-		// if !v.IsUsable() {
+		// if !v.Usable() {
 		// 	o *= 0.6
 		// }
 		a := v.alignment | zgeo.Shrink

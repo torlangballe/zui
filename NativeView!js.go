@@ -28,6 +28,10 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 func (v *NativeView) LocalRect(rect zgeo.Rect) {
 }
 
+func (v *NativeView) Parent() *NativeView {
+	return nil
+}
+
 func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{10, 10}
 }
@@ -44,11 +48,11 @@ func (v *NativeView) SetColor(c zgeo.Color) View {
 	return v
 }
 
-func (v *NativeView) Alpha(alpha float32) View {
+func (v *NativeView) SetAlpha(alpha float32) View {
 	return v
 }
 
-func (v *NativeView) GetAlpha() float32 {
+func (v *NativeView) Alpha() float32 {
 	return 1
 }
 
@@ -84,7 +88,7 @@ func (v *NativeView) Usable(usable bool) View {
 	return v
 }
 
-func (v *NativeView) IsUsable() bool {
+func (v *NativeView) Usable() bool {
 	return true
 }
 

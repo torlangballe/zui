@@ -165,8 +165,6 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	//	tot := v.getCellFitSizeInTotal(total, c)
 	var size = c.View.CalculatedSize(zgeo.Size{})
 	// fmt.Println("get cell size1:", v.ObjectName(), c.View.ObjectName(), size)
-	m := calcMarginAdd(c)
-	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	size.Maximize(c.MinSize)
 	if c.MaxSize.W != 0 {
 		zfloat.Minimize(&size.W, c.MaxSize.W)
@@ -174,13 +172,15 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	if c.MaxSize.H != 0 {
 		zfloat.Minimize(&size.H, c.MaxSize.H)
 	}
+	m := calcMarginAdd(c)
+	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
 	// if weightIndex != nil {
 	// 	len := v.weightMinSizes[*weightIndex]
 	// 	if len != 0 {
 	// 		*size.VerticeP(v.Vertical) = len
 	// 	}
 	// }
-	// fmt.Println("get cell size2:", c.View.ObjectName(), size, c.MinSize, c.MaxSize)
+	// fmt.Println("get cell size2:", v.ObjectName(), ":", m.Vertice(!v.Vertical), c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
 	return size
 }
 

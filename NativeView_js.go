@@ -5,16 +5,17 @@ import (
 	"strconv"
 	"strings"
 	"syscall/js"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
 type NativeView struct {
-	Element    js.Value
-	View       View
-	presented  bool
-	parent     *NativeView
+	Element   js.Value
+	View      View
+	presented bool
+	parent    *NativeView
 }
 
 func (v *NativeView) Parent() *NativeView {
@@ -127,7 +128,7 @@ func (v *NativeView) SetColor(c zgeo.Color) View {
 	return v
 }
 
-func (v *NativeView) Color() zgeo.Color{
+func (v *NativeView) Color() zgeo.Color {
 	str := v.style().Get("color").String()
 	return makeRGBAFromString(str)
 }
@@ -136,24 +137,12 @@ func (n *NativeView) style() js.Value {
 	return n.get("style")
 }
 
-func (v *NativeView) setUsable(usable bool) {
-	v.set("disabled", !usable)
-}
-
-func (v *NativeView) isUsable() bool {
-	dis := v.Element.Get("disabled")
-	if dis.Type() == js.TypeUndefined {
-		return true
-	}
-	return dis.Bool()
-}
-
-func (v *NativeView) Alpha(alpha float32) View {
+func (v *NativeView) SetAlpha(alpha float32) View {
 	v.style().Set("alpha", alpha)
 	return v
 }
 
-func (v *NativeView) GetAlpha() float32 {
+func (v *NativeView) Alpha() float32 {
 	return float32(v.style().Get("alpha").Float())
 }
 
@@ -209,13 +198,17 @@ func (v *NativeView) IsShown() bool {
 	return v.style().Get("visibility").String() == "visible"
 }
 
-func (v *NativeView) Usable(usable bool) View {
-	v.setUsable(usable)
+func (v *NativeView) SetUsable(usable bool) View {
+	v.set("disabled", !usable)
 	return v
 }
 
-func (v *NativeView) IsUsable() bool {
-	return v.isUsable()
+func (v *NativeView) Usable() bool {
+	dis := v.Element.Get("disabled")
+	if dis.IsUndefined() {
+		return true
+	}
+	return !dis.Bool()
 }
 
 func (v *NativeView) IsFocused() bool {
@@ -293,7 +286,7 @@ func (v *NativeView) AddChild(child View, index int) {
 }
 
 func (v *NativeView) SetStokeWidth(width float64) *NativeView {
-	
+
 	return v
 }
 

@@ -39,7 +39,7 @@ func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.
 	default:
 		break
 	}
-	n.Alpha(fade)
+	n.SetAlpha(fade)
 	n.SetRect(out)
 }
 

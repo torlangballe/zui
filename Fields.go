@@ -106,14 +106,12 @@ type FieldOwner struct {
 func callFieldHandlerFunc(structure interface{}, i int, f *Field, action FieldActionType, view *View) bool {
 	fh, _ := structure.(FieldActionHandler)
 	// fmt.Println("callFieldHandler1", fh)
-	// fmt.Printf("callFieldHandler: %+v\n", structure)
 	var result bool
 	if fh != nil {
 		result = fh.HandleAction(f.ID, i, f, action, view)
 	}
 
 	if view != nil && *view != nil {
-		working on this:
 		first := true
 		n := ViewGetNative(*view)
 		for n != nil {
@@ -126,9 +124,7 @@ func callFieldHandlerFunc(structure interface{}, i int, f *Field, action FieldAc
 						if fh2 != nil {
 							id2 := zstr.FirstToLowerWithAcronyms(parent.View.ObjectName())
 							f2 := fv.FieldOwner.FindFieldWithID(id2)
-							if f2 != nil {
-								fh.HandleAction(id2, i, f2, action, &parent.View)
-							}
+							fh2.HandleAction(id2, i, f2, action, &parent.View)
 						}
 					}
 					first = false
@@ -209,7 +205,7 @@ func fieldsMakeMenu(structure interface{}, item zreflect.Item, f *Field, i int, 
 	menu := MenuViewNew(f.Name+"Menu", items, item.Interface, f.IsStatic())
 	menu.SetMaxWidth(f.MaxWidth)
 
-	fmt.Println("fieldsMakeMenu:", f.Name, items.Count(), item.Interface, item.TypeName, item.Kind)
+	// fmt.Println("fieldsMakeMenu2:", f.Name, items.Count(), item.Interface, item.TypeName, item.Kind)
 
 	menu.ChangedHandler(func(id, name string, value interface{}) {
 		iface := menu.GetCurrentIdOrValue()
@@ -221,13 +217,23 @@ func fieldsMakeMenu(structure interface{}, item zreflect.Item, f *Field, i int, 
 }
 
 func fieldsMakeTimeView(structure interface{}, item zreflect.Item, f *Field, i int) View {
+	var str string
 	t := item.Interface.(time.Time)
 	format := f.Format
 	if format == "" {
-		format = "2006-01-02 15:04:05"
+		format = "15:04 01-Jan-06"
+	}
+	// fmt.Println("fieldsMakeTimeView:", format)
+	if format == "nice" {
+		str = ztime.GetNice(t, f.Flags&fieldHasSeconds != 0)
+	} else {
+		str = t.Format(format)
+	}
+	if f.IsStatic() {
+		label := LabelNew(str)
+		return label
 	}
 	var style TextViewStyle
-	str := t.Format(format)
 	tv := TextViewNew(str, style)
 	return tv
 }
@@ -525,7 +531,7 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 	if parentField != nil && fo.labelizeWidth == 0 {
 		labelizeWidth = parentField.LabelizeWidth
 	}
-	fmt.Println("fieldsBuildStack", len(rootItems.Children), err, len(*fields), labelizeWidth)
+	// fmt.Println("fieldsBuildStack", len(rootItems.Children), err, len(*fields), labelizeWidth)
 	if err != nil {
 		panic(err)
 	}
@@ -552,7 +558,7 @@ func fieldsBuildStack(fo FieldOwner, stack *StackView, structData interface{}, p
 			ei := findLocalEnum(&rootItems.Children, f.LocalEnum)
 			if !zlog.ErrorIf(ei == nil, f.Name, f.LocalEnum) {
 				enum, _ := ei.Interface.(MenuItems)
-				fmt.Println("make local enum:", f.Name, f.LocalEnum, i, enum, ei)
+				// fmt.Println("make local enum:", f.Name, f.LocalEnum, i, enum, ei)
 				if zlog.ErrorIf(enum == nil, "field isn't enum, not MenuItems type", f.Name, f.LocalEnum) {
 					continue
 				}

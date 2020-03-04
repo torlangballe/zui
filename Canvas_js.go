@@ -1,9 +1,10 @@
 package zui
 
 import (
+	"syscall/js"
+
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
-	"syscall/js"
 )
 
 // interesting: https://github.com/markfarnan/go-canvas
@@ -112,11 +113,11 @@ func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float3
 }
 
 func (c *Canvas) PushState() {
-	//      context.saveGState()
+	c.context.Call("save")
 }
 
 func (c *Canvas) PopState() {
-	//      context.restoreGState()
+	c.context.Call("restore")
 }
 
 func (c *Canvas) ClearRect(rect zgeo.Rect) {

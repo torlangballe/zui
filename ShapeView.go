@@ -148,7 +148,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	col := v.color
 	if col.Valid {
 		var o = col.Opacity()
-		if !v.IsUsable() {
+		if !v.Usable() {
 			o *= 0.6
 		}
 		canvas.SetColor(v.getStateColor(col), o)
@@ -157,7 +157,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	if v.StrokeWidth != 0 {
 		fmt.Println("shapeViewDraw stroke:", view.ObjectName())
 		var o = v.StrokeColor.Opacity()
-		if !v.IsUsable() {
+		if !v.Usable() {
 			o *= 0.6
 		}
 		canvas.SetColor(v.getStateColor(v.StrokeColor), o)
@@ -174,7 +174,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
 		}
 		o := v.ImageOpacity
-		if !v.IsUsable() {
+		if !v.Usable() {
 			o *= 0.6
 		}
 		if v.IsImageFill {

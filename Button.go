@@ -12,9 +12,13 @@ type Button struct {
 	ShapeView
 }
 
-func ButtonNew(title, imageName string, size zgeo.Size, insets zgeo.Size) *Button {
+func ButtonNewSimple(title, imageName string) *Button {
+	return ButtonNew(title, imageName, zgeo.Size{20, 28}, zgeo.Size{6, 13})
+}
+
+func ButtonNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *Button {
 	b := &Button{}
-	b.ShapeView.init(ShapeViewTypeNone, size, title)
+	b.ShapeView.init(ShapeViewTypeNone, minSize, title)
 	if insets.IsNull() {
 		insets = zgeo.Size{6, 13}
 	}

@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -20,7 +21,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("className", "widget")
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if v.pressed != nil {
+		if v.pressed != nil && v.Usable() {
 			v.pressed()
 		}
 		return nil
@@ -48,6 +49,13 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 	return v
 }
 
+func (v *CustomView) SetUsable(usable bool) View {
+	v.NativeView.SetUsable(usable)
+	v.Expose()
+	fmt.Println("CV SetUsable:", v.ObjectName(), usable, v.Usable())
+	return v
+}
+
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
 		// fmt.Println("makeCanvas:", v.ObjectName())
@@ -70,7 +78,16 @@ func (v *CustomView) drawIfExposed() {
 			v.exposeTimer.Stop()
 			v.makeCanvas()
 			v.canvas.ClearRect(zgeo.Rect{})
+			if !v.Usable() {
+				fmt.Println("cv: push for disabled")
+				v.canvas.PushState()
+				v.canvas.context.Set("globalAlpha", 0.4)
+			}
+			fmt.Println("CV drawIfExposed", v.ObjectName(), v.Usable(), v.canvas.context.Get("globalAlpha"))
 			v.draw(r, v.canvas, v.View)
+			if !v.Usable() {
+				v.canvas.PopState()
+			}
 			v.exposed = false
 			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}

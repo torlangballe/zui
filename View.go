@@ -12,11 +12,11 @@ type View interface {
 	SetObjectName(name string) View
 	ObjectName() string
 
-	Usable(usable bool) View
-	IsUsable() bool
+	SetUsable(usable bool) View
+	Usable() bool
 
-	Alpha(alpha float32) View
-	GetAlpha() float32
+	SetAlpha(alpha float32) View
+	Alpha() float32
 
 	SetColor(color zgeo.Color) View   // Color is the main color of a view. If it is stroked and filled, it is fill color
 	SetBGColor(color zgeo.Color) View // BGColor is all color in background of view, not just fill color

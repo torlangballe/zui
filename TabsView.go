@@ -6,7 +6,7 @@ import (
 
 type TabsView struct {
 	StackView
-	header         *StackView
+	Header         *StackView
 	ChildView      View
 	creators       map[string]func(bool) View
 	CurrentID      string
@@ -20,11 +20,11 @@ func TabsViewNew(name string) *TabsView {
 	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func(bool) View{}
-	v.header = StackViewHor("header")
-	v.header.SetSpacing(0)
+	v.Header = StackViewHor("header")
+	v.Header.SetSpacing(0)
 	v.childAlignmens = map[string]zgeo.Alignment{}
 
-	v.Add(zgeo.Left|zgeo.Top, v.header)
+	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	return v
 }
 
@@ -45,7 +45,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.header.Add(zgeo.Left|zgeo.VertCenter, button)
+	v.Header.Add(zgeo.Left|zgeo.Bottom, button)
 	if set {
 		v.SetTab(id)
 	}
@@ -61,7 +61,7 @@ func (v *TabsView) AddTab(title, id string, set bool, align zgeo.Alignment, view
 }
 
 func (v *TabsView) setButtonOn(id string, on bool) {
-	view := v.header.FindViewWithName(id, false)
+	view := v.Header.FindViewWithName(id, false)
 	// fmt.Println("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button := (*view).(*Button)
@@ -96,7 +96,7 @@ func (v *TabsView) SetTab(id string) {
 		}
 		presentViewCallReady(v.ChildView)
 		if v.presented { // don't do if not first set up yet, not surer why we do this on header/child separately
-			v.header.ArrangeChildren(nil)
+			v.Header.ArrangeChildren(nil)
 			v.ArrangeChildren(&v.ChildView)
 		}
 		et, _ := v.ChildView.(ExposableType)

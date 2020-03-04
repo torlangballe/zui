@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /21/10/15.
@@ -35,7 +36,7 @@ const (
 )
 
 func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, blendMode CanvasBlendMode, sourceRect zgeo.Rect) {
-	//	fmt.Println("Canvas.DrawImage", sourceRect, image.path, destRect, image.Size())
+	// fmt.Println("Canvas.DrawImage", image.Size(), sourceRect, image.path, destRect, image.GetCapInsets())
 	if image != nil {
 		if image.GetCapInsets().IsNull() {
 			if sourceRect.IsNull() {
@@ -50,11 +51,14 @@ func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, bl
 
 func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, dh float64, opacity float32, blendMode CanvasBlendMode) {
 	size := image.Size()
-	// diff := dest.Size.Minus(size)
+	ds := dest.Size
+	zlog.Assert(ds.W >= -inset.Size.W, ds.W, -inset.Size.W, image.path)
+	zlog.Assert(ds.H >= -inset.Size.H, ds.H, -inset.Size.H, image.path)
+
 	insetMid := size.Minus(inset.Size.Negative())
 	c.drawPlainImage(image, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, blendMode, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
-	// fmt.Println("drawInsetRow:", RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh))
+	// fmt.Println("drawInsetRow:", size)
 	c.drawPlainImage(image, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, blendMode, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
 	c.drawPlainImage(image, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, blendMode, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
