@@ -67,8 +67,6 @@ type ReadyToShowType interface {
 type ContainerType interface {
 	GetChildren() []View
 	ArrangeChildren(onlyChild *View)
-	WhenLoaded(done func())
-	isLoading() bool
 }
 
 type ViewLayoutProtocol interface {

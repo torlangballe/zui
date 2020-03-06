@@ -1,9 +1,10 @@
 package zui
 
 import (
-	"github.com/torlangballe/zutil/zlog"
 	"reflect"
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zlog"
 )
 
 const separatorID = "$sep"
@@ -11,7 +12,6 @@ const separatorID = "$sep"
 func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
-	v.otherItems = map[string]string{}
 
 	v.IsStatic = isStatic
 	sel := DocumentJS.Call("createElement", "select")
@@ -24,7 +24,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 	v.updateVals(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
-//			zlog.Info("menuview changed", v.ObjectName())
+		//			zlog.Info("menuview changed", v.ObjectName())
 		if v.IsStatic && v.oldValue != nil {
 			v.SetWithID(v.oldID)
 			return nil
@@ -41,12 +41,12 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 				return nil
 			}
 		}
-		for id, in := range v.otherItems {
-			if id == sid {
-				v.oldID = id
+		for _, oi := range v.otherItems {
+			if oi.ID == sid {
+				v.oldID = oi.ID
 				v.oldValue = nil
 				if v.changed != nil {
-					v.changed(id, in, nil)
+					v.changed(oi.ID, oi.Title, nil)
 				}
 			}
 		}
@@ -59,15 +59,15 @@ func (v *MenuView) Empty() {
 	options := v.get("options")
 	options.Set("length", 0)
 	v.items = nil
-	v.otherItems = map[string]string{}
+	v.otherItems = v.otherItems[:0]
 	v.oldID = ""
 	v.oldValue = nil
 }
 
 func (v *MenuView) UpdateValues(items MenuItems) {
-//	zlog.Info("MV UpdateValues", MenuItemsLength(items), v.IsStatic)
-	if !menuItemsAreEqual(v.items, items) {
-	// zlog.Info("MV UpdateValues2")
+	// zlog.Info("MV UpdateValues", v.ObjectName(), v.items, items)
+	if !MenuItemsAreEqual(v.items, items) {
+		// zlog.Info("MV UpdateValues2")
 		options := v.get("options")
 		options.Set("length", 0)
 		v.updateVals(items, nil)
@@ -75,11 +75,11 @@ func (v *MenuView) UpdateValues(items MenuItems) {
 }
 
 func (v *MenuView) AddSeparator() {
-	v.menuViewAddItem(separatorID, "")
+	v.AddAction(separatorID, "")
 }
 
 func (v *MenuView) AddAction(id, name string) {
-	v.otherItems[id] = name
+	v.otherItems = append(v.otherItems, otherItem{ID: id, Title: name})
 	v.menuViewAddItem(id, name)
 }
 
@@ -129,14 +129,15 @@ func (v *MenuView) SetWithID(setID string) *MenuView {
 		zlog.Info(zlog.GetCallingStackString())
 		return v
 	}
-	//  fmt.Println("mv:setwithid:", setID, v.ObjectName())
+	// fmt.Println("mv:setwithid:", setID, v.ObjectName())
 	for i := 0; i < v.items.Count(); i++ {
 		id, _, iv := v.items.GetItem(i)
 		if id == setID {
+			// fmt.Println("mv set:", id, i, len(v.otherItems))
 			v.oldValue = iv
 			v.oldID = id
 			options := v.get("options")
-			o := options.Index(i)
+			o := options.Index(i + len(v.otherItems))
 			o.Set("selected", "true")
 			break
 		}

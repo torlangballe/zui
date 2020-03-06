@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -41,16 +43,16 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if !v.minSize.IsNull() {
 		s.Maximize(v.minSize)
 	}
-	// fmt.Println("IV CalculatedSize:", v.ObjectName(), v.image != nil, v.MinSize, v.MaxSize, "got:", s)
+	s.Add(v.ContainerView.margin.Size.Negative())
+	// fmt.Println("IV CalculatedSize:", v.ObjectName(), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
 	return s
 }
 
-func (v *ImageView) GetMinSize(s zgeo.Size) *ImageView {
-	v.minSize = s
-	return v
+func (v *ImageView) MaxSize() zgeo.Size {
+	return v.maxSize
 }
 
-func (v *ImageView) MaxSize(s zgeo.Size) *ImageView {
+func (v *ImageView) SetMaxSize(s zgeo.Size) *ImageView {
 	v.maxSize = s
 	return v
 }
@@ -73,7 +75,7 @@ func ImageViewFromImage(image *Image) *ImageView {
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func()) {
-	// fmt.Println("IV SetImage", path)
+	fmt.Println("IV SetImage", path)
 	v.exposed = false
 	if image != nil {
 		v.image = image
@@ -108,7 +110,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// }
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
-		// fmt.Println("IV Draw:", v.margin, r, v.image.path, rect, "->", ir)
+		// fmt.Println("IV Draw:", view.ObjectName(), v.margin, r, v.image.path, rect, "->", ir)
 		canvas.DrawImage(drawImage, ir, 1, CanvasBlendModeNormal, zgeo.Rect{})
 	}
 	if v.IsFocused() {

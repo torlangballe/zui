@@ -22,7 +22,7 @@ type StackView struct {
 
 func StackViewNew(vertical bool, name string) *StackView {
 	s := &StackView{}
-	s.ContainerView.init(s, name)
+	s.ContainerView.Init(s, name)
 	s.Vertical = vertical
 	s.spacing = 6
 	return s
@@ -104,21 +104,18 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignment, cell ContainerViewCell) (zgeo.Rect, zgeo.Rect) {
 	max := cell.MaxSize
-	// if max.W != 0 {
-	// 	zmath.Maximize(&max.W, size.W)
-	// }
-	// if max.H != 0 {
-	// 	zmath.Maximize(&max.H, size.H)
-	// }
 	var box = inRect.Align(size, a, zgeo.Size{}, max)
 	var vr zgeo.Rect
+	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
 		s := cell.View.CalculatedSize(inRect.Size)
 		zlog.Fatal(nil, "strange align")
 		// fmt.Println("handleAlign", s, cell.Alignment, cell.Margin, max)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
-		vr = box.Expanded(cell.Margin.Negative())
+		//		vr = box.Expanded(cell.Margin.Negative())
+		vr = box.ExpandedWithAlignment(cell.Margin.Negative(), cell.Alignment)
+		// fmt.Println("handleAlign expin:", box, cell.View.ObjectName(), vr, cell.Margin, cell.Alignment)
 	}
 	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	return box, vr
@@ -272,8 +269,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				}
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
+					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, c4.Margin)
 					c4.View.SetRect(vr)
-					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
+					//					fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
@@ -291,9 +289,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 						r.SetMaxX(m)
 					}
 				}
-				cv, got := c4.View.(*ContainerView)
-				if got {
-					cv.ArrangeChildren(nil)
+				ct, _ := c4.View.(ContainerType)
+				if ct != nil {
+					ct.ArrangeChildren(nil)
 				} else {
 					//! (c4.view as? ZCustomView)?.HandleAfterLayout()
 				}
@@ -326,9 +324,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			}
 			// fmt.Println("cellmid:", c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect())
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
-			cv, got := c5.View.(*ContainerView)
-			if got {
-				cv.ArrangeChildren(nil)
+			ct, _ := c5.View.(ContainerType)
+			if ct != nil {
+				ct.ArrangeChildren(nil)
 			} else {
 				//!          (c5.view as? ZCustomView)?.HandleAfterLayout()
 			}

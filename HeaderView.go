@@ -5,10 +5,18 @@ import (
 
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zreflect"
 )
 
+type Header struct {
+	ID        string
+	Title     string
+	Align     zgeo.Alignment
+	Height    float64
+	ImagePath string
+	MinWidth  float64
+	MaxWidth  float64
+	ImageSize zgeo.Size
+}
 type HeaderView struct {
 	StackView
 }
@@ -22,51 +30,30 @@ func HeaderViewNew() *HeaderView {
 	return v
 }
 
-func (v *HeaderView) Populate(fields []Field, height float64, pressed func(id string)) {
-	for i, f := range fields {
-		if f.Height == 0 {
-			fields[i].Height = height - 6
-		}
-		s := zgeo.Size{f.MinWidth, 28}
+func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
+	for _, h := range headers {
 		cell := ContainerViewCell{}
-		exp := zgeo.AlignmentNone
-		if f.Kind == zreflect.KindString && f.Enum == nil {
-			exp = zgeo.HorExpand
-		}
-		t := ""
-		if f.Flags&(fieldHasHeaderImage|fieldsNoHeader) == 0 {
-			t = f.Title
-			if t == "" {
-				t = f.Name
-			}
-		}
-		cell.Alignment = zgeo.Left | zgeo.VertCenter | exp
+		cell.Alignment = h.Align
 
-		button := ButtonNew(t, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
-		if f.Flags&fieldHasHeaderImage != 0 {
-			if f.FixedPath == "" {
-				zlog.Error(nil, "no image path for header image field", f.Name)
-			} else {
-				iv := ImageViewNew(f.FixedPath, f.Size)
-				iv.SetObjectName(f.ID + ".image")
-				button.Add(zgeo.Center, iv)
-			}
+		s := zgeo.Size{h.MinWidth, 28}
+		button := ButtonNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+		if h.ImagePath != "" {
+			iv := ImageViewNew(h.ImagePath, h.ImageSize)
+			iv.SetObjectName(h.ID + ".image")
+			button.Add(zgeo.Center, iv)
 		}
 		//		button.Text(f.name)
 		cell.View = button
 		if pressed != nil {
-			id := f.ID // nned to get actual ID here, not just f.ID (f is pointer)
+			id := h.ID // nned to get actual ID here, not just f.ID (f is pointer)
 			button.SetPressedHandler(func() {
 				pressed(id)
 			})
 		}
-		zfloat.Maximize(&fields[i].MinWidth, button.CalculatedSize(zgeo.Size{}).W)
-		if f.MaxWidth != 0 {
-			cell.MaxSize.W = math.Max(f.MaxWidth, f.MinWidth)
+		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)
+		if h.MaxWidth != 0 {
+			cell.MaxSize.W = math.Max(h.MaxWidth, h.MinWidth)
 		}
-		// if f.MinWidth != 0 {
-		// 	cell.MinSize.W = math.Max(f.MinWidth, fields[i].MinWidth)
-		// }
 		v.AddCell(cell, -1)
 	}
 }
@@ -89,6 +76,6 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 		hr.SetMaxX(e)
 		x = e
 		hv.SetRect(hr)
-		// fmt.Println("TABLE View rect item:", child.ObjectName(), hv.Rect())
+		// fmt.Println("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())
 	}
 }

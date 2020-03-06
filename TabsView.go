@@ -76,6 +76,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	}
 }
 func (v *TabsView) SetTab(id string) {
+	// fmt.Println("Set Tab", id)
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
 			v.creators[id](true)
@@ -88,20 +89,29 @@ func (v *TabsView) SetTab(id string) {
 		v.Add(v.childAlignmens[id], v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
-		o := v.View.(NativeViewOwner)
-		if o != nil {
-			if !o.GetNative().presented {
-				return
-			}
+		if !v.presented {
+			// fmt.Println("Set Tab, exit because not presented yet", id)
+			return
 		}
+		ct := v.ChildView.(ContainerType)
+		//		et, _ := v.ChildView.(ExposableType)
+		et, _ := v.View.(ExposableType)
+		// if !v.presented {
+		// 	return
+		// }
 		presentViewCallReady(v.ChildView)
-		if v.presented { // don't do if not first set up yet, not surer why we do this on header/child separately
-			v.Header.ArrangeChildren(nil)
-			v.ArrangeChildren(&v.ChildView)
-		}
-		et, _ := v.ChildView.(ExposableType)
-		if et != nil {
-			et.Expose()
-		}
+		presentViewPresenting = true
+		v.ArrangeChildren(nil)
+		WhenContainerLoaded(ct, func(waited bool) {
+			// fmt.Println("Set Tab container loaded:", waited)
+			if waited { // if we waited for some loading, lets re-arrange
+				v.ArrangeChildren(nil)
+			}
+			presentViewPresenting = false
+			if et != nil {
+				et.drawIfExposed()
+			}
+		})
 	}
+	// fmt.Println("Set Tab Done", id)
 }

@@ -72,6 +72,8 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	}
 	v.SetDrawHandler(shapeViewDraw)
 	v.CustomView.SetMinSize(minSize)
+	f := FontNice(FontDefaultSize, FontStyleNormal)
+	v.SetFont(f)
 }
 
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
@@ -126,7 +128,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
 	v := view.(*ShapeView)
-	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.GetMinSize(), rect, view.ObjectName())
+	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.MinSize(), rect, view.ObjectName())
 
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -211,9 +213,11 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		t.Color = v.getStateColor(t.Color)
 		t.Rect = textRect.Expanded(zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0})
 		t.Rect.Pos.Y -= 2
+		t.Font = v.Font()
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack)
 		}
+		// fmt.Println("ShapeView draw:", t.Font, t.Text)
 		t.Draw(canvas)
 		if v.IsImageFill {
 			canvas.SetDropShadowOff(1)

@@ -43,8 +43,12 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	v.exposeTimer.Stop()
 	v.exposeTimer.StartIn(secs, true, func() {
 		io, got := v.View.(ImageOwner)
+		// fmt.Println("exposeInSecs draw", v.ObjectName(), got)
 		if got {
 			image := io.GetImage()
+			if image != nil {
+				// fmt.Println("CV exposeInSecs draw image", v.ObjectName(), image.loading)
+			}
 			if image != nil && image.loading {
 				v.exposeInSecs(0.1)
 				return

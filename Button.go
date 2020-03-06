@@ -30,9 +30,19 @@ func ButtonNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *Bu
 	b.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	b.TextInfo.Color = zgeo.ColorBlack //White
 	b.ImageMargin = zgeo.Size{}
-	b.GetImage()
 	b.TextXMargin = 16
 	return b
+}
+
+func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
+	s := v.ShapeView.CalculatedSize(total)
+	if v.image != nil {
+		if true { //v.image.path == "images/buttons/gray@2x.png" {
+			// fmt.Println("ButtonCalc:", s, v.ObjectName(), v.image.path, v.image.Size())
+		}
+		s.Maximize(v.image.Size())
+	}
+	return s
 }
 
 func (b *Button) SetImageName(name string, insets zgeo.Size) {
@@ -40,6 +50,6 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	if ScreenMain().Scale > 1 {
 		s = fmt.Sprintf("@%dx", int(ScreenMain().Scale))
 	}
-	cimage := b.SetImage(nil, "buttons/"+name+s+".png", nil)
+	cimage := b.SetImage(nil, "images/buttons/"+name+s+".png", nil)
 	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

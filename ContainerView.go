@@ -102,7 +102,7 @@ func ContainerViewNew(view View, name string) *ContainerView {
 	return v
 }
 
-func (v *ContainerView) init(view View, name string) {
+func (v *ContainerView) Init(view View, name string) {
 	v.CustomView.init(view, name)
 }
 
@@ -198,34 +198,49 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	c.View.SetRect(rv)
 }
 
-func (v *ContainerView) isLoading() bool {
-	for _, c := range v.cells {
-		iowner, got := c.View.(ImageOwner)
+func ContainerIsLoading(ct ContainerType) bool {
+	// fmt.Println("ContainerIsLoading1", len(ct.GetChildren()))
+	for _, v := range ct.GetChildren() {
+		iowner, got := v.(ImageOwner)
 		if got {
 			image := iowner.GetImage()
+			if image != nil && image.path == "images/buttons/gray@2x.png" {
+				// fmt.Println("CV IsLoading:", image.path, image.loading)
+			}
 			if image != nil && image.loading {
+				// fmt.Println("ContainerIsLoading image loading", len(ct.GetChildren()))
 				return true
 			}
 		} else {
-			ct, _ := c.View.(ContainerType)
-			// fmt.Println("CV IsLoading:", c.View.ObjectName(), v.ObjectName(), ct != nil)
+			ct, _ := v.(ContainerType)
+			// fmt.Println("CV Sub IsLoading:", v.ObjectName(), v.ObjectName(), ct != nil)
 			if ct != nil {
-				if ct.isLoading() {
+				if ContainerIsLoading(ct) {
+					// fmt.Println("ContainerIsLoading sub loading", len(ct.GetChildren()))
 					return true
 				}
 			}
 		}
 	}
+	// fmt.Println("ContainerIsLoading Done", len(ct.GetChildren()))
 	return false
 }
 
-func (v *ContainerView) WhenLoaded(done func()) {
+// WhenContainerLoaded waits for all sub-parts images etc to be loaded before calling done.
+// done received waited=true if it had to wait
+func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
+	if !ContainerIsLoading(ct) {
+		if done != nil {
+			done(false)
+		}
+		return
+	}
 	ztimer.Repeat(0.1, true, true, func() bool {
-		if v.isLoading() {
+		if ContainerIsLoading(ct) {
 			return true
 		}
 		if done != nil {
-			done()
+			done(true)
 		}
 		return false
 	})
@@ -296,12 +311,14 @@ func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(vi
 		if !foreach(c) {
 			return
 		}
-		if subViews {
-			sub, got := c.(ContainerType)
-			// fmt.Println("ContainerViewRangeChildren:", c.ObjectName(), got)
-			if got {
-				ContainerTypeRangeChildren(sub, subViews, foreach)
-			}
+	}
+	if !subViews {
+		return
+	}
+	for _, c := range ct.GetChildren() {
+		sub, got := c.(ContainerType)
+		if got {
+			ContainerTypeRangeChildren(sub, subViews, foreach)
 		}
 	}
 }
@@ -319,23 +336,15 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 }
 
 func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
-	for _, c := range v.cells {
-		// fmt.Println("FindViewWithName", name, c.View.ObjectName())
-		if c.View.ObjectName() == name {
-			return &c.View
+	var found *View
+	ContainerTypeRangeChildren(v, recursive, func(view View) bool {
+		if view.ObjectName() == name {
+			found = &view
+			return false
 		}
-		if recursive {
-			cv, got := c.View.(*ContainerView)
-			if got {
-				vn := cv.FindViewWithName(name, true)
-				if vn != nil {
-					return vn
-				}
-			}
-		}
-	}
-
-	return nil
+		return true
+	})
+	return found
 }
 
 func (v *ContainerView) FindCellWithName(name string) int {

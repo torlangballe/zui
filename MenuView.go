@@ -8,6 +8,11 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
+type otherItem struct {
+	ID    string
+	Title string
+}
+
 type MenuView struct {
 	NativeView
 	maxWidth   float64
@@ -15,7 +20,7 @@ type MenuView struct {
 	items      MenuItems
 	oldID      string
 	oldValue   interface{}
-	otherItems map[string]string
+	otherItems []otherItem
 
 	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
 }
@@ -54,7 +59,13 @@ func menuItemsIDForValue(m MenuItems, val interface{}) string {
 	return ""
 }
 
-func menuItemsAreEqual(a, b MenuItems) bool {
+func MenuItemsAreEqual(a, b MenuItems) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
 	ac := a.Count()
 	bc := b.Count()
 	if ac != bc {
@@ -88,9 +99,9 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 				maxString = name
 			}
 		}
-		for _, name := range v.otherItems {
-			if len(name) > len(maxString) {
-				maxString = name
+		for _, oi := range v.otherItems {
+			if len(oi.Title) > len(maxString) {
+				maxString = oi.Title
 			}
 		}
 	}
@@ -117,7 +128,7 @@ func (v *MenuView) SetMaxWidth(max float64) View {
 func isSimpleValue(v interface{}) bool {
 	rval := reflect.ValueOf(v)
 	k := rval.Kind()
-	_, is := v.(FieldStringer)
+	_, is := v.(UIStringer)
 	if is {
 		return true
 	}

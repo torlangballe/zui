@@ -8,6 +8,10 @@ package zui
 type Object int
 type AnyObject int
 
+type UIStringer interface {
+	ZUIString() string
+}
+
 func DefinesIsRunningInSimulator() bool {
 	return false
 }

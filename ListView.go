@@ -299,3 +299,21 @@ func (v *ListView) UpdateVisibleRows() {
 		v.UpdateRow(i, edited)
 	}
 }
+
+func (v *ListView) GetChildren() []View {
+	var views []View
+	for _, v := range v.rows {
+		views = append(views, v)
+	}
+	return views
+}
+
+func (v *ListView) ArrangeChildren(onlyChild *View) {
+	// fmt.Println("ListView ArrangeChildren:", len(v.rows))
+	for _, v := range v.rows {
+		ct, _ := v.(ContainerType)
+		if ct != nil {
+			ct.ArrangeChildren(nil)
+		}
+	}
+}

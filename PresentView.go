@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -94,7 +96,11 @@ func PresentViewShow(v View, attributes PresentViewAttributes, done func()) {
 	mainRect := WindowGetCurrent().Rect()
 	presentViewCallReady(v)
 	ct := v.(ContainerType)
-	ct.WhenLoaded(func() {
+
+	fmt.Println("PresentViewShow", v.ObjectName())
+
+	WhenContainerLoaded(ct, func(waited bool) {
+		fmt.Println("PresentViewShow loaded", v.ObjectName())
 		if attributes.MakeFull {
 			// fmt.Println("Present:", mainRect, presentViewPresenting)
 			v.SetRect(mainRect)

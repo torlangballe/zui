@@ -2,7 +2,6 @@ package zui
 
 import (
 	"fmt"
-	"strings"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -24,7 +23,6 @@ func ImageFromPath(path string, got func()) *Image {
 	}
 	i := Image{}
 	i.load(path, func() {
-		i.loading = false
 		if got != nil {
 			got()
 		}
@@ -33,11 +31,11 @@ func ImageFromPath(path string, got func()) *Image {
 }
 
 func (i *Image) load(path string, done func()) {
-	if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
-		if !strings.HasPrefix(path, "images/") {
-			path = "images/" + path
-		}
-	}
+	// if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
+	// 	if !strings.HasPrefix(path, "images/") {
+	// 		path = "images/" + path
+	// 	}
+	// }
 	i.path = path
 	i.loading = true
 	i.scale = imageGetScaleFromPath(path)
@@ -48,7 +46,17 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		// fmt.Println("Image Load scale:", i.scale, path, i.Size())	
+		// fmt.Println("Image Load scale:", i.scale, path, i.Size())
+		if done != nil {
+			done()
+		}
+		return nil
+	}))
+	i.imageJS.Set("onerror", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		i.loading = false
+		i.size.W = 5
+		i.size.H = 5
+		fmt.Println("Image Load fail:", path)
 		if done != nil {
 			done()
 		}

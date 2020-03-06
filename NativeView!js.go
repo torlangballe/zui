@@ -84,7 +84,7 @@ func (v *NativeView) IsShown() bool {
 	return true
 }
 
-func (v *NativeView) Usable(usable bool) View {
+func (v *NativeView) SetUsable(usable bool) View {
 	return v
 }
 
