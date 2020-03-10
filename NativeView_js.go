@@ -31,6 +31,10 @@ func (v *NativeView) Parent() *NativeView {
 	return v.parent
 }
 
+func (v *NativeView) Child(path string) View {
+	return ViewChild(v.View, path)
+}
+
 func (v *NativeView) GetNative() *NativeView {
 	return v
 }
@@ -309,8 +313,4 @@ func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo
 
 func (v *NativeView) SetToolTip(str string) {
 	v.set("title", str)
-}
-
-func (v *NativeView) Child(path string) View {
-	return ViewChild(v.View, path)
 }

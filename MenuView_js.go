@@ -21,7 +21,7 @@ func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool)
 	v.SetFont(FontNice(14, FontStyleNormal))
 	// v.style().Set("webkitAppearance", "none") // to set to non-system look
 	v.SetObjectName(name)
-	v.updateVals(items, value)
+	v.SetValues(items, value)
 
 	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview changed", v.ObjectName())
@@ -70,7 +70,7 @@ func (v *MenuView) UpdateValues(items MenuItems) {
 		// zlog.Info("MV UpdateValues2")
 		options := v.get("options")
 		options.Set("length", 0)
-		v.updateVals(items, nil)
+		v.SetValues(items, nil)
 	}
 }
 
@@ -96,7 +96,7 @@ func (v *MenuView) menuViewAddItem(id, name string) {
 	v.call("appendChild", option)
 }
 
-func (v *MenuView) updateVals(items MenuItems, value interface{}) {
+func (v *MenuView) SetValues(items MenuItems, value interface{}) {
 	var setID string
 
 	v.items = items // must be before v.getNumberOfItemsString

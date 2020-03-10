@@ -1,8 +1,6 @@
 package zui
 
 import (
-	"fmt"
-
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -75,7 +73,7 @@ func ImageViewFromImage(image *Image) *ImageView {
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func()) {
-	fmt.Println("IV SetImage", path)
+	// fmt.Println("IV SetImage", path)
 	v.exposed = false
 	if image != nil {
 		v.image = image

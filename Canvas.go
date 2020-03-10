@@ -53,7 +53,7 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 	size := image.Size()
 	ds := dest.Size
 	zlog.Assert(ds.W >= -inset.Size.W, ds.W, -inset.Size.W, image.path)
-	zlog.Assert(ds.H >= -inset.Size.H, ds.H, -inset.Size.H, image.path)
+	zlog.Assert(ds.H >= -inset.Size.H, ds.H, -inset.Size.H, image.path, inset)
 
 	insetMid := size.Minus(inset.Size.Negative())
 	c.drawPlainImage(image, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, blendMode, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))

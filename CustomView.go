@@ -40,7 +40,6 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	}
 	// fmt.Println("exposeInSecs", v.ObjectName())
 	v.exposed = true
-	v.exposeTimer.Stop()
 	v.exposeTimer.StartIn(secs, true, func() {
 		io, got := v.View.(ImageOwner)
 		// fmt.Println("exposeInSecs draw", v.ObjectName(), got)

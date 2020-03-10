@@ -81,16 +81,21 @@ type ViewLayoutProtocol interface {
 
 func ViewChild(v View, path string) View {
 	parts := strings.Split(path, "/")
+	// fmt.Println("ViewChild:", v.ObjectName(), path)
 	name := parts[0]
 	ct := v.(ContainerType)
 	if ct != nil {
 		for _, ch := range ct.GetChildren() {
-			if ch.ObjectName() == name {
+			// fmt.Println("Childs:", name, "'"+ch.ObjectName()+"'")
+			if name == "*" || ch.ObjectName() == name {
 				if len(parts) == 1 {
 					return ch
 				}
 				path = strings.Join(parts[1:], "/")
-				return ViewChild(ch, path)
+				gotView := ViewChild(ch, path)
+				if gotView != nil || name != "*" {
+					return gotView
+				}
 			}
 		}
 	}

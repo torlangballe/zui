@@ -16,6 +16,7 @@ type Header struct {
 	MinWidth  float64
 	MaxWidth  float64
 	ImageSize zgeo.Size
+	Tip       string
 }
 type HeaderView struct {
 	StackView
@@ -39,10 +40,16 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 		button := ButtonNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(h.ImagePath, h.ImageSize)
+			iv.SetMaxSize(h.ImageSize)
 			iv.SetObjectName(h.ID + ".image")
-			button.Add(zgeo.Center, iv)
+			button.Add(zgeo.Center, iv, zgeo.Size{})
 		}
-		//		button.Text(f.name)
+		if !h.ImageSize.IsNull() {
+			cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
+		}
+		if h.Tip != "" {
+			button.SetToolTip(h.Tip)
+		}
 		cell.View = button
 		if pressed != nil {
 			id := h.ID // nned to get actual ID here, not just f.ID (f is pointer)
@@ -52,7 +59,7 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 		}
 		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)
 		if h.MaxWidth != 0 {
-			cell.MaxSize.W = math.Max(h.MaxWidth, h.MinWidth)
+			zfloat.Maximize(&cell.MaxSize.W, math.Max(h.MaxWidth, h.MinWidth))
 		}
 		v.AddCell(cell, -1)
 	}

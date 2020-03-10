@@ -204,9 +204,9 @@ func WordsGetAdd() string           { return TS("Add") }        // generic name 
 func WordsGetDelete() string        { return TS("Delete") }     // generic name for Delete in button etc
 func WordsGetExit() string          { return TS("Exit") }       // generic name for Exit in button etc. i.e  You have unsaved changes. [Save] [Exit]
 func WordsGetRetryQuestion() string { return TS("Retry?") }     // generic name for Retry? in button etc, must be formulated like a question
-func WordsGetFahrenheit() string    { return TS("fahrenheit") } // generic name for fahrenheit, used in buttons etc.
-func WordsGetCelsius() string       { return TS("celsius") }    // generic name for celsius, used in buttons etc.
-func WordsGetSettings() string      { return TS("settings") }   // generic name for settings, used in buttons / title etc
+func WordsGetFahrenheit() string    { return TS("Fahrenheit") } // generic name for fahrenheit, used in buttons etc.
+func WordsGetCelsius() string       { return TS("Celsius") }    // generic name for celsius, used in buttons etc.
+func WordsGetSettings() string      { return TS("Settings") }   // generic name for settings, used in buttons / title etc
 
 func WordsGetDayOfMonth() string { return TS("Day") }   // generic name for the day of a month i.e 23rd of July
 func WordsGetMonth() string      { return TS("Month") } // generic name for month.
@@ -230,7 +230,7 @@ func WordsGetSelected(on bool) string {
 	if on {
 		return TS("Selected") // generic name for selected in button/title/switch, i.e something is selected/on
 	} else {
-		return TS("unselected") // generic name for unselected in button/title/switch, i.e something is unselected/off
+		return TS("Unselected") // generic name for unselected in button/title/switch, i.e something is unselected/off
 	}
 }
 
