@@ -93,6 +93,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.IsStatic {
 		maxString = "658 items" // make it big enough to not need to resize much
 	} else {
+		// fmt.Println("MV Calc size:", v)
 		for i := 0; i < v.items.Count(); i++ {
 			_, name, _ := v.items.GetItem(i)
 			if len(name) > len(maxString) {
@@ -147,7 +148,9 @@ func (v *MenuView) SetWithIdOrValue(o interface{}) {
 		id = fmt.Sprint(o)
 	}
 	// zlog.Debug("set", o, reflect.ValueOf(o).Type(), id)
-	v.SetWithID(id)
+	if id != "" {
+		v.SetWithID(id)
+	}
 }
 
 func (v *MenuView) GetCurrentIdOrValue() interface{} {

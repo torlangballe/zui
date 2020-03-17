@@ -60,20 +60,28 @@ func (l *Label) SetMaxLines(max int) View {
 	return l
 }
 
-func Labelize(parent *StackView, view View, prefix string, minWidth float64) (label *Label, labelCell *ContainerViewCell) {
+func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
 	font := FontNice(FontDefaultSize, FontStyleBold)
 	o, _ := view.(TextLayoutOwner)
 	if o != nil {
 		font = o.Font()
 		font.Style = FontStyleBold
 	}
-	label = LabelNew(prefix)
+	title := prefix
+	checkBox, _ := view.(*CheckBox)
+	if checkBox != nil {
+		title = ""
+		clabel, cstack := checkBox.Labelize(prefix)
+		clabel.SetFont(font).SetColor(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
+		view = cstack
+	}
+	label = LabelNew(title)
+	label.SetObjectName("$labelize.label " + prefix)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font).SetColor(zgeo.ColorDefaultForeground.OpacityChanged(0.7))
-	stack := StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
+	stack = StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth
-	labelCell = stack.AddView(view, zgeo.Left|zgeo.VertCenter)
-	parent.AddView(stack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
+	viewCell = stack.AddView(view, zgeo.Left|zgeo.VertCenter)
 	return
 }

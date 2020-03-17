@@ -18,3 +18,6 @@ func (w *Window) Rect() zgeo.Rect {
 	var s zgeo.Size
 	return zgeo.Rect{Size: s}
 }
+
+func WindowOpenWithURL(surl string) {
+}

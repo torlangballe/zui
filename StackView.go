@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -105,16 +106,28 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignment, cell ContainerViewCell) (zgeo.Rect, zgeo.Rect) {
 	max := cell.MaxSize
 	var box = inRect.Align(size, a, zgeo.Size{}, max)
+	// var box = inRect.Align(size, a, cell.Margin, max)
+
 	var vr zgeo.Rect
-	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
+	// if v.ObjectName() == "bar" {
+	// 	fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
+	// }
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
 		s := cell.View.CalculatedSize(inRect.Size)
 		zlog.Fatal(nil, "strange align")
 		// fmt.Println("handleAlign", s, cell.Alignment, cell.Margin, max)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
-		//		vr = box.Expanded(cell.Margin.Negative())
-		vr = box.ExpandedWithAlignment(cell.Margin.Negative(), cell.Alignment)
+		vr = box
+		if true { //cell.Alignment.Only(v.Vertical)&zgeo.Center != 0 {
+			vr = box.AlignmentTransform(cell.Margin, cell.Alignment)
+			if v.ObjectName() == "bar" {
+				// fmt.Println("AFTER expand:", cell.View.ObjectName(), vr, box)
+			}
+			box.UnionWith(vr)
+		} else {
+			zlog.Info(nil, "NOT shrink expanding:", cell.View.ObjectName())
+		}
 		// fmt.Println("handleAlign expin:", box, cell.View.ObjectName(), vr, cell.Margin, cell.Alignment)
 	}
 	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
@@ -269,7 +282,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				}
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
-					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, c4.Margin)
+					if v.ObjectName() == "bar" {
+						fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, c4.Margin)
+					}
 					c4.View.SetRect(vr)
 					//					fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}

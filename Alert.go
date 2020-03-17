@@ -1,8 +1,8 @@
 package zui
 
 import (
-	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /7/11/15.
@@ -54,6 +54,11 @@ func (a *Alert) Destructive(text string) *Alert {
 func (a *Alert) Sub(text string) *Alert {
 	a.SubText = text
 	return a
+}
+
+func AlertShow(items ...interface{}) {
+	a := AlertNew(items...)
+	a.Show(nil)
 }
 
 func AlertShowError(text string, err error) {

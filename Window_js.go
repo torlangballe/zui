@@ -22,3 +22,7 @@ func (w *Window) Rect() zgeo.Rect {
 	s.H = w.element.Get("innerHeight").Float()
 	return zgeo.Rect{Size: s}
 }
+
+func WindowOpenWithURL(surl string) {
+	WindowJS.Call("open", surl)
+}

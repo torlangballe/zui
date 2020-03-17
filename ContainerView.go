@@ -62,6 +62,7 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	var gotAlign zgeo.Alignment
 	var gotMargin zgeo.Size
 
+	// fmt.Println("CV ADD1:", c.ObjectName())
 	for _, v := range elements {
 		if cell, got := v.(ContainerViewCell); got {
 			c.AddCell(cell, -1)
@@ -144,6 +145,7 @@ func (v *ContainerView) AddView(view View, align zgeo.Alignment) *ContainerViewC
 
 func (v *ContainerView) AddAdvanced(view View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *ContainerViewCell {
 	collapsed := false
+	// fmt.Println("CV AddAdvancedView:", v.ObjectName(), view.ObjectName())
 	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, zgeo.Size{}, collapsed, free, 0.0}, index)
 }
 

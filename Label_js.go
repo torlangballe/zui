@@ -15,9 +15,10 @@ func LabelNew(text string) *Label {
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	style.Set("whiteSpace", "nowrap")
-//	style.Set("padding-top", "3px")
+	//	style.Set("padding-top", "3px")
 
 	label.View = label
+	label.SetObjectName(text)
 	textNode := DocumentJS.Call("createTextNode", text)
 	label.call("appendChild", textNode)
 	f := FontNice(FontDefaultSize, FontStyleNormal)
@@ -27,7 +28,7 @@ func LabelNew(text string) *Label {
 
 func (v *Label) SetRect(r zgeo.Rect) View {
 	//	fmt.Println("Label SetRect:", v.ObjectName(), r)
-//	r.Pos.Y -= 6
+	//	r.Pos.Y -= 6
 	v.NativeView.SetRect(r)
 	return v
 }
