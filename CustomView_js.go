@@ -78,16 +78,16 @@ func (v *CustomView) drawIfExposed() {
 			v.exposeTimer.Stop()
 			v.makeCanvas()
 			v.canvas.ClearRect(zgeo.Rect{})
-			if !v.Usable() {
-				// fmt.Println("cv: push for disabled")
-				v.canvas.PushState()
-				v.canvas.context.Set("globalAlpha", 0.4)
-			}
+			// if !v.Usable() {
+			// 	// fmt.Println("cv: push for disabled")
+			// 	v.canvas.PushState()
+			// 	v.canvas.context.Set("globalAlpha", 0.4)
+			// }
 			// fmt.Println("CV drawIfExposed", v.ObjectName(), v.Usable(), v.canvas.context.Get("globalAlpha"))
 			v.draw(r, v.canvas, v.View)
-			if !v.Usable() {
-				v.canvas.PopState()
-			}
+			// if !v.Usable() {
+			// 	v.canvas.PopState()
+			// }
 			v.exposed = false
 			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}

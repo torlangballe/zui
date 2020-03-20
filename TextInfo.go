@@ -3,9 +3,11 @@ package zui
 import (
 	"math"
 
-	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/zfloat"
+
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /22/10/15.
@@ -52,11 +54,17 @@ func TextInfoNew() *TextInfo {
 	return t
 }
 
+// GetBounds returns rect of size of text.
+// It is placed within ti.Rect using alignment
+// TODO: Make it handle multi-line with some home-made wrapping stuff.
 func (ti *TextInfo) GetBounds(noWidth bool) zgeo.Rect {
 	var size = canvasGetTextSize(ti.Text, ti.Font)
 
 	if ti.MaxLines != 0 {
 		size.H = float64(ti.Font.LineHeight()) * float64(ti.MaxLines)
+	}
+	if !ti.Rect.IsNull() {
+		zfloat.Minimize(&size.W, ti.Rect.Size.W)
 	}
 	return ti.Rect.Align(size, ti.Alignment, zgeo.Size{}, zgeo.Size{})
 }
@@ -136,7 +144,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		//         ScaleFontToFit()
 	}
 	// canvas.SetColor(ColorYellow, 0.3)
-	// canvas.FillPath(PathNewFromRect(ra, Size{}))
+	// canvas.FillPath(PathNewRect(ra, Size{}))
 
 	//	fmt.Println("drawTextInRect:", ts, ra, ti.Rect, ti.Alignment)
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -17,7 +18,7 @@ type MenuView struct {
 	NativeView
 	maxWidth   float64
 	changed    func(id, name string, value interface{})
-	items      MenuItems
+	items      zdict.NamedValues
 	oldID      string
 	oldValue   interface{}
 	otherItems []otherItem
@@ -27,62 +28,11 @@ type MenuView struct {
 
 var menuViewHeight = 22.0
 
-type MenuItem struct {
-	ID    string
-	Name  string
-	Value interface{}
-}
-
-type MenuItems interface {
-	GetItem(i int) (id, name string, value interface{})
-	Count() int
-}
-
-// MenuItemsIndexOfID loops through items and returns index of one with id. -1 if none
-func MenuItemsIndexOfID(m MenuItems, findID string) int {
-	for i := 0; i < m.Count(); i++ {
-		id, _, _ := m.GetItem(i)
-		if findID == id {
-			return i
-		}
-	}
-	return -1
-}
-
-func menuItemsIDForValue(m MenuItems, val interface{}) string {
-	for i := 0; i < m.Count(); i++ {
-		id, _, v := m.GetItem(i)
-		if reflect.DeepEqual(val, v) {
-			return id
-		}
-	}
-	return ""
-}
-
-func MenuItemsAreEqual(a, b MenuItems) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	ac := a.Count()
-	bc := b.Count()
-	if ac != bc {
-		return false
-	}
-	for i := 0; i < ac; i++ {
-		ai, _, av := a.GetItem(i)
-		bi, _, bv := b.GetItem(i)
-		if ai != bi {
-			return false
-		}
-		if !reflect.DeepEqual(av, bv) {
-			return false
-		}
-	}
-	return true
-}
+// type MenuItem struct {
+// 	ID    string
+// 	Name  string
+// 	Value interface{}
+// }
 
 func (v *MenuView) getNumberOfItemsString() string {
 	return WordsPluralizeString("%d %s", "en", float64(v.items.Count()), "item")
@@ -143,7 +93,7 @@ func (v *MenuView) SetWithIdOrValue(o interface{}) {
 	_, _, val := v.items.GetItem(0)
 	var id string
 	if isSimpleValue(val) {
-		id = menuItemsIDForValue(v.items, o)
+		id = zdict.NamedValuesIDForValue(v.items, o)
 	} else {
 		id = fmt.Sprint(o)
 	}

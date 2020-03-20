@@ -281,18 +281,18 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 }
 
 func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
-	i := v.FindCellWithView(view)
+	cell := v.FindCellWithView(view)
 
-	changed := (v.cells[i].Collapsed != collapse)
+	changed := (cell.Collapsed != collapse)
 	if changed {
 		if collapse {
 			//detachFromContainer := false
-			v.RemoveChild(v.cells[i].View) //, detachFromContainer)
+			v.RemoveChild(cell.View) //, detachFromContainer)
 		} else {
-			v.AddChild(v.cells[i].View, -1)
+			v.AddChild(cell.View, -1)
 		}
 	}
-	v.cells[i].Collapsed = collapse
+	cell.Collapsed = collapse
 	if arrange {
 		v.ArrangeChildren(nil)
 	}
@@ -349,7 +349,7 @@ func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 	return found
 }
 
-func (v *ContainerView) FindCellWithName(name string) int {
+func (v *ContainerView) FindCellIndexWithName(name string) int {
 	for i, c := range v.cells {
 		if c.View.ObjectName() == name {
 			return i
@@ -358,13 +358,29 @@ func (v *ContainerView) FindCellWithName(name string) int {
 	return -1
 }
 
-func (v *ContainerView) FindCellWithView(view View) int {
+func (v *ContainerView) FindCellWithName(name string) *ContainerViewCell {
+	i := v.FindCellIndexWithName(name)
+	if i == -1 {
+		return nil
+	}
+	return &v.cells[i]
+}
+
+func (v *ContainerView) FindCellIndexWithView(view View) int {
 	for i, c := range v.cells {
 		if c.View == view {
 			return i
 		}
 	}
 	return -1
+}
+
+func (v *ContainerView) FindCellWithView(view View) *ContainerViewCell {
+	i := v.FindCellIndexWithView(view)
+	if i == -1 {
+		return nil
+	}
+	return &v.cells[i]
 }
 
 func (v *ContainerView) RemoveChild(subView View) {
@@ -403,9 +419,8 @@ func (v *ContainerView) drawIfExposed() {
 }
 
 func (v *ContainerView) ReplaceView(oldView, newView View) {
-	i := v.FindCellWithView(oldView)
-	if i != -1 {
-		c := v.cells[i]
+	c := v.FindCellWithView(oldView)
+	if c != nil {
 		r := v.Rect()
 		newView.SetRect(r)
 		v.AddChild(newView, -1)

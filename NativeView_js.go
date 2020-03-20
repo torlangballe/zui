@@ -12,10 +12,11 @@ import (
 )
 
 type NativeView struct {
-	Element   js.Value
-	View      View
-	presented bool
-	parent    *NativeView
+	Element      js.Value
+	View         View
+	presented    bool
+	transparency float32
+	parent       *NativeView
 }
 
 func (v *NativeView) Parent() *NativeView {
@@ -142,12 +143,13 @@ func (n *NativeView) style() js.Value {
 }
 
 func (v *NativeView) SetAlpha(alpha float32) View {
+	v.transparency = 1 - alpha
 	v.style().Set("alpha", alpha)
 	return v
 }
 
 func (v *NativeView) Alpha() float32 {
-	return float32(v.style().Get("alpha").Float())
+	return 1 - v.transparency
 }
 
 func (v *NativeView) SetObjectName(name string) View {
@@ -204,6 +206,18 @@ func (v *NativeView) IsShown() bool {
 
 func (v *NativeView) SetUsable(usable bool) View {
 	v.set("disabled", !usable)
+	style := v.style()
+	var alpha float32 = 0.4
+	if usable {
+		alpha = 1 - v.transparency
+	}
+	str := "none"
+	if usable {
+		str = "auto"
+	}
+	style.Set("pointer-events", str)
+	style.Set("opacity", alpha)
+	// fmt.Println("NV SetUSABLE:", v.ObjectName(), usable, alpha)
 	return v
 }
 

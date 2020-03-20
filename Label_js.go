@@ -15,8 +15,11 @@ func LabelNew(text string) *Label {
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	style.Set("whiteSpace", "nowrap")
+	style.Set("overflow", "hidden")
+	style.Set("textOverflow", "clip")
 	//	style.Set("padding-top", "3px")
 
+	label.maxLines = 1
 	label.View = label
 	label.SetObjectName(text)
 	textNode := DocumentJS.Call("createTextNode", text)

@@ -18,7 +18,7 @@ func (k KeyValueStore) getItem(key string, v interface{}) bool {
 
 	switch o.Type() {
 	case js.TypeUndefined:
-		zlog.Debug(nil, "KeyValueStore getItem item undefined:", key)
+		zlog.Debug(nil, zlog.StackAdjust(1), "KeyValueStore getItem item undefined:", key)
 		return false
 
 	case js.TypeNumber:

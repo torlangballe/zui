@@ -2,7 +2,9 @@
 
 package zui
 
-func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
+import "github.com/torlangballe/zutil/zdict"
+
+func MenuViewNew(name string, items zdict.NamedValues, value interface{}, isStatic bool) *MenuView {
 	return &MenuView{}
 }
 
@@ -15,11 +17,12 @@ func (v *MenuView) SetWithID(id string) *MenuView {
 }
 
 func (v *MenuView) ChangedHandler(handler func(id, name string, value interface{})) {}
-func (v *MenuView) UpdateValues(items MenuItems)                                    {}
-func (v *MenuView) Empty() {}
-func (v *MenuView) AddSeparator() {}
-func (v *MenuView) AddAction(id, name string) {}
-func (v *MenuView) updateVals(items MenuItems, value interface{}) {}
+func (v *MenuView) UpdateValues(items zdict.NamedValues)                            {}
+func (v *MenuView) Empty()                                                          {}
+func (v *MenuView) AddSeparator()                                                   {}
+func (v *MenuView) AddAction(id, name string)                                       {}
+func (v *MenuView) updateVals(items zdict.NamedValues, value interface{})           {}
+func (v *MenuView) SetValues(items zdict.NamedValues, value interface{})            {}
 
 func menuViewGetHackedFontForSize(font *Font) *Font {
 	return font

@@ -102,6 +102,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
+	// fmt.Println("ShapeView CalcSize:", v.ObjectName(), s)
 	s.MakeInteger()
 	return s
 }
@@ -129,7 +130,6 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
 	v := view.(*ShapeView)
 	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.MinSize(), rect, view.ObjectName())
-
 	switch v.Type {
 	case ShapeViewTypeStar:
 		path.AddStar(rect, v.Count, v.Ratio)
@@ -197,7 +197,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				} else if v.Type == ShapeViewTypeCircle {
 					corner = v.image.Size().Max() / 2
 				}
-				clipPath := zgeo.PathNewFromRect(ir, zgeo.Size{corner, corner})
+				clipPath := zgeo.PathNewRect(ir, zgeo.Size{corner, corner})
 				canvas.PushState()
 				canvas.ClipPath(clipPath, false, false)
 			}
@@ -217,7 +217,10 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack)
 		}
-		// fmt.Println("ShapeView draw:", t.Font, t.Text)
+		// if v.TextInfo.Text == "On" {
+		// 	fmt.Println("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		// }
+
 		t.Draw(canvas)
 		if v.IsImageFill {
 			canvas.SetDropShadowOff(1)

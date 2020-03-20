@@ -4,12 +4,13 @@ import (
 	"reflect"
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zlog"
 )
 
 const separatorID = "$sep"
 
-func MenuViewNew(name string, items MenuItems, value interface{}, isStatic bool) *MenuView {
+func MenuViewNew(name string, items zdict.NamedValues, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
 
@@ -64,9 +65,9 @@ func (v *MenuView) Empty() {
 	v.oldValue = nil
 }
 
-func (v *MenuView) UpdateValues(items MenuItems) {
+func (v *MenuView) UpdateValues(items zdict.NamedValues) {
 	// zlog.Info("MV UpdateValues", v.ObjectName(), v.items, items)
-	if !MenuItemsAreEqual(v.items, items) {
+	if !zdict.NamedValuesAreEqual(v.items, items) {
 		// zlog.Info("MV UpdateValues2")
 		options := v.get("options")
 		options.Set("length", 0)
@@ -96,7 +97,7 @@ func (v *MenuView) menuViewAddItem(id, name string) {
 	v.call("appendChild", option)
 }
 
-func (v *MenuView) SetValues(items MenuItems, value interface{}) {
+func (v *MenuView) SetValues(items zdict.NamedValues, value interface{}) {
 	var setID string
 
 	v.items = items // must be before v.getNumberOfItemsString

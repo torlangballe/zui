@@ -1,7 +1,6 @@
 package zui
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -109,7 +108,7 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 	// var box = inRect.Align(size, a, cell.Margin, max)
 
 	var vr zgeo.Rect
-	// if v.ObjectName() == "bar" {
+	// if v.ObjectName() == "header" {
 	// 	fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	// }
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
@@ -183,14 +182,14 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 		zfloat.Minimize(&size.H, c.MaxSize.H)
 	}
 	m := calcMarginAdd(c)
-	*size.VerticeP(!v.Vertical) += m.Vertice(!v.Vertical)
+	*size.VerticeP(v.Vertical) += m.Vertice(v.Vertical)
 	// if weightIndex != nil {
 	// 	len := v.weightMinSizes[*weightIndex]
 	// 	if len != 0 {
 	// 		*size.VerticeP(v.Vertical) = len
 	// 	}
 	// }
-	// fmt.Println("get cell size2:", v.ObjectName(), ":", m.Vertice(!v.Vertical), c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
+	// fmt.Println("get cell size2:", v.ObjectName(), ":", m, c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
 	return size
 }
 
@@ -280,13 +279,11 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(zgeo.Expand.Only(v.Vertical))
 				}
+				// fmt.Printf("cellsides: %d %s %s %v %p\n", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
-					if v.ObjectName() == "bar" {
-						fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, c4.Margin)
-					}
 					c4.View.SetRect(vr)
-					//					fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
+					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
@@ -337,7 +334,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
-			// fmt.Println("cellmid:", c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect())
+			// fmt.Println("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			ct, _ := c5.View.(ContainerType)
 			if ct != nil {

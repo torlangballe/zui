@@ -13,7 +13,8 @@ type Label struct {
 	maxLines  int
 	margin    zgeo.Rect
 	alignment zgeo.Alignment
-	pressed   func()
+
+	pressed func()
 }
 
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {

@@ -32,6 +32,10 @@ type ListView struct {
 	rows   map[int]View
 }
 
+type ListViewIDGetter interface {
+	GetID(index int) string
+}
+
 func ListViewNew(name string) *ListView {
 	v := &ListView{}
 	v.init(v, name)
@@ -243,10 +247,6 @@ func (v *ListView) DeleteChildRow(i int, transition PresentViewTransition) { // 
 
 func (v *ListView) IsFocused() bool {
 	return false
-}
-
-type ListViewIDGetter interface {
-	GetID(index int) string
 }
 
 func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {

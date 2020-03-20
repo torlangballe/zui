@@ -57,7 +57,7 @@ func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, 
 	}
 	t.Wrap = TextInfoWrapWord
 	rect := t.GetBounds(noWidth)
-	// fmt.Println("TextLayoutCalculateSize:", rect, text, font.Size, font.Name)
+	// fmt.Println("TextLayoutCalculateSize:", maxWidth, rect, text, font.Size, font.Name)
 
 	rect.Size.W += 4
 	return rect.Size

@@ -44,9 +44,10 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 			iv.SetObjectName(h.ID + ".image")
 			button.Add(zgeo.Center, iv, zgeo.Size{})
 		}
-		if !h.ImageSize.IsNull() {
-			cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
-		}
+		button.TextXMargin = 0
+		// if !h.ImageSize.IsNull() {
+		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
+		// }
 		if h.Tip != "" {
 			button.SetToolTip(h.Tip)
 		}
