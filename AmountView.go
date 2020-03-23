@@ -73,18 +73,24 @@ func AmountViewCircleNew() *AmountView {
 }
 
 func (v *AmountView) drawBar(rect zgeo.Rect, canvas *Canvas, view View) {
-	rect.Size.W *= v.Value()
-	path := zgeo.PathNewRect(rect, zgeo.Size{})
-	col := v.getColorForValue()
-	canvas.SetColor(col, 1)
-	canvas.FillPath(path)
+	val := v.Value()
+	if val != -1 {
+		rect.Size.W *= val
+		if rect.Size.W < 3 {
+			rect.Size.W = 3
+		}
+		path := zgeo.PathNewRect(rect, zgeo.Size{3, 3})
+		col := v.getColorForValue()
+		canvas.SetColor(col, 1)
+		canvas.FillPath(path)
+	}
 }
 
 func AmountViewBarNew(width float64) *AmountView {
 	v := &AmountView{}
 	v.CustomView.init(v, "amount")
 	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
-	v.SetColor(zgeo.ColorNewGray(0.4, 1))
+	v.SetColor(zgeo.ColorNew(0.4, 0.4, 0.8, 1))
 	v.SetCorner(3)
 	v.CustomView.SetMinSize(zgeo.Size{width, 10})
 	v.SetDrawHandler(v.drawBar)

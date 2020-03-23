@@ -10,6 +10,21 @@ import (
 
 const separatorID = "$sep"
 
+// type NIV struct {
+// 	name  string
+// 	id    string
+// 	value interface{}
+// }
+
+// func getNIVFromNamedValues(nv zdict.NamedValues) []NIV {
+// 	c := nv.Count()
+// 	nivs := make([]NIV, c, c)
+// 	for i := 0; i < c; i++ {
+// 		name, id, value := nv.GetItem()
+// 		nivs[i] = NIV{name, id, value}
+// 	}
+// }
+
 func MenuViewNew(name string, items zdict.NamedValues, value interface{}, isStatic bool) *MenuView {
 	v := &MenuView{}
 	v.items = items
@@ -66,7 +81,7 @@ func (v *MenuView) Empty() {
 }
 
 func (v *MenuView) UpdateValues(items zdict.NamedValues) {
-	// zlog.Info("MV UpdateValues", v.ObjectName(), v.items, items)
+	// fmt.Println("MV UpdateValues", v.ObjectName(), v.items, items)
 	if !zdict.NamedValuesAreEqual(v.items, items) {
 		// zlog.Info("MV UpdateValues2")
 		options := v.get("options")

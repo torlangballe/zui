@@ -89,7 +89,7 @@ func (v *TextView) BGColor() zgeo.Color {
 	if str == "" || str == "initial" { // hack since it is white but has no value, so it isn't "initall", which is transparent
 		return zgeo.ColorWhite
 	}
-	return makeRGBAFromString(str)
+	return zgeo.ColorFromString(str)
 }
 
 func (v *TextView) updateDone() {

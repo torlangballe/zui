@@ -34,6 +34,11 @@ var menuViewHeight = 22.0
 // 	Value interface{}
 // }
 
+func (v *MenuView) Dump() {
+	fmt.Println("DumpMenu:", v.ObjectName())
+	zdict.DumpNamedValues(v.items)
+}
+
 func (v *MenuView) getNumberOfItemsString() string {
 	return WordsPluralizeString("%d %s", "en", float64(v.items.Count()), "item")
 }
