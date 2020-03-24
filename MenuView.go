@@ -84,8 +84,9 @@ func (v *MenuView) SetMaxWidth(max float64) View {
 func isSimpleValue(v interface{}) bool {
 	rval := reflect.ValueOf(v)
 	k := rval.Kind()
-	_, is := v.(UIStringer)
-	if is {
+	_, isui := v.(UIStringer)
+	_, isnv := v.(zdict.NVStringer)
+	if isui || isnv {
 		return true
 	}
 	return k != reflect.Slice && k != reflect.Struct && k != reflect.Map
@@ -112,7 +113,7 @@ func (v *MenuView) GetCurrentIdOrValue() interface{} {
 	if v.oldValue == nil {
 		return nil
 	}
-	// fmt.Println("MenuView GetCurrentIdOrValue", v.oldValue, isSimpleValue(v.oldValue), reflect.ValueOf(v.oldValue).Type())
+	// fmt.Println("MenuView GetCurrentIdOrValue", v.oldValue, p(v.oldValue), reflect.ValueOf(v.oldValue).Type())
 	if isSimpleValue(v.oldValue) {
 		return v.oldValue
 	}
