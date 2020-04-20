@@ -90,7 +90,7 @@ func (v *ShapeView) GetImage() *Image {
 func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.TextInfo.Text != "" {
-		ts := v.TextInfo.GetBounds(false).Size
+		ts := v.TextInfo.GetBounds(false)
 		ts.Add(zgeo.Size{16, 6})
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
@@ -182,7 +182,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.PushState()
 			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, rect, o, CanvasBlendModeNormal, zgeo.Rect{})
+			canvas.DrawImage(drawImage, rect, o, zgeo.Rect{})
 			canvas.PopState()
 		} else {
 			a := v.ImageAlign | zgeo.Shrink
@@ -202,7 +202,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				canvas.ClipPath(clipPath, false, false)
 			}
 			textRect = ir
-			canvas.DrawImage(drawImage, ir, o, CanvasBlendModeNormal, zgeo.Rect{})
+			canvas.DrawImage(drawImage, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
 			}

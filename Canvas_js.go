@@ -1,10 +1,11 @@
 package zui
 
 import (
+	"image"
 	"syscall/js"
 
-	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 // interesting: https://github.com/markfarnan/go-canvas
@@ -22,6 +23,11 @@ func CanvasNew() *Canvas {
 	c.context.Set("imageSmoothingEnabled", true)
 	c.context.Set("imageSmoothingQuality", "high")
 	return &c
+}
+
+func (c *Canvas) SetSize(size zgeo.Size) {
+	c.element.Set("width", size.W*2) // scale?
+	c.element.Set("height", size.H*2)
 }
 
 func (c *Canvas) Element() js.Value {
@@ -106,7 +112,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
 }
 
-func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, blendMode CanvasBlendMode, sourceRect zgeo.Rect) {
+func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
 	// fmt.Println("drawPlainImage:", destRect, sourceRect, sr, c)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
@@ -140,16 +146,13 @@ func (c *Canvas) SetDropShadowOff(opacity float64) {
 	}
 }
 
-func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float32) {
+func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float64) {
 	// make this a color type instead?? Maybe no point, as it has fixed start/end pos for gradient
 	c.PushState()
 	c.ClipPath(path, false, false)
 	gradient := c.context.Call("createLinearGradient", pos1.X, pos1.Y, pos2.X, pos2.Y)
 	if len(locations) == 0 {
-		last := len(colors) - 1
-		for i := 0; i <= last; i++ {
-			locations = append(locations, float32(i)/float32(last))
-		}
+		locations = canvasCreateGradientLocations(len(colors))
 	}
 	for i, c := range colors {
 		gradient.Call("addColorStop", locations[i], makeRGBAString(c))
@@ -200,7 +203,8 @@ func (c *Canvas) setMatrix(m zgeo.Matrix) {
 func (c *Canvas) setLineType(ltype zgeo.PathLineType) {
 }
 
-func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, attributes zdict.Dict) {
+func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
+	zlog.Assert(strokeWidth == 0)
 	c.context.Call("fillText", text, pos.X, pos.Y)
 }
 
@@ -227,4 +231,9 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 
 	// fmt.Println("canvasGetTextSize:", text, font, s)
 	return s
+}
+
+func (c *Canvas) Image() *image.Image {
+	zlog.Fatal(nil, "Not implemented")
+	return nil
 }

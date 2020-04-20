@@ -206,9 +206,6 @@ func ContainerIsLoading(ct ContainerType) bool {
 		iowner, got := v.(ImageOwner)
 		if got {
 			image := iowner.GetImage()
-			if image != nil && image.path == "images/buttons/gray@2x.png" {
-				// fmt.Println("CV IsLoading:", image.path, image.loading)
-			}
 			if image != nil && image.loading {
 				// fmt.Println("ContainerIsLoading image loading", len(ct.GetChildren()))
 				return true

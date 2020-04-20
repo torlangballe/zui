@@ -1,8 +1,6 @@
 package zui
 
 import (
-	"fmt"
-
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -47,8 +45,8 @@ func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	s := ""
-	if ScreenMain().Scale > 1 {
-		s = fmt.Sprintf("@%dx", int(ScreenMain().Scale))
+	if ScreenMain().Scale >= 2 {
+		s = "@2x"
 	}
 	cimage := b.SetImage(nil, "images/buttons/"+name+s+".png", nil)
 	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))

@@ -93,8 +93,9 @@ func makeRGBAString(c zgeo.Color) string {
 	if !c.Valid {
 		return "initial"
 	}
-	rgba := c.GetRGBA()
-	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
+	return c.GetHex()
+	//	rgba := c.GetRGBA()
+	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }
 
 func (v *NativeView) SetColor(c zgeo.Color) View {

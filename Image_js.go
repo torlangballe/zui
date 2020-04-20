@@ -15,6 +15,7 @@ type imageBase struct {
 }
 
 func ImageFromPath(path string, got func()) *Image {
+	// fmt.Println("ImageFromPath:", path)
 	if path == "" {
 		if got != nil {
 			got()

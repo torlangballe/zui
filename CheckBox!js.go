@@ -2,17 +2,19 @@
 
 package zui
 
-func (c *CheckBox) Value() BoolInd {
-	return BoolFalse
+import "github.com/torlangballe/zutil/zbool"
+
+func (c *CheckBox) Value() zbool.BoolInd {
+	return zbool.BoolFalse
 }
 
-func CheckBoxNew(on BoolInd) *CheckBox {
+func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	c := &CheckBox{}
 	return c
 }
 
 func (c *CheckBox) ValueHandler(handler func(view View)) {}
 
-func (c *CheckBox) SetValue(b BoolInd) *CheckBox {
+func (c *CheckBox) SetValue(b zbool.BoolInd) *CheckBox {
 	return c
 }

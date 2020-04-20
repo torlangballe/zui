@@ -28,8 +28,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 }
 
 func (v *CustomView) setCanvasSize(size zgeo.Size) {
-	v.canvas.element.Set("width", size.W*2) // scale?
-	v.canvas.element.Set("height", size.H*2)
+	v.canvas.SetSize(size) // scale?
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
 

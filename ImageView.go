@@ -109,7 +109,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
 		// fmt.Println("IV Draw:", view.ObjectName(), v.margin, r, v.image.path, rect, "->", ir)
-		canvas.DrawImage(drawImage, ir, 1, CanvasBlendModeNormal, zgeo.Rect{})
+		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
 	}
 	if v.IsFocused() {
 		FocusDraw(canvas, rect, 15, 0, 1)

@@ -52,6 +52,7 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 			button.SetToolTip(h.Tip)
 		}
 		cell.View = button
+
 		if pressed != nil {
 			id := h.ID // nned to get actual ID here, not just f.ID (f is pointer)
 			button.SetPressedHandler(func() {

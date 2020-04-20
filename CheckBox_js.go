@@ -1,8 +1,12 @@
 package zui
 
-import "syscall/js"
+import (
+	"syscall/js"
 
-func CheckBoxNew(on BoolInd) *CheckBox {
+	"github.com/torlangballe/zutil/zbool"
+)
+
+func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	s := &CheckBox{}
 	s.Element = DocumentJS.Call("createElement", "input")
 	s.set("style", "position:absolute")
@@ -23,17 +27,17 @@ func (s *CheckBox) ValueHandler(handler func(view View)) {
 	}))
 }
 
-func (s *CheckBox) Value() BoolInd {
+func (s *CheckBox) Value() zbool.BoolInd {
 	b := s.get("checked").Bool()
 	i := s.get("indeterminate").Bool()
 	if i {
-		return BoolUnknown
+		return zbool.BoolUnknown
 	}
-	return BoolIndFromBool(b)
+	return zbool.ToBoolInd(b)
 }
 
-func (s *CheckBox) SetValue(b BoolInd) *CheckBox {
-	if b.IsIndetermed() {
+func (s *CheckBox) SetValue(b zbool.BoolInd) *CheckBox {
+	if b.IsUndetermined() {
 		s.set("indeterminate", true)
 	} else {
 		s.set("checked", b.Value())

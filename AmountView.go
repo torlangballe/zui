@@ -40,24 +40,24 @@ func (v *AmountView) getColorForValue() zgeo.Color {
 	return col
 }
 
-func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *Canvas, view View) {
-	rect.Size.W = rect.Size.H
+func AmountCircleDraw(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float64, color, strokeColor zgeo.Color) {
 	path := zgeo.PathNew()
-
-	s := rect.Size.MinusD(v.StrokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
+	s := rect.Size.MinusD(strokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
 	w := s.Min()
-
-	deg := v.Value() * 360
 	path.MoveTo(rect.Center())
-	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, deg)
-	col := v.getColorForValue()
-	canvas.SetColor(col, 1)
+	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, value*360)
+	canvas.SetColor(color, 1)
 	canvas.FillPath(path)
 
 	line := zgeo.PathNew()
 	line.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, 360)
-	canvas.SetColor(v.StrokeColor, 1)
-	canvas.StrokePath(line, v.StrokeWidth, zgeo.PathLineRound)
+	canvas.SetColor(strokeColor, 1)
+	canvas.StrokePath(line, strokeWidth, zgeo.PathLineRound)
+}
+
+func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *Canvas, view View) {
+	rect.Size.W = rect.Size.H
+	AmountCircleDraw(rect, canvas, v.Value(), v.StrokeWidth, v.getColorForValue(), v.StrokeColor)
 }
 
 func AmountViewCircleNew() *AmountView {

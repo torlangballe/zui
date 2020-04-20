@@ -127,7 +127,7 @@ func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn zgeo.Size) zgeo.Si
 
 func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
 	if v.IsHighlighted {
-		g := col.GetGrayScale()
+		g := col.GrayScale()
 		if g < 0.5 {
 			col = col.Mix(zgeo.ColorWhite, 0.5)
 		} else {

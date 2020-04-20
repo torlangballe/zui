@@ -1,15 +1,13 @@
 package zui
 
 import (
-	"runtime"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
 
 func init() {
 	zlog.Info("zui init()")
-	runtime.LockOSThread()
+	// runtime.LockOSThread() // ! skip for now
 }
 
 // func TimerInitBlockingDispatchFromMain() {
@@ -60,7 +58,10 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 // Screen
 
 func ScreenMain() Screen {
-	return Screen{}
+	s := Screen{}
+	s.SoftScale = 1
+	s.Scale = 1
+	return s
 }
 
 func zViewAddView(parent View, child View, index int) {
