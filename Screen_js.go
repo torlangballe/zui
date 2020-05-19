@@ -19,7 +19,7 @@ func ScreenMain() Screen {
 	m.Rect = zgeo.RectMake(0, 0, w, h)
 	m.Scale = math.Round(dpr)
 	// if !printed {
-	// 	fmt.Println("SCREEN SCALE:", dpr)
+	// 	zlog.Info("SCREEN SCALE:", dpr)
 	// 	printed = true
 	// }
 	//	m.Scale = 1 //!!!!!!!!!!!!!!!!!!!!

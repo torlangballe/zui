@@ -1,10 +1,10 @@
 package zui
 
 import (
-	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type imageBase struct {
@@ -15,7 +15,7 @@ type imageBase struct {
 }
 
 func ImageFromPath(path string, got func()) *Image {
-	// fmt.Println("ImageFromPath:", path)
+	// zlog.Info("ImageFromPath:", path)
 	if path == "" {
 		if got != nil {
 			got()
@@ -37,7 +37,7 @@ func (i *Image) load(path string, done func()) {
 	// 		path = "images/" + path
 	// 	}
 	// }
-	i.path = path
+	i.Path = path
 	i.loading = true
 	i.scale = imageGetScaleFromPath(path)
 
@@ -47,7 +47,7 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		// fmt.Println("Image Load scale:", i.scale, path, i.Size())
+		// zlog.Info("Image Load scale:", i.scale, path, i.Size())
 		if done != nil {
 			done()
 		}
@@ -57,7 +57,7 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = 5
 		i.size.H = 5
-		fmt.Println("Image Load fail:", path)
+		zlog.Info("Image Load fail:", path)
 		if done != nil {
 			done()
 		}
@@ -100,7 +100,7 @@ func (i *Image) GetScaledInSize(size zgeo.Size, proportional bool) *Image {
 	}
 	width := int(vsize.W) / int(i.scale)
 	height := int(vsize.H) / int(i.scale)
-	fmt.Println("GetScaledInSize not made yet:", width, height)
+	zlog.Info("GetScaledInSize not made yet:", width, height)
 	return nil
 }
 
@@ -126,7 +126,7 @@ func (i *Image) Rotated(deg float64, around *zgeo.Pos) *Image {
 		pos = *around
 	}
 	transform := zgeo.MatrixForRotatingAroundPoint(pos, deg)
-	fmt.Println("Image.Rotated not made yet:", transform)
+	zlog.Info("Image.Rotated not made yet:", transform)
 	return i
 }
 

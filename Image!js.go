@@ -4,7 +4,6 @@ package zui
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -26,6 +25,13 @@ type imageBase struct {
 	//	scale     int  `json:"scale"`
 	//	capInsets Rect `json:"capInsets"`
 	//	hasAlpha  bool `json:"hasAlpha"`
+}
+
+func ImageFromNative(n image.Image) *Image {
+	i := &Image{}
+	i.goimage = n
+	i.scale = 1
+	return i
 }
 
 func ImageFromPath(path string, got func()) *Image {
@@ -85,6 +91,7 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	scale := float64(i.scale)
 	width := uint(vsize.W * scale)
 	height := uint(vsize.H * scale)
+
 	newImage := resize.Resize(width, height, i.goimage, resize.Lanczos3)
 
 	ni := &Image{}
@@ -118,10 +125,10 @@ func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
 	return ni
 }
 
-func (i *Image) SaveToPNG(file string) error {
-	out, err := os.Create(file)
+func (i *Image) SaveToPNG(filepath string) error {
+	out, err := os.Create(filepath)
 	if err != nil {
-		return zlog.Error(err, "os.create")
+		return zlog.Error(err, "os.create", filepath)
 	}
 	defer out.Close()
 	err = png.Encode(out, i.goimage)
@@ -131,13 +138,13 @@ func (i *Image) SaveToPNG(file string) error {
 	return nil
 }
 
-func (i *Image) SaveToJPEG(file string) error {
-	out, err := os.Create(file)
+func (i *Image) SaveToJPEG(filepath string) error {
+	out, err := os.Create(filepath)
 	if err != nil {
-		return zlog.Error(err, "os.create")
+		return zlog.Error(err, "os.create", filepath)
 	}
 	defer out.Close()
-	err = jpeg.Encode(out, i.goimage, &jpeg.Options{Quality: 1})
+	err = jpeg.Encode(out, i.goimage, &jpeg.Options{Quality: 98})
 	if err != nil {
 		return zlog.Error(err, "encode")
 	}
@@ -172,7 +179,7 @@ func (i *Image) Rotated(deg float64, around *zgeo.Pos) *Image {
 		pos = *around
 	}
 	transform := zgeo.MatrixForRotatingAroundPoint(pos, deg)
-	fmt.Println("Image.Rotated not made yet:", transform)
+	zlog.Info("Image.Rotated not made yet:", transform)
 	return i
 }
 

@@ -1,11 +1,14 @@
 package zui
 
 import (
-	"fmt"
 	"math"
+
+	"github.com/torlangballe/zutil/zfloat"
 
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -70,9 +73,17 @@ func TextInfoNew() *TextInfo {
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
 func (ti *TextInfo) GetBounds(noWidth bool) zgeo.Size {
-	var size = canvasGetTextSize(ti.Text, ti.Font)
-	if ti.MaxLines != 0 {
-		size.H = float64(ti.Font.LineHeight()) * float64(ti.MaxLines)
+	var size zgeo.Size
+	lines := zstr.SplitByNewLines(ti.Text, true)
+	for _, str := range lines {
+		s := canvasGetTextSize(str, ti.Font)
+		size.H = s.H
+		zfloat.Maximize(&size.W, s.W)
+	}
+	count := zint.Max(ti.MaxLines, len(lines))
+	count = ti.MaxLines
+	if count > 1 {
+		size.H = float64(ti.Font.LineHeight()) * float64(count)
 	}
 	// if !ti.Rect.IsNull() {
 	// 	zfloat.Minimize(&size.W, ti.Rect.Size.W)
@@ -172,7 +183,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.71
-	// fmt.Println("TI.Draw:", ti.Rect, ts, ra, h, y)
+	// zlog.Info("TI.Draw:", ti.Rect, ts, ra, h, y)
 	canvas.SetFont(font, nil)
 	zstr.RangeStringLines(ti.Text, false, func(s string) {
 		x := ra.Pos.X
@@ -199,6 +210,6 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 	} else {
 		return ti.Font
 	}
-	fmt.Println("Scale Font:", r, w, s.W)
+	zlog.Info("Scale Font:", r, w, s.W)
 	return FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
 }

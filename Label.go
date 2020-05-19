@@ -26,7 +26,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 	// s.W += 10
 	s.H += 3
-	// fmt.Println("label calcedsize:", v.Text(), s, o.Font())
+	// zlog.Info("label calcedsize:", v.Text(), s, o.Font())
 	return s
 }
 

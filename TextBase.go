@@ -11,7 +11,7 @@ import (
 // }
 
 // func (l *ViewBaseHandler) GetView() *NativeView {
-// 	//	fmt.Println("ViewBaseHandler GetView:", l)
+// 	//	zlog.Info("ViewBaseHandler GetView:", l)
 // 	return l.native
 // }
 
@@ -57,7 +57,7 @@ func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, 
 	}
 	t.Wrap = TextInfoWrapWord
 	size := t.GetBounds(noWidth)
-	// fmt.Println("TextLayoutCalculateSize:", maxWidth, rect, text, font.Size, font.Name)
+	// zlog.Info("TextLayoutCalculateSize:", maxWidth, rect, text, font.Size, font.Name)
 
 	size.W += 4
 	return size

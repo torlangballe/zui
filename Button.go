@@ -36,7 +36,7 @@ func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.ShapeView.CalculatedSize(total)
 	if v.image != nil {
 		if true { //v.image.path == "images/buttons/gray@2x.png" {
-			// fmt.Println("ButtonCalc:", s, v.ObjectName(), v.image.path, v.image.Size())
+			// zlog.Info("ButtonCalc:", s, v.ObjectName(), v.image.path, v.image.Size())
 		}
 		s.Maximize(v.image.Size())
 	}

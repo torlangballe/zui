@@ -81,7 +81,7 @@ func (v *MenuView) Empty() {
 }
 
 func (v *MenuView) UpdateValues(items zdict.NamedValues) {
-	// fmt.Println("MV UpdateValues", v.ObjectName(), v.items, items)
+	// zlog.Info("MV UpdateValues", v.ObjectName(), v.items, items)
 	if !zdict.NamedValuesAreEqual(v.items, items) {
 		// zlog.Info("MV UpdateValues2")
 		options := v.get("options")
@@ -134,7 +134,7 @@ func (v *MenuView) SetValues(items zdict.NamedValues, value interface{}) {
 		}
 		v.menuViewAddItem(in, id)
 	}
-	//  fmt.Println("updateVals:", v.ObjectName(), value, setID)
+	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 	if setID != "" {
 		v.SetWithID(setID)
 	}
@@ -145,11 +145,11 @@ func (v *MenuView) SetWithID(setID string) *MenuView {
 		zlog.Info(zlog.GetCallingStackString())
 		return v
 	}
-	// fmt.Println("mv:setwithid:", setID, v.ObjectName())
+	// zlog.Info("mv:setwithid:", setID, v.ObjectName())
 	for i := 0; i < v.items.Count(); i++ {
 		id, _, iv := v.items.GetItem(i)
 		if id == setID {
-			// fmt.Println("mv set:", id, i, len(v.otherItems))
+			// zlog.Info("mv set:", id, i, len(v.otherItems))
 			v.oldValue = iv
 			v.oldID = id
 			options := v.get("options")

@@ -95,12 +95,12 @@ func PresentViewShow(v View, attributes PresentViewAttributes, done func()) {
 	presentViewCallReady(v)
 	ct := v.(ContainerType)
 
-	// fmt.Println("PresentViewShow", v.ObjectName())
+	// zlog.Info("PresentViewShow", v.ObjectName())
 
 	WhenContainerLoaded(ct, func(waited bool) {
-		// fmt.Println("PresentViewShow loaded", v.ObjectName())
+		// zlog.Info("PresentViewShow loaded", v.ObjectName())
 		if attributes.MakeFull {
-			// fmt.Println("Present:", mainRect, presentViewPresenting)
+			// zlog.Info("Present:", mainRect, presentViewPresenting)
 			v.SetRect(mainRect)
 		} else {
 			size := v.CalculatedSize(mainRect.Size)

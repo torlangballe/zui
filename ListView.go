@@ -133,7 +133,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 		}
 	}
 	first = -1
-	// fmt.Println("\nlayout rows", len(oldRows), count)
+	// zlog.Info("\nlayout rows", len(oldRows), count)
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
 		s.H = v.GetRowHeight(i)
@@ -309,7 +309,7 @@ func (v *ListView) GetChildren() []View {
 }
 
 func (v *ListView) ArrangeChildren(onlyChild *View) {
-	// fmt.Println("ListView ArrangeChildren:", len(v.rows))
+	// zlog.Info("ListView ArrangeChildren:", len(v.rows))
 	for _, v := range v.rows {
 		ct, _ := v.(ContainerType)
 		if ct != nil {

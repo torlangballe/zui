@@ -58,10 +58,10 @@ func addView(parent, child *NativeView) {
 
 func jsAddEventListener(e js.Value, name string, handler func()) {
 	err := e.Call("addEventListener", name, js.FuncOf(func(js.Value, []js.Value) interface{} {
-		fmt.Println("event listener")
+		zlog.Info("event listener")
 		return nil
 	}))
-	fmt.Println("jsAddEventListener err:", err)
+	zlog.Info("jsAddEventListener err:", err)
 }
 
 func NativeViewAddToRoot(v View) {
@@ -85,7 +85,7 @@ func NativeViewAddToRoot(v View) {
 	// n.style().Set("-webkit-transform", scale)
 
 	// trans := fmt.Sprintf("translate(-%f,%f)", s.W, 0.0)
-	// fmt.Println("TRANS:", trans)
+	// zlog.Info("TRANS:", trans)
 	// n.style().Set("-webkit-transform", trans)
 	n.AddChild(v, -1)
 }
@@ -115,12 +115,3 @@ func getFontStyle(font *Font) string {
 
 	return strings.Join(parts, " ")
 }
-
-// func (ti *TextInfo) getTextSize(noWidth bool) Size {
-// 	var canvas = DocumentJS.Call("createElement", "canvas")
-// 	var context = canvas.Call("getContext", "2d")
-// 	context.Set("font", getFontStyle(ti.Font))
-// 	var metrics = context.Call("measureText", ti.Text)
-// 	fmt.Println("CALCD:", metrics.Get("width"), ti.Font.Name, ti.Font.Size)
-// 	return Size{metrics.Get("width").Float(), metrics.Get("height").Float()}
-// }

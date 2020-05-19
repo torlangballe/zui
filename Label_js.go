@@ -5,6 +5,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 func LabelNew(text string) *Label {
@@ -14,9 +15,10 @@ func LabelNew(text string) *Label {
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
-	style.Set("whiteSpace", "nowrap")
+	style.Set("whiteSpace", "pre-wrap")
 	style.Set("overflow", "hidden")
 	style.Set("textOverflow", "clip")
+//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
 	label.maxLines = 1
@@ -30,7 +32,7 @@ func LabelNew(text string) *Label {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) View {
-	//	fmt.Println("Label SetRect:", v.ObjectName(), r)
+	//	zlog.Info("Label SetRect:", v.ObjectName(), r)
 	//	r.Pos.Y -= 6
 	v.NativeView.SetRect(r)
 	return v
@@ -61,7 +63,7 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
 func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m
 	style := v.style()
-	fmt.Println("Label SetMarg:", v.ObjectName(), m)
+	zlog.Info("Label SetMarg:", v.ObjectName(), m)
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
 	style.Set("padding-bottom", fmt.Sprintf("%dpx", int(m.Max().Y)))

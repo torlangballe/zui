@@ -66,7 +66,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 
 func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) {
 	str := getFontStyle(font)
-	// fmt.Println("canvas set font:", str)
+	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
 	//    state.font = afontCreateTransformed(amatrix)
 }
@@ -82,7 +82,7 @@ func (c *Canvas) Transform(matrix zgeo.Matrix) {
 
 func (c *Canvas) ClipPath(path *zgeo.Path, exclude bool, eofill bool) {
 	c.setPath(path)
-	//      context.clip(using(eofill ? .evenOdd  .winding))
+	c.context.Call("clip")
 }
 
 func (c *Canvas) GetClipRect() zgeo.Rect {
@@ -93,6 +93,7 @@ func (c *Canvas) GetClipRect() zgeo.Rect {
 func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineType) {
 	c.setPath(path)
 	c.setLineType(ltype)
+	c.setLineWidth(width)
 	c.context.Call("stroke")
 
 	// context.setLineWidth(CGFloat(width))
@@ -114,7 +115,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 
 func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
-	// fmt.Println("drawPlainImage:", destRect, sourceRect, sr, c)
+	// zlog.Info("drawPlainImage:", destRect, sourceRect, sr, c)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
 
@@ -171,26 +172,26 @@ func (c *Canvas) DrawRadialGradient(path *zgeo.Path, colors []zgeo.Color, center
 }
 
 func (c *Canvas) setPath(path *zgeo.Path) {
-	// fmt.Println("\n\nsetPath")
+	// zlog.Info("\n\nsetPath")
 	c.context.Call("beginPath")
 	path.ForEachPart(func(part zgeo.PathNode) {
 		switch part.Type {
 		case zgeo.PathMove:
-			//  fmt.Println("moveTo", part.Points[0].X, part.Points[0].Y)
+			//  zlog.Info("moveTo", part.Points[0].X, part.Points[0].Y)
 			c.context.Call("moveTo", part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathLine:
-			// fmt.Println("lineTo", part.Points[0].X, part.Points[0].Y)
+			// zlog.Info("lineTo", part.Points[0].X, part.Points[0].Y)
 			c.context.Call("lineTo", part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathClose:
-			// fmt.Println("pathClose")
+			// zlog.Info("pathClose")
 			c.context.Call("closePath")
 		case zgeo.PathQuadCurve:
 			c.context.Call("quadraticCurveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y)
-			// fmt.Println("quadCurve")
+			// zlog.Info("quadCurve")
 			break
 		case zgeo.PathCurve:
 			c.context.Call("bezierCurveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
-			// fmt.Println("curveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
+			// zlog.Info("curveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
 			break
 		}
 	})
@@ -201,6 +202,10 @@ func (c *Canvas) setMatrix(m zgeo.Matrix) {
 }
 
 func (c *Canvas) setLineType(ltype zgeo.PathLineType) {
+}
+
+func (c *Canvas) setLineWidth(width float64) {
+	c.context.Set("lineWidth", width)
 }
 
 func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
@@ -224,12 +229,12 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	//	s.H = metrics.Get("height").Float()
 
 	// if text == "QTT Manager" {
-	// 	fmt.Println("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
+	// 	zlog.Info("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
 	// }
 	//	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
 	s.H = font.LineHeight() * 0.85
 
-	// fmt.Println("canvasGetTextSize:", text, font, s)
+	// zlog.Info("canvasGetTextSize:", text, font, s)
 	return s
 }
 

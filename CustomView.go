@@ -7,9 +7,11 @@ import (
 
 type CustomView struct {
 	NativeView
+	baseCustomView
 	canvas        *Canvas
 	minSize       zgeo.Size
 	pressed       func()
+	longPressed   func()
 	valueChanged  func(view View)
 	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
@@ -38,15 +40,15 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	if v.exposed || presentViewPresenting {
 		return
 	}
-	// fmt.Println("exposeInSecs", v.ObjectName())
+	// zlog.Info("exposeInSecs", v.ObjectName())
 	v.exposed = true
 	v.exposeTimer.StartIn(secs, true, func() {
 		io, got := v.View.(ImageOwner)
-		// fmt.Println("exposeInSecs draw", v.ObjectName(), got)
+		// zlog.Info("exposeInSecs draw", v.ObjectName(), got)
 		if got {
 			image := io.GetImage()
 			if image != nil {
-				// fmt.Println("CV exposeInSecs draw image", v.ObjectName(), image.loading)
+				// zlog.Info("CV exposeInSecs draw image", v.ObjectName(), image.loading)
 			}
 			if image != nil && image.loading {
 				v.exposeInSecs(0.1)
@@ -55,7 +57,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 		}
 		et, _ := v.View.(ExposableType)
 		if et != nil {
-			// fmt.Println("CV exposeInSecs draw", v.ObjectName())
+			// zlog.Info("CV exposeInSecs draw", v.ObjectName())
 			et.drawIfExposed()
 		}
 	})

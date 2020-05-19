@@ -8,15 +8,19 @@ import (
 
 type ImageView struct {
 	ContainerView
-	image     *Image
-	maxSize   zgeo.Size
-	alignment zgeo.Alignment
+	image        *Image
+	maxSize      zgeo.Size
+	alignment    zgeo.Alignment
+	cornerRadius float64
+	strokeWidth  float64
+	strokeColor  zgeo.Color
 }
 
-func ImageViewNew(path string, minSize zgeo.Size) *ImageView {
+func ImageViewNew(path string, maxSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.init(v, path)
-	v.CustomView.SetMinSize(minSize)
+	v.SetMaxSize(maxSize)
+	v.SetObjectName("image")
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetDrawHandler(ImageViewDraw)
 	if path != "" {
@@ -26,8 +30,28 @@ func ImageViewNew(path string, minSize zgeo.Size) *ImageView {
 	return v
 }
 
+func (v *ImageView) SetStroke(width float64, c zgeo.Color) View {
+	v.strokeWidth = width
+	v.strokeColor = c
+	v.Expose()
+	return v
+}
+
+func (v *ImageView) SetCorner(radius float64) View {
+	v.cornerRadius = radius
+	v.Expose()
+	return v
+}
+
 func (v *ImageView) GetImage() *Image {
 	return v.image
+}
+
+func (v *ImageView) Path() string {
+	if v.image != nil {
+		return v.image.Path
+	}
+	return ""
 }
 
 func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -42,7 +66,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		s.Maximize(v.minSize)
 	}
 	s.Add(v.ContainerView.margin.Size.Negative())
-	// fmt.Println("IV CalculatedSize:", v.ObjectName(), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
+	// zlog.Info("IV CalculatedSize:", v.ObjectName(), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
 	return s
 }
 
@@ -73,7 +97,7 @@ func ImageViewFromImage(image *Image) *ImageView {
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func()) {
-	// fmt.Println("IV SetImage", path)
+	// zlog.Info("IV SetImage", path)
 	v.exposed = false
 	if image != nil {
 		v.image = image
@@ -81,7 +105,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func()) {
 		got()
 	} else {
 		v.image = ImageFromPath(path, func() {
-			// fmt.Println("IV SetImage got", path)
+			// zlog.Info("IV SetImage got", path)
 			v.Expose()
 			if got != nil {
 				got()
@@ -93,6 +117,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func()) {
 func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	v := view.(*ImageView)
 	if v.image != nil {
+		var path *zgeo.Path
 		drawImage := v.image
 		if v.IsHighlighted {
 			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
@@ -108,8 +133,22 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// }
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
-		// fmt.Println("IV Draw:", view.ObjectName(), v.margin, r, v.image.path, rect, "->", ir)
+		// zlog.Info("IV Draw:", view.ObjectName(), v.margin, r, v.image.path, rect, "->", ir)
+		if v.cornerRadius != 0 {
+			canvas.PushState()
+			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.cornerRadius))
+			canvas.ClipPath(path, true, true)
+		}
 		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
+		if v.cornerRadius != 0 {
+			canvas.PopState()
+		}
+		if v.strokeWidth != 0 {
+			corner := v.cornerRadius - v.strokeWidth
+			path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
+			canvas.SetColor(v.strokeColor, 1)
+			canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)
+		}
 	}
 	if v.IsFocused() {
 		FocusDraw(canvas, rect, 15, 0, 1)

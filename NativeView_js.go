@@ -5,6 +5,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type NativeView struct {
@@ -20,7 +21,7 @@ func (v *NativeView) Parent() *NativeView {
 	// if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
 	// 	return nil
 	// }
-	// //	fmt.Println("ParentElement:", v.ObjectName(), e)
+	// //	zlog.Info("ParentElement:", v.ObjectName(), e)
 	// n := &NativeView{}
 	// n.Element = e
 	// n.View = n
@@ -37,7 +38,7 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) View {
-	// fmt.Println("NV Rect", v.ObjectName())
+	// zlog.Info("NV Rect", v.ObjectName())
 	setElementRect(v.Element, rect)
 	return v
 }
@@ -134,7 +135,7 @@ func (v *NativeView) SetBGColor(c zgeo.Color) View {
 
 func (v *NativeView) BGColor() zgeo.Color {
 	str := v.style().Get("backgroundColor").String()
-	fmt.Println("nv bgcolor", str)
+	zlog.Info("nv bgcolor", str)
 	return zgeo.ColorFromString(str)
 }
 
@@ -187,7 +188,7 @@ func (v *NativeView) SetUsable(usable bool) View {
 	}
 	style.Set("pointer-events", str)
 	style.Set("opacity", alpha)
-	// fmt.Println("NV SetUSABLE:", v.ObjectName(), usable, alpha)
+	// zlog.Info("NV SetUSABLE:", v.ObjectName(), usable, alpha)
 	return v
 }
 

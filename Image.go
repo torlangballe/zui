@@ -13,7 +13,7 @@ import (
 type Image struct {
 	imageBase
 	scale   int
-	path    string
+	Path    string
 	loading bool
 }
 

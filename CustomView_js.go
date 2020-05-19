@@ -2,10 +2,18 @@ package zui
 
 import (
 	"syscall/js"
+	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/ztimer"
 )
+
+type baseCustomView struct {
+	cancelClick     bool
+	downClickedTime time.Time
+	longTimer       *ztimer.Timer
+}
 
 func (v *CustomView) init(view View, name string) {
 	v.Element = DocumentJS.Call("createElement", "div")
@@ -14,15 +22,45 @@ func (v *CustomView) init(view View, name string) {
 	v.View = view
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
+}
+
+func (v *CustomView) SetLongPressedHandler(handler func()) {
+	v.longPressed = handler
+	v.set("className", "widget")
+	v.set("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		// fmt.Println("MOUSEDOWN")
+		v.downClickedTime = time.Now()
+		v.longTimer = ztimer.StartIn(0.5, true, func() {
+			// fmt.Println("TIMER")
+			if v.longPressed != nil && v.Usable() {
+				v.longPressed()
+			}
+			v.longTimer = nil
+			v.cancelClick = true
+		})
+		return nil
+	}))
+	v.set("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		// fmt.Println("MOUSEUP")
+		if v.longTimer != nil {
+			v.longTimer.Stop()
+		}
+		return nil
+	}))
 }
 
 func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("className", "widget")
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if v.pressed != nil && v.Usable() {
+		if v.longTimer != nil {
+			v.longTimer.Stop()
+		}
+		if !v.cancelClick && v.pressed != nil && v.Usable() {
 			v.pressed()
 		}
+		v.cancelClick = false
 		return nil
 	}))
 }
@@ -33,7 +71,7 @@ func (v *CustomView) setCanvasSize(size zgeo.Size) {
 }
 
 func (v *CustomView) SetRect(rect zgeo.Rect) View {
-	// fmt.Println("CV SetRect:", v.ObjectName(), rect)
+	// zlog.Info("CV SetRect:", v.ObjectName(), rect)
 	v.NativeView.SetRect(rect)
 	r := v.Rect()
 	if rect != r {
@@ -51,13 +89,13 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 func (v *CustomView) SetUsable(usable bool) View {
 	v.NativeView.SetUsable(usable)
 	v.Expose()
-	// fmt.Println("CV SetUsable:", v.ObjectName(), usable, v.Usable())
+	// zlog.Info("CV SetUsable:", v.ObjectName(), usable, v.Usable())
 	return v
 }
 
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
-		// fmt.Println("makeCanvas:", v.ObjectName())
+		// zlog.Info("makeCanvas:", v.ObjectName())
 		v.canvas = CanvasNew()
 		v.call("appendChild", v.canvas.element)
 		s := v.GetLocalRect().Size
@@ -70,7 +108,7 @@ func (v *CustomView) makeCanvas() {
 
 func (v *CustomView) drawIfExposed() {
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
-		// fmt.Println("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
+		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.GetLocalRect()
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
 			// println("CV drawIfExposed2:", v.ObjectName())
@@ -78,11 +116,11 @@ func (v *CustomView) drawIfExposed() {
 			v.makeCanvas()
 			v.canvas.ClearRect(zgeo.Rect{})
 			// if !v.Usable() {
-			// 	// fmt.Println("cv: push for disabled")
+			// 	// zlog.Info("cv: push for disabled")
 			// 	v.canvas.PushState()
 			// 	v.canvas.context.Set("globalAlpha", 0.4)
 			// }
-			// fmt.Println("CV drawIfExposed", v.ObjectName(), v.Usable(), v.canvas.context.Get("globalAlpha"))
+			// zlog.Info("CV drawIfExposed", v.ObjectName(), v.Usable(), v.canvas.context.Get("globalAlpha"))
 			v.draw(r, v.canvas, v.View)
 			// if !v.Usable() {
 			// 	v.canvas.PopState()

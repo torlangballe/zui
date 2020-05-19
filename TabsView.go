@@ -62,7 +62,7 @@ func (v *TabsView) AddTab(title, id string, set bool, align zgeo.Alignment, view
 
 func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.Header.FindViewWithName(id, false)
-	// fmt.Println("setButtonOn:", id, on, view != nil)
+	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button := (*view).(*Button)
 		str := "grayTab"
@@ -76,7 +76,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	}
 }
 func (v *TabsView) SetTab(id string) {
-	// fmt.Println("Set Tab", id)
+	// zlog.Info("Set Tab", id)
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
 			v.creators[id](true)
@@ -90,7 +90,7 @@ func (v *TabsView) SetTab(id string) {
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		if !v.presented {
-			// fmt.Println("Set Tab, exit because not presented yet", id)
+			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
 		ct := v.ChildView.(ContainerType)
@@ -103,7 +103,7 @@ func (v *TabsView) SetTab(id string) {
 		presentViewPresenting = true
 		v.ArrangeChildren(nil)
 		WhenContainerLoaded(ct, func(waited bool) {
-			// fmt.Println("Set Tab container loaded:", waited)
+			// zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, lets re-arrange
 				v.ArrangeChildren(nil)
 			}
@@ -113,5 +113,5 @@ func (v *TabsView) SetTab(id string) {
 			}
 		})
 	}
-	// fmt.Println("Set Tab Done", id)
+	// zlog.Info("Set Tab Done", id)
 }

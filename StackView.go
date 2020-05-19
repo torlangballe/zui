@@ -78,7 +78,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	//	v.calcWeightMins()
 	// for i, c := range v.cells {
 	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
-	// 		fmt.Println("weight size:", c.View.ObjectName(), v.weightMinSizes[i])
+	// 		zlog.Info("weight size:", c.View.ObjectName(), v.weightMinSizes[i])
 	// 	}
 	// }
 	var size = zgeo.Size{}
@@ -86,7 +86,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		if !c.Collapsed && !c.Free {
 			fs := v.getCellSize(c, &i)
 			m := calcMarginAdd(c)
-			// fmt.Println("calcsize:", c.View.ObjectName(), fs, m)
+			// zlog.Info("calcsize:", c.View.ObjectName(), fs, m)
 			*size.VerticeP(v.Vertical) += fs.Vertice(v.Vertical)
 			//			zmath.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)-m.Vertice(!v.Vertical))
 			zfloat.Maximize(size.VerticeP(!v.Vertical), fs.Vertice(!v.Vertical)+m.Vertice(!v.Vertical))
@@ -109,27 +109,27 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 
 	var vr zgeo.Rect
 	// if v.ObjectName() == "header" {
-	// 	fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
+	// 	zlog.Info("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	// }
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
 		s := cell.View.CalculatedSize(inRect.Size)
 		zlog.Fatal(nil, "strange align")
-		// fmt.Println("handleAlign", s, cell.Alignment, cell.Margin, max)
+		// zlog.Info("handleAlign", s, cell.Alignment, cell.Margin, max)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
 		vr = box
 		if true { //cell.Alignment.Only(v.Vertical)&zgeo.Center != 0 {
 			vr = box.AlignmentTransform(cell.Margin, cell.Alignment)
 			if v.ObjectName() == "bar" {
-				// fmt.Println("AFTER expand:", cell.View.ObjectName(), vr, box)
+				// zlog.Info("AFTER expand:", cell.View.ObjectName(), vr, box)
 			}
 			box.UnionWith(vr)
 		} else {
 			zlog.Info(nil, "NOT shrink expanding:", cell.View.ObjectName())
 		}
-		// fmt.Println("handleAlign expin:", box, cell.View.ObjectName(), vr, cell.Margin, cell.Alignment)
+		// zlog.Info("handleAlign expin:", box, cell.View.ObjectName(), vr, cell.Margin, cell.Alignment)
 	}
-	// fmt.Println("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
+	// zlog.Info("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	return box, vr
 }
 
@@ -151,7 +151,7 @@ func addDiff(size *zgeo.Size, maxSize float64, vertical bool, diff *float64, cou
 		*diff -= d
 		(*count)--
 	}
-	// fmt.Println("addDiff:", size.W, d, maxSize)
+	// zlog.Info("addDiff:", size.W, d, maxSize)
 	*(*size).VerticeP(vertical) += d
 }
 
@@ -173,7 +173,7 @@ func calcMarginAdd(c ContainerViewCell) zgeo.Size {
 func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size {
 	//	tot := v.getCellFitSizeInTotal(total, c)
 	var size = c.View.CalculatedSize(zgeo.Size{})
-	// fmt.Println("get cell size1:", v.ObjectName(), c.View.ObjectName(), size)
+	// zlog.Info("get cell size1:", v.ObjectName(), c.View.ObjectName(), size)
 	size.Maximize(c.MinSize)
 	if c.MaxSize.W != 0 {
 		zfloat.Minimize(&size.W, c.MaxSize.W)
@@ -189,7 +189,7 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	// 		*size.VerticeP(v.Vertical) = len
 	// 	}
 	// }
-	// fmt.Println("get cell size2:", v.ObjectName(), ":", m, c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
+	// zlog.Info("get cell size2:", v.ObjectName(), ":", m, c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
 	return size
 }
 
@@ -203,7 +203,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
-	// fmt.Println("*********** Stack.ArrangeChildren:", v.ObjectName())
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName())
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
@@ -250,7 +250,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	cs += v.margin.Size.Vertice(v.Vertical)
 
 	diff := r.Size.Vertice(v.Vertical) - cs
-	//	fmt.Println("DIFF:", v.ObjectName(), diff, r.Size, cs)
+	//	zlog.Info("DIFF:", v.ObjectName(), diff, r.Size, cs)
 	var lastNoFreeIndex = -1
 	for _, useMaxSize := range []bool{true, false} {
 		for i, c3 := range v.cells {
@@ -260,10 +260,10 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
 				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-					// fmt.Println("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W)
+					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W)
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
-				// fmt.Println("cellsize:", v.ObjectName(), c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
+				// zlog.Info("cellsize:", v.ObjectName(), c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
 				sizes[c3.View] = size
 			}
 		}
@@ -283,7 +283,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
-					// fmt.Println("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
+					// zlog.Info("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
 				if c4.Alignment&aless != 0 {
 					m := math.Max(r.Min().Vertice(v.Vertical), box.Max().Vertice(v.Vertical)+v.spacing)
@@ -334,7 +334,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
-			// fmt.Println("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
+			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			ct, _ := c5.View.(ContainerType)
 			if ct != nil {

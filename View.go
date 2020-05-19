@@ -84,7 +84,7 @@ func ViewChild(v View, path string) View {
 		return v
 	}
 	parts := strings.Split(path, "/")
-	// fmt.Println("ViewChild:", v.ObjectName(), path)
+	// zlog.Info("ViewChild:", v.ObjectName(), path)
 	name := parts[0]
 	if name == ".." {
 		path = strings.Join(parts[1:], "/")
@@ -97,7 +97,7 @@ func ViewChild(v View, path string) View {
 	ct := v.(ContainerType)
 	if ct != nil {
 		for _, ch := range ct.GetChildren() {
-			// fmt.Println("Childs:", name, "'"+ch.ObjectName()+"'")
+			// zlog.Info("Childs:", name, "'"+ch.ObjectName()+"'")
 			if name == "*" || ch.ObjectName() == name {
 				if len(parts) == 1 {
 					return ch

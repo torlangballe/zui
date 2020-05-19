@@ -135,24 +135,24 @@ func (c *Canvas) DrawRadialGradient(path *zgeo.Path, colors []zgeo.Color, center
 
 func (c *Canvas) setPath(path *zgeo.Path) {
 	path.ForEachPart(func(part zgeo.PathNode) {
-		// fmt.Println("setPath", part.Type)
+		// zlog.Info("setPath", part.Type)
 		switch part.Type {
 		case zgeo.PathMove:
-			//  fmt.Println("moveTo", part.Points[0].X, part.Points[0].Y)
+			//  zlog.Info("moveTo", part.Points[0].X, part.Points[0].Y)
 			c.context.MoveTo(part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathLine:
-			// fmt.Println("lineTo", part.Points[0].X, part.Points[0].Y)
+			// zlog.Info("lineTo", part.Points[0].X, part.Points[0].Y)
 			c.context.LineTo(part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathClose:
-			// fmt.Println("pathClose")
+			// zlog.Info("pathClose")
 			c.context.ClosePath()
 		case zgeo.PathQuadCurve:
 			c.context.QuadraticTo(part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y)
-			// fmt.Println("quadCurve")
+			// zlog.Info("quadCurve")
 			break
 		case zgeo.PathCurve:
 			c.context.CubicTo(part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
-			// fmt.Println("curveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
+			// zlog.Info("curveTo", part.Points[0].X, part.Points[0].Y, part.Points[1].X, part.Points[1].Y, part.Points[2].X, part.Points[2].Y)
 			break
 		}
 	})
@@ -189,8 +189,7 @@ func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float3
 }
 
 func (c *Canvas) Image() *Image {
-	i := new(Image)
-	i.goimage = c.context.Image()
+	i := ImageFromNative(c.context.Image())
 	return i
 }
 

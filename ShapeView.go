@@ -3,12 +3,12 @@ package zui
 //  Created by Tor Langballe on /22/10/15.
 
 import (
-	"fmt"
 	"math"
 	"path"
 
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type ShapeViewType string
@@ -102,7 +102,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
-	// fmt.Println("ShapeView CalcSize:", v.ObjectName(), s)
+	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), s)
 	s.MakeInteger()
 	return s
 }
@@ -129,7 +129,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
 	v := view.(*ShapeView)
-	// fmt.Println("shapeViewDraw:", v.canvas != nil, v.MinSize(), rect, view.ObjectName())
+	// zlog.Info("shapeViewDraw:", v.canvas != nil, v.MinSize(), rect, view.ObjectName())
 	switch v.Type {
 	case ShapeViewTypeStar:
 		path.AddStar(rect, v.Count, v.Ratio)
@@ -157,7 +157,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
-		fmt.Println("shapeViewDraw stroke:", view.ObjectName())
+		zlog.Info("shapeViewDraw stroke:", view.ObjectName())
 		var o = v.StrokeColor.Opacity()
 		if !v.Usable() {
 			o *= 0.6
@@ -211,14 +211,16 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	if v.TextInfo.Text != "" {
 		t := v.TextInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
-		t.Rect = textRect.Expanded(zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0})
-		t.Rect.Pos.Y -= 2
+		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}
+		t.Rect = textRect.Expanded(exp)
+		t.Rect.Pos.Y += 1
+		// zlog.Info("Shape draw:", exp, v.TextInfo.Text, t.Color)
 		t.Font = v.Font()
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack)
 		}
 		// if v.TextInfo.Text == "On" {
-		// 	fmt.Println("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		// 	zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 
 		t.Draw(canvas)

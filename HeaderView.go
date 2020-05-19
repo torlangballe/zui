@@ -40,10 +40,11 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 		button := ButtonNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(h.ImagePath, h.ImageSize)
-			iv.SetMaxSize(h.ImageSize)
+			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.ID + ".image")
 			button.Add(zgeo.Center, iv, zgeo.Size{})
 		}
+		button.TextInfo.Color = zgeo.ColorWhite
 		button.TextXMargin = 0
 		// if !h.ImageSize.IsNull() {
 		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
@@ -85,6 +86,6 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 		hr.SetMaxX(e)
 		x = e
 		hv.SetRect(hr)
-		// fmt.Println("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())
+		// zlog.Info("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())
 	}
 }

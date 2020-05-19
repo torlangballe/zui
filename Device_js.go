@@ -1,7 +1,6 @@
 package zui
 
 import (
-	"strconv"
 	"syscall/js"
 	"time"
 
@@ -25,13 +24,6 @@ func DeviceIsIPad() bool {
 	return false
 }
 
-func DeviceBrowserLocation() (protocol, hostname string, port int) {
-	loc := WindowJS.Get("location")
-	protocol = loc.Get("protocol").String()
-	hostname = loc.Get("hostname").String()
-	port, _ = strconv.Atoi(loc.Get("port").String())
-	return
-}
 func DeviceIsBrowser() bool {
 	return true
 }

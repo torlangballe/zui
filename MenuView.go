@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type otherItem struct {
@@ -35,7 +36,7 @@ var menuViewHeight = 22.0
 // }
 
 func (v *MenuView) Dump() {
-	fmt.Println("DumpMenu:", v.ObjectName())
+	zlog.Info("DumpMenu:", v.ObjectName())
 	zdict.DumpNamedValues(v.items)
 }
 
@@ -48,7 +49,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.IsStatic {
 		maxString = "658 items" // make it big enough to not need to resize much
 	} else {
-		// fmt.Println("MV Calc size:", v)
+		// zlog.Info("MV Calc size:", v)
 		for i := 0; i < v.items.Count(); i++ {
 			_, name, _ := v.items.GetItem(i)
 			if len(name) > len(maxString) {
@@ -63,7 +64,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	maxString += "m"
 	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth)
-	// fmt.Println("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
+	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
 	s.W += 32
 	s.H = menuViewHeight
 	if v.maxWidth != 0 {
@@ -113,7 +114,7 @@ func (v *MenuView) GetCurrentIdOrValue() interface{} {
 	if v.oldValue == nil {
 		return nil
 	}
-	// fmt.Println("MenuView GetCurrentIdOrValue", v.oldValue, p(v.oldValue), reflect.ValueOf(v.oldValue).Type())
+	// zlog.Info("MenuView GetCurrentIdOrValue", v.oldValue, p(v.oldValue), reflect.ValueOf(v.oldValue).Type())
 	if isSimpleValue(v.oldValue) {
 		return v.oldValue
 	}

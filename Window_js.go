@@ -1,9 +1,12 @@
 package zui
 
 import (
+	"fmt"
+	"strings"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type windowNative struct {
@@ -23,6 +26,28 @@ func (w *Window) Rect() zgeo.Rect {
 	return zgeo.Rect{Size: s}
 }
 
-func WindowOpenWithURL(surl string) {
-	WindowJS.Call("open", surl)
+func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
+	win := &Window{}
+	var specs []string
+	if !size.IsNull() {
+		specs = append(specs, fmt.Sprintf("width=%d,height=%d", int(size.W), int(size.H)))
+	}
+	if pos != nil {
+		specs = append(specs, fmt.Sprintf("left=%d,top=%d", int(pos.X), int(pos.Y)))
+	}
+	win.element = WindowJS.Call("open", surl, "_blank", strings.Join(specs, ","))
+	zlog.Info("WIN:", win.element)
+	return win
+}
+
+func (w *Window) Close() {
+	w.element.Call("close")
+}
+
+func (w *Window) Activate() {
+	w.element.Call("focus")
+}
+
+func (w *Window) SetTitle(title string) {
+	w.element.Get("document").Set("title", title)
 }

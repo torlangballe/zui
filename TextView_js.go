@@ -4,7 +4,6 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -69,7 +68,7 @@ func (v *TextView) SetRect(rect zgeo.Rect) View {
 	m := v.Margin.Maxed(zgeo.SizeBoth(jsTextMargin))
 	rect = rect.Expanded(m.Negative())
 	rect.Pos.Y -= 3
-	// fmt.Println("TV: Rect:", v.ObjectName(), rect)
+	// zlog.Info("TV: Rect:", v.ObjectName(), rect)
 	v.NativeView.SetRect(rect)
 	return v
 }
@@ -147,7 +146,7 @@ func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods Keyb
 	v.set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		if handler != nil {
 			event := vs[0]
-			key := event.Get("which").Int()
+			// key := event.Get("which").Int()
 			var mods KeyboardModifier
 			if event.Get("altKey").Bool() {
 				mods |= KeyboardModifierAlt
@@ -161,7 +160,7 @@ func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods Keyb
 			if event.Get("shiftKey").Bool() {
 				mods |= KeyboardModifierShift
 			}
-			zlog.Dummy("KeyUp:", key, mods)
+			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil
 	}))
