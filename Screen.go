@@ -14,12 +14,13 @@ const (
 )
 
 type Screen struct {
-	isLocked     bool
-	Rect         zgeo.Rect
-	UsableRect   zgeo.Rect //= ZRect(UIScreen.main.bounds)
-	Scale        float64   //= float64(UIScreen.main.scale)
-	SoftScale    float64   // = 1.0
-	KeyboardRect *zgeo.Rect
+	IsMain   bool
+	isLocked bool
+	Rect     zgeo.Rect
+	// UsableRect   zgeo.Rect //= ZRect(UIScreen.main.bounds)
+	Scale     float64 //= float64(UIScreen.main.scale)
+	SoftScale float64 // = 1.0
+	//	KeyboardRect *zgeo.Rect
 }
 
 func ScreenStatusBarHeight() float64 {

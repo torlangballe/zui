@@ -1,5 +1,5 @@
 package zui
 
 func DeviceHardwareTypeAndVersion() (string, float32) {
-	return "intel-nuc", 1.0
+	return "pc", 1.0
 }

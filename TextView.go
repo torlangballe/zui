@@ -33,6 +33,12 @@ type TextView struct {
 
 const TextViewDefaultMargin = 3.0
 
+func TextViewNew(text string, style TextViewStyle) *TextView {
+	tv := &TextView{}
+	tv.Init(text, style)
+	return tv
+}
+
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := TextLayoutCalculateSize(v.alignment, v.Font(), "Ajzig", v.maxLines, v.maxWidth)
 	s.Add(v.Margin.TimesD(2))

@@ -4,16 +4,10 @@ package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
-func TextViewNew(text string, style TextViewStyle) *TextView {
-	tv := &TextView{}
-	// tv.Element = DocumentJS.Call("createElement", "INPUT")
-	// tv.set("style", "position:absolute")
-	// tv.set("type", "text")
-	// tv.set("value", text)
+func (tv *TextView) Init(text string, style TextViewStyle) {
 	tv.View = tv
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	tv.SetFont(f)
-	return tv
 }
 
 func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {

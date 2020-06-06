@@ -78,7 +78,7 @@ func AppGetProcessId() int64 {
 var AppMain *App
 
 // static var MainFunc ((_ args [string])Void)? = nil
-// class ZLauncher {
+// class ZLauncher
 //     func Start(args [string]) { }
 // }
 
@@ -87,10 +87,8 @@ type FilesRedirector struct {
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path[1:]
-	// zlog.Info("PATH:", path)
 	if zstr.HasPrefix(path, "page/", &path) {
 		zstr.ExtractStringTilSeparator(&path, "/")
-		// zlog.Info("PATH2:", path, function)
 	}
 	http.ServeFile(w, req, "www/"+path)
 }

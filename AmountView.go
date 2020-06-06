@@ -15,6 +15,7 @@ type AmountView struct {
 
 func (v *AmountView) SetValue(value float64) *AmountView {
 	v.value = value
+	// zlog.Info("AmountView SetValue:", value, v.exposed, presentViewPresenting)
 	v.Expose()
 	return v
 }
@@ -44,6 +45,7 @@ func AmountCircleDraw(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float64
 	path := zgeo.PathNew()
 	s := rect.Size.MinusD(strokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
 	w := s.Min()
+	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, ScreenMain().SoftScale)
 	path.MoveTo(rect.Center())
 	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, value*360)
 	canvas.SetColor(color, 1)

@@ -34,10 +34,10 @@ func ImageFromNative(n image.Image) *Image {
 	return i
 }
 
-func ImageFromPath(path string, got func()) *Image {
+func ImageFromPath(path string, got func(*Image)) *Image {
 	i := &Image{}
 	if got != nil {
-		defer got()
+		defer got(i)
 	}
 	file, err := os.Open(path)
 	if err != nil {
@@ -138,7 +138,7 @@ func (i *Image) SaveToPNG(filepath string) error {
 	return nil
 }
 
-func (i *Image) SaveToJPEG(filepath string) error {
+func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
 	out, err := os.Create(filepath)
 	if err != nil {
 		return zlog.Error(err, "os.create", filepath)
@@ -154,6 +154,17 @@ func (i *Image) SaveToJPEG(filepath string) error {
 func (i *Image) PNGData() ([]byte, error) {
 	out := bytes.NewBuffer([]byte{})
 	err := png.Encode(out, i.goimage)
+	if err != nil {
+		err = zlog.Error(err, "encode")
+		return []byte{}, err
+	}
+	return out.Bytes(), nil
+}
+
+func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
+	out := bytes.NewBuffer([]byte{})
+	options := jpeg.Options{Quality: qualityPercent}
+	err := jpeg.Encode(out, i.goimage, &options)
 	if err != nil {
 		err = zlog.Error(err, "encode")
 		return []byte{}, err

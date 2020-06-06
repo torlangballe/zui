@@ -1,4 +1,5 @@
 // +build !js
+// +build !darwin
 
 package zui
 

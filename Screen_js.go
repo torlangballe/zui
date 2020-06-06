@@ -24,7 +24,7 @@ func ScreenMain() Screen {
 	// }
 	//	m.Scale = 1 //!!!!!!!!!!!!!!!!!!!!
 	m.SoftScale = 1
-	m.UsableRect = m.Rect
+	// m.UsableRect = m.Rect
 
 	return m
 }

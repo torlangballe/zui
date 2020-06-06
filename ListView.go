@@ -64,6 +64,7 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ListView) drawIfExposed() {
+	// zlog.Info("LV:drawIfExposed")
 	for _, view := range v.rows {
 		et, got := view.(ExposableType)
 		if got {
@@ -139,6 +140,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 		s.H = v.GetRowHeight(i)
 		s.W = ls.W + v.Margin.Size.W
 		r := zgeo.Rect{zgeo.Pos{0, y}, s}
+		// zlog.Info("layout row:", i, s)
 		if (onlyIndex == -1 || i == onlyIndex) && r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
 			if first == -1 {
 				first = i
@@ -156,6 +158,11 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				v.rows[i] = row
 				v.setRowBGColor(i)
 				row.SetRect(r)
+				et, _ := row.(ExposableType)
+				if et != nil {
+					et.drawIfExposed()
+				}
+
 			}
 		}
 		y += s.H + v.spacing
@@ -255,6 +262,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	for {
 		oid := oldSlice.GetID(i)
 		nid := newSlice.GetID(i)
+		// zlog.Info("UpdateWithOldNewSlice", i, oid, nid)
 		if nid != oid {
 			reload = true
 			break

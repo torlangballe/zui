@@ -115,7 +115,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 		v.SetObjectName(name)
 	}
 	if image == nil && spath != "" {
-		v.image = ImageFromPath(spath, func() {
+		v.image = ImageFromPath(spath, func(*Image) {
 			// println("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.Expose()
 			if done != nil {

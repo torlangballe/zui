@@ -1,6 +1,9 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
+)
 
 //  Created by Tor Langballe on /13/11/15.
 
@@ -65,6 +68,7 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 }
 
 func (v *ScrollView) drawIfExposed() {
+	zlog.Info("SV:drawIfExposed")
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
 		et, got := v.child.(ExposableType)

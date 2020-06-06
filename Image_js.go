@@ -14,18 +14,18 @@ type imageBase struct {
 	imageJS   js.Value
 }
 
-func ImageFromPath(path string, got func()) *Image {
+func ImageFromPath(path string, got func(*Image)) *Image {
 	// zlog.Info("ImageFromPath:", path)
 	if path == "" {
 		if got != nil {
-			got()
+			got(nil)
 		}
 		return nil
 	}
 	i := Image{}
 	i.load(path, func() {
 		if got != nil {
-			got()
+			got(&i)
 		}
 	})
 	return &i
@@ -57,7 +57,7 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = 5
 		i.size.H = 5
-		zlog.Info("Image Load fail:", path)
+		// zlog.Info("Image Load fail:", path)
 		if done != nil {
 			done()
 		}

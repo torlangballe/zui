@@ -9,8 +9,7 @@ import (
 
 const jsTextMargin = 3
 
-func TextViewNew(text string, style TextViewStyle) *TextView {
-	tv := &TextView{}
+func (tv *TextView) Init(text string, style TextViewStyle) {
 	stype := "text"
 	tv.Element = DocumentJS.Call("createElement", "INPUT")
 	tv.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
@@ -24,7 +23,6 @@ func TextViewNew(text string, style TextViewStyle) *TextView {
 	tv.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	tv.SetFont(f)
-	return tv
 }
 
 func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {

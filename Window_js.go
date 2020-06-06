@@ -26,6 +26,9 @@ func (w *Window) Rect() zgeo.Rect {
 	return zgeo.Rect{Size: s}
 }
 
+// WindowOpenWithURL opens a new window with a given url.
+// It can set the *size* if non-zero, and *pos* if non-null.
+// Use *loaded* callback before setting title etc, as this is otherwise set during load
 func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
 	win := &Window{}
 	var specs []string
@@ -35,8 +38,8 @@ func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
 	if pos != nil {
 		specs = append(specs, fmt.Sprintf("left=%d,top=%d", int(pos.X), int(pos.Y)))
 	}
-	win.element = WindowJS.Call("open", surl, "_blank", strings.Join(specs, ","))
-	zlog.Info("WIN:", win.element)
+	win.element = WindowJS.Call("open", surl, "banana_blank", strings.Join(specs, ","))
+	// zlog.Info("OPENEDWIN:", win.element, surl)
 	return win
 }
 
@@ -49,5 +52,6 @@ func (w *Window) Activate() {
 }
 
 func (w *Window) SetTitle(title string) {
+	zlog.Info("setttile", w.element, title)
 	w.element.Get("document").Set("title", title)
 }

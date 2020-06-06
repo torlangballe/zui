@@ -44,7 +44,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 	zlog.Fatal(nil, "Not implemented")
 }
 
-func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) {
+func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
 	path := "www/fonts/" + font.Name
 	if font.Style&FontStyleBold != 0 {
 		path += " Bold"
@@ -52,7 +52,13 @@ func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) {
 	if font.Style&FontStyleItalic != 0 {
 		path += " Italic"
 	}
-	c.context.LoadFontFace(path+".ttf", font.Size)
+	// zlog.Info("canvas LoadFontFace:", path, font.Size)
+
+	err := c.context.LoadFontFace(path+".ttf", font.Size)
+	if err != nil {
+		return zlog.Error(err, "load font", path, font.Size)
+	}
+	return nil
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {

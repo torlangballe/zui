@@ -1,11 +1,16 @@
 package zui
 
 import (
+	"runtime"
+
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/torlangballe/zutil/zlog"
 )
 
+// Interesting: https://github.com/jaypipes/ghw
+
 type DeviceCellularNetworkType int
+type DeviceOSType string
 
 const (
 	DeviceCellularUnknown DeviceCellularNetworkType = iota
@@ -15,7 +20,24 @@ const (
 	DeviceCellular4G
 	DeviceCellular5G
 	DeviceCellularXG
+
+	DeviceMacOSType   DeviceOSType = "macos"
+	DeviceWindowsType DeviceOSType = "windows"
+	DeviceJSType      DeviceOSType = "js"
 )
+
+func DeviceOS() DeviceOSType {
+	switch runtime.GOOS {
+	case "windows":
+		return DeviceWindowsType
+	case "darwin":
+		return DeviceMacOSType
+	case "js":
+		return DeviceJSType
+	}
+	zlog.Fatal(nil, "other type")
+	return DeviceOSType("")
+}
 
 // DeviceCPUUsage returns a slice of 0-1 where 1 is 100% of how much each CPU is utilized. Order unknown, but hopefully doesn't change
 func DeviceCPUUsage() (out []float64) {

@@ -64,10 +64,11 @@ func (c *Canvas) FillPath(path *zgeo.Path) {
 func (c *Canvas) FillPathEO(path *zgeo.Path) {
 }
 
-func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) {
+func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
 	str := getFontStyle(font)
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
+	return nil
 	//    state.font = afontCreateTransformed(amatrix)
 }
 

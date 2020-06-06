@@ -60,8 +60,10 @@ func jsAddEventListener(e js.Value, name string, handler func()) {
 	err := e.Call("addEventListener", name, js.FuncOf(func(js.Value, []js.Value) interface{} {
 		zlog.Info("event listener")
 		return nil
-	}))
-	zlog.Info("jsAddEventListener err:", err)
+	}), false)
+	if !err.IsUndefined() {
+		zlog.Info("jsAddEventListener err:", err)
+	}
 }
 
 func NativeViewAddToRoot(v View) {
