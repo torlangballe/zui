@@ -8,7 +8,7 @@ import (
 
 var printed bool
 
-func ScreenMain() Screen {
+func ScreenGetAll() []Screen {
 	var m Screen
 
 	s := WindowJS.Get("screen")
@@ -18,6 +18,7 @@ func ScreenMain() Screen {
 	dpr := WindowJS.Get("devicePixelRatio").Float()
 	m.Rect = zgeo.RectMake(0, 0, w, h)
 	m.Scale = math.Round(dpr)
+	m.IsMain = true
 	// if !printed {
 	// 	zlog.Info("SCREEN SCALE:", dpr)
 	// 	printed = true
@@ -26,7 +27,7 @@ func ScreenMain() Screen {
 	m.SoftScale = 1
 	// m.UsableRect = m.Rect
 
-	return m
+	return []Screen{m}
 }
 
 /*

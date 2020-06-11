@@ -16,18 +16,7 @@ import (
 	"unsafe"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
-
-func ScreenMain() Screen {
-	for _, s := range ScreenGetAll() {
-		if s.IsMain {
-			return s
-		}
-	}
-	zlog.Fatal(nil, "no main screen")
-	return Screen{}
-}
 
 /*
 func ScreenGetAll() (screens []Screen) {

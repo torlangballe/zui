@@ -191,7 +191,7 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 }
 
 func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	c.context.DrawImage(image.goimage, int(destRect.Pos.X), int(destRect.Pos.Y))
+	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
 }
 
 func (c *Canvas) Image() *Image {

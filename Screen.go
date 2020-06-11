@@ -1,6 +1,9 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
+)
 
 //  Created by Tor Langballe on /12/11/15.
 
@@ -21,6 +24,20 @@ type Screen struct {
 	Scale     float64 //= float64(UIScreen.main.scale)
 	SoftScale float64 // = 1.0
 	//	KeyboardRect *zgeo.Rect
+}
+
+func ScreenMain() Screen {
+	for _, s := range ScreenGetAll() {
+		if s.IsMain {
+			return s
+		}
+	}
+	zlog.Error(nil, "No screen!")
+	s := Screen{}
+	s.SoftScale = 1
+	s.Scale = 1
+	s.IsMain = true
+	return s
 }
 
 func ScreenStatusBarHeight() float64 {

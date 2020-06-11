@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"image"
+	"io"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -29,6 +31,21 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		}
 	})
 	return &i
+}
+
+func ImageFromNative(n image.Image) *Image {
+	zlog.Fatal(nil, "Not implemented")
+	return nil
+}
+
+func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
+	zlog.Fatal(nil, "Not implemented")
+	return nil
+}
+
+func (i *Image) Encode(w io.Writer, qualityPercent int) error {
+	zlog.Fatal(nil, "Not implemented")
+	return nil
 }
 
 func (i *Image) load(path string, done func()) {
