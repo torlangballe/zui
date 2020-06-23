@@ -3,6 +3,8 @@
 package zui
 
 import (
+	"runtime"
+
 	"github.com/fogleman/gg"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -45,20 +47,30 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 }
 
 func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
-	path := "www/fonts/" + font.Name
+	var err error
+	name := font.Name
 	if font.Style&FontStyleBold != 0 {
-		path += " Bold"
+		name += " Bold"
 	}
 	if font.Style&FontStyleItalic != 0 {
-		path += " Italic"
+		name += " Italic"
 	}
-	// zlog.Info("canvas LoadFontFace:", path, font.Size)
-
-	err := c.context.LoadFontFace(path+".ttf", font.Size)
-	if err != nil {
-		return zlog.Error(err, "load font", path, font.Size)
+	var paths = []string{"Fonts/"}
+	if runtime.GOOS == "darwin" {
+		paths = append(paths, "/System/Library/Fonts/")
 	}
-	return nil
+	for _, path := range paths {
+		for _, ext := range []string{".ttf", ".ttc"} {
+			p := path + name + ext
+			err = c.context.LoadFontFace(p, font.Size)
+			if err != nil {
+				zlog.Info(err, "Load font:", p)
+			} else {
+				return nil
+			}
+		}
+	}
+	return zlog.Error(nil, "couldn't load font", font.Name)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {

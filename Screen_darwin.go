@@ -43,6 +43,9 @@ func ScreenGetAll() (screens []Screen) {
 func ScreenGetAll() (screens []Screen) {
 	var count C.uint32_t = 0
 	C.CGGetActiveDisplayList(0, nil, &count)
+	if count == 0 {
+		return
+	}
 	cscreens := make([]C.ScreenInfo, count)
 	p := (*C.ScreenInfo)(unsafe.Pointer(&cscreens[0]))
 	c := int(C.GetAllScreens(p, C.int(count)))
@@ -55,6 +58,5 @@ func ScreenGetAll() (screens []Screen) {
 		s.SoftScale = 1
 		screens = append(screens, s)
 	}
-
 	return
 }

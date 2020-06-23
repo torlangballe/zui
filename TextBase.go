@@ -36,13 +36,14 @@ type TextLayoutOwner interface {
 	SetMinWidth(min float64) View
 	SetMaxWidth(max float64) View
 	SetMaxLines(max int) View
+	IsMinimumOneLineHight() bool
 }
 
 func TextLayoutOwnerCalculateSize(o TextLayoutOwner) zgeo.Size {
-	return TextLayoutCalculateSize(o.TextAlignment(), o.Font(), o.Text(), o.MaxLines(), o.MaxWidth())
+	return TextLayoutCalculateSize(o.TextAlignment(), o.Font(), o.Text(), o.MaxLines(), o.MaxWidth(), o.IsMinimumOneLineHight())
 }
 
-func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64) zgeo.Size {
+func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, maxLines int, maxWidth float64, isMinimumOneLineHight bool) zgeo.Size {
 	var t TextInfo
 	t.Alignment = alignment
 	t.Text = text
@@ -56,6 +57,7 @@ func TextLayoutCalculateSize(alignment zgeo.Alignment, font *Font, text string, 
 		t.MaxLines = maxLines
 	}
 	t.Wrap = TextInfoWrapWord
+	t.IsMinimumOneLineHight = isMinimumOneLineHight
 	size := t.GetBounds(noWidth)
 	// zlog.Info("TextLayoutCalculateSize:", maxWidth, rect, text, font.Size, font.Name)
 

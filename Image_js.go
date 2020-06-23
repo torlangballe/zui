@@ -48,6 +48,15 @@ func (i *Image) Encode(w io.Writer, qualityPercent int) error {
 	return nil
 }
 
+func (i *Image) RGBAImage() *Image {
+	zlog.Fatal(nil, "Not implemented")
+	return nil
+}
+
+func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
+	return nil, nil
+}
+
 func (i *Image) load(path string, done func()) {
 	// if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
 	// 	if !strings.HasPrefix(path, "images/") {

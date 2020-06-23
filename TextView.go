@@ -5,7 +5,7 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-//  Oriiginally created by Tor Langballe on /2/11/15.
+//  Originally created by Tor Langballe on /2/11/15.
 
 type TextViewStyle struct {
 	KeyboardType  KeyboardType
@@ -40,7 +40,7 @@ func TextViewNew(text string, style TextViewStyle) *TextView {
 }
 
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	s := TextLayoutCalculateSize(v.alignment, v.Font(), "Ajzig", v.maxLines, v.maxWidth)
+	s := TextLayoutCalculateSize(v.alignment, v.Font(), "Ajzig", v.maxLines, v.maxWidth, true)
 	s.Add(v.Margin.TimesD(2))
 	s.MakeInteger()
 	return s

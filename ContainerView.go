@@ -228,13 +228,7 @@ func ContainerIsLoading(ct ContainerType) bool {
 // WhenContainerLoaded waits for all sub-parts images etc to be loaded before calling done.
 // done received waited=true if it had to wait
 func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
-	if !ContainerIsLoading(ct) {
-		if done != nil {
-			done(false)
-		}
-		return
-	}
-	ztimer.Repeat(0.1, true, true, func() bool {
+	ztimer.RepeatNow(0.1, func() bool {
 		if ContainerIsLoading(ct) {
 			return true
 		}

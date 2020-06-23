@@ -38,6 +38,19 @@ func (s FontStyle) String() string {
 	return strings.Join(parts, " ")
 }
 
+func FontStyleFromStr(str string) FontStyle {
+	s := FontStyleNormal
+	for _, p := range strings.Split(str, " ") {
+		switch p {
+		case "bold":
+			s |= FontStyleBold
+		case "italic":
+			s |= FontStyleItalic
+		}
+	}
+	return s
+}
+
 func FontNew(name string, size float64, style FontStyle) *Font {
 	return &Font{Name: name, Size: size * scale, Style: style}
 }

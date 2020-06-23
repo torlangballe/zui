@@ -232,7 +232,7 @@ func (v *ListView) Select(i int) {
 func (v *ListView) FlashSelect(i int) {
 	count := 0
 	v.Select(i)
-	ztimer.Repeat(0.1, true, true, func() bool {
+	ztimer.RepeatNow(0.1, func() bool {
 		if count%2 == 0 {
 			v.Select(i)
 		} else {

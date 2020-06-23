@@ -86,7 +86,8 @@ func (v *TextView) BGColor() zgeo.Color {
 	if str == "" || str == "initial" { // hack since it is white but has no value, so it isn't "initall", which is transparent
 		return zgeo.ColorWhite
 	}
-	return zgeo.ColorFromString(str)
+	c := zgeo.ColorFromString(str)
+	return c
 }
 
 func (v *TextView) updateDone() {
@@ -106,7 +107,7 @@ func (v *TextView) startUpdate() {
 		v.updateTimer.Stop()
 	}
 	// zlog.Info("call Text Update", v.UpdateSecs)
-	v.updateTimer = ztimer.StartIn(v.UpdateSecs, true, func() {
+	v.updateTimer = ztimer.StartIn(v.UpdateSecs, func() {
 		v.updateDone()
 	})
 	//	v.updated = false

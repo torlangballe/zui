@@ -42,7 +42,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 	}
 	// zlog.Info("exposeInSecs", v.ObjectName())
 	v.exposed = true
-	v.exposeTimer.StartIn(secs, true, func() {
+	v.exposeTimer.StartIn(secs, func() {
 		io, got := v.View.(ImageOwner)
 		// zlog.Info("exposeInSecs draw", v.ObjectName(), got)
 		if got {

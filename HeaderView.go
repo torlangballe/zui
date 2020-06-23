@@ -44,7 +44,7 @@ func (v *HeaderView) Populate(headers []Header, pressed func(id string)) {
 			iv.SetObjectName(h.ID + ".image")
 			button.Add(zgeo.Center, iv, zgeo.Size{})
 		}
-		button.TextInfo.Color = zgeo.ColorWhite
+		button.SetColor(zgeo.ColorWhite)
 		button.TextXMargin = 0
 		// if !h.ImageSize.IsNull() {
 		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})

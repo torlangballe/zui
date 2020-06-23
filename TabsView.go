@@ -39,8 +39,8 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
-	button.TextInfo.Color = zgeo.ColorWhite
-	button.TextInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
+	button.SetColor(zgeo.ColorWhite)
+	button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	v.creators[id] = creator
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
@@ -72,14 +72,14 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 			style = FontStyleBold
 		}
 		button.SetImageName(str, zgeo.Size{11, 13})
-		button.TextInfo.Font = FontNice(FontDefaultSize, style)
+		button.SetFont(FontNice(FontDefaultSize, style))
 	}
 }
 func (v *TabsView) SetTab(id string) {
 	// zlog.Info("Set Tab", id)
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
-			v.creators[id](true)
+			v.creators[v.CurrentID](true)
 			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.ChildView != nil {

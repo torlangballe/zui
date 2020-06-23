@@ -63,7 +63,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		}
 	}
 	maxString += "m"
-	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth)
+	s := TextLayoutCalculateSize(zgeo.Left, v.Font(), maxString, 1, v.maxWidth, true)
 	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
 	s.W += 32
 	s.H = menuViewHeight

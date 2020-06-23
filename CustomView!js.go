@@ -14,3 +14,6 @@ func (v *CustomView) makeCanvas() {
 
 func (v *CustomView) SetPressedHandler(handler func()) {
 }
+
+func (v *CustomView) SetLongPressedHandler(handler func()) {
+}

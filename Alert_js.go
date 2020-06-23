@@ -2,8 +2,6 @@ package zui
 
 import (
 	"syscall/js"
-
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func (a *Alert) Show(handle func(result AlertResult)) {
@@ -12,7 +10,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	if a.SubText != "" {
 		str += "\n\n" + a.SubText
 	}
-	zlog.Info("alert:", str)
+	// zlog.Info("alert:", str)
 	if a.CancelButton != "" {
 		alert := js.Global().Get("confirm")
 		r = alert.Invoke(str).Bool()

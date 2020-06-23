@@ -233,7 +233,7 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	// 	zlog.Info("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
 	// }
 	//	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
-	s.H = font.LineHeight() * 0.85
+	s.H = font.LineHeight() * 1.1
 
 	// zlog.Info("canvasGetTextSize:", text, font, s)
 	return s

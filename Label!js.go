@@ -20,3 +20,4 @@ func (v *Label) SetMargin(m zgeo.Rect) *Label {
 
 func (v *Label) SetPressedHandler(handler func()) {
 }
+

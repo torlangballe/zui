@@ -30,6 +30,10 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
+func (l *Label) IsMinimumOneLineHight() bool {
+	return true
+}
+
 func (l *Label) TextAlignment() zgeo.Alignment {
 	return l.alignment
 }

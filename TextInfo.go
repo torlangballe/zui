@@ -44,17 +44,18 @@ const (
 )
 
 type TextInfo struct {
-	Type             TextInfoType
-	Wrap             TextInfoWrap
-	Text             string
-	Color            zgeo.Color
-	Alignment        zgeo.Alignment
-	Font             *Font
-	Rect             zgeo.Rect
-	LineSpacing      float64
-	StrokeWidth      float64
-	MaxLines         int
-	MinimumFontScale float64
+	Type                  TextInfoType
+	Wrap                  TextInfoWrap
+	Text                  string
+	Color                 zgeo.Color
+	Alignment             zgeo.Alignment
+	Font                  *Font
+	Rect                  zgeo.Rect
+	LineSpacing           float64
+	StrokeWidth           float64
+	MaxLines              int
+	MinimumFontScale      float64
+	IsMinimumOneLineHight bool
 }
 
 func TextInfoNew() *TextInfo {
@@ -82,8 +83,8 @@ func (ti *TextInfo) GetBounds(noWidth bool) zgeo.Size {
 	}
 	count := zint.Max(ti.MaxLines, len(lines))
 	count = ti.MaxLines
-	if count > 1 {
-		size.H = float64(ti.Font.LineHeight()) * float64(count)
+	if count > 1 || ti.IsMinimumOneLineHight {
+		size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
 	}
 	// if !ti.Rect.IsNull() {
 	// 	zfloat.Minimize(&size.W, ti.Rect.Size.W)

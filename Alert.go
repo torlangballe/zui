@@ -33,7 +33,13 @@ func AlertNew(items ...interface{}) *Alert {
 	return a
 }
 
-func (a *Alert) Cancel(text string) *Alert {
+func AlertNewWithCancel(items ...interface{}) *Alert {
+	a := AlertNew()
+	a.SetCancel("")
+	return a
+}
+
+func (a *Alert) SetCancel(text string) *Alert {
 	if text == "" {
 		text = WordsGetCancel()
 	}
@@ -41,17 +47,17 @@ func (a *Alert) Cancel(text string) *Alert {
 	return a
 }
 
-func (a *Alert) Other(text string) *Alert {
+func (a *Alert) SetOther(text string) *Alert {
 	a.OtherButton = text
 	return a
 }
 
-func (a *Alert) Destructive(text string) *Alert {
+func (a *Alert) SetDestructive(text string) *Alert {
 	a.DestructiveButton = text
 	return a
 }
 
-func (a *Alert) Sub(text string) *Alert {
+func (a *Alert) SetSub(text string) *Alert {
 	a.SubText = text
 	return a
 }

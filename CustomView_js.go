@@ -31,7 +31,7 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 	v.set("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEDOWN")
 		v.downClickedTime = time.Now()
-		v.longTimer = ztimer.StartIn(0.5, true, func() {
+		v.longTimer = ztimer.StartIn(0.5, func() {
 			// fmt.Println("TIMER")
 			if v.longPressed != nil && v.Usable() {
 				v.longPressed()

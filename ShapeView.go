@@ -26,7 +26,7 @@ type ShapeView struct {
 	image        *Image
 	Type         ShapeViewType
 	StrokeWidth  float64
-	TextInfo     TextInfo
+	textInfo     TextInfo
 	ImageMargin  zgeo.Size //  ZSize(4.0, 1.0) * ZScreen.SoftScale
 	TextXMargin  float64
 	IsImageFill  bool       //
@@ -34,7 +34,7 @@ type ShapeView struct {
 	Ratio        float32    // = 0.3
 	Count        int        // = 5
 	StrokeColor  zgeo.Color // = ZColor.White()
-	MaxWidth     float64
+	maxWidth     float64
 	ImageAlign   zgeo.Alignment // .Center
 	IsFillBox    bool
 	IsRoundImage bool
@@ -51,7 +51,7 @@ func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
 
 func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string) {
 	v.CustomView.init(v, name)
-	v.TextInfo = *TextInfoNew()
+	v.textInfo = *TextInfoNew()
 	v.Type = shapeType
 	v.ImageMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
 	v.ImageOpacity = 1
@@ -76,10 +76,57 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.SetFont(f)
 }
 
+func (v *ShapeView) SetColor(c zgeo.Color) View {
+	v.textInfo.Color = c
+	return v
+}
+
+func (v *ShapeView) Color() zgeo.Color {
+	return v.textInfo.Color
+}
+
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
 func (v *ShapeView) SetText(text string) View {
-	v.TextInfo.Text = text
+	v.textInfo.Text = text
 	v.Expose()
+	return v
+}
+
+func (v *ShapeView) Text() string {
+	return v.textInfo.Text
+}
+
+func (v *ShapeView) SetTextAlignment(a zgeo.Alignment) View {
+	v.textInfo.Alignment = a
+	return v
+}
+
+func (v *ShapeView) MinWidth() float64 {
+	return v.MinWidth()
+}
+
+func (v *ShapeView) MaxWidth() float64 {
+	return v.maxWidth
+}
+
+func (v *ShapeView) MaxLines() int {
+	return v.textInfo.MaxLines
+}
+
+func (v *ShapeView) SetMinWidth(min float64) View {
+	s := v.MinSize()
+	s.W = min
+	v.SetMinSize(s)
+	return v
+}
+
+func (v *ShapeView) SetMaxWidth(max float64) View {
+	v.maxWidth = max
+	return v
+}
+
+func (v *ShapeView) SetMaxLines(max int) View {
+	v.textInfo.MaxLines = max
 	return v
 }
 
@@ -89,15 +136,15 @@ func (v *ShapeView) GetImage() *Image {
 
 func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
-	if v.TextInfo.Text != "" {
-		ts := v.TextInfo.GetBounds(false)
+	if v.textInfo.Text != "" {
+		ts := v.textInfo.GetBounds(false)
 		ts.Add(zgeo.Size{16, 6})
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
 	}
 	s.Add(v.margin.Size.Negative())
-	if v.MaxWidth != 0.0 {
-		zfloat.Maximize(&s.W, v.MaxWidth)
+	if v.maxWidth != 0.0 {
+		zfloat.Maximize(&s.W, v.maxWidth)
 	}
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
@@ -208,18 +255,18 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			}
 		}
 	}
-	if v.TextInfo.Text != "" {
-		t := v.TextInfo // .Copy()
+	if v.textInfo.Text != "" {
+		t := v.textInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
 		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
-		t.Rect.Pos.Y += 1
-		// zlog.Info("Shape draw:", exp, v.TextInfo.Text, t.Color)
+		t.Rect.Pos.Y += 3
+		// zlog.Info("Shape draw:", exp, v.textInfo.Text, t.Color)
 		t.Font = v.Font()
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack)
 		}
-		// if v.TextInfo.Text == "On" {
+		// if v.textInfotextInfo.Text == "On" {
 		// 	zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 

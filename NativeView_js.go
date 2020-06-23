@@ -75,8 +75,7 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 		h = parseElementCoord(sh)
 		w = parseElementCoord(sw)
 	} else {
-		println("parse empty Coord: " + v.ObjectName())
-		panic("parse empty Coord")
+		zlog.Info("parse empty Coord:", v.ObjectName(), zlog.GetCallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -129,6 +128,7 @@ func (v *NativeView) SetObjectName(name string) View {
 }
 
 func (v *NativeView) SetBGColor(c zgeo.Color) View {
+	// zlog.Info("SetBGColor:", v.ObjectName(), c)
 	v.style().Set("backgroundColor", makeRGBAString(c))
 	return v
 }
