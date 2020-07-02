@@ -25,6 +25,21 @@ func (v *CustomView) init(view View, name string) {
 	v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
+func (v *CustomView) SetPressedHandler(handler func()) {
+	v.pressed = handler
+	v.set("className", "widget")
+	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if v.longTimer != nil {
+			v.longTimer.Stop()
+		}
+		if !v.cancelClick && v.pressed != nil && v.Usable() {
+			v.pressed()
+		}
+		v.cancelClick = false
+		return nil
+	}))
+}
+
 func (v *CustomView) SetLongPressedHandler(handler func()) {
 	v.longPressed = handler
 	v.set("className", "widget")
@@ -50,19 +65,12 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 	}))
 }
 
-func (v *CustomView) SetPressedHandler(handler func()) {
-	v.pressed = handler
-	v.set("className", "widget")
-	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if v.longTimer != nil {
-			v.longTimer.Stop()
-		}
-		if !v.cancelClick && v.pressed != nil && v.Usable() {
-			v.pressed()
-		}
-		v.cancelClick = false
-		return nil
-	}))
+func (v *CustomView) PressedHandler() func() {
+	return v.pressed
+}
+
+func (v *CustomView) LongPressedHandler() func() {
+	return v.longPressed
 }
 
 func (v *CustomView) setCanvasSize(size zgeo.Size) {

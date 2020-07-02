@@ -129,7 +129,7 @@ func (ti *TextInfo) MakeAttributes() zdict.Dict {
 func (ti *TextInfo) FillAndStroke(canvas *Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
 	t := *ti
 	t.Type = TextInfoFill
-	t.Draw(canvas)
+	//	t.Draw(canvas)
 	t.Color = strokeColor
 	t.Type = TextInfoStroke
 	t.StrokeWidth = width
@@ -159,6 +159,17 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	if ti.Type == TextInfoStroke {
 		w = ti.StrokeWidth
 	}
+	font := ti.Font
+	if ti.Alignment&zgeo.HorCenter != 0 {
+		//        r = r.Expanded(ZSize(1, 0))
+	}
+	if ti.Alignment&zgeo.HorShrink != 0 {
+		zlog.Assert(!ti.Rect.Size.IsNull())
+		// fmt.Println("CANVAS TI SetFont B4 Scale:", font)
+		font = ti.ScaledFontToFit(ti.MinimumFontScale)
+	}
+	// fmt.Println("CANVAS TI SetFont:", font)
+	canvas.SetFont(font, nil)
 	if ti.Rect.Size.IsNull() {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, w)
 		return zgeo.Rect{}
@@ -174,18 +185,10 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	} else {
 		//r.SetMinY(ra.Pos.Y - float64(ti.Font.LineHeight())/20)
 	}
-	font := ti.Font
-	if ti.Alignment&zgeo.HorCenter != 0 {
-		//        r = r.Expanded(ZSize(1, 0))
-	}
-	if ti.Alignment&zgeo.HorShrink != 0 {
-		font = ti.ScaledFontToFit(ti.MinimumFontScale)
-	}
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
-	canvas.SetFont(font, nil)
 	zstr.RangeStringLines(ti.Text, false, func(s string) {
 		x := ra.Pos.X
 		// tsize := canvasGetTextSize(s, ti.Font)
@@ -211,6 +214,5 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 	} else {
 		return ti.Font
 	}
-	zlog.Info("Scale Font:", r, w, s.W)
 	return FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
 }

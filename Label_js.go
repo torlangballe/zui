@@ -18,7 +18,7 @@ func LabelNew(text string) *Label {
 	style.Set("whiteSpace", "pre-wrap")
 	style.Set("overflow", "hidden")
 	style.Set("textOverflow", "clip")
-//	white-space: pre-wrap for multi-lines
+	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
 	label.maxLines = 1

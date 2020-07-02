@@ -28,6 +28,9 @@ func TabsViewNew(name string) *TabsView {
 	return v
 }
 
+var TabsDefaultButtonName = "gray-tab"
+var TabsDefaultTextColor = zgeo.ColorWhite
+
 func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, creator func(del bool) View) {
 	if title == "" {
 		title = id
@@ -36,10 +39,10 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 		align = zgeo.Left | zgeo.Top | zgeo.Expand
 	}
 	v.childAlignmens[id] = align
-	button := ButtonNew(title, "grayTab", zgeo.Size{20, 28}, zgeo.Size{11, 13})
+	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 28}, zgeo.Size{11, 13})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
-	button.SetColor(zgeo.ColorWhite)
+	button.SetColor(TabsDefaultTextColor)
 	button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	v.creators[id] = creator
 	button.SetPressedHandler(func() {
@@ -65,10 +68,10 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button := (*view).(*Button)
-		str := "grayTab"
+		str := TabsDefaultButtonName
 		style := FontStyleNormal
 		if on {
-			str += "Dark"
+			str += "-selected"
 			style = FontStyleBold
 		}
 		button.SetImageName(str, zgeo.Size{11, 13})

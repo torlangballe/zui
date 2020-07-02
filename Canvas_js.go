@@ -214,28 +214,12 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 	c.context.Call("fillText", text, pos.X, pos.Y)
 }
 
-var measureTextCanvas *Canvas
-
-func canvasGetTextSize(text string, font *Font) zgeo.Size {
-	// https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript
-
+func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
 	var s zgeo.Size
-	if measureTextCanvas == nil {
-		measureTextCanvas = CanvasNew()
-	}
-	measureTextCanvas.SetFont(font, nil)
-	var metrics = measureTextCanvas.context.Call("measureText", text)
-
+	c.SetFont(font, nil)
+	var metrics = c.context.Call("measureText", text)
 	s.W = metrics.Get("width").Float()
-	//	s.H = metrics.Get("height").Float()
-
-	// if text == "QTT Manager" {
-	// 	zlog.Info("canvasGetTextSize:", text, font.Size, font.Name, s, s.W)
-	// }
-	//	s.W -= 3 // seems to wrap otherwise, maybe it's rounded down to int somewhere
 	s.H = font.LineHeight() * 1.1
-
-	// zlog.Info("canvasGetTextSize:", text, font, s)
 	return s
 }
 

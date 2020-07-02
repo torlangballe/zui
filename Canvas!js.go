@@ -3,7 +3,9 @@
 package zui
 
 import (
+	"fmt"
 	"runtime"
+	"sync"
 
 	"github.com/fogleman/gg"
 	"github.com/torlangballe/zutil/zgeo"
@@ -19,6 +21,21 @@ type canvasNative struct {
 
 func CanvasNew() *Canvas {
 	return &Canvas{}
+}
+
+func (c *Canvas) String() string {
+	if c.context == nil {
+		return "context==nil"
+	}
+	return fmt.Sprintf("context:%dx%d", c.context.Width(), c.context.Height())
+}
+
+func CanvasFromImage(image *Image) *Canvas {
+	zlog.Assert(image != nil && image.GoImage != nil)
+	c := &Canvas{}
+	c.context = gg.NewContextForImage(image.GoImage)
+	zlog.Assert(c.context != nil)
+	return c
 }
 
 func (c *Canvas) SetSize(size zgeo.Size) {
@@ -46,7 +63,10 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 	zlog.Fatal(nil, "Not implemented")
 }
 
+var fontMutex sync.Mutex
+
 func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
+	//	fmt.Printf("CANVAS SETFONT: %v %p %s\n", c, c, zlog.GetCallingStackString())
 	var err error
 	name := font.Name
 	if font.Style&FontStyleBold != 0 {
@@ -62,7 +82,10 @@ func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
 	for _, path := range paths {
 		for _, ext := range []string{".ttf", ".ttc"} {
 			p := path + name + ext
+			zlog.Assert(c.context != nil)
+			fontMutex.Lock()
 			err = c.context.LoadFontFace(p, font.Size)
+			fontMutex.Unlock()
 			if err != nil {
 				zlog.Info(err, "Load font:", p)
 			} else {
@@ -186,19 +209,17 @@ func (c *Canvas) setLineType(ltype zgeo.PathLineType) {
 }
 
 func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
+	// fmt.Printf("CANVAS draw text: %v %p\n", c, c)
+	fontMutex.Lock()
 	c.context.DrawString(text, pos.X, pos.Y)
+	fontMutex.Unlock()
 }
 
-var measureTextCanvas *Canvas
-
-func canvasGetTextSize(text string, font *Font) zgeo.Size {
-	if measureTextCanvas == nil {
-		measureTextCanvas = CanvasNew()
-		measureTextCanvas.SetSize(zgeo.Size{500, 100})
-	}
-	measureTextCanvas.SetFont(font, nil)
-
-	w, h := measureTextCanvas.context.MeasureString(text)
+func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
+	c.SetFont(font, nil)
+	fontMutex.Lock()
+	w, h := c.context.MeasureString(text)
+	fontMutex.Unlock()
 	return zgeo.Size{w, h}
 }
 

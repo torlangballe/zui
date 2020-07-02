@@ -2,6 +2,7 @@ package zui
 
 import (
 	"math"
+	"sync"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -59,4 +60,31 @@ func canvasCreateGradientLocations(colors int) []float64 {
 		locations[i] = float64(i) / float64(last)
 	}
 	return locations
+}
+
+var measureTextCanvases = map[*Canvas]bool{}
+var measureTextMutex sync.Mutex
+
+func canvasGetTextSize(text string, font *Font) zgeo.Size {
+	var canvas *Canvas
+	measureTextMutex.Lock() // We can make a pool of canvases here if worth it
+	// fmt.Println("canvas measure lock time:", time.Since(start), len(measureTextCanvases))
+	for c, used := range measureTextCanvases {
+		if !used {
+			measureTextCanvases[c] = true
+			canvas = c
+			break
+		}
+	}
+	measureTextMutex.Unlock()
+	if canvas == nil {
+		canvas = CanvasNew()
+		canvas.SetSize(zgeo.Size{500, 100})
+	}
+	s := canvas.MeasureText(text, font)
+	measureTextMutex.Lock()
+	// fmt.Println("canvas measure lock time 2:", time.Since(start), len(measureTextCanvases))
+	measureTextCanvases[canvas] = false
+	measureTextMutex.Unlock()
+	return s
 }

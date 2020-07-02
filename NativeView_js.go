@@ -254,6 +254,7 @@ func (v *NativeView) Font() *Font {
 }
 
 func (v *NativeView) SetText(text string) View {
+	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
 	v.set("innerHTML", text)
 	return v
 }

@@ -34,7 +34,7 @@ func AlertNew(items ...interface{}) *Alert {
 }
 
 func AlertNewWithCancel(items ...interface{}) *Alert {
-	a := AlertNew()
+	a := AlertNew(items)
 	a.SetCancel("")
 	return a
 }

@@ -29,6 +29,12 @@ type imageBase struct {
 	//	hasAlpha  bool `json:"hasAlpha"`
 }
 
+func ImageNewRGBA(size zgeo.Size) *Image {
+	i := &Image{}
+	i.GoImage = image.NewRGBA(zgeo.RectFromSize(size).GoRect())
+	return i
+}
+
 func ImageFromNative(n image.Image) *Image {
 	i := &Image{}
 	i.GoImage = n
@@ -87,7 +93,7 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 
 // ShrunkInto scales down the image to fit inside size.
 // It must be a subset of standard libarary image types, as it uses rez
-// package to downsample, which works on underlying image types. 
+// package to downsample, which works on underlying image types.
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	var vsize = size
 	if proportional {

@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /14/12/17.
@@ -48,6 +49,9 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	if ScreenMain().Scale >= 2 {
 		s = "@2x"
 	}
-	cimage := b.SetImage(nil, "images/buttons/"+name+s+".png", nil)
+	str := "images/buttons/" + name + s + ".png"
+
+	zlog.Info("SetImageButtonName:", str)
+	cimage := b.SetImage(nil, str, nil)
 	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

@@ -90,3 +90,16 @@ func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *
 	viewCell = stack.AddView(view, zgeo.Left|zgeo.VertCenter)
 	return
 }
+
+// SetLongPressedHandler sets the handdler function for when label is long-pressed.
+// Currently not implemented (see customview for implementation), and doesn't print as zfielsd sets this for Pressable type
+func (v *Label) SetLongPressedHandler(handler func()) {
+}
+
+func (v *Label) PressedHandler() func() {
+	return v.pressed
+}
+
+func (v *Label) LongPressedHandler() func() {
+	return nil
+}

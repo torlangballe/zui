@@ -68,6 +68,12 @@ type ContainerType interface {
 	GetChildren() []View
 	ArrangeChildren(onlyChild *View)
 }
+type Pressable interface {
+	SetPressedHandler(handler func())
+	SetLongPressedHandler(handler func())
+	PressedHandler() func()
+	LongPressedHandler() func()
+}
 
 type ViewLayoutProtocol interface {
 	HandleBeforeLayout()

@@ -76,3 +76,7 @@ func (l *TextView) SetMaxLines(max int) View {
 	l.maxLines = max
 	return l
 }
+
+func (l *TextView) IsMinimumOneLineHight() bool {
+	return true
+}

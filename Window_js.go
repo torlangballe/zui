@@ -43,6 +43,11 @@ func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
 	return win
 }
 
+func WindowOpenOtherURLType(surl string) {
+	zlog.Info("OPEN URL:", surl)
+	WindowJS.Get("location").Set("href", surl)
+}
+
 func (w *Window) Close() {
 	w.element.Call("close")
 }
@@ -52,6 +57,6 @@ func (w *Window) Activate() {
 }
 
 func (w *Window) SetTitle(title string) {
-	zlog.Info("setttile", w.element, title)
+	// zlog.Info("setttile", w.element, title)
 	w.element.Get("document").Set("title", title)
 }
