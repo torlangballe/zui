@@ -2,18 +2,10 @@ package zui
 
 import (
 	"syscall/js"
-	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/ztimer"
 )
-
-type baseCustomView struct {
-	cancelClick     bool
-	downClickedTime time.Time
-	longTimer       *ztimer.Timer
-}
 
 func (v *CustomView) init(view View, name string) {
 	v.Element = DocumentJS.Call("createElement", "div")
@@ -29,38 +21,22 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	v.set("className", "widget")
 	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if v.longTimer != nil {
-			v.longTimer.Stop()
-		}
-		if !v.cancelClick && v.pressed != nil && v.Usable() {
-			v.pressed()
-		}
-		v.cancelClick = false
+		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
 }
 
 func (v *CustomView) SetLongPressedHandler(handler func()) {
+	// zlog.Info("SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
 	v.set("className", "widget")
 	v.set("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		// fmt.Println("MOUSEDOWN")
-		v.downClickedTime = time.Now()
-		v.longTimer = ztimer.StartIn(0.5, func() {
-			// fmt.Println("TIMER")
-			if v.longPressed != nil && v.Usable() {
-				v.longPressed()
-			}
-			v.longTimer = nil
-			v.cancelClick = true
-		})
+		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
 	v.set("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
-		if v.longTimer != nil {
-			v.longTimer.Stop()
-		}
+		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil
 	}))
 }

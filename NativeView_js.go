@@ -3,9 +3,11 @@ package zui
 import (
 	"fmt"
 	"syscall/js"
+	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type NativeView struct {
@@ -299,4 +301,41 @@ func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo
 
 func (v *NativeView) SetToolTip(str string) {
 	v.set("title", str)
+}
+
+type LongPresser struct {
+	cancelClick     bool
+	downClickedTime time.Time
+	longTimer       *ztimer.Timer
+}
+
+func (lp *LongPresser) HandleOnClick(view View) {
+	if lp.longTimer != nil {
+		lp.longTimer.Stop()
+	}
+	p, _ := view.(Pressable)
+	if p != nil && !lp.cancelClick && p.PressedHandler() != nil && view.Usable() {
+		p.PressedHandler()()
+	}
+	lp.cancelClick = false
+}
+
+func (lp *LongPresser) HandleOnMouseDown(view View) {
+	// fmt.Println("MOUSEDOWN")
+	lp.downClickedTime = time.Now()
+	lp.longTimer = ztimer.StartIn(0.5, func() {
+		p, _ := view.(Pressable)
+		if p != nil && p.LongPressedHandler() != nil && view.Usable() {
+			// fmt.Println("TIMER:", p != nil, p.LongPressedHandler() != nil, view.Usable())
+			p.LongPressedHandler()()
+		}
+		lp.longTimer = nil
+		lp.cancelClick = true
+	})
+}
+
+func (lp *LongPresser) HandleOnMouseUp(view View) {
+	if lp.longTimer != nil {
+		lp.longTimer.Stop()
+	}
 }

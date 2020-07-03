@@ -3,6 +3,7 @@ package zui
 import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 //  Created by Tor Langballe on /7/11/15.
@@ -79,4 +80,18 @@ func (a *Alert) ShowOK(handle func()) {
 			handle()
 		}
 	})
+}
+
+var ShowStatusLabel *Label
+
+// ShowStatus shows an status/error in a label on gui, and can hide it after secs
+func ShowStatus(text string, secs float64) {
+	if ShowStatusLabel != nil {
+		ShowStatusLabel.SetText(text)
+		if secs != 0 {
+			ztimer.StartIn(secs, func() {
+				ShowStatusLabel.SetText("")
+			})
+		}
+	}
 }

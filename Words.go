@@ -189,6 +189,7 @@ func WordsGetInch(plural bool, langCode string) string {
 func WordsGetDayPeriod() string     { return TS("am/pm") }      // generic name for am/pm part of day when used as a column title etc
 func WordsGetOK() string            { return TS("OK") }         // generic name for OK in button etc
 func WordsGetSet() string           { return TS("Set") }        // generic name for Set in button, i.e set value
+func WordsGetClear() string         { return TS("Clear") }      // generic name for Set in button, i.e set value
 func WordsGetOff() string           { return TS("Off") }        // generic name for Off in button, i.e value/switch is off. this is RMEOVED by VO in value
 func WordsGetOpen() string          { return TS("Open") }       // generic name for button to open a window or something
 func WordsGetBack() string          { return TS("Back") }       // generic name for back button in navigation bar
@@ -211,6 +212,13 @@ func WordsGetSettings() string      { return TS("Settings") }   // generic name 
 func WordsGetDayOfMonth() string { return TS("Day") }   // generic name for the day of a month i.e 23rd of July
 func WordsGetMonth() string      { return TS("Month") } // generic name for month.
 func WordsGetYear() string       { return TS("Year") }  // generic name for year.
+
+func WordsGetSetOrClear(set bool) string {
+	if set {
+		return WordsGetSet()
+	}
+	return WordsGetClear()
+}
 
 func WordsGetIs(count int) string {
 	if count == 1 {

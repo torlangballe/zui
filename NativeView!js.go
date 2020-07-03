@@ -9,6 +9,8 @@ type NativeView struct {
 	presented bool
 }
 
+type LongPresser struct{}
+
 func (v *NativeView) GetView() *NativeView {
 	return v
 }

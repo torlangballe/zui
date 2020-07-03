@@ -7,7 +7,7 @@ import (
 
 type CustomView struct {
 	NativeView
-	baseCustomView
+	LongPresser
 	canvas        *Canvas
 	minSize       zgeo.Size
 	pressed       func()

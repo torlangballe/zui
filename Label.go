@@ -8,13 +8,15 @@ import (
 
 type Label struct {
 	NativeView
+	LongPresser
 	minWidth  float64
 	maxWidth  float64
 	maxLines  int
 	margin    zgeo.Rect
 	alignment zgeo.Alignment
 
-	pressed func()
+	pressed     func()
+	longPressed func()
 }
 
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -93,13 +95,11 @@ func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *
 
 // SetLongPressedHandler sets the handdler function for when label is long-pressed.
 // Currently not implemented (see customview for implementation), and doesn't print as zfielsd sets this for Pressable type
-func (v *Label) SetLongPressedHandler(handler func()) {
-}
 
 func (v *Label) PressedHandler() func() {
 	return v.pressed
 }
 
 func (v *Label) LongPressedHandler() func() {
-	return nil
+	return v.longPressed
 }

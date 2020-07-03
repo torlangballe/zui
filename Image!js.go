@@ -154,6 +154,18 @@ func (i *Image) Encode(w io.Writer, qualityPercent int) error {
 	return jpeg.Encode(w, i.GoImage, &options)
 }
 
+func ImageFromFile(filepath string) (i *Image, format string, err error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, "", err
+	}
+	ni, f, err := image.Decode(file)
+	if err != nil {
+		return nil, f, err
+	}
+	return ImageFromNative(ni), f, nil
+}
+
 func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
 	out, err := os.Create(filepath)
 	if err != nil {

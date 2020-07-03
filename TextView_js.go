@@ -72,7 +72,9 @@ func (v *TextView) SetRect(rect zgeo.Rect) View {
 }
 
 func (v *TextView) SetText(str string) View {
-	v.set("value", str)
+	if v.Text() != str {
+		v.set("value", str)
+	}
 	return v
 }
 

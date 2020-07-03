@@ -17,11 +17,11 @@ func TabsViewNew(name string) *TabsView {
 	v := &TabsView{}
 	v.StackView.init(v, name)
 	v.Vertical = true
-	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func(bool) View{}
 	v.Header = StackViewHor("header")
-	v.Header.SetSpacing(0)
+	v.Header.SetMargin(zgeo.RectFromXY2(5, 0, 0, 0))
+	v.Header.SetSpacing(10)
 	v.childAlignmens = map[string]zgeo.Alignment{}
 
 	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
@@ -39,7 +39,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 		align = zgeo.Left | zgeo.Top | zgeo.Expand
 	}
 	v.childAlignmens[id] = align
-	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 28}, zgeo.Size{11, 13})
+	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 24}, zgeo.Size{11, 13})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
 	button.SetColor(TabsDefaultTextColor)
