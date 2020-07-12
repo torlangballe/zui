@@ -142,6 +142,9 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
 	}
+	if v.image != nil {
+		s.Maximize(v.image.Size())
+	}
 	s.Add(v.margin.Size.Negative())
 	if v.maxWidth != 0.0 {
 		zfloat.Maximize(&s.W, v.maxWidth)

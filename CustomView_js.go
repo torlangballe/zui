@@ -4,7 +4,6 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func (v *CustomView) init(view View, name string) {
@@ -14,7 +13,7 @@ func (v *CustomView) init(view View, name string) {
 	v.View = view
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
-	v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
+	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
 func (v *CustomView) SetPressedHandler(handler func()) {
@@ -49,23 +48,38 @@ func (v *CustomView) LongPressedHandler() func() {
 	return v.longPressed
 }
 
-func (v *CustomView) setCanvasSize(size zgeo.Size) {
-	v.canvas.SetSize(size) // scale?
+func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
+	s := size.TimesD(scale)
+	// if v.ObjectName() == "provider" {
+	// zlog.Info("setCanvasSize:", v.ObjectName(), s, zlog.GetCallingStackString())
+	// }
+	v.canvas.SetSize(s) // scale?
+	// zlog.Info("setCanvasSize:", v.ObjectName(), scale)
+	v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
+	//!!!!!!!! v.canvas.element.Get("style").Set("zIndex", 0)
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
 
 func (v *CustomView) SetRect(rect zgeo.Rect) View {
-	// zlog.Info("CV SetRect:", v.ObjectName(), rect)
-	v.NativeView.SetRect(rect)
-	r := v.Rect()
-	if rect != r {
-		if v.canvas != nil {
-			zlog.Debug("set", v.ObjectName(), rect)
-			s := v.GetLocalRect().Size
-			v.setCanvasSize(s)
-			v.Expose()
-		}
+
+	s := zgeo.Size{}
+	if v.HasSize() {
+		s = v.Rect().Size
 	}
+	v.NativeView.SetRect(rect)
+	// r := v.Rect()
+	// if v.ObjectName() == "streams" {
+	// 	zlog.Info("CV SetRect:", v.ObjectName(), rect, r)
+	// }
+	// if rect != r {
+	if v.canvas != nil && s != rect.Size {
+		// zlog.Debug("set", v.ObjectName(), s, rect.Size)
+		s := v.GetLocalRect().Size
+		scale := ScreenMain().Scale
+		v.setCanvasSize(s, scale)
+		v.Expose()
+	}
+	// }
 	v.isSetup = true
 	return v
 }
@@ -79,13 +93,11 @@ func (v *CustomView) SetUsable(usable bool) View {
 
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
-		// zlog.Info("makeCanvas:", v.ObjectName())
 		v.canvas = CanvasNew()
 		v.call("appendChild", v.canvas.element)
 		s := v.GetLocalRect().Size
-		v.setCanvasSize(s)
-		v.canvas.context.Call("scale", 2, 2) // this must be AFTER setElementRect, doesn't do anything!
-		v.canvas.element.Get("style").Set("zIndex", 0)
+		scale := ScreenMain().Scale
+		v.setCanvasSize(s, scale)
 	}
 	// set z index!!
 }

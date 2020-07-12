@@ -2,15 +2,20 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 )
+
+const tabSeparatorID = "tab-separator"
 
 type TabsView struct {
 	StackView
-	Header         *StackView
-	ChildView      View
-	creators       map[string]func(bool) View
-	CurrentID      string
-	childAlignmens map[string]zgeo.Alignment
+	Header             *StackView
+	ChildView          View
+	CurrentID          string
+	creators           map[string]func(bool) View
+	childAlignments    map[string]zgeo.Alignment
+	separatorForIDs    []string
+	SeparatorLineInset float64
 }
 
 func TabsViewNew(name string) *TabsView {
@@ -22,10 +27,36 @@ func TabsViewNew(name string) *TabsView {
 	v.Header = StackViewHor("header")
 	v.Header.SetMargin(zgeo.RectFromXY2(5, 0, 0, 0))
 	v.Header.SetSpacing(10)
-	v.childAlignmens = map[string]zgeo.Alignment{}
-
+	v.childAlignments = map[string]zgeo.Alignment{}
 	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	return v
+}
+
+func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner float64, forIDs []string) {
+	cv := CustomViewNew(tabSeparatorID)
+	cv.SetMinSize(zgeo.Size{10, thickness})
+	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+		selectedView := v.Header.FindViewWithName(v.CurrentID, false)
+		canvas.SetColor(color, 1)
+		if selectedView != nil {
+			r := (*selectedView).Rect()
+			x0 := r.Pos.X + v.SeparatorLineInset
+			x1 := r.Max().X - v.SeparatorLineInset
+			r = rect
+			r.SetMaxX(x0)
+			path := zgeo.PathNewRect(r, zgeo.Size{})
+			canvas.FillPath(path)
+			r = rect
+			r.SetMinX(x1)
+			path = zgeo.PathNewRect(r, zgeo.Size{})
+			canvas.FillPath(path)
+		} else {
+			path := zgeo.PathNewRect(rect, zgeo.Size{})
+			canvas.FillPath(path)
+		}
+	})
+	v.Add(zgeo.TopLeft|zgeo.HorExpand, cv)
+	v.separatorForIDs = forIDs
 }
 
 var TabsDefaultButtonName = "gray-tab"
@@ -38,7 +69,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 	if align == zgeo.AlignmentNone {
 		align = zgeo.Left | zgeo.Top | zgeo.Expand
 	}
-	v.childAlignmens[id] = align
+	v.childAlignments[id] = align
 	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 24}, zgeo.Size{11, 13})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
@@ -48,7 +79,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.Header.Add(zgeo.Left|zgeo.Bottom, button)
+	v.Header.Add(zgeo.BottomLeft, button)
 	if set {
 		v.SetTab(id)
 	}
@@ -79,7 +110,6 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	}
 }
 func (v *TabsView) SetTab(id string) {
-	// zlog.Info("Set Tab", id)
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
 			v.creators[v.CurrentID](true)
@@ -89,9 +119,13 @@ func (v *TabsView) SetTab(id string) {
 			v.RemoveChild(v.ChildView)
 		}
 		v.ChildView = v.creators[id](false)
-		v.Add(v.childAlignmens[id], v.ChildView)
+		v.Add(v.childAlignments[id], v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
+		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
+		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
+		// zlog.Info("Call collapse:", tabSeparatorID, !hasSeparator, v.separatorForIDs)
+		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 		if !v.presented {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
@@ -116,5 +150,12 @@ func (v *TabsView) SetTab(id string) {
 			}
 		})
 	}
-	// zlog.Info("Set Tab Done", id)
+}
+
+func (v *TabsView) GetChildren() []View {
+	return v.StackView.GetChildren()
+}
+
+func (v *TabsView) ArrangeChildren(onlyChild *View) {
+	v.StackView.ArrangeChildren(onlyChild)
 }

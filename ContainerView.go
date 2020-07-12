@@ -19,6 +19,10 @@ type ContainerViewCell struct {
 	Weight    float64
 }
 
+var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
+var GroupingStrokeWidth = 2.0
+var GroupingStrokeCorner = 4.0
+
 func CVCell(view View, alignment zgeo.Alignment) *ContainerViewCell {
 	cell := ContainerViewCell{Alignment: alignment, View: view}
 	return &cell
@@ -275,16 +279,20 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 	cell := v.FindCellWithView(view)
 
 	changed := (cell.Collapsed != collapse)
+	// zlog.Info("COLLAPSE:", collapse, view.ObjectName(), cell.View.ObjectName())
 	if changed {
+		cell.Collapsed = collapse
 		if collapse {
 			//detachFromContainer := false
-			v.RemoveChild(cell.View) //, detachFromContainer)
+			v.CustomView.RemoveChild(view)
+			// v.RemoveChild(view)
+			cell = nil // force this to avoid use from here on
+			// zlog.Info("COLLAPSED:", view.ObjectName())
 		} else {
 			v.AddChild(cell.View, -1)
 		}
 	}
-	cell.Collapsed = collapse
-	if arrange {
+	if arrange && v.presented {
 		v.ArrangeChildren(nil)
 	}
 	return changed
@@ -338,6 +346,7 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
 	var found *View
 	ContainerTypeRangeChildren(v, recursive, func(view View) bool {
+		// zlog.Info("FindViewWithName:", name, "==", view.ObjectName())
 		if view.ObjectName() == name {
 			found = &view
 			return false

@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /14/12/17.
@@ -51,7 +50,7 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	}
 	str := "images/buttons/" + name + s + ".png"
 
-	zlog.Info("SetImageButtonName:", str)
+	// zlog.Info("SetImageButtonName:", str)
 	cimage := b.SetImage(nil, str, nil)
 	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

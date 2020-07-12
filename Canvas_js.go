@@ -26,8 +26,8 @@ func CanvasNew() *Canvas {
 }
 
 func (c *Canvas) SetSize(size zgeo.Size) {
-	c.element.Set("width", size.W*2) // scale?
-	c.element.Set("height", size.H*2)
+	c.element.Set("width", size.W) // scale?
+	c.element.Set("height", size.H)
 }
 
 func (c *Canvas) Element() js.Value {

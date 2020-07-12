@@ -224,7 +224,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 		if !c2.Free {
 			if c2.Collapsed {
-				v.RemoveChild(c2.View)
+				//				v.RemoveChild(c2.View) // why would we do this? Should be done already
 			} else {
 				if c2.Alignment&ashrink != 0 {
 					decs++

@@ -31,7 +31,7 @@ func (s *CheckBox) Value() zbool.BoolInd {
 	b := s.get("checked").Bool()
 	i := s.get("indeterminate").Bool()
 	if i {
-		return zbool.BoolUnknown
+		return zbool.Unknown
 	}
 	return zbool.ToBoolInd(b)
 }

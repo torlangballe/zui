@@ -92,8 +92,8 @@ func NativeViewAddToRoot(v View) {
 	n.AddChild(v, -1)
 }
 
-func (n *NativeView) call(method string, v js.Value) {
-	n.Element.Call(method, v)
+func (n *NativeView) call(method string, v js.Value) js.Value {
+	return n.Element.Call(method, v)
 }
 
 func (n *NativeView) set(property string, v interface{}) {

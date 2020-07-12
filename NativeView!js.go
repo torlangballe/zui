@@ -4,9 +4,8 @@ package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
-type NativeView struct {
-	View      View
-	presented bool
+type baseNativeView struct {
+	View View
 }
 
 type LongPresser struct{}

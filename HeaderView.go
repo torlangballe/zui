@@ -5,6 +5,7 @@ import (
 
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type Header struct {
@@ -79,6 +80,9 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 			e -= marg
 		} else {
 			e = w
+		}
+		if v.cells[i].Collapsed {
+			zlog.Info("Header collapsed!", v.ObjectName(), i)
 		}
 		hv := v.cells[i].View
 		hr := hv.Rect()

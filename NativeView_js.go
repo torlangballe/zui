@@ -10,10 +10,9 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-type NativeView struct {
+type baseNativeView struct {
 	Element      js.Value
 	View         View
-	presented    bool
 	transparency float32
 	parent       *NativeView
 }
@@ -43,6 +42,10 @@ func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	// zlog.Info("NV Rect", v.ObjectName())
 	setElementRect(v.Element, rect)
 	return v
+}
+
+func (v *NativeView) HasSize() bool {
+	return v.style().Get("left").String() != ""
 }
 
 func (v *NativeView) Rect() zgeo.Rect {
@@ -287,11 +290,14 @@ func (v *NativeView) SetZIndex(index int) {
 }
 
 func (v *NativeView) RemoveChild(child View) {
+	// zlog.Info("REMOVE CHILD:", child.ObjectName(), zlog.GetCallingStackString())
 	o, _ := child.(NativeViewOwner)
 	if o == nil {
 		panic("NativeView AddChild child not native")
 	}
-	v.call("removeChild", o.GetNative().Element)
+	removedNode := v.call("removeChild", o.GetNative().Element)
+	o.GetNative().Element = removedNode
+
 }
 
 func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
@@ -338,4 +344,13 @@ func (lp *LongPresser) HandleOnMouseUp(view View) {
 	if lp.longTimer != nil {
 		lp.longTimer.Stop()
 	}
+}
+
+func (v *NativeView) SetAboveParent(above bool) {
+	zlog.Info("SetAboveParent:", v.ObjectName(), above)
+	str := "hidden"
+	if above {
+		str = "visible"
+	}
+	v.style().Set("overflow", str)
 }
