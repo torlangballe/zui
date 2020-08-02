@@ -56,6 +56,11 @@ type TextInfo struct {
 	MaxLines              int
 	MinimumFontScale      float64
 	IsMinimumOneLineHight bool
+	SplitItems            []string
+}
+
+type TextInfoOwner interface {
+	GetTextInfo() TextInfo
 }
 
 func TextInfoNew() *TextInfo {
@@ -67,22 +72,39 @@ func TextInfoNew() *TextInfo {
 	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	t.StrokeWidth = 1
 	t.MinimumFontScale = 0.5
+	t.SplitItems = []string{"\r\n", "\n", "\r"}
 	return t
+}
+
+func (ti *TextInfo) SetWidthFreeHight(w float64) {
+	ti.Rect = zgeo.RectFromSize(zgeo.Size{w, 99999})
 }
 
 // GetBounds returns rect of size of text.
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
-func (ti *TextInfo) GetBounds(noWidth bool) zgeo.Size {
+func (ti *TextInfo) GetBounds() zgeo.Size {
 	var size zgeo.Size
-	lines := zstr.SplitByNewLines(ti.Text, true)
+	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
+	add := 0
 	for _, str := range lines {
 		s := canvasGetTextSize(str, ti.Font)
-		size.H = s.H
+		// zlog.Info("ti bounds:", str, s)
+		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
+			splitToLines := math.Ceil(s.W / ti.Rect.Size.W)
+			if splitToLines > 1 {
+				// zlog.Info("SPLIT!", splitToLines, ti.Rect.Size, s)
+				s.W = ti.Rect.Size.W
+				s.H *= splitToLines
+				add += int(splitToLines) - 1
+			}
+		}
+		size.H += s.H
 		zfloat.Maximize(&size.W, s.W)
 	}
-	count := zint.Max(ti.MaxLines, len(lines))
-	count = ti.MaxLines
+	count := zint.Max(ti.MaxLines, len(lines)) + add
+	// zlog.Info("BOUNDS:", size, count, add)
+	//	count = ti.MaxLines
 	if count > 1 || ti.IsMinimumOneLineHight {
 		size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
 	}
@@ -175,7 +197,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		return zgeo.Rect{}
 	}
 	r := ti.Rect
-	var ts = ti.GetBounds(false)
+	var ts = ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, zgeo.Size{}, zgeo.Size{})
 	if ti.Alignment&zgeo.Top != 0 {
@@ -200,8 +222,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 
 func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 	w := ti.Rect.Size.W * 0.99
-	noWidth := true
-	s := ti.GetBounds(noWidth)
+	s := ti.GetBounds()
 
 	var r float64
 	if s.W > w {

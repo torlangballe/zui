@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -9,6 +10,7 @@ import (
 type Label struct {
 	NativeView
 	LongPresser
+
 	minWidth  float64
 	maxWidth  float64
 	maxLines  int
@@ -19,11 +21,24 @@ type Label struct {
 	longPressed func()
 }
 
+func (v *Label) GetTextInfo() TextInfo {
+	t := TextInfoNew()
+	t.Alignment = v.alignment
+	t.Font = v.Font()
+	t.Text = v.Text()
+	if v.maxWidth != 0 {
+		t.SetWidthFreeHight(v.maxWidth)
+	}
+	t.MaxLines = v.maxLines
+	return *t
+}
+
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var o TextLayoutOwner
-	o = v
-	s := TextLayoutOwnerCalculateSize(o)
+	to := v.View.(TextInfoOwner)
+	ti := to.GetTextInfo()
+	s := ti.GetBounds()
 	s.Add(v.margin.Size.Negative())
+	zfloat.Maximize(&s.W, v.minWidth)
 	s.MakeInteger()
 
 	// s.W += 10
@@ -69,9 +84,10 @@ func (l *Label) SetMaxLines(max int) View {
 
 func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
 	font := FontNice(FontDefaultSize, FontStyleBold)
-	o, _ := view.(TextLayoutOwner)
-	if o != nil {
-		font = o.Font()
+	to, _ := view.(TextInfoOwner)
+	if to != nil {
+		ti := to.GetTextInfo()
+		font = ti.Font
 		font.Style = FontStyleBold
 	}
 	title := prefix

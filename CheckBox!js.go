@@ -5,7 +5,7 @@ package zui
 import "github.com/torlangballe/zutil/zbool"
 
 func (c *CheckBox) Value() zbool.BoolInd {
-	return zbool.BoolFalse
+	return zbool.False
 }
 
 func CheckBoxNew(on zbool.BoolInd) *CheckBox {

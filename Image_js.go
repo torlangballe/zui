@@ -73,7 +73,7 @@ func (i *Image) load(path string, done func()) {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		// zlog.Info("Image Load scale:", i.scale, path, i.Size())
+		// zlog.Info("Image Load scale:", i.scale, path, i.Size(), i.loading)
 		if done != nil {
 			done()
 		}

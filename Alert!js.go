@@ -2,5 +2,5 @@
 
 package zui
 
-func (a *Alert) Show(handle func(result AlertResult)) {
+func (a *Alert) showNative(handle func(result AlertResult)) {
 }

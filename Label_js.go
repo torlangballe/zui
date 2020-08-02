@@ -5,23 +5,24 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func LabelNew(text string) *Label {
 	label := &Label{}
 	label.Element = DocumentJS.Call("createElement", "label")
+	// zlog.Info("Label New:", label.TextInfo.SplitItems, text)
 	style := label.style()
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	style.Set("whiteSpace", "pre-wrap")
-	style.Set("overflow", "hidden")
-	style.Set("textOverflow", "clip")
+	//	style.Set("overflow", "hidden")
+	//	style.Set("textOverflow", "clip")
+	style.Set("wordWrap", "break-word")
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
-	label.maxLines = 1
+	label.SetMaxLines(1)
 	label.View = label
 	label.SetObjectName(text)
 	textNode := DocumentJS.Call("createTextNode", text)
@@ -45,6 +46,7 @@ func (v *Label) SetPressedHandler(handler func()) {
 		return nil
 		return nil
 	}))
+	v.set("class", "widget")
 }
 
 func (v *Label) SetLongPressedHandler(handler func()) {
@@ -63,7 +65,6 @@ func (v *Label) SetLongPressedHandler(handler func()) {
 }
 
 func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
-	v.alignment = a
 	str := "left"
 	if a&zgeo.Right != 0 {
 		str = "right"
@@ -77,7 +78,7 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
 func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m
 	style := v.style()
-	zlog.Info("Label SetMarg:", v.ObjectName(), m)
+	// zlog.Info("Label SetMarg:", v.ObjectName(), m)
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
 	style.Set("padding-bottom", fmt.Sprintf("%dpx", int(m.Max().Y)))

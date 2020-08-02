@@ -67,6 +67,7 @@ type ReadyToShowType interface {
 type ContainerType interface {
 	GetChildren() []View
 	ArrangeChildren(onlyChild *View)
+	ReplaceChild(child, with View)
 }
 type Pressable interface {
 	SetPressedHandler(handler func())
@@ -75,6 +76,7 @@ type Pressable interface {
 	LongPressedHandler() func()
 }
 
+// ViewLayoutProtocol ...not really using this yet left over from iOS stuff
 type ViewLayoutProtocol interface {
 	HandleBeforeLayout()
 	HandleAfterLayout()

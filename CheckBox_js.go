@@ -4,6 +4,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 func CheckBoxNew(on zbool.BoolInd) *CheckBox {
@@ -15,6 +16,11 @@ func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	s.View = s
 	s.SetValue(on)
 	return s
+}
+
+func (v *CheckBox) SetRect(rect zgeo.Rect) View {
+	rect.Pos.Y -= 3
+	return v.NativeView.SetRect(rect)
 }
 
 func (s *CheckBox) ValueHandler(handler func(view View)) {

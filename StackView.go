@@ -11,13 +11,10 @@ import (
 
 //  Created by Tor Langballe on /20/10/15.
 
-var debugHints = true
-
 type StackView struct {
 	ContainerView
-	spacing        float64
-	Vertical       bool
-	weightMinSizes []float64
+	spacing  float64
+	Vertical bool
 }
 
 func StackViewNew(vertical bool, name string) *StackView {
@@ -45,42 +42,7 @@ func (v *StackView) Spacing() float64 {
 	return v.spacing
 }
 
-func (v *StackView) calcWeightMins() {
-	v.weightMinSizes = make([]float64, len(v.cells), len(v.cells))
-	var weights []float64
-	sizes := make([]float64, len(v.cells), len(v.cells))
-	minWeight := -1.0
-	for i, c := range v.cells {
-		if !c.Collapsed && !c.Free && c.Weight > 0 {
-			if minWeight != -1 && c.Weight < minWeight {
-				minWeight = c.Weight
-			}
-			zfloat.AddToSet(c.Weight, &weights)
-			sizes[i] = v.getCellSize(c, nil).Vertice(v.Vertical)
-		}
-	}
-	for _, w := range weights {
-		max := 0.0
-		for i, c := range v.cells {
-			if !c.Collapsed && !c.Free && c.Weight == w {
-				zfloat.Maximize(&max, sizes[i])
-			}
-		}
-		for i, c := range v.cells {
-			if !c.Collapsed && !c.Free && c.Weight == w {
-				v.weightMinSizes[i] = max
-			}
-		}
-	}
-}
-
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	//	v.calcWeightMins()
-	// for i, c := range v.cells {
-	// 	if !c.Collapsed && !c.Free && c.Weight > 0 {
-	// 		zlog.Info("weight size:", c.View.ObjectName(), v.weightMinSizes[i])
-	// 	}
-	// }
 	var size = zgeo.Size{}
 	for i, c := range v.cells {
 		if !c.Collapsed && !c.Free {
@@ -99,6 +61,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	zfloat.Maximize(size.VerticeP(!v.Vertical), v.MinSize().Vertice(!v.Vertical))
 	size.Maximize(v.MinSize())
+	// zlog.Info("calcsized stack size:", v.ObjectName(), size)
 	return size
 }
 
@@ -151,8 +114,9 @@ func addDiff(size *zgeo.Size, maxSize float64, vertical bool, diff *float64, cou
 		*diff -= d
 		(*count)--
 	}
-	// zlog.Info("addDiff:", size.W, d, maxSize)
+	// old := *size
 	*(*size).VerticeP(vertical) += d
+	// zlog.Info("addDiffIn:", old, "=>", size.W, d, maxSize)
 }
 
 func calcMarginAdd(c ContainerViewCell) zgeo.Size {
@@ -174,6 +138,7 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	//	tot := v.getCellFitSizeInTotal(total, c)
 	var size = c.View.CalculatedSize(zgeo.Size{})
 	// zlog.Info("get cell size1:", v.ObjectName(), c.View.ObjectName(), size)
+	vert := v.Vertical
 	size.Maximize(c.MinSize)
 	if c.MaxSize.W != 0 {
 		zfloat.Minimize(&size.W, c.MaxSize.W)
@@ -181,15 +146,12 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	if c.MaxSize.H != 0 {
 		zfloat.Minimize(&size.H, c.MaxSize.H)
 	}
+	if c.ExpandFromMinSize && c.MinSize.Vertice(vert) != 0 {
+		*size.VerticeP(vert) = c.MinSize.Vertice(vert)
+	}
 	m := calcMarginAdd(c)
-	*size.VerticeP(v.Vertical) += m.Vertice(v.Vertical)
-	// if weightIndex != nil {
-	// 	len := v.weightMinSizes[*weightIndex]
-	// 	if len != 0 {
-	// 		*size.VerticeP(v.Vertical) = len
-	// 	}
-	// }
-	// zlog.Info("get cell size2:", v.ObjectName(), ":", m, c.View.ObjectName(), size, c.Margin, c.MinSize, c.MaxSize)
+	*size.VerticeP(vert) += m.Vertice(vert)
+	// zlog.Info("get cell size2:", v.ObjectName(), c.View.ObjectName(), size)
 	return size
 }
 
@@ -250,7 +212,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	cs += v.margin.Size.Vertice(v.Vertical)
 
 	diff := r.Size.Vertice(v.Vertical) - cs
-	//	zlog.Info("DIFF:", v.ObjectName(), diff, r.Size, cs)
+	// zlog.Info("DIFF:", v.ObjectName(), diff, r.Size, cs)
 	var lastNoFreeIndex = -1
 	for _, useMaxSize := range []bool{true, false} {
 		for i, c3 := range v.cells {
@@ -260,7 +222,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
 				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W)
+					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
 				// zlog.Info("cellsize:", v.ObjectName(), c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)

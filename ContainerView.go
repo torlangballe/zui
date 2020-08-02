@@ -9,19 +9,21 @@ import (
 // Original class created by Tor Langballe on 23-sept-2014.
 
 type ContainerViewCell struct {
-	Alignment zgeo.Alignment
-	Margin    zgeo.Size
-	View      View
-	MaxSize   zgeo.Size // MaxSize is maximum size of child-view including margin
-	MinSize   zgeo.Size // MinSize is minimum size of child-view including margin
-	Collapsed bool
-	Free      bool // Free Cells are placed using ContainerView method, not "inherited" ArrangeChildren method
-	Weight    float64
+	Alignment         zgeo.Alignment
+	Margin            zgeo.Size
+	View              View
+	MaxSize           zgeo.Size // MaxSize is maximum size of child-view including margin
+	MinSize           zgeo.Size // MinSize is minimum size of child-view including margin
+	Collapsed         bool
+	Free              bool // Free Cells are placed using ContainerView method, not "inherited" ArrangeChildren method
+	ExpandFromMinSize bool // Makes cell expand into extra space in addition to minsize, not current size
 }
 
 var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
 var GroupingStrokeWidth = 2.0
 var GroupingStrokeCorner = 4.0
+var GroupingMargin = 10.0
+var AlertButtonsOnRight = true
 
 func CVCell(view View, alignment zgeo.Alignment) *ContainerViewCell {
 	cell := ContainerViewCell{Alignment: alignment, View: view}
@@ -98,6 +100,16 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	}
 }
 
+func (v *ContainerView) AddAlertButton(button View) {
+	a := zgeo.VertCenter
+	if AlertButtonsOnRight {
+		a |= zgeo.Right
+	} else {
+		a |= zgeo.Left
+	}
+	v.Add(a, button)
+}
+
 func ContainerViewNew(view View, name string) *ContainerView {
 	v := &ContainerView{}
 	if view == nil {
@@ -150,7 +162,7 @@ func (v *ContainerView) AddView(view View, align zgeo.Alignment) *ContainerViewC
 func (v *ContainerView) AddAdvanced(view View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *ContainerViewCell {
 	collapsed := false
 	// zlog.Info("CV AddAdvancedView:", v.ObjectName(), view.ObjectName())
-	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, zgeo.Size{}, collapsed, free, 0.0}, index)
+	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, zgeo.Size{}, collapsed, free, false}, index)
 }
 
 func (v *ContainerView) Contains(view View) bool {
@@ -276,8 +288,7 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 }
 
 func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
-	cell := v.FindCellWithView(view)
-
+	cell, _ := v.FindCellWithView(view)
 	changed := (cell.Collapsed != collapse)
 	// zlog.Info("COLLAPSE:", collapse, view.ObjectName(), cell.View.ObjectName())
 	if changed {
@@ -382,12 +393,12 @@ func (v *ContainerView) FindCellIndexWithView(view View) int {
 	return -1
 }
 
-func (v *ContainerView) FindCellWithView(view View) *ContainerViewCell {
+func (v *ContainerView) FindCellWithView(view View) (*ContainerViewCell, int) {
 	i := v.FindCellIndexWithView(view)
 	if i == -1 {
-		return nil
+		return nil, -1
 	}
-	return &v.cells[i]
+	return &v.cells[i], i
 }
 
 func (v *ContainerView) RemoveChild(subView View) {
@@ -417,21 +428,22 @@ func (v *ContainerView) drawIfExposed() {
 	// zlog.Info("CoV drawIf:", v.ObjectName())
 	v.CustomView.drawIfExposed()
 	for _, c := range v.cells {
-		et, got := c.View.(ExposableType)
-		// zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
-		if got {
-			et.drawIfExposed()
+		if !c.Collapsed {
+			et, got := c.View.(ExposableType)
+			// zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
+			if got {
+				et.drawIfExposed()
+			}
 		}
 	}
 }
 
-func (v *ContainerView) ReplaceView(oldView, newView View) {
-	c := v.FindCellWithView(oldView)
+func (v *ContainerView) ReplaceChild(child, with View) {
+	c, i := v.FindCellWithView(child)
 	if c != nil {
-		r := v.Rect()
-		newView.SetRect(r)
-		v.AddChild(newView, -1)
-		v.RemoveChild(c.View)
-		c.View = newView
+		c.View = with
+		with.SetRect(child.Rect())
+		v.RemoveChild(child)
+		v.AddChild(with, i)
 	}
 }

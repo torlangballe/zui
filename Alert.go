@@ -1,6 +1,9 @@
 package zui
 
 import (
+	"math"
+
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
@@ -11,10 +14,10 @@ import (
 type AlertResult int
 
 const (
-	AlertOK          = 1
-	AlertCancel      = 2
-	AlertDestructive = 3
-	AlertOther       = 4
+	AlertCancel AlertResult = iota
+	AlertOK
+	AlertDestructive
+	AlertOther
 )
 
 type Alert struct {
@@ -24,6 +27,7 @@ type Alert struct {
 	OtherButton       string
 	DestructiveButton string
 	SubText           string
+	BuildGUI          bool
 }
 
 func AlertNew(items ...interface{}) *Alert {
@@ -76,7 +80,7 @@ func AlertShowError(text string, err error) {
 
 func (a *Alert) ShowOK(handle func()) {
 	a.Show(func(a AlertResult) {
-		if a == AlertOK {
+		if handle != nil && a == AlertOK {
 			handle()
 		}
 	})
@@ -94,4 +98,53 @@ func ShowStatus(text string, secs float64) {
 			})
 		}
 	}
+}
+
+func addButtonIfNotEmpty(stack *StackView, text string, handle func(result AlertResult), result AlertResult) {
+	if text != "" {
+		button := ButtonNew(text, "gray", zgeo.Size{10, 28}, zgeo.Size{})
+		stack.AddAlertButton(button)
+		button.SetPressedHandler(func() {
+			PresentViewPop(stack, true, 0, PresentViewTransitionSame, func() {
+				if handle != nil {
+					handle(result)
+				}
+			})
+		})
+	}
+}
+
+func (a *Alert) Show(handle func(result AlertResult)) {
+	if !a.BuildGUI {
+		a.showNative(handle)
+		return
+	}
+
+	textWidth := math.Min(640, ScreenMain().Rect.Size.W/2)
+	stack := StackViewVert("alert")
+	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
+	label := LabelNew(a.Text)
+	label.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	label.SetMaxLines(0)
+	label.SetMaxWidth(textWidth)
+	stack.Add(zgeo.TopCenter, label)
+	if a.SubText != "" {
+		subLabel := LabelNew(a.SubText)
+		subLabel.SetFont(FontNice(FontDefaultSize-2, FontStyleNormal))
+		// subLabel.SetMaxLines(4)
+		stack.Add(zgeo.TopCenter, subLabel)
+	}
+	bar := StackViewHor("bar")
+	stack.Add(zgeo.TopCenter|zgeo.HorExpand, bar)
+
+	addButtonIfNotEmpty(stack, a.OKButton, handle, AlertOK)
+	addButtonIfNotEmpty(stack, a.CancelButton, handle, AlertCancel)
+	addButtonIfNotEmpty(stack, a.DestructiveButton, handle, AlertDestructive)
+	addButtonIfNotEmpty(stack, a.OtherButton, handle, AlertOther)
+
+	att := PresentViewAttributesNew()
+	att.MakeFull = false
+	att.PortraitOnly = false
+
+	PresentViewShow(stack, att, nil)
 }

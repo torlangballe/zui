@@ -4,7 +4,7 @@ import (
 	"syscall/js"
 )
 
-func (a *Alert) Show(handle func(result AlertResult)) {
+func (a *Alert) showNative(handle func(result AlertResult)) {
 	r := true
 	str := a.Text
 	if a.SubText != "" {
@@ -19,6 +19,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 		alert.Invoke(str)
 	}
 	go func() {
+		// defer zlog.LogRecoverAndExit()
 		if handle != nil {
 			if r {
 				handle(AlertOK)

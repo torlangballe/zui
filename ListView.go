@@ -102,6 +102,7 @@ func (v *ListView) init(view View, name string) {
 }
 
 func (v *ListView) SetRect(rect zgeo.Rect) View {
+	// zlog.Info("ListView SetRect:", v.ObjectName(), rect)
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
@@ -272,7 +273,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		}
 		i++
 	}
-	// zlog.Info("UpdateWithOldNewSlice", reload)
+	// zlog.Info("UpdateWithOldNewSlice", reload, v.presented)
 	if reload {
 		v.ReloadData()
 	} else {
@@ -324,4 +325,8 @@ func (v *ListView) ArrangeChildren(onlyChild *View) {
 			ct.ArrangeChildren(nil)
 		}
 	}
+}
+
+func (v *ListView) ReplaceChild(child, with View) {
+
 }

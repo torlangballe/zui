@@ -130,7 +130,7 @@ func (v *TabsView) SetTab(id string) {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
-		ct := v.ChildView.(ContainerType)
+		ct := v.View.(ContainerType)
 		//		et, _ := v.ChildView.(ExposableType)
 		et, _ := v.View.(ExposableType)
 		// if !v.presented {
@@ -138,7 +138,7 @@ func (v *TabsView) SetTab(id string) {
 		// }
 		presentViewCallReady(v.ChildView)
 		presentViewPresenting = true
-		v.ArrangeChildren(nil)
+		v.ArrangeChildren(nil) // we need to do this in advance, before stuff below, can't remmember why
 		WhenContainerLoaded(ct, func(waited bool) {
 			// zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, lets re-arrange

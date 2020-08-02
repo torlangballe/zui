@@ -17,3 +17,11 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 
 func (v *CustomView) SetLongPressedHandler(handler func()) {
 }
+
+func (v *CustomView) PressedHandler() func() {
+	return nil
+}
+
+func (v *CustomView) LongPressedHandler() func() {
+	return nil
+}

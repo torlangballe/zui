@@ -138,3 +138,5 @@ func (v *NativeView) AddChild(child View, index int)                            
 func (v *NativeView) RemoveChild(child View)                                            {}
 func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {}
 func (v *NativeView) SetToolTip(str string)                                             {}
+func (v *NativeView) SetAboveParent(above bool)                                         {}
+func NativeViewAddToRoot(v View)                                                        {}

@@ -4,7 +4,7 @@ package zui
 
 import "github.com/torlangballe/zutil/zgeo"
 
-func (tv *TextView) Init(text string, style TextViewStyle) {
+func (tv *TextView) Init(text string, style TextViewStyle, maxLines int) {
 	tv.View = tv
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	tv.SetFont(f)
@@ -27,5 +27,11 @@ func (v *TextView) IsPassword(is bool) *TextView {
 	return v
 }
 
-func (v *TextView) ChangedHandler(handler func(view View))                                     {}
-func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {}
+func (v *TextView) SetChangedHandler(handler func(view View))                                     {}
+func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {}
+
+func (v *TextView) SetPlaceholder(str string) *TextView {
+	return v
+}
+
+func (v *TextView) ScrollToBottom() {}

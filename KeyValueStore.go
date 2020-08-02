@@ -40,8 +40,9 @@ func (k KeyValueStore) DictForKey(key string) (dict zdict.Dict, got bool) {
 	return
 }
 
-func (k KeyValueStore) Int64ForKey(key string) (int64, bool) {
-	return 0, false
+func (k KeyValueStore) Int64ForKey(key string) (n int64, got bool) {
+	got = k.getItem(key, &n)
+	return
 }
 
 func (k KeyValueStore) IntForKey(key string) (int, bool) {

@@ -33,50 +33,58 @@ type TextView struct {
 
 const TextViewDefaultMargin = 3.0
 
-func TextViewNew(text string, style TextViewStyle) *TextView {
+func TextViewNew(text string, style TextViewStyle, maxLines int) *TextView {
 	tv := &TextView{}
-	tv.Init(text, style)
+	tv.Init(text, style, maxLines)
 	return tv
 }
 
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	s := TextLayoutCalculateSize(v.alignment, v.Font(), "Ajzig", v.maxLines, v.maxWidth, true)
+	ti := TextInfoNew()
+	ti.Alignment = v.alignment
+	ti.Text = v.Text()
+	ti.IsMinimumOneLineHight = true
+	ti.Font = v.Font()
+	ti.MaxLines = v.maxLines
+	ti.SetWidthFreeHight(v.maxWidth)
+	s := ti.GetBounds()
 	s.Add(v.Margin.TimesD(2))
 	s.MakeInteger()
 	return s
 }
 
-func (l *TextView) TextAlignment() zgeo.Alignment {
-	return l.alignment
+func (v *TextView) TextAlignment() zgeo.Alignment {
+	return v.alignment
 }
 
-func (l *TextView) MinWidth() float64 {
-	return l.minWidth
+func (v *TextView) MinWidth() float64 {
+	return v.minWidth
 }
 
-func (l *TextView) MaxWidth() float64 {
-	return l.maxWidth
+func (v *TextView) MaxWidth() float64 {
+	return v.maxWidth
 }
 
-func (l *TextView) MaxLines() int {
-	return l.maxLines
+func (v *TextView) MaxLines() int {
+	return v.maxLines
 }
 
-func (l *TextView) SetMinWidth(min float64) View {
-	l.minWidth = min
-	return l
+func (v *TextView) SetMinWidth(min float64) View {
+	v.minWidth = min
+	return v
 }
 
-func (l *TextView) SetMaxWidth(max float64) View {
-	l.maxWidth = max
-	return l
+func (v *TextView) SetMaxWidth(max float64) View {
+	v.maxWidth = max
+	return v
 }
 
-func (l *TextView) SetMaxLines(max int) View {
-	l.maxLines = max
-	return l
+func (v *TextView) SetMaxLines(max int) View {
+	v.maxLines = max
+	return v
 }
 
-func (l *TextView) IsMinimumOneLineHight() bool {
+func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
 }
+

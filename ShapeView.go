@@ -137,7 +137,7 @@ func (v *ShapeView) GetImage() *Image {
 func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.textInfo.Text != "" {
-		ts := v.textInfo.GetBounds(false)
+		ts := v.textInfo.GetBounds()
 		ts.Add(zgeo.Size{16, 6})
 		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
 		s.Maximize(ts)
@@ -152,12 +152,15 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
-	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), s)
+	// if v.ObjectName() == "variables" {
+	// 	zlog.Info("ShapeView CalcSize:", v.ObjectName(), s, v.image.Size(), v.image.loading)
+	// }
 	s.MakeInteger()
 	return s
 }
 
 func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
+	// zlog.Info("sv.setimage:", spath)
 	v.image = image
 	v.exposed = false
 	if v.ObjectName() == "" {
@@ -165,9 +168,10 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func()) *Image {
 		v.SetObjectName(name)
 	}
 	if image == nil && spath != "" {
-		v.image = ImageFromPath(spath, func(*Image) {
-			// println("sv image loaded: " + spath + ": " + v.ObjectName())
+		v.image = ImageFromPath(spath, func(i *Image) {
+			// zlog.Info("sv image loaded: "+spath+": "+v.ObjectName(), i.loading)
 			v.Expose()
+			v.image = i // we must set it here, or it's not set yet in done() below
 			if done != nil {
 				done()
 			}
@@ -252,6 +256,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				canvas.ClipPath(clipPath, false, false)
 			}
 			textRect = ir
+			// zlog.Info("SV DRAW:", rect, "ir:", ir)
 			canvas.DrawImage(drawImage, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()

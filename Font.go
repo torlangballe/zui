@@ -11,9 +11,10 @@ type FontStyle int
 var scale = 1.0
 
 const (
-	FontStyleNormal FontStyle = 0
-	FontStyleBold   FontStyle = 1
-	FontStyleItalic FontStyle = 2
+	FontStyleNormal     FontStyle = 0
+	FontStyleBold       FontStyle = 1
+	FontStyleItalic     FontStyle = 2
+	FontStyleBoldItalic FontStyle = FontStyleBold | FontStyleItalic
 )
 
 type Font struct {
@@ -24,6 +25,7 @@ type Font struct {
 
 // DefaultSize This is used
 var FontDefaultSize = 16.0
+var FontDefaultName = "Helvetica"
 
 func (s FontStyle) String() string {
 	var parts []string
@@ -55,12 +57,23 @@ func FontNew(name string, size float64, style FontStyle) *Font {
 	return &Font{Name: name, Size: size * scale, Style: style}
 }
 
+func FontDefault() *Font {
+	return FontNew(FontDefaultName, FontDefaultSize, FontStyleNormal)
+}
+
 func FontNice(size float64, style FontStyle) *Font {
-	return FontNew("Helvetica", size, style)
+	if size == 0 {
+		size = FontDefaultSize
+	}
+	return FontNew(FontDefaultName, size, style)
 }
 
 func (f *Font) NewWithSize(size float64) *Font {
 	return FontNew(f.Name, size, f.Style)
+}
+
+func (f *Font) NewWithStyle(style FontStyle) *Font {
+	return FontNew(f.Name, f.Size, style)
 }
 
 func (f *Font) LineHeight() float64 {

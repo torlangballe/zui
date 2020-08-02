@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /14/12/17.
@@ -27,6 +28,7 @@ func ButtonNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *Bu
 	b.textInfo.Text = title
 	b.textInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
 	b.textInfo.Color = zgeo.ColorBlack //White
+	b.textInfo.MaxLines = 1
 	b.ImageMargin = zgeo.Size{}
 	b.TextXMargin = 16
 	return b
@@ -51,6 +53,10 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	str := "images/buttons/" + name + s + ".png"
 
 	// zlog.Info("SetImageButtonName:", str)
-	cimage := b.SetImage(nil, str, nil)
+	cimage := b.SetImage(nil, str, func() {
+		if b.image.Size().W < insets.W*2 || b.image.Size().H < insets.H*2 {
+			zlog.Fatal(nil, "Button: Small image for inset:", b.ObjectName(), name, b.image.Size(), insets)
+		}
+	})
 	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

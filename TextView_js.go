@@ -9,20 +9,32 @@ import (
 
 const jsTextMargin = 3
 
-func (tv *TextView) Init(text string, style TextViewStyle) {
-	stype := "text"
-	tv.Element = DocumentJS.Call("createElement", "INPUT")
-	tv.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
-	tv.set("style", "position:absolute")
-	if style.KeyboardType == KeyboardTypePassword {
-		stype = "password"
+// https://www.w3schools.com/jsref/dom_obj_textarea.asp
+
+func (v *TextView) Init(text string, style TextViewStyle, maxLines int) {
+	v.SetMaxLines(maxLines)
+	if maxLines > 1 {
+		v.Element = DocumentJS.Call("createElement", "textarea")
+	} else {
+		v.Element = DocumentJS.Call("createElement", "input")
+		v.set("type", "text")
+		if style.KeyboardType == KeyboardTypePassword {
+			v.set("type", "password")
+		} else {
+			v.set("type", "text")
+		}
 	}
-	tv.set("type", stype)
-	tv.set("value", text)
-	tv.View = tv
-	tv.UpdateSecs = 1
+	v.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
+	v.set("style", "position:absolute")
+	v.set("value", text)
+	v.View = v
+	v.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
-	tv.SetFont(f)
+	v.SetFont(f)
+}
+
+func (v *TextView) SetStatic(s bool) {
+	v.set("readOnly", s)
 }
 
 func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
@@ -93,6 +105,9 @@ func (v *TextView) BGColor() zgeo.Color {
 }
 
 func (v *TextView) updateDone() {
+	if v.updateTimer != nil {
+		v.updateTimer.Stop()
+	}
 	if v.UpdateSecs > 1 {
 		v.SetBGColor(v.pushedBGColor)
 		v.pushedBGColor = zgeo.Color{}
@@ -115,7 +130,7 @@ func (v *TextView) startUpdate() {
 	//	v.updated = false
 }
 
-func (v *TextView) ChangedHandler(handler func(view View)) {
+func (v *TextView) SetChangedHandler(handler func(view View)) {
 	v.changed = handler
 	if handler != nil {
 		v.set("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
@@ -142,7 +157,7 @@ func (v *TextView) ChangedHandler(handler func(view View)) {
 	}
 }
 
-func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
+func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
 	v.set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		if handler != nil {
@@ -165,4 +180,8 @@ func (v *TextView) KeyHandler(handler func(view View, key KeyboardKey, mods Keyb
 		}
 		return nil
 	}))
+}
+
+func (v *TextView) ScrollToBottom() {
+	v.set("scrollTop", v.get("scrollHeight"))
 }

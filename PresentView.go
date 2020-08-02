@@ -18,6 +18,7 @@ const (
 	PresentViewTransitionFromBottom
 	PresentViewTransitionFade
 	PresentViewTransitionReverse
+	PresentViewTransitionSame
 )
 
 func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.Rect, fade float32) {
@@ -48,7 +49,6 @@ type PresentViewAttributes struct {
 	Transition    PresentViewTransition
 	OldTransition PresentViewTransition
 	DarkContent   bool
-	FullArea      bool
 	MakeFull      bool
 	PortraitOnly  bool
 	FadeToo       bool
@@ -60,7 +60,6 @@ var stack []PresentViewAttributes
 func PresentViewAttributesNew() PresentViewAttributes {
 	a := PresentViewAttributes{}
 	a.DurationSecs = 0.5
-	a.FullArea = true
 	a.MakeFull = true
 	a.PortraitOnly = true
 	return a
@@ -91,45 +90,68 @@ var presentViewPresenting = true
 
 func PresentViewShow(v View, attributes PresentViewAttributes, done func()) {
 	presentViewPresenting = true
-	mainRect := WindowGetCurrent().Rect()
 	presentViewCallReady(v)
-	ct := v.(ContainerType)
-
-	// zlog.Info("PresentViewShow", v.ObjectName())
-
-	WhenContainerLoaded(ct, func(waited bool) {
-		// zlog.Info("PresentViewShow loaded", v.ObjectName())
-		if attributes.MakeFull {
-			// zlog.Info("Present:", mainRect, presentViewPresenting)
-			v.SetRect(mainRect)
-		} else {
-			size := v.CalculatedSize(mainRect.Size)
-			r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
-			v.SetRect(r)
-			v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
-			v.SetCorner(10)
-			no := v.(NativeViewOwner)
-			if no != nil {
-				no.GetNative().SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorBlack)
-			}
-		}
-		// cvt, _ := v.(ContainerViewType)
-		// if cvt != nil {
-		// 	cvt.ArrangeChildren(nil)
-		// }
-		NativeViewAddToRoot(v)
-		presentViewPresenting = false
-		et, _ := v.(ExposableType)
-		if et != nil {
-			et.drawIfExposed()
-		}
-		if done != nil {
-			done()
-		}
-	})
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		WhenContainerLoaded(ct, func(waited bool) {
+			presentLoaded(v, attributes, done)
+		})
+	} else {
+		presentLoaded(v, attributes, done)
+	}
 }
 
-func PresentViewPop(namedView string, animated bool, overrideDurationSecs float64, overrideTransition PresentViewTransition, done *func()) {
+func presentLoaded(v View, attributes PresentViewAttributes, done func()) {
+	// zlog.Info("PresentViewShow", v.ObjectName())
+
+	// zlog.Info("PresentViewShow Loaded", attributes.MakeFull, v.ObjectName())
+	// zlog.Info("PresentViewShow loaded", v.ObjectName())
+	mainRect := WindowGetCurrent().Rect()
+	if attributes.MakeFull {
+		// zlog.Info("Present:", mainRect, presentViewPresenting)
+		v.SetRect(mainRect)
+	} else {
+		// size := v.CalculatedSize(mainRect.Size)
+		// r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
+		// zlog.Info("Present:", r)
+		v.SetBGColor(zgeo.ColorNewGray(0.95, 1))
+		v.SetCorner(5)
+		no := v.(NativeViewOwner)
+		if no != nil {
+			nv := no.GetNative()
+			nv.SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorNewGray(0.2, 1))
+			g := ContainerViewNew(nil, "$blocker")
+			g.SetRect(mainRect)
+			g.SetBGColor(zgeo.ColorNewGray(0, 0.5))
+			g.Add(zgeo.Center, v)
+			g.ArrangeChildren(nil)
+			v = g
+		}
+	}
+	// cvt, _ := v.(ContainerViewType)
+	// if cvt != nil {
+	// 	cvt.ArrangeChildren(nil)
+	// }
+	NativeViewAddToRoot(v)
+	presentViewPresenting = false
+	et, _ := v.(ExposableType)
+	if et != nil {
+		et.drawIfExposed()
+	}
+	if done != nil {
+		done()
+	}
+}
+
+func PresentViewPop(view View, animated bool, overrideDurationSecs float64, overrideTransition PresentViewTransition, done func()) {
+	parent := ViewGetNative(view).Parent()
+	if parent.ObjectName() == "$blocker" {
+		view = parent
+	}
+	ViewGetNative(view).RemoveFromParent()
+	if done != nil {
+		done()
+	}
 }
 
 func PresentViewGetTopPushed() *CustomView {

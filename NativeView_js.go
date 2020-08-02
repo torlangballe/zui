@@ -230,6 +230,8 @@ func (v *NativeView) DumpTree() {
 }
 
 func (v *NativeView) RemoveFromParent() {
+	zlog.Assert(v.parent != nil)
+	v.parent.RemoveChild(v)
 }
 
 func (v *NativeView) SetFont(font *Font) View {
@@ -353,4 +355,31 @@ func (v *NativeView) SetAboveParent(above bool) {
 		str = "visible"
 	}
 	v.style().Set("overflow", str)
+}
+
+func NativeViewAddToRoot(v View) {
+	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
+	// 	return nil
+	// })
+
+	n := &NativeView{}
+	n.Element = DocumentElementJS
+	n.View = n
+
+	// s := WindowGetCurrent().Rect().Size.DividedByD(2)
+
+	// o, _ := v.(NativeViewOwner)
+	// if o == nil {
+	// 	panic("NativeView AddChild child not native")
+	// }
+	// nv := o.GetNative()
+	// nv.style().Set("display", "inline-block")
+
+	// scale := fmt.Sprintf("scale(%f)", ScreenMain().Scale)
+	// n.style().Set("-webkit-transform", scale)
+
+	// trans := fmt.Sprintf("translate(-%f,%f)", s.W, 0.0)
+	// zlog.Info("TRANS:", trans)
+	// n.style().Set("-webkit-transform", trans)
+	n.AddChild(v, -1)
 }

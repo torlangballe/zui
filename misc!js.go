@@ -9,9 +9,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-func NativeViewAddToRoot(v View) {
-}
-
 // TextInfo
 func (ti *TextInfo) getTextSize(noWidth bool) zgeo.Size {
 	return zgeo.Size{}
