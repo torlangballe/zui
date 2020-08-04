@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /22/9/14.
@@ -53,6 +54,8 @@ type PresentViewAttributes struct {
 	PortraitOnly  bool
 	FadeToo       bool
 	DeleteOld     bool
+	Modal         bool
+	Title         string
 }
 
 var stack []PresentViewAttributes
@@ -60,8 +63,8 @@ var stack []PresentViewAttributes
 func PresentViewAttributesNew() PresentViewAttributes {
 	a := PresentViewAttributes{}
 	a.DurationSecs = 0.5
-	a.MakeFull = true
-	a.PortraitOnly = true
+	a.MakeFull = false
+	a.PortraitOnly = false
 	return a
 }
 
@@ -69,10 +72,10 @@ func presentViewCallReady(v View) {
 	o := v.(NativeViewOwner)
 	if o != nil {
 		nv := o.GetNative()
-		if nv.presented {
+		if nv.Presented {
 			return
 		}
-		nv.presented = true
+		nv.Presented = true
 	}
 	r, got := v.(ReadyToShowType)
 	if got {
@@ -88,32 +91,35 @@ func presentViewCallReady(v View) {
 
 var presentViewPresenting = true
 
-func PresentViewShow(v View, attributes PresentViewAttributes, done func()) {
+func PresentViewShow(v View, attributes PresentViewAttributes, done func(), closed func()) {
 	presentViewPresenting = true
 	presentViewCallReady(v)
 	ct, _ := v.(ContainerType)
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
-			presentLoaded(v, attributes, done)
+			presentLoaded(v, attributes, done, closed)
 		})
 	} else {
-		presentLoaded(v, attributes, done)
+		presentLoaded(v, attributes, done, closed)
 	}
 }
 
-func presentLoaded(v View, attributes PresentViewAttributes, done func()) {
+var firstPresented bool
+
+func presentLoaded(v View, attributes PresentViewAttributes, done func(), closed func()) {
 	// zlog.Info("PresentViewShow", v.ObjectName())
 
 	// zlog.Info("PresentViewShow Loaded", attributes.MakeFull, v.ObjectName())
 	// zlog.Info("PresentViewShow loaded", v.ObjectName())
-	mainRect := WindowGetCurrent().Rect()
-	if attributes.MakeFull {
-		// zlog.Info("Present:", mainRect, presentViewPresenting)
-		v.SetRect(mainRect)
-	} else {
-		// size := v.CalculatedSize(mainRect.Size)
-		// r := mainRect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
-		// zlog.Info("Present:", r)
+	win := WindowGetCurrent()
+	rect := win.Rect()
+
+	size := v.CalculatedSize(rect.Size)
+	if attributes.Modal || firstPresented {
+		rect = rect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
+	}
+	if attributes.Modal {
+		zlog.Info("Present  Modal:", rect)
 		v.SetBGColor(zgeo.ColorNewGray(0.95, 1))
 		v.SetCorner(5)
 		no := v.(NativeViewOwner)
@@ -121,18 +127,34 @@ func presentLoaded(v View, attributes PresentViewAttributes, done func()) {
 			nv := no.GetNative()
 			nv.SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorNewGray(0.2, 1))
 			g := ContainerViewNew(nil, "$blocker")
-			g.SetRect(mainRect)
+			g.SetRect(rect)
 			g.SetBGColor(zgeo.ColorNewGray(0, 0.5))
 			g.Add(zgeo.Center, v)
 			g.ArrangeChildren(nil)
 			v = g
+			win.AddView(v)
 		}
+	} else {
+		if firstPresented {
+			size.H += WindowBarHeight
+			win = WindowOpenWithURL("about:blank", size, &rect.Pos)
+			if attributes.Title != "" {
+				win.SetTitle(attributes.Title)
+			}
+			if closed != nil {
+				win.SetHandleClosed(closed)
+			}
+		}
+		v.SetRect(zgeo.RectFromSize(rect.Size))
+		win.AddView(v)
 	}
+	firstPresented = true
+
 	// cvt, _ := v.(ContainerViewType)
 	// if cvt != nil {
 	// 	cvt.ArrangeChildren(nil)
 	// }
-	NativeViewAddToRoot(v)
+	// NativeViewAddToRoot(v)
 	presentViewPresenting = false
 	et, _ := v.(ExposableType)
 	if et != nil {

@@ -143,8 +143,6 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	addButtonIfNotEmpty(stack, a.OtherButton, handle, AlertOther)
 
 	att := PresentViewAttributesNew()
-	att.MakeFull = false
-	att.PortraitOnly = false
-
-	PresentViewShow(stack, att, nil)
+	att.Modal = true
+	PresentViewShow(stack, att, nil, nil)
 }

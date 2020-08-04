@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"strings"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -18,37 +20,52 @@ type TextView struct {
 	NativeView
 	minWidth      float64
 	maxWidth      float64
-	maxLines      int
 	alignment     zgeo.Alignment
 	changed       func(view View)
 	pushedBGColor zgeo.Color
 	keyPressed    func(view View, key KeyboardKey, mods KeyboardModifier)
 	updateTimer   *ztimer.Timer
+	Columns       int
+	rows          int
 	//	updated       bool
 
-	Margin zgeo.Size
+	margin zgeo.Size
 	// ContinuousUpdateCalls bool
 	UpdateSecs float64
 }
 
-const TextViewDefaultMargin = 3.0
+const TextViewDefaultMargin = 2.0
 
-func TextViewNew(text string, style TextViewStyle, maxLines int) *TextView {
+func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
 	tv := &TextView{}
-	tv.Init(text, style, maxLines)
+	tv.Init(text, style, rows, cols)
 	return tv
 }
 
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	const letters = "etaoinsrhdlucmfywgpbvkxqjz"
 	ti := TextInfoNew()
 	ti.Alignment = v.alignment
-	ti.Text = v.Text()
 	ti.IsMinimumOneLineHight = true
+	if v.Columns == 0 {
+		ti.Text = v.Text()
+	} else {
+		len := len(letters)
+		for i := 0; i < v.Columns; i++ {
+			c := string(letters[i%len])
+			if i%8 == 4 {
+				c = strings.ToUpper(c)
+			}
+			ti.Text += c
+		}
+	}
 	ti.Font = v.Font()
-	ti.MaxLines = v.maxLines
-	ti.SetWidthFreeHight(v.maxWidth)
+	ti.MaxLines = v.rows
+	if v.maxWidth != 0 {
+		ti.SetWidthFreeHight(v.maxWidth - v.margin.W*2)
+	}
 	s := ti.GetBounds()
-	s.Add(v.Margin.TimesD(2))
+	s.Add(v.margin.TimesD(2))
 	s.MakeInteger()
 	return s
 }
@@ -66,7 +83,7 @@ func (v *TextView) MaxWidth() float64 {
 }
 
 func (v *TextView) MaxLines() int {
-	return v.maxLines
+	return v.rows
 }
 
 func (v *TextView) SetMinWidth(min float64) View {
@@ -80,11 +97,10 @@ func (v *TextView) SetMaxWidth(max float64) View {
 }
 
 func (v *TextView) SetMaxLines(max int) View {
-	v.maxLines = max
+	v.rows = max
 	return v
 }
 
 func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
 }
-

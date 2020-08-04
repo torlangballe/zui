@@ -282,7 +282,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 }
 
 func (v *ListView) UpdateVisibleRows() {
-	if !v.presented {
+	if !v.Presented {
 		return
 	}
 	first := -1

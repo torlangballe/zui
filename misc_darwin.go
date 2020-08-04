@@ -3,12 +3,10 @@ package zui
 import (
 	"syscall"
 	"time"
-
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func init() {
-	zlog.Info("zui init()")
+	// zlog.Info("zui init()")
 	// runtime.LockOSThread() // ! skip for now
 }
 

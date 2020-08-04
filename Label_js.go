@@ -15,6 +15,7 @@ func LabelNew(text string) *Label {
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
+	style.Set("verticalAlign", "middle")
 	style.Set("whiteSpace", "pre-wrap")
 	//	style.Set("overflow", "hidden")
 	//	style.Set("textOverflow", "clip")

@@ -2,14 +2,12 @@ package zui
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"syscall"
 	"syscall/js"
 	"time"
 
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zstr"
 )
 
 // https://github.com/siongui/godom
@@ -25,21 +23,6 @@ func init() {
 	if DeviceWasmBrowser() != "Safari" {
 		menuViewHeight = 25
 	}
-}
-
-func parseElementCoord(value js.Value) float64 {
-	var s string
-	str := value.String()
-	if zstr.HasSuffix(str, "px", &s) {
-		n, err := strconv.ParseFloat(s, 32)
-		if err != nil {
-			zlog.Error(err, "not number")
-			return 0
-		}
-		return n
-	}
-	panic("parseElementCoord: not handled type: " + str)
-	return 0
 }
 
 func getCreatedTimeFromStatT(fstat *syscall.Stat_t) time.Time {

@@ -12,7 +12,9 @@ type FilesRedirector struct {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+
 	path := req.URL.Path[1:]
+	// zlog.Info("SERVE:", path)
 	if zstr.HasPrefix(path, "page/", &path) {
 		zstr.ExtractStringTilSeparator(&path, "/")
 	}

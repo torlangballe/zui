@@ -2,11 +2,13 @@ package zui
 
 import (
 	"fmt"
+	"strconv"
 	"syscall/js"
 	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -48,13 +50,28 @@ func (v *NativeView) HasSize() bool {
 	return v.style().Get("left").String() != ""
 }
 
+func (v *NativeView) parseElementCoord(value js.Value) float64 {
+	var s string
+	str := value.String()
+	if zstr.HasSuffix(str, "px", &s) {
+		n, err := strconv.ParseFloat(s, 32)
+		if err != nil {
+			zlog.Error(err, "not number", v.ObjectName())
+			return 0
+		}
+		return n
+	}
+	zlog.Fatal(nil, "parseElementCoord: not handled type:", str, v.ObjectName())
+	return 0
+}
+
 func (v *NativeView) Rect() zgeo.Rect {
 	var pos zgeo.Pos
 	style := v.style()
 	// pos.X = v.Element.Get("offsetLeft").Float()
 	// pos.Y = v.Element.Get("offsetTop").Float()
-	pos.X = parseElementCoord(style.Get("left"))
-	pos.Y = parseElementCoord(style.Get("top"))
+	pos.X = v.parseElementCoord(style.Get("left"))
+	pos.Y = v.parseElementCoord(style.Get("top"))
 	size := v.GetLocalRect().Size
 	return zgeo.Rect{pos, size}
 }
@@ -77,8 +94,8 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 	sw := style.Get("width")
 	sh := style.Get("height")
 	if sw.String() != "" {
-		h = parseElementCoord(sh)
-		w = parseElementCoord(sw)
+		h = v.parseElementCoord(sh)
+		w = v.parseElementCoord(sw)
 	} else {
 		zlog.Info("parse empty Coord:", v.ObjectName(), zlog.GetCallingStackString())
 	}
@@ -255,7 +272,7 @@ func (v *NativeView) Font() *Font {
 		fstyle |= FontStyleItalic
 	}
 	ss := cssStyle.Get("font-size")
-	size := parseElementCoord(ss)
+	size := v.parseElementCoord(ss)
 
 	return FontNew(name, size, fstyle)
 }
@@ -357,29 +374,3 @@ func (v *NativeView) SetAboveParent(above bool) {
 	v.style().Set("overflow", str)
 }
 
-func NativeViewAddToRoot(v View) {
-	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
-	// 	return nil
-	// })
-
-	n := &NativeView{}
-	n.Element = DocumentElementJS
-	n.View = n
-
-	// s := WindowGetCurrent().Rect().Size.DividedByD(2)
-
-	// o, _ := v.(NativeViewOwner)
-	// if o == nil {
-	// 	panic("NativeView AddChild child not native")
-	// }
-	// nv := o.GetNative()
-	// nv.style().Set("display", "inline-block")
-
-	// scale := fmt.Sprintf("scale(%f)", ScreenMain().Scale)
-	// n.style().Set("-webkit-transform", scale)
-
-	// trans := fmt.Sprintf("translate(-%f,%f)", s.W, 0.0)
-	// zlog.Info("TRANS:", trans)
-	// n.style().Set("-webkit-transform", trans)
-	n.AddChild(v, -1)
-}

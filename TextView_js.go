@@ -1,19 +1,20 @@
 package zui
 
 import (
+	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-const jsTextMargin = 3
+const jsTextMargin = 2
 
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
-func (v *TextView) Init(text string, style TextViewStyle, maxLines int) {
-	v.SetMaxLines(maxLines)
-	if maxLines > 1 {
+func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
+	v.SetMaxLines(rows)
+	if rows > 1 {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
@@ -24,8 +25,11 @@ func (v *TextView) Init(text string, style TextViewStyle, maxLines int) {
 			v.set("type", "text")
 		}
 	}
-	v.Margin = zgeo.SizeBoth(TextViewDefaultMargin)
+	v.Columns = cols
 	v.set("style", "position:absolute")
+	if rows <= 1 {
+		v.SetMargin(zgeo.SizeBoth(TextViewDefaultMargin))
+	}
 	v.set("value", text)
 	v.View = v
 	v.UpdateSecs = 1
@@ -74,11 +78,23 @@ func (v *TextView) SetPlaceholder(str string) *TextView {
 	return v
 }
 
+func (v *TextView) SetMargin(m zgeo.Size) View {
+	v.margin = m
+	style := v.style()
+	style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.W)))
+	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.W)))
+	style.Set("paddingTop", fmt.Sprintf("%dpx", int(m.H)))
+	style.Set("paddingBottom", fmt.Sprintf("%dpx", int(m.H)))
+	return v
+}
+
 func (v *TextView) SetRect(rect zgeo.Rect) View {
-	m := v.Margin.Maxed(zgeo.SizeBoth(jsTextMargin))
-	rect = rect.Expanded(m.Negative())
-	rect.Pos.Y -= 3
-	// zlog.Info("TV: Rect:", v.ObjectName(), rect)
+	// m := v.margin.Maxed(zgeo.SizeBoth(jsTextMargin))
+	// rect = rect.Expanded(m.Negative())
+	if v.MaxLines() <= 1 {
+		rect = rect.Expanded(zgeo.Size{-6, -4})
+		rect.Pos.Y -= 3
+	}
 	v.NativeView.SetRect(rect)
 	return v
 }

@@ -126,14 +126,14 @@ func (v *TabsView) SetTab(id string) {
 		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
 		// zlog.Info("Call collapse:", tabSeparatorID, !hasSeparator, v.separatorForIDs)
 		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
-		if !v.presented {
+		if !v.Presented {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
 		ct := v.View.(ContainerType)
 		//		et, _ := v.ChildView.(ExposableType)
 		et, _ := v.View.(ExposableType)
-		// if !v.presented {
+		// if !v.Presented {
 		// 	return
 		// }
 		presentViewCallReady(v.ChildView)

@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/torlangballe/zutil/zcommand"
+	"github.com/torlangballe/zutil/zprocess"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
 func DeviceHardwareTypeAndVersion() (string, float32) {
-	str, err := zcommand.RunCommand("sysctl", 0, "-n", "hw.model")
+	str, err := zprocess.RunCommand("sysctl", 0, "-n", "hw.model")
 	if err != nil {
 		zlog.Error(err)
 		return "", 0

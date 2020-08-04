@@ -67,6 +67,7 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	var gotView *View
 	var gotAlign zgeo.Alignment
 	var gotMargin zgeo.Size
+	var gotIndex = -1
 
 	// zlog.Info("CV ADD1:", c.ObjectName())
 	for _, v := range elements {
@@ -77,13 +78,17 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 		if view, got := v.(View); got {
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
-				c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, -1, false)
+				c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
 				gotView = nil
 				gotAlign = zgeo.AlignmentNone
 				gotMargin = zgeo.Size{}
+				gotIndex = -1
 			}
 			gotView = &view
 			continue
+		}
+		if n, got := v.(int); got {
+			gotIndex = n
 		}
 		if a, got := v.(zgeo.Alignment); got {
 			gotAlign = a
@@ -96,7 +101,7 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	}
 	if gotView != nil {
 		a := calculateAddAlignment(defAlignment, gotAlign)
-		c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, -1, false)
+		c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
 	}
 }
 
@@ -303,7 +308,7 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 			v.AddChild(cell.View, -1)
 		}
 	}
-	if arrange && v.presented {
+	if arrange && v.Presented {
 		v.ArrangeChildren(nil)
 	}
 	return changed

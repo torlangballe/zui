@@ -23,8 +23,8 @@ func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
 	return nil
 }
 
-func (w *Window) Close() {
-}
-
-func (w *Window) Activate() {
-}
+func (w *Window) Close()                        {}
+func (w *Window) Activate()                     {}
+func (w *Window) AddView(v View)                {}
+func (w *Window) SetTitle(title string)         {}
+func (w *Window) SetHandleClosed(closed func()) {}
