@@ -63,6 +63,8 @@ func (i *Image) load(path string, done func()) {
 	// 		path = "images/" + path
 	// 	}
 	// }
+	// zlog.Info("Image Load:", path)
+
 	i.Path = path
 	i.loading = true
 	i.scale = imageGetScaleFromPath(path)

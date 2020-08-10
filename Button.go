@@ -21,7 +21,7 @@ func ButtonNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *Bu
 	if insets.IsNull() {
 		insets = zgeo.Size{6, 13}
 	}
-	b.CanFocus(true)
+	b.SetCanFocus(true)
 	b.ImageAlign = zgeo.Expand | zgeo.Center
 	b.SetColor(zgeo.Color{})
 	b.SetImageName(imageName, insets)

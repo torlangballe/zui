@@ -5,6 +5,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -123,6 +124,7 @@ func (v *TextView) BGColor() zgeo.Color {
 func (v *TextView) updateDone() {
 	if v.updateTimer != nil {
 		v.updateTimer.Stop()
+		v.updateTimer = nil
 	}
 	if v.UpdateSecs > 1 {
 		v.SetBGColor(v.pushedBGColor)
@@ -136,10 +138,10 @@ func (v *TextView) startUpdate() {
 		v.pushedBGColor = v.BGColor()
 		v.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
 	}
+	zlog.Info("call Text Update", v.UpdateSecs)
 	if v.updateTimer != nil {
 		v.updateTimer.Stop()
 	}
-	// zlog.Info("call Text Update", v.UpdateSecs)
 	v.updateTimer = ztimer.StartIn(v.UpdateSecs, func() {
 		v.updateDone()
 	})
@@ -176,8 +178,10 @@ func (v *TextView) SetChangedHandler(handler func(view View)) {
 func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
 	v.set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		zlog.Info("KeyUp")
 		if handler != nil {
 			event := vs[0]
+			key := KeyboardKey(event.Get("which").Int())
 			// key := event.Get("which").Int()
 			var mods KeyboardModifier
 			if event.Get("altKey").Bool() {
@@ -192,6 +196,7 @@ func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods K
 			if event.Get("shiftKey").Bool() {
 				mods |= KeyboardModifierShift
 			}
+			handler(v, key, mods)
 			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil

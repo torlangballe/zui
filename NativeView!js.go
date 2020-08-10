@@ -49,6 +49,10 @@ func (v *NativeView) SetColor(c zgeo.Color) View {
 	return v
 }
 
+func (v *NativeView) Color() zgeo.Color {
+	return zgeo.Color{}
+}
+
 func (v *NativeView) SetAlpha(alpha float32) View {
 	return v
 }
@@ -101,7 +105,7 @@ func (v *NativeView) Focus(focus bool) View {
 	return v
 }
 
-func (v *NativeView) CanFocus(can bool) View {
+func (v *NativeView) SetCanFocus(can bool) View {
 	return v
 }
 
@@ -134,9 +138,9 @@ func (v *NativeView) SetText(text string) View {
 func (v *NativeView) Text() string {
 	return ""
 }
-func (v *NativeView) AddChild(child View, index int)                                    {}
-func (v *NativeView) RemoveChild(child View)                                            {}
-func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {}
-func (v *NativeView) SetToolTip(str string)                                             {}
-func (v *NativeView) SetAboveParent(above bool)                                         {}
-func NativeViewAddToRoot(v View)                                                        {}
+func (v *NativeView) AddChild(child View, index int)       {}
+func (v *NativeView) RemoveChild(child View)               {}
+func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {}
+func (v *NativeView) SetToolTip(str string)                {}
+func (v *NativeView) SetAboveParent(above bool)            {}
+func NativeViewAddToRoot(v View)                           {}

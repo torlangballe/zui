@@ -171,7 +171,10 @@ func (v *NativeView) SetCorner(radius float64) View {
 }
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color) View {
-	str := fmt.Sprintf("%dpx solid %s", int(width), makeRGBAString(c))
+	str := "none"
+	if width != 0 {
+		str = fmt.Sprintf("%dpx solid %s", int(width), makeRGBAString(c))
+	}
 	v.style().Set("border", str)
 	return v
 }
@@ -227,10 +230,11 @@ func (v *NativeView) IsFocused() bool {
 }
 
 func (v *NativeView) Focus(focus bool) View {
+	v.call("focus")
 	return v
 }
 
-func (v *NativeView) CanFocus(can bool) View {
+func (v *NativeView) SetCanFocus(can bool) View {
 	v.set("tabindex", "0")
 	return v
 }
@@ -319,13 +323,22 @@ func (v *NativeView) RemoveChild(child View) {
 
 }
 
-func (v *NativeView) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
-	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(deltaSize.W), int(deltaSize.H), int(blur), makeRGBAString(color))
+func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
+	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(shadow.Delta.W), int(shadow.Delta.H), int(shadow.Blur), makeRGBAString(shadow.Color))
 	v.style().Set("boxShadow", str)
 }
 
 func (v *NativeView) SetToolTip(str string) {
 	v.set("title", str)
+}
+
+func (v *NativeView) GetAbsoluteRect() zgeo.Rect {
+	r := v.Element.Call("getBoundingClientRect")
+	x := r.Get("x").Float()
+	y := r.Get("y").Float()
+	w := r.Get("width").Float()
+	h := r.Get("height").Float()
+	return zgeo.RectFromXYWH(x, y, w, h)
 }
 
 type LongPresser struct {
@@ -374,3 +387,14 @@ func (v *NativeView) SetAboveParent(above bool) {
 	v.style().Set("overflow", str)
 }
 
+func (n *NativeView) call(method string, args ...interface{}) js.Value {
+	return n.Element.Call(method, args...)
+}
+
+func (n *NativeView) set(property string, v interface{}) {
+	n.Element.Set(property, v)
+}
+
+func (n *NativeView) get(property string) js.Value {
+	return n.Element.Get(property)
+}

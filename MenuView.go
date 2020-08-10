@@ -50,20 +50,20 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			}
 		}
 	}
-	maxString += "m"
+	// maxString += "m"
 	ti := TextInfoNew()
 	ti.Alignment = zgeo.Left
 	ti.Text = maxString
 	ti.IsMinimumOneLineHight = true
-	ti.Font = v.Font()
+	ti.Font = v.Font().NewWithSize(14)
 	ti.MaxLines = 1
 	s := ti.GetBounds()
-	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
-	s.W += 32
+	s.W += 38
 	s.H = menuViewHeight
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
+	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
 	return s
 }
 

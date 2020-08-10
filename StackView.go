@@ -101,12 +101,6 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 func (v *StackView) ForceHorizontalFocusNavigation() {
 }
 
-// func (v *StackView) SetRect(rect Rect) View {
-// 	v.CustomView.SetRect(rect)
-// 	v.ArrangeChildren(nil)
-// 	return v
-// }
-
 func addDiff(size *zgeo.Size, maxSize float64, vertical bool, diff *float64, count *int) {
 	d := math.Floor(*diff / float64(*count))
 	if maxSize != 0 {
@@ -151,7 +145,9 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	}
 	m := calcMarginAdd(c)
 	*size.VerticeP(vert) += m.Vertice(vert)
-	// zlog.Info("get cell size2:", v.ObjectName(), c.View.ObjectName(), size)
+	// if c.View.ObjectName() == "drm" {
+	// zlog.Info("get cell size2:", c.MaxSize, c.MinSize, v.ObjectName(), c.View.ObjectName(), size)
+	// }
 	return size
 }
 
@@ -296,7 +292,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
-			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
+			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			ct, _ := c5.View.(ContainerType)
 			if ct != nil {

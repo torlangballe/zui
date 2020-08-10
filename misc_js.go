@@ -49,18 +49,6 @@ func jsAddEventListener(e js.Value, name string, handler func()) {
 	}
 }
 
-func (n *NativeView) call(method string, v js.Value) js.Value {
-	return n.Element.Call(method, v)
-}
-
-func (n *NativeView) set(property string, v interface{}) {
-	n.Element.Set(property, v)
-}
-
-func (n *NativeView) get(property string) js.Value {
-	return n.Element.Get(property)
-}
-
 func getFontStyle(font *Font) string {
 	var parts []string
 	if font.Style&FontStyleBold != 0 {

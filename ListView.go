@@ -45,6 +45,20 @@ func ListViewNew(name string) *ListView {
 	//        allowsSelection = true // selectable
 }
 
+func (v *ListView) init(view View, name string) {
+	v.ScrollView.init(view, name)
+	v.Selectable = true
+	v.selectionIndex = -1
+	v.rows = map[int]View{}
+	v.HandleScroll = func(pos zgeo.Pos) {
+		v.topPos = pos.Y
+		first, last := v.layoutRows(-1)
+		if v.HandleScrolledToRows != nil {
+			v.HandleScrolledToRows(pos.Y, first, last)
+		}
+	}
+}
+
 func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.ScrollView.CalculatedSize(total)
 	h := 0.0
@@ -87,25 +101,12 @@ func (v *ListView) SelectedColor(col zgeo.Color) *ListView {
 	return v
 }
 
-func (v *ListView) init(view View, name string) {
-	v.ScrollView.init(view, name)
-	v.Selectable = true
-	v.selectionIndex = -1
-	v.rows = map[int]View{}
-	v.HandleScroll = func(pos zgeo.Pos) {
-		v.topPos = pos.Y
-		first, last := v.layoutRows(-1)
-		if v.HandleScrolledToRows != nil {
-			v.HandleScrolledToRows(pos.Y, first, last)
-		}
-	}
-}
-
 func (v *ListView) SetRect(rect zgeo.Rect) View {
 	// zlog.Info("ListView SetRect:", v.ObjectName(), rect)
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
+		v.stack.SetBGColor(zgeo.ColorRed)
 		v.AddChild(v.stack, -1)
 	}
 	count := v.GetRowCount()
@@ -120,6 +121,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 	w := rect.Size.W + v.Margin.Size.W
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.SetRect(r)
+	// zlog.Info("List set rect: stack", rect, r)
 	v.layoutRows(-1)
 	return v
 }
@@ -159,11 +161,16 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				v.rows[i] = row
 				v.setRowBGColor(i)
 				row.SetRect(r)
-				et, _ := row.(ExposableType)
-				if et != nil {
-					et.drawIfExposed()
-				}
-
+				ct := row.(ContainerType)
+				WhenContainerLoaded(ct, func(waited bool) {
+					if waited {
+						row.SetRect(r)
+					}
+					et, _ := row.(ExposableType)
+					if et != nil {
+						et.drawIfExposed()
+					}
+				})
 			}
 		}
 		y += s.H + v.spacing
@@ -281,12 +288,12 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	}
 }
 
-func (v *ListView) UpdateVisibleRows() {
+func (v *ListView) GetFirstLastVisibleRowIndexes() (first int, last int) {
+	first = -1
+	last = -1
 	if !v.Presented {
 		return
 	}
-	first := -1
-	last := -1
 	y := 0.0
 	count := v.GetRowCount()
 	ls := v.GetLocalRect().Size
@@ -303,6 +310,11 @@ func (v *ListView) UpdateVisibleRows() {
 		}
 		y = e + v.spacing
 	}
+	return
+}
+
+func (v *ListView) UpdateVisibleRows() {
+	first, last := v.GetFirstLastVisibleRowIndexes()
 	for i := first; i <= last; i++ {
 		edited := false
 		v.UpdateRow(i, edited)

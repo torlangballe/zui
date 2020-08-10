@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /22/9/14.
@@ -46,16 +45,18 @@ func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.
 }
 
 type PresentViewAttributes struct {
-	DurationSecs  float64
-	Transition    PresentViewTransition
-	OldTransition PresentViewTransition
-	DarkContent   bool
-	MakeFull      bool
-	PortraitOnly  bool
-	FadeToo       bool
-	DeleteOld     bool
-	Modal         bool
-	Title         string
+	DurationSecs             float64
+	Transition               PresentViewTransition
+	OldTransition            PresentViewTransition
+	DarkContent              bool
+	MakeFull                 bool
+	PortraitOnly             bool
+	FadeToo                  bool
+	DeleteOld                bool
+	Modal                    bool
+	Title                    string
+	Pos                      *zgeo.Pos
+	ModalCloseOnOutsidePress bool
 }
 
 var stack []PresentViewAttributes
@@ -91,48 +92,58 @@ func presentViewCallReady(v View) {
 
 var presentViewPresenting = true
 
-func PresentViewShow(v View, attributes PresentViewAttributes, done func(), closed func()) {
+func PresentViewShow(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
 	presentViewPresenting = true
 	presentViewCallReady(v)
 	ct, _ := v.(ContainerType)
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
-			presentLoaded(v, attributes, done, closed)
+			presentLoaded(v, attributes, presented, closed)
 		})
 	} else {
-		presentLoaded(v, attributes, done, closed)
+		presentLoaded(v, attributes, presented, closed)
 	}
 }
 
 var firstPresented bool
 
-func presentLoaded(v View, attributes PresentViewAttributes, done func(), closed func()) {
+func presentLoaded(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
 	// zlog.Info("PresentViewShow", v.ObjectName())
-
-	// zlog.Info("PresentViewShow Loaded", attributes.MakeFull, v.ObjectName())
-	// zlog.Info("PresentViewShow loaded", v.ObjectName())
 	win := WindowGetCurrent()
-	rect := win.Rect()
+
+	fullRect := win.Rect()
+	rect := fullRect
 
 	size := v.CalculatedSize(rect.Size)
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
 	}
 	if attributes.Modal {
-		zlog.Info("Present  Modal:", rect)
-		v.SetBGColor(zgeo.ColorNewGray(0.95, 1))
-		v.SetCorner(5)
-		no := v.(NativeViewOwner)
-		if no != nil {
-			nv := no.GetNative()
-			nv.SetDropShadow(zgeo.Size{4, 4}, 8, zgeo.ColorNewGray(0.2, 1))
+		ct, _ := v.(ContainerType)
+		if ct != nil {
+			v.SetBGColor(zgeo.ColorNewGray(0.95, 1))
+			v.SetCorner(5)
+		}
+		nv := ViewGetNative(v)
+		if nv != nil {
+			nv.SetDropShadow(zgeo.DropShadow{Delta: zgeo.Size{4, 4}, Blur: 8, Color: zgeo.ColorNewGray(0.2, 1)})
 			g := ContainerViewNew(nil, "$blocker")
-			g.SetRect(rect)
+			fullRect.Pos = zgeo.Pos{}
+			g.SetRect(fullRect)
 			g.SetBGColor(zgeo.ColorNewGray(0, 0.5))
-			g.Add(zgeo.Center, v)
+			if attributes.Pos != nil {
+				g.Add(zgeo.TopLeft, v, attributes.Pos.Size())
+			} else {
+				g.Add(zgeo.Center, v)
+			}
 			g.ArrangeChildren(nil)
+			if attributes.ModalCloseOnOutsidePress {
+				g.SetPressedHandler(func() {
+					PresentViewPop(v, closed)
+				})
+			}
 			v = g
-			win.AddView(v)
+			win.AddView(g)
 		}
 	} else {
 		if firstPresented {
@@ -160,12 +171,17 @@ func presentLoaded(v View, attributes PresentViewAttributes, done func(), closed
 	if et != nil {
 		et.drawIfExposed()
 	}
-	if done != nil {
-		done()
+	if presented != nil {
+		presented(win)
 	}
 }
 
-func PresentViewPop(view View, animated bool, overrideDurationSecs float64, overrideTransition PresentViewTransition, done func()) {
+func PresentViewPop(view View, done func()) {
+	PresentViewPopOverride(view, PresentViewAttributes{}, done)
+}
+
+func PresentViewPopOverride(view View, overrideAttributes PresentViewAttributes, done func()) {
+	// TODO: Handle non-modal window too
 	parent := ViewGetNative(view).Parent()
 	if parent.ObjectName() == "$blocker" {
 		view = parent

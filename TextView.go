@@ -42,6 +42,10 @@ func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
 	return tv
 }
 
+func (v *TextView) IsEditing() bool {
+	return v.updateTimer != nil
+}
+
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	const letters = "etaoinsrhdlucmfywgpbvkxqjz"
 	ti := TextInfoNew()
@@ -68,6 +72,10 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.Add(v.margin.TimesD(2))
 	s.MakeInteger()
 	return s
+}
+
+func (v *TextView) Margin() zgeo.Size {
+	return v.margin
 }
 
 func (v *TextView) TextAlignment() zgeo.Alignment {

@@ -40,10 +40,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
 	s.MakeInteger()
-
-	// s.W += 10
-	//s.H += 3
-	// zlog.Info("label calcedsize:", v.Text(), s, o.Font())
+	// zlog.Info("label calcedsize:", v.Text(), s, v.MaxLines())
 	return s
 }
 

@@ -23,7 +23,7 @@ type View interface {
 	SetCorner(radius float64) View
 	SetStroke(width float64, color zgeo.Color) View
 
-	CanFocus(can bool) View
+	SetCanFocus(can bool) View
 	Focus(focus bool) View
 	IsFocused() bool
 

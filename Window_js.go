@@ -5,6 +5,8 @@ import (
 	"strings"
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/ztimer"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zslice"
 )
@@ -32,10 +34,12 @@ func WindowGetCurrent() *Window {
 }
 
 func (w *Window) Rect() zgeo.Rect {
-	var s zgeo.Size
-	s.W = w.element.Get("innerWidth").Float()
-	s.H = w.element.Get("innerHeight").Float()
-	return zgeo.Rect{Size: s}
+	var r zgeo.Rect
+	r.Pos.X = w.element.Get("screenX").Float()
+	r.Pos.Y = w.element.Get("screenY").Float()
+	r.Size.W = w.element.Get("innerWidth").Float()
+	r.Size.H = w.element.Get("innerHeight").Float()
+	return r
 }
 
 // WindowOpenWithURL opens a new window with a given url.
@@ -88,6 +92,8 @@ func (w *Window) SetHandleClosed(closed func()) {
 	}))
 }
 
+var resizeTimer *ztimer.Timer
+
 func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
@@ -112,4 +118,21 @@ func (w *Window) AddView(v View) {
 	// zlog.Info("TRANS:", trans)
 	// n.style().Set("-webkit-transform", trans)
 	wn.AddChild(v, -1)
+	w.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		if resizeTimer == nil {
+			resizeTimer = ztimer.StartIn(0.2, func() {
+				r := w.Rect()
+				if w.HandleBeforeResized != nil {
+					w.HandleBeforeResized(r)
+				}
+				r.Pos = zgeo.Pos{}
+				v.SetRect(r)
+				if w.HandleAfterResized != nil {
+					w.HandleAfterResized(r)
+				}
+				resizeTimer = nil
+			})
+		}
+		return nil
+	}))
 }

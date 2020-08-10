@@ -138,10 +138,10 @@ func (v *TabsView) SetTab(id string) {
 		// }
 		presentViewCallReady(v.ChildView)
 		presentViewPresenting = true
-		v.ArrangeChildren(nil) // we need to do this in advance, before stuff below, can't remmember why
+		v.ArrangeChildren(nil) // This can cerate table rows and do all kinds of things that load images etc.
 		WhenContainerLoaded(ct, func(waited bool) {
 			// zlog.Info("Set Tab container loaded:", waited)
-			if waited { // if we waited for some loading, lets re-arrange
+			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
 				v.ArrangeChildren(nil)
 			}
 			presentViewPresenting = false

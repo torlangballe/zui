@@ -17,6 +17,7 @@ const (
 	KeyboardKeyReturn    = 13
 	KeyboardKeyTab       = 9
 	KeyboardKeyBackspace = 8
+	KeyboardKeyEscape = 27
 )
 
 const (

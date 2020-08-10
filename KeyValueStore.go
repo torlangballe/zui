@@ -40,26 +40,37 @@ func (k KeyValueStore) DictForKey(key string) (dict zdict.Dict, got bool) {
 	return
 }
 
-func (k KeyValueStore) Int64ForKey(key string) (n int64, got bool) {
-	got = k.getItem(key, &n)
-	return
+func (k KeyValueStore) Int64ForKey(key string, def int64) (val int64, got bool) {
+	got = k.getItem(key, &val)
+	if got {
+		return val, true
+	}
+	return def, true
 }
 
-func (k KeyValueStore) IntForKey(key string) (int, bool) {
-	n, got := k.Int64ForKey(key)
+func (k KeyValueStore) IntForKey(key string, def int) (int, bool) {
+	n, got := k.Int64ForKey(key, int64(def))
 	return int(n), got
 }
 
-func (k KeyValueStore) DoubleForKey(key string) (float64, bool) {
-	return 0, false
+func (k KeyValueStore) DoubleForKey(key string, def float64) (val float64, got bool) {
+	got = k.getItem(key, &val)
+	if got {
+		return val, true
+	}
+	return def, true
 }
 
 func (k KeyValueStore) TimeForKey(key string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func (k KeyValueStore) BoolForKey(key string) (bool, bool) {
-	return false, false
+func (k KeyValueStore) BoolForKey(key string, def bool) (val bool, got bool) {
+	got = k.getItem(key, &val)
+	if got {
+		return val, true
+	}
+	return def, true
 }
 
 func (k KeyValueStore) IncrementInt(key string, sync bool, inc int) int {

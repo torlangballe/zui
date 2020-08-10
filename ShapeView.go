@@ -152,9 +152,12 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
-	// if v.ObjectName() == "variables" {
-	// 	zlog.Info("ShapeView CalcSize:", v.ObjectName(), s, v.image.Size(), v.image.loading)
-	// }
+	if v.ObjectName() == "newTest" {
+		// if v.image.loading {
+		// 	zlog.Info("!!!!!!!!!!!!!!!!!!!!!!!!!! SH image loading")
+		// }
+	 	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
+	}
 	s.MakeInteger()
 	return s
 }

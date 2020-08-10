@@ -105,7 +105,7 @@ func addButtonIfNotEmpty(stack *StackView, text string, handle func(result Alert
 		button := ButtonNew(text, "gray", zgeo.Size{10, 28}, zgeo.Size{})
 		stack.AddAlertButton(button)
 		button.SetPressedHandler(func() {
-			PresentViewPop(stack, true, 0, PresentViewTransitionSame, func() {
+			PresentViewPop(stack, func() {
 				if handle != nil {
 					handle(result)
 				}
