@@ -40,43 +40,43 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
 	s.MakeInteger()
-	// zlog.Info("label calcedsize:", v.Text(), s, v.MaxLines())
+	// zlog.Info("label calcedsize:", v.Text(), s, v.MaxLines(), v.IsMinimumOneLineHight())
 	return s
 }
 
-func (l *Label) IsMinimumOneLineHight() bool {
-	return true
+func (v *Label) IsMinimumOneLineHight() bool {
+	return v.maxLines > 0
 }
 
-func (l *Label) TextAlignment() zgeo.Alignment {
-	return l.alignment
+func (v *Label) TextAlignment() zgeo.Alignment {
+	return v.alignment
 }
 
-func (l *Label) MinWidth() float64 {
-	return l.minWidth
+func (v *Label) MinWidth() float64 {
+	return v.minWidth
 }
 
-func (l *Label) MaxWidth() float64 {
-	return l.maxWidth
+func (v *Label) MaxWidth() float64 {
+	return v.maxWidth
 }
 
-func (l *Label) MaxLines() int {
-	return l.maxLines
+func (v *Label) MaxLines() int {
+	return v.maxLines
 }
 
-func (l *Label) SetMinWidth(min float64) View {
-	l.minWidth = min
-	return l
+func (v *Label) SetMinWidth(min float64) View {
+	v.minWidth = min
+	return v
 }
 
-func (l *Label) SetMaxWidth(max float64) View {
-	l.maxWidth = max
-	return l
+func (v *Label) SetMaxWidth(max float64) View {
+	v.maxWidth = max
+	return v
 }
 
-func (l *Label) SetMaxLines(max int) View {
-	l.maxLines = max
-	return l
+func (v *Label) SetMaxLines(max int) View {
+	v.maxLines = max
+	return v
 }
 
 func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *StackView, viewCell *ContainerViewCell) {

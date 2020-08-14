@@ -219,6 +219,7 @@ func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
 	c.SetFont(font, nil)
 	var metrics = c.context.Call("measureText", text)
 	s.W = metrics.Get("width").Float()
+	//	zlog.Info("c measure:", text)
 	s.H = font.LineHeight() * 1.1
 	return s
 }

@@ -46,7 +46,7 @@ func (s *CheckBox) SetValue(b zbool.BoolInd) *CheckBox {
 	if b.IsUndetermined() {
 		s.set("indeterminate", true)
 	} else {
-		s.set("checked", b.Value())
+		s.set("checked", b.BoolValue())
 	}
 	return s
 }

@@ -1,9 +1,11 @@
 package zui
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /30/10/15.
@@ -25,22 +27,29 @@ func KeyValueStoreNew(local bool) *KeyValueStore {
 	return &KeyValueStore{Local: local}
 }
 
-func (k KeyValueStore) ObjectForKey(key string) (object interface{}, got bool) {
-	got = k.getItem(key, &object)
+func (k KeyValueStore) GetObject(key string, objectPtr interface{}) (got bool) {
+	var rawjson string
+	got = k.getItem(key, &rawjson)
+	if got {
+		err := json.Unmarshal([]byte(rawjson), objectPtr)
+		if zlog.OnError(err, "unmarshal") {
+			return
+		}
+	}
 	return
 }
 
-func (k KeyValueStore) StringForKey(key string) (str string, got bool) {
+func (k KeyValueStore) GetString(key string) (str string, got bool) {
 	got = k.getItem(key, &str)
 	return
 }
 
-func (k KeyValueStore) DictForKey(key string) (dict zdict.Dict, got bool) {
+func (k KeyValueStore) GetDict(key string) (dict zdict.Dict, got bool) {
 	got = k.getItem(key, &dict)
 	return
 }
 
-func (k KeyValueStore) Int64ForKey(key string, def int64) (val int64, got bool) {
+func (k KeyValueStore) GetInt64(key string, def int64) (val int64, got bool) {
 	got = k.getItem(key, &val)
 	if got {
 		return val, true
@@ -48,12 +57,12 @@ func (k KeyValueStore) Int64ForKey(key string, def int64) (val int64, got bool) 
 	return def, true
 }
 
-func (k KeyValueStore) IntForKey(key string, def int) (int, bool) {
-	n, got := k.Int64ForKey(key, int64(def))
+func (k KeyValueStore) GetInt(key string, def int) (int, bool) {
+	n, got := k.GetInt64(key, int64(def))
 	return int(n), got
 }
 
-func (k KeyValueStore) DoubleForKey(key string, def float64) (val float64, got bool) {
+func (k KeyValueStore) GetDouble(key string, def float64) (val float64, got bool) {
 	got = k.getItem(key, &val)
 	if got {
 		return val, true
@@ -61,11 +70,11 @@ func (k KeyValueStore) DoubleForKey(key string, def float64) (val float64, got b
 	return def, true
 }
 
-func (k KeyValueStore) TimeForKey(key string) (time.Time, bool) {
+func (k KeyValueStore) GetTime(key string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func (k KeyValueStore) BoolForKey(key string, def bool) (val bool, got bool) {
+func (k KeyValueStore) GetBool(key string, def bool) (val bool, got bool) {
 	got = k.getItem(key, &val)
 	if got {
 		return val, true
@@ -82,7 +91,11 @@ func (k KeyValueStore) RemoveForKey(key string, sync bool) {
 }
 
 func (k KeyValueStore) SetObject(object interface{}, key string, sync bool) {
-	k.setItem(key, object, sync)
+	data, err := json.Marshal(object)
+	if zlog.OnError(err, "marshal") {
+		return
+	}
+	k.setItem(key, string(data), sync)
 }
 func (k KeyValueStore) SetString(value string, key string, sync bool)  { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.setItem(key, dict, sync) }

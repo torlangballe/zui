@@ -136,7 +136,8 @@ func (n *NativeView) style() js.Value {
 
 func (v *NativeView) SetAlpha(alpha float32) View {
 	v.transparency = 1 - alpha
-	v.style().Set("alpha", alpha)
+	//	v.style().Set("alpha", alpha)
+	v.style().Set("opacity", alpha)
 	return v
 }
 
