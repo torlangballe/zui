@@ -3,11 +3,13 @@ package zui
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 )
 
 type Header struct {
@@ -55,27 +57,40 @@ func updateTriangle(triangle *ImageView, small bool) {
 	triangle.SetImage(nil, str, nil)
 }
 
-func (v *HeaderView) makeKey() string {
-	return "HeaderView/SortOrder/" + v.ObjectName()
+func makeKey(name string) string {
+	return "HeaderView/SortOrder/" + name
 }
 
-func (v *HeaderView) findSortInfo(id string) *SortInfo {
+func GetUserAdjustedSortOrder(tableName string) (order []SortInfo) {
+	key := makeKey(tableName)
+	DefaultLocalKeyValueStore.GetObject(key, &order)
+	return
+}
+
+func SetUserAdjustedSortOrder(tableName string, order []SortInfo) {
+	key := makeKey(tableName)
+	DefaultLocalKeyValueStore.SetObject(order, key, true)
+}
+
+func (v *HeaderView) findSortInfo(sortOrderID string) int {
 	for i := range v.SortOrder {
-		if v.SortOrder[i].ID == id {
-			return &v.SortOrder[i]
+		if v.SortOrder[i].ID == sortOrderID {
+			return i
 		}
 	}
-	return nil
+	return -1
 }
 
 func (v *HeaderView) handleButtonPressed(button *Button, h Header) {
 	if h.SortSmallFirst != zbool.Unknown {
-		sorting := v.findSortInfo(h.ID)
+		si := v.findSortInfo(h.ID)
+		sorting := v.SortOrder[si]
 		sorting.SmallFirst = !sorting.SmallFirst
+		zslice.RemoveAt(&v.SortOrder, si)
+		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
 		triangle := (*button.FindViewWithName("sort", false)).(*ImageView)
 		updateTriangle(triangle, sorting.SmallFirst)
-		key := v.makeKey()
-		DefaultLocalKeyValueStore.SetObject(v.SortOrder, key, true)
+		SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 		if v.SortingPressed != nil {
 			v.SortingPressed()
 		}
@@ -86,15 +101,33 @@ func (v *HeaderView) handleButtonPressed(button *Button, h Header) {
 }
 
 func (v *HeaderView) Populate(headers []Header) {
-	key := v.makeKey()
-	DefaultLocalKeyValueStore.GetObject(key, &v.SortOrder)
+	type newSort struct {
+		id    string
+		small bool
+		pri   int
+	}
+	v.SortOrder = GetUserAdjustedSortOrder(v.ObjectName())
+	var newSorts []newSort
 	for _, h := range headers {
-		if h.SortSmallFirst != zbool.Unknown {
-			if v.findSortInfo(h.ID) == nil {
-				v.SortOrder = append(v.SortOrder, SortInfo{h.ID, h.SortSmallFirst.BoolValue()})
-			}
+		if h.SortSmallFirst != zbool.Unknown && v.findSortInfo(h.ID) == -1 {
+			newSorts = append(newSorts, newSort{id: h.ID, small: h.SortSmallFirst.BoolValue(), pri: h.SortPriority})
 		}
 	}
+	sort.Slice(newSorts, func(i, j int) bool {
+		pi := newSorts[i]
+		pj := newSorts[j]
+		if pi.pri == 0 {
+			pi.pri = 1000 + i
+		}
+		if pj.pri == 0 {
+			pj.pri = 1000 + j
+		}
+		return pi.pri < pj.pri
+	})
+	for _, n := range newSorts {
+		v.SortOrder = append(v.SortOrder, SortInfo{n.id, n.small})
+	}
+	SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 	for _, h := range headers {
 		cell := ContainerViewCell{}
 		cell.Alignment = h.Align
@@ -131,7 +164,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
 			button.Add(zgeo.TopRight, triangle, zgeo.Size{2, 3})
-			sorting := v.findSortInfo(h.ID)
+			sorting := v.SortOrder[v.findSortInfo(h.ID)]
 			triangle.SetAlpha(0.5)
 			updateTriangle(triangle, sorting.SmallFirst)
 		}

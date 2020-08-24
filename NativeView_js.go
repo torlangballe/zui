@@ -108,8 +108,14 @@ func (v *NativeView) LocalRect(rect zgeo.Rect) {
 }
 
 func (v *NativeView) ObjectName() string {
-	return v.get("id").String()
+	return v.get("oname").String()
 }
+
+func (v *NativeView) SetObjectName(name string) View {
+	v.set("oname", name)
+	return v
+}
+
 
 func makeRGBAString(c zgeo.Color) string {
 	if !c.Valid {
@@ -143,11 +149,6 @@ func (v *NativeView) SetAlpha(alpha float32) View {
 
 func (v *NativeView) Alpha() float32 {
 	return 1 - v.transparency
-}
-
-func (v *NativeView) SetObjectName(name string) View {
-	v.set("id", name)
-	return v
 }
 
 func (v *NativeView) SetBGColor(c zgeo.Color) View {

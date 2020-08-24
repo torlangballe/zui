@@ -57,7 +57,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	ti.IsMinimumOneLineHight = true
 	ti.Font = v.Font().NewWithSize(14)
 	ti.MaxLines = 1
-	s := ti.GetBounds()
+	s, _, _ := ti.GetBounds()
 	s.W += 38
 	s.H = menuViewHeight
 	if v.maxWidth != 0 {

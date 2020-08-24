@@ -30,7 +30,7 @@ func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic boo
 			return nil
 		}
 		index := v.get("selectedIndex").Int()
-		zlog.Info("Selected:", index)
+		// zlog.Info("Selected:", index)
 		zlog.Assert(index < len(v.items))
 		v.currentValue = v.items[index].Value
 		if v.changed != nil {

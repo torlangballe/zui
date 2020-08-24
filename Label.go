@@ -36,7 +36,7 @@ func (v *Label) GetTextInfo() TextInfo {
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	to := v.View.(TextInfoOwner)
 	ti := to.GetTextInfo()
-	s := ti.GetBounds()
+	s, _, _ := ti.GetBounds()
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
 	s.MakeInteger()

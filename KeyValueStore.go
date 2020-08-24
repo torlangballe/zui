@@ -52,13 +52,14 @@ func (k KeyValueStore) GetDict(key string) (dict zdict.Dict, got bool) {
 func (k KeyValueStore) GetInt64(key string, def int64) (val int64, got bool) {
 	got = k.getItem(key, &val)
 	if got {
-		return val, true
+		return
 	}
 	return def, true
 }
 
 func (k KeyValueStore) GetInt(key string, def int) (int, bool) {
 	n, got := k.GetInt64(key, int64(def))
+	// zlog.Info("KVS GetInt:", key, n, got)
 	return int(n), got
 }
 
@@ -100,7 +101,10 @@ func (k KeyValueStore) SetObject(object interface{}, key string, sync bool) {
 func (k KeyValueStore) SetString(value string, key string, sync bool)  { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.setItem(key, dict, sync) }
 func (k KeyValueStore) SetInt64(value int64, key string, sync bool)    { k.setItem(key, value, sync) }
-func (k KeyValueStore) SetInt(value int, key string, sync bool)        { k.setItem(key, value, sync) }
+func (k KeyValueStore) SetInt(value int, key string, sync bool) {
+	zlog.Info("KVS: SetInt:", value, key)
+	k.setItem(key, value, sync)
+}
 func (k KeyValueStore) SetDouble(value float64, key string, sync bool) { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetBool(value bool, key string, sync bool)      { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetTime(value time.Time, key string, sync bool) { k.setItem(key, value, sync) }

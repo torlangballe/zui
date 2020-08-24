@@ -106,7 +106,6 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
-		v.stack.SetBGColor(zgeo.ColorRed)
 		v.AddChild(v.stack, -1)
 	}
 	count := v.GetRowCount()

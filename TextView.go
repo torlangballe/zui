@@ -68,7 +68,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		ti.SetWidthFreeHight(v.maxWidth - v.margin.W*2)
 	}
-	s := ti.GetBounds()
+	s, _, _ := ti.GetBounds()
 	s.Add(v.margin.TimesD(2))
 	s.MakeInteger()
 	return s

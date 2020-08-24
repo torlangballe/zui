@@ -83,35 +83,52 @@ func (ti *TextInfo) SetWidthFreeHight(w float64) {
 // GetBounds returns rect of size of text.
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
-func (ti *TextInfo) GetBounds() zgeo.Size {
+func (ti *TextInfo) GetBounds() (zgeo.Size, []string, []float64) {
 	var size zgeo.Size
+	var allLines []string
+	var widths []float64
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
-	add := 0
 	for _, str := range lines {
 		s := canvasGetTextSize(str, ti.Font)
-		// zlog.Info("ti bounds:", str, s)
+		// zlog.Info("ti bounds:", str, ti.MaxLines)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
-			splitToLines := math.Ceil(s.W / ti.Rect.Size.W)
-			if splitToLines > 1 {
-				// zlog.Info("SPLIT!", splitToLines, ti.Rect.Size, s)
-				s.W = ti.Rect.Size.W
-				s.H *= splitToLines
-				add += int(splitToLines) - 1
+			split := s.W / ti.Rect.Size.W
+			// zlog.Info("TI split:", split, str)
+			if split > 1 {
+				runes := []rune(str)
+				rlen := len(runes)
+				each := int(math.Ceil(float64(len(runes)) / split))
+				for i := 0; i < rlen; i += each {
+					e := zint.Min(rlen, i+each)
+					part := string(runes[i:e])
+					ratio := float64(e-i) / float64(rlen)
+					allLines = append(allLines, part)
+					widths = append(widths, s.W*ratio)
+				}
+			} else {
+				allLines = append(allLines, str)
+				widths = append(widths, s.W)
 			}
+			// zlog.Info("SPLIT!", splitToLines, ti.Rect.Size, s)
+			s.W = ti.Rect.Size.W
+		} else {
+			allLines = append(allLines, str)
 		}
-		size.H += s.H
 		zfloat.Maximize(&size.W, s.W)
+		zfloat.Maximize(&size.H, s.H)
 	}
-	count := zint.Max(ti.MaxLines, len(lines)) + add
-	// zlog.Info("BOUNDS:", size, count, add)
-	//	count = ti.MaxLines
-	if count > 1 || ti.IsMinimumOneLineHight {
-		size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
+	if ti.MaxLines == 1 || ti.Rect.Size.W == 0 {
+		allLines = []string{ti.Text}
+		widths = []float64{size.W}
+	} else {
+		count := zint.Max(ti.MaxLines, len(allLines))
+		// zlog.Info("BOUNDS:", size, count, add)
+		//	count = ti.MaxLines
+		if count > 1 || ti.IsMinimumOneLineHight {
+			size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
+		}
 	}
-	// if !ti.Rect.IsNull() {
-	// 	zfloat.Minimize(&size.W, ti.Rect.Size.W)
-	// }
-	return size
+	return size, allLines, widths
 }
 
 func (ti *TextInfo) getNativeWrapMode(w TextInfoWrap) int {
@@ -196,33 +213,26 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, w)
 		return zgeo.Rect{}
 	}
-	r := ti.Rect
-	var ts = ti.GetBounds()
+	ts, lines, widths := ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, zgeo.Size{}, zgeo.Size{})
-	if ti.Alignment&zgeo.Top != 0 {
-		r.SetMaxY(ra.Max().Y) // this
-	} else if ti.Alignment&zgeo.Bottom != 0 {
-		r.SetMinY(r.Max().Y - ra.Size.H) // and this are on r and not ra? Not used??
-	} else {
-		//r.SetMinY(ra.Pos.Y - float64(ti.Font.LineHeight())/20)
-	}
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
-	zstr.RangeStringLines(ti.Text, false, func(s string) {
-		x := ra.Pos.X
+	zlog.Assert(len(lines) == len(widths), len(lines), len(widths))
+	for i, s := range lines {
+		x := ra.Pos.X + (ra.Size.W-widths[i])/2
 		// tsize := canvasGetTextSize(s, ti.Font)
 		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, w)
 		y += h
-	})
+	}
 	return ra
 }
 
 func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 	w := ti.Rect.Size.W * 0.99
-	s := ti.GetBounds()
+	s, _, _ := ti.GetBounds()
 
 	var r float64
 	if s.W > w {

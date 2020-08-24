@@ -5,7 +5,6 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zfloat"
-	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -14,11 +13,12 @@ func getLocalStorage() js.Value {
 }
 
 func (k KeyValueStore) getItem(key string, v interface{}) bool {
+	var err error
 	k.prefixKey(&key)
 	local := getLocalStorage()
 	o := local.Get(key)
 
-	// zlog.Info("get kv item:", key, o.Type())
+	// zlog.Info("get kv item:", key, o.Type(), o)
 	switch o.Type() {
 	case js.TypeUndefined:
 		// zlog.Debug(nil, zlog.StackAdjust(1), "KeyValueStore getItem item undefined:", key)
@@ -33,16 +33,27 @@ func (k KeyValueStore) getItem(key string, v interface{}) bool {
 		return true
 
 	case js.TypeString:
-		ptr, _ := v.(*string)
-		if ptr != nil {
-			*v.(*string) = o.String()
+		sp, _ := v.(*string)
+		if sp != nil {
+			*sp = o.String()
+			// zlog.Info("get kv item string:", o.String())
 		}
-		n, err := strconv.ParseInt(o.String(), 10, 64)
-		if err != nil {
-			zlog.Error(err, "parse int from string")
-			return false
+		ip, _ := v.(*int64)
+		if ip != nil {
+			*ip, err = strconv.ParseInt(o.String(), 10, 64)
+			if zlog.OnError(err, "parse int") {
+				return false
+			}
+			// zlog.Info("get kv item int:", *ip)
 		}
-		err = zint.SetAny(v, n)
+		fp, _ := v.(*float64)
+		if fp != nil {
+			*fp, err = strconv.ParseFloat(o.String(), 64)
+			if zlog.OnError(err, "parse float") {
+				return false
+			}
+			// zlog.Info("get kv item float:", o.Float())
+		}
 		return true
 	}
 	zlog.Debug("bad type:", o.Type())

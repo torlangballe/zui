@@ -137,9 +137,9 @@ func (v *ShapeView) GetImage() *Image {
 func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.textInfo.Text != "" {
-		ts := v.textInfo.GetBounds()
+		ts, _, _ := v.textInfo.GetBounds()
 		ts.Add(zgeo.Size{16, 6})
-		ts.W *= 1.1 // some strange bug in android doesn't allow *= here...
+		ts.W *= 1.1
 		s.Maximize(ts)
 	}
 	if v.image != nil {
@@ -156,7 +156,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		// if v.image.loading {
 		// 	zlog.Info("!!!!!!!!!!!!!!!!!!!!!!!!!! SH image loading")
 		// }
-	 	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
+		// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
 	}
 	s.MakeInteger()
 	return s

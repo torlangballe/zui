@@ -25,8 +25,6 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.set("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
 		target := args[0].Get("target")
-		// zlog.Info(v.ObjectName(), "click", "target:", target.Get("id"), "target==canvas:")
-		// zlog.Info(v.ObjectName(), "CV onclick, is this me:", v.Element.Equal(this), v.Element.Equal(target), this.Equal(target), target)
 		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
 			(&v.LongPresser).HandleOnClick(v)
 		}

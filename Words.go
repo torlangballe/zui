@@ -443,13 +443,13 @@ func WordsGetHemisphereDirectionsFromGeoAlignment(alignment zgeo.Alignment, sepa
 		str = TSL("North", langCode) // General name for north as in north-east wind etc
 	}
 	if alignment&zgeo.Bottom != 0 {
-		zstr.Concat(&str, separator, TSL("South", langCode)) // General name for south as in south-east wind etc
+		str = zstr.Concat(separator, str, TSL("South", langCode)) // General name for south as in south-east wind etc
 	}
 	if alignment&zgeo.Left != 0 {
-		zstr.Concat(&str, separator, TSL("West", langCode)) // General name for west as in north-west wind etc
+		str = zstr.Concat(separator, str, TSL("West", langCode)) // General name for west as in north-west wind etc
 	}
 	if alignment&zgeo.Right != 0 {
-		zstr.Concat(&str, separator, TSL("East", langCode)) // General name for north as in north-east wind etc
+		str = zstr.Concat(separator, str, TSL("East", langCode)) // General name for north as in north-east wind etc
 	}
 	return str
 }
