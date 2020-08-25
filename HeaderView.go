@@ -48,11 +48,19 @@ func HeaderViewNew(id string) *HeaderView {
 	return v
 }
 
-func updateTriangle(triangle *ImageView, small bool) {
+func (v *HeaderView) updateTriangle(triangle *ImageView, id string) {
+	i := v.findSortInfo(id)
+	sorting := v.SortOrder[i]
+	if i == 0 {
+		triangle.SetAlpha(1)
+	} else {
+		triangle.SetAlpha(0.5)
+	}
 	str := "down"
-	if small {
+	if sorting.SmallFirst {
 		str = "up"
 	}
+
 	str = fmt.Sprintf("images/sort-triangle-%s.png", str)
 	triangle.SetImage(nil, str, nil)
 }
@@ -88,8 +96,14 @@ func (v *HeaderView) handleButtonPressed(button *Button, h Header) {
 		sorting.SmallFirst = !sorting.SmallFirst
 		zslice.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
+		for _, c := range v.GetChildren() {
+			tri := c.(*Button).FindViewWithName("sort", false)
+			if tri != nil {
+				(*tri).SetAlpha(0.5)
+			}
+		}
 		triangle := (*button.FindViewWithName("sort", false)).(*ImageView)
-		updateTriangle(triangle, sorting.SmallFirst)
+		v.updateTriangle(triangle, h.ID)
 		SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 		if v.SortingPressed != nil {
 			v.SortingPressed()
@@ -164,9 +178,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
 			button.Add(zgeo.TopRight, triangle, zgeo.Size{2, 3})
-			sorting := v.SortOrder[v.findSortInfo(h.ID)]
-			triangle.SetAlpha(0.5)
-			updateTriangle(triangle, sorting.SmallFirst)
+			v.updateTriangle(triangle, h.ID)
 		}
 		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)
 		if h.MaxWidth != 0 {

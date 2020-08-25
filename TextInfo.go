@@ -222,8 +222,12 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
 	zlog.Assert(len(lines) == len(widths), len(lines), len(widths))
 	for i, s := range lines {
-		x := ra.Pos.X + (ra.Size.W-widths[i])/2
-		// tsize := canvasGetTextSize(s, ti.Font)
+		x := ra.Pos.X
+		if ti.Alignment&zgeo.HorCenter != 0 {
+			x += (ra.Size.W - widths[i]) / 2
+		} else if ti.Alignment&zgeo.Right != 0 {
+			x += (ra.Size.W - widths[i])
+		}
 		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, w)
 		y += h
 	}
