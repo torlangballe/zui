@@ -19,7 +19,7 @@ func (w *Window) Rect() zgeo.Rect {
 	return zgeo.Rect{Size: s}
 }
 
-func WindowOpenWithURL(surl string, size zgeo.Size, pos *zgeo.Pos) *Window {
+func WindowOpen(o WindowOptions) *Window {
 	return nil
 }
 

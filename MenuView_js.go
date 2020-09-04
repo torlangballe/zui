@@ -23,18 +23,18 @@ func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic boo
 	v.SetObjectName(name)
 	v.SetAndSelect(items, value)
 
-	v.set("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
-		//			zlog.Info("menuview changed", v.ObjectName())
-		if v.IsStatic && v.currentValue != nil {
-			v.SelectWithValue(v.currentValue)
-			return nil
-		}
-		index := v.get("selectedIndex").Int()
+	v.setjs("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+		//			zlog.Info("menuview selected", v.ObjectName())
+		index := v.getjs("selectedIndex").Int()
 		// zlog.Info("Selected:", index)
 		zlog.Assert(index < len(v.items))
-		v.currentValue = v.items[index].Value
-		if v.changed != nil {
-			v.changed(v.items[index].Name, v.items[index].Value)
+		if v.IsStatic {
+			v.SelectWithValue(v.items[0].Value)
+		} else {
+			v.currentValue = v.items[index].Value
+		}
+		if v.selectedHandler != nil {
+			v.selectedHandler(v.items[index].Name, v.items[index].Value)
 		}
 		return nil
 	}))
@@ -42,7 +42,7 @@ func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic boo
 }
 
 func (v *MenuView) Empty() {
-	options := v.get("options")
+	options := v.getjs("options")
 	options.Set("length", 0)
 	v.items = v.items[:0]
 	v.currentValue = nil
@@ -111,7 +111,7 @@ func (v *MenuView) SelectWithValue(value interface{}) *MenuView {
 	for i, item := range v.items {
 		if reflect.DeepEqual(item.Value, value) {
 			v.currentValue = item.Value
-			options := v.get("options")
+			options := v.getjs("options")
 			// zlog.Info("MV SelectWithValue Set:", i, v.ObjectName(), len(v.items), options, value)
 			o := options.Index(i)
 			o.Set("selected", "true")
@@ -125,8 +125,8 @@ func (v *MenuView) SelectWithValue(value interface{}) *MenuView {
 // 	return v.oldID, v.currentValue
 // }
 
-func (v *MenuView) ChangedHandler(handler func(name string, value interface{})) {
-	v.changed = handler
+func (v *MenuView) SetSelectedHandler(handler func(name string, value interface{})) {
+	v.selectedHandler = handler
 }
 
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value

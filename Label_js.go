@@ -42,23 +42,23 @@ func (v *Label) SetRect(r zgeo.Rect) View {
 
 func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 		return nil
 	}))
-	v.set("class", "widget")
+	v.setjs("class", "widget")
 }
 
 func (v *Label) SetLongPressedHandler(handler func()) {
 	// zlog.Info("Label.SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
-	v.set("className", "widget")
-	v.set("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.setjs("className", "widget")
+	v.setjs("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
-	v.set("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.setjs("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil

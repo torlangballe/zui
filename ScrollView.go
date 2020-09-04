@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"math"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -9,9 +11,8 @@ import (
 
 type ScrollView struct {
 	CustomView
-	Margin       zgeo.Rect
-	HandleScroll func(pos zgeo.Pos)
-	child        View
+	child   View
+	YOffset float64
 }
 
 func ScrollViewNew() *ScrollView {
@@ -32,12 +33,39 @@ func (v *ScrollView) GetChildren() []View {
 	return []View{}
 }
 
+func (v *ScrollView) Update() {
+	v.exposed = false
+	cust, _ := v.child.(*CustomView)
+	if cust != nil {
+		zlog.Info("SV Update1:", v.ObjectName(), v.Presented, cust.exposed)
+		cust.exposed = false
+	}
+	ct, _ := v.child.(ContainerType)
+	if ct != nil {
+		for i, c := range ct.GetChildren() {
+			// zlog.Info("SV Update1", c.ObjectName(), ViewGetNative(c).Presented)
+			if ViewGetNative(c).Presented {
+				zlog.Info("SV Update:", i, c.Rect().Min().Y, c.ObjectName())
+			}
+		}
+	}
+	v.ArrangeChildren(nil)
+	v.Expose()
+}
+
 func (v *ScrollView) ArrangeChildren(onlyChild *View) {
 	if v.child != nil {
-		ct, got := v.child.(ContainerType)
-		if got {
-			ct.ArrangeChildren(onlyChild)
-		}
+		ls := v.Rect().Size
+		ls.H = 20000
+		cs := v.child.CalculatedSize(ls)
+		cs.W = ls.W
+		r := zgeo.Rect{Size: cs}
+		// zlog.Info("SV Arrange:", r)
+		v.child.SetRect(r) // this will call arrange children on child if container
+		// ct, got := v.child.(ContainerType)
+		// if got {
+		// 	ct.ArrangeChildren(onlyChild)
+		// }
 	}
 }
 
@@ -50,9 +78,6 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ScrollView) SetContentOffset(offset zgeo.Pos, animated bool) {
-}
-
 func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
 	if v.child != nil {
@@ -61,7 +86,6 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 		cs := v.child.CalculatedSize(ls)
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
-		r.Add(v.Margin)
 		v.child.SetRect(r)
 	}
 	return v
@@ -69,27 +93,50 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 
 func (v *ScrollView) drawIfExposed() {
 	zlog.Info("SV:drawIfExposed")
+	if v.child != nil {
+		ViewGetNative(v.child).Presented = false
+		presentViewCallReady(v.child)
+	}
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
 		et, got := v.child.(ExposableType)
 		if got {
+			// zlog.Info("SV:drawIfExposed child")
 			et.drawIfExposed()
 		}
 	}
 }
 
-func ScrollViewToMakeItVisible(view View) {
-	// var s:UIView? = view.View()
-	// while s != nil {
-	//     s = s!.superview
-	//     if s != nil {
-	//         if let sv = s! as? ZScrollView {
-	//             if Double(sv.frame.size.height) - sv.margin.size.h < Double(sv.contentSize.height) {
-	//                 let y = float64(view.View().convert(view.View().bounds, to:sv.View()).origin.y)
-	//                 sv.SetContentOffset(ZPos(0, y - 40))
-	//             }
-	//             break
-	//         }
-	//     }
-	// }
+func (v *ScrollView) Expose() {
+	v.CustomView.Expose()
+	et, _ := v.child.(ExposableType)
+	if et != nil {
+		// zlog.Info("SV:Expose child!")
+		et.Expose()
+	}
+}
+
+func (v *ScrollView) ScrollToBottom(animate bool) {
+	h := v.child.Rect().Size.H
+	h -= v.Rect().Size.H
+	h = math.Max(0, h)
+	v.SetContentOffset(h, animate)
+}
+
+func (v *ScrollView) ScrollToTop(animate bool) {
+	v.SetContentOffset(0, animate)
+}
+
+func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
+	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
+		if handler != nil {
+			dir := 0
+			if pos.Y < 8 {
+				dir = -1
+			} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+8 {
+				dir = 1
+			}
+			handler(pos, dir)
+		}
+	})
 }

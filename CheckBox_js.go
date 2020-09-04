@@ -10,8 +10,8 @@ import (
 func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	s := &CheckBox{}
 	s.Element = DocumentJS.Call("createElement", "input")
-	s.set("style", "position:absolute")
-	s.set("type", "checkbox")
+	s.setjs("style", "position:absolute")
+	s.setjs("type", "checkbox")
 	s.SetCanFocus(true)
 	s.View = s
 	s.SetValue(on)
@@ -25,7 +25,7 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) View {
 
 func (s *CheckBox) ValueHandler(handler func(view View)) {
 	s.valueChanged = handler
-	s.set("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	s.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if s.valueChanged != nil {
 			s.valueChanged(s)
 		}
@@ -34,8 +34,8 @@ func (s *CheckBox) ValueHandler(handler func(view View)) {
 }
 
 func (s *CheckBox) Value() zbool.BoolInd {
-	b := s.get("checked").Bool()
-	i := s.get("indeterminate").Bool()
+	b := s.getjs("checked").Bool()
+	i := s.getjs("indeterminate").Bool()
 	if i {
 		return zbool.Unknown
 	}
@@ -44,9 +44,9 @@ func (s *CheckBox) Value() zbool.BoolInd {
 
 func (s *CheckBox) SetValue(b zbool.BoolInd) *CheckBox {
 	if b.IsUndetermined() {
-		s.set("indeterminate", true)
+		s.setjs("indeterminate", true)
 	} else {
-		s.set("checked", b.BoolValue())
+		s.setjs("checked", b.BoolValue())
 	}
 	return s
 }

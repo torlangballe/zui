@@ -69,7 +69,7 @@ func makeKey(name string) string {
 	return "HeaderView/SortOrder/" + name
 }
 
-func GetUserAdjustedSortOrder(tableName string) (order []SortInfo) {
+func getUserAdjustedSortOrder(tableName string) (order []SortInfo) {
 	key := makeKey(tableName)
 	DefaultLocalKeyValueStore.GetObject(key, &order)
 	return
@@ -120,9 +120,18 @@ func (v *HeaderView) Populate(headers []Header) {
 		small bool
 		pri   int
 	}
-	v.SortOrder = GetUserAdjustedSortOrder(v.ObjectName())
+	v.SortOrder = getUserAdjustedSortOrder(v.ObjectName())
+	zslice.RemoveIf(&v.SortOrder, func(i int) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
+		for _, h := range headers {
+			if v.SortOrder[i].ID == h.ID {
+				return false
+			}
+		}
+		return true
+	})
 	var newSorts []newSort
 	for _, h := range headers {
+		// zlog.Info("POPULATE:", h.ID)
 		if h.SortSmallFirst != zbool.Unknown && v.findSortInfo(h.ID) == -1 {
 			newSorts = append(newSorts, newSort{id: h.ID, small: h.SortSmallFirst.BoolValue(), pri: h.SortPriority})
 		}
@@ -142,6 +151,9 @@ func (v *HeaderView) Populate(headers []Header) {
 		v.SortOrder = append(v.SortOrder, SortInfo{n.id, n.small})
 	}
 	SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
+	// for _, s := range v.SortOrder {
+	// 	zlog.Info("SO:", s.ID)
+	// }
 	for _, h := range headers {
 		cell := ContainerViewCell{}
 		cell.Alignment = h.Align
@@ -149,7 +161,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		s := zgeo.Size{h.MinWidth, 28}
 		button := ButtonNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
-			iv := ImageViewNew(h.ImagePath, h.ImageSize)
+			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.ID + ".image")
 			button.Add(zgeo.Center, iv, zgeo.Size{})
@@ -174,7 +186,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			}
 		})
 		if h.SortSmallFirst != zbool.Unknown {
-			triangle := ImageViewNew("", zgeo.Size{6, 5})
+			triangle := ImageViewNew(nil, "", zgeo.Size{6, 5})
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
 			button.Add(zgeo.TopRight, triangle, zgeo.Size{2, 3})

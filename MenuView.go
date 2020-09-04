@@ -9,10 +9,10 @@ import (
 
 type MenuView struct {
 	NativeView
-	maxWidth     float64
-	changed      func(name string, value interface{})
-	items        zdict.Items
-	currentValue interface{}
+	maxWidth        float64
+	selectedHandler func(name string, value interface{})
+	items           zdict.Items
+	currentValue    interface{}
 
 	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
 }

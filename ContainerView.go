@@ -63,22 +63,22 @@ func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
 	return a
 }
 
-func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}) {
+func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}) {
 	var gotView *View
 	var gotAlign zgeo.Alignment
 	var gotMargin zgeo.Size
 	var gotIndex = -1
 
 	// zlog.Info("CV ADD1:", c.ObjectName())
-	for _, v := range elements {
-		if cell, got := v.(ContainerViewCell); got {
-			c.AddCell(cell, -1)
+	for _, e := range elements {
+		if cell, got := e.(ContainerViewCell); got {
+			v.AddCell(cell, -1)
 			continue
 		}
-		if view, got := v.(View); got {
+		if view, got := e.(View); got {
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
-				c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+				v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
 				gotView = nil
 				gotAlign = zgeo.AlignmentNone
 				gotMargin = zgeo.Size{}
@@ -87,21 +87,21 @@ func (c *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 			gotView = &view
 			continue
 		}
-		if n, got := v.(int); got {
+		if n, got := e.(int); got {
 			gotIndex = n
 		}
-		if a, got := v.(zgeo.Alignment); got {
+		if a, got := e.(zgeo.Alignment); got {
 			gotAlign = a
 			continue
 		}
-		if m, got := v.(zgeo.Size); got {
+		if m, got := e.(zgeo.Size); got {
 			gotMargin = m
 			continue
 		}
 	}
 	if gotView != nil {
 		a := calculateAddAlignment(defAlignment, gotAlign)
-		c.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+		v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
 	}
 }
 
@@ -433,12 +433,13 @@ func (v *ContainerView) drawIfExposed() {
 	for _, c := range v.cells {
 		if !c.Collapsed {
 			et, got := c.View.(ExposableType)
-			// zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
+			//			zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
 			if got {
 				et.drawIfExposed()
 			}
 		}
 	}
+	v.exposed = false
 }
 
 func (v *ContainerView) ReplaceChild(child, with View) {

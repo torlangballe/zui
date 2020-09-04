@@ -1,14 +1,13 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 //  Created by Tor Langballe on /9/11/15.
 
 const AnimationDefaultSecs = 0.8
 const repeatInfinite = -1
-
-func AnimationDo(durationSecs float64, animations func(), completion func(done bool)) {
-}
 
 func AnimationRemoveAllFromView(view *NativeView) {
 }

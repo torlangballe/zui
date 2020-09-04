@@ -2,6 +2,7 @@ package zui
 
 import (
 	"math"
+	"unicode/utf8"
 
 	"github.com/torlangballe/zutil/zfloat"
 
@@ -31,16 +32,16 @@ const (
 	TextInfoWrapTailTruncate
 	TextInfoWrapMiddleTruncate
 
-	TextPaintType   = "paint-type"
-	TextWrapType    = "wrap"
-	TextColor       = "color"
-	TextAlignment   = "alignemnt"
-	TextFontName    = "font-name"
-	TextFontSize    = "font-size"
-	TextFontStyle   = "font-style"
-	TextLineSpacing = "line-spacing"
-	TextStrokeWidth = "stroke-width"
-	TextStrokeColor = "stroke-color"
+	// TextPaintType   = "paint-type"
+	// TextWrapType    = "wrap"
+	// TextColor       = "color"
+	// TextAlignment   = "alignemnt"
+	// TextFontName    = "font-name"
+	// TextFontSize    = "font-size"
+	// TextFontStyle   = "font-style"
+	// TextLineSpacing = "line-spacing"
+	// TextStrokeWidth = "stroke-width"
+	// TextStrokeColor = "stroke-color"
 )
 
 type TextInfo struct {
@@ -57,6 +58,7 @@ type TextInfo struct {
 	MinimumFontScale      float64
 	IsMinimumOneLineHight bool
 	SplitItems            []string
+	Margin                zgeo.Size
 }
 
 type TextInfoOwner interface {
@@ -95,29 +97,27 @@ func (ti *TextInfo) GetBounds() (zgeo.Size, []string, []float64) {
 			split := s.W / ti.Rect.Size.W
 			// zlog.Info("TI split:", split, str)
 			if split > 1 {
-				runes := []rune(str)
-				rlen := len(runes)
-				each := int(math.Ceil(float64(len(runes)) / split))
-				for i := 0; i < rlen; i += each {
-					e := zint.Min(rlen, i+each)
-					part := string(runes[i:e])
-					ratio := float64(e-i) / float64(rlen)
-					allLines = append(allLines, part)
-					widths = append(widths, s.W*ratio)
+				rlen := utf8.RuneCountInString(str)
+				each := int(math.Ceil(float64(rlen) / split))
+				rlines := zstr.BreakIntoRuneLines(str, "", each)
+				for _, rline := range rlines {
+					allLines = append(allLines, string(rline))
+					widths = append(widths, float64(len(rline))/float64(rlen)*s.W)
 				}
+				s.W = ti.Rect.Size.W
 			} else {
 				allLines = append(allLines, str)
 				widths = append(widths, s.W)
 			}
 			// zlog.Info("SPLIT!", splitToLines, ti.Rect.Size, s)
-			s.W = ti.Rect.Size.W
 		} else {
 			allLines = append(allLines, str)
 		}
 		zfloat.Maximize(&size.W, s.W)
 		zfloat.Maximize(&size.H, s.H)
+		// zlog.Info("TI GetBounds:", str, size.W, s.W)
 	}
-	if ti.MaxLines == 1 || ti.Rect.Size.W == 0 {
+	if ti.MaxLines == 1 { //|| ti.Rect.Size.W == 0 {
 		allLines = []string{ti.Text}
 		widths = []float64{size.W}
 	} else {
@@ -202,6 +202,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	if ti.Alignment&zgeo.HorCenter != 0 {
 		//        r = r.Expanded(ZSize(1, 0))
 	}
+
 	if ti.Alignment&zgeo.HorShrink != 0 {
 		zlog.Assert(!ti.Rect.Size.IsNull())
 		// fmt.Println("CANVAS TI SetFont B4 Scale:", font)
@@ -215,7 +216,8 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	}
 	ts, lines, widths := ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
-	ra := ti.Rect.Align(ts, ti.Alignment, zgeo.Size{}, zgeo.Size{})
+	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin, zgeo.Size{})
+	// zlog.Info("DRAW:", ti.Rect, ts, ra)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.71
@@ -235,7 +237,11 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 }
 
 func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
-	w := ti.Rect.Size.W * 0.99
+	w := ti.Rect.Size.W
+	w -= ti.Margin.W
+	if ti.Alignment&zgeo.HorCenter != 0 {
+		w -= ti.Margin.W
+	}
 	s, _, _ := ti.GetBounds()
 
 	var r float64
@@ -245,7 +251,7 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 			r = math.Max(r, minScale)
 		}
 	} else if s.H > ti.Rect.Size.H {
-		r = math.Max(5, (ti.Rect.Size.H/s.H)*1.01) // max was for all three args!!!
+		r = math.Max(5, (w/s.H)*1.01)
 	} else {
 		return ti.Font
 	}

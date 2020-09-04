@@ -50,13 +50,18 @@ func (v *ListView) init(view View, name string) {
 	v.Selectable = true
 	v.selectionIndex = -1
 	v.rows = map[int]View{}
-	v.HandleScroll = func(pos zgeo.Pos) {
+	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
+		// zlog.Info("ScrollTo:", pos.Y)
 		v.topPos = pos.Y
 		first, last := v.layoutRows(-1)
 		if v.HandleScrolledToRows != nil {
 			v.HandleScrolledToRows(pos.Y, first, last)
 		}
-	}
+	})
+}
+
+func (v *ListView) SelectionIndex() int {
+	return v.selectionIndex
 }
 
 func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -109,7 +114,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 		v.AddChild(v.stack, -1)
 	}
 	count := v.GetRowCount()
-	pos := v.Margin.Min()
+	var pos zgeo.Pos
 	h := 0.0
 	for i := 0; i < count; i++ {
 		h += v.GetRowHeight(i)
@@ -117,7 +122,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 			h += v.spacing
 		}
 	}
-	w := rect.Size.W + v.Margin.Size.W
+	w := rect.Size.W
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.SetRect(r)
 	// zlog.Info("List set rect: stack", rect, r)
@@ -127,7 +132,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 
 func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	count := v.GetRowCount()
-	ls := v.GetLocalRect().Size
+	ls := v.LocalRect().Size
 	oldRows := map[int]View{}
 	y := 0.0
 	for k, v := range v.rows {
@@ -140,7 +145,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
 		s.H = v.GetRowHeight(i)
-		s.W = ls.W + v.Margin.Size.W
+		s.W = ls.W
 		r := zgeo.Rect{zgeo.Pos{0, y}, s}
 		// zlog.Info("layout row:", i, s)
 		if (onlyIndex == -1 || i == onlyIndex) && r.Max().Y >= v.topPos && r.Min().Y <= v.topPos+ls.H {
@@ -190,6 +195,16 @@ func (v *ListView) ExposeRows() {
 }
 
 func (v *ListView) ScrollToMakeRowVisible(row int, animate bool) {
+	first, last := v.GetFirstLastVisibleRowIndexes()
+	if row <= first || row >= last {
+		rect := v.GetRectOfRow(row)
+		if row <= first {
+			v.ScrollView.SetContentOffset(rect.Pos.Y, animate)
+		} else {
+			h := v.LocalRect().Size.H
+			v.ScrollView.SetContentOffset(rect.Pos.Y-h+rect.Size.H, animate)
+		}
+	}
 }
 
 func (v *ListView) ReloadData() {
@@ -264,22 +279,46 @@ func (v *ListView) IsFocused() bool {
 }
 
 func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
+	// zlog.Info("update:", v.selectionIndex)
 	i := 0
 	reload := false
+	var oldSelectionIndex = v.selectionIndex
+	var selectionID string
+	selectionSet := true
+	different := false
+	if v.selectionIndex != -1 {
+		selectionID = oldSlice.GetID(v.selectionIndex)
+		selectionSet = false
+	}
+	// zlog.Info("Sel:", selectionID, i, v.selectionIndex)
 	for {
 		oid := oldSlice.GetID(i)
 		nid := newSlice.GetID(i)
-		// zlog.Info("UpdateWithOldNewSlice", i, oid, nid)
+		// zlog.Info("update row", i, oid, nid)
+		if nid != "" && selectionID == nid {
+			// zlog.Info("Found new selection:", i, nid)
+			v.selectionIndex = i
+			if different {
+				break
+			}
+			selectionSet = true
+		}
 		if nid != oid {
+			different = true
 			reload = true
-			break
+			if selectionSet {
+				break
+			}
 		}
 		if oid == "" || nid == "" {
 			break
 		}
 		i++
 	}
-	// zlog.Info("UpdateWithOldNewSlice", reload, v.presented)
+	// zlog.Info("UpdateWithOldNewSlice", reload, v.selectionIndex, oldSelectionIndex)
+	if oldSelectionIndex != v.selectionIndex {
+		v.ScrollToMakeRowVisible(v.selectionIndex, false)
+	}
 	if reload {
 		v.ReloadData()
 	} else {
@@ -295,7 +334,7 @@ func (v *ListView) GetFirstLastVisibleRowIndexes() (first int, last int) {
 	}
 	y := 0.0
 	count := v.GetRowCount()
-	ls := v.GetLocalRect().Size
+	ls := v.LocalRect().Size
 	for i := 0; i < count; i++ {
 		e := y + v.GetRowHeight(i)
 		if e >= v.topPos && y <= v.topPos+ls.H {
@@ -310,6 +349,26 @@ func (v *ListView) GetFirstLastVisibleRowIndexes() (first int, last int) {
 		y = e + v.spacing
 	}
 	return
+}
+
+func (v *ListView) GetRectOfRow(row int) zgeo.Rect {
+	if !v.Presented {
+		return zgeo.Rect{}
+	}
+	y := 0.0
+	count := v.GetRowCount()
+	ls := v.LocalRect().Size
+	for i := 0; i < count; i++ {
+		var s zgeo.Size
+		s.H = v.GetRowHeight(i)
+		if row == i {
+			s.W = ls.W
+			r := zgeo.Rect{zgeo.Pos{0, y}, s}
+			return r
+		}
+		y += s.H + v.spacing
+	}
+	return zgeo.Rect{}
 }
 
 func (v *ListView) UpdateVisibleRows() {

@@ -56,6 +56,7 @@ type PresentViewAttributes struct {
 	Modal                    bool
 	Title                    string
 	Pos                      *zgeo.Pos
+	WindowID                 string
 	ModalCloseOnOutsidePress bool
 }
 
@@ -73,6 +74,7 @@ func presentViewCallReady(v View) {
 	o := v.(NativeViewOwner)
 	if o != nil {
 		nv := o.GetNative()
+		// zlog.Info("presentViewCallReady:", v.ObjectName(), nv.Presented)
 		if nv.Presented {
 			return
 		}
@@ -84,6 +86,7 @@ func presentViewCallReady(v View) {
 	}
 	ct, got := v.(ContainerType)
 	if got {
+		// zlog.Info("presentViewCallReady1:", v.ObjectName(), len(ct.GetChildren()))
 		for _, c := range ct.GetChildren() {
 			presentViewCallReady(c)
 		}
@@ -92,7 +95,7 @@ func presentViewCallReady(v View) {
 
 var presentViewPresenting = true
 
-func PresentViewShow(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
+func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
 	presentViewPresenting = true
 	presentViewCallReady(v)
 	ct, _ := v.(ContainerType)
@@ -108,7 +111,7 @@ func PresentViewShow(v View, attributes PresentViewAttributes, presented func(wi
 var firstPresented bool
 
 func presentLoaded(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
-	// zlog.Info("PresentViewShow", v.ObjectName())
+	// zlog.Info("PresentView", v.ObjectName())
 	win := WindowGetCurrent()
 
 	fullRect := win.Rect()
@@ -148,14 +151,16 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 	} else {
 		if firstPresented {
 			size.H += WindowBarHeight
-			win = WindowOpenWithURL("about:blank", size, &rect.Pos)
+			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
+			win = WindowOpen(o)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
 			}
 			if closed != nil {
-				win.SetHandleClosed(closed)
+				win.HandleClosed = closed
 			}
 		}
+		// zlog.Info("Window Opened")
 		v.SetRect(zgeo.RectFromSize(rect.Size))
 		win.AddView(v)
 	}

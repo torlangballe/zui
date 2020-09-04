@@ -39,7 +39,7 @@ func AlertNew(items ...interface{}) *Alert {
 }
 
 func AlertNewWithCancel(items ...interface{}) *Alert {
-	a := AlertNew(items)
+	a := AlertNew(items...)
 	a.SetCancel("")
 	return a
 }
@@ -144,5 +144,5 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 
 	att := PresentViewAttributesNew()
 	att.Modal = true
-	PresentViewShow(stack, att, nil, nil)
+	PresentView(stack, att, nil, nil)
 }

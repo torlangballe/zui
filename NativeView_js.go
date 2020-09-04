@@ -26,8 +26,8 @@ func (v *NativeView) Parent() *NativeView {
 	// }
 	// //	zlog.Info("ParentElement:", v.ObjectName(), e)
 	// n := &NativeView{}
-	// n.Element = e
-	// n.View = n
+	// v.Element = e
+	// v.View = n
 	// return n
 	return v.parent
 }
@@ -61,7 +61,7 @@ func (v *NativeView) parseElementCoord(value js.Value) float64 {
 		}
 		return n
 	}
-	zlog.Fatal(nil, "parseElementCoord: not handled type:", str, v.ObjectName())
+	zlog.Error(nil, "parseElementCoord: not handled type:", str, v.ObjectName()) //! Fatal
 	return 0
 }
 
@@ -72,7 +72,7 @@ func (v *NativeView) Rect() zgeo.Rect {
 	// pos.Y = v.Element.Get("offsetTop").Float()
 	pos.X = v.parseElementCoord(style.Get("left"))
 	pos.Y = v.parseElementCoord(style.Get("top"))
-	size := v.GetLocalRect().Size
+	size := v.LocalRect().Size
 	return zgeo.Rect{pos, size}
 }
 
@@ -88,7 +88,7 @@ func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{10, 10}
 }
 
-func (v *NativeView) GetLocalRect() zgeo.Rect {
+func (v *NativeView) LocalRect() zgeo.Rect {
 	var w, h float64
 	style := v.style()
 	sw := style.Get("width")
@@ -103,19 +103,22 @@ func (v *NativeView) GetLocalRect() zgeo.Rect {
 	return zgeo.RectMake(0, 0, w, h)
 }
 
-func (v *NativeView) LocalRect(rect zgeo.Rect) {
-
+func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
+	zlog.Fatal(nil, "NOT IMPLEMENTED")
 }
 
 func (v *NativeView) ObjectName() string {
-	return v.get("oname").String()
+	return v.getjs("oname").String()
 }
+
+var idCount int
 
 func (v *NativeView) SetObjectName(name string) View {
-	v.set("oname", name)
+	v.setjs("oname", name)
+	idCount++
+	v.setjs("id", fmt.Sprintf("%s-%d", name, idCount))
 	return v
 }
-
 
 func makeRGBAString(c zgeo.Color) string {
 	if !c.Valid {
@@ -136,8 +139,9 @@ func (v *NativeView) Color() zgeo.Color {
 	return zgeo.ColorFromString(str)
 }
 
-func (n *NativeView) style() js.Value {
-	return n.get("style")
+func (v *NativeView) style() js.Value {
+
+	return v.getjs("style")
 }
 
 func (v *NativeView) SetAlpha(alpha float32) View {
@@ -203,7 +207,7 @@ func (v *NativeView) IsShown() bool {
 }
 
 func (v *NativeView) SetUsable(usable bool) View {
-	v.set("disabled", !usable)
+	v.setjs("disabled", !usable)
 	style := v.style()
 	var alpha float32 = 0.4
 	if usable {
@@ -237,7 +241,7 @@ func (v *NativeView) Focus(focus bool) View {
 }
 
 func (v *NativeView) SetCanFocus(can bool) View {
-	v.set("tabindex", "0")
+	v.setjs("tabindex", "0")
 	return v
 }
 
@@ -285,12 +289,12 @@ func (v *NativeView) Font() *Font {
 
 func (v *NativeView) SetText(text string) View {
 	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
-	v.set("innerHTML", text)
+	v.setjs("innerHTML", text)
 	return v
 }
 
 func (v *NativeView) Text() string {
-	text := v.get("innerHTML").String()
+	text := v.getjs("innerHTML").String()
 	return text
 }
 
@@ -331,7 +335,7 @@ func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
 }
 
 func (v *NativeView) SetToolTip(str string) {
-	v.set("title", str)
+	v.setjs("title", str)
 }
 
 func (v *NativeView) GetAbsoluteRect() zgeo.Rect {
@@ -389,14 +393,25 @@ func (v *NativeView) SetAboveParent(above bool) {
 	v.style().Set("overflow", str)
 }
 
-func (n *NativeView) call(method string, args ...interface{}) js.Value {
-	return n.Element.Call(method, args...)
+func (v *NativeView) call(method string, args ...interface{}) js.Value {
+
+	return v.Element.Call(method, args...)
 }
 
-func (n *NativeView) set(property string, v interface{}) {
-	n.Element.Set(property, v)
+func (v *NativeView) setjs(property string, value interface{}) {
+	v.Element.Set(property, value)
 }
 
-func (n *NativeView) get(property string) js.Value {
-	return n.Element.Get(property)
+func (v *NativeView) getjs(property string) js.Value {
+	return v.Element.Get(property)
+}
+
+func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
+	v.setjs("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if handler != nil {
+			y := v.getjs("scrollTop").Float()
+			handler(zgeo.Pos{0, y})
+		}
+		return nil
+	}))
 }

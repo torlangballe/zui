@@ -22,11 +22,11 @@ func (v *NativeView) Rect() zgeo.Rect {
 	return zgeo.Rect{}
 }
 
-func (v *NativeView) GetLocalRect() zgeo.Rect {
+func (v *NativeView) LocalRect() zgeo.Rect {
 	return zgeo.Rect{}
 }
 
-func (v *NativeView) LocalRect(rect zgeo.Rect) {
+func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
 }
 
 func (v *NativeView) Parent() *NativeView {
@@ -138,9 +138,11 @@ func (v *NativeView) SetText(text string) View {
 func (v *NativeView) Text() string {
 	return ""
 }
-func (v *NativeView) AddChild(child View, index int)       {}
-func (v *NativeView) RemoveChild(child View)               {}
-func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {}
-func (v *NativeView) SetToolTip(str string)                {}
-func (v *NativeView) SetAboveParent(above bool)            {}
-func NativeViewAddToRoot(v View)                           {}
+func (v *NativeView) AddChild(child View, index int)              {}
+func (v *NativeView) RemoveChild(child View)                      {}
+func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow)        {}
+func (v *NativeView) SetToolTip(str string)                       {}
+func (v *NativeView) SetAboveParent(above bool)                   {}
+func NativeViewAddToRoot(v View)                                  {}
+func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {}
+func (v *NativeView) setjs(property string, value interface{})    {}

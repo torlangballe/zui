@@ -15,7 +15,7 @@ type CustomView struct {
 	valueChanged  func(view View)
 	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
-	timers        []*ztimer.Timer
+	StopOnClose   []ztimer.Stopper // anything that needs to be stopped
 	color         zgeo.Color
 	IsHighlighted bool
 	exposeTimer   ztimer.Timer
@@ -33,14 +33,15 @@ func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *CustomView) Expose() {
+	// zlog.Info("CV Expose", v.ObjectName())
 	v.exposeInSecs(0.1) //0.01)
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {
+	// zlog.Info("exposeInSecs", v.ObjectName(), v.exposed, presentViewPresenting)
 	if v.exposed || presentViewPresenting {
 		return
 	}
-	// zlog.Info("exposeInSecs", v.ObjectName())
 	v.exposed = true
 	v.exposeTimer.StartIn(secs, func() {
 		io, got := v.View.(ImageOwner)
@@ -108,10 +109,10 @@ func (v *CustomView) GetViewsRectInMyCoordinates(view View) zgeo.Rect {
 }
 
 func (v *CustomView) HandleClosing() {
-	for _, t := range v.timers {
-		t.Stop()
+	for _, st := range v.StopOnClose {
+		st.Stop()
 	}
-	v.timers = v.timers[:]
+	v.StopOnClose = v.StopOnClose[:]
 }
 
 func (v *CustomView) Activate(activate bool) { // like being activated/deactivated for first time

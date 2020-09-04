@@ -21,8 +21,8 @@ func (v *CustomView) init(view View, name string) {
 
 func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.set("className", "widget")
-	v.set("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.setjs("className", "widget")
+	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
 		target := args[0].Get("target")
 		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
@@ -35,12 +35,12 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 func (v *CustomView) SetLongPressedHandler(handler func()) {
 	// zlog.Info("SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
-	v.set("className", "widget")
-	v.set("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.setjs("className", "widget")
+	v.setjs("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
-	v.set("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.setjs("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil
@@ -81,7 +81,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 	// if rect != r {
 	if v.canvas != nil && s != rect.Size {
 		// zlog.Debug("set", v.ObjectName(), s, rect.Size)
-		s := v.GetLocalRect().Size
+		s := v.LocalRect().Size
 		scale := ScreenMain().Scale
 		v.setCanvasSize(s, scale)
 		v.Expose()
@@ -103,7 +103,7 @@ func (v *CustomView) makeCanvas() {
 		v.canvas = CanvasNew()
 		v.canvas.element.Set("id", v.ObjectName()+".canvas")
 		v.call("appendChild", v.canvas.element)
-		s := v.GetLocalRect().Size
+		s := v.LocalRect().Size
 		scale := ScreenMain().Scale
 		v.setCanvasSize(s, scale)
 	}
@@ -113,7 +113,7 @@ func (v *CustomView) makeCanvas() {
 func (v *CustomView) drawIfExposed() {
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
-		r := v.GetLocalRect()
+		r := v.LocalRect()
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
 			// println("CV drawIfExposed2:", v.ObjectName())
 			v.exposeTimer.Stop()

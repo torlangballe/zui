@@ -16,7 +16,7 @@ type ImageView struct {
 	strokeColor  zgeo.Color
 }
 
-func ImageViewNew(path string, maxSize zgeo.Size) *ImageView {
+func ImageViewNew(image *Image, path string, maxSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.init(v, path)
 	v.SetMaxSize(maxSize)
@@ -24,7 +24,7 @@ func ImageViewNew(path string, maxSize zgeo.Size) *ImageView {
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetDrawHandler(ImageViewDraw)
 	if path != "" {
-		v.SetImage(nil, path, nil)
+		v.SetImage(image, path, nil)
 	}
 	//        isAccessibilityElement = true
 	return v
@@ -52,6 +52,14 @@ func (v *ImageView) Path() string {
 		return v.image.Path
 	}
 	return ""
+}
+
+func (v *ImageView) SetRect(rect zgeo.Rect) View {
+	v.CustomView.SetRect(rect)
+	if v.ObjectName() == "zap!" {
+		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
+	}
+	return v
 }
 
 func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -89,20 +97,16 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) *ImageView {
 	return v
 }
 
-func ImageViewFromImage(image *Image) *ImageView {
-	v := ImageViewNew("", zgeo.Size{})
-	v.SetImage(image, "", nil)
-
-	return v
-}
-
 func (v *ImageView) SetImage(image *Image, path string, got func()) {
 	// zlog.Info("IV SetImage", path)
+	v.setjs("href", path)
 	v.exposed = false
 	if image != nil {
 		v.image = image
 		v.Expose()
-		got()
+		if got != nil {
+			got()
+		}
 	} else {
 		v.image = ImageFromPath(path, func(ni *Image) {
 			// if ni != nil {
@@ -141,6 +145,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.cornerRadius))
 			canvas.ClipPath(path, true, true)
 		}
+		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.Rect())
 		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
 		if v.cornerRadius != 0 {
 			canvas.PopState()

@@ -18,19 +18,19 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
-		v.set("type", "text")
+		v.setjs("type", "text")
 		if style.KeyboardType == KeyboardTypePassword {
-			v.set("type", "password")
+			v.setjs("type", "password")
 		} else {
-			v.set("type", "text")
+			v.setjs("type", "text")
 		}
 	}
 	v.Columns = cols
-	v.set("style", "position:absolute")
+	v.setjs("style", "position:absolute")
 	if rows <= 1 {
 		v.SetMargin(zgeo.SizeBoth(TextViewDefaultMargin))
 	}
-	v.set("value", text)
+	v.setjs("value", text)
 	v.View = v
 	v.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
@@ -38,7 +38,7 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 }
 
 func (v *TextView) SetStatic(s bool) {
-	v.set("readOnly", s)
+	v.setjs("readOnly", s)
 }
 
 func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
@@ -54,27 +54,27 @@ func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
 }
 
 func (v *TextView) SetReadOnly(is bool) *TextView {
-	v.set("readonly", is)
+	v.setjs("readonly", is)
 	return v
 }
 
 func (v *TextView) SetMin(min float64) *TextView {
-	v.set("min", min)
+	v.setjs("min", min)
 	return v
 }
 
 func (v *TextView) SetMax(max float64) *TextView {
-	v.set("max", max)
+	v.setjs("max", max)
 	return v
 }
 
 func (v *TextView) SetStep(step float64) *TextView {
-	v.set("step", step)
+	v.setjs("step", step)
 	return v
 }
 
 func (v *TextView) SetPlaceholder(str string) *TextView {
-	v.set("placeholder", str)
+	v.setjs("placeholder", str)
 	return v
 }
 
@@ -101,13 +101,13 @@ func (v *TextView) SetRect(rect zgeo.Rect) View {
 
 func (v *TextView) SetText(str string) View {
 	if v.Text() != str {
-		v.set("value", str)
+		v.setjs("value", str)
 	}
 	return v
 }
 
 func (v *TextView) Text() string {
-	text := v.get("value").String()
+	text := v.getjs("value").String()
 	return text
 }
 
@@ -150,7 +150,7 @@ func (v *TextView) startUpdate() {
 func (v *TextView) SetChangedHandler(handler func(view View)) {
 	v.changed = handler
 	if handler != nil {
-		v.set("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		v.setjs("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			if v.UpdateSecs != 0 { //  && v.updated
 				event := vs[0]
 				key := event.Get("which").Int()
@@ -162,7 +162,7 @@ func (v *TextView) SetChangedHandler(handler func(view View)) {
 			}
 			return nil
 		}))
-		v.set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		v.setjs("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
 			// v.updated = true
 			if v.UpdateSecs == 0 {
 				v.changed(v)
@@ -176,7 +176,7 @@ func (v *TextView) SetChangedHandler(handler func(view View)) {
 
 func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
-	v.set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		// zlog.Info("KeyUp")
 		if handler != nil {
 			event := vs[0]
@@ -203,5 +203,5 @@ func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods K
 }
 
 func (v *TextView) ScrollToBottom() {
-	v.set("scrollTop", v.get("scrollHeight"))
+	v.setjs("scrollTop", v.getjs("scrollHeight"))
 }
