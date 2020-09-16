@@ -45,6 +45,7 @@ func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.
 }
 
 type PresentViewAttributes struct {
+	WindowOptions
 	DurationSecs             float64
 	Transition               PresentViewTransition
 	OldTransition            PresentViewTransition
@@ -55,8 +56,6 @@ type PresentViewAttributes struct {
 	DeleteOld                bool
 	Modal                    bool
 	Title                    string
-	Pos                      *zgeo.Pos
-	WindowID                 string
 	ModalCloseOnOutsidePress bool
 }
 
@@ -70,26 +69,32 @@ func PresentViewAttributesNew() PresentViewAttributes {
 	return a
 }
 
-func presentViewCallReady(v View) {
-	o := v.(NativeViewOwner)
-	if o != nil {
-		nv := o.GetNative()
-		// zlog.Info("presentViewCallReady:", v.ObjectName(), nv.Presented)
-		if nv.Presented {
-			return
+func presentViewCallReady(v View, beforeWindow bool) {
+	nv := ViewGetNative(v)
+	if nv == nil {
+		return
+	}
+	if !nv.Presented {
+		if !beforeWindow {
+			nv.Presented = true
 		}
-		nv.Presented = true
+		r, _ := v.(ReadyToShowType)
+		if r != nil {
+			r.ReadyToShow(beforeWindow)
+		}
 	}
-	r, got := v.(ReadyToShowType)
-	if got {
-		r.ReadyToShow()
+	if nv.allChildrenPresented {
+		return
 	}
-	ct, got := v.(ContainerType)
-	if got {
+	ct, _ := v.(ContainerType)
+	if ct != nil {
 		// zlog.Info("presentViewCallReady1:", v.ObjectName(), len(ct.GetChildren()))
 		for _, c := range ct.GetChildren() {
-			presentViewCallReady(c)
+			presentViewCallReady(c, beforeWindow)
 		}
+	}
+	if !beforeWindow {
+		nv.allChildrenPresented = true
 	}
 }
 
@@ -97,24 +102,25 @@ var presentViewPresenting = true
 
 func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
 	presentViewPresenting = true
-	presentViewCallReady(v)
-	ct, _ := v.(ContainerType)
-	if ct != nil {
-		WhenContainerLoaded(ct, func(waited bool) {
-			presentLoaded(v, attributes, presented, closed)
-		})
-	} else {
-		presentLoaded(v, attributes, presented, closed)
-	}
+	presentViewCallReady(v, true)
+
+	// ct, _ := v.(ContainerType)
+	// if ct != nil {
+	// 	WhenContainerLoaded(ct, func(waited bool) {
+	// 		presentLoaded(v, attributes, presented, closed)
+	// 	})
+	// } else {
+	presentLoaded(v, attributes, presented, closed)
+	// }
 }
 
 var firstPresented bool
 
 func presentLoaded(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
 	// zlog.Info("PresentView", v.ObjectName())
-	win := WindowGetCurrent()
+	win := WindowGetMain()
 
-	fullRect := win.Rect()
+	fullRect := win.ContentRect()
 	rect := fullRect
 
 	size := v.CalculatedSize(rect.Size)
@@ -151,7 +157,11 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 	} else {
 		if firstPresented {
 			size.H += WindowBarHeight
-			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
+			//			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
+			o := attributes.WindowOptions
+			o.Pos = &rect.Pos
+			o.Size = size
+			// zlog.Info("PresentView:", rect.Pos, size, attributes.ID)
 			win = WindowOpen(o)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
@@ -160,7 +170,6 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 				win.HandleClosed = closed
 			}
 		}
-		// zlog.Info("Window Opened")
 		v.SetRect(zgeo.RectFromSize(rect.Size))
 		win.AddView(v)
 	}
@@ -171,6 +180,7 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 	// 	cvt.ArrangeChildren(nil)
 	// }
 	// NativeViewAddToRoot(v)
+	presentViewCallReady(v, false)
 	presentViewPresenting = false
 	et, _ := v.(ExposableType)
 	if et != nil {

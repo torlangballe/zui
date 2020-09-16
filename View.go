@@ -61,7 +61,7 @@ type ExposableType interface {
 }
 
 type ReadyToShowType interface {
-	ReadyToShow()
+	ReadyToShow(beforeWindow bool)
 }
 
 type ContainerType interface {

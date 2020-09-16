@@ -2,24 +2,26 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
 type CustomView struct {
 	NativeView
 	LongPresser
-	canvas        *Canvas
-	minSize       zgeo.Size
-	pressed       func()
-	longPressed   func()
-	valueChanged  func(view View)
-	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
-	exposed       bool
-	StopOnClose   []ztimer.Stopper // anything that needs to be stopped
-	color         zgeo.Color
-	IsHighlighted bool
-	exposeTimer   ztimer.Timer
-	isSetup       bool
+	canvas          *Canvas
+	minSize         zgeo.Size
+	pressed         func()
+	longPressed     func()
+	valueChanged    func(view View)
+	// pointerEnclosed func(inside bool)
+	draw            func(rect zgeo.Rect, canvas *Canvas, view View)
+	exposed         bool
+	StopOnClose     []ztimer.Stopper // anything that needs to be stopped
+	color           zgeo.Color
+	IsHighlighted   bool
+	exposeTimer     ztimer.Timer
+	isSetup         bool
 }
 
 func CustomViewNew(name string) *CustomView {
@@ -109,19 +111,15 @@ func (v *CustomView) GetViewsRectInMyCoordinates(view View) zgeo.Rect {
 }
 
 func (v *CustomView) HandleClosing() {
+	zlog.Info("CV HandleClosing")
 	for _, st := range v.StopOnClose {
 		st.Stop()
 	}
 	v.StopOnClose = v.StopOnClose[:]
 }
 
-func (v *CustomView) Activate(activate bool) { // like being activated/deactivated for first time
-}
-
-func (v *CustomView) Rotate(degrees float64) {
-	// r := MathDegToRad(degrees)
-	//self.transform = CGAffineTransform(rotationAngle CGFloat(r))
-}
+// func (v *CustomView) Activate(activate bool) { // like being activated/deactivated for first time
+// }
 
 func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn zgeo.Size) zgeo.Size {
 	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))

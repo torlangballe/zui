@@ -144,20 +144,19 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	if v.image != nil {
 		s.Maximize(v.image.Size())
+		s.Maximize(v.image.CapInsets().Size.Negative())
 	}
 	s.Add(v.margin.Size.Negative())
 	if v.maxWidth != 0.0 {
-		zfloat.Maximize(&s.W, v.maxWidth)
+		zfloat.Minimize(&s.W, v.maxWidth)
 	}
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
-	if v.ObjectName() == "newTest" {
-		// if v.image.loading {
-		// 	zlog.Info("!!!!!!!!!!!!!!!!!!!!!!!!!! SH image loading")
-		// }
-		// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
-	}
+	// if v.image.loading {
+	// 	zlog.Info("!!!!!!!!!!!!!!!!!!!!!!!!!! SH image loading:", v.ObjectName(), v.image.capInsets.Size.Negative())
+	// }
+	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
 	s.MakeInteger()
 	return s
 }
@@ -227,7 +226,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	// 	imarg.Maximize(Size{5.0, 5.0}.TimesD(ScreenMain().SoftScale))
 	// }
 	textRect := rect
-	if v.image != nil {
+	if v.image != nil && !v.image.loading {
 		drawImage := v.image
 		if v.IsHighlighted {
 			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
@@ -259,7 +258,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				canvas.ClipPath(clipPath, false, false)
 			}
 			textRect = ir
-			// zlog.Info("SV DRAW:", rect, "ir:", ir)
+			// zlog.Info("SVDraw:", v.ObjectName(), ir)
 			canvas.DrawImage(drawImage, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()

@@ -1,7 +1,10 @@
 package zui
 
 import (
+	"time"
+
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -79,7 +82,6 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
 				v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
-				gotView = nil
 				gotAlign = zgeo.AlignmentNone
 				gotMargin = zgeo.Size{}
 				gotIndex = -1
@@ -138,6 +140,10 @@ func (v *ContainerView) SetMargin(margin zgeo.Rect) *ContainerView {
 	return v
 }
 
+func (v *ContainerView) Margin() zgeo.Rect {
+	return v.margin
+}
+
 func (v *ContainerView) SetMarginS(margin zgeo.Size) *ContainerView {
 	v.margin = zgeo.RectFromMinMax(margin.Pos(), margin.Pos().Negative())
 	return v
@@ -182,8 +188,12 @@ func (v *ContainerView) Contains(view View) bool {
 func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
 	ct := v.View.(ContainerType)
-	// zlog.Info("CV SetRect", v.ObjectName(), rect)
+	//	start := time.Now()
 	ct.ArrangeChildren(nil)
+	// d := time.Since(start)
+	// if d > time.Millisecond*50 {
+	// 	zlog.Info("CV SetRect2", v.ObjectName(), d)
+	// }
 	return v
 }
 
@@ -247,11 +257,17 @@ func ContainerIsLoading(ct ContainerType) bool {
 // WhenContainerLoaded waits for all sub-parts images etc to be loaded before calling done.
 // done received waited=true if it had to wait
 func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
+	// if done != nil {
+	// 	done(false)
+	// }
+	// return
+	start := time.Now()
 	ztimer.RepeatNow(0.1, func() bool {
 		if ContainerIsLoading(ct) {
 			return true
 		}
 		if done != nil {
+			zlog.Info("Wait:", time.Since(start), ct.(View).ObjectName())
 			done(true)
 		}
 		return false
@@ -405,20 +421,21 @@ func (v *ContainerView) FindCellWithView(view View) (*ContainerViewCell, int) {
 }
 
 func (v *ContainerView) RemoveChild(subView View) {
-	v.CustomView.RemoveChild(subView)
 	v.DetachChild(subView)
+	v.CustomView.RemoveChild(subView)
 }
 
 func (v *ContainerView) RemoveAllChildren() {
 	for _, c := range v.cells {
-		v.DetachChild(c.View)
+		// zlog.Info("CV removeALL:", i, len(v.cells))
 		v.CustomView.RemoveChild(c.View)
 	}
+	v.cells = v.cells[:0]
 }
 
 func (v *ContainerView) DetachChild(subView View) {
 	for i, c := range v.cells {
-		// zlog.Info("detach?:", c.View.ObjectName(), c.View == subView, len(v.cells))
+		//zlog.Info("detach?:", ViewGetNative(c.View).Element, c.View == subView, len(v.cells))
 		if c.View == subView {
 			zslice.RemoveAt(&v.cells, i)
 			// zlog.Info("detach2:", c.View.ObjectName(), len(v.cells))

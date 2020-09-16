@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /13/11/15.
@@ -37,19 +36,31 @@ func (v *ScrollView) Update() {
 	v.exposed = false
 	cust, _ := v.child.(*CustomView)
 	if cust != nil {
-		zlog.Info("SV Update1:", v.ObjectName(), v.Presented, cust.exposed)
+		// zlog.Info("SV Update1:", v.ObjectName(), v.Presented, cust.exposed)
 		cust.exposed = false
 	}
 	ct, _ := v.child.(ContainerType)
+	var keepOffsetY *float64
 	if ct != nil {
-		for i, c := range ct.GetChildren() {
+		for _, c := range ct.GetChildren() {
 			// zlog.Info("SV Update1", c.ObjectName(), ViewGetNative(c).Presented)
 			if ViewGetNative(c).Presented {
-				zlog.Info("SV Update:", i, c.Rect().Min().Y, c.ObjectName())
+				diff := c.Rect().Min().Y - v.YOffset
+				if diff >= 0 && keepOffsetY == nil {
+					y := c.Rect().Min().Y
+					keepOffsetY = &y
+				}
+				// if diff > 0 {
+				// 	zlog.Info("SV Update:", i, diff, c.ObjectName())
+				// }
 			}
 		}
 	}
 	v.ArrangeChildren(nil)
+	// if keepOffsetY != nil {
+	// 	zlog.Info("SV Update KeepOffset:", *keepOffsetY)
+	// 	// v.SetContentOffset(*keepOffsetY, false)
+	// }
 	v.Expose()
 }
 
@@ -92,10 +103,10 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 }
 
 func (v *ScrollView) drawIfExposed() {
-	zlog.Info("SV:drawIfExposed")
+	// zlog.Info("SV:drawIfExposed")
 	if v.child != nil {
-		ViewGetNative(v.child).Presented = false
-		presentViewCallReady(v.child)
+		//ViewGetNative(v.child).Presented = false
+		presentViewCallReady(v.child, true)
 	}
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
@@ -104,6 +115,7 @@ func (v *ScrollView) drawIfExposed() {
 			// zlog.Info("SV:drawIfExposed child")
 			et.drawIfExposed()
 		}
+		presentViewCallReady(v.child, false)
 	}
 }
 
@@ -129,11 +141,12 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 
 func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
 	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
+		v.YOffset = pos.Y
 		if handler != nil {
 			dir := 0
-			if pos.Y < 8 {
+			if pos.Y < 2 {
 				dir = -1
-			} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+8 {
+			} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+2 {
 				dir = 1
 			}
 			handler(pos, dir)

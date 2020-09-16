@@ -9,5 +9,4 @@ func ClipboardSetString(str string) {
 	textArea.Call("select")
 	DocumentJS.Call("execCommand", "copy")
 	DocumentJS.Get("body").Call("removeChild", textArea)
-
 }

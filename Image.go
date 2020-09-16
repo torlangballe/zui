@@ -3,9 +3,9 @@ package zui
 import (
 	"strconv"
 
-	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -28,9 +28,9 @@ func MakeImageFromDrawFunction(size zgeo.Size, scale float32, draw func(size zge
 func (i *Image) ForPixels(got func(pos zgeo.Pos, color zgeo.Color)) {
 }
 
-func (i *Image) CapInsetsCorner(c zgeo.Size) *Image {
+func (i *Image) SetCapInsetsCorner(c zgeo.Size) *Image {
 	r := zgeo.RectFromMinMax(c.Pos(), c.Pos().Negative())
-	return i.CapInsets(r)
+	return i.SetCapInsets(r)
 }
 
 func imageGetScaleFromPath(path string) int {

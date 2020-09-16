@@ -42,6 +42,7 @@ func (v *NativeView) GetNative() *NativeView {
 
 func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	// zlog.Info("NV Rect", v.ObjectName())
+	rect.MakeInteger()
 	setElementRect(v.Element, rect)
 	return v
 }
@@ -61,7 +62,11 @@ func (v *NativeView) parseElementCoord(value js.Value) float64 {
 		}
 		return n
 	}
-	zlog.Error(nil, "parseElementCoord: not handled type:", str, v.ObjectName()) //! Fatal
+	iv, _ := v.View.(*ImageView)
+	if iv != nil {
+		zlog.Error(nil, "parseElementCoord For Image: not handled type:", str, iv.Path()) //! Fatal
+	}
+	//	zlog.Error(nil, "parseElementCoord: not handled type:", str, v.ObjectName(), zlog.GetCallingStackString()) //! Fatal
 	return 0
 }
 
@@ -97,7 +102,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else {
-		zlog.Info("parse empty Coord:", v.ObjectName(), zlog.GetCallingStackString())
+		zlog.Info("parse empty Coord:", v.ObjectName())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -140,7 +145,6 @@ func (v *NativeView) Color() zgeo.Color {
 }
 
 func (v *NativeView) style() js.Value {
-
 	return v.getjs("style")
 }
 
@@ -299,34 +303,41 @@ func (v *NativeView) Text() string {
 }
 
 func (v *NativeView) AddChild(child View, index int) {
-	o, _ := child.(NativeViewOwner)
-	if o == nil {
+	n := ViewGetNative(child)
+	if n == nil {
 		panic("NativeView AddChild child not native")
 	}
-	n := o.GetNative()
 	n.parent = v
 	v.call("appendChild", n.Element)
 	n.style().Set("zIndex", 100)
+	for _, p := range n.AllParents() {
+		p.allChildrenPresented = false
+	}
 }
 
-func (v *NativeView) SetStokeWidth(width float64) *NativeView {
-
-	return v
+func (v *NativeView) AllParents() (all []*NativeView) {
+	for v.parent != nil {
+		all = append(all, v.parent)
+		v = v.parent
+	}
+	return
 }
+
+// func (v *NativeView) SetStokeWidth(width float64) *NativeView { // spelt wrong too
+// 	return v
+// }
 
 func (v *NativeView) SetZIndex(index int) {
 	v.style().Set("zIndex", index)
 }
 
 func (v *NativeView) RemoveChild(child View) {
-	// zlog.Info("REMOVE CHILD:", child.ObjectName(), zlog.GetCallingStackString())
-	o, _ := child.(NativeViewOwner)
-	if o == nil {
+	nv := ViewGetNative(child)
+	if nv == nil {
 		panic("NativeView AddChild child not native")
 	}
-	removedNode := v.call("removeChild", o.GetNative().Element)
-	o.GetNative().Element = removedNode
-
+	// zlog.Info("REMOVE CHILD:", child.ObjectName())
+	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
 }
 
 func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
@@ -394,7 +405,6 @@ func (v *NativeView) SetAboveParent(above bool) {
 }
 
 func (v *NativeView) call(method string, args ...interface{}) js.Value {
-
 	return v.Element.Call(method, args...)
 }
 
@@ -411,6 +421,30 @@ func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
 		if handler != nil {
 			y := v.getjs("scrollTop").Float()
 			handler(zgeo.Pos{0, y})
+		}
+		return nil
+	}))
+}
+
+func (v *NativeView) RotateDeg(deg float64) {
+	v.style().Set("transform", fmt.Sprintf("rotate(%fdeg)", deg))
+}
+
+func (v *NativeView) GetWindow() *Window {
+	w := v.getjs("ownerDocument").Get("defaultView")
+	return windowsFindForElement(w)
+}
+
+func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
+	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if handler != nil {
+			handler(true)
+		}
+		return nil
+	}))
+	v.setjs("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if handler != nil {
+			handler(false)
 		}
 		return nil
 	}))

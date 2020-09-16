@@ -12,14 +12,14 @@ type Button struct {
 }
 
 func ButtonNewSimple(title, imageName string) *Button {
-	return ButtonNew(title, imageName, zgeo.Size{20, 28}, zgeo.Size{6, 13})
+	return ButtonNew(title, imageName, zgeo.Size{20, 26}, zgeo.Size{6, 12})
 }
 
 func ButtonNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *Button {
 	b := &Button{}
 	b.ShapeView.init(ShapeViewTypeNone, minSize, title)
 	if insets.IsNull() {
-		insets = zgeo.Size{6, 13}
+		insets = zgeo.Size{6, 12}
 	}
 	b.SetCanFocus(true)
 	b.ImageAlign = zgeo.Expand | zgeo.Center
@@ -58,5 +58,5 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 			zlog.Fatal(nil, "Button: Small image for inset:", b.ObjectName(), name, b.image.Size(), insets)
 		}
 	})
-	cimage.CapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
+	cimage.SetCapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }

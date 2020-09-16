@@ -19,11 +19,11 @@ func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 }
 
 func (v *CheckBox) SetRect(rect zgeo.Rect) View {
-	rect.Pos.Y -= 3
+	rect.Pos.Y -= 4
 	return v.NativeView.SetRect(rect)
 }
 
-func (s *CheckBox) ValueHandler(handler func(view View)) {
+func (s *CheckBox) SetValueHandler(handler func(view View)) {
 	s.valueChanged = handler
 	s.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if s.valueChanged != nil {
@@ -34,11 +34,11 @@ func (s *CheckBox) ValueHandler(handler func(view View)) {
 }
 
 func (s *CheckBox) Value() zbool.BoolInd {
-	b := s.getjs("checked").Bool()
 	i := s.getjs("indeterminate").Bool()
 	if i {
 		return zbool.Unknown
 	}
+	b := s.getjs("checked").Bool()
 	return zbool.ToBoolInd(b)
 }
 

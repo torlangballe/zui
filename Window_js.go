@@ -23,17 +23,29 @@ func init() {
 }
 
 type windowNative struct {
-	hasResized bool
-	element    js.Value
+	hasResized      bool
+	element         js.Value
+	animationFrames map[int]int // maps random animation id to dom animationFrameID
 }
 
-func WindowGetCurrent() *Window {
+func WindowGetMain() *Window {
 	w := &Window{}
 	w.element = WindowJS
 	return w
 }
 
 func (w *Window) Rect() zgeo.Rect {
+	var r zgeo.Rect
+	r.Pos.X = w.element.Get("screenX").Float()
+	r.Pos.Y = w.element.Get("screenY").Float()
+	// r.Size.W = w.element.Get("innerWidth").Float()
+	// r.Size.H = w.element.Get("innerHeight").Float()
+	r.Size.W = w.element.Get("outerWidth").Float()
+	r.Size.H = w.element.Get("outerHeight").Float()
+	return r
+}
+
+func (w *Window) ContentRect() zgeo.Rect {
 	var r zgeo.Rect
 	r.Pos.X = w.element.Get("screenX").Float()
 	r.Pos.Y = w.element.Get("screenY").Float()
@@ -49,17 +61,21 @@ func WindowOpen(o WindowOptions) *Window {
 	win := &Window{}
 	var specs []string
 	if !o.Size.IsNull() {
-		specs = append(specs, fmt.Sprintf("width=%d,height=%d", int(o.Size.W), int(o.Size.H)))
 	}
-	if o.Pos != nil {
-		specs = append(specs, fmt.Sprintf("left=%d,top=%d", int(o.Pos.X), int(o.Pos.Y)))
+
+	rect, gotPos, gotSize := getRectFromOptions(o)
+	if gotPos {
+		specs = append(specs, fmt.Sprintf("left=%d,top=%d", int(rect.Pos.X), int(rect.Pos.Y)))
+	}
+	if gotSize {
+		specs = append(specs, fmt.Sprintf("width=%d,height=%d", int(rect.Size.W), int(rect.Size.H)))
 	}
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	win.ID = o.ID
-	// zlog.Info("OPENEDWIN:", win.element, surl)
 	windows[win] = true
+	// zlog.Info("OPENEDWIN:", o.URL, specs, len(windows))
 	win.element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
-		// zlog.Info("Window Closed!")
+		zlog.Info("Window Closed!", win.ID, win.animationFrames)
 		delete(windows, win)
 		if win.HandleClosed != nil {
 			win.HandleClosed()
@@ -69,9 +85,12 @@ func WindowOpen(o WindowOptions) *Window {
 	return win
 }
 
-func WindowCurrentSetLocation(surl string) {
-	// zlog.Info("OPEN URL:", surl)
-	WindowJS.Get("location").Set("href", surl)
+func (win *Window) GetURL() string {
+	return win.element.Get("location").Get("href").String()
+}
+
+func (win *Window) SetLocation(surl string) {
+	win.element.Get("location").Set("href", surl)
 }
 
 func (w *Window) Close() {
@@ -121,12 +140,12 @@ func (w *Window) AddView(v View) {
 		}
 		if resizeTimer == nil {
 			resizeTimer = ztimer.StartIn(0.2, func() {
-				r := w.Rect()
+				r := w.ContentRect()
 				if w.HandleBeforeResized != nil {
 					w.HandleBeforeResized(r)
 				}
 				r.Pos = zgeo.Pos{}
-				zlog.Info("On Resized: to", r.Size, "from:", v.Rect().Size)
+				zlog.Info("On Resized: to", v.ObjectName(), r.Size, "from:", v.Rect().Size)
 				v.SetRect(r)
 				if w.HandleAfterResized != nil {
 					w.HandleAfterResized(r)
@@ -147,4 +166,17 @@ func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {
 		}
 		return nil
 	}))
+}
+
+func windowsFindForElement(e js.Value) *Window {
+	for w, _ := range windows {
+		if w.element.Equal(e) {
+			return w
+		}
+	}
+	return nil
+}
+
+func (win *Window) SetAddressBarURL(surl string) {
+	win.element.Get("history").Call("pushState", "", "", surl)
 }

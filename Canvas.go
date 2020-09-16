@@ -16,15 +16,16 @@ type Canvas struct {
 }
 
 func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.path, destRect, image.GetCapInsets())
 	if image != nil {
-		if image.GetCapInsets().IsNull() {
+		if image.CapInsets().IsNull() {
 			if sourceRect.IsNull() {
 				sourceRect = zgeo.Rect{Size: image.Size()}
 			}
 			c.drawPlainImage(image, destRect, opacity, sourceRect)
 		} else {
-			c.drawInsetImage(image, image.GetCapInsets(), destRect, opacity)
+			// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.Path, destRect, image.SetCapInsets())
+			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
+			// zlog.Info("Canvas.DrawImage Done", image.Path)
 		}
 	}
 }
@@ -33,7 +34,7 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 	size := image.Size()
 	ds := dest.Size
 	zlog.ErrorIf(ds.W < -inset.Size.W, ds.W, -inset.Size.W, image.Path)
-	zlog.ErrorIf(ds.H < -inset.Size.H, ds.H, -inset.Size.H, image.Path, inset, "ds:", ds, "dest:", dest)
+	zlog.ErrorIf(ds.H < -inset.Size.H, ds.H, -inset.Size.H, image.Size(), image.Path, inset, "ds:", ds, "dest:", dest)
 
 	insetMid := size.Minus(inset.Size.Negative())
 	c.drawPlainImage(image, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))

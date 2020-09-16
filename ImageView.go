@@ -43,7 +43,7 @@ func (v *ImageView) SetCorner(radius float64) View {
 	return v
 }
 
-func (v *ImageView) GetImage() *Image {
+func (v *ImageView) Image() *Image {
 	return v.image
 }
 
@@ -97,7 +97,7 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) *ImageView {
 	return v
 }
 
-func (v *ImageView) SetImage(image *Image, path string, got func()) {
+func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 	// zlog.Info("IV SetImage", path)
 	v.setjs("href", path)
 	v.exposed = false
@@ -105,16 +105,18 @@ func (v *ImageView) SetImage(image *Image, path string, got func()) {
 		v.image = image
 		v.Expose()
 		if got != nil {
-			got()
+			got(image)
 		}
 	} else {
 		v.image = ImageFromPath(path, func(ni *Image) {
+			// zlog.Info("Image from path gotten:", path)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())
 			// }
+			v.image = ni
 			v.Expose()
 			if got != nil {
-				got()
+				got(ni)
 			}
 		})
 	}

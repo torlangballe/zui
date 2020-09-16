@@ -4,12 +4,14 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type windowNative struct {
 }
 
-func WindowGetCurrent() *Window {
+func WindowGetMain() *Window {
 	w := &Window{}
 	return w
 }
@@ -19,12 +21,23 @@ func (w *Window) Rect() zgeo.Rect {
 	return zgeo.Rect{Size: s}
 }
 
+func (w *Window) ContentRect() zgeo.Rect {
+	return w.Rect()
+}
+
 func WindowOpen(o WindowOptions) *Window {
 	return nil
 }
 
-func (w *Window) Close()                        {}
-func (w *Window) Activate()                     {}
-func (w *Window) AddView(v View)                {}
-func (w *Window) SetTitle(title string)         {}
-func (w *Window) SetHandleClosed(closed func()) {}
+func (win *Window) GetURL() string {
+	return ""
+}
+
+// func (win *Window) SetAddressBarPathAndArgs(path string, args zdict.Dict) {}
+func (w *Window) Close()                         {}
+func (w *Window) Activate()                      {}
+func (w *Window) AddView(v View)                 {}
+func (w *Window) SetTitle(title string)          {}
+func (w *Window) SetHandleClosed(closed func())  {}
+func (win *Window) SetAddressBarURL(surl string) {}
+func (win *Window) SetLocation(surl string)      {}

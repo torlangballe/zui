@@ -2,6 +2,7 @@ package zui
 
 import (
 	"fmt"
+	"html"
 	"reflect"
 	"syscall/js"
 
@@ -26,13 +27,15 @@ func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic boo
 	v.setjs("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
 		index := v.getjs("selectedIndex").Int()
-		// zlog.Info("Selected:", index)
 		zlog.Assert(index < len(v.items))
 		if v.IsStatic {
+			// for i, item := range v.items {
+			// 	zlog.Info("ITEM:", i, item.Name, item.Value)
+			// }
 			v.SelectWithValue(v.items[0].Value)
-		} else {
-			v.currentValue = v.items[index].Value
 		}
+		v.currentValue = v.items[index].Value
+		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
 		if v.selectedHandler != nil {
 			v.selectedHandler(v.items[index].Name, v.items[index].Value)
 		}
@@ -56,10 +59,22 @@ func (v *MenuView) AddSeparator() {
 	v.items = append(v.items, item)
 }
 
-// func (v *MenuView) AddAction(id, name string) {
-// 	v.otherItems = append(v.otherItems, otherItem{ID: id, Title: name})
-// 	v.menuViewAddItem(id, name)
-// }
+func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
+	if zlog.ErrorIf(value == nil, v.ObjectName()) {
+		return
+	}
+	for i, item := range v.items {
+		if reflect.DeepEqual(item.Value, value) {
+			options := v.getjs("options")
+			// zlog.Info("MV ChangeNameForValue:", i, v.ObjectName(), name, value)
+			v.items[i].Name = name
+			o := options.Index(i)
+			o.Set("text", name)
+
+			break
+		}
+	}
+}
 
 func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 	option := DocumentJS.Call("createElement", "option")
@@ -69,8 +84,8 @@ func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 	} else {
 		id := fmt.Sprint(value)
 		option.Set("value", id)
-		option.Set("title", id)
-		option.Set("innerHTML", name)
+		option.Set("text", id)
+		// option.Set("innerHTML", name)
 	}
 	v.call("appendChild", option)
 }
@@ -81,6 +96,25 @@ func (v *MenuView) SetAndSelect(items zdict.Items, value interface{}) {
 	v.SelectWithValue(value)
 }
 
+func (v *MenuView) SetValues(items zdict.Items) {
+	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
+	if !items.Equal(v.items) {
+		old := v.currentValue // we need to remember current value to re-set as Empty() below clears it
+		v.items = items       // must be before v.getNumberOfItemsString
+		var str string
+		for _, item := range v.items {
+			str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
+		}
+		// We use HTML here to add all at once, or slow.
+		v.setjs("innerHTML", str)
+		if old != nil {
+			v.SelectWithValue(old)
+		}
+	}
+	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
+}
+
+/*
 func (v *MenuView) SetValues(items zdict.Items) {
 	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
 	if !items.Equal(v.items) {
@@ -102,9 +136,9 @@ func (v *MenuView) SetValues(items zdict.Items) {
 	}
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
-
+*/
 func (v *MenuView) SelectWithValue(value interface{}) *MenuView {
-	if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.GetCallingStackString()) {
+	if zlog.ErrorIf(value == nil, v.ObjectName()) {
 		return v
 	}
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)

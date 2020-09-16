@@ -124,7 +124,6 @@ func (v *CustomView) drawIfExposed() {
 			// 	v.canvas.PushState()
 			// 	v.canvas.context.Set("globalAlpha", 0.4)
 			// }
-			// zlog.Info("CV drawIfExposed", v.ObjectName(), v.Usable(), v.canvas.context.Get("globalAlpha"))
 			v.draw(r, v.canvas, v.View)
 			// if !v.Usable() {
 			// 	v.canvas.PopState()

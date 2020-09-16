@@ -44,7 +44,7 @@ func HeaderViewNew(id string) *HeaderView {
 	v.StackView.init(v, "header")
 	v.Vertical = false
 	v.SetObjectName(id)
-	v.SetSpacing(6)
+	v.SetSpacing(0)
 	return v
 }
 

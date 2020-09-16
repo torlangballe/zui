@@ -16,6 +16,7 @@ type TabsView struct {
 	childAlignments    map[string]zgeo.Alignment
 	separatorForIDs    []string
 	SeparatorLineInset float64
+	ChangedHandler     func(newID string)
 }
 
 func TabsViewNew(name string) *TabsView {
@@ -70,7 +71,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 		align = zgeo.Left | zgeo.Top | zgeo.Expand
 	}
 	v.childAlignments[id] = align
-	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 24}, zgeo.Size{11, 13})
+	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 26}, zgeo.Size{11, 12})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
 	button.SetColor(TabsDefaultTextColor)
@@ -105,17 +106,19 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 			str += "-selected"
 			style = FontStyleBold
 		}
-		button.SetImageName(str, zgeo.Size{11, 13})
+		button.SetImageName(str, zgeo.Size{11, 12})
 		button.SetFont(FontNice(FontDefaultSize, style))
 	}
 }
 func (v *TabsView) SetTab(id string) {
+	// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells))
 	if v.CurrentID != id {
 		if v.CurrentID != "" {
 			v.creators[v.CurrentID](true)
 			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.ChildView != nil {
+			// zlog.Info("Remove Child!:", v.ChildView.ObjectName())
 			v.RemoveChild(v.ChildView)
 		}
 		v.ChildView = v.creators[id](false)
@@ -124,38 +127,58 @@ func (v *TabsView) SetTab(id string) {
 		v.setButtonOn(id, true)
 		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-		// zlog.Info("Call collapse:", tabSeparatorID, !hasSeparator, v.separatorForIDs)
+		// zlog.Info("Call collapse:", id, len(v.cells))
 		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 		if !v.Presented {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
-		ct := v.View.(ContainerType)
-		//		et, _ := v.ChildView.(ExposableType)
 		et, _ := v.View.(ExposableType)
 		// if !v.Presented {
 		// 	return
 		// }
-		presentViewCallReady(v.ChildView)
+		presentViewCallReady(v.ChildView, true)
 		presentViewPresenting = true
 		v.ArrangeChildren(nil) // This can cerate table rows and do all kinds of things that load images etc.
-		WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("Set Tab container loaded:", waited)
-			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-				v.ArrangeChildren(nil)
-			}
-			presentViewPresenting = false
-			if et != nil {
-				et.drawIfExposed()
-			}
-		})
+		/*
+			ct := v.View.(ContainerType)
+				WhenContainerLoaded(ct, func(waited bool) {
+					zlog.Info("SetTab Loaded")
+					// zlog.Info("Set Tab container loaded:", waited)
+					if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+						v.ArrangeChildren(nil)
+					}
+					zlog.Info("SetTab Loaded re-arranged")
+		*/
+		presentViewPresenting = false
+		presentViewCallReady(v.ChildView, false)
+		if et != nil {
+			et.drawIfExposed()
+		}
+		/*
+			})
+		*/
+		if v.ChangedHandler != nil {
+			v.ChangedHandler(id)
+		}
 	}
 }
 
-func (v *TabsView) GetChildren() []View {
-	return v.StackView.GetChildren()
-}
+// func (v *TabsView) GetChildren() []View {
+// 	return v.StackView.GetChildren()
+// }
 
 func (v *TabsView) ArrangeChildren(onlyChild *View) {
 	v.StackView.ArrangeChildren(onlyChild)
+}
+
+func GetParentTabsCurrentID(child View) string {
+	n := ViewGetNative(child)
+	for _, p := range n.AllParents() {
+		t, _ := p.View.(*TabsView)
+		if t != nil {
+			return t.CurrentID
+		}
+	}
+	return ""
 }

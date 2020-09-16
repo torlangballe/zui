@@ -116,7 +116,11 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 
 func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
-	// zlog.Info("drawPlainImage:", destRect, sourceRect, sr, c)
+	if destRect.Size.H < 0 {
+		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, sr, c)
+		return
+	}
+	// zlog.Info("drawPlain:", image.Size(), image.Path, sr, destRect)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
 

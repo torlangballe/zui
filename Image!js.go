@@ -74,12 +74,12 @@ func (i *Image) Size() zgeo.Size {
 	return zgeo.Size{float64(s.X), float64(s.Y)}
 }
 
-func (i *Image) CapInsets(capInsets zgeo.Rect) *Image {
+func (i *Image) SetCapInsets(capInsets zgeo.Rect) *Image {
 	//	i.capInsets = capInsets
 	return i
 }
 
-func (i *Image) GetCapInsets() zgeo.Rect {
+func (i *Image) CapInsets() zgeo.Rect {
 	return zgeo.Rect{}
 }
 

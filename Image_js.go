@@ -3,11 +3,15 @@ package zui
 import (
 	"image"
 	"io"
+	"strings"
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
+
+var cache = zcache.New(3600)
 
 type imageBase struct {
 	size      zgeo.Size `json:"size"`
@@ -24,13 +28,20 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		}
 		return nil
 	}
-	i := Image{}
-	i.load(path, func() {
+	i := &Image{}
+	if cache.GetTo(&i, path) {
 		if got != nil {
-			got(&i)
+			got(i)
+		}
+		return i
+	}
+	i.load(path, func() {
+		cache.Put(path, i)
+		if got != nil {
+			got(i)
 		}
 	})
-	return &i
+	return i
 }
 
 func ImageFromNative(n image.Image) *Image {
@@ -67,6 +78,7 @@ func (i *Image) load(path string, done func()) {
 
 	i.Path = path
 	i.loading = true
+	i.loading = strings.HasPrefix(path, "images/")
 	i.scale = imageGetScaleFromPath(path)
 
 	imageF := js.Global().Get("Image")
@@ -104,12 +116,12 @@ func (i *Image) Size() zgeo.Size {
 	return i.size.DividedByD(float64(i.scale))
 }
 
-func (i *Image) CapInsets(capInsets zgeo.Rect) *Image {
+func (i *Image) SetCapInsets(capInsets zgeo.Rect) *Image {
 	i.capInsets = capInsets
 	return i
 }
 
-func (i *Image) GetCapInsets() zgeo.Rect {
+func (i *Image) CapInsets() zgeo.Rect {
 	return i.capInsets
 }
 

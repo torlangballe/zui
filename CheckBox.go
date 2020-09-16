@@ -15,7 +15,8 @@ func (c *CheckBox) Labelize(title string) (*Label, *StackView) {
 	label := LabelNew(title)
 	label.SetObjectName("$checkBoxLabel:[" + title + "]")
 	stack := StackViewHor("$labledCheckBoxStack.[" + title + "]")
-	stack.Add(zgeo.Left|zgeo.Top, c, zgeo.Size{0, -4})
+	stack.SetSpacing(0)
+	stack.Add(zgeo.Left|zgeo.VertCenter, c, zgeo.Size{0, -4})
 	stack.Add(zgeo.Left|zgeo.VertCenter, label, zgeo.Size{6, 0})
 
 	return label, stack

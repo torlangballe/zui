@@ -2,5 +2,6 @@ package zui
 
 type NativeView struct {
 	baseNativeView
-	Presented bool
+	Presented            bool
+	allChildrenPresented bool
 }

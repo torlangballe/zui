@@ -259,12 +259,12 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 						r.SetMaxX(m)
 					}
 				}
-				ct, _ := c4.View.(ContainerType)
-				if ct != nil {
-					ct.ArrangeChildren(nil)
-				} else {
-					//! (c4.view as? ZCustomView)?.HandleAfterLayout()
-				}
+				// ct, _ := c4.View.(ContainerType)
+				// if ct != nil {
+				// 	ct.ArrangeChildren(nil)
+				// } else {
+				// 	//! (c4.view as? ZCustomView)?.HandleAfterLayout()
+				// }
 			} else {
 				centerDim += sizes[c4.View].Vertice(v.Vertical)
 				if !firstCenter {

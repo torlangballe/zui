@@ -19,12 +19,6 @@ type MenuView struct {
 
 var menuViewHeight = 22.0
 
-// type MenuItem struct {
-// 	ID    string
-// 	Name  string
-// 	Value interface{}
-// }
-
 func (v *MenuView) CurrentValue() interface{} {
 	return v.currentValue
 }
@@ -75,42 +69,3 @@ func (v *MenuView) SetMaxWidth(max float64) View {
 	v.maxWidth = max
 	return v
 }
-
-// func isSimpleValue(v interface{}) bool {
-// 	rval := reflect.ValueOf(v)
-// 	k := rval.Kind()
-// 	_, isui := v.(UIStringer)
-// 	_, isnv := v.(zdict.NVStringer)
-// 	if isui || isnv {
-// 		return true
-// 	}
-// 	return k != reflect.Slice && k != reflect.Struct && k != reflect.Map
-// }
-
-// func (v *MenuView) SetWithIdOrValue(o interface{}) {
-// 	if v.items.Count() == 0 {
-// 		return
-// 	}
-// 	_, _, val := v.items.GetItem(0)
-// 	var id string
-// 	if isSimpleValue(val) {
-// 		id = zdict.NamedValuesIDForValue(v.items, o)
-// 	} else {
-// 		id = fmt.Sprint(o)
-// 	}
-// 	// zlog.Debug("set", o, reflect.ValueOf(o).Type(), id)
-// 	if id != "" {
-// 		v.SetWithID(id)
-// 	}
-// }
-
-// func (v *MenuView) GetCurrentIdOrValue() interface{} {
-// 	if v.oldValue == nil {
-// 		return nil
-// 	}
-// 	// zlog.Info("MenuView GetCurrentIdOrValue", v.oldValue, p(v.oldValue), reflect.ValueOf(v.oldValue).Type())
-// 	if isSimpleValue(v.oldValue) {
-// 		return v.oldValue
-// 	}
-// 	return v.oldID
-// }

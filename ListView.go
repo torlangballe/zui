@@ -20,12 +20,13 @@ type ListView struct {
 	HandleRowSelected    func(i int)
 	HandleScrolledToRows func(y float64, first, last int)
 
-	RowColors []zgeo.Color
-	MinRows   int
+	RowColors  []zgeo.Color
+	HoverColor zgeo.Color
+	MinRows    int
 
 	selectionIndex int
 	Selectable     bool
-	selectedColor  zgeo.Color
+	SelectedColor  zgeo.Color
 
 	topPos float64
 	stack  *CustomView
@@ -36,11 +37,13 @@ type ListViewIDGetter interface {
 	GetID(index int) string
 }
 
+var DefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
+
 func ListViewNew(name string) *ListView {
 	v := &ListView{}
 	v.init(v, name)
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	v.selectedColor = zgeo.ColorNew(0.6, 0.6, 0.8, 1)
+	v.SelectedColor = DefaultSelectedColor
 	return v
 	//        allowsSelection = true // selectable
 }
@@ -101,11 +104,6 @@ func (v *ListView) Spacing() float64 {
 	return v.spacing
 }
 
-func (v *ListView) SelectedColor(col zgeo.Color) *ListView {
-	v.selectedColor = col
-	return v
-}
-
 func (v *ListView) SetRect(rect zgeo.Rect) View {
 	// zlog.Info("ListView SetRect:", v.ObjectName(), rect)
 	v.ScrollView.SetRect(rect)
@@ -131,6 +129,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 }
 
 func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
+	// zlog.Info("layout rows", v.ObjectName(), zlog.GetCallingStackString())
 	count := v.GetRowCount()
 	ls := v.LocalRect().Size
 	oldRows := map[int]View{}
@@ -142,6 +141,7 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	}
 	first = -1
 	// zlog.Info("\nlayout rows", len(oldRows), count)
+	// start := time.Now()
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
 		s.H = v.GetRowHeight(i)
@@ -160,21 +160,25 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				}
 				delete(oldRows, i)
 			} else {
+				// tart := time.Now()
 				row = v.CreateRow(s, i)
+				if v.HoverColor.Valid {
+					index := i
+					ViewGetNative(row).SetPointerEnterHandler(func(inside bool) {
+						if v.GetRowCount() > 1 {
+							if inside {
+								row.SetBGColor(v.HoverColor)
+							} else {
+								v.setRowBGColor(index)
+							}
+						}
+					})
+				}
+				// zlog.Info("LV Create Row:", time.Since(start))
 				v.stack.AddChild(row, -1)
 				v.rows[i] = row
 				v.setRowBGColor(i)
 				row.SetRect(r)
-				ct := row.(ContainerType)
-				WhenContainerLoaded(ct, func(waited bool) {
-					if waited {
-						row.SetRect(r)
-					}
-					et, _ := row.(ExposableType)
-					if et != nil {
-						et.drawIfExposed()
-					}
-				})
 			}
 		}
 		y += s.H + v.spacing
@@ -182,6 +186,10 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	for i, view := range oldRows {
 		v.stack.RemoveChild(view)
 		delete(v.rows, i)
+	}
+	et, _ := v.View.(ExposableType)
+	if et != nil {
+		et.drawIfExposed()
 	}
 	return
 }
@@ -233,7 +241,7 @@ func ListViewGetIndexFromRowView(view View) int {
 func (v *ListView) setRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
-		col := v.selectedColor
+		col := v.SelectedColor
 		if !v.Selectable || v.selectionIndex == -1 || v.selectionIndex != i {
 			col = v.RowColors[i%len(v.RowColors)]
 		}
@@ -329,9 +337,9 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 func (v *ListView) GetFirstLastVisibleRowIndexes() (first int, last int) {
 	first = -1
 	last = -1
-	if !v.Presented {
-		return
-	}
+	// if !v.Presented {
+	// 	return
+	// }
 	y := 0.0
 	count := v.GetRowCount()
 	ls := v.LocalRect().Size
