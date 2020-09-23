@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/torlangballe/zutil/zprocess"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zprocess"
 	"github.com/torlangballe/zutil/zstr"
 )
 

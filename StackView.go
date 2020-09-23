@@ -237,7 +237,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(zgeo.Expand.Only(v.Vertical))
 				}
-				// fmt.Printf("cellsides: %d %s %s %v %p\n", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
+				//				zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
@@ -259,6 +259,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 						r.SetMaxX(m)
 					}
 				}
+				// zlog.Info("cellsides:", v.ObjectName(), c4.View.ObjectName(), r)
 				// ct, _ := c4.View.(ContainerType)
 				// if ct != nil {
 				// 	ct.ArrangeChildren(nil)

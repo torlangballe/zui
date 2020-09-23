@@ -449,3 +449,17 @@ func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
 		return nil
 	}))
 }
+
+func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
+	//!!	v.keyPressed = handler
+	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		zlog.Info("KeyUp")
+		if handler != nil {
+			event := vs[0]
+			key, mods := getKeyAndModsFromEvent(event)
+			handler(v, key, mods)
+			zlog.Info("KeyUp:", key, mods)
+		}
+		return nil
+	}))
+}

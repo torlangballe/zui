@@ -180,3 +180,23 @@ func windowsFindForElement(e js.Value) *Window {
 func (win *Window) SetAddressBarURL(surl string) {
 	win.element.Get("history").Call("pushState", "", "", surl)
 }
+
+func setKeyHandler(doc js.Value, handler func(KeyboardKey, KeyboardModifier)) {
+}
+
+func (win *Window) SetKeypressHandler(handler func(KeyboardKey, KeyboardModifier)) {
+	win.keyPressedHandler = handler
+	doc := win.element.Get("document")
+	doc.Set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		if handler != nil {
+			key, mods := getKeyAndModsFromEvent(vs[0])
+			handler(key, mods)
+		}
+		return nil
+	}))
+	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		win.SetKeypressHandler(handler)
+		zlog.Info("WIN activate!")
+		return nil
+	}))
+}

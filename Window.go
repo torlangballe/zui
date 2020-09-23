@@ -16,6 +16,7 @@ var windows = map[*Window]bool{}
 
 type Window struct {
 	windowNative
+	keyPressedHandler   func(KeyboardKey, KeyboardModifier)
 	HandleClosed        func()
 	HandleBeforeResized func(r zgeo.Rect) bool // HandleBeforeResize  is called before window re-arranges child view
 	HandleAfterResized  func(r zgeo.Rect) bool // HandleAfterResize  is called after window re-arranges child view

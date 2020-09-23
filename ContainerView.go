@@ -187,6 +187,7 @@ func (v *ContainerView) Contains(view View) bool {
 
 func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
+	// zlog.Info("CV SetRect2", v.ObjectName(), v.View)
 	ct := v.View.(ContainerType)
 	//	start := time.Now()
 	ct.ArrangeChildren(nil)

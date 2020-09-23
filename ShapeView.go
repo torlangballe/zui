@@ -76,14 +76,14 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.SetFont(f)
 }
 
-func (v *ShapeView) SetColor(c zgeo.Color) View {
-	v.textInfo.Color = c
-	return v
-}
+// func (v *ShapeView) SetColor(c zgeo.Color) View {
+// 	v.textInfo.Color = c
+// 	return v
+// }
 
-func (v *ShapeView) Color() zgeo.Color {
-	return v.textInfo.Color
-}
+// func (v *ShapeView) Color() zgeo.Color {
+// 	return v.textInfo.Color
+// }
 
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
 func (v *ShapeView) SetText(text string) View {
@@ -98,6 +98,12 @@ func (v *ShapeView) Text() string {
 
 func (v *ShapeView) SetTextAlignment(a zgeo.Alignment) View {
 	v.textInfo.Alignment = a
+	return v
+}
+
+func (v *ShapeView) SetTextColor(col zgeo.Color) View {
+	v.textInfo.Color = col
+	v.Expose()
 	return v
 }
 
@@ -191,7 +197,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		path.AddStar(rect, v.Count, v.Ratio)
 
 	case ShapeViewTypeCircle:
-		s := rect.Size.MinusD(v.StrokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
+		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(ScreenMain().SoftScale)
 		w := s.Min()
 		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
 

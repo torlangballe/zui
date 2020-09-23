@@ -63,7 +63,6 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	v.canvas.SetSize(s) // scale?
 	// zlog.Info("setCanvasSize:", v.ObjectName(), scale)
 	v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
-	//!!!!!!!! v.canvas.element.Get("style").Set("zIndex", 0)
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
 
@@ -133,3 +132,4 @@ func (v *CustomView) drawIfExposed() {
 		}
 	}
 }
+

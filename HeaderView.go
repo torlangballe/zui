@@ -166,7 +166,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			iv.SetObjectName(h.ID + ".image")
 			button.Add(zgeo.Center, iv, zgeo.Size{})
 		}
-		button.SetColor(zgeo.ColorWhite)
+		button.SetTextColor(zgeo.ColorWhite)
 		button.TextXMargin = 0
 		button.SetObjectName(h.ID)
 		// if !h.ImageSize.IsNull() {

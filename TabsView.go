@@ -74,7 +74,7 @@ func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, 
 	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 26}, zgeo.Size{11, 12})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
-	button.SetColor(TabsDefaultTextColor)
+	button.SetTextColor(TabsDefaultTextColor)
 	button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	v.creators[id] = creator
 	button.SetPressedHandler(func() {
