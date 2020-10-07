@@ -24,7 +24,7 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 	if err != nil {
 		return "", zlog.Error(err, "read markdown", filepath)
 	}
-	html, err := zmarkdown.Convert(markdown, title)
+	html, err := zmarkdown.ConvertToHTML(markdown, title)
 	if err != nil {
 		return "", zlog.Error(err, "convert", filepath)
 	}
@@ -57,3 +57,4 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func AppServeZUIWasm() {
 	http.Handle("/", FilesRedirector{})
 }
+

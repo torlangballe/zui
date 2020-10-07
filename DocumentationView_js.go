@@ -14,7 +14,7 @@ type DocumentationIconView struct {
 	ShapeView
 }
 
-var DocumentationPathPrefix = "http://localhost/doc/"
+var DocumentationPathPrefix = "/doc/"
 var DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
@@ -41,7 +41,7 @@ type DocumentationView struct {
 func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v := &DocumentationView{}
 	v.init(minSize, true)
-	v.setjs("className", "markdown-body")
+	//	v.setjs("className", "markdown-body")
 	return v
 }
 
@@ -52,6 +52,10 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 // if err != nil {
 // 	AlertShowError("Get Documentation", err)
 // 	return err
+// }
+
+// func makeButton(text string) *ShapeView {
+
 // }
 
 func DocumentationViewPresent(path string) error {
@@ -65,6 +69,7 @@ func DocumentationViewPresent(path string) error {
 	if !zhttp.StringStartsWithHTTPX(path) {
 		filepath = DocumentationPathPrefix + path
 	}
+	zlog.Info("SetDocPath:", filepath)
 	v.SetURL(filepath)
 	title := path
 	isMarkdown := zstr.HasSuffix(title, ".md", &title)

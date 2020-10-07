@@ -18,7 +18,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		stype = "iframe"
 	}
 	v.Element = DocumentJS.Call("createElement", stype)
-	// v.Element.Set("id", "ifrm")
+	v.Element.Set("id", "ifrm")
 	if isFrame {
 		v.Element.Set("allow", "encrypted-media")
 	}
