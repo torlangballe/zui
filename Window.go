@@ -3,10 +3,12 @@ package zui
 import (
 	"math"
 	"net/url"
+	"path"
 
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zrest"
 )
 
 // WindowBarHeight is height of a normal window's title bar, can be different for each os
@@ -43,10 +45,11 @@ func WindowExistsActivate(winID string) bool {
 	return false
 }
 
-func (win *Window) GetURLWithNewPathAndArgs(path string, args zdict.Dict) string {
+func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) string {
 	u, err := url.Parse(win.GetURL())
 	zlog.OnError(err)
-	u.Path = path
+	u.Path = path.Join(zrest.AppURLPrefix, spath)
+	zlog.Info("GetURLWithNewPathAndArgs:", spath, args, u)
 	q := args.ToURLValues()
 	u.RawQuery = q.Encode()
 	return u.String()

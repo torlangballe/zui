@@ -55,7 +55,8 @@ func (b *Button) SetImageName(name string, insets zgeo.Size) {
 	// zlog.Info("SetImageButtonName:", str)
 	cimage := b.SetImage(nil, str, func() {
 		if b.image.Size().W < insets.W*2 || b.image.Size().H < insets.H*2 {
-			zlog.Fatal(nil, "Button: Small image for inset:", b.ObjectName(), name, b.image.Size(), insets)
+			zlog.Error(nil, "Button: Small image for inset:", b.ObjectName(), name, b.image.Size(), insets)
+			return
 		}
 	})
 	cimage.SetCapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))

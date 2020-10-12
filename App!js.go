@@ -19,6 +19,8 @@ type FilesRedirector struct {
 
 const filePathPrefix = "www/"
 
+// AppURLPrefix is the first part of the path to your webapp, everything, including assets etc are within this prefix.
+
 func convertMarkdownToHTML(filepath, title string) (string, error) {
 	markdown, err := zfile.ReadStringFromFile(filepath)
 	if err != nil {
@@ -32,7 +34,9 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	path := req.URL.Path[1:]
+	path := req.URL.Path
+	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
+	zlog.Info("Serve app:", path)
 	if zstr.HasPrefix(path, "page/", &path) {
 		part := zstr.ExtractStringTilSeparator(&path, "/")
 		switch part {
@@ -55,6 +59,5 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func AppServeZUIWasm() {
-	http.Handle("/", FilesRedirector{})
+	http.Handle(zrest.AppURLPrefix, FilesRedirector{})
 }
-
