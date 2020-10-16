@@ -261,6 +261,7 @@ func (v *NativeView) DumpTree() {
 }
 
 func (v *NativeView) RemoveFromParent() {
+	v.StopStoppers()
 	zlog.Assert(v.parent != nil)
 	v.parent.RemoveChild(v)
 }

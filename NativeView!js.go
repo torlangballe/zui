@@ -121,6 +121,7 @@ func (v *NativeView) DumpTree() {
 }
 
 func (v *NativeView) RemoveFromParent() {
+	v.StopStoppers()
 }
 
 func (v *NativeView) SetFont(font *Font) View {
