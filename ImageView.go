@@ -30,6 +30,21 @@ func ImageViewNew(image *Image, path string, maxSize zgeo.Size) *ImageView {
 	return v
 }
 
+func (v *ImageView) SetPressToShowImage(on bool) {
+	if on {
+		v.SetPressedHandler(func() {
+			if v.image != nil {
+				opts := WindowOptions{
+					URL: v.image.Path,
+				}
+				WindowOpen(opts)
+			}
+		})
+	} else {
+		v.SetPressedHandler(nil)
+	}
+}
+
 func (v *ImageView) SetStroke(width float64, c zgeo.Color) View {
 	v.strokeWidth = width
 	v.strokeColor = c

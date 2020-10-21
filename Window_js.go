@@ -5,6 +5,7 @@ import (
 	"strings"
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 
@@ -70,6 +71,10 @@ func WindowOpen(o WindowOptions) *Window {
 	if gotSize {
 		specs = append(specs, fmt.Sprintf("width=%d,height=%d", int(rect.Size.W), int(rect.Size.H)))
 	}
+	if o.URL != "" && !zhttp.StringStartsWithHTTPX(o.URL) {
+		o.URL = WindowGetMain().GetURLWithNewPathAndArgs(o.URL, nil)
+	}
+	zlog.Info("OPEN WIN:", o.URL)
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	win.ID = o.ID
 	windows[win] = true

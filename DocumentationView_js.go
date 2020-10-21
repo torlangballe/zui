@@ -69,7 +69,7 @@ func DocumentationViewPresent(path string) error {
 	if !zhttp.StringStartsWithHTTPX(path) {
 		filepath = DocumentationPathPrefix + path
 	}
-	zlog.Info("SetDocPath:", filepath)
+	// zlog.Info("SetDocPath:", filepath)
 	v.SetURL(filepath)
 	title := path
 	isMarkdown := zstr.HasSuffix(title, ".md", &title)
