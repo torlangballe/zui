@@ -332,7 +332,7 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrange bool) bool {
 	view := v.FindViewWithName(name, false)
 	if view != nil {
-		return v.CollapseChild(*view, collapse, arrange)
+		return v.CollapseChild(view, collapse, arrange)
 	}
 	return false
 }
@@ -374,12 +374,16 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	return true
 }
 
-func (v *ContainerView) FindViewWithName(name string, recursive bool) *View {
-	var found *View
-	ContainerTypeRangeChildren(v, recursive, func(view View) bool {
+func (v *ContainerView) FindViewWithName(name string, recursive bool) View {
+	return ContainerTypeFindViewWithName(v, name, recursive)
+}
+
+func ContainerTypeFindViewWithName(ct ContainerType, name string, recursive bool) View {
+	var found View
+	ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
 		// zlog.Info("FindViewWithName:", name, "==", view.ObjectName())
 		if view.ObjectName() == name {
-			found = &view
+			found = view
 			return false
 		}
 		return true

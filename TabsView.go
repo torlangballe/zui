@@ -40,7 +40,7 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 		selectedView := v.Header.FindViewWithName(v.CurrentID, false)
 		canvas.SetColor(color, 1)
 		if selectedView != nil {
-			r := (*selectedView).Rect()
+			r := selectedView.Rect()
 			x0 := r.Pos.X + v.SeparatorLineInset
 			x1 := r.Max().X - v.SeparatorLineInset
 			r = rect
@@ -99,7 +99,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.Header.FindViewWithName(id, false)
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
-		button := (*view).(*Button)
+		button := view.(*Button)
 		str := TabsDefaultButtonName
 		style := FontStyleNormal
 		if on {

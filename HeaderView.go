@@ -99,10 +99,10 @@ func (v *HeaderView) handleButtonPressed(button *Button, h Header) {
 		for _, c := range v.GetChildren() {
 			tri := c.(*Button).FindViewWithName("sort", false)
 			if tri != nil {
-				(*tri).SetAlpha(0.5)
+				tri.SetAlpha(0.5)
 			}
 		}
-		triangle := (*button.FindViewWithName("sort", false)).(*ImageView)
+		triangle := button.FindViewWithName("sort", false).(*ImageView)
 		v.updateTriangle(triangle, h.ID)
 		SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 		if v.SortingPressed != nil {

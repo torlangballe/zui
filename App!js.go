@@ -36,7 +36,7 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
-	zlog.Info("Serve app:", path)
+	// zlog.Info("Serve app:", path)
 	if zstr.HasPrefix(path, "page/", &path) {
 		part := zstr.ExtractStringTilSeparator(&path, "/")
 		switch part {

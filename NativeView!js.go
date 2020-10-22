@@ -151,3 +151,7 @@ func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {}
 func (v *NativeView) AllParents() (all []*NativeView) {
 	return
 }
+
+func (v *NativeView) GetFocusedView() *NativeView {
+	return nil
+}

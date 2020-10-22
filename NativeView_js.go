@@ -464,3 +464,26 @@ func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods
 		return nil
 	}))
 }
+
+func (v *NativeView) GetFocusedView() (found View) {
+	ct := v.View.(ContainerType)
+	e := DocumentJS.Get("activeElement")
+	// zlog.Info("GetFocusedView:", e, e.IsUndefined())
+	if e.IsUndefined() {
+		return nil
+	}
+
+	foundID := e.Get("id").String()
+	// zlog.Info("GetFocusedView2:", foundID)
+	recursive := true
+	ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
+		n := ViewGetNative(view)
+		id := n.getjs("id").String()
+		if id == foundID {
+			found = n.View
+			return false
+		}
+		return true
+	})
+	return found
+}

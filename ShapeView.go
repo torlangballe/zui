@@ -8,7 +8,6 @@ import (
 
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type ShapeViewType string
@@ -219,7 +218,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
-		zlog.Info("shapeViewDraw stroke:", view.ObjectName())
+		// zlog.Info("shapeViewDraw stroke:", view.ObjectName())
 		var o = v.StrokeColor.Opacity()
 		if !v.Usable() {
 			o *= 0.6
