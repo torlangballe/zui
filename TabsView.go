@@ -21,8 +21,8 @@ type TabsView struct {
 
 func TabsViewNew(name string) *TabsView {
 	v := &TabsView{}
-	v.StackView.init(v, name)
-	v.Vertical = true
+	v.StackView.Init(v, true, name)
+	v.SetSpacing(0)
 	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 	v.creators = map[string]func(bool) View{}
 	v.Header = StackViewHor("header")

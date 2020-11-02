@@ -4,7 +4,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zstr"
 )
 
 // https://apple.stackexchange.com/questions/365857/create-system-preferences-url-to-privacy-files-and-folders-in-10-15-catalina
@@ -14,7 +13,7 @@ type DocumentationIconView struct {
 	ShapeView
 }
 
-var DocumentationPathPrefix = "/doc/"
+var DocumentationPathPrefix = "doc/"
 var DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
@@ -34,14 +33,20 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 }
 
 type DocumentationView struct {
-	WebView
-	OldContentHash int64
+	StackView
+	WebView *WebView
+	// OldContentHash int64 -- what is this?
 }
 
 func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v := &DocumentationView{}
-	v.init(minSize, true)
-	//	v.setjs("className", "markdown-body")
+	v.Init(v, true, "docview")
+	v.SetSpacing(0)
+	isFrame := true
+	isMakeBar := true
+	v.WebView = WebViewNew(minSize, isFrame, isMakeBar)
+	v.Add(zgeo.TopLeft|zgeo.HorExpand, v.WebView.Bar)
+	v.Add(zgeo.TopLeft|zgeo.Expand, v.WebView)
 	return v
 }
 
@@ -69,36 +74,15 @@ func DocumentationViewPresent(path string) error {
 	if !zhttp.StringStartsWithHTTPX(path) {
 		filepath = DocumentationPathPrefix + path
 	}
-	// zlog.Info("SetDocPath:", filepath)
-	v.SetURL(filepath)
-	title := path
-	isMarkdown := zstr.HasSuffix(title, ".md", &title)
-	refresh := LabelNew("↻")
-	refresh.SetFont(FontNice(24, FontStyleNormal))
-	refresh.SetPressedHandler(func() {
-		zlog.Info("refresh")
-		v.SetURL(filepath)
-	})
-	widgets := []View{
-		refresh,
+	zlog.Info("SetDocPath:", filepath)
+	v.WebView.SetURL(filepath)
+	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
+
+	attr := PresentViewAttributes{
+		WindowOptions: opts,
 	}
-	if isMarkdown {
-		// help := DocumentationIconViewNew("https://www.markdownguide.org/basic-syntax/")
-		// widgets = append(widgets, help)
-	}
-	PresentTitledView(v, title, opts, widgets, nil, func(win *Window) {
-		win.SetKeypressHandler(func(key KeyboardKey, mods KeyboardModifier) {
-			zlog.Info("PRESS!", key, 'R')
-			if key == 'R' {
-				v.SetURL(filepath)
-			}
-		})
-	}, nil)
+	PresentView(v, attr, nil, nil)
 	return nil
-}
-
-func (v *DocumentationIconView) refeshIfChanged() {
-
 }
 
 /*

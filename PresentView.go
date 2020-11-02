@@ -232,7 +232,7 @@ func PresentViewRecusivelyHandleActivation(activated bool) {
 //     }
 // }
 
-func PresentTitledView(view View, stitle string, winOptions WindowOptions, barViews []View, ready func(stack, bar *StackView), presented func(*Window), closed func()) {
+func PresentTitledView(view View, stitle string, winOptions WindowOptions, barViews map[View]zgeo.Alignment, ready func(stack, bar *StackView), presented func(*Window), closed func()) {
 	stack, _ := view.(*StackView)
 	if stack == nil {
 		stack = StackViewVert("present-titled-stack")
@@ -254,8 +254,11 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	bar.Add(zgeo.Left|zgeo.VertCenter, titleLabel, zgeo.Size{20, 0})
 
 	xmargin := 10.0
-	for _, v := range barViews {
-		bar.Add(zgeo.RightCenter, 0, v, zgeo.Size{xmargin, 0})
+	for v, a := range barViews {
+		if a&zgeo.Vertical == 0 {
+			a |= zgeo.VertCenter
+		}
+		bar.Add(a, 0, v, zgeo.Size{xmargin, 0})
 		xmargin = 0
 	}
 	stack.Add(zgeo.TopCenter|zgeo.HorExpand, 0, bar)

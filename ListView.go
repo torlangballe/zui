@@ -129,7 +129,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 }
 
 func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
-	// zlog.Info("layout rows", v.ObjectName(), zlog.GetCallingStackString())
+	// zlog.Info("layout rows", v.ObjectName())
 	count := v.GetRowCount()
 	ls := v.LocalRect().Size
 	oldRows := map[int]View{}
@@ -318,7 +318,7 @@ func (v *ListView) GetFocusedParts() (element, row View, index int) {
 }
 
 func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
-	// zlog.Info("update:", v.selectionIndex)
+	// zlog.Info("UpdateWithOldNewSlice:", v.selectionIndex, zlog.GetCallingStackString())
 	i := 0
 	reload := false
 	var oldSelectionIndex = v.selectionIndex

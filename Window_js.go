@@ -80,6 +80,9 @@ func WindowOpen(o WindowOptions) *Window {
 	windows[win] = true
 	// zlog.Info("OPENEDWIN:", o.URL, specs, len(windows))
 	win.element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
+		if win.ProgrammaticView != nil {
+			win.ProgrammaticView.StopStoppers()
+		}
 		zlog.Info("Window Closed!", win.ID, win.animationFrames)
 		delete(windows, win)
 		if win.HandleClosed != nil {
@@ -117,6 +120,7 @@ func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
 	// })
+	w.ProgrammaticView = ViewGetNative(v)
 	wn := &NativeView{}
 	wn.Element = w.element.Get("document").Get("documentElement")
 	wn.View = wn

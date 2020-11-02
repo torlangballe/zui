@@ -15,6 +15,7 @@ import (
 )
 
 type FilesRedirector struct {
+	Override func(w http.ResponseWriter, req *http.Request) bool
 }
 
 const filePathPrefix = "www/"
@@ -34,6 +35,11 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if r.Override != nil {
+		if r.Override(w, req) {
+			return
+		}
+	}
 	path := req.URL.Path
 	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
 	// zlog.Info("Serve app:", path)
@@ -58,6 +64,9 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filepath)
 }
 
-func AppServeZUIWasm() {
-	http.Handle(zrest.AppURLPrefix, FilesRedirector{})
+func AppServeZUIWasm(override func(w http.ResponseWriter, req *http.Request) bool) {
+	f := &FilesRedirector{
+		Override: override,
+	}
+	http.Handle(zrest.AppURLPrefix, f)
 }

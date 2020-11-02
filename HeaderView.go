@@ -41,9 +41,7 @@ type HeaderView struct {
 
 func HeaderViewNew(id string) *HeaderView {
 	v := &HeaderView{}
-	v.StackView.init(v, "header")
-	v.Vertical = false
-	v.SetObjectName(id)
+	v.StackView.Init(v, false, id)
 	v.SetSpacing(0)
 	return v
 }

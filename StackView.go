@@ -19,10 +19,14 @@ type StackView struct {
 
 func StackViewNew(vertical bool, name string) *StackView {
 	s := &StackView{}
-	s.ContainerView.Init(s, name)
-	s.Vertical = vertical
-	s.spacing = 6
+	s.Init(s, vertical, name)
 	return s
+}
+
+func (v *StackView) Init(view View, vertical bool, name string) {
+	v.ContainerView.Init(view, name)
+	v.Vertical = vertical
+	v.spacing = 6
 }
 
 func StackViewVert(name string) *StackView {
