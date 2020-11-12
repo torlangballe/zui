@@ -7,6 +7,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -20,7 +21,7 @@ var WindowJS = js.Global().Get("window")
 type css js.Value
 
 func init() {
-	if DeviceWasmBrowser() != "Safari" {
+	if zdevice.WasmBrowser() != "Safari" {
 		menuViewHeight = 25
 	}
 }

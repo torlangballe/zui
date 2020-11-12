@@ -49,7 +49,7 @@ func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
 }
 
 func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string) {
-	v.CustomView.init(v, name)
+	v.CustomView.Init(v, name)
 	v.textInfo = *TextInfoNew()
 	v.Type = shapeType
 	v.ImageMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)

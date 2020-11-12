@@ -10,13 +10,14 @@ import (
 
 type ScrollView struct {
 	CustomView
-	child   View
-	YOffset float64
+	child         View
+	YOffset       float64
+	ScrollHandler func(pos zgeo.Pos, infiniteDir int)
 }
 
 func ScrollViewNew() *ScrollView {
 	v := &ScrollView{}
-	v.init(v, "scrollview")
+	v.Init(v, "scrollview")
 	return v
 }
 
@@ -140,16 +141,6 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 }
 
 func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
-	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
-		v.YOffset = pos.Y
-		if handler != nil {
-			dir := 0
-			if pos.Y < 2 {
-				dir = -1
-			} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+2 {
-				dir = 1
-			}
-			handler(pos, dir)
-		}
-	})
+	v.ScrollHandler = handler
 }
+

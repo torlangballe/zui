@@ -141,6 +141,7 @@ func (v *NativeView) Text() string {
 }
 func (v *NativeView) AddChild(child View, index int)                   {}
 func (v *NativeView) RemoveChild(child View)                           {}
+func (v *NativeView) ReplaceChild(child, replace View) error           {}
 func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow)             {}
 func (v *NativeView) SetToolTip(str string)                            {}
 func (v *NativeView) SetAboveParent(above bool)                        {}

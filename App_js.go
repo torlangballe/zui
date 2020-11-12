@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -19,7 +20,7 @@ func AppMainArgs() (path string, args map[string]string) {
 	u, err := url.Parse(AppURL())
 	zlog.AssertNotError(err)
 	path = u.Path
-	zstr.HasPrefix(path, "/page/", &path)
+	zstr.HasPrefix(path, zrest.AppURLPrefix+"page/", &path)
 	path = strings.TrimRight(path, "/")
 	for k, v := range u.Query() {
 		args[k] = v[0]

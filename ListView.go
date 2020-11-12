@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -17,16 +18,17 @@ type ListView struct {
 	GetRowHeight         func(i int) float64
 	CreateRow            func(rowSize zgeo.Size, i int) View
 	RowUpdater           func(i int, edited bool)
-	HandleRowSelected    func(i int)
+	HandleRowSelected    func(i int, selected bool)
 	HandleScrolledToRows func(y float64, first, last int)
 
 	RowColors  []zgeo.Color
 	HoverColor zgeo.Color
-	MinRows    int
+	MinRows    int // MinRows is the minimum number of rows used to calculate size of list
 
-	selectionIndex int
-	Selectable     bool
-	SelectedColor  zgeo.Color
+	selectionIndex    int
+	PressSelectable   bool
+	PressUnselectable bool
+	SelectedColor     zgeo.Color
 
 	// topPos float64
 	stack *CustomView
@@ -41,18 +43,17 @@ var DefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
 
 func ListViewNew(name string) *ListView {
 	v := &ListView{}
-	v.init(v, name)
-	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	v.SelectedColor = DefaultSelectedColor
+	v.Init(v, name)
 	return v
 	//        allowsSelection = true // selectable
 }
 
-func (v *ListView) init(view View, name string) {
-	v.ScrollView.init(view, name)
-	v.Selectable = true
+func (v *ListView) Init(view View, name string) {
+	v.ScrollView.Init(view, name)
 	v.selectionIndex = -1
 	v.rows = map[int]View{}
+	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
+	v.SelectedColor = DefaultSelectedColor
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("ScrollTo:", pos.Y)
 		// v.topPos = pos.Y
@@ -65,6 +66,10 @@ func (v *ListView) init(view View, name string) {
 
 func (v *ListView) SelectionIndex() int {
 	return v.selectionIndex
+}
+
+func (v *ListView) IsRowSelected(index int) bool {
+	return index == v.selectionIndex
 }
 
 func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -80,6 +85,7 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		// zlog.Info("ListView.CalculatedSize2:", v.ObjectName(), i, h)
 	}
 	s.H = h
+	s.Maximize(v.MinSize())
 	// zlog.Info("ListView.CalculatedSize:", v.ObjectName(), s, count, v.MinRows)
 
 	return s
@@ -120,6 +126,8 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 			h += v.spacing
 		}
 	}
+	// zlog.Info("ListView SetRect:", v.ObjectName(), h)
+
 	w := rect.Size.W
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.SetRect(r)
@@ -162,24 +170,10 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				delete(oldRows, i)
 			} else {
 				// tart := time.Now()
-				row = v.CreateRow(s, i)
-				if v.HoverColor.Valid {
-					index := i
-					ViewGetNative(row).SetPointerEnterHandler(func(inside bool) {
-						if v.GetRowCount() > 1 {
-							if inside {
-								row.SetBGColor(v.HoverColor)
-							} else {
-								v.setRowBGColor(index)
-							}
-						}
-					})
-				}
-				// zlog.Info("LV Create Row:", time.Since(start))
+				row = v.makeRow(s, i)
 				v.stack.AddChild(row, -1)
-				v.rows[i] = row
-				v.setRowBGColor(i)
 				row.SetRect(r)
+				// zlog.Info("LV Create Row:", i, r)
 			}
 		}
 		y += s.H + v.spacing
@@ -222,11 +216,58 @@ func (v *ListView) ReloadData() {
 		v.stack.RemoveChild(view)
 	}
 	v.rows = map[int]View{}
-	v.layoutRows(-1)
+	v.SetRect(v.Rect()) // this will cause layoutrows and resizing of v.stack
 }
 
-func (v *ListView) MoveRow(fromIndex int, toIndex int) {
+func (v *ListView) ReloadRow(i int) {
+	row, _ := v.rows[i]
+	if row != nil {
+		size := row.Rect().Size
+		newRow := v.makeRow(size, i)
+		ViewGetNative(v.stack).ReplaceChild(row, newRow)
+		zlog.Info("ReloadRow:", i)
+	}
 }
+
+func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
+	row := v.CreateRow(rowSize, index)
+	v.rows[index] = row
+	v.setRowBGColor(index)
+	if v.HoverColor.Valid {
+		ViewGetNative(row).SetPointerEnterHandler(func(inside bool) {
+			if v.GetRowCount() > 1 {
+				if inside {
+					row.SetBGColor(v.HoverColor)
+				} else {
+					v.setRowBGColor(index)
+				}
+			}
+		})
+	}
+	if v.PressSelectable {
+		p, _ := row.(Pressable)
+		if p != nil {
+			old := p.PressedHandler()
+			p.SetPressedHandler(func() {
+				zlog.Info("Pressed", index, v.selectionIndex)
+				if index == v.selectionIndex {
+					if v.PressUnselectable {
+						v.Unselect()
+					}
+				} else {
+					v.Select(index)
+				}
+				if old != nil {
+					old()
+				}
+			})
+		}
+	}
+	return row
+}
+
+// func (v *ListView) MoveRow(fromIndex int, toIndex int) {
+// }
 
 func (v *ListView) GetVisibleRowViewFromIndex(i int) View {
 	return v.rows[i]
@@ -244,21 +285,35 @@ func (v *ListView) setRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
 		col := v.SelectedColor
-		if !v.Selectable || v.selectionIndex == -1 || v.selectionIndex != i {
-			col = v.RowColors[i%len(v.RowColors)]
+		if v.selectionIndex != i {
+			if len(v.RowColors) == 0 {
+				col = zgeo.ColorWhite
+			} else {
+				col = v.RowColors[i%len(v.RowColors)]
+			}
 		}
+		// zlog.Info("setRowBGColor", i, col)
 		row.SetBGColor(col)
 	}
 }
 
 func (v *ListView) Select(i int) {
-	v.ScrollToMakeRowVisible(i, false)
-	old := v.selectionIndex
+	zlog.Info("SELECT:", i)
+	v.ScrollToMakeRowVisible(i, false) // scroll first, so unselect doesn't update row that might not be visible anyway
+	v.Unselect()
 	v.selectionIndex = i
+	v.HandleRowSelected(i, true)
+	v.setRowBGColor(i) // this must be after v.HandleRowSelected, as it might make a new row, also for old above
+}
+
+func (v *ListView) Unselect() {
+	old := v.selectionIndex
+	v.selectionIndex = -1
 	if old != -1 {
+		zlog.Info("Unselect:", old)
+		v.HandleRowSelected(old, false)
 		v.setRowBGColor(old)
 	}
-	v.setRowBGColor(i)
 }
 
 func (v *ListView) FlashSelect(i int) {
@@ -373,7 +428,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	// zlog.Info("UpdateWithOldNewSlice", reload, v.selectionIndex, oldSelectionIndex)
 	if focusedIndex != -1 {
 		v.ScrollToMakeRowVisible(focusedIndex, false)
-	} else if oldSelectionIndex != v.selectionIndex {
+	} else if v.selectionIndex != -1 && oldSelectionIndex != v.selectionIndex {
 		v.ScrollToMakeRowVisible(v.selectionIndex, false)
 	}
 	if reload {

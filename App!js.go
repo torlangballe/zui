@@ -42,7 +42,6 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	path := req.URL.Path
 	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
-	// zlog.Info("Serve app:", path)
 	if zstr.HasPrefix(path, "page/", &path) {
 		part := zstr.ExtractStringTilSeparator(&path, "/")
 		switch part {
@@ -61,6 +60,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		io.WriteString(w, html)
 		return
 	}
+	// zlog.Info("Serve app:", path, filepath)
 	http.ServeFile(w, req, filepath)
 }
 

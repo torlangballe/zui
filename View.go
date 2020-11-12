@@ -87,6 +87,13 @@ type ViewLayoutProtocol interface {
 	RefreshAccessibility()
 }
 
+func ExposeView(v View) {
+	et, _ := v.(ExposableType)
+	if et != nil {
+		et.Expose()
+	}
+}
+
 func ViewChild(v View, path string) View {
 	if path == "" {
 		return v

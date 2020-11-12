@@ -85,10 +85,7 @@ func (ti *TextInfo) SetWidthFreeHight(w float64) {
 // GetBounds returns rect of size of text.
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
-func (ti *TextInfo) GetBounds() (zgeo.Size, []string, []float64) {
-	var size zgeo.Size
-	var allLines []string
-	var widths []float64
+func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := canvasGetTextSize(str, ti.Font)

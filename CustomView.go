@@ -24,7 +24,7 @@ type CustomView struct {
 
 func CustomViewNew(name string) *CustomView {
 	c := &CustomView{}
-	c.init(c, name)
+	c.Init(c, name)
 	return c
 }
 
@@ -62,6 +62,14 @@ func (v *CustomView) exposeInSecs(secs float64) {
 			et.drawIfExposed()
 		}
 	})
+}
+
+func (v *CustomView) PressedHandler() func() {
+	return v.pressed
+}
+
+func (v *CustomView) LongPressedHandler() func() {
+	return v.longPressed
 }
 
 func (v *CustomView) SetColor(c zgeo.Color) View {
@@ -128,9 +136,9 @@ func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
 	if v.IsHighlighted {
 		g := col.GrayScale()
 		if g < 0.5 {
-			col = col.Mix(zgeo.ColorWhite, 0.5)
+			col = col.Mixed(zgeo.ColorWhite, 0.5)
 		} else {
-			col = col.Mix(zgeo.ColorBlack, 0.5)
+			col = col.Mixed(zgeo.ColorBlack, 0.5)
 		}
 	}
 	if !v.Usable() {

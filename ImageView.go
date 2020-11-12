@@ -18,7 +18,7 @@ type ImageView struct {
 
 func ImageViewNew(image *Image, path string, maxSize zgeo.Size) *ImageView {
 	v := &ImageView{}
-	v.CustomView.init(v, path)
+	v.CustomView.Init(v, path)
 	v.SetMaxSize(maxSize)
 	v.SetObjectName("image")
 	v.alignment = zgeo.Center | zgeo.Proportional
@@ -71,6 +71,7 @@ func (v *ImageView) Path() string {
 
 func (v *ImageView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
+	// zlog.Info("ImageView SetRect:", rect, v.getjs("id"))
 	if v.ObjectName() == "zap!" {
 		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
 	}
@@ -89,7 +90,8 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		s.Maximize(v.minSize)
 	}
 	s.Add(v.ContainerView.margin.Size.Negative())
-	// zlog.Info("IV CalculatedSize:", v.ObjectName(), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
+	s.Maximize(zgeo.Size{2, 2})
+	// zlog.Info("IV CalculatedSize:", v.getjs("id"), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
 	return s
 }
 
@@ -113,7 +115,7 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) *ImageView {
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
-	// zlog.Info("IV SetImage", path)
+	// zlog.Info("IV SetImage", path, v.getjs("id").String(), v.Rect(), v.image != nil)
 	v.setjs("href", path)
 	v.exposed = false
 	if image != nil {
@@ -123,8 +125,8 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 			got(image)
 		}
 	} else {
-		v.image = ImageFromPath(path, func(ni *Image) {
-			// zlog.Info("Image from path gotten:", path)
+		ImageFromPath(path, func(ni *Image) {
+			// zlog.Info("Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())
 			// }
@@ -162,7 +164,8 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.cornerRadius))
 			canvas.ClipPath(path, true, true)
 		}
-		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.Rect())
+		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
+		// zlog.Info(v.ObjectName(), "IV.DrawImage22:", v.Rect(), v.image.imageJS.IsUndefined(), v.image.imageJS.IsNull())
 		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
 		if v.cornerRadius != 0 {
 			canvas.PopState()

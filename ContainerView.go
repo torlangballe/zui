@@ -122,12 +122,12 @@ func ContainerViewNew(view View, name string) *ContainerView {
 	if view == nil {
 		view = v
 	}
-	v.init(view, name)
+	v.Init(view, name)
 	return v
 }
 
 func (v *ContainerView) Init(view View, name string) {
-	v.CustomView.init(view, name)
+	v.CustomView.Init(view, name)
 }
 
 func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) *ContainerView {

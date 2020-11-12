@@ -9,7 +9,7 @@ import (
 
 // TODO: store pressed/logpressed js function, and release when adding new one
 
-func (v *CustomView) init(view View, name string) {
+func (v *CustomView) Init(view View, name string) {
 	v.Element = DocumentJS.Call("createElement", "div")
 	v.Element.Set("style", "position:absolute")
 	v.exposed = true
@@ -24,10 +24,15 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.setjs("className", "widget")
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
-		target := args[0].Get("target")
-		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
-			(&v.LongPresser).HandleOnClick(v)
-		}
+		// target := args[0].Get("target")
+		// zlog.Info("Pressed:", v.ObjectName(), target.Get("id"), this.Equal(target), v.canvas != nil)
+		// if v.canvas != nil {
+		// 	zlog.Info("Eq:", v.canvas.element.Equal(target))
+		// }
+		// if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
+		// There must be some cast this isn't supposted to be good!!!!
+		(&v.LongPresser).HandleOnClick(v)
+		// }
 		return nil
 	}))
 }
@@ -45,14 +50,6 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil
 	}))
-}
-
-func (v *CustomView) PressedHandler() func() {
-	return v.pressed
-}
-
-func (v *CustomView) LongPressedHandler() func() {
-	return v.longPressed
 }
 
 func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
@@ -132,4 +129,3 @@ func (v *CustomView) drawIfExposed() {
 		}
 	}
 }
-

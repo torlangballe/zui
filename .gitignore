@@ -1,0 +1,15 @@
+*.o
+*.wasm
+*.gz
+*.dylib
+*.exe
+*.exe~
+*.dll
+*.so
+*.swiftmodule
+*.exe
+*.log
+*.zip
+*.out
+*.pprof
+

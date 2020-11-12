@@ -316,6 +316,18 @@ func (v *NativeView) AddChild(child View, index int) {
 	}
 }
 
+func (v *NativeView) ReplaceChild(child, replace View) {
+	v.AddChild(replace, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	replace.SetRect(child.Rect())
+	v.RemoveChild(child)
+	et, _ := replace.(ExposableType)
+	zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
+	if et != nil {
+		et.Expose()
+		et.drawIfExposed()
+	}
+}
+
 func (v *NativeView) AllParents() (all []*NativeView) {
 	for v.parent != nil {
 		all = append(all, v.parent)

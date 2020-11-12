@@ -64,7 +64,7 @@ func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *Canvas, view View) {
 
 func AmountViewCircleNew() *AmountView {
 	v := &AmountView{}
-	v.CustomView.init(v, "amount")
+	v.CustomView.Init(v, "amount")
 	v.StrokeColor = zgeo.ColorDarkGray
 	v.SetColor(zgeo.ColorNewGray(0.7, 1))
 	v.CustomView.SetMinSize(zgeo.SizeBoth(24))
@@ -90,7 +90,7 @@ func (v *AmountView) drawBar(rect zgeo.Rect, canvas *Canvas, view View) {
 
 func AmountViewBarNew(width float64) *AmountView {
 	v := &AmountView{}
-	v.CustomView.init(v, "amount")
+	v.CustomView.Init(v, "amount")
 	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
 	v.SetColor(zgeo.ColorNew(0.4, 0.4, 0.8, 1))
 	v.SetCorner(3)

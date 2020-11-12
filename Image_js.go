@@ -35,7 +35,10 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		}
 		return i
 	}
-	i.load(path, func() {
+	i.load(path, func(success bool) {
+		if !success {
+			i = nil
+		}
 		cache.Put(path, i)
 		if got != nil {
 			got(i)
@@ -68,7 +71,7 @@ func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
 	return nil, nil
 }
 
-func (i *Image) load(path string, done func()) {
+func (i *Image) load(path string, done func(success bool)) {
 	// if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
 	// 	if !strings.HasPrefix(path, "images/") {
 	// 		path = "images/" + path
@@ -89,7 +92,7 @@ func (i *Image) load(path string, done func()) {
 		i.size.H = i.imageJS.Get("height").Float()
 		// zlog.Info("Image Load scale:", i.scale, path, i.Size(), i.loading)
 		if done != nil {
-			done()
+			done(true)
 		}
 		return nil
 	}))
@@ -99,7 +102,7 @@ func (i *Image) load(path string, done func()) {
 		i.size.H = 5
 		// zlog.Info("Image Load fail:", path)
 		if done != nil {
-			done()
+			done(false)
 		}
 		return nil
 	}))

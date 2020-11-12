@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"syscall/js"
 
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -171,7 +172,7 @@ func (v *MenuView) SetFont(font *Font) View {
 		panic("can't set menu view font size to anything except 14 in js")
 	}
 	f := *font
-	if DeviceWasmBrowser() == "Safari" {
+	if zdevice.WasmBrowser() == "Safari" {
 		f.Size = 16
 	}
 	v.NativeView.SetFont(&f)

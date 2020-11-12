@@ -15,7 +15,7 @@ type ActivityView struct {
 
 func ActivityNew(colCircle, colPart zgeo.Color, size float64) *ActivityView {
 	v := &ActivityView{}
-	v.CustomView.init(v, "activity")
+	v.CustomView.Init(v, "activity")
 	v.SetMinSize(zgeo.SizeBoth(size))
 	v.SetCorner(size)
 	v.stop = true
