@@ -54,21 +54,21 @@ func (v *WebView) makeBar() *StackView {
 		zlog.Info("back")
 	})
 	v.Back.SetUsable(false)
-	v.Bar.Add(zgeo.LeftCenter, v.Back)
+	v.Bar.Add(zgeo.CenterLeft, v.Back)
 
 	v.Forward = ImageViewNew(nil, "images/triangle-right-gray.png", zgeo.Size{20, 20})
 	v.Forward.SetPressedHandler(func() {
 		zlog.Info("forward")
 	})
 	v.Forward.SetUsable(false)
-	v.Bar.Add(zgeo.LeftCenter, v.Forward)
+	v.Bar.Add(zgeo.CenterLeft, v.Forward)
 
 	v.Refresh = ImageViewNew(nil, "images/refresh.png", zgeo.Size{18, 18})
 	v.Refresh.SetPressedHandler(func() {
 		v.SetURL(v.url)
 		zlog.Info("refresh")
 	})
-	v.Bar.Add(zgeo.RightCenter, v.Refresh)
+	v.Bar.Add(zgeo.CenterRight, v.Refresh)
 
 	return v.Bar
 }

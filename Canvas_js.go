@@ -120,6 +120,7 @@ func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float3
 		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, sr, c)
 		return
 	}
+	// TODO: Use filter-blur to pre-blur image if it is going to be scaled down. Amazing not built-in interpolation
 	// zlog.Info("drawPlain:", image.Size(), image.Path, sr, destRect)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }

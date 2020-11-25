@@ -141,7 +141,6 @@ func (v *NativeView) Text() string {
 }
 func (v *NativeView) AddChild(child View, index int)                   {}
 func (v *NativeView) RemoveChild(child View)                           {}
-func (v *NativeView) ReplaceChild(child, replace View) error           {}
 func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow)             {}
 func (v *NativeView) SetToolTip(str string)                            {}
 func (v *NativeView) SetAboveParent(above bool)                        {}
@@ -149,6 +148,9 @@ func NativeViewAddToRoot(v View)                                       {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))      {}
 func (v *NativeView) setjs(property string, value interface{})         {}
 func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {}
+func (v *NativeView) ReplaceChild(child, replace View) error {
+	return nil
+}
 func (v *NativeView) AllParents() (all []*NativeView) {
 	return
 }

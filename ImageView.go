@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -37,6 +38,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 				opts := WindowOptions{
 					URL: v.image.Path,
 				}
+				zlog.Info("Open Image View:", v.image.Path)
 				WindowOpen(opts)
 			}
 		})

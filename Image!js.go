@@ -31,7 +31,7 @@ type imageBase struct {
 
 func ImageNewRGBA(size zgeo.Size) *Image {
 	i := &Image{}
-	i.GoImage = image.NewRGBA(zgeo.RectFromSize(size).GoRect())
+	i.GoImage = image.NewRGBA(zgeo.Rect{Size: size}.GoRect())
 	return i
 }
 

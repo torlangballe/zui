@@ -74,7 +74,7 @@ func WindowOpen(o WindowOptions) *Window {
 	if o.URL != "" && !zhttp.StringStartsWithHTTPX(o.URL) {
 		o.URL = WindowGetMain().GetURLWithNewPathAndArgs(o.URL, nil)
 	}
-	zlog.Info("OPEN WIN:", o.URL)
+	// zlog.Info("OPEN WIN:", o.URL)
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	win.ID = o.ID
 	windows[win] = true
@@ -83,7 +83,7 @@ func WindowOpen(o WindowOptions) *Window {
 		if win.ProgrammaticView != nil {
 			win.ProgrammaticView.StopStoppers()
 		}
-		zlog.Info("Window Closed!", win.ID, win.animationFrames)
+		// zlog.Info("Window Closed!", win.ID, win.animationFrames)
 		delete(windows, win)
 		if win.HandleClosed != nil {
 			win.HandleClosed()
@@ -154,7 +154,7 @@ func (w *Window) AddView(v View) {
 					w.HandleBeforeResized(r)
 				}
 				r.Pos = zgeo.Pos{}
-				zlog.Info("On Resized: to", v.ObjectName(), r.Size, "from:", v.Rect().Size)
+				// zlog.Info("On Resized: to", v.ObjectName(), r.Size, "from:", v.Rect().Size)
 				v.SetRect(r)
 				if w.HandleAfterResized != nil {
 					w.HandleAfterResized(r)

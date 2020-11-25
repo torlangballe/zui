@@ -34,7 +34,7 @@ func (v *TextView) SetPlaceholder(str string) *TextView {
 	return v
 }
 
-func (v *TextView) SetMargin(m zgeo.Size) View {
+func (v *TextView) SetMargin(m zgeo.Rect) View {
 	return v
 }
 

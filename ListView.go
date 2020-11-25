@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -225,7 +224,7 @@ func (v *ListView) ReloadRow(i int) {
 		size := row.Rect().Size
 		newRow := v.makeRow(size, i)
 		ViewGetNative(v.stack).ReplaceChild(row, newRow)
-		zlog.Info("ReloadRow:", i)
+		// zlog.Info("ReloadRow:", i)
 	}
 }
 
@@ -249,13 +248,13 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 		if p != nil {
 			old := p.PressedHandler()
 			p.SetPressedHandler(func() {
-				zlog.Info("Pressed", index, v.selectionIndex)
+				// zlog.Info("Pressed", index, v.selectionIndex)
 				if index == v.selectionIndex {
 					if v.PressUnselectable {
 						v.Unselect()
 					}
 				} else {
-					v.Select(index)
+					v.Select(index, false)
 				}
 				if old != nil {
 					old()
@@ -297,20 +296,24 @@ func (v *ListView) setRowBGColor(i int) {
 	}
 }
 
-func (v *ListView) Select(i int) {
-	zlog.Info("SELECT:", i)
-	v.ScrollToMakeRowVisible(i, false) // scroll first, so unselect doesn't update row that might not be visible anyway
+func (v *ListView) Select(i int, scrollTo bool) {
+	// zlog.Info("SELECT:", i)
+	if scrollTo {
+		v.ScrollToMakeRowVisible(i, false) // scroll first, so unselect doesn't update row that might not be visible anyway
+	}
 	v.Unselect()
 	v.selectionIndex = i
-	v.HandleRowSelected(i, true)
+	if v.HandleRowSelected != nil {
+		v.HandleRowSelected(i, true)
+	}
 	v.setRowBGColor(i) // this must be after v.HandleRowSelected, as it might make a new row, also for old above
 }
 
 func (v *ListView) Unselect() {
 	old := v.selectionIndex
 	v.selectionIndex = -1
-	if old != -1 {
-		zlog.Info("Unselect:", old)
+	// zlog.Info("Unselect:", old)
+	if old != -1 && old < v.GetRowCount() {
 		v.HandleRowSelected(old, false)
 		v.setRowBGColor(old)
 	}
@@ -318,12 +321,12 @@ func (v *ListView) Unselect() {
 
 func (v *ListView) FlashSelect(i int) {
 	count := 0
-	v.Select(i)
+	v.Select(i, true)
 	ztimer.RepeatNow(0.1, func() bool {
 		if count%2 == 0 {
-			v.Select(i)
+			v.Select(i, false)
 		} else {
-			v.Select(-1)
+			v.Unselect()
 		}
 		count++
 		return (count < 8)
@@ -382,6 +385,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	different := false
 	if v.selectionIndex != -1 {
 		selectionID = oldSlice.GetID(v.selectionIndex)
+		// zlog.Info("UpdateWithOldNewSlice:", v.selectionIndex, "selid:", selectionID)
 		selectionSet = false
 	}
 	focusedView, _, focusedIndex := v.GetFocusedParts()
@@ -389,26 +393,27 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		focusedID = oldSlice.GetID(focusedIndex)
 		focusedObjectName = focusedView.ObjectName()
 	}
-	for j := 0; ; j++ {
-		sid := oldSlice.GetID(j)
-		if sid == "" {
-			break
-		}
-		// zlog.Info("OLDID:", sid)
-	}
+	// for j := 0; ; j++ {
+	// 	sid := oldSlice.GetID(j)
+	// 	if sid == "" {
+	// 		break
+	// 	}
+	// 	zlog.Info("OLDID:", sid)
+	// }
 
 	// zlog.Info("UpdateWithOldNewSlice focus is:", focusedView != nil, focusedIndex, focusedID)
-	// zlog.Info("Sel:", selectionID, i, v.selectionIndex)
+	// zlog.Info("Sel:", selectionSet, selectionID, i, v.selectionIndex)
 	for {
 		oid := oldSlice.GetID(i)
 		nid := newSlice.GetID(i)
-		// zlog.Info("new id", nid)
+		// zlog.Info("new id", i, nid, "oid:", oid, "selid:", selectionID)
 		if nid != "" && focusedID == nid {
 			focusedIndex = i
 		} else if nid != "" && selectionID == nid {
 			// zlog.Info("Found new selection:", i, nid)
 			v.selectionIndex = i
 			if different && focusedIndex == -1 {
+				// zlog.Info("break1")
 				break
 			}
 			selectionSet = true
@@ -417,20 +422,22 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 			different = true
 			reload = true
 			if selectionSet && focusedIndex == -1 {
+				// zlog.Info("break2")
 				break
 			}
 		}
-		if oid == "" || nid == "" {
+		if (oid == "" || nid == "") && selectionSet {
+			// zlog.Info("break3")
 			break
 		}
 		i++
 	}
-	// zlog.Info("UpdateWithOldNewSlice", reload, v.selectionIndex, oldSelectionIndex)
 	if focusedIndex != -1 {
 		v.ScrollToMakeRowVisible(focusedIndex, false)
 	} else if v.selectionIndex != -1 && oldSelectionIndex != v.selectionIndex {
 		v.ScrollToMakeRowVisible(v.selectionIndex, false)
 	}
+	// zlog.Info("UpdateWithOldNewSlice", reload, v.selectionIndex, oldSelectionIndex)
 	if reload {
 		v.ReloadData()
 	} else {

@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -25,13 +24,13 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	repeater := ztimer.RepeatIn(0.5, func() bool {
 		// zlog.Info("cddoc:", v.getjs("contentDocument"))
 		contentDoc := v.getjs("contentDocument")
-		zlog.Info("CDOC:", contentDoc, DocumentJS)
+		// zlog.Info("CDOC:", contentDoc, DocumentJS)
 		if !contentDoc.IsUndefined() && !contentDoc.IsNull() {
-			zlog.Info("LOC:", contentDoc.Get("location"))
+			// zlog.Info("LOC:", contentDoc.Get("location"))
 			newURL := contentDoc.Get("location").Get("href").String()
 			if newURL != v.url {
 				v.url = newURL
-				zlog.Info("cddoc:", newURL)
+				// zlog.Info("cddoc:", newURL)
 				v.History = append(v.History, newURL)
 				if v.Back != nil {
 					v.Back.SetUsable(true)
@@ -52,7 +51,7 @@ func (v *WebView) setTitle() {
 	str := v.url
 	win := v.GetWindow()
 	if win != nil {
-		zlog.Info("SetWebViewURLTitle:", str)
+		// zlog.Info("SetWebViewURLTitle:", str)
 		win.SetTitle(str)
 	}
 	if v.TitleLabel != nil {

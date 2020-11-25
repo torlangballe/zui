@@ -79,7 +79,7 @@ func TextInfoNew() *TextInfo {
 }
 
 func (ti *TextInfo) SetWidthFreeHight(w float64) {
-	ti.Rect = zgeo.RectFromSize(zgeo.Size{w, 99999})
+	ti.Rect = zgeo.RectFromWH(w, 99999)
 }
 
 // GetBounds returns rect of size of text.

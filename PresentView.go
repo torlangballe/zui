@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -119,7 +118,7 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 var firstPresented bool
 
 func presentLoaded(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
-	zlog.Info("PresentView", v.ObjectName())
+	// zlog.Info("PresentView", v.ObjectName())
 	win := WindowGetMain()
 
 	fullRect := win.ContentRect()
@@ -163,7 +162,7 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 			o := attributes.WindowOptions
 			o.Pos = &rect.Pos
 			o.Size = size
-			zlog.Info("PresentView:", rect.Pos, size, attributes.ID)
+			// zlog.Info("PresentView:", rect.Pos, size, attributes.ID)
 			win = WindowOpen(o)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
@@ -172,7 +171,7 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 				win.HandleClosed = closed
 			}
 		}
-		v.SetRect(zgeo.RectFromSize(rect.Size))
+		v.SetRect(zgeo.Rect{Size: rect.Size})
 		win.AddView(v)
 	}
 	firstPresented = true
@@ -241,7 +240,7 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	}
 	bar := StackViewHor("bar")
 	bar.SetSpacing(2)
-	bar.SetMarginS(zgeo.Size{6, 2})
+	// bar.SetMarginS(zgeo.Size{6, 2})
 	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
 		path := zgeo.PathNewRect(rect, zgeo.Size{})
@@ -251,13 +250,14 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	titleLabel := LabelNew(stitle)
 	titleLabel.SetFont(FontNew("Arial", 16, FontStyleBold))
 	titleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
-	bar.Add(zgeo.Left|zgeo.VertCenter, titleLabel, zgeo.Size{20, 0})
+	bar.Add(zgeo.Left|zgeo.VertCenter, titleLabel) //, zgeo.Size{20, 0})
 
-	xmargin := 10.0
+	xmargin := 0.0 //10.0
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.VertCenter
 		}
+		// zlog.Info("Bar add:", v.ObjectName())
 		bar.Add(a, 0, v, zgeo.Size{xmargin, 0})
 		xmargin = 0
 	}

@@ -2,6 +2,7 @@ package zui
 
 import (
 	"math"
+	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -13,6 +14,8 @@ type ScrollView struct {
 	child         View
 	YOffset       float64
 	ScrollHandler func(pos zgeo.Pos, infiniteDir int)
+
+	lastEdgeScroll time.Time
 }
 
 func ScrollViewNew() *ScrollView {
@@ -133,6 +136,7 @@ func (v *ScrollView) ScrollToBottom(animate bool) {
 	h := v.child.Rect().Size.H
 	h -= v.Rect().Size.H
 	h = math.Max(0, h)
+	// zlog.Info("Scroll2Bottom:", h)
 	v.SetContentOffset(h, animate)
 }
 
@@ -143,4 +147,3 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
 	v.ScrollHandler = handler
 }
-

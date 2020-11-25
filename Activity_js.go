@@ -42,13 +42,13 @@ func (v *ActivityView) Start() {
 		return
 	}
 	v.Show(true)
-	Animate(v, 99999, func(secPos float64) bool {
-		if v.stop {
-			return false
-		}
-		v.RotateDeg(secPos * 360 / v.rotationSecs)
-		return true
-	})
+	// Animate(v, 99999, func(secPos float64) bool {
+	// 	if v.stop {
+	// 		return false
+	// 	}
+	// 	v.RotateDeg(secPos * 360 / v.rotationSecs)
+	// 	return true
+	// })
 }
 
 func (v *ActivityView) Stop() {

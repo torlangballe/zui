@@ -12,11 +12,11 @@ func addAnimationToWindow(win *Window, frameID int, randomID int) {
 	}
 }
 
-var animationFunc js.Func
-
 // Animate calls handler smartly on window Animation frames, until secs has passed, or handler returns false
 // TODO: Use zmath.EaseInOut to make rounder animation
-func Animate(view View, secs float64, handler func(secsPos float64) bool) {
+func Animate(view View, secs float64, handler func(t float64) bool) {
+	var animationFunc js.Func
+
 	if secs == 0 {
 		secs = AnimationDefaultSecs
 	}
@@ -31,9 +31,10 @@ func Animate(view View, secs float64, handler func(secsPos float64) bool) {
 		if startJS.IsUndefined() {
 			startJS = posJS
 		}
-		diff := (posJS.Float() - startJS.Float()) / 1000
-		if diff < secs {
-			ok := handler(diff)
+		t := (posJS.Float() - startJS.Float()) / 1000 / secs
+		// zlog.Info("Ani?", t, posJS.Float(), startJS.Float(), secs)
+		if t <= 1 {
+			ok := handler(t)
 			if !ok {
 				if *aniFrameID != -1 {
 					delete(win.animationFrames, randomID)

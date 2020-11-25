@@ -2,6 +2,8 @@ package zui
 
 import "github.com/torlangballe/zutil/zlog"
 
+var DebugMode bool
+
 func DebugIsRelease() bool {
 	return false
 }

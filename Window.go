@@ -49,9 +49,9 @@ func WindowExistsActivate(winID string) bool {
 func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) string {
 	u, err := url.Parse(win.GetURL())
 	zlog.OnError(err)
-	spath = zstr.Concat("/", zrest.AppURLPrefix, spath)
+	// spath = zstr.Concat("/", zrest.AppURLPrefix, spath)
 	u.Path = spath //path.Join(zrest.AppURLPrefix, spath)
-	zlog.Info("GetURLWithNewPathAndArgs:", spath, args, u)
+	// zlog.Info("GetURLWithNewPathAndArgs:", spath, args, u)
 	q := args.ToURLValues()
 	u.RawQuery = q.Encode()
 	return u.String()
@@ -112,8 +112,9 @@ func getRectFromOptions(o WindowOptions) (rect zgeo.Rect, gotPos, gotSize bool) 
 	return
 }
 
-func (win *Window) SetAddressBarPathAndArgs(path string, args zdict.Dict) {
+func (win *Window) SetAddressBarPathAndArgs(spath string, args zdict.Dict) {
 	// zlog.Info("WindowSetAddressBarPathAndArgs:", path, args)
-	surl := win.GetURLWithNewPathAndArgs(path, args)
+	spath = zstr.Concat("/", zrest.AppURLPrefix, spath)
+	surl := win.GetURLWithNewPathAndArgs(spath, args)
 	win.SetAddressBarURL(surl)
 }

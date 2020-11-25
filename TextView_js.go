@@ -18,17 +18,22 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
-		v.setjs("type", "text")
+
 		if style.KeyboardType == KeyboardTypePassword {
 			v.setjs("type", "password")
+		} else if style.IsSearch {
+			v.setjs("type", "search")
 		} else {
 			v.setjs("type", "text")
 		}
 	}
+
 	v.Columns = cols
 	v.setjs("style", "position:absolute")
+	v.style().Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	v.style().Set("-webkitBoxShadow", "none") // doesn't work
 	if rows <= 1 {
-		v.SetMargin(zgeo.SizeBoth(TextViewDefaultMargin))
+		v.SetMargin(zgeo.RectFromXY2(TextViewDefaultMargin, TextViewDefaultMargin, -TextViewDefaultMargin, -TextViewDefaultMargin))
 	}
 	v.setjs("value", text)
 	v.View = v
@@ -78,26 +83,28 @@ func (v *TextView) SetPlaceholder(str string) *TextView {
 	return v
 }
 
-func (v *TextView) SetMargin(m zgeo.Size) View {
+func (v *TextView) SetMargin(m zgeo.Rect) View {
 	v.margin = m
+	// zlog.Info("TextView. SetMargin:", v.ObjectName(), m)
 	style := v.style()
-	style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.W)))
-	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.W)))
-	style.Set("paddingTop", fmt.Sprintf("%dpx", int(m.H)))
-	style.Set("paddingBottom", fmt.Sprintf("%dpx", int(m.H)))
+	style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.Min().X)))
+	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
+	style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
+	style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 	return v
 }
 
-func (v *TextView) SetRect(rect zgeo.Rect) View {
-	// m := v.margin.Maxed(zgeo.SizeBoth(jsTextMargin))
-	// rect = rect.Expanded(m.Negative())
-	if v.MaxLines() <= 1 {
-		rect = rect.Expanded(zgeo.Size{-6, -4})
-		rect.Pos.Y -= 3
-	}
-	v.NativeView.SetRect(rect)
-	return v
-}
+// func (v *TextView) SetRect(rect zgeo.Rect) View {
+// 	// m := v.margin.Maxed(zgeo.SizeBoth(jsTextMargin))
+// 	// rect = rect.Expanded(m.Negative())
+// 	if v.MaxLines() <= 1 {
+// 		rect = rect.Expanded(zgeo.Size{-6, -4})
+// 		rect.Pos.Y -= 3
+// 	}
+// 	zlog.Info("TextView. SetRect:", v.ObjectName(), rect.Size)
+// 	v.NativeView.SetRect(rect)
+// 	return v
+// }
 
 func (v *TextView) SetText(str string) View {
 	if v.Text() != str {

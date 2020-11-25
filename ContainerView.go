@@ -66,7 +66,7 @@ func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
 	return a
 }
 
-func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}) {
+func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}) (first *ContainerViewCell) {
 	var gotView *View
 	var gotAlign zgeo.Alignment
 	var gotMargin zgeo.Size
@@ -75,13 +75,19 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	// zlog.Info("CV ADD1:", c.ObjectName())
 	for _, e := range elements {
 		if cell, got := e.(ContainerViewCell); got {
-			v.AddCell(cell, -1)
+			cell := v.AddCell(cell, -1)
+			if first == nil {
+				first = cell
+			}
 			continue
 		}
 		if view, got := e.(View); got {
 			if gotView != nil {
 				a := calculateAddAlignment(defAlignment, gotAlign)
-				v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+				cell := v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+				if first == nil {
+					first = cell
+				}
 				gotAlign = zgeo.AlignmentNone
 				gotMargin = zgeo.Size{}
 				gotIndex = -1
@@ -103,8 +109,12 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 	}
 	if gotView != nil {
 		a := calculateAddAlignment(defAlignment, gotAlign)
-		v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+		cell := v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+		if first == nil {
+			first = cell
+		}
 	}
+	return
 }
 
 func (v *ContainerView) AddAlertButton(button View) {
@@ -290,9 +300,9 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || c.View == *onlyChild {
 				v.arrangeChild(c, r)
 			}
-			ccv, cgot := c.View.(*ContainerView)
-			if cgot {
-				ccv.ArrangeChildren(onlyChild)
+			ct, _ := c.View.(ContainerType) // we might be "inherited" by StackView or something
+			if ct != nil {
+				ct.ArrangeChildren(onlyChild)
 			}
 		}
 	}
@@ -310,7 +320,10 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
 	cell, _ := v.FindCellWithView(view)
 	changed := (cell.Collapsed != collapse)
-	// zlog.Info("COLLAPSE:", collapse, view.ObjectName(), cell.View.ObjectName())
+	// zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
+	if collapse {
+		cell.View.Show(false)
+	}
 	if changed {
 		cell.Collapsed = collapse
 		if collapse {
@@ -324,7 +337,11 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 		}
 	}
 	if arrange && v.Presented {
-		v.ArrangeChildren(nil)
+		ct := v.View.(ContainerType) // we might be "inherited" by StackView or something
+		ct.ArrangeChildren(nil)
+	}
+	if !collapse {
+		cell.View.Show(true)
 	}
 	return changed
 }
@@ -432,7 +449,6 @@ func (v *ContainerView) RemoveChild(subView View) {
 
 func (v *ContainerView) RemoveAllChildren() {
 	for _, c := range v.cells {
-		// zlog.Info("CV removeALL:", i, len(v.cells))
 		v.CustomView.RemoveChild(c.View)
 	}
 	v.cells = v.cells[:0]

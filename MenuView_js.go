@@ -21,7 +21,7 @@ func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic boo
 	sel.Set("style", "position:absolute")
 	v.View = v
 	v.SetFont(FontNice(14, FontStyleNormal))
-	// v.style().Set("webkitAppearance", "none") // to set to non-system look
+	// v.style().Set("-webkit-appearance", "none") // to set to non-system look
 	v.SetObjectName(name)
 	v.SetAndSelect(items, value)
 

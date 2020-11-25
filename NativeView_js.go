@@ -41,7 +41,7 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) View {
-	// zlog.Info("NV Rect", v.ObjectName())
+	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
 	rect.MakeInteger()
 	setElementRect(v.Element, rect)
 	return v
@@ -294,12 +294,12 @@ func (v *NativeView) Font() *Font {
 
 func (v *NativeView) SetText(text string) View {
 	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
-	v.setjs("innerHTML", text)
+	v.setjs("innerText", text)
 	return v
 }
 
 func (v *NativeView) Text() string {
-	text := v.getjs("innerHTML").String()
+	text := v.getjs("innerText").String()
 	return text
 }
 
@@ -351,6 +351,7 @@ func (v *NativeView) RemoveChild(child View) {
 	}
 	// zlog.Info("REMOVE CHILD:", child.ObjectName())
 	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
+	nv.parent = nil
 }
 
 func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
@@ -466,12 +467,12 @@ func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
 func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
 	//!!	v.keyPressed = handler
 	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		zlog.Info("KeyUp")
+		// zlog.Info("KeyUp")
 		if handler != nil {
 			event := vs[0]
 			key, mods := getKeyAndModsFromEvent(event)
 			handler(v, key, mods)
-			zlog.Info("KeyUp:", key, mods)
+			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil
 	}))

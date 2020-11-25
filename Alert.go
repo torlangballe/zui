@@ -86,15 +86,24 @@ func (a *Alert) ShowOK(handle func()) {
 	})
 }
 
-var ShowStatusLabel *Label
+// AlertStatusLabel is a global Label you can point to somewhere in your visible gui, Alert.ShowStatus sets it's text for a limited time
+var AlertSetStatus func(str string)
+var statusTimer *ztimer.Timer
 
-// ShowStatus shows an status/error in a label on gui, and can hide it after secs
-func ShowStatus(text string, secs float64) {
-	if ShowStatusLabel != nil {
-		ShowStatusLabel.SetText(text)
+// AlertShowStatus shows an status/error in a label on gui, and can hide it after secs
+func AlertShowStatus(text string, secs float64) {
+	// zlog.Info("AlertShowStatus", text, secs)
+	if AlertSetStatus != nil {
+		AlertSetStatus(text)
+		if statusTimer != nil {
+			statusTimer.Stop()
+		}
 		if secs != 0 {
-			ztimer.StartIn(secs, func() {
-				ShowStatusLabel.SetText("")
+			statusTimer = ztimer.StartIn(secs, func() {
+				if AlertSetStatus != nil { // in case it is nil'ed
+					statusTimer = nil
+					AlertSetStatus("")
+				}
 			})
 		}
 	}

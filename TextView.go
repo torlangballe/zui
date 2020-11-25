@@ -10,6 +10,7 @@ import (
 //  Originally created by Tor Langballe on /2/11/15.
 
 type TextViewStyle struct {
+	IsSearch      bool
 	KeyboardType  KeyboardType
 	AutoCapType   KeyboardAutoCapType
 	ReturnKeyType KeyboardReturnKeyType
@@ -29,7 +30,7 @@ type TextView struct {
 	rows          int
 	//	updated       bool
 
-	margin zgeo.Size
+	margin zgeo.Rect
 	// ContinuousUpdateCalls bool
 	UpdateSecs float64
 }
@@ -66,15 +67,19 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	ti.Font = v.Font()
 	ti.MaxLines = v.rows
 	if v.maxWidth != 0 {
-		ti.SetWidthFreeHight(v.maxWidth - v.margin.W*2)
+		ti.SetWidthFreeHight(v.maxWidth + v.margin.Size.W*2)
 	}
 	s, _, _ := ti.GetBounds()
-	s.Add(v.margin.TimesD(2))
+	// if v.ObjectName() == "search" {
+	// 	zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName(), zlog.GetCallingStackString())
+	// }
+	s.Add(v.margin.Size.Negative())
+	//	s.H += 4
 	s.MakeInteger()
 	return s
 }
 
-func (v *TextView) Margin() zgeo.Size {
+func (v *TextView) Margin() zgeo.Rect {
 	return v.margin
 }
 

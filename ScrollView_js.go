@@ -1,8 +1,9 @@
 package zui
 
 import (
+	"time"
+
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 func (v *ScrollView) Init(view View, name string) {
@@ -15,11 +16,17 @@ func (v *ScrollView) Init(view View, name string) {
 	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
 		v.YOffset = pos.Y
 		if v.ScrollHandler != nil {
+			now := time.Now()
 			dir := 0
-			if pos.Y < 2 {
-				dir = -1
-			} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+2 {
-				dir = 1
+			if time.Since(v.lastEdgeScroll) >= time.Second {
+				if pos.Y < 0 {
+					dir = -1
+					// zlog.Info("Infin-scroll up:", pos.Y)
+					v.lastEdgeScroll = now
+				} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+2 {
+					dir = 1
+					v.lastEdgeScroll = now
+				}
 			}
 			v.ScrollHandler(pos, dir)
 		}
@@ -28,9 +35,11 @@ func (v *ScrollView) Init(view View, name string) {
 
 func (v *ScrollView) SetContentOffset(y float64, animated bool) {
 	if animated {
-		zlog.Info("Scroll:", y)
-		Animate(v, 2, func(posSecs float64) bool {
-			zlog.Info("Animate:", v.YOffset, y, v.YOffset+(y-v.YOffset)*(posSecs/2))
+		// zlog.Info("Scroll:", y)
+		Animate(v, 0.5, func(t float64) bool {
+			ay := v.YOffset + (y-v.YOffset)*t
+			// zlog.Info("Animate:", t, v.YOffset, y, ay)
+			v.SetContentOffset(ay, false)
 			return true
 		})
 		return
@@ -38,6 +47,5 @@ func (v *ScrollView) SetContentOffset(y float64, animated bool) {
 	v.YOffset = y
 	if v.child != nil {
 		v.setjs("scrollTop", y)
-		// zlog.Info("SetContentOffset:", y)
 	}
 }

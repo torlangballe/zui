@@ -46,6 +46,7 @@ func (v *StackView) Spacing() float64 {
 	return v.spacing
 }
 
+// TODO: Cache sizes more, CalculatedSize will recalculate sub-childens size many times
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var size = zgeo.Size{}
 	for i, c := range v.cells {
@@ -186,6 +187,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 		if !c2.Free {
 			if c2.Collapsed {
+				if c2.View != nil && ViewGetNative(c2.View).Parent() != nil {
+					v.CustomView.RemoveChild(c2.View)
+				}
 				//				v.RemoveChild(c2.View) // why would we do this? Should be done already
 			} else {
 				if c2.Alignment&ashrink != 0 {
@@ -211,6 +215,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var cs = v.CalculatedSize(zgeo.Size{}).Vertice(v.Vertical)
 	cs += v.margin.Size.Vertice(v.Vertical)
 
+	// zlog.Info("Arrange:", v.ObjectName(), cs, r)
 	diff := r.Size.Vertice(v.Vertical) - cs
 	// zlog.Info("DIFF:", v.ObjectName(), diff, r.Size, cs)
 	var lastNoFreeIndex = -1
@@ -222,7 +227,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
 				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
-					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
+					// if v.ObjectName() == "header" {
+					// 	zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
+					// }
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
 				// zlog.Info("cellsize:", v.ObjectName(), c3.MinSize.W, c3.MaxSize.W, c3.View.ObjectName(), size, c3.Alignment)
@@ -244,6 +251,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				//				zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
+					// zlog.Info("cellsides:", v.ObjectName(), vr)
 					c4.View.SetRect(vr)
 					// zlog.Info("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
@@ -295,6 +303,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
+				// if c5.View.ObjectName() == "snapSeconds" {
+				// 	zlog.Info("cellmid:", c5.View.ObjectName(), vr, reflect.TypeOf(c5.View))
+				// }
 				c5.View.SetRect(vr)
 			}
 			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
