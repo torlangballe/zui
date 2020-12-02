@@ -23,7 +23,7 @@ type Window struct {
 	HandleBeforeResized func(r zgeo.Rect) bool // HandleBeforeResize  is called before window re-arranges child view
 	HandleAfterResized  func(r zgeo.Rect) bool // HandleAfterResize  is called after window re-arranges child view
 	ID                  string
-	ProgrammaticView    *NativeView // this is set if the window has zui views added to it. If from URL, it is nil
+	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
 }
 
 type WindowOptions struct {

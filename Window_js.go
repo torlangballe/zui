@@ -81,7 +81,8 @@ func WindowOpen(o WindowOptions) *Window {
 	// zlog.Info("OPENEDWIN:", o.URL, specs, len(windows))
 	win.element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		if win.ProgrammaticView != nil {
-			win.ProgrammaticView.StopStoppers()
+			pnv := ViewGetNative(win.ProgrammaticView)
+			pnv.StopStoppers()
 		}
 		// zlog.Info("Window Closed!", win.ID, win.animationFrames)
 		delete(windows, win)
@@ -91,6 +92,31 @@ func WindowOpen(o WindowOptions) *Window {
 		return nil
 	}))
 	return win
+}
+
+func (win *Window) setOnResize() {
+	win.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		// zlog.Info("On Resize", win.hasResized)
+		if !win.hasResized {
+			win.hasResized = true
+			return nil
+		}
+		ztimer.StartIn(0.2, func() {
+			r := win.ContentRect()
+			if win.HandleBeforeResized != nil {
+				win.HandleBeforeResized(r)
+			}
+			r.Pos = zgeo.Pos{}
+			if win.ProgrammaticView != nil {
+				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
+				win.ProgrammaticView.SetRect(r)
+				if win.HandleAfterResized != nil {
+					win.HandleAfterResized(r)
+				}
+			}
+		})
+		return nil
+	}))
 }
 
 func (win *Window) GetURL() string {
@@ -114,13 +140,11 @@ func (w *Window) SetTitle(title string) {
 	w.element.Get("document").Set("title", title)
 }
 
-var resizeTimer *ztimer.Timer
-
 func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
 	// })
-	w.ProgrammaticView = ViewGetNative(v)
+	w.ProgrammaticView = v
 	wn := &NativeView{}
 	wn.Element = w.element.Get("document").Get("documentElement")
 	wn.View = wn
@@ -142,28 +166,7 @@ func (w *Window) AddView(v View) {
 	// n.style().Set("-webkit-transform", trans)
 	wn.AddChild(v, -1)
 	//	ztimer.StartIn(0.1, func() {
-	w.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		if !w.hasResized {
-			w.hasResized = true
-			return nil
-		}
-		if resizeTimer == nil {
-			resizeTimer = ztimer.StartIn(0.2, func() {
-				r := w.ContentRect()
-				if w.HandleBeforeResized != nil {
-					w.HandleBeforeResized(r)
-				}
-				r.Pos = zgeo.Pos{}
-				// zlog.Info("On Resized: to", v.ObjectName(), r.Size, "from:", v.Rect().Size)
-				v.SetRect(r)
-				if w.HandleAfterResized != nil {
-					w.HandleAfterResized(r)
-				}
-				resizeTimer = nil
-			})
-		}
-		return nil
-	}))
+
 	//	})
 }
 

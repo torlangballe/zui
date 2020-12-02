@@ -33,6 +33,8 @@ func (win *Window) GetURL() string {
 	return ""
 }
 
+func (win *Window) setOnResize() {}
+
 // func (win *Window) SetAddressBarPathAndArgs(path string, args zdict.Dict) {}
 func (w *Window) Close()                         {}
 func (w *Window) Activate()                      {}

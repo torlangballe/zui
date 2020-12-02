@@ -1,6 +1,8 @@
 package zui
 
-import "github.com/torlangballe/zutil/ztimer"
+import (
+	"github.com/torlangballe/zutil/ztimer"
+)
 
 type NativeView struct {
 	baseNativeView
@@ -10,10 +12,12 @@ type NativeView struct {
 }
 
 func (v *NativeView) AddStopper(s ztimer.Stopper) {
+	// zlog.Info("AddStopper:", v.ObjectName())
 	v.stopOnClose = append(v.stopOnClose, s)
 }
 
 func (v *NativeView) StopStoppers() {
+	// zlog.Info("StopStoppers:", v.View.ObjectName(), len(v.stopOnClose))
 	for _, s := range v.stopOnClose {
 		s.Stop()
 	}

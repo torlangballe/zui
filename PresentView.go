@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -148,6 +149,13 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 			}
 			g.ArrangeChildren(nil)
 			if attributes.ModalCloseOnOutsidePress {
+				lp, _ := v.(Pressable)
+				zlog.Info("LP:", lp != nil, v.ObjectName())
+				if lp != nil {
+					lp.SetPressedHandler(func() {
+						zlog.Info("LP Pressed")
+					})
+				}
 				g.SetPressedHandler(func() {
 					PresentViewPop(v, closed)
 				})
@@ -173,6 +181,7 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 		}
 		v.SetRect(zgeo.Rect{Size: rect.Size})
 		win.AddView(v)
+		win.setOnResize()
 	}
 	firstPresented = true
 
@@ -198,11 +207,18 @@ func PresentViewPop(view View, done func()) {
 
 func PresentViewPopOverride(view View, overrideAttributes PresentViewAttributes, done func()) {
 	// TODO: Handle non-modal window too
-	parent := ViewGetNative(view).Parent()
-	if parent.ObjectName() == "$blocker" {
-		view = parent
+	nv := ViewGetNative(view)
+	if view.ObjectName() == "$blocker" {
+		ct, _ := view.(ContainerType)
+		if ct != nil {
+			for _, c := range ct.GetChildren() {
+				zlog.Info("PresentViewPopOverride child", c.ObjectName())
+			}
+		}
+		// zlog.Info("PresentViewPopOverride", view.ObjectName(), parent.ObjectName())
 	}
-	ViewGetNative(view).RemoveFromParent()
+	nv.StopStoppers()
+	nv.RemoveFromParent()
 	if done != nil {
 		done()
 	}

@@ -24,14 +24,15 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.setjs("className", "widget")
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
-		// target := args[0].Get("target")
+		target := args[0].Get("target")
 		// zlog.Info("Pressed:", v.ObjectName(), target.Get("id"), this.Equal(target), v.canvas != nil)
 		// if v.canvas != nil {
 		// 	zlog.Info("Eq:", v.canvas.element.Equal(target))
 		// }
-		// if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
-		// There must be some cast this isn't supposted to be good!!!!
-		(&v.LongPresser).HandleOnClick(v)
+		zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
+		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
+			(&v.LongPresser).HandleOnClick(v)
+		}
 		// }
 		return nil
 	}))

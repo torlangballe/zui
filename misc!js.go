@@ -5,31 +5,15 @@ package zui
 import (
 	"os"
 	"strings"
-
-	"github.com/torlangballe/zutil/zgeo"
 )
 
-// TextInfo
-func (ti *TextInfo) getTextSize(noWidth bool) zgeo.Size {
-	return zgeo.Size{}
-}
+// // TextInfo
+// func (ti *TextInfo) getTextSize(noWidth bool) zgeo.Size {
+// 	return zgeo.Size{}
+// }
 
-// CustomView
-
-type baseCustomView struct {
-}
-
-func CustomViewInit() *NativeView {
-	return nil
-}
-
-func zViewAddView(parent View, child View, index int) {
-}
-
-// CustomView
-
-func zViewSetRect(view View, rect zgeo.Rect, layout bool) { // layout only used on android
-}
+// func zViewSetRect(view View, rect zgeo.Rect, layout bool) { // layout only used on android
+// }
 
 // App:
 

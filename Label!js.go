@@ -21,4 +21,9 @@ func (v *Label) SetMargin(m zgeo.Rect) *Label {
 func (v *Label) SetPressedHandler(handler func()) {
 }
 
+func (v *Label) SetMaxLines(max int) View {
+	v.maxLines = max
+	return v
+}
+
 

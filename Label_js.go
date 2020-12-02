@@ -8,10 +8,10 @@ import (
 )
 
 func LabelNew(text string) *Label {
-	label := &Label{}
-	label.Element = DocumentJS.Call("createElement", "label")
-	// zlog.Info("Label New:", label.TextInfo.SplitItems, text)
-	style := label.style()
+	v := &Label{}
+	v.Element = DocumentJS.Call("createElement", "label")
+	// zlog.Info("Label New:", v.TextInfo.SplitItems, text)
+	style := v.style()
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
@@ -23,14 +23,36 @@ func LabelNew(text string) *Label {
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
-	label.SetMaxLines(1)
-	label.View = label
-	label.SetObjectName(text)
+	v.View = v
+	v.SetObjectName(text)
+	v.SetMaxLines(1)
 	textNode := DocumentJS.Call("createTextNode", text)
-	label.call("appendChild", textNode)
+	v.call("appendChild", textNode)
 	f := FontNice(FontDefaultSize, FontStyleNormal)
-	label.SetFont(f)
-	return label
+	v.SetFont(f)
+	return v
+}
+
+func (v *Label) SetMaxLines(max int) View {
+	// zlog.Info("Label.SetMaxLines:", max, v.ObjectName())
+	v.maxLines = max
+	style := v.style()
+	if max == 1 {
+		// style.Set("overflow", "hidden")
+		// style.Set("display", "inline-block")
+		// zlog.Info("Label.SetMaxLines here!")
+		style.Set("text-overflow", "ellipsis")
+		style.Set("white-space", "nowrap")
+
+	} else {
+		// zlog.Info("Label.SetMaxLines here2!")
+		style.Set("text-overflow", "initial")
+		style.Set("white-space", "normal")
+	}
+	//	style.Set("textOverflow", "clip")
+	//	white-space: pre-wrap for multi-lines
+
+	return v
 }
 
 func (v *Label) SetRect(r zgeo.Rect) View {

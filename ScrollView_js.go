@@ -6,6 +6,8 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
+var scrollOutsideDelta = 2.0
+
 func (v *ScrollView) Init(view View, name string) {
 	v.CustomView.Init(view, name)
 	style := v.style()
@@ -19,11 +21,12 @@ func (v *ScrollView) Init(view View, name string) {
 			now := time.Now()
 			dir := 0
 			if time.Since(v.lastEdgeScroll) >= time.Second {
-				if pos.Y < 0 {
+				// zlog.Info("ScrollY:", pos.Y, scrollOutsideDelta, pos.Y < scrollOutsideDelta)
+				if pos.Y < scrollOutsideDelta {
 					dir = -1
 					// zlog.Info("Infin-scroll up:", pos.Y)
 					v.lastEdgeScroll = now
-				} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H+2 {
+				} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H-scrollOutsideDelta {
 					dir = 1
 					v.lastEdgeScroll = now
 				}

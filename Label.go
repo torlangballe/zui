@@ -73,11 +73,6 @@ func (v *Label) SetMaxWidth(max float64) View {
 	return v
 }
 
-func (v *Label) SetMaxLines(max int) View {
-	v.maxLines = max
-	return v
-}
-
 func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
 	font := FontNice(FontDefaultSize, FontStyleBold)
 	to, _ := view.(TextInfoOwner)

@@ -72,6 +72,13 @@ func AlertShow(items ...interface{}) {
 	a.Show(nil)
 }
 
+func AlertAsk(title string, handle func(ok bool)) {
+	alert := AlertNewWithCancel(title)
+	alert.Show(func(a AlertResult) {
+		handle(a == AlertOK)
+	})
+}
+
 func AlertShowError(text string, err error) {
 	a := AlertNew(text + "\n" + err.Error())
 	a.Show(nil)
