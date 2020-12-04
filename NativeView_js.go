@@ -321,7 +321,7 @@ func (v *NativeView) ReplaceChild(child, replace View) {
 	replace.SetRect(child.Rect())
 	v.RemoveChild(child)
 	et, _ := replace.(ExposableType)
-	zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
+	// zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
 	if et != nil {
 		et.Expose()
 		et.drawIfExposed()

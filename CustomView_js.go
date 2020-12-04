@@ -24,7 +24,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.setjs("className", "widget")
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
-		target := args[0].Get("target")
+		// target := args[0].Get("target") // is it not event?
 		// zlog.Info("Pressed:", v.ObjectName(), target.Get("id"), this.Equal(target), v.canvas != nil)
 		// if v.canvas != nil {
 		// 	zlog.Info("Eq:", v.canvas.element.Equal(target))

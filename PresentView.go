@@ -149,13 +149,13 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 			}
 			g.ArrangeChildren(nil)
 			if attributes.ModalCloseOnOutsidePress {
-				lp, _ := v.(Pressable)
-				zlog.Info("LP:", lp != nil, v.ObjectName())
-				if lp != nil {
-					lp.SetPressedHandler(func() {
-						zlog.Info("LP Pressed")
-					})
-				}
+				// lp, _ := v.(Pressable)
+				// zlog.Info("LP:", lp != nil, v.ObjectName())
+				// if lp != nil {
+				// 	lp.SetPressedHandler(func() {
+				// 		zlog.Info("LP Pressed")
+				// 	})
+				// }
 				g.SetPressedHandler(func() {
 					PresentViewPop(v, closed)
 				})
