@@ -29,10 +29,10 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		// if v.canvas != nil {
 		// 	zlog.Info("Eq:", v.canvas.element.Equal(target))
 		// }
-		zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
-		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
-			(&v.LongPresser).HandleOnClick(v)
-		}
+		// zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
+		//		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
+		(&v.LongPresser).HandleOnClick(v)
+		//		}
 		// }
 		return nil
 	}))

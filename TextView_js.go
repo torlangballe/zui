@@ -40,6 +40,14 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 	v.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	v.SetFont(f)
+
+	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		event := args[0]
+		event.Call("stopPropagation")
+		//		zlog.Info("onclick textview:", args)
+		// event.stopPropagation();
+		return nil
+	}))
 }
 
 func (v *TextView) SetStatic(s bool) {
