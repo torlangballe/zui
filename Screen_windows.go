@@ -1,6 +1,6 @@
 package zui
 
-// "github.com/kbinani/screenshot"
+// "xxxgithub.com/kbinani/screenshot"
 
 func ScreenGetAll() (screens []Screen) {
 	// n := screenshot.NumActiveDisplays()
