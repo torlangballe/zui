@@ -228,7 +228,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
 				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
 					// if v.ObjectName() == "header" {
-					// 	zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
+					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
 					// }
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
@@ -251,7 +251,6 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				//				zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
-					// zlog.Info("cellsides:", v.ObjectName(), vr)
 					c4.View.SetRect(vr)
 					// zlog.Info("cellsides:", v.ObjectName(), c4.View.ObjectName(), c4.Alignment, vr, "s:", sizes[c4.View], r, "get:", c4.View.Rect())
 				}
@@ -300,12 +299,10 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	// Centered children:
 	for _, c5 := range v.cells {
 		if !c5.Collapsed && c5.Alignment&amid != 0 && !c5.Free { // .reversed()
-			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
+			//a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
+			a := c5.Alignment | aless
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
-				// if c5.View.ObjectName() == "snapSeconds" {
-				// 	zlog.Info("cellmid:", c5.View.ObjectName(), vr, reflect.TypeOf(c5.View))
-				// }
 				c5.View.SetRect(vr)
 			}
 			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)

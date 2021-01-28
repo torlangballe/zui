@@ -1,6 +1,8 @@
 package zui
 
 import (
+	"path"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -17,15 +19,19 @@ type ImageView struct {
 	strokeColor  zgeo.Color
 }
 
-func ImageViewNew(image *Image, path string, maxSize zgeo.Size) *ImageView {
+func ImageViewNew(image *Image, imagePath string, maxSize zgeo.Size) *ImageView {
 	v := &ImageView{}
-	v.CustomView.Init(v, path)
+	v.CustomView.Init(v, imagePath)
 	v.SetMaxSize(maxSize)
-	v.SetObjectName("image")
+	name := "image"
+	if imagePath != "" {
+		_, name = path.Split(imagePath)
+	}
+	v.SetObjectName(name)
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetDrawHandler(ImageViewDraw)
-	if path != "" {
-		v.SetImage(image, path, nil)
+	if imagePath != "" {
+		v.SetImage(image, imagePath, nil)
 	}
 	//        isAccessibilityElement = true
 	return v

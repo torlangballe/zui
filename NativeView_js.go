@@ -42,7 +42,7 @@ func (v *NativeView) GetNative() *NativeView {
 
 func (v *NativeView) SetRect(rect zgeo.Rect) View {
 	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
-	rect.MakeInteger()
+	rect = rect.ExpandedToInt()
 	setElementRect(v.Element, rect)
 	return v
 }
@@ -102,7 +102,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else {
-		zlog.Info("parse empty Coord:", v.ObjectName())
+		zlog.Info("parse empty Coord:", v.ObjectName(), zlog.GetCallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -465,17 +465,9 @@ func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
 }
 
 func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
-	//!!	v.keyPressed = handler
-	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("KeyUp")
-		if handler != nil {
-			event := vs[0]
-			key, mods := getKeyAndModsFromEvent(event)
-			handler(v, key, mods)
-			// zlog.Info("KeyUp:", key, mods)
-		}
-		return nil
-	}))
+	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) {
+		handler(v.View, key, mods)
+	})
 }
 
 func (v *NativeView) GetFocusedView() (found View) {

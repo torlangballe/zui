@@ -106,14 +106,14 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 	presentViewPresenting = true
 	presentViewCallReady(v, true)
 
-	// ct, _ := v.(ContainerType)
-	// if ct != nil {
-	// 	WhenContainerLoaded(ct, func(waited bool) {
-	// 		presentLoaded(v, attributes, presented, closed)
-	// 	})
-	// } else {
-	presentLoaded(v, attributes, presented, closed)
-	// }
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		WhenContainerLoaded(ct, func(waited bool) {
+			presentLoaded(v, attributes, presented, closed)
+		})
+	} else {
+		presentLoaded(v, attributes, presented, closed)
+	}
 }
 
 var firstPresented bool
@@ -207,15 +207,13 @@ func PresentViewPop(view View, done func()) {
 
 func PresentViewPopOverride(view View, overrideAttributes PresentViewAttributes, done func()) {
 	// TODO: Handle non-modal window too
+	zlog.Info("PresentViewPopOverride", view.ObjectName())
+
 	nv := ViewGetNative(view)
-	if view.ObjectName() == "$blocker" {
-		ct, _ := view.(ContainerType)
-		if ct != nil {
-			for _, c := range ct.GetChildren() {
-				zlog.Info("PresentViewPopOverride child", c.ObjectName())
-			}
-		}
-		// zlog.Info("PresentViewPopOverride", view.ObjectName(), parent.ObjectName())
+	parent := nv.Parent()
+	if parent != nil && parent.ObjectName() == "$blocker" {
+		zlog.Info("PresentViewPopOverride remove blocker instead", view.ObjectName())
+		nv = parent
 	}
 	nv.StopStoppers()
 	nv.RemoveFromParent()

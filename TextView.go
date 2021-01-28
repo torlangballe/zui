@@ -75,7 +75,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// }
 	s.Add(v.margin.Size.Negative())
 	//	s.H += 4
-	s.MakeInteger()
+	s = s.ExpandedToInt()
 	return s
 }
 

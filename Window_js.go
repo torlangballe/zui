@@ -149,25 +149,7 @@ func (w *Window) AddView(v View) {
 	wn.Element = w.element.Get("document").Get("documentElement")
 	wn.View = wn
 
-	// s := WindowGetCurrent().Rect().Size.DividedByD(2)
-
-	// o, _ := v.(NativeViewOwner)
-	// if o == nil {
-	// 	panic("NativeView AddChild child not native")
-	// }
-	// nv := o.GetNative()
-	// nv.style().Set("display", "inline-block")
-
-	// scale := fmt.Sprintf("scale(%f)", ScreenMain().Scale)
-	// n.style().Set("-webkit-transform", scale)
-
-	// trans := fmt.Sprintf("translate(-%f,%f)", s.W, 0.0)
-	// zlog.Info("TRANS:", trans)
-	// n.style().Set("-webkit-transform", trans)
 	wn.AddChild(v, -1)
-	//	ztimer.StartIn(0.1, func() {
-
-	//	})
 }
 
 func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {

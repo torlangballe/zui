@@ -155,6 +155,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0.0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
+	// zlog.Info("SV Calcsize:", v.ObjectName(), s)
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
@@ -162,7 +163,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// 	zlog.Info("!!!!!!!!!!!!!!!!!!!!!!!!!! SH image loading:", v.ObjectName(), v.image.capInsets.Size.Negative())
 	// }
 	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.image.Size(), v.image.loading)
-	s.MakeInteger()
+	s = s.ExpandedToInt()
 	return s
 }
 
@@ -246,10 +247,11 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 			canvas.DrawImage(drawImage, rect, o, zgeo.Rect{})
 			canvas.PopState()
 		} else {
-			a := v.ImageAlign | zgeo.Shrink
+			a := v.ImageAlign | zgeo.Shrink //| zgeo.Proportional
 			// if v.IsFillBox {
 			// 	a = AlignmentNone
 			// }
+			// zlog.Info("SV DRAW IMAGE:", v.ObjectName(), v.ImageMargin, v.image.Size(), a, rect)
 			ir := rect.Align(v.image.Size(), a, v.ImageMargin, zgeo.Size{})
 			var corner float64
 			if v.IsRoundImage {

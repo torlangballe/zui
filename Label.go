@@ -39,7 +39,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s, _, _ := ti.GetBounds()
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
-	s.MakeInteger()
+	s = s.ExpandedToInt()
 	return s
 }
 

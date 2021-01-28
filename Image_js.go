@@ -4,10 +4,12 @@ import (
 	"image"
 	"io"
 	"strings"
+	"sync"
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -36,6 +38,7 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		return i
 	}
 	i.load(path, func(success bool) {
+		// zlog.Info("ImageFromPath loaded:", path, success)
 		if !success {
 			i = nil
 		}
@@ -53,8 +56,30 @@ func ImageFromNative(n image.Image) *Image {
 }
 
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
-	zlog.Fatal(nil, "Not implemented")
-	return nil
+	isFile := false
+	goImage := goImageFromPath(i.Path, isFile)
+	if goImage == nil {
+		zlog.Error(nil, "goImageFromPath")
+		return nil
+	}
+	scale := float64(i.scale)
+	newGoImage := goImageShrunkInto(goImage, scale, size, proportional)
+	data, err := goImagePNGData(newGoImage)
+	if err != nil {
+		zlog.Error(err)
+		return nil
+	}
+	surl := zhttp.MakeDataURL(data, "image/png")
+	//	zlog.Info("image url:\n", surl)
+	var wg sync.WaitGroup
+	var newImage *Image
+	wg.Add(1)
+	ImageFromPath(surl, func(image *Image) {
+		newImage = image
+		wg.Done()
+	})
+	wg.Wait()
+	return newImage
 }
 
 func (i *Image) Encode(w io.Writer, qualityPercent int) error {
@@ -68,6 +93,7 @@ func (i *Image) RGBAImage() *Image {
 }
 
 func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
+	zlog.Fatal(nil, "Not implemented")
 	return nil, nil
 }
 
@@ -136,16 +162,17 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 	return i
 }
 
-func (i *Image) GetScaledInSize(size zgeo.Size, proportional bool) *Image {
-	var vsize = size
-	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.ScaleToFitProp, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
-	}
-	width := int(vsize.W) / int(i.scale)
-	height := int(vsize.H) / int(i.scale)
-	zlog.Info("GetScaledInSize not made yet:", width, height)
-	return nil
-}
+// See
+// func (i *Image) GetScaledInSize(size zgeo.Size, proportional bool) *Image {
+// 	var vsize = size
+// 	if proportional {
+// 		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.ScaleToFitProp, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
+// 	}
+// 	width := int(vsize.W) / int(i.scale)
+// 	height := int(vsize.H) / int(i.scale)
+// 	zlog.Info("GetScaledInSize not made yet:", width, height)
+// 	return nil
+// }
 
 func (i *Image) GetCropped(crop zgeo.Rect) *Image {
 	return i

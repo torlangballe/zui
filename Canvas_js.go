@@ -17,6 +17,7 @@ type canvasNative struct {
 
 func CanvasNew() *Canvas {
 	c := Canvas{}
+	c.DownsampleImages = true
 	c.element = DocumentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute")
 	c.context = c.element.Call("getContext", "2d")
@@ -114,14 +115,51 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
 }
 
+type scaledImage struct {
+	path string
+	size zgeo.Size
+}
+
+var scaledImageMap = map[scaledImage]*Image{}
+
+func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+	proportional := false
+	ds := destRect.Size.ExpandedToInt()
+	si := scaledImage{image.Path, ds}
+	sourceRect = zgeo.Rect{Size: ds}
+	newImage, _ := scaledImageMap[si]
+	if newImage != nil {
+		image = newImage
+		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+	}
+	go func() {
+		// zlog.Info("drawPlainImage cache scaled", image.Path, ds)
+		image = image.ShrunkInto(ds, proportional)
+		scaledImageMap[si] = image
+		if image != nil {
+			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+		}
+	}()
+}
+
 func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	sr := sourceRect.TimesD(float64(image.scale))
 	if destRect.Size.H < 0 {
-		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, sr, c)
+		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, c)
 		return
 	}
-	// TODO: Use filter-blur to pre-blur image if it is going to be scaled down. Amazing not built-in interpolation
-	// zlog.Info("drawPlain:", image.Size(), image.Path, sr, destRect)
+	ss := sourceRect.Size
+	ds := destRect.Size
+	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
+	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.size && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
+		c.drawCachedScaledImage(image, destRect, opacity, sourceRect)
+		return
+	}
+	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+}
+
+func (c *Canvas) rawDrawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+	sr := sourceRect.TimesD(float64(image.scale))
+	// zlog.Info("rawDrawPlain:", image.Size(), image.Path, sr, destRect)
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
 

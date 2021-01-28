@@ -40,14 +40,29 @@ func addView(parent, child *NativeView) {
 	parent.call("appendChild", child.Element)
 }
 
-func jsAddEventListener(e js.Value, name string, handler func()) {
-	err := e.Call("addEventListener", name, js.FuncOf(func(js.Value, []js.Value) interface{} {
-		zlog.Info("event listener")
+// func jsAddEventListener(e js.Value, name string, handler func(this func(js.Value, vals []js.Value)) {
+// 	err := e.Call("addEventListener", name, js.FuncOf(this func(js.Value, vals []js.Value) interface{} {
+// 		handler(this, vals)
+// 		zlog.Info("event listener")
+// 		return nil
+// 	}), false)
+// 	if !err.IsUndefined() {
+// 		zlog.Info("jsAddEventListener err:", err)
+// 	}
+// }
+
+func jsSetKeyHandler(e js.Value, handler func(key KeyboardKey, mods KeyboardModifier)) {
+	//!!	v.keyPressed = handler
+	e.Set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		// zlog.Info("KeyUp")
+		if handler != nil {
+			event := vs[0]
+			key, mods := getKeyAndModsFromEvent(event)
+			handler(key, mods)
+			// zlog.Info("KeyUp:", key, mods)
+		}
 		return nil
-	}), false)
-	if !err.IsUndefined() {
-		zlog.Info("jsAddEventListener err:", err)
-	}
+	}))
 }
 
 func getFontStyle(font *Font) string {
@@ -62,4 +77,15 @@ func getFontStyle(font *Font) string {
 	parts = append(parts, font.Name)
 
 	return strings.Join(parts, " ")
+}
+
+func jsCreateDotSeparatedObject(f string) js.Value {
+	parent := js.Global()
+	parts := strings.Split(f, ".")
+	//	parts = zstr.Reversed(parts)
+	for _, p := range parts {
+		zlog.Info("GET:", p)
+		parent = parent.Get(p)
+	}
+	return parent
 }

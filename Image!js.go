@@ -11,10 +11,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/bamiaux/rez"
 	"github.com/disintegration/imaging"
-
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -43,21 +42,19 @@ func ImageFromNative(n image.Image) *Image {
 }
 
 func ImageFromPath(path string, got func(*Image)) *Image {
-	i := &Image{}
-	if got != nil {
-		defer got(i)
+	isFile := !zhttp.StringStartsWithHTTPX(path)
+	goImage := goImageFromPath(path, isFile)
+	if goImage == nil {
+		if got != nil {
+			got(nil)
+			return nil
+		}
 	}
-	file, err := os.Open(path)
-	if err != nil {
-		zlog.Error(err, "open", path)
-		return nil
-	}
-	i.GoImage, _, err = image.Decode(file)
-	if err != nil {
-		zlog.Error(err, "decode", path)
-		return nil
-	}
+	i := ImageFromNative(goImage)
 	i.scale = imageGetScaleFromPath(path)
+	if got != nil {
+		got(i)
+	}
 	return i
 }
 
@@ -91,23 +88,9 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 	return i
 }
 
-// ShrunkInto scales down the image to fit inside size.
-// It must be a subset of standard libarary image types, as it uses rez
-// package to downsample, which works on underlying image types.
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
-	var vsize = size
-	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
-	}
 	scale := float64(i.scale)
-	nSize := vsize.TimesD(scale)
-	goRect := zgeo.Rect{Size: nSize}.GoRect()
-	newImage := image.NewRGBA(goRect)
-	//	resize.Resize(width, height, i.GoImage, resize.Lanczos3)
-	err := rez.Convert(newImage, i.GoImage, rez.NewBicubicFilter())
-	if err != nil {
-		zlog.Error(err, "rez Resample")
-	}
+	newImage := goImageShrunkInto(i.GoImage, scale, size, proportional)
 	return ImageFromNative(newImage)
 }
 
@@ -180,13 +163,7 @@ func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
 }
 
 func (i *Image) PNGData() ([]byte, error) {
-	out := bytes.NewBuffer([]byte{})
-	err := png.Encode(out, i.GoImage)
-	if err != nil {
-		err = zlog.Error(err, "encode")
-		return []byte{}, err
-	}
-	return out.Bytes(), nil
+	return goImagePNGData(i.GoImage)
 }
 
 func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {

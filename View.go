@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type View interface {
@@ -44,10 +45,11 @@ type NativeViewOwner interface {
 }
 
 func ViewGetNative(view View) *NativeView {
-	o := view.(NativeViewOwner)
+	o, _ := view.(NativeViewOwner)
 	if o != nil {
 		return o.GetNative()
 	}
+	zlog.Error(nil, "no view", view != nil)
 	return nil
 }
 

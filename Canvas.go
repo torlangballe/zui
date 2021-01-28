@@ -13,6 +13,7 @@ import (
 type Canvas struct {
 	canvasNative
 	currentMatrix zgeo.Matrix // is currentTransform...
+	DownsampleImages  bool
 }
 
 func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
@@ -63,12 +64,13 @@ func canvasCreateGradientLocations(colors int) []float64 {
 	return locations
 }
 
+// measureTextCanvases is a pool of canvases to do text measurements in. Might not actually speed things up in DOM, which maybe is single-thread
 var measureTextCanvases = map[*Canvas]bool{}
 var measureTextMutex sync.Mutex
 
 func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	var canvas *Canvas
-	measureTextMutex.Lock() // We can make a pool of canvases here if worth it
+	measureTextMutex.Lock() 
 	// fmt.Println("canvas measure lock time:", time.Since(start), len(measureTextCanvases))
 	for c, used := range measureTextCanvases {
 		if !used {

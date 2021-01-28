@@ -7,5 +7,8 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/garyburd/redigo v1.6.2
-	github.com/torlangballe/zutil v0.0.0-20201126235223-ae6e8fe16b25
+	github.com/jung-kurt/gofpdf v1.16.2 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/torlangballe/zutil v0.0.0-20201207093958-4c84b65f22c0
+	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
 )

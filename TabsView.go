@@ -2,33 +2,49 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
 const tabSeparatorID = "tab-separator"
 
-type TabsView struct {
-	StackView
-	Header             *StackView
-	ChildView          View
-	CurrentID          string
-	creators           map[string]func(bool) View
-	childAlignments    map[string]zgeo.Alignment
-	separatorForIDs    []string
-	SeparatorLineInset float64
-	ChangedHandler     func(newID string)
+type tab struct {
+	id             string
+	create         func(delete bool) View
+	view           View
+	childAlignment zgeo.Alignment
+	image          *Image
 }
 
-func TabsViewNew(name string) *TabsView {
+type TabsView struct {
+	StackView
+	Header              *StackView
+	ChildView           View
+	CurrentID           string
+	tabs                map[string]*tab
+	separatorForIDs     []string
+	SeparatorLineInset  float64
+	ChangedHandler      func(newID string)
+	ButtonName          string //
+	selectedButtonColor zgeo.Color
+	MaxImageSize        zgeo.Size
+}
+
+func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
 	v.StackView.Init(v, true, name)
 	v.SetSpacing(0)
-	v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
-	v.creators = map[string]func(bool) View{}
+	if buttons {
+		v.ButtonName = TabsDefaultButtonName
+		v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
+	} else {
+		v.SetMargin(zgeo.RectFromXY2(0, 2, 0, -2))
+		v.MaxImageSize = zgeo.Size{60, 20}
+	}
+	v.tabs = map[string]*tab{}
 	v.Header = StackViewHor("header")
-	v.Header.SetMargin(zgeo.RectFromXY2(5, 0, 0, 0))
+	v.Header.SetMargin(zgeo.RectFromXY2(2, 0, 0, 0))
 	v.Header.SetSpacing(10)
-	v.childAlignments = map[string]zgeo.Alignment{}
 	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	return v
 }
@@ -63,33 +79,60 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 var TabsDefaultButtonName = "gray-tab"
 var TabsDefaultTextColor = zgeo.ColorWhite
 
-func (v *TabsView) AddTabFunc(id, title string, set bool, align zgeo.Alignment, creator func(del bool) View) {
+// AddTab adds a new tab to the row of tabs.
+// id is unique id that identifies it.
+// title is what's written in the tab, if ButtonName != "".
+// ipath is path to image, if ButtonName != "" shown on right, otherwise centered
+// set makes it the current tab after adding
+// align is how to align the content child view
+// create is a function to create or delete the content child each time tab is set.
+func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete bool) View) {
 	if title == "" {
 		title = id
 	}
-	if align == zgeo.AlignmentNone {
-		align = zgeo.Left | zgeo.Top | zgeo.Expand
+	var button *ShapeView
+	var view View
+	tab := &tab{}
+	tab.id = id
+	minSize := zgeo.Size{20, 26}
+	tab.childAlignment = zgeo.Left | zgeo.Top | zgeo.Expand
+	if v.ButtonName != "" {
+		// zlog.Info("Add Tab button:", title, v.ButtonName)
+		b := ButtonNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
+		button = &b.ShapeView
+		view = b
+	} else {
+		button = ShapeViewNew(ShapeViewTypeRoundRect, minSize)
+		button.SetColor(v.selectedButtonColor)
+		view = button
 	}
-	v.childAlignments[id] = align
-	button := ButtonNew(title, TabsDefaultButtonName, zgeo.Size{20, 26}, zgeo.Size{11, 12})
 	button.SetObjectName(id)
 	button.SetMarginS(zgeo.Size{10, 0})
 	button.SetTextColor(TabsDefaultTextColor)
 	button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
-	v.creators[id] = creator
+	if ipath != "" {
+		button.SetImage(nil, ipath, nil)
+	}
+	tab.create = create
+	v.tabs[id] = tab
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.Header.Add(zgeo.BottomLeft, button)
+	cell := v.Header.Add(zgeo.BottomLeft, view)
+	zlog.Info("AddTab:", view.ObjectName())
+	if !v.MaxImageSize.IsNull() {
+		cell.MaxSize = v.MaxImageSize
+	}
 	if set {
 		v.SetTab(id)
 	}
 }
 
-func (v *TabsView) AddTab(title, id string, set bool, align zgeo.Alignment, view View) {
-	v.AddTabFunc(title, id, set, align, func(del bool) View {
-		if del {
-			return nil
+// AddTabWithView calls AddTabFunc, but with a fixed view instead of dynamically created/deleted one
+func (v *TabsView) AddTabWithView(id, title, ipath string, set bool, view View) {
+	v.AddTab(id, title, ipath, set, func(delete bool) View {
+		if delete {
+			return nil // AddTab deletes
 		}
 		return view
 	})
@@ -99,36 +142,68 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.Header.FindViewWithName(id, false)
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
-		button := view.(*Button)
-		str := TabsDefaultButtonName
-		style := FontStyleNormal
-		if on {
-			str += "-selected"
-			style = FontStyleBold
+		button, _ := view.(*Button)
+		if button != nil {
+			str := TabsDefaultButtonName
+			style := FontStyleNormal
+			if on {
+				str += "-selected"
+				style = FontStyleBold
+			}
+			button.SetImageName(str, zgeo.Size{11, 12})
+			button.SetFont(FontNice(FontDefaultSize, style))
+		} else { // image only
+			col := zgeo.ColorClear
+			if on {
+				col = v.selectedButtonColor
+			}
+			v.SetBGColor(col)
 		}
-		button.SetImageName(str, zgeo.Size{11, 12})
-		button.SetFont(FontNice(FontDefaultSize, style))
 	}
 }
+
+func (v *TabsView) findTab(id string) *tab {
+	for _, t := range v.tabs {
+		zlog.Info("Find:", id, t.id)
+		if t.id == id {
+			return t
+		}
+	}
+	return nil
+}
+
+func (v *TabsView) SetChildAlignment(id string, a zgeo.Alignment) {
+	t := v.findTab(id)
+	t.childAlignment = a
+}
+
+func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
+	cell := v.Header.FindCellWithName(id)
+	// zlog.Info("FIND:", id, cell)
+	cell.Alignment = a
+}
+
 func (v *TabsView) SetTab(id string) {
-	// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells))
 	if v.CurrentID != id {
+		// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells))
 		if v.CurrentID != "" {
-			v.creators[v.CurrentID](true)
+			v.tabs[v.CurrentID].create(true)
 			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.ChildView != nil {
 			// zlog.Info("Remove Child!:", v.ChildView.ObjectName())
 			v.RemoveChild(v.ChildView)
 		}
-		v.ChildView = v.creators[id](false)
-		v.Add(v.childAlignments[id], v.ChildView)
+		tab := v.tabs[id]
+		v.ChildView = tab.create(false)
+		v.Add(tab.childAlignment, v.ChildView)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
 		// zlog.Info("Call collapse:", id, len(v.cells))
 		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
+		// zlog.Info("TV SetTab", v.Presented)
 		if !v.Presented {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
@@ -139,7 +214,7 @@ func (v *TabsView) SetTab(id string) {
 		// }
 		presentViewCallReady(v.ChildView, true)
 		presentViewPresenting = true
-		v.ArrangeChildren(nil) // This can cerate table rows and do all kinds of things that load images etc.
+		v.ArrangeChildren(nil) // This can create table rows and do all kinds of things that load images etc.
 		/*
 			ct := v.View.(ContainerType)
 				WhenContainerLoaded(ct, func(waited bool) {
@@ -149,7 +224,9 @@ func (v *TabsView) SetTab(id string) {
 						v.ArrangeChildren(nil)
 					}
 					zlog.Info("SetTab Loaded re-arranged")
+				})
 		*/
+		zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
 		presentViewPresenting = false
 		presentViewCallReady(v.ChildView, false)
 		if et != nil {
@@ -169,6 +246,7 @@ func (v *TabsView) SetTab(id string) {
 // }
 
 func (v *TabsView) ArrangeChildren(onlyChild *View) {
+	zlog.Info("TabView ArrangeChildren")
 	v.StackView.ArrangeChildren(onlyChild)
 }
 
