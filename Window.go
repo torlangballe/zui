@@ -18,12 +18,13 @@ var windows = map[*Window]bool{}
 
 type Window struct {
 	windowNative
-	keyPressedHandler   func(KeyboardKey, KeyboardModifier)
 	HandleClosed        func()
 	HandleBeforeResized func(r zgeo.Rect) bool // HandleBeforeResize  is called before window re-arranges child view
 	HandleAfterResized  func(r zgeo.Rect) bool // HandleAfterResize  is called after window re-arranges child view
 	ID                  string
 	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
+	dismissed           bool // this stores if window is dismissed or closed for other reasons, used by present close functions
+	keyHandlers         map[View]func(KeyboardKey, KeyboardModifier)
 }
 
 type WindowOptions struct {
@@ -32,6 +33,12 @@ type WindowOptions struct {
 	Pos       *zgeo.Pos
 	Size      zgeo.Size
 	Alignment zgeo.Alignment
+}
+
+func WindowNew() *Window {
+	w := &Window{}
+	w.keyHandlers = map[View]func(KeyboardKey, KeyboardModifier){}
+	return w
 }
 
 // if WindowExistsActivate finds an open window in windows with id == winID it activates it and returns true

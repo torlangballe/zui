@@ -4,7 +4,9 @@
 
 package zui
 
-import "strings"
+import (
+	"strings"
+)
 
 type FontStyle int
 

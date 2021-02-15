@@ -1,15 +1,33 @@
+// +build zui
+
 package zui
 
 import (
-	"time"
-
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
 // Original class created by Tor Langballe on 23-sept-2014.
+
+var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
+var GroupingStrokeWidth = 2.0
+var GroupingStrokeCorner = 4.0
+var GroupingMargin = 10.0
+var AlertButtonsOnRight = true
+
+// func CVCell(view View, alignment zgeo.Alignment) *ContainerViewCell {
+// 	cell := ContainerViewCell{Alignment: alignment, View: view}
+// 	return &cell
+// }
+
+type ContainerView struct {
+	CustomView
+	margin            zgeo.Rect
+	singleOrientation bool
+	cells             []ContainerViewCell
+	layoutHandler     ViewLayoutProtocol
+}
 
 type ContainerViewCell struct {
 	Alignment         zgeo.Alignment
@@ -20,26 +38,6 @@ type ContainerViewCell struct {
 	Collapsed         bool
 	Free              bool // Free Cells are placed using ContainerView method, not "inherited" ArrangeChildren method
 	ExpandFromMinSize bool // Makes cell expand into extra space in addition to minsize, not current size
-}
-
-var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
-var GroupingStrokeWidth = 2.0
-var GroupingStrokeCorner = 4.0
-var GroupingMargin = 10.0
-var AlertButtonsOnRight = true
-
-func CVCell(view View, alignment zgeo.Alignment) *ContainerViewCell {
-	cell := ContainerViewCell{Alignment: alignment, View: view}
-	return &cell
-}
-
-type ContainerView struct {
-	CustomView
-	margin            zgeo.Rect
-	singleOrientation bool
-	//	view              *CustomView
-	cells         []ContainerViewCell
-	layoutHandler ViewLayoutProtocol
 }
 
 func (v *ContainerView) GetChildren() (children []View) {
@@ -197,8 +195,8 @@ func (v *ContainerView) Contains(view View) bool {
 
 func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	v.CustomView.SetRect(rect)
-	//	zlog.Info("CV SetRect2", v.ObjectName(), v.View)
-	ct := v.View.(ContainerType)
+	// zlog.Info("CV SetRect2", v.ObjectName(), v.View)
+	ct := v.View.(ContainerType) // in case we are a stack or something inheriting from ContainerView
 	//	start := time.Now()
 	ct.ArrangeChildren(nil)
 	// d := time.Since(start)
@@ -272,13 +270,13 @@ func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
 	// 	done(false)
 	// }
 	// return
-	start := time.Now()
+	// start := time.Now()
 	ztimer.RepeatNow(0.1, func() bool {
 		if ContainerIsLoading(ct) {
 			return true
 		}
 		if done != nil {
-			zlog.Info("Wait:", time.Since(start), ct.(View).ObjectName())
+			// zlog.Info("Wait:", time.Since(start), ct.(View).ObjectName())
 			done(true)
 		}
 		return false

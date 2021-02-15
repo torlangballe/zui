@@ -66,3 +66,4 @@ func (k *KeyValueStore) setItem(key string, v interface{}, sync bool) error {
 	local.Set(key, v)
 	return nil
 }
+

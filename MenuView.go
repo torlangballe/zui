@@ -7,14 +7,19 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
+type MenuType interface {
+	//	UpdateAndSelect(items zdict.Items, value interface{})
+	UpdateItems(items zdict.Items, values []interface{})
+	//	SelectWithValue(value interface{}, set bool)
+	SetSelectedHandler(handler func())
+}
+
 type MenuView struct {
 	NativeView
 	maxWidth        float64
-	selectedHandler func(name string, value interface{})
+	selectedHandler func()
 	items           zdict.Items
 	currentValue    interface{}
-
-	IsStatic bool // if set, user can't set a different value, but can press and see them. Shows number of items
 }
 
 var menuViewHeight = 22.0
@@ -32,33 +37,37 @@ func (v *MenuView) getNumberOfItemsString() string {
 	return WordsPluralizeString("%d %s", "en", float64(v.items.Count()), "item")
 }
 
+// func MenuViewCalcItemsWidth(items zdict.Items, font *Font) float64 {
+// 	var maxString string
+// 	// zlog.Info("MV Calc size:", v)
+// 	for _, item := range items {
+// 		if len(item.Name) > len(maxString) {
+// 			maxString = item.Name
+// 		}
+// 	}
+// 	ti := TextInfoNew()
+// 	ti.Alignment = zgeo.Left
+// 	ti.Text = maxString
+// 	ti.IsMinimumOneLineHight = true
+// 	ti.Font = font
+// 	ti.MaxLines = 1
+// 	s, _, _ := ti.GetBounds()
+// 	return s.W
+// }
+
 func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var maxString string
-	if v.IsStatic {
-		maxString = "658 items" // make it big enough to not need to resize much
-	} else {
-		// zlog.Info("MV Calc size:", v)
-		for _, item := range v.items {
-			if len(item.Name) > len(maxString) {
-				maxString = item.Name
-			}
+	var max string
+	for _, item := range v.items {
+		if len(item.Name) > len(max) {
+			max = item.Name
 		}
 	}
-	// maxString += "m"
-	ti := TextInfoNew()
-	ti.Alignment = zgeo.Left
-	ti.Text = maxString
-	ti.IsMinimumOneLineHight = true
-	ti.Font = v.Font().NewWithSize(14)
-	ti.MaxLines = 1
-	s, _, _ := ti.GetBounds()
-	s.W += 38
-	s.H = menuViewHeight
+	w := TextInfoWidthOfString(max, v.Font())
 	if v.maxWidth != 0 {
-		zfloat.Minimize(&s.W, v.maxWidth)
+		zfloat.Minimize(&w, v.maxWidth)
 	}
 	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
-	return s
+	return zgeo.Size{w + 38, menuViewHeight}
 }
 
 func (v *MenuView) MaxWidth() float64 {

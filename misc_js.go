@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zdevice"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 // https://github.com/siongui/godom
@@ -18,11 +17,11 @@ var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")
 var WindowJS = js.Global().Get("window")
 
-type css js.Value
+// type css js.Value
 
 func init() {
-	if zdevice.WasmBrowser() != "Safari" {
-		menuViewHeight = 25
+	if zdevice.OS() == zdevice.MacOSType && zdevice.WasmBrowser() == "safari" {
+		FontDefaultName = "-apple-system"
 	}
 }
 
@@ -51,14 +50,16 @@ func addView(parent, child *NativeView) {
 // 	}
 // }
 
-func jsSetKeyHandler(e js.Value, handler func(key KeyboardKey, mods KeyboardModifier)) {
+func jsSetKeyHandler(e js.Value, handler func(key KeyboardKey, mods KeyboardModifier) bool) {
 	//!!	v.keyPressed = handler
-	e.Set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+	e.Set("onkeyup", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		// zlog.Info("KeyUp")
 		if handler != nil {
-			event := vs[0]
+			event := args[0]
 			key, mods := getKeyAndModsFromEvent(event)
-			handler(key, mods)
+			if handler(key, mods) {
+				event.Call("stopPropagation")
+			}
 			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil
@@ -82,9 +83,7 @@ func getFontStyle(font *Font) string {
 func jsCreateDotSeparatedObject(f string) js.Value {
 	parent := js.Global()
 	parts := strings.Split(f, ".")
-	//	parts = zstr.Reversed(parts)
 	for _, p := range parts {
-		zlog.Info("GET:", p)
 		parent = parent.Get(p)
 	}
 	return parent

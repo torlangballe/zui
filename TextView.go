@@ -28,6 +28,7 @@ type TextView struct {
 	updateTimer   *ztimer.Timer
 	Columns       int
 	rows          int
+	isSearch      bool
 	//	updated       bool
 
 	margin zgeo.Rect
@@ -74,8 +75,10 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// 	zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName(), zlog.GetCallingStackString())
 	// }
 	s.Add(v.margin.Size.Negative())
-	//	s.H += 4
-	s = s.ExpandedToInt()
+	if v.isSearch {
+		//		s.H += 14
+	}
+	s = s.Ceil()
 	return s
 }
 

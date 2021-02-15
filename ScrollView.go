@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -16,6 +18,7 @@ type ScrollView struct {
 	ScrollHandler func(pos zgeo.Pos, infiniteDir int)
 
 	lastEdgeScroll time.Time
+	ScrolledAt     time.Time
 }
 
 func ScrollViewNew() *ScrollView {

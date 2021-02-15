@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -39,7 +41,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s, _, _ := ti.GetBounds()
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
-	s = s.ExpandedToInt()
+	s = s.Ceil()
 	return s
 }
 

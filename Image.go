@@ -32,6 +32,7 @@ type Image struct {
 
 type ImageOwner interface {
 	GetImage() *Image
+	SetImage(image *Image, path string, got func(*Image))
 }
 
 func MakeImageFromDrawFunction(size zgeo.Size, scale float32, draw func(size zgeo.Size, canvas Canvas)) *Image {

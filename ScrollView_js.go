@@ -14,6 +14,7 @@ func (v *ScrollView) Init(view View, name string) {
 	style.Set("overflow-x", "hidden")
 	//	style.Set("overflow-y", "auto")
 	style.Set("overflow-y", "scroll")
+	v.setjs("tabindex", "-1")
 	style.Set("overscrollBehavior", "contain")
 	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
 		v.YOffset = pos.Y
@@ -37,8 +38,8 @@ func (v *ScrollView) Init(view View, name string) {
 }
 
 func (v *ScrollView) SetContentOffset(y float64, animated bool) {
+	v.ScrolledAt = time.Now()
 	if animated {
-		// zlog.Info("Scroll:", y)
 		Animate(v, 0.5, func(t float64) bool {
 			ay := v.YOffset + (y-v.YOffset)*t
 			// zlog.Info("Animate:", t, v.YOffset, y, ay)

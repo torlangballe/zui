@@ -19,11 +19,6 @@ func ScreenGetAll() []Screen {
 	m.Rect = zgeo.RectMake(0, 0, w, h)
 	m.Scale = math.Round(dpr)
 	m.IsMain = true
-	// if !printed {
-	// 	zlog.Info("SCREEN SCALE:", dpr)
-	// 	printed = true
-	// }
-	//	m.Scale = 1 //!!!!!!!!!!!!!!!!!!!!
 	m.SoftScale = 1
 	// m.UsableRect = m.Rect
 

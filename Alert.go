@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -118,10 +120,10 @@ func AlertShowStatus(text string, secs float64) {
 
 func addButtonIfNotEmpty(stack *StackView, text string, handle func(result AlertResult), result AlertResult) {
 	if text != "" {
-		button := ButtonNew(text, "gray", zgeo.Size{10, 28}, zgeo.Size{})
+		button := ButtonViewNew(text, "gray", zgeo.Size{10, 28}, zgeo.Size{})
 		stack.AddAlertButton(button)
 		button.SetPressedHandler(func() {
-			PresentViewPop(stack, func() {
+			PresentViewClose(stack, result == AlertCancel, func(dismissed bool) {
 				if handle != nil {
 					handle(result)
 				}

@@ -12,6 +12,14 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
+var winMain *Window
+
+type windowNative struct {
+	hasResized      bool
+	element         js.Value
+	animationFrames map[int]int // maps random animation id to dom animationFrameID
+}
+
 func init() {
 	WindowJS.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		// zlog.Info("Main window closed or refreshed?")
@@ -21,18 +29,13 @@ func init() {
 		windows = map[*Window]bool{} // this might not be necessary, as we're shutting down?
 		return nil
 	}))
-}
-
-type windowNative struct {
-	hasResized      bool
-	element         js.Value
-	animationFrames map[int]int // maps random animation id to dom animationFrameID
+	winMain = WindowNew()
+	winMain.element = WindowJS
+	windows[winMain] = true
 }
 
 func WindowGetMain() *Window {
-	w := &Window{}
-	w.element = WindowJS
-	return w
+	return winMain
 }
 
 func (w *Window) Rect() zgeo.Rect {
@@ -175,22 +178,52 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.element.Get("history").Call("pushState", "", "", surl)
 }
 
-func setKeyHandler(doc js.Value, handler func(KeyboardKey, KeyboardModifier)) {
-}
+// func setKeyHandler(doc js.Value, handler func(KeyboardKey, KeyboardModifier)) {
+// }
 
-func (win *Window) SetKeypressHandler(handler func(KeyboardKey, KeyboardModifier)) {
-	win.keyPressedHandler = handler
+func (win *Window) setOnKeyUp() {
 	doc := win.element.Get("document")
-	doc.Set("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		if handler != nil {
-			key, mods := getKeyAndModsFromEvent(vs[0])
-			handler(key, mods)
+	zlog.Info("win keydown")
+	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+		if len(win.keyHandlers) != 0 {
+			key, mods := getKeyAndModsFromEvent(args[0])
+			for view, h := range win.keyHandlers {
+				// zlog.Info("win key:", key, view.ObjectName())
+				if PresentedViewCurrentIsParent(view) {
+					h(key, mods)
+				}
+			}
+			if key == KeyboardKeyDownArrow || key == KeyboardKeyUpArrow {
+				event := args[0]
+				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
+			}
 		}
 		return nil
 	}))
+}
+
+func (win *Window) removeKeyPressHandlerViews(root View) {
+	ct := root.(ContainerType)
+	ContainerTypeRangeChildren(ct, true, func(view View) bool {
+		if win.keyHandlers[view] != nil {
+			// zlog.Info("removeKeyPressHandlerView:", view.ObjectName())
+			delete(win.keyHandlers, view) // I guess we could just call delete without checking if it exists first, faster?
+		}
+		return true
+	})
+}
+
+func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {
+	if handler == nil {
+		delete(win.keyHandlers, v)
+		return
+	}
+	win.keyHandlers[v] = handler
+	win.setOnKeyUp()
+	doc := win.element.Get("document")
 	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		win.SetKeypressHandler(handler)
-		zlog.Info("WIN activate!")
+		win.setOnKeyUp()
+		// zlog.Info("WIN activate!")
 		return nil
 	}))
 }

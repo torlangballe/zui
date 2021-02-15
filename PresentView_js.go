@@ -1,6 +1,6 @@
 package zui
 
-func PresentViewURL(surl string) {
+func PresentViewSetURL(surl string) {
 	WindowJS.Get("location").Call("assign", surl)
 }
 

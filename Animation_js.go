@@ -27,6 +27,7 @@ func Animate(view View, secs float64, handler func(t float64) bool) {
 	randomID := int(rand.Int31())
 	win := ViewGetNative(view).GetWindow()
 	animationFunc = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// zlog.Info("Ani")
 		posJS := args[0]
 		if startJS.IsUndefined() {
 			startJS = posJS
@@ -44,6 +45,7 @@ func Animate(view View, secs float64, handler func(t float64) bool) {
 			*aniFrameID = win.element.Call("requestAnimationFrame", animationFunc).Int()
 			addAnimationToWindow(win, *aniFrameID, randomID)
 		}
+		handler(-1)
 		if *aniFrameID != -1 {
 			delete(win.animationFrames, randomID)
 		}

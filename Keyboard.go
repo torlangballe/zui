@@ -7,6 +7,7 @@ type KeyboardAutoCapType string
 type KeyboardReturnKeyType string
 
 const (
+	KeyboardModifierNone                   = 0
 	KeyboardModifierShift KeyboardModifier = 1 << iota
 	KeyboardModifierControl
 	KeyboardModifierAlt
@@ -15,9 +16,12 @@ const (
 
 const (
 	KeyboardKeyReturn    = 13
+	KeyboardKeyEnter    = 131313 // not sure what it is elsewhere, doesn't exist in js/html
 	KeyboardKeyTab       = 9
 	KeyboardKeyBackspace = 8
-	KeyboardKeyEscape = 27
+	KeyboardKeyEscape    = 27
+	KeyboardKeyUpArrow   = 38
+	KeyboardKeyDownArrow = 40
 )
 
 const (

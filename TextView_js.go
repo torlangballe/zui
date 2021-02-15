@@ -18,10 +18,10 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
-
 		if style.KeyboardType == KeyboardTypePassword {
 			v.setjs("type", "password")
 		} else if style.IsSearch {
+			v.isSearch = true
 			v.setjs("type", "search")
 		} else {
 			v.setjs("type", "text")

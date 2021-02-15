@@ -74,6 +74,7 @@ github.com/torlangballe/zui v0.0.0-20201125142540-fd9688fb924d/go.mod h1:4TzBHLn
 github.com/torlangballe/zutil v0.0.0-20201207093958-4c84b65f22c0 h1:NwyxherFVZScoU8BcmQ8aV0OwzPorkZLVV7yKUYMbgM=
 github.com/torlangballe/zutil v0.0.0-20201207093958-4c84b65f22c0/go.mod h1:fQwfWa97s92tr4eiDBK4wwyosDRgHXPZeQbVLVrjp+0=
 github.com/torlangballe/zutil v0.0.0-20201207113831-ca4a4882929a h1:nLdofzoKIto/adsIQr3L1UGZQWgoqoqmsGtIEJySa68=
+github.com/torlangballe/zutil v0.0.0-20210128100408-a5519ace123f h1:i+18ZhEWlXk/CreF1aMF/rjmXDyy8OVbAAcjYYdUXpM=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/image v0.0.0-20190910094157-69e4b8554b2a/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=

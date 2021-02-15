@@ -1,7 +1,13 @@
+// +build zui
+
 package zui
 
 import (
+	"time"
+
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -20,14 +26,18 @@ type ListView struct {
 	HandleRowSelected    func(i int, selected bool)
 	HandleScrolledToRows func(y float64, first, last int)
 
-	RowColors  []zgeo.Color
-	HoverColor zgeo.Color
-	MinRows    int // MinRows is the minimum number of rows used to calculate size of list
+	RowColors        []zgeo.Color
+	HighlightColor   zgeo.Color
+	highlightedIndex int
+	MinRows          int // MinRows is the minimum number of rows used to calculate size of list
 
-	selectionIndex    int
-	PressSelectable   bool
-	PressUnselectable bool
-	SelectedColor     zgeo.Color
+	selectionIndexes     map[int]bool
+	PressSelectable      bool
+	PressUnselectable    bool
+	MultiSelect          bool
+	HoverHighlight       bool
+	ExposeSetsRowBGColor bool
+	SelectedColor        zgeo.Color
 
 	// topPos float64
 	stack *CustomView
@@ -49,10 +59,12 @@ func ListViewNew(name string) *ListView {
 
 func (v *ListView) Init(view View, name string) {
 	v.ScrollView.Init(view, name)
-	v.selectionIndex = -1
 	v.rows = map[int]View{}
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
 	v.SelectedColor = DefaultSelectedColor
+	v.selectionIndexes = map[int]bool{}
+	v.highlightedIndex = -1
+	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("ScrollTo:", pos.Y)
 		// v.topPos = pos.Y
@@ -64,11 +76,18 @@ func (v *ListView) Init(view View, name string) {
 }
 
 func (v *ListView) SelectionIndex() int {
-	return v.selectionIndex
+	for i := range v.selectionIndexes {
+		return i
+	}
+	return -1
 }
 
 func (v *ListView) IsRowSelected(index int) bool {
-	return index == v.selectionIndex
+	return v.selectionIndexes[index]
+}
+
+func (v *ListView) IsRowHighlighted(index int) bool {
+	return v.highlightedIndex == index
 }
 
 func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -114,7 +133,11 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")
+		v.SetCanFocus(false)
 		v.AddChild(v.stack, -1)
+		if v.highlightedIndex == -1 && v.HighlightColor.Valid {
+			v.highlightedIndex = 0
+		}
 	}
 	count := v.GetRowCount()
 	var pos zgeo.Pos
@@ -228,17 +251,40 @@ func (v *ListView) ReloadRow(i int) {
 	}
 }
 
+func (v *ListView) refreshRow(index int) {
+	row, _ := v.rows[index]
+	if row != nil {
+		cv, _ := row.(*CustomView)
+		if cv != nil {
+			cv.Expose()
+		}
+	}
+	if !v.ExposeSetsRowBGColor {
+		v.UpdateRowBGColor(index)
+	}
+}
+
 func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 	row := v.CreateRow(rowSize, index)
 	v.rows[index] = row
-	v.setRowBGColor(index)
-	if v.HoverColor.Valid {
+	v.refreshRow(index)
+	if v.HoverHighlight && v.HighlightColor.Valid {
 		ViewGetNative(row).SetPointerEnterHandler(func(inside bool) {
+			if time.Since(v.ScrolledAt) < time.Second {
+				return
+			}
 			if v.GetRowCount() > 1 {
+				old := v.highlightedIndex
 				if inside {
-					row.SetBGColor(v.HoverColor)
+					v.highlightedIndex = index
 				} else {
-					v.setRowBGColor(index)
+					v.highlightedIndex = -1
+				}
+				if old != -1 && old != v.highlightedIndex {
+					v.refreshRow(old)
+				}
+				if inside {
+					v.refreshRow(index)
 				}
 			}
 		})
@@ -248,14 +294,8 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 		if p != nil {
 			old := p.PressedHandler()
 			p.SetPressedHandler(func() {
-				// zlog.Info("Pressed", index, v.selectionIndex)
-				if index == v.selectionIndex {
-					if v.PressUnselectable {
-						v.Unselect()
-					}
-				} else {
-					v.Select(index, false)
-				}
+				// zlog.Info("Pressed", index, v.selectionIndexes, old)
+				v.doRowPressed(index)
 				if old != nil {
 					old()
 				}
@@ -263,6 +303,17 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 		}
 	}
 	return row
+}
+
+func (v *ListView) doRowPressed(index int) {
+	if v.selectionIndexes[index] {
+		if v.MultiSelect || v.PressUnselectable {
+			v.Unselect(index)
+		}
+	} else {
+		v.Select(index, false)
+	}
+
 }
 
 // func (v *ListView) MoveRow(fromIndex int, toIndex int) {
@@ -280,18 +331,20 @@ func ListViewGetIndexFromRowView(view View) int {
 	return -1
 }
 
-func (v *ListView) setRowBGColor(i int) {
+func (v *ListView) UpdateRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
 		col := v.SelectedColor
-		if v.selectionIndex != i {
-			if len(v.RowColors) == 0 {
+		if !v.selectionIndexes[i] {
+			if v.HighlightColor.Valid && i == v.highlightedIndex {
+				col = v.HighlightColor
+			} else if len(v.RowColors) == 0 {
 				col = zgeo.ColorWhite
 			} else {
 				col = v.RowColors[i%len(v.RowColors)]
 			}
 		}
-		// zlog.Info("setRowBGColor", i, col)
+		// zlog.Info("UpdateRowBGColor", i, col)
 		row.SetBGColor(col)
 	}
 }
@@ -301,21 +354,33 @@ func (v *ListView) Select(i int, scrollTo bool) {
 	if scrollTo {
 		v.ScrollToMakeRowVisible(i, false) // scroll first, so unselect doesn't update row that might not be visible anyway
 	}
-	v.Unselect()
-	v.selectionIndex = i
+	if !v.MultiSelect {
+		v.UnselectAll()
+	}
+	v.selectionIndexes[i] = true
 	if v.HandleRowSelected != nil {
 		v.HandleRowSelected(i, true)
 	}
-	v.setRowBGColor(i) // this must be after v.HandleRowSelected, as it might make a new row, also for old above
+	v.refreshRow(i) // this must be after v.HandleRowSelected, as it might make a new row, also for old above
 }
 
-func (v *ListView) Unselect() {
-	old := v.selectionIndex
-	v.selectionIndex = -1
+func (v *ListView) UnselectAll() {
+	old := v.SelectionIndex()
+	v.selectionIndexes = map[int]bool{}
 	// zlog.Info("Unselect:", old)
-	if old != -1 && old < v.GetRowCount() {
+	if !v.MultiSelect && old != -1 && old < v.GetRowCount() {
 		v.HandleRowSelected(old, false)
-		v.setRowBGColor(old)
+		v.refreshRow(old)
+	}
+}
+
+func (v *ListView) Unselect(index int) {
+	old := v.SelectionIndex()
+	delete(v.selectionIndexes, index)
+	// zlog.Info("Unselect:", old)
+	if !v.MultiSelect && old != -1 && old < v.GetRowCount() { // why < rowcount?
+		v.HandleRowSelected(old, false)
+		v.refreshRow(old)
 	}
 }
 
@@ -326,7 +391,7 @@ func (v *ListView) FlashSelect(i int) {
 		if count%2 == 0 {
 			v.Select(i, false)
 		} else {
-			v.Unselect()
+			v.Unselect(i)
 		}
 		count++
 		return (count < 8)
@@ -379,28 +444,20 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	// zlog.Info("UpdateWithOldNewSlice:", v.selectionIndex, zlog.GetCallingStackString())
 	i := 0
 	reload := false
-	var oldSelectionIndex = v.selectionIndex
-	var selectionID, focusedID, focusedObjectName string
-	selectionSet := true
-	different := false
-	if v.selectionIndex != -1 {
-		selectionID = oldSlice.GetID(v.selectionIndex)
+	oldSelectionIndex := v.SelectionIndex()
+	oldSelections := v.selectionIndexes
+	v.selectionIndexes = map[int]bool{}
+	selectIDs := map[int]string{}
+	var focusedID, focusedObjectName string
+	for i := range oldSelections {
+		selectIDs[i] = oldSlice.GetID(i)
 		// zlog.Info("UpdateWithOldNewSlice:", v.selectionIndex, "selid:", selectionID)
-		selectionSet = false
 	}
 	focusedView, _, focusedIndex := v.GetFocusedParts()
 	if focusedIndex != -1 {
 		focusedID = oldSlice.GetID(focusedIndex)
 		focusedObjectName = focusedView.ObjectName()
 	}
-	// for j := 0; ; j++ {
-	// 	sid := oldSlice.GetID(j)
-	// 	if sid == "" {
-	// 		break
-	// 	}
-	// 	zlog.Info("OLDID:", sid)
-	// }
-
 	// zlog.Info("UpdateWithOldNewSlice focus is:", focusedView != nil, focusedIndex, focusedID)
 	// zlog.Info("Sel:", selectionSet, selectionID, i, v.selectionIndex)
 	for {
@@ -409,24 +466,22 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		// zlog.Info("new id", i, nid, "oid:", oid, "selid:", selectionID)
 		if nid != "" && focusedID == nid {
 			focusedIndex = i
-		} else if nid != "" && selectionID == nid {
+		} else if nid != "" && selectIDs[i] == nid {
 			// zlog.Info("Found new selection:", i, nid)
-			v.selectionIndex = i
-			if different && focusedIndex == -1 {
-				// zlog.Info("break1")
-				break
-			}
-			selectionSet = true
+			v.selectionIndexes[i] = true
+			delete(selectIDs, i)
+			// if different && focusedIndex == -1 {
+			// 	break
+			// }
 		}
 		if nid != oid {
-			different = true
 			reload = true
-			if selectionSet && focusedIndex == -1 {
+			if len(selectIDs) == 0 && focusedIndex == -1 {
 				// zlog.Info("break2")
 				break
 			}
 		}
-		if (oid == "" || nid == "") && selectionSet {
+		if (oid == "" || nid == "") && len(selectIDs) == 0 {
 			// zlog.Info("break3")
 			break
 		}
@@ -434,8 +489,8 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 	}
 	if focusedIndex != -1 {
 		v.ScrollToMakeRowVisible(focusedIndex, false)
-	} else if v.selectionIndex != -1 && oldSelectionIndex != v.selectionIndex {
-		v.ScrollToMakeRowVisible(v.selectionIndex, false)
+	} else if !v.MultiSelect && v.SelectionIndex() != -1 && oldSelectionIndex != v.SelectionIndex() {
+		v.ScrollToMakeRowVisible(v.SelectionIndex(), false)
 	}
 	// zlog.Info("UpdateWithOldNewSlice", reload, v.selectionIndex, oldSelectionIndex)
 	if reload {
@@ -453,6 +508,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 			ct := row.(ContainerType)
 			newFocused := ContainerTypeFindViewWithName(ct, focusedObjectName, true)
 			if newFocused != nil {
+				zlog.Info("listview focus something")
 				newFocused.Focus(true)
 			}
 		}
@@ -531,5 +587,50 @@ func (v *ListView) ArrangeChildren(onlyChild *View) {
 }
 
 func (v *ListView) ReplaceChild(child, with View) {
+	zlog.Fatal(nil, "not implemented")
+}
 
+func (v *ListView) moveHighlight(delta int) {
+	old := v.highlightedIndex
+	n := zint.Max(zint.Min(v.highlightedIndex+delta, v.GetRowCount()-1), 0)
+	if n != v.highlightedIndex {
+		// zlog.Info("moveHighlight:", v.highlightedIndex, "->", n)
+		v.highlightedIndex = n
+		if old != -1 {
+			v.refreshRow(old)
+		}
+		v.refreshRow(n)
+		animate := false
+		v.ScrollToMakeRowVisible(n, animate)
+	}
+}
+
+func (v *ListView) ReadyToShow(beforeWindow bool) {
+	if !beforeWindow && v.HighlightColor.Valid {
+		win := v.GetWindow()
+		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {
+			// zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
+			switch key {
+			case KeyboardKeyTab:
+				if v.HighlightColor.Valid && v.highlightedIndex != -1 {
+					row := v.rows[v.highlightedIndex]
+					ViewGetNative(row).FocusNext(mod != KeyboardModifierShift)
+				}
+			case KeyboardKeyUpArrow:
+				if mod == KeyboardModifierNone {
+					v.moveHighlight(-1)
+				}
+			case KeyboardKeyDownArrow:
+				if mod == KeyboardModifierNone {
+					v.moveHighlight(1)
+				}
+			case KeyboardKeyReturn, KeyboardKeyEnter:
+				if mod == KeyboardModifierNone {
+					if v.PressSelectable && v.HighlightColor.Valid && v.highlightedIndex != -1 {
+						v.doRowPressed(v.highlightedIndex)
+					}
+				}
+			}
+		})
+	}
 }

@@ -36,7 +36,7 @@ func AppSetUIDefaults() (part string, args map[string]string) {
 	host, _ := zhost.GetHostAndPort(url)
 
 	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
-	zlog.Info("AppSetUIDefaults:", host, url.Host)
+	// zlog.Info("AppSetUIDefaults:", host, url.Host)
 	zrpc.ToServerClient = zrpc.NewClient()
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 	DefaultLocalKeyValueStore = KeyValueStoreNew(true)

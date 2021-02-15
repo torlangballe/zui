@@ -89,7 +89,7 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := canvasGetTextSize(str, ti.Font)
-		// zlog.Info("ti bounds:", str, ti.MaxLines)
+		//		zlog.Info("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
 			// zlog.Info("TI split:", split, str)
@@ -214,13 +214,13 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	ts, lines, widths := ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin, zgeo.Size{})
-	// zlog.Info("DRAW:", ti.Rect, ts, ra)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
-	y := ra.Pos.Y + h*0.71
+	y := ra.Pos.Y + h*0.90 // 0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
 	zlog.Assert(len(lines) == len(widths), len(lines), len(widths))
 	for i, s := range lines {
+		// zlog.Info("DRAW:", s, ti.Rect, ts, ra, "h:", h, "y:", y)
 		x := ra.Pos.X
 		if ti.Alignment&zgeo.HorCenter != 0 {
 			x += (ra.Size.W - widths[i]) / 2
@@ -253,4 +253,15 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 		return ti.Font
 	}
 	return FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
+}
+
+func TextInfoWidthOfString(str string, font *Font) float64 {
+	ti := TextInfoNew()
+	ti.Alignment = zgeo.Left
+	ti.Text = str
+	ti.IsMinimumOneLineHight = true
+	ti.Font = font
+	ti.MaxLines = 1
+	s, _, _ := ti.GetBounds()
+	return s.W
 }

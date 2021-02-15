@@ -13,32 +13,24 @@ import (
 
 const separatorID = "$sep"
 
-func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic bool) *MenuView {
+func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	v := &MenuView{}
-	v.IsStatic = isStatic
 	sel := DocumentJS.Call("createElement", "select")
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
 	v.SetFont(FontNice(14, FontStyleNormal))
-	// v.style().Set("-webkit-appearance", "none") // to set to non-system look
 	v.SetObjectName(name)
-	v.SetAndSelect(items, value)
+	v.UpdateAndSelect(items, value)
 
 	v.setjs("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
 		index := v.getjs("selectedIndex").Int()
 		zlog.Assert(index < len(v.items))
-		if v.IsStatic {
-			// for i, item := range v.items {
-			// 	zlog.Info("ITEM:", i, item.Name, item.Value)
-			// }
-			v.SelectWithValue(v.items[0].Value)
-		}
 		v.currentValue = v.items[index].Value
 		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
 		if v.selectedHandler != nil {
-			v.selectedHandler(v.items[index].Name, v.items[index].Value)
+			v.selectedHandler()
 		}
 		return nil
 	}))
@@ -91,13 +83,13 @@ func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 	v.call("appendChild", option)
 }
 
-func (v *MenuView) SetAndSelect(items zdict.Items, value interface{}) {
-	// zlog.Info("MV SetAndSelect:", v.ObjectName(), value)
-	v.SetValues(items)
-	v.SelectWithValue(value)
+func (v *MenuView) UpdateAndSelect(items zdict.Items, value interface{}) {
+	// zlog.Info("MV SetAndSelect:", v, items)
+	v.UpdateItems(items)
+	v.SelectWithValue(value, true)
 }
 
-func (v *MenuView) SetValues(items zdict.Items) {
+func (v *MenuView) UpdateItems(items zdict.Items) {
 	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
 	if !items.Equal(v.items) {
 		old := v.currentValue // we need to remember current value to re-set as Empty() below clears it
@@ -109,38 +101,15 @@ func (v *MenuView) SetValues(items zdict.Items) {
 		// We use HTML here to add all at once, or slow.
 		v.setjs("innerHTML", str)
 		if old != nil {
-			v.SelectWithValue(old)
+			v.SelectWithValue(old, true)
 		}
 	}
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
 
-/*
-func (v *MenuView) SetValues(items zdict.Items) {
-	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
-	if !items.Equal(v.items) {
-		old := v.currentValue // we need to remember current value to re-set as Empty() below clears it
-		v.Empty()
-		v.items = items // must be before v.getNumberOfItemsString
-		if v.IsStatic {
-			// zlog.Info("Items:", v.getNumberOfItemsString())
-			// v.AddAction("$STATICNAME", v.getNumberOfItemsString())
-			// v.SetWithID("$STATICNAME")
-		}
-		for _, item := range v.items {
-			// zlog.Info("MV SetValues:", v.ObjectName(), i, len(items), item.Name)
-			v.menuViewAddItem(item.Name, item.Value)
-		}
-		if old != nil {
-			v.SelectWithValue(old)
-		}
-	}
-	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
-}
-*/
-func (v *MenuView) SelectWithValue(value interface{}) *MenuView {
+func (v *MenuView) SelectWithValue(value interface{}, set bool) {
 	if zlog.ErrorIf(value == nil, v.ObjectName()) {
-		return v
+		return
 	}
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)
 	for i, item := range v.items {
@@ -153,14 +122,13 @@ func (v *MenuView) SelectWithValue(value interface{}) *MenuView {
 			break
 		}
 	}
-	return v
 }
 
 // func (v *MenuView) IDAndValue() (id string, value interface{}) {
 // 	return v.oldID, v.currentValue
 // }
 
-func (v *MenuView) SetSelectedHandler(handler func(name string, value interface{})) {
+func (v *MenuView) SetSelectedHandler(handler func()) {
 	v.selectedHandler = handler
 }
 

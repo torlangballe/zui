@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -150,9 +152,7 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	}
 	m := calcMarginAdd(c)
 	*size.VerticeP(vert) += m.Vertice(vert)
-	// if c.View.ObjectName() == "drm" {
 	// zlog.Info("get cell size2:", c.MaxSize, c.MinSize, v.ObjectName(), c.View.ObjectName(), size)
-	// }
 	return size
 }
 
@@ -248,7 +248,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(zgeo.Expand.Only(v.Vertical))
 				}
-				//				zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
+				// zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
@@ -299,13 +299,13 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	// Centered children:
 	for _, c5 := range v.cells {
 		if !c5.Collapsed && c5.Alignment&amid != 0 && !c5.Free { // .reversed()
-			//a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
-			a := c5.Alignment | aless
+			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
+			// a := c5.Alignment | aless // need this for other case, how to make work?
 			box, vr := v.handleAlign(sizes[c5.View], r, a, c5)
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
-			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
+			//zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			ct, _ := c5.View.(ContainerType)
 			if ct != nil {

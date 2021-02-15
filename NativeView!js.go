@@ -147,7 +147,7 @@ func (v *NativeView) SetAboveParent(above bool)                        {}
 func NativeViewAddToRoot(v View)                                       {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))      {}
 func (v *NativeView) setjs(property string, value interface{})         {}
-func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {}
+func (v *NativeView) SetPointerEnterHandlerSetPointerEnterHandler(handler func(inside bool)) {}
 func (v *NativeView) ReplaceChild(child, replace View) error {
 	return nil
 }

@@ -19,6 +19,12 @@ type baseNativeView struct {
 	parent       *NativeView
 }
 
+func (v *NativeView) MakeJSElement(view View, etype string) {
+	v.Element = DocumentJS.Call("createElement", etype)
+	v.Element.Set("style", "position:absolute")
+	v.View = view
+}
+
 func (v *NativeView) Parent() *NativeView {
 	// e := v.get("parentElement")
 	// if e.Type() == js.TypeUndefined || e.Type() == js.TypeNull {
@@ -240,12 +246,19 @@ func (v *NativeView) IsFocused() bool {
 }
 
 func (v *NativeView) Focus(focus bool) View {
+	zlog.Assert(focus)
+	// zlog.Info("FOCUS:", v.ObjectName(), focus)
 	v.call("focus")
 	return v
 }
 
 func (v *NativeView) SetCanFocus(can bool) View {
-	v.setjs("tabindex", "0")
+	// zlog.Info("SetCanFocus:", v.ObjectName())
+	val := "-1"
+	if can {
+		val = "0"
+	}
+	v.setjs("tabindex", val)
 	return v
 }
 
@@ -254,6 +267,7 @@ func (v *NativeView) Opaque(opaque bool) View {
 }
 
 func (v *NativeView) GetChild(path string) *NativeView {
+	zlog.Fatal(nil, "not implemented")
 	return nil
 }
 
@@ -261,6 +275,10 @@ func (v *NativeView) DumpTree() {
 }
 
 func (v *NativeView) RemoveFromParent() {
+	win := v.GetWindow()
+	zlog.Info("RemoveFromParent:", v.ObjectName())
+	win.removeKeyPressHandlerViews(v.View)
+
 	v.StopStoppers()
 	zlog.Assert(v.parent != nil)
 	v.parent.RemoveChild(v)
@@ -304,9 +322,10 @@ func (v *NativeView) Text() string {
 }
 
 func (v *NativeView) AddChild(child View, index int) {
+	zlog.ErrorIf(index != -1, "non -1 insert not implemented")
 	n := ViewGetNative(child)
 	if n == nil {
-		panic("NativeView AddChild child not native")
+		zlog.Fatal(nil, "NativeView AddChild child not native")
 	}
 	n.parent = v
 	v.call("appendChild", n.Element)
@@ -384,6 +403,7 @@ func (lp *LongPresser) HandleOnClick(view View) {
 	}
 	p, _ := view.(Pressable)
 	if p != nil && !lp.cancelClick && p.PressedHandler() != nil && view.Usable() {
+		// zlog.Info("HANDLE ONCLICK!")
 		p.PressedHandler()()
 	}
 	lp.cancelClick = false
@@ -445,7 +465,13 @@ func (v *NativeView) RotateDeg(deg float64) {
 }
 
 func (v *NativeView) GetWindow() *Window {
-	w := v.getjs("ownerDocument").Get("defaultView")
+	root := v
+	all := v.AllParents()
+	if len(all) > 1 {
+		root = all[0]
+	}
+	w := root.getjs("ownerDocument").Get("defaultView")
+	// zlog.Info("NV.GetWindow:", w, root.ObjectName())
 	return windowsFindForElement(w)
 }
 
@@ -464,9 +490,9 @@ func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
 	}))
 }
 
-func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
-	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) {
-		handler(v.View, key, mods)
+func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier) bool) {
+	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) bool {
+		return handler(v.View, key, mods)
 	})
 }
 

@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -34,17 +36,17 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
 	v.StackView.Init(v, true, name)
 	v.SetSpacing(0)
+	v.Header = StackViewHor("header")
 	if buttons {
 		v.ButtonName = TabsDefaultButtonName
 		v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
+		v.Header.SetMargin(zgeo.RectFromXY2(2, 0, 0, 0))
 	} else {
-		v.SetMargin(zgeo.RectFromXY2(0, 2, 0, -2))
 		v.MaxImageSize = zgeo.Size{60, 20}
+		v.Header.SetMargin(zgeo.RectFromXY2(6, 3, -6, -3))
 	}
 	v.tabs = map[string]*tab{}
-	v.Header = StackViewHor("header")
-	v.Header.SetMargin(zgeo.RectFromXY2(2, 0, 0, 0))
-	v.Header.SetSpacing(10)
+	v.Header.SetSpacing(12)
 	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
 	return v
 }
@@ -98,18 +100,21 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	tab.childAlignment = zgeo.Left | zgeo.Top | zgeo.Expand
 	if v.ButtonName != "" {
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
-		b := ButtonNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
+		b := ButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
 		button = &b.ShapeView
+		button.SetTextColor(TabsDefaultTextColor)
+		button.SetMarginS(zgeo.Size{10, 0})
+		button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 		view = b
 	} else {
 		button = ShapeViewNew(ShapeViewTypeRoundRect, minSize)
 		button.SetColor(v.selectedButtonColor)
+		button.MaxSize = v.MaxImageSize
+		button.ImageMargin = zgeo.Size{}
 		view = button
 	}
+	button.MaxSize.H = 26
 	button.SetObjectName(id)
-	button.SetMarginS(zgeo.Size{10, 0})
-	button.SetTextColor(TabsDefaultTextColor)
-	button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	if ipath != "" {
 		button.SetImage(nil, ipath, nil)
 	}
@@ -118,11 +123,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
-	cell := v.Header.Add(zgeo.BottomLeft, view)
-	zlog.Info("AddTab:", view.ObjectName())
-	if !v.MaxImageSize.IsNull() {
-		cell.MaxSize = v.MaxImageSize
-	}
+	v.Header.Add(zgeo.BottomLeft, view)
 	if set {
 		v.SetTab(id)
 	}
@@ -142,7 +143,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	view := v.Header.FindViewWithName(id, false)
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
-		button, _ := view.(*Button)
+		button, _ := view.(*ButtonView)
 		if button != nil {
 			str := TabsDefaultButtonName
 			style := FontStyleNormal
@@ -226,7 +227,7 @@ func (v *TabsView) SetTab(id string) {
 					zlog.Info("SetTab Loaded re-arranged")
 				})
 		*/
-		zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
+		// zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
 		presentViewPresenting = false
 		presentViewCallReady(v.ChildView, false)
 		if et != nil {
@@ -246,7 +247,7 @@ func (v *TabsView) SetTab(id string) {
 // }
 
 func (v *TabsView) ArrangeChildren(onlyChild *View) {
-	zlog.Info("TabView ArrangeChildren")
+	// zlog.Info("TabView ArrangeChildren")
 	v.StackView.ArrangeChildren(onlyChild)
 }
 

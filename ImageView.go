@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -66,7 +68,7 @@ func (v *ImageView) SetCorner(radius float64) View {
 	return v
 }
 
-func (v *ImageView) Image() *Image {
+func (v *ImageView) GetImage() *Image {
 	return v.image
 }
 
@@ -133,7 +135,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 			got(image)
 		}
 	} else {
-		ImageFromPath(path, func(ni *Image) {
+		v.image = ImageFromPath(path, func(ni *Image) {
 			// zlog.Info("Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())

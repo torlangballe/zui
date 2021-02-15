@@ -10,10 +10,7 @@ import (
 // TODO: store pressed/logpressed js function, and release when adding new one
 
 func (v *CustomView) Init(view View, name string) {
-	v.Element = DocumentJS.Call("createElement", "div")
-	v.Element.Set("style", "position:absolute")
-	v.exposed = true
-	v.View = view
+	v.MakeJSElement(view, "div")
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
@@ -32,6 +29,8 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		// zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
 		//		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
 		(&v.LongPresser).HandleOnClick(v)
+		event := args[0]
+		event.Call("stopPropagation")
 		//		}
 		// }
 		return nil

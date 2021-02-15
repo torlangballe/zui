@@ -124,7 +124,7 @@ var scaledImageMap = map[scaledImage]*Image{}
 
 func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	proportional := false
-	ds := destRect.Size.ExpandedToInt()
+	ds := destRect.Size.Ceil()
 	si := scaledImage{image.Path, ds}
 	sourceRect = zgeo.Rect{Size: ds}
 	newImage, _ := scaledImageMap[si]
@@ -221,7 +221,7 @@ func (c *Canvas) setPath(path *zgeo.Path) {
 	path.ForEachPart(func(part zgeo.PathNode) {
 		switch part.Type {
 		case zgeo.PathMove:
-			//  zlog.Info("moveTo", part.Points[0].X, part.Points[0].Y)
+			// zlog.Info("moveTo", part.Points[0].X, part.Points[0].Y)
 			c.context.Call("moveTo", part.Points[0].X, part.Points[0].Y)
 		case zgeo.PathLine:
 			// zlog.Info("lineTo", part.Points[0].X, part.Points[0].Y)

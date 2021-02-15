@@ -1,9 +1,14 @@
+// +build zui
+
 package zui
 
 import (
+	"reflect"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 //  Created by Tor Langballe on /22/9/14.
@@ -22,6 +27,28 @@ const (
 	PresentViewTransitionReverse
 	PresentViewTransitionSame
 )
+
+var presentCloseFunc func(dismissed bool)
+
+var presentedNativeViewStack []View
+
+func PresentedViewCurrentIsParent(v View) bool {
+	l := len(presentedNativeViewStack)
+	if l <= 1 {
+		return true
+	}
+	nv := ViewGetNative(v)
+	p := presentedNativeViewStack[l-1]
+	if p == nv {
+		return true
+	}
+	for _, n := range nv.AllParents() {
+		if n == p {
+			return true
+		}
+	}
+	return false
+}
 
 func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.Rect, fade float32) {
 	var me = screen
@@ -59,6 +86,8 @@ type PresentViewAttributes struct {
 	Modal                    bool
 	Title                    string
 	ModalCloseOnOutsidePress bool
+	ModalDimBackground       bool
+	ModalDropShadow          zgeo.DropShadow
 }
 
 var stack []PresentViewAttributes
@@ -68,6 +97,12 @@ func PresentViewAttributesNew() PresentViewAttributes {
 	a.DurationSecs = 0.5
 	a.MakeFull = false
 	a.PortraitOnly = false
+	a.ModalDimBackground = true
+	a.ModalDropShadow = zgeo.DropShadow{
+		Delta: zgeo.Size{4, 4},
+		Blur:  8,
+		Color: zgeo.ColorNewGray(0.2, 1),
+	}
 	return a
 }
 
@@ -100,71 +135,102 @@ func presentViewCallReady(v View, beforeWindow bool) {
 	}
 }
 
-var presentViewPresenting = true
-
-func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
-	presentViewPresenting = true
-	presentViewCallReady(v, true)
-
-	ct, _ := v.(ContainerType)
-	if ct != nil {
-		WhenContainerLoaded(ct, func(waited bool) {
-			presentLoaded(v, attributes, presented, closed)
-		})
-	} else {
-		presentLoaded(v, attributes, presented, closed)
-	}
-}
-
-var firstPresented bool
-
-func presentLoaded(v View, attributes PresentViewAttributes, presented func(win *Window), closed func()) {
-	// zlog.Info("PresentView", v.ObjectName())
+func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, closed func(dismissed bool)) (outer View) {
+	outer = v
 	win := WindowGetMain()
-
-	fullRect := win.ContentRect()
-	rect := fullRect
-
-	size := v.CalculatedSize(rect.Size)
-	if attributes.Modal || firstPresented {
-		rect = rect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
-	}
 	if attributes.Modal {
 		ct, _ := v.(ContainerType)
 		if ct != nil {
-			v.SetBGColor(zgeo.ColorNewGray(0.95, 1))
 			v.SetCorner(5)
 		}
 		nv := ViewGetNative(v)
 		if nv != nil {
-			nv.SetDropShadow(zgeo.DropShadow{Delta: zgeo.Size{4, 4}, Blur: 8, Color: zgeo.ColorNewGray(0.2, 1)})
-			g := ContainerViewNew(nil, "$blocker")
+			nv.SetDropShadow(attributes.ModalDropShadow)
+			blocker := ContainerViewNew(nil, "$blocker")
+			outer = blocker
+			fullRect := win.ContentRect()
 			fullRect.Pos = zgeo.Pos{}
-			g.SetRect(fullRect)
-			g.SetBGColor(zgeo.ColorNewGray(0, 0.5))
-			if attributes.Pos != nil {
-				g.Add(zgeo.TopLeft, v, attributes.Pos.Size())
+			// zlog.Info("blocker rect:", fullRect)
+			blocker.SetRect(fullRect)
+			if attributes.ModalDimBackground {
+				blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
 			} else {
-				g.Add(zgeo.Center, v)
+				blocker.SetBGColor(zgeo.ColorClear)
 			}
-			g.ArrangeChildren(nil)
+			blocker.Add(zgeo.TopLeft, v)
 			if attributes.ModalCloseOnOutsidePress {
 				// lp, _ := v.(Pressable)
-				// zlog.Info("LP:", lp != nil, v.ObjectName())
 				// if lp != nil {
 				// 	lp.SetPressedHandler(func() {
 				// 		zlog.Info("LP Pressed")
 				// 	})
 				// }
-				g.SetPressedHandler(func() {
-					PresentViewPop(v, closed)
+				blocker.SetPressedHandler(func() {
+					// zlog.Info("blocker pressed")
+					dismissed := true
+					PresentViewClose(v, dismissed, closed)
 				})
 			}
-			v = g
-			win.AddView(g)
+			win.AddView(blocker)
+		}
+	}
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		recursive := true
+		ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
+			// TODO: focus something here...
+			return false
+		})
+	}
+	return
+}
+
+var presentViewPresenting = true
+
+func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
+	presentedNativeViewStack = append(presentedNativeViewStack, ViewGetNative(v))
+	presentCloseFunc = closed
+	presentViewPresenting = true
+	presentViewCallReady(v, true)
+
+	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		WhenContainerLoaded(ct, func(waited bool) {
+			zlog.Info("ready to present", reflect.ValueOf(v).Type(), v.ObjectName())
+			presentLoaded(v, outer, attributes, presented, closed)
+		})
+	} else {
+		presentLoaded(v, outer, attributes, presented, closed)
+	}
+}
+
+var firstPresented bool
+
+func presentLoaded(v, outer View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
+	// zlog.Info("PresentView", v.ObjectName(), reflect.ValueOf(v).Type())
+	win := WindowGetMain()
+	fullRect := win.ContentRect()
+	fullRect.Pos = zgeo.Pos{}
+	rect := fullRect
+	size := v.CalculatedSize(rect.Size)
+	if attributes.Modal || firstPresented {
+		rect = rect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
+	}
+	if attributes.Modal {
+		nv := ViewGetNative(v)
+		if nv != nil {
+			r := rect
+			if attributes.Pos != nil {
+				r.Pos = *attributes.Pos
+			}
+			r = r.MovedInto(fullRect)
+			v.SetRect(r)
 		}
 	} else {
-		if firstPresented {
+		if !firstPresented {
+			win.AddView(outer)
+		} else {
 			size.H += WindowBarHeight
 			//			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
 			o := attributes.WindowOptions
@@ -172,16 +238,18 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 			o.Size = size
 			// zlog.Info("PresentView:", rect.Pos, size, attributes.ID)
 			win = WindowOpen(o)
+			win.AddView(outer)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
 			}
 			if closed != nil {
-				win.HandleClosed = closed
+				win.HandleClosed = func() {
+					closed(true)
+					presentCloseFunc = nil
+				}
 			}
 		}
 		v.SetRect(zgeo.Rect{Size: rect.Size})
-		win.AddView(v)
-		win.setOnResize()
 	}
 	firstPresented = true
 
@@ -190,35 +258,42 @@ func presentLoaded(v View, attributes PresentViewAttributes, presented func(win 
 	// 	cvt.ArrangeChildren(nil)
 	// }
 	// NativeViewAddToRoot(v)
-	presentViewCallReady(v, false)
+	presentViewCallReady(outer, false)
 	presentViewPresenting = false
-	et, _ := v.(ExposableType)
+	et, _ := outer.(ExposableType)
 	if et != nil {
 		et.drawIfExposed()
 	}
+	win.setOnResize()
 	if presented != nil {
 		presented(win)
 	}
 }
 
-func PresentViewPop(view View, done func()) {
-	PresentViewPopOverride(view, PresentViewAttributes{}, done)
+func PresentViewClose(view View, dismissed bool, done func(dismissed bool)) {
+	PresentViewCloseOverride(view, dismissed, PresentViewAttributes{}, done)
 }
 
-func PresentViewPopOverride(view View, overrideAttributes PresentViewAttributes, done func()) {
+func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes PresentViewAttributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
-	zlog.Info("PresentViewPopOverride", view.ObjectName())
+	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName())
 
 	nv := ViewGetNative(view)
 	parent := nv.Parent()
 	if parent != nil && parent.ObjectName() == "$blocker" {
-		zlog.Info("PresentViewPopOverride remove blocker instead", view.ObjectName())
+		// zlog.Info("PresentViewCloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
-	nv.StopStoppers()
+	presentedNativeViewStack = presentedNativeViewStack[:len(presentedNativeViewStack)-1]
 	nv.RemoveFromParent()
 	if done != nil {
-		done()
+		done(dismissed)
+	}
+	if presentCloseFunc != nil {
+		ztimer.StartIn(0.2, func() {
+			presentCloseFunc(dismissed)
+		})
+		// presentCloseFunc = nil // can't do this, clears before StartIn
 	}
 }
 
@@ -231,21 +306,7 @@ func PresentViewRecusivelyHandleActivation(activated bool) {
 	}
 }
 
-// private func setFocusInView(view ZContainerView) {
-//     view.setNeedsFocusUpdate()
-
-//     view.RangeChildren(subViews true) { (view) in
-//         if let v = view as? ZCustomView {
-//             if v.canFocus {
-//                 view.Focus()
-//                 return false
-//             }
-//         }
-//         return true
-//     }
-// }
-
-func PresentTitledView(view View, stitle string, winOptions WindowOptions, barViews map[View]zgeo.Alignment, ready func(stack, bar *StackView), presented func(*Window), closed func()) {
+func PresentTitledView(view View, stitle string, winOptions WindowOptions, barViews map[View]zgeo.Alignment, ready func(stack, bar *StackView), presented func(*Window), closed func(dismissed bool)) {
 	stack, _ := view.(*StackView)
 	if stack == nil {
 		stack = StackViewVert("present-titled-stack")
