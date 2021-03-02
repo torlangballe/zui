@@ -53,6 +53,10 @@ func (v *NativeView) Color() zgeo.Color {
 	return zgeo.Color{}
 }
 
+func (v *NativeView) BGColor() zgeo.Color {
+	return zgeo.Color{}
+}
+
 func (v *NativeView) SetAlpha(alpha float32) View {
 	return v
 }
@@ -147,7 +151,10 @@ func (v *NativeView) SetAboveParent(above bool)                        {}
 func NativeViewAddToRoot(v View)                                       {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))      {}
 func (v *NativeView) setjs(property string, value interface{})         {}
-func (v *NativeView) SetPointerEnterHandlerSetPointerEnterHandler(handler func(inside bool)) {}
+func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {}
+func (v *NativeView) SetOnInputHandler(handler func(view View)) {}
+func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier) bool) {}
+
 func (v *NativeView) ReplaceChild(child, replace View) error {
 	return nil
 }
@@ -158,3 +165,13 @@ func (v *NativeView) AllParents() (all []*NativeView) {
 func (v *NativeView) GetFocusedView() *NativeView {
 	return nil
 }
+
+func (v *NativeView) GetWindow() *Window {
+	return nil
+}
+
+func (v *NativeView) GetAbsoluteRect() zgeo.Rect {
+	return zgeo.Rect{}
+}
+
+func (v *NativeView) SetStyle(key, value string) {}

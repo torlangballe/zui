@@ -1,12 +1,6 @@
 package zui
 
-import (
-	"github.com/torlangballe/zutil/zprocess"
-	"github.com/torlangballe/zutil/zfile"
-	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
-)
-
+/*
 func WindowsCloseWindowWithTitle(title string) error {
 	eval := `"WINDOWTITLE eq ` + title + `"`
 	str, err := zprocess.RunCommand("killtask", 4, "/FI", eval)
@@ -33,3 +27,4 @@ func WindowGetImageForTitle(title string, crop zgeo.Rect) (*Image, error) {
 	image = image.Cropped(crop, false)
 	return image, nil
 }
+*/

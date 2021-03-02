@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-const separatorID = "$sep"
 
 func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	v := &MenuView{}

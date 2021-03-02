@@ -1,25 +1,36 @@
+// +build zui
+
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type VideoView struct {
 	NativeView
 	baseVideoView
+	Out *ImageView
 	LongPresser
-	canvas      *Canvas
-	minSize     zgeo.Size
-	pressed     func()
-	longPressed func()
+	streaming        bool
+	StreamSize       zgeo.Size
+	canvas           *Canvas
+	maxSize          zgeo.Size
+	pressed          func()
+	longPressed      func()
+	StreamingStarted func()
 
 	draw func(rect zgeo.Rect, canvas *Canvas, view View)
 }
 
-func VideoViewNew(minSize zgeo.Size) *VideoView {
+func VideoViewNew(maxSize zgeo.Size) *VideoView {
 	v := &VideoView{}
-	v.Init(v, minSize)
+	v.Init(v, maxSize)
 	return v
 }
 
 func (v *VideoView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.minSize
+	if !v.StreamSize.IsNull() {
+		return v.StreamSize.ScaledInto(v.maxSize)
+	}
+	return v.maxSize
 }

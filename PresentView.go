@@ -3,10 +3,7 @@
 package zui
 
 import (
-	"reflect"
-
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -197,7 +194,7 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 	ct, _ := v.(ContainerType)
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
-			zlog.Info("ready to present", reflect.ValueOf(v).Type(), v.ObjectName())
+			// zlog.Info("ready to present", reflect.ValueOf(v).Type(), v.ObjectName())
 			presentLoaded(v, outer, attributes, presented, closed)
 		})
 	} else {

@@ -43,3 +43,4 @@ func (w *Window) SetTitle(title string)          {}
 func (w *Window) SetHandleClosed(closed func())  {}
 func (win *Window) SetAddressBarURL(surl string) {}
 func (win *Window) SetLocation(surl string)      {}
+func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {}

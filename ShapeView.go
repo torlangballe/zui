@@ -63,7 +63,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	v.ImageGap = 4
 	v.Count = 5
 	v.StrokeColor = zgeo.ColorWhite
-	v.ImageAlign = zgeo.Center
+	v.ImageAlign = zgeo.Center | zgeo.Proportional
 	v.PathLineType = zgeo.PathLineRound
 	v.SetColor(zgeo.ColorGray)
 	//	v.Proportional = true
@@ -293,7 +293,6 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		} else {
 			a := v.ImageAlign | zgeo.Shrink
 			ir := rect.Align(v.image.Size(), a, v.ImageMargin, v.ImageMaxSize)
-			//			zlog.Info("SV DRAW IMAGE:", ir, v.ObjectName(), v.ImageMargin, v.image.Size(), a, rect)
 			var corner float64
 			if v.IsRoundImage {
 				if v.Type == ShapeViewTypeRoundRect {

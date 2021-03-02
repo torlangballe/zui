@@ -6,7 +6,6 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zhttp"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -183,7 +182,7 @@ func (win *Window) SetAddressBarURL(surl string) {
 
 func (win *Window) setOnKeyUp() {
 	doc := win.element.Get("document")
-	zlog.Info("win keydown")
+	// zlog.Info("win keydown")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		if len(win.keyHandlers) != 0 {
 			key, mods := getKeyAndModsFromEvent(args[0])

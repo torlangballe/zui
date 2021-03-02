@@ -15,7 +15,6 @@ import (
 
 type ListView struct {
 	ScrollView
-	//ListViewNative
 	//	Scrolling bool
 	spacing float64
 
@@ -459,7 +458,7 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		focusedObjectName = focusedView.ObjectName()
 	}
 	// zlog.Info("UpdateWithOldNewSlice focus is:", focusedView != nil, focusedIndex, focusedID)
-	// zlog.Info("Sel:", selectionSet, selectionID, i, v.selectionIndex)
+	// defer zlog.Info("UpdateWithOldNewSlice done")
 	for {
 		oid := oldSlice.GetID(i)
 		nid := newSlice.GetID(i)
@@ -480,6 +479,9 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 				// zlog.Info("break2")
 				break
 			}
+		}
+		if oid == "" && nid == "" {
+			break
 		}
 		if (oid == "" || nid == "") && len(selectIDs) == 0 {
 			// zlog.Info("break3")

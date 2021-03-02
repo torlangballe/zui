@@ -29,6 +29,8 @@ func (v *TextView) IsPassword(is bool) *TextView {
 
 func (v *TextView) SetChangedHandler(handler func(view View))                                     {}
 func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {}
+func (v *TextView) ScrollToBottom() {}
+func (v *TextView) SetIsStatic(s bool) {}
 
 func (v *TextView) SetPlaceholder(str string) *TextView {
 	return v
@@ -38,4 +40,3 @@ func (v *TextView) SetMargin(m zgeo.Rect) View {
 	return v
 }
 
-func (v *TextView) ScrollToBottom() {}

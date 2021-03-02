@@ -216,17 +216,16 @@ func (v *TabsView) SetTab(id string) {
 		presentViewCallReady(v.ChildView, true)
 		presentViewPresenting = true
 		v.ArrangeChildren(nil) // This can create table rows and do all kinds of things that load images etc.
-		/*
-			ct := v.View.(ContainerType)
-				WhenContainerLoaded(ct, func(waited bool) {
-					zlog.Info("SetTab Loaded")
-					// zlog.Info("Set Tab container loaded:", waited)
-					if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-						v.ArrangeChildren(nil)
-					}
-					zlog.Info("SetTab Loaded re-arranged")
-				})
-		*/
+
+		ct := v.View.(ContainerType)
+		WhenContainerLoaded(ct, func(waited bool) {
+			// zlog.Info("SetTab Loaded")
+			// zlog.Info("Set Tab container loaded:", waited)
+			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+				v.ArrangeChildren(nil)
+			}
+		})
+
 		// zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
 		presentViewPresenting = false
 		presentViewCallReady(v.ChildView, false)

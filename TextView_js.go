@@ -50,7 +50,7 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 	}))
 }
 
-func (v *TextView) SetStatic(s bool) {
+func (v *TextView) SetIsStatic(s bool) {
 	v.setjs("readOnly", s)
 }
 

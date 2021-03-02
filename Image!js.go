@@ -34,7 +34,7 @@ func ImageNewRGBA(size zgeo.Size) *Image {
 	return i
 }
 
-func ImageFromNative(n image.Image) *Image {
+func ImageFromGo(n image.Image) *Image {
 	i := &Image{}
 	i.GoImage = n
 	i.scale = 1
@@ -50,7 +50,7 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 			return nil
 		}
 	}
-	i := ImageFromNative(goImage)
+	i := ImageFromGo(goImage)
 	i.scale = imageGetScaleFromPath(path)
 	if got != nil {
 		got(i)
@@ -91,7 +91,7 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	scale := float64(i.scale)
 	newImage := goImageShrunkInto(i.GoImage, scale, size, proportional)
-	return ImageFromNative(newImage)
+	return ImageFromGo(newImage)
 }
 
 func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
@@ -146,7 +146,7 @@ func ImageFromFile(filepath string) (i *Image, format string, err error) {
 	if err != nil {
 		return nil, f, err
 	}
-	return ImageFromNative(ni), f, nil
+	return ImageFromGo(ni), f, nil
 }
 
 func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
@@ -207,5 +207,5 @@ func (i *Image) RGBAImage() *Image {
 	r := i.GoImage.Bounds()
 	n := image.NewRGBA(r)
 	draw.Draw(n, r, i.GoImage, image.Point{}, draw.Over)
-	return ImageFromNative(n)
+	return ImageFromGo(n)
 }

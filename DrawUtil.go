@@ -1,0 +1,19 @@
+package zui
+
+import "github.com/torlangballe/zutil/zgeo"
+
+func DrawUtilAmountPie(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float64, color, strokeColor zgeo.Color) {
+	path := zgeo.PathNew()
+	s := rect.Size.MinusD(strokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
+	w := s.Min()
+	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, ScreenMain().SoftScale)
+	path.MoveTo(rect.Center())
+	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, value*360)
+	canvas.SetColor(color, 1)
+	canvas.FillPath(path)
+
+	line := zgeo.PathNew()
+	line.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, 360)
+	canvas.SetColor(strokeColor, 1)
+	canvas.StrokePath(line, strokeWidth, zgeo.PathLineRound)
+}

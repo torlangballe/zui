@@ -1,8 +1,8 @@
+// +build zui
+
 package zui
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -26,11 +26,13 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	iv.SetAlpha(0.4)
 	s.Add(zgeo.TopLeft, t)
 	s.Add(zgeo.CenterLeft, iv, zgeo.Size{3, 0}).Free = true
-	t.Element.Call("addEventListener", "input", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	t.SetOnInputHandler(func(view View) {
 		iv.Show(t.Text() == "")
-		return nil
-	}))
-
+	})
+	// Call("addEventListener", "input", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	// 	iv.Show(t.Text() == "")
+	// 	return nil
+	// }))
 	return s
 }
 

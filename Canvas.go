@@ -11,9 +11,14 @@ import (
 //  Created by Tor Langballe on /21/10/15.
 // Check out: https://github.com/tdewolff/canvas
 type Canvas struct {
+	size zgeo.Size
 	canvasNative
-	currentMatrix zgeo.Matrix // is currentTransform...
-	DownsampleImages  bool
+	currentMatrix    zgeo.Matrix // is currentTransform...
+	DownsampleImages bool
+}
+
+func (c *Canvas) Size() zgeo.Size {
+	return c.size
 }
 
 func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
@@ -70,7 +75,7 @@ var measureTextMutex sync.Mutex
 
 func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	var canvas *Canvas
-	measureTextMutex.Lock() 
+	measureTextMutex.Lock()
 	// fmt.Println("canvas measure lock time:", time.Since(start), len(measureTextCanvases))
 	for c, used := range measureTextCanvases {
 		if !used {
@@ -90,4 +95,12 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	measureTextCanvases[canvas] = false
 	measureTextMutex.Unlock()
 	return s
+}
+
+func (c *Canvas) ZImage(cut zgeo.Rect) *Image {
+	gi := c.Image(cut)
+	if gi == nil {
+		return nil
+	}
+	return ImageFromGo(gi)
 }

@@ -29,6 +29,7 @@ func CanvasNew() *Canvas {
 func (c *Canvas) SetSize(size zgeo.Size) {
 	c.element.Set("width", size.W) // scale?
 	c.element.Set("height", size.H)
+	c.size = size
 }
 
 func (c *Canvas) Element() js.Value {
@@ -70,7 +71,6 @@ func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
 	return nil
-	//    state.font = afontCreateTransformed(amatrix)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {
@@ -97,8 +97,6 @@ func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineT
 	c.setLineType(ltype)
 	c.setLineWidth(width)
 	c.context.Call("stroke")
-
-	// context.setLineWidth(CGFloat(width))
 }
 
 func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64, ltype zgeo.PathLineType, eofill bool) {
@@ -109,10 +107,6 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	c.setLineType(ltype)
 	c.context.Call("stroke")
 	c.PopState()
-
-	//        context.setLineWidth(CGFloat(width))
-
-	//        context.drawPath(using eofill ? CGPathDrawingMode.eoFillStroke  CGPathDrawingMode.fillStroke)
 }
 
 type scaledImage struct {
@@ -131,6 +125,7 @@ func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity
 	if newImage != nil {
 		image = newImage
 		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+		return
 	}
 	go func() {
 		// zlog.Info("drawPlainImage cache scaled", image.Path, ds)
@@ -267,7 +262,18 @@ func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
 	return s
 }
 
-func (c *Canvas) Image() *image.Image {
-	zlog.Fatal(nil, "Not implemented")
-	return nil
+func (c *Canvas) Image(cut zgeo.Rect) image.Image {
+	if cut.IsNull() {
+		cut = zgeo.Rect{Size: c.Size()}
+	}
+	idata := c.context.Call("getImageData", cut.Pos.X, cut.Pos.X, cut.Size.W, cut.Size.H)
+	clamped := idata.Get("data")
+	ilen := clamped.Length()
+	// zlog.Info("getImageData:", ilen)
+	buf := make([]byte, ilen, ilen)
+	js.CopyBytesToGo(buf, clamped)
+	// zlog.Info("canvas.Image:", cut, ilen, n)
+	newImage := image.NewRGBA(zgeo.Rect{Size: cut.Size}.GoRect())
+	newImage.Pix = buf
+	return newImage
 }

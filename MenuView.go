@@ -7,6 +7,8 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
+const separatorID = "$sep"
+
 type MenuType interface {
 	//	UpdateAndSelect(items zdict.Items, value interface{})
 	UpdateItems(items zdict.Items, values []interface{})

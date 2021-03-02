@@ -1,3 +1,4 @@
+// +build zui
 // +build !js
 
 package zui

@@ -7,11 +7,12 @@ import (
 
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-
 	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /20/10/15.
+
+var NewStack bool
 
 type StackView struct {
 	ContainerView
@@ -75,15 +76,15 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignment, cell ContainerViewCell) (zgeo.Rect, zgeo.Rect) {
 	max := cell.MaxSize
 	var box = inRect.Align(size, a, zgeo.Size{}, max)
+	// zlog.Info("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, cell.Margin)
 	// var box = inRect.Align(size, a, cell.Margin, max)
 
 	var vr zgeo.Rect
 	// if v.ObjectName() == "header" {
-	// 	zlog.Info("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, vr, cell.Margin)
 	// }
 	if cell.Alignment.Only(v.Vertical)&zgeo.Shrink != 0 {
 		s := cell.View.CalculatedSize(inRect.Size)
-		zlog.Fatal(nil, "strange align")
+		//!!		zlog.Fatal(nil, "strange align")
 		// zlog.Info("handleAlign", s, cell.Alignment, cell.Margin, max)
 		vr = box.Align(s, cell.Alignment, cell.Margin, max)
 	} else {
@@ -166,7 +167,22 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName())
+	zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
+	if NewStack {
+		rm := v.Rect().Plus(v.Margin())
+		var lays []zgeo.LayoutCell
+		for _, c := range v.cells {
+			l := c.LayoutCell
+			l.OriginalSize = c.View.CalculatedSize(rm.Size)
+			l.Name = c.View.ObjectName()
+			lays = append(lays, l)
+		}
+		rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
+		for i, c := range v.cells {
+			c.View.SetRect(rects[i])
+		}
+		return
+	}
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
@@ -215,20 +231,20 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var cs = v.CalculatedSize(zgeo.Size{}).Vertice(v.Vertical)
 	cs += v.margin.Size.Vertice(v.Vertical)
 
-	// zlog.Info("Arrange:", v.ObjectName(), cs, r)
+	//	zlog.Info("Arrange:", v.ObjectName(), cs, r)
 	diff := r.Size.Vertice(v.Vertical) - cs
-	// zlog.Info("DIFF:", v.ObjectName(), diff, r.Size, cs)
 	var lastNoFreeIndex = -1
 	for _, useMaxSize := range []bool{true, false} {
 		for i, c3 := range v.cells {
 			if !c3.Collapsed && !c3.Free && (c3.MaxSize.W != 0) == useMaxSize {
+				//				zlog.Info("DIFF3:", incs, v.ObjectName(), diff, r.Size, cs)
 				lastNoFreeIndex = i
 				size := v.getCellSize(c3, &i)
 				if decs > 0 && c3.Alignment&ashrink != 0 && diff != 0.0 {
 					//addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &decs)
-				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 {
+				} else if incs > 0 && c3.Alignment&aexpand != 0 && diff != 0.0 && c3.Alignment&zgeo.Proportional == 0 {
 					// if v.ObjectName() == "header" {
-					// zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
+					//					zlog.Info("addDiff:", c3.View.ObjectName(), size.W, diff, r.Size.W, c3.Alignment)
 					// }
 					addDiff(&size, c3.MaxSize.W, v.Vertical, &diff, &incs)
 				}
@@ -248,7 +264,6 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 				if i != lastNoFreeIndex {
 					a = a.Subtracted(zgeo.Expand.Only(v.Vertical))
 				}
-				// zlog.Info("cellsides:", i, v.ObjectName(), c4.View.ObjectName(), sizes[c4.View], c4.View)
 				box, vr := v.handleAlign(sizes[c4.View], r, a, c4)
 				if onlyChild == nil || *onlyChild == c4.View {
 					c4.View.SetRect(vr)
@@ -286,6 +301,8 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			}
 		}
 	}
+	//	zlog.Info("Arrange2:", v.ObjectName(), r, v.Vertical, "cn:", cn, "cedim:", centerDim)
+
 	if v.Vertical {
 		r.SetMinY(math.Max(r.Min().Y, cn-centerDim/2))
 	} else {
@@ -296,7 +313,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	} else {
 		r.SetMaxX(math.Min(r.Max().X, cn+centerDim/2))
 	}
-	// Centered children:
+	//	Centered children:
 	for _, c5 := range v.cells {
 		if !c5.Collapsed && c5.Alignment&amid != 0 && !c5.Free { // .reversed()
 			a := c5.Alignment.Subtracted(amid|zgeo.Expand) | aless
@@ -305,7 +322,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			if onlyChild == nil || *onlyChild == c5.View {
 				c5.View.SetRect(vr)
 			}
-			//zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
+			// zlog.Info("cellmid:", v.ObjectName(), c5.View.ObjectName(), c5.View.CalculatedSize(zgeo.Size{}), c5.Alignment, vr, "s:", sizes[c5.View], r, "get:", c5.View.Rect(), c5.Margin, c5.MaxSize)
 			*r.Pos.VerticeP(v.Vertical) = box.Max().Vertice(v.Vertical) + v.spacing
 			ct, _ := c5.View.(ContainerType)
 			if ct != nil {

@@ -135,7 +135,7 @@ func makeRGBAString(c zgeo.Color) string {
 	if !c.Valid {
 		return "initial"
 	}
-	return c.GetHex()
+	return c.Hex()
 	//	rgba := c.GetRGBA()
 	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }
@@ -152,6 +152,10 @@ func (v *NativeView) Color() zgeo.Color {
 
 func (v *NativeView) style() js.Value {
 	return v.getjs("style")
+}
+
+func (v *NativeView) SetStyle(key, value string) {
+	v.style().Set(key, value)
 }
 
 func (v *NativeView) SetAlpha(alpha float32) View {
@@ -276,7 +280,7 @@ func (v *NativeView) DumpTree() {
 
 func (v *NativeView) RemoveFromParent() {
 	win := v.GetWindow()
-	zlog.Info("RemoveFromParent:", v.ObjectName())
+	// zlog.Info("RemoveFromParent:", v.ObjectName())
 	win.removeKeyPressHandlerViews(v.View)
 
 	v.StopStoppers()
@@ -322,7 +326,7 @@ func (v *NativeView) Text() string {
 }
 
 func (v *NativeView) AddChild(child View, index int) {
-	zlog.ErrorIf(index != -1, "non -1 insert not implemented")
+	zlog.ErrorIf(index != -1, zlog.StackAdjust(1), "non -1 insert not implemented")
 	n := ViewGetNative(child)
 	if n == nil {
 		zlog.Fatal(nil, "NativeView AddChild child not native")
@@ -494,6 +498,13 @@ func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods
 	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) bool {
 		return handler(v.View, key, mods)
 	})
+}
+
+func (v *NativeView) SetOnInputHandler(handler func(view View)) {
+	v.Element.Set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		handler(v.View)
+		return nil
+	}))
 }
 
 func (v *NativeView) GetFocusedView() (found View) {

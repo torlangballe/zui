@@ -12,6 +12,7 @@ import (
 
 // https://github.com/siongui/godom
 // https://medium.zenika.com/go-1-11-webassembly-for-the-gophers-ae4bb8b1ee03
+// https://github.com/golang/go/wiki/WebAssembly
 
 var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")

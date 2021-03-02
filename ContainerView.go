@@ -30,14 +30,8 @@ type ContainerView struct {
 }
 
 type ContainerViewCell struct {
-	Alignment         zgeo.Alignment
-	Margin            zgeo.Size
-	View              View
-	MaxSize           zgeo.Size // MaxSize is maximum size of child-view including margin
-	MinSize           zgeo.Size // MinSize is minimum size of child-view including margin
-	Collapsed         bool
-	Free              bool // Free Cells are placed using ContainerView method, not "inherited" ArrangeChildren method
-	ExpandFromMinSize bool // Makes cell expand into extra space in addition to minsize, not current size
+	zgeo.LayoutCell
+	View View
 }
 
 func (v *ContainerView) GetChildren() (children []View) {
@@ -181,7 +175,8 @@ func (v *ContainerView) AddView(view View, align zgeo.Alignment) *ContainerViewC
 func (v *ContainerView) AddAdvanced(view View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *ContainerViewCell {
 	collapsed := false
 	// zlog.Info("CV AddAdvancedView:", v.ObjectName(), view.ObjectName())
-	return v.AddCell(ContainerViewCell{align, marg, view, maxSize, zgeo.Size{}, collapsed, free, false}, index)
+	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.Size{}, collapsed, free, false, zgeo.Size{}, view.ObjectName()}
+	return v.AddCell(ContainerViewCell{LayoutCell: lc, View: view}, index)
 }
 
 func (v *ContainerView) Contains(view View) bool {

@@ -9,10 +9,9 @@ import (
 	"os"
 	"strconv"
 
-	//"github.com/bamiaux/rez"
-
 	//"github.com/nfnt/resize"
 
+	"github.com/bamiaux/rez"
 	"github.com/disintegration/imaging"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
@@ -73,18 +72,22 @@ func goImageShrunkInto(goImage image.Image, scale float64, size zgeo.Size, propo
 		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
 	}
 	nSize := vsize.TimesD(scale)
+
+	//	this didn't work for large image?
 	width := int(nSize.W)
 	height := int(nSize.H)
-	//	newImage := resize.Resize(width, height, goImage, resize.Lanczos3) //Bicubic)
-
-	newImage := imaging.Resize(goImage, width, height, imaging.Lanczos)
-
-	// goRect := zgeo.Rect{Size: nSize}.GoRect()
-	// newImage := image.NewRGBA(goRect)
-	// err := rez.Convert(newImage, goImage, rez.NewBilinearFilter()) //NewBicubicFilter
-	// if err != nil {
-	// 	zlog.Error(err, "rez Resample")
-	// }
+	var newImage image.Image
+	if s.Max() > 1000 {
+		goRect := zgeo.Rect{Size: nSize}.GoRect()
+		newImage = image.NewRGBA(goRect)
+		err := rez.Convert(newImage, goImage, rez.NewBilinearFilter()) //NewBicubicFilter
+		if err != nil {
+			zlog.Error(err, "rez Resample")
+			return nil
+		}
+	} else {
+		newImage = imaging.Resize(goImage, width, height, imaging.Lanczos)
+	}
 	return newImage
 }
 

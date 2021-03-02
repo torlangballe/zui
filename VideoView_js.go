@@ -2,9 +2,8 @@ package zui
 
 import (
 	"context"
-	"fmt"
+	"image"
 	"syscall/js"
-	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -13,11 +12,11 @@ import (
 type baseVideoView struct {
 }
 
-func (v *VideoView) Init(view View, minSize zgeo.Size) {
+func (v *VideoView) Init(view View, maxSize zgeo.Size) {
 	v.MakeJSElement(v, "video")
 	v.SetObjectName("video-input")
 	v.Element.Set("autoplay", true)
-	v.minSize = minSize
+	v.maxSize = maxSize
 }
 
 func VideoViewGetInputDevices(got func(devs map[string]string)) {
@@ -41,22 +40,24 @@ func VideoViewGetInputDevices(got func(devs map[string]string)) {
 	return
 }
 
-func (v *VideoView) keepGettingImage(ctx context.Context, canvas *Canvas, continuousImageHandler func(*Image) bool) {
-	zlog.Info("keepGettingImag:", ctx.Err())
-
+func (v *VideoView) keepGettingImage(ctx context.Context, canvas *Canvas, continuousImageHandler func(image.Image) bool) {
+	// zlog.Info("keepGettingImag:", ctx.Err())
 	for ctx.Err() == nil {
-		time.Sleep(time.Second)
+		//		time.Sleep(time.Second)
 
 		s := v.Rect().Size
 		canvas.context.Call("drawImage", v.Element, 0, 0, s.W, s.H)
-		zlog.Info("draw image")
+		goImage := canvas.Image(zgeo.Rect{})
+		// zlog.Info("draw image:", goImage.Bounds())
+		continuousImageHandler(goImage)
 	}
 }
 
 // CreateStream creates a stream, perhaps withAudio, and hooks it up with video.
 // Needs to be called in a goroutine.v.Element
-func (v *VideoView) CreateStream(withAudio bool, continuousImageHandler func(*Image) bool) {
+func (v *VideoView) CreateStream(withAudio bool, continuousImageHandler func(image.Image) bool) {
 	// https://www.twilio.com/blog/2018/04/choosing-cameras-javascript-mediadevices-api.html
+	// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Taking_still_photos
 	mediaDevs := getMediaDevices()
 	constraints := map[string]interface{}{
 		"video": true,
@@ -67,21 +68,31 @@ func (v *VideoView) CreateStream(withAudio bool, continuousImageHandler func(*Im
 	stream.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		stream := args[0]
 		v.Element.Set("srcObject", stream)
-		fmt.Println("Got Stream33")
-		//		v.Element.Call("play")
-		zlog.Info("HERE1!")
-		v.Element.Set("canplay", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			zlog.Info("can play")
+		//		v.Element.Call("play") do we need this???
+		v.Element.Set("oncanplay", js.FuncOf(func(js.Value, []js.Value) interface{} {
+			if !v.streaming {
+				v.StreamSize.W = v.Element.Get("videoWidth").Float()
+				v.StreamSize.H = v.Element.Get("videoHeight").Float()
+				v.streaming = true
+				zlog.Info("can play:", v.StreamSize)
+				if v.StreamingStarted != nil {
+					v.StreamingStarted()
+				}
+			}
 			return nil
 		}))
-		zlog.Info("HERE2", continuousImageHandler != nil)
 		if continuousImageHandler != nil {
 			ctx, cancel := context.WithCancel(context.Background())
 			v.AddStopper(cancel)
-			canvas := CanvasNew()
-			canvas.SetSize(zgeo.Size{500, 100})
-			zlog.Info("HERE!")
-			go v.keepGettingImage(ctx, canvas, continuousImageHandler)
+			v.canvas = CanvasNew()
+			s := zgeo.Size{640, 480}
+			v.canvas.SetSize(s)
+			zlog.Info("video got image:", s)
+			//			v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
+			v.Element.Call("appendChild", v.canvas.element)
+			v.canvas.element.Get("style").Set("visible", "hidden")
+			setElementRect(v.canvas.element, zgeo.Rect{Size: s})
+			go v.keepGettingImage(ctx, v.canvas, continuousImageHandler)
 		}
 		return nil
 	}))

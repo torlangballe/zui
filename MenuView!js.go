@@ -5,7 +5,7 @@ package zui
 
 import "github.com/torlangballe/zutil/zdict"
 
-func MenuViewNew(name string, items zdict.Items, value interface{}, isStatic bool) *MenuView {
+func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	return &MenuView{}
 }
 

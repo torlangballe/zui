@@ -1,13 +1,13 @@
 package zui
 
+//  Created by Tor Langballe on /15/11/15.
+
 import (
 	"os"
 	"time"
 
 	"github.com/torlangballe/zutil/ztime"
 )
-
-//  Created by Tor Langballe on /15/11/15.
 
 type App struct {
 	//    static var appFile  ZFileUrl? = nil
@@ -18,6 +18,8 @@ type App struct {
 	oldVersion     float32
 	handler        AppHandler
 }
+
+var AppMain *App
 
 func (a *App) SetHandler(handler AppHandler) {
 	a.handler = handler
@@ -73,9 +75,3 @@ func AppGetProcessId() int64 {
 	return 0
 }
 
-var AppMain *App
-
-// static var MainFunc ((_ args [string])Void)? = nil
-// class ZLauncher
-//     func Start(args [string]) { }
-// }

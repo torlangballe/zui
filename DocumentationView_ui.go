@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -49,19 +51,6 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v.Add(zgeo.TopLeft|zgeo.Expand, v.WebView)
 	return v
 }
-
-// var get GetDoc
-// var got GotGetDoc
-// get.Path = path
-// err := zrpc.ToServerClient.CallRemote(Calls.GetDocument, &get, &got)
-// if err != nil {
-// 	AlertShowError("Get Documentation", err)
-// 	return err
-// }
-
-// func makeButton(text string) *ShapeView {
-
-// }
 
 func DocumentationViewPresent(path string) error {
 	opts := WindowOptions{}

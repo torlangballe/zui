@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -21,9 +23,8 @@ func ActivityNew(colCircle, colPart zgeo.Color, size float64) *ActivityView {
 	v.stop = true
 	w := math.Floor(size / 5)
 	v.SetStroke(w, colCircle)
-	style := v.style()
-	style.Set("borderTop", fmt.Sprintf("%dpx solid %s", int(w), makeRGBAString(colPart)))
-	style.Set("boxSizing", "border-box")
+	v.SetStyle("borderTop", fmt.Sprintf("%dpx solid %s", int(w), colPart.Hex()))
+	v.SetStyle("boxSizing", "border-box")
 	v.rotationSecs = 1.5
 
 	return v

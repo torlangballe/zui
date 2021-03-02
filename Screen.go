@@ -27,6 +27,7 @@ type Screen struct {
 }
 
 func ScreenMain() Screen {
+	// test:
 	for _, s := range ScreenGetAll() {
 		if s.IsMain {
 			return s

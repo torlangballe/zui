@@ -152,7 +152,7 @@ func getNativeTextAdjustment(style zgeo.Alignment) int {
 		return 0
 	} else if style&zgeo.HorCenter != 0 {
 		return 0
-	} else if style&zgeo.HorJustify != 0 {
+	} else if style&zgeo.HorExpand != 0 {
 		panic("bad text adjust")
 	}
 	return 0 //NSTextAlignment.left

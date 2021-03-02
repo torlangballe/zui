@@ -4,6 +4,7 @@ package zui
 
 import (
 	"fmt"
+	"image"
 	"runtime"
 	"sync"
 
@@ -227,8 +228,8 @@ func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float3
 	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
 }
 
-func (c *Canvas) Image() *Image {
-	i := ImageFromNative(c.context.Image())
+func (c *Canvas) Image(cut zgeo.Rect) image.Image {
+	i := c.context.Image()
 	return i
 }
 

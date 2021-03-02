@@ -56,6 +56,7 @@ func ImageFromNative(n image.Image) *Image {
 }
 
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
+	// this can be better, use canvas.Image()
 	isFile := false
 	goImage := goImageFromPath(i.Path, isFile)
 	if goImage == nil {
@@ -64,22 +65,7 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	}
 	scale := float64(i.scale)
 	newGoImage := goImageShrunkInto(goImage, scale, size, proportional)
-	data, err := goImagePNGData(newGoImage)
-	if err != nil {
-		zlog.Error(err)
-		return nil
-	}
-	surl := zhttp.MakeDataURL(data, "image/png")
-	//	zlog.Info("image url:\n", surl)
-	var wg sync.WaitGroup
-	var newImage *Image
-	wg.Add(1)
-	ImageFromPath(surl, func(image *Image) {
-		newImage = image
-		wg.Done()
-	})
-	wg.Wait()
-	return newImage
+	return ImageFromGo(newGoImage)
 }
 
 func (i *Image) Encode(w io.Writer, qualityPercent int) error {
@@ -162,18 +148,6 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 	return i
 }
 
-// See
-// func (i *Image) GetScaledInSize(size zgeo.Size, proportional bool) *Image {
-// 	var vsize = size
-// 	if proportional {
-// 		vsize = zgeo.Rect{Size: size}.Align(i.Size(), zgeo.Center|zgeo.Shrink|zgeo.ScaleToFitProp, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
-// 	}
-// 	width := int(vsize.W) / int(i.scale)
-// 	height := int(vsize.H) / int(i.scale)
-// 	zlog.Info("GetScaledInSize not made yet:", width, height)
-// 	return nil
-// }
-
 func (i *Image) GetCropped(crop zgeo.Rect) *Image {
 	return i
 }
@@ -201,5 +175,23 @@ func (i *Image) Rotated(deg float64, around *zgeo.Pos) *Image {
 }
 
 func (i *Image) FixedOrientation() *Image {
+	return i
+}
+
+func ImageFromGo(image image.Image) *Image {
+	data, err := goImagePNGData(image)
+	if err != nil {
+		zlog.Error(err)
+		return nil
+	}
+	surl := zhttp.MakeDataURL(data, "image/png")
+	i := &Image{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	i.load(surl, func(success bool) {
+		wg.Done()
+	})
+	wg.Wait()
+	// zlog.Info("Loaded image from native", zlog.GetCallingStackString())
 	return i
 }
