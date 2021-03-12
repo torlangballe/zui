@@ -11,12 +11,12 @@ const (
 	KeyboardModifierShift KeyboardModifier = 1 << iota
 	KeyboardModifierControl
 	KeyboardModifierAlt
-	KeyboardModifierMeta
+	KeyboardModifierCommand
 )
 
 const (
 	KeyboardKeyReturn    = 13
-	KeyboardKeyEnter    = 131313 // not sure what it is elsewhere, doesn't exist in js/html
+	KeyboardKeyEnter     = 131313 // not sure what it is elsewhere, doesn't exist in js/html
 	KeyboardKeyTab       = 9
 	KeyboardKeyBackspace = 8
 	KeyboardKeyEscape    = 27
@@ -55,5 +55,9 @@ const (
 	KeyboardReturnKeySearch   KeyboardReturnKeyType = "search"
 	KeyboardReturnKeyContinue KeyboardReturnKeyType = "continue"
 )
+
+// KeyboardModifiersAtPress is set from keyboard events before handlers are called.
+// This is global to avoid passing mods in all pressed/longpressed handlers
+var KeyboardModifiersAtPress KeyboardModifier
 
 // Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType

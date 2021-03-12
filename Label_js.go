@@ -55,11 +55,10 @@ func (v *Label) SetMaxLines(max int) View {
 	return v
 }
 
-func (v *Label) SetRect(r zgeo.Rect) View {
+func (v *Label) SetRect(r zgeo.Rect) {
 	//	zlog.Info("Label SetRect:", v.ObjectName(), r)
 	//	r.Pos.Y -= 6
 	v.NativeView.SetRect(r)
-	return v
 }
 
 func (v *Label) SetPressedHandler(handler func()) {

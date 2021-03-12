@@ -30,7 +30,7 @@ type View interface {
 
 	Opaque(opaque bool) View
 
-	SetRect(rect zgeo.Rect) View
+	SetRect(rect zgeo.Rect) 
 	Rect() zgeo.Rect
 
 	Show(show bool) View

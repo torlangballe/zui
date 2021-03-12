@@ -47,8 +47,8 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	isFrame := true
 	isMakeBar := true
 	v.WebView = WebViewNew(minSize, isFrame, isMakeBar)
-	v.Add(zgeo.TopLeft|zgeo.HorExpand, v.WebView.Bar)
-	v.Add(zgeo.TopLeft|zgeo.Expand, v.WebView)
+	v.Add(v.WebView.Bar, zgeo.TopLeft|zgeo.HorExpand)
+	v.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
 	return v
 }
 

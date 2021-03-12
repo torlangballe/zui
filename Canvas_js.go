@@ -129,6 +129,9 @@ func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity
 	}
 	go func() {
 		// zlog.Info("drawPlainImage cache scaled", image.Path, ds)
+		if len(scaledImageMap) > 500 {
+			scaledImageMap = map[scaledImage]*Image{}
+		}
 		image = image.ShrunkInto(ds, proportional)
 		scaledImageMap[si] = image
 		if image != nil {

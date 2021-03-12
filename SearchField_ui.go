@@ -24,8 +24,8 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	t.setjs("inputmode", "search")
 	iv := ImageViewNew(nil, "images/magnifier.png", zgeo.Size{10, 10})
 	iv.SetAlpha(0.4)
-	s.Add(zgeo.TopLeft, t)
-	s.Add(zgeo.CenterLeft, iv, zgeo.Size{3, 0}).Free = true
+	s.Add(t, zgeo.TopLeft)
+	s.Add(iv, zgeo.CenterLeft, zgeo.Size{3, 0}).Free = true
 	t.SetOnInputHandler(func(view View) {
 		iv.Show(t.Text() == "")
 	})

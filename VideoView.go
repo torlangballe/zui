@@ -4,6 +4,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type VideoView struct {
@@ -13,11 +14,12 @@ type VideoView struct {
 	LongPresser
 	streaming        bool
 	StreamSize       zgeo.Size
-	canvas           *Canvas
+	renderCanvas     *Canvas
 	maxSize          zgeo.Size
 	pressed          func()
 	longPressed      func()
 	StreamingStarted func()
+	Overlay          View
 
 	draw func(rect zgeo.Rect, canvas *Canvas, view View)
 }
@@ -30,7 +32,20 @@ func VideoViewNew(maxSize zgeo.Size) *VideoView {
 
 func (v *VideoView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if !v.StreamSize.IsNull() {
-		return v.StreamSize.ScaledInto(v.maxSize)
+		s := v.StreamSize.ScaledInto(v.maxSize)
+		zlog.Info("video calcs:", s)
+		return s
 	}
 	return v.maxSize
+}
+
+func (v *VideoView) SetMaxSize(max zgeo.Size) {
+	v.maxSize = max
+}
+
+func (v *VideoView) SetRect(rect zgeo.Rect) {
+	v.NativeView.SetRect(rect)
+	if v.Overlay != nil {
+		v.Overlay.SetRect(rect)
+	}
 }

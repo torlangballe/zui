@@ -96,7 +96,7 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ScrollView) SetRect(rect zgeo.Rect) View {
+func (v *ScrollView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
 	if v.child != nil {
 		ls := rect.Size
@@ -106,7 +106,6 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) View {
 		r := zgeo.Rect{Size: cs}
 		v.child.SetRect(r)
 	}
-	return v
 }
 
 func (v *ScrollView) drawIfExposed() {

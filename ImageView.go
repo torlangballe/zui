@@ -79,13 +79,12 @@ func (v *ImageView) Path() string {
 	return ""
 }
 
-func (v *ImageView) SetRect(rect zgeo.Rect) View {
+func (v *ImageView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
 	// zlog.Info("ImageView SetRect:", rect, v.getjs("id"))
 	if v.ObjectName() == "zap!" {
 		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
 	}
-	return v
 }
 
 func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -136,7 +135,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 		}
 	} else {
 		v.image = ImageFromPath(path, func(ni *Image) {
-			// zlog.Info("Image from path gotten:", path, ni != nil)
+			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())
 			// }

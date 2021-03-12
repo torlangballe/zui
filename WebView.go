@@ -49,28 +49,28 @@ func (v *WebView) makeBar() *StackView {
 	v.TitleLabel.SetFont(FontNew("Arial", 16, FontStyleBold))
 	v.TitleLabel.SetTextAlignment(zgeo.Center)
 	v.TitleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
-	v.Bar.Add(zgeo.Center|zgeo.HorExpand, v.TitleLabel)
+	v.Bar.Add(v.TitleLabel, zgeo.Center|zgeo.HorExpand)
 
 	v.Back = ImageViewNew(nil, "images/triangle-left-gray.png", zgeo.Size{20, 20})
 	v.Back.SetPressedHandler(func() {
 		zlog.Info("back")
 	})
 	v.Back.SetUsable(false)
-	v.Bar.Add(zgeo.CenterLeft, v.Back)
+	v.Bar.Add(v.Back, zgeo.CenterLeft)
 
 	v.Forward = ImageViewNew(nil, "images/triangle-right-gray.png", zgeo.Size{20, 20})
 	v.Forward.SetPressedHandler(func() {
 		zlog.Info("forward")
 	})
 	v.Forward.SetUsable(false)
-	v.Bar.Add(zgeo.CenterLeft, v.Forward)
+	v.Bar.Add(v.Forward, zgeo.CenterLeft)
 
 	v.Refresh = ImageViewNew(nil, "images/refresh.png", zgeo.Size{18, 18})
 	v.Refresh.SetPressedHandler(func() {
 		v.SetURL(v.url)
 		zlog.Info("refresh")
 	})
-	v.Bar.Add(zgeo.CenterRight, v.Refresh)
+	v.Bar.Add(v.Refresh, zgeo.CenterRight)
 
 	return v.Bar
 }

@@ -14,10 +14,6 @@ func (v *NativeView) GetView() *NativeView {
 	return v
 }
 
-func (v *NativeView) SetRect(rect zgeo.Rect) View {
-	return v
-}
-
 func (v *NativeView) Rect() zgeo.Rect {
 	return zgeo.Rect{}
 }
@@ -154,6 +150,7 @@ func (v *NativeView) setjs(property string, value interface{})         {}
 func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {}
 func (v *NativeView) SetOnInputHandler(handler func(view View)) {}
 func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier) bool) {}
+func (v *NativeView) SetRect(rect zgeo.Rect) {}
 
 func (v *NativeView) ReplaceChild(child, replace View) error {
 	return nil

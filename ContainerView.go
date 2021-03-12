@@ -41,30 +41,30 @@ func (v *ContainerView) GetChildren() (children []View) {
 	return
 }
 
-func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
-	if a&zgeo.VertPos != 0 && def&zgeo.VertPos != 0 {
-		def &= ^zgeo.Vertical
-	}
-	if a&zgeo.HorPos != 0 && def&zgeo.HorPos != 0 {
-		def &= ^zgeo.HorPos
-	}
-	a |= def
-	if a&zgeo.VertPos == 0 {
-		a |= zgeo.Top
-	}
-	if a&zgeo.HorPos == 0 {
-		a |= zgeo.Left
-	}
-	return a
-}
+// func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
+// 	if a&zgeo.VertPos != 0 && def&zgeo.VertPos != 0 {
+// 		def &= ^zgeo.Vertical
+// 	}
+// 	if a&zgeo.HorPos != 0 && def&zgeo.HorPos != 0 {
+// 		def &= ^zgeo.HorPos
+// 	}
+// 	a |= def
+// 	if a&zgeo.VertPos == 0 {
+// 		a |= zgeo.Top
+// 	}
+// 	if a&zgeo.HorPos == 0 {
+// 		a |= zgeo.Left
+// 	}
+// 	return a
+// }
 
-func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}) (first *ContainerViewCell) {
-	var gotView *View
+func (v *ContainerView) Add(elements ...interface{}) (first *ContainerViewCell) {
+	var gotView View
 	var gotAlign zgeo.Alignment
 	var gotMargin zgeo.Size
 	var gotIndex = -1
 
-	// zlog.Info("CV ADD1:", c.ObjectName())
+	// zlog.Info("CV ADD1:", v.ObjectName())
 	for _, e := range elements {
 		if cell, got := e.(ContainerViewCell); got {
 			cell := v.AddCell(cell, -1)
@@ -75,8 +75,8 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 		}
 		if view, got := e.(View); got {
 			if gotView != nil {
-				a := calculateAddAlignment(defAlignment, gotAlign)
-				cell := v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+				// zlog.Info("CV ADD got:", gotView.ObjectName())
+				cell := v.AddAdvanced(gotView, gotAlign, gotMargin, zgeo.Size{}, gotIndex, false)
 				if first == nil {
 					first = cell
 				}
@@ -84,7 +84,7 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 				gotMargin = zgeo.Size{}
 				gotIndex = -1
 			}
-			gotView = &view
+			gotView = view
 			continue
 		}
 		if n, got := e.(int); got {
@@ -100,8 +100,8 @@ func (v *ContainerView) Add(defAlignment zgeo.Alignment, elements ...interface{}
 		}
 	}
 	if gotView != nil {
-		a := calculateAddAlignment(defAlignment, gotAlign)
-		cell := v.AddAdvanced(*gotView, a, gotMargin, zgeo.Size{}, gotIndex, false)
+		// zlog.Info("CV ADD got end:", gotView.ObjectName())
+		cell := v.AddAdvanced(gotView, gotAlign, gotMargin, zgeo.Size{}, gotIndex, false)
 		if first == nil {
 			first = cell
 		}
@@ -116,7 +116,7 @@ func (v *ContainerView) AddAlertButton(button View) {
 	} else {
 		a |= zgeo.Left
 	}
-	v.Add(a, button)
+	v.Add(button, a)
 }
 
 func ContainerViewNew(view View, name string) *ContainerView {
@@ -188,7 +188,7 @@ func (v *ContainerView) Contains(view View) bool {
 	return false
 }
 
-func (v *ContainerView) SetRect(rect zgeo.Rect) View {
+func (v *ContainerView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
 	// zlog.Info("CV SetRect2", v.ObjectName(), v.View)
 	ct := v.View.(ContainerType) // in case we are a stack or something inheriting from ContainerView
@@ -198,7 +198,6 @@ func (v *ContainerView) SetRect(rect zgeo.Rect) View {
 	// if d > time.Millisecond*50 {
 	// 	zlog.Info("CV SetRect2", v.ObjectName(), d)
 	// }
-	return v
 }
 
 func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -227,10 +226,12 @@ func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
 }
 
 func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
-	ir := r.Expanded(c.Margin.MinusD(2.0))
-	s := c.View.CalculatedSize(ir.Size)
-	var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
-	c.View.SetRect(rv)
+	if c.Alignment != zgeo.AlignmentNone {
+		ir := r.Expanded(c.Margin.MinusD(2.0))
+		s := c.View.CalculatedSize(ir.Size)
+		var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
+		c.View.SetRect(rv)
+	}
 }
 
 func ContainerIsLoading(ct ContainerType) bool {
@@ -401,38 +402,22 @@ func ContainerTypeFindViewWithName(ct ContainerType, name string, recursive bool
 	return found
 }
 
-func (v *ContainerView) FindCellIndexWithName(name string) int {
+func (v *ContainerView) FindCellWithName(name string) (*ContainerViewCell, int) {
 	for i, c := range v.cells {
 		if c.View.ObjectName() == name {
-			return i
+			return &v.cells[i], i
 		}
 	}
-	return -1
-}
-
-func (v *ContainerView) FindCellWithName(name string) *ContainerViewCell {
-	i := v.FindCellIndexWithName(name)
-	if i == -1 {
-		return nil
-	}
-	return &v.cells[i]
-}
-
-func (v *ContainerView) FindCellIndexWithView(view View) int {
-	for i, c := range v.cells {
-		if c.View == view {
-			return i
-		}
-	}
-	return -1
+	return nil, -1
 }
 
 func (v *ContainerView) FindCellWithView(view View) (*ContainerViewCell, int) {
-	i := v.FindCellIndexWithView(view)
-	if i == -1 {
-		return nil, -1
+	for i, c := range v.cells {
+		if c.View == view {
+			return &v.cells[i], i
+		}
 	}
-	return &v.cells[i], i
+	return nil, -1
 }
 
 func (v *ContainerView) RemoveChild(subView View) {

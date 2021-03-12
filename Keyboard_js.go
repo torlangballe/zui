@@ -3,21 +3,41 @@ package zui
 import "syscall/js"
 
 func getKeyAndModsFromEvent(event js.Value) (key KeyboardKey, mods KeyboardModifier) {
-	key = KeyboardKey(event.Get("which").Int())
-	if event.Get("altKey").Bool() {
+	gkey := event.Get("which")
+	if !gkey.IsUndefined() {
+		key = KeyboardKey(gkey.Int())
+	}
+	if jsGetBoolIfDefined(event, "altKey") {
 		mods |= KeyboardModifierAlt
 	}
-	if event.Get("ctrlKey").Bool() {
+	if jsGetBoolIfDefined(event, "ctrlKey") {
 		mods |= KeyboardModifierControl
 	}
-	if event.Get("metaKey").Bool() {
-		mods |= KeyboardModifierMeta
+	if jsGetBoolIfDefined(event, "metaKey") || jsGetBoolIfDefined(event, "osKey") {
+		mods |= KeyboardModifierCommand
 	}
-	if event.Get("shiftKey").Bool() {
+	if jsGetBoolIfDefined(event, "shiftKey") {
 		mods |= KeyboardModifierShift
 	}
 	return
 }
+
+// func GetModifierKeysPressed() (mod KeyboardModifier) {
+
+// 	if KeyboardEvent.getModifierState("Alt") {
+// 		mod |= KeyboardModifierAlt
+// 	}
+// 	if event.getModifierState("Control") {
+// 		mod |= KeyboardModifierControl
+// 	}
+// 	if event.getModifierState("Shift") {
+// 		mod |= KeyboardModifierAlt
+// 	}
+// 	if event.getModifierState("Meta") || event.getModifierState("OS") {
+// 		mod |= KeyboardModifierCommand
+// 	}
+// 	return
+// }
 
 // This should be done by functionality that exists in Window
 // func SetGlobalKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zutil/zbool"
-	"github.com/torlangballe/zutil/zhost"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/znet"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
@@ -33,7 +33,7 @@ func AppMainArgs() (path string, args map[string]string) {
 
 func AppSetUIDefaults() (part string, args map[string]string) {
 	url, _ := url.Parse(AppURL())
-	host, _ := zhost.GetHostAndPort(url)
+	host, _ := znet.GetHostAndPort(url)
 
 	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
 	// zlog.Info("AppSetUIDefaults:", host, url.Host)

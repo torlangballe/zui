@@ -67,6 +67,14 @@ func jsSetKeyHandler(e js.Value, handler func(key KeyboardKey, mods KeyboardModi
 	}))
 }
 
+func jsGetBoolIfDefined(e js.Value, get string) bool {
+	v := e.Get(get)
+	if v.IsUndefined() {
+		return false
+	}
+	return v.Bool()
+}
+
 func getFontStyle(font *Font) string {
 	var parts []string
 	if font.Style&FontStyleBold != 0 {

@@ -13,7 +13,8 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-var cache = zcache.New(3600)
+var remoteCache = zcache.New(3600, false)
+var localCache = zcache.New(0, false) // cache for with-app images, no expiry
 
 type imageBase struct {
 	size      zgeo.Size `json:"size"`
@@ -30,8 +31,12 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		}
 		return nil
 	}
+	cache := remoteCache
+	if strings.HasPrefix(path, "images/") {
+		cache = localCache
+	}
 	i := &Image{}
-	if cache.GetTo(&i, path) {
+	if cache.Get(&i, path) {
 		if got != nil {
 			got(i)
 		}
@@ -179,7 +184,7 @@ func (i *Image) FixedOrientation() *Image {
 }
 
 func ImageFromGo(image image.Image) *Image {
-	data, err := goImagePNGData(image)
+	data, err := GoImagePNGData(image)
 	if err != nil {
 		zlog.Error(err)
 		return nil

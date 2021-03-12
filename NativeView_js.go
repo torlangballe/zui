@@ -46,11 +46,10 @@ func (v *NativeView) GetNative() *NativeView {
 	return v
 }
 
-func (v *NativeView) SetRect(rect zgeo.Rect) View {
+func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
 	rect = rect.ExpandedToInt()
 	setElementRect(v.Element, rect)
-	return v
 }
 
 func (v *NativeView) HasSize() bool {
@@ -108,7 +107,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else {
-		zlog.Info("parse empty Coord:", v.ObjectName(), zlog.GetCallingStackString())
+		zlog.Info("parse empty Coord:", v.Hierarchy()) // , zlog.GetCallingStackString()
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -275,6 +274,15 @@ func (v *NativeView) GetChild(path string) *NativeView {
 	return nil
 }
 
+func (v *NativeView) Hierarchy() string {
+	var str string
+	for _, p := range v.AllParents() {
+		str += "/" + p.ObjectName()
+	}
+	str += "/" + v.ObjectName()
+	return str
+}
+
 func (v *NativeView) DumpTree() {
 }
 
@@ -353,7 +361,7 @@ func (v *NativeView) ReplaceChild(child, replace View) {
 
 func (v *NativeView) AllParents() (all []*NativeView) {
 	for v.parent != nil {
-		all = append(all, v.parent)
+		all = append([]*NativeView{v.parent}, all...)
 		v = v.parent
 	}
 	return

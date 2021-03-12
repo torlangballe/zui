@@ -7,7 +7,11 @@ import (
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/ztimer"
 )
+
+// https://www.twilio.com/blog/2018/04/choosing-cameras-javascript-mediadevices-api.html
+// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Taking_still_photos
 
 type baseVideoView struct {
 }
@@ -40,24 +44,19 @@ func VideoViewGetInputDevices(got func(devs map[string]string)) {
 	return
 }
 
-func (v *VideoView) keepGettingImage(ctx context.Context, canvas *Canvas, continuousImageHandler func(image.Image) bool) {
-	// zlog.Info("keepGettingImag:", ctx.Err())
-	for ctx.Err() == nil {
-		//		time.Sleep(time.Second)
-
-		s := v.Rect().Size
-		canvas.context.Call("drawImage", v.Element, 0, 0, s.W, s.H)
-		goImage := canvas.Image(zgeo.Rect{})
-		// zlog.Info("draw image:", goImage.Bounds())
-		continuousImageHandler(goImage)
-	}
+func (v *VideoView) getNextImage(continuousImageHandler func(image.Image) bool) {
+	// zlog.Info("keepGettingImage:", ctx.Err())
+	//		time.Sleep(time.Second)
+	s := v.Rect().Size
+	v.renderCanvas.context.Call("drawImage", v.Element, 0, 0, s.W, s.H)
+	goImage := v.renderCanvas.Image(zgeo.Rect{})
+	// zlog.Info("draw image:", goImage.Bounds())
+	continuousImageHandler(goImage)
 }
 
 // CreateStream creates a stream, perhaps withAudio, and hooks it up with video.
 // Needs to be called in a goroutine.v.Element
 func (v *VideoView) CreateStream(withAudio bool, continuousImageHandler func(image.Image) bool) {
-	// https://www.twilio.com/blog/2018/04/choosing-cameras-javascript-mediadevices-api.html
-	// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Taking_still_photos
 	mediaDevs := getMediaDevices()
 	constraints := map[string]interface{}{
 		"video": true,
@@ -84,24 +83,33 @@ func (v *VideoView) CreateStream(withAudio bool, continuousImageHandler func(ima
 		if continuousImageHandler != nil {
 			ctx, cancel := context.WithCancel(context.Background())
 			v.AddStopper(cancel)
-			v.canvas = CanvasNew()
+			v.renderCanvas = CanvasNew()
+			v.renderCanvas.element.Set("id", "render-canvas")
 			s := zgeo.Size{640, 480}
-			v.canvas.SetSize(s)
+			v.renderCanvas.SetSize(s)
 			zlog.Info("video got image:", s)
-			//			v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
-			v.Element.Call("appendChild", v.canvas.element)
-			v.canvas.element.Get("style").Set("visible", "hidden")
-			setElementRect(v.canvas.element, zgeo.Rect{Size: s})
-			go v.keepGettingImage(ctx, v.canvas, continuousImageHandler)
+			//			v.renderCanvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
+			v.Element.Call("appendChild", v.renderCanvas.element)
+			v.renderCanvas.element.Get("style").Set("visible", "hidden")
+			setElementRect(v.renderCanvas.element, zgeo.Rect{Size: s})
+			ztimer.RepeatIn(0.05, func() bool {
+				if ctx.Err() != nil {
+					return false
+				}
+				if v.streaming {
+					v.getNextImage(continuousImageHandler)
+				}
+				return true
+			})
 		}
 		return nil
 	}))
 }
 
-func (v *VideoView) Capture() {
-	canvas := CanvasNew()
-	canvas.SetSize(zgeo.Size{500, 100})
-}
+// func (v *VideoView) Capture() {
+// 	canvas := CanvasNew()
+// 	canvas.SetSize(zgeo.Size{500, 100})
+// }
 
 func getMediaDevices() js.Value {
 	return jsCreateDotSeparatedObject("navigator.mediaDevices")

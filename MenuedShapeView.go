@@ -5,6 +5,8 @@ package zui
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
@@ -42,6 +44,16 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 			v.popup()
 		}
 	})
+	v.SetLongPressedHandler(func() {
+		set := true
+		if len(v.SelectedItems()) == len(v.items) {
+			set = false
+		}
+		for i := range v.items {
+			v.items[i].Selected = set
+		}
+		v.updateTitle()
+	})
 
 	v.UpdateItems(items, values)
 	v.SetTextAlignment(zgeo.CenterLeft)
@@ -53,7 +65,6 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 func (v *MenuedShapeView) SetPillStyle() {
 	// v.SetBGColor(zgeo.ColorClear)
 	v.SetColor(zgeo.ColorLightGray)
-	v.SetColor(zgeo.ColorRed)
 	v.SetTextColor(zgeo.ColorBlack)
 	v.SetTextAlignment(zgeo.Center)
 	v.SetMargin(zgeo.RectFromXY2(0, 2, 0, -2))
@@ -92,15 +103,36 @@ func (v *MenuedShapeView) AddSeparator() {
 }
 
 func (v *MenuedShapeView) updateTitle() {
+	var nstr string
+	if v.IsStatic {
+		return
+	}
+	if v.IsMultiple {
+		var count int
+		for _, i := range v.items {
+			if i.Selected {
+				count++
+			}
+		}
+		nstr = strconv.Itoa(count)
+		if count == len(v.items) {
+			nstr = "all"
+		}
+	}
 	if v.GetTitle != nil {
-		if v.IsStatic || v.IsMultiple {
+		if v.IsMultiple {
 			name := v.GetTitle(len(v.items))
+			name = strings.Replace(name, `%d`, nstr, -1)
 			v.SetText(name)
 		}
-	} else if !v.IsMultiple && !v.IsStatic {
+	} else if v.IsMultiple {
+		v.SetText(nstr)
+	} else {
 		item := v.SelectedItem()
 		if item.Value != nil {
 			v.SetText(fmt.Sprint(item.Value))
+		} else {
+			v.SetText("")
 		}
 	}
 }
@@ -155,21 +187,28 @@ const (
 )
 
 func (v *MenuedShapeView) popup() {
+	var selection = map[int]bool{}
+	for i, item := range v.items {
+		if item.Selected {
+			selection[i] = true
+		}
+	}
+
 	stack := StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
-	list := ListViewNew("menu-list")
+	list := ListViewNew("menu-list", selection)
 	list.MinRows = 1
 	stack.SetBGColor(zgeo.ColorWhite)
 	//	list.ScrollView.SetBGColor(zgeo.ColorClear)
 	list.PressSelectable = true
 	list.PressUnselectable = v.IsMultiple
 	list.MultiSelect = v.IsMultiple
-	list.SelectedColor = zgeo.ColorNew(0, 0.341, 0.847, 1)
-	list.HighlightColor = list.SelectedColor
+	list.SelectedColor = zgeo.ColorWhite
+	list.HighlightColor = zgeo.ColorNew(0, 0.341, 0.847, 1)
 	list.HoverHighlight = true
 	list.ExposeSetsRowBGColor = true
 	list.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	stack.Add(zgeo.TopLeft|zgeo.Expand, list)
+	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 	// zlog.Info("POP:", v.Font().Size)
 	var bs zgeo.Size
 	lineHeight := v.Font().LineHeight() + 4
@@ -197,13 +236,19 @@ func (v *MenuedShapeView) popup() {
 			ti.Rect = rect.Plus(zgeo.RectFromXY2(leftMarg, 0, -rightMarg, 0))
 			list.UpdateRowBGColor(i)
 			ti.Draw(canvas)
+			if list.IsRowSelected(i) {
+				ti.Text = "√"
+				ti.Rect = rect.Plus(zgeo.RectFromXY2(8, 0, 0, 0))
+				ti.Alignment = zgeo.Left
+				ti.Draw(canvas) // we keep black/white hightlighted color
+			}
 		})
 		return cv
 	}
 	win := v.GetWindow()
 	win.AddKeypressHandler(stack.View, func(key KeyboardKey, mod KeyboardModifier) {
 		if mod == KeyboardModifierNone && key == KeyboardKeyEscape {
-			PresentViewClose(stack, false, nil)
+			PresentViewClose(stack, true, nil)
 		}
 	})
 	var max string
@@ -218,7 +263,7 @@ func (v *MenuedShapeView) popup() {
 	// stack.SetCorner(8)
 
 	list.HandleRowSelected = func(i int, selected bool) {
-		// zlog.Info("list selected", i)
+		zlog.Info("list selected", i, selected)
 		v.items[i].Selected = selected
 		if !v.IsMultiple {
 			PresentViewClose(stack, false, nil)
@@ -236,11 +281,12 @@ func (v *MenuedShapeView) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
-		// zlog.Info("menu pop closed", dismissed, zlog.GetCallingStackString())
-		if !dismissed {
+		zlog.Info("menu pop closed", dismissed)
+		if !dismissed || v.IsMultiple { // if multiple, we handle any select/deselect done
 			if v.selectedHandler != nil {
 				v.selectedHandler()
 			}
+			v.updateTitle()
 		}
 	})
 }

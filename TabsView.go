@@ -47,7 +47,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	}
 	v.tabs = map[string]*tab{}
 	v.Header.SetSpacing(12)
-	v.Add(zgeo.Left|zgeo.Top|zgeo.HorExpand, v.Header)
+	v.Add(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
 	return v
 }
 
@@ -74,7 +74,7 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 			canvas.FillPath(path)
 		}
 	})
-	v.Add(zgeo.TopLeft|zgeo.HorExpand, cv)
+	v.Add(cv, zgeo.TopLeft|zgeo.HorExpand)
 	v.separatorForIDs = forIDs
 }
 
@@ -123,7 +123,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	button.SetPressedHandler(func() {
 		v.SetTab(id)
 	})
-	v.Header.Add(zgeo.BottomLeft, view)
+	v.Header.Add(view, zgeo.BottomLeft)
 	if set {
 		v.SetTab(id)
 	}
@@ -179,7 +179,7 @@ func (v *TabsView) SetChildAlignment(id string, a zgeo.Alignment) {
 }
 
 func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
-	cell := v.Header.FindCellWithName(id)
+	cell, _ := v.Header.FindCellWithName(id)
 	// zlog.Info("FIND:", id, cell)
 	cell.Alignment = a
 }
@@ -197,7 +197,7 @@ func (v *TabsView) SetTab(id string) {
 		}
 		tab := v.tabs[id]
 		v.ChildView = tab.create(false)
-		v.Add(tab.childAlignment, v.ChildView)
+		v.Add(v.ChildView, tab.childAlignment)
 		v.CurrentID = id
 		v.setButtonOn(id, true)
 		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)

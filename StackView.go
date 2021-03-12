@@ -167,9 +167,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
-	zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	if NewStack {
-		rm := v.Rect().Plus(v.Margin())
+		rm := v.LocalRect().Plus(v.Margin())
 		var lays []zgeo.LayoutCell
 		for _, c := range v.cells {
 			l := c.LayoutCell
@@ -179,7 +179,11 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 		rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
 		for i, c := range v.cells {
-			c.View.SetRect(rects[i])
+			r := rects[i]
+			if !r.IsNull() {
+				c.View.SetRect(r)
+				// zlog.Info("LAYOUT SETRECT:", r, c.Alignment, c.View.ObjectName())
+			}
 		}
 		return
 	}
@@ -203,9 +207,10 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		}
 		if !c2.Free {
 			if c2.Collapsed {
-				if c2.View != nil && ViewGetNative(c2.View).Parent() != nil {
-					v.CustomView.RemoveChild(c2.View)
-				}
+				// causes crash:
+				// if c2.View != nil && ViewGetNative(c2.View).Parent() != nil {
+				// 	v.CustomView.RemoveChild(c2.View)
+				// }
 				//				v.RemoveChild(c2.View) // why would we do this? Should be done already
 			} else {
 				if c2.Alignment&ashrink != 0 {

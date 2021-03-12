@@ -102,18 +102,6 @@ func (v *TextView) SetMargin(m zgeo.Rect) View {
 	return v
 }
 
-// func (v *TextView) SetRect(rect zgeo.Rect) View {
-// 	// m := v.margin.Maxed(zgeo.SizeBoth(jsTextMargin))
-// 	// rect = rect.Expanded(m.Negative())
-// 	if v.MaxLines() <= 1 {
-// 		rect = rect.Expanded(zgeo.Size{-6, -4})
-// 		rect.Pos.Y -= 3
-// 	}
-// 	zlog.Info("TextView. SetRect:", v.ObjectName(), rect.Size)
-// 	v.NativeView.SetRect(rect)
-// 	return v
-// }
-
 func (v *TextView) SetText(str string) View {
 	if v.Text() != str {
 		v.setjs("value", str)
@@ -195,21 +183,24 @@ func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods K
 		// zlog.Info("KeyUp")
 		if handler != nil {
 			event := vs[0]
-			key := KeyboardKey(event.Get("which").Int())
-			// key := event.Get("which").Int()
-			var mods KeyboardModifier
-			if event.Get("altKey").Bool() {
-				mods |= KeyboardModifierAlt
-			}
-			if event.Get("ctrlKey").Bool() {
-				mods |= KeyboardModifierControl
-			}
-			if event.Get("metaKey").Bool() {
-				mods |= KeyboardModifierMeta
-			}
-			if event.Get("shiftKey").Bool() {
-				mods |= KeyboardModifierShift
-			}
+			key, mods := getKeyAndModsFromEvent(event) // replaces below code?
+			/*
+				key := KeyboardKey(event.Get("which").Int())
+				// key := event.Get("which").Int()
+				var mods KeyboardModifier
+				if event.Get("altKey").Bool() {
+					mods |= KeyboardModifierAlt
+				}
+				if event.Get("ctrlKey").Bool() {
+					mods |= KeyboardModifierControl
+				}
+				if event.Get("metaKey").Bool() {
+					mods |= KeyboardModifierCommand
+				}
+				if event.Get("shiftKey").Bool() {
+					mods |= KeyboardModifierShift
+				}
+			*/
 			handler(v, key, mods)
 			// zlog.Info("KeyUp:", key, mods)
 		}

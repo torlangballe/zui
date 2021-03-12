@@ -163,7 +163,7 @@ func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
 }
 
 func (i *Image) PNGData() ([]byte, error) {
-	return goImagePNGData(i.GoImage)
+	return GoImagePNGData(i.GoImage)
 }
 
 func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {

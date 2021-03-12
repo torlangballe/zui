@@ -10,6 +10,7 @@ package zui
 //     int ismain;
 // } ScreenInfo;
 // int GetAllScreens(struct ScreenInfo *sis, int max);
+// void SetMainScreenResolutionWithinWidths(long minw, long minh, long maxw, long maxh);
 import "C"
 
 import (
@@ -59,4 +60,17 @@ func ScreenGetAll() (screens []Screen) {
 		screens = append(screens, s)
 	}
 	return
+}
+
+// SetMainScreenResolutionMin goes through the display modes of the main screen, and finds the smallest width
+// one that is as big as minWidth, and sets that.
+func SetMainScreenResolutionWithinWidths(min, max zgeo.Size) {
+	ms := ScreenMain().Rect.Size
+	if max.IsNull() {
+		max = min
+	}
+	if ms.Contains(min) && max.Contains(ms) {
+		return
+	}
+	C.SetMainScreenResolutionWithinWidths(C.long(min.W), C.long(min.H), C.long(max.W), C.long(max.H))
 }

@@ -154,7 +154,7 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 			} else {
 				blocker.SetBGColor(zgeo.ColorClear)
 			}
-			blocker.Add(zgeo.TopLeft, v)
+			blocker.Add(v, zgeo.TopLeft)
 			if attributes.ModalCloseOnOutsidePress {
 				// lp, _ := v.(Pressable)
 				// if lp != nil {
@@ -308,7 +308,7 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	if stack == nil {
 		stack = StackViewVert("present-titled-stack")
 		stack.SetSpacing(0)
-		stack.Add(zgeo.TopCenter|zgeo.Expand, view)
+		stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	}
 	bar := StackViewHor("bar")
 	bar.SetSpacing(2)
@@ -322,7 +322,7 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	titleLabel := LabelNew(stitle)
 	titleLabel.SetFont(FontNew("Arial", 16, FontStyleBold))
 	titleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
-	bar.Add(zgeo.Left|zgeo.VertCenter, titleLabel) //, zgeo.Size{20, 0})
+	bar.Add(titleLabel, zgeo.Left|zgeo.VertCenter) //, zgeo.Size{20, 0})
 
 	xmargin := 0.0 //10.0
 	for v, a := range barViews {
@@ -330,10 +330,10 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 			a |= zgeo.VertCenter
 		}
 		// zlog.Info("Bar add:", v.ObjectName())
-		bar.Add(a, 0, v, zgeo.Size{xmargin, 0})
+		bar.Add(v, 0, zgeo.TopCenter|zgeo.Expand, zgeo.Size{xmargin, 0})
 		xmargin = 0
 	}
-	stack.Add(zgeo.TopCenter|zgeo.HorExpand, 0, bar)
+	stack.Add(bar, 0, zgeo.TopCenter|zgeo.HorExpand)
 	if ready != nil {
 		ready(stack, bar)
 	}

@@ -49,19 +49,23 @@ type ListViewIDGetter interface {
 
 var DefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
 
-func ListViewNew(name string) *ListView {
+func ListViewNew(name string, selection map[int]bool) *ListView {
 	v := &ListView{}
-	v.Init(v, name)
+	v.Init(v, name, selection)
 	return v
 	//        allowsSelection = true // selectable
 }
 
-func (v *ListView) Init(view View, name string) {
+func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.ScrollView.Init(view, name)
 	v.rows = map[int]View{}
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
 	v.SelectedColor = DefaultSelectedColor
-	v.selectionIndexes = map[int]bool{}
+	if selection != nil {
+		v.selectionIndexes = selection
+	} else {
+		v.selectionIndexes = map[int]bool{}
+	}
 	v.highlightedIndex = -1
 	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
@@ -127,7 +131,7 @@ func (v *ListView) Spacing() float64 {
 	return v.spacing
 }
 
-func (v *ListView) SetRect(rect zgeo.Rect) View {
+func (v *ListView) SetRect(rect zgeo.Rect) {
 	// zlog.Info("ListView SetRect:", v.ObjectName(), rect)
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
@@ -154,7 +158,6 @@ func (v *ListView) SetRect(rect zgeo.Rect) View {
 	v.stack.SetRect(r)
 	// zlog.Info("List set rect: stack", rect, r)
 	v.layoutRows(-1)
-	return v
 }
 
 func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
@@ -334,16 +337,16 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
 		col := v.SelectedColor
-		if !v.selectionIndexes[i] {
-			if v.HighlightColor.Valid && i == v.highlightedIndex {
-				col = v.HighlightColor
-			} else if len(v.RowColors) == 0 {
+		if v.HighlightColor.Valid && i == v.highlightedIndex {
+			col = v.HighlightColor
+		} else if !v.selectionIndexes[i] {
+			if len(v.RowColors) == 0 {
 				col = zgeo.ColorWhite
 			} else {
 				col = v.RowColors[i%len(v.RowColors)]
 			}
 		}
-		// zlog.Info("UpdateRowBGColor", i, col)
+		// zlog.Info("UpdateRowBGColor", i, col, v.selectionIndexes[i], v.highlightedIndex)
 		row.SetBGColor(col)
 	}
 }
@@ -364,22 +367,24 @@ func (v *ListView) Select(i int, scrollTo bool) {
 }
 
 func (v *ListView) UnselectAll() {
-	old := v.SelectionIndex()
+	if v.HandleRowSelected != nil {
+		for index := range v.selectionIndexes {
+			v.HandleRowSelected(index, false)
+		}
+	}
+	oldIndexes := v.selectionIndexes
 	v.selectionIndexes = map[int]bool{}
-	// zlog.Info("Unselect:", old)
-	if !v.MultiSelect && old != -1 && old < v.GetRowCount() {
-		v.HandleRowSelected(old, false)
-		v.refreshRow(old)
+	for index := range oldIndexes {
+		v.refreshRow(index)
 	}
 }
 
 func (v *ListView) Unselect(index int) {
-	old := v.SelectionIndex()
-	delete(v.selectionIndexes, index)
-	// zlog.Info("Unselect:", old)
-	if !v.MultiSelect && old != -1 && old < v.GetRowCount() { // why < rowcount?
-		v.HandleRowSelected(old, false)
-		v.refreshRow(old)
+	zlog.Info("Unselect:", index)
+	if v.selectionIndexes[index] {
+		delete(v.selectionIndexes, index)
+		v.HandleRowSelected(index, false)
+		v.refreshRow(index)
 	}
 }
 

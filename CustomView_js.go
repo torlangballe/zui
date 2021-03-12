@@ -30,6 +30,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		//		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
 		(&v.LongPresser).HandleOnClick(v)
 		event := args[0]
+		_, KeyboardModifiersAtPress = getKeyAndModsFromEvent(event)
 		event.Call("stopPropagation")
 		//		}
 		// }
@@ -63,7 +64,7 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
 
-func (v *CustomView) SetRect(rect zgeo.Rect) View {
+func (v *CustomView) SetRect(rect zgeo.Rect) {
 
 	s := zgeo.Size{}
 	if v.HasSize() {
@@ -84,7 +85,6 @@ func (v *CustomView) SetRect(rect zgeo.Rect) View {
 	}
 	// }
 	v.isSetup = true
-	return v
 }
 
 func (v *CustomView) SetUsable(usable bool) View {
@@ -99,6 +99,7 @@ func (v *CustomView) makeCanvas() {
 		v.canvas = CanvasNew()
 		v.canvas.element.Set("id", v.ObjectName()+".canvas")
 		v.call("appendChild", v.canvas.element)
+		// v.canvas.element.Get("style").Set("zIndex", 200)
 		s := v.LocalRect().Size
 		scale := ScreenMain().Scale
 		v.setCanvasSize(s, scale)
@@ -114,7 +115,9 @@ func (v *CustomView) drawIfExposed() {
 			// println("CV drawIfExposed2:", v.ObjectName())
 			v.exposeTimer.Stop()
 			v.makeCanvas()
-			v.canvas.ClearRect(zgeo.Rect{})
+			if !v.OpaqueDraw {
+				v.canvas.ClearRect(zgeo.Rect{})
+			}
 			// if !v.Usable() {
 			// 	// zlog.Info("cv: push for disabled")
 			// 	v.canvas.PushState()

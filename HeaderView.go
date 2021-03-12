@@ -164,7 +164,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.ID + ".image")
-			button.Add(zgeo.Center, iv, zgeo.Size{})
+			button.Add(iv, zgeo.Center, zgeo.Size{})
 		}
 		button.SetTextColor(zgeo.ColorWhite)
 		button.TextXMargin = 0
@@ -189,7 +189,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle := ImageViewNew(nil, "", zgeo.Size{6, 5})
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
-			button.Add(zgeo.TopRight, triangle, zgeo.Size{2, 3})
+			button.Add(triangle, zgeo.TopRight, zgeo.Size{2, 3})
 			v.updateTriangle(triangle, h.ID)
 		}
 		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)

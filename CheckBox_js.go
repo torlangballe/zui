@@ -18,9 +18,9 @@ func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	return s
 }
 
-func (v *CheckBox) SetRect(rect zgeo.Rect) View {
+func (v *CheckBox) SetRect(rect zgeo.Rect) {
 	rect.Pos.Y -= 4
-	return v.NativeView.SetRect(rect)
+	v.NativeView.SetRect(rect)
 }
 
 func (s *CheckBox) SetValueHandler(handler func(view View)) {

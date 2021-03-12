@@ -10,6 +10,8 @@ import (
 type CustomView struct {
 	NativeView
 	LongPresser
+
+	OpaqueDraw   bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
 	canvas       *Canvas
 	minSize      zgeo.Size
 	pressed      func()
@@ -30,13 +32,17 @@ func CustomViewNew(name string) *CustomView {
 	return c
 }
 
+func (v *CustomView) Canvas() *Canvas {
+	return v.canvas
+}
+
 func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.MinSize()
 }
 
 func (v *CustomView) Expose() {
 	// zlog.Info("CV Expose", v.ObjectName())
-	v.exposeInSecs(0.1) //0.01)
+	v.exposeInSecs(0.01) //0.01)
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {
@@ -54,6 +60,7 @@ func (v *CustomView) exposeInSecs(secs float64) {
 				// zlog.Info("CV exposeInSecs draw image", v.ObjectName(), image.loading)
 			}
 			if image != nil && image.loading {
+				// zlog.Info("CV exposeInSecs wait for loading", v.ObjectName())
 				v.exposeInSecs(0.1)
 				return
 			}

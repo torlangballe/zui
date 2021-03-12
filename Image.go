@@ -119,7 +119,7 @@ func goImageFromPath(path string, isFile bool) image.Image {
 	return goImage
 }
 
-func goImagePNGData(goImage image.Image) ([]byte, error) {
+func GoImagePNGData(goImage image.Image) ([]byte, error) {
 	out := bytes.NewBuffer([]byte{})
 	err := png.Encode(out, goImage)
 	if err != nil {

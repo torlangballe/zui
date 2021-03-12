@@ -145,15 +145,15 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	label.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	label.SetMaxLines(0)
 	label.SetMaxWidth(textWidth)
-	stack.Add(zgeo.TopCenter, label)
+	stack.Add(label, zgeo.TopCenter)
 	if a.SubText != "" {
 		subLabel := LabelNew(a.SubText)
 		subLabel.SetFont(FontNice(FontDefaultSize-2, FontStyleNormal))
 		// subLabel.SetMaxLines(4)
-		stack.Add(zgeo.TopCenter, subLabel)
+		stack.Add(subLabel, zgeo.TopCenter)
 	}
 	bar := StackViewHor("bar")
-	stack.Add(zgeo.TopCenter|zgeo.HorExpand, bar)
+	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
 
 	addButtonIfNotEmpty(stack, a.OKButton, handle, AlertOK)
 	addButtonIfNotEmpty(stack, a.CancelButton, handle, AlertCancel)
