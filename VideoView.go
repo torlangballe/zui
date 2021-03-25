@@ -32,7 +32,7 @@ func VideoViewNew(maxSize zgeo.Size) *VideoView {
 
 func (v *VideoView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if !v.StreamSize.IsNull() {
-		s := v.StreamSize.ScaledInto(v.maxSize)
+		s := v.StreamSize.ShrunkInto(v.maxSize)
 		zlog.Info("video calcs:", s)
 		return s
 	}

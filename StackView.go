@@ -15,6 +15,7 @@ import (
 var NewStack bool
 
 type StackView struct {
+	NewStack bool
 	ContainerView
 	spacing  float64
 	Vertical bool
@@ -27,6 +28,7 @@ func StackViewNew(vertical bool, name string) *StackView {
 }
 
 func (v *StackView) Init(view View, vertical bool, name string) {
+	v.NewStack = NewStack
 	v.ContainerView.Init(view, name)
 	v.Vertical = vertical
 	v.spacing = 6
@@ -167,8 +169,11 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var amore = zgeo.Right
 	var amid = zgeo.HorCenter | zgeo.MarginIsOffset
 
+	if v.layoutHandler != nil {
+		v.layoutHandler.HandleBeforeLayout()
+	}
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
-	if NewStack {
+	if v.NewStack {
 		rm := v.LocalRect().Plus(v.Margin())
 		var lays []zgeo.LayoutCell
 		for _, c := range v.cells {
@@ -190,9 +195,6 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
-	if v.layoutHandler != nil {
-		v.layoutHandler.HandleBeforeLayout()
-	}
 	if v.Vertical {
 		ashrink = zgeo.VertShrink
 		aexpand = zgeo.VertExpand

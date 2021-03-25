@@ -13,12 +13,12 @@ import (
 
 type ImageView struct {
 	ContainerView
-	image        *Image
-	maxSize      zgeo.Size
-	alignment    zgeo.Alignment
-	cornerRadius float64
-	strokeWidth  float64
-	strokeColor  zgeo.Color
+	image       *Image
+	maxSize     zgeo.Size
+	alignment   zgeo.Alignment
+	imageCorner float64
+	strokeWidth float64
+	strokeColor zgeo.Color
 }
 
 func ImageViewNew(image *Image, imagePath string, maxSize zgeo.Size) *ImageView {
@@ -62,8 +62,8 @@ func (v *ImageView) SetStroke(width float64, c zgeo.Color) View {
 	return v
 }
 
-func (v *ImageView) SetCorner(radius float64) View {
-	v.cornerRadius = radius
+func (v *ImageView) SetImageCorner(radius float64) View {
+	v.imageCorner = radius
 	v.Expose()
 	return v
 }
@@ -92,15 +92,21 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.image != nil {
 		s = v.image.Size()
 	}
+	margSize := v.margin.Size
 	if !v.maxSize.IsNull() {
-		s.Minimize(v.maxSize)
+		s = s.ShrunkInto(v.maxSize.Plus(margSize))
 	}
 	if !v.minSize.IsNull() {
-		s.Maximize(v.minSize)
+		ms := v.minSize.Plus(margSize)
+		if s.IsNull() || v.alignment&zgeo.Proportional == 0 {
+			s = ms
+		} else {
+			s = s.ExpandedInto(ms)
+		}
 	}
-	s.Add(v.ContainerView.margin.Size.Negative())
+	s.Add(margSize.Negative())
 	s.Maximize(zgeo.Size{2, 2})
-	// zlog.Info("IV CalculatedSize:", v.getjs("id"), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
+	// zlog.Info("IV CalculatedSize:", v.alignment, v.getjs("id"), v.image != nil, v.MinSize(), v.MaxSize(), "got:", s)
 	return s
 }
 
@@ -161,26 +167,26 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// if !v.Usable() {
 		// 	o *= 0.6
 		// }
-		a := v.alignment | zgeo.Shrink
+		a := v.alignment | zgeo.Shrink | zgeo.Proportional
 		// if v.IsFillBox {
 		// 	a = AlignmentNone
 		// }
 		r := rect.Plus(v.margin)
 		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
 		// zlog.Info("IV Draw:", v.image.Size(), view.ObjectName(), r, v.image.Path, rect, "->", ir)
-		if v.cornerRadius != 0 {
+		if v.imageCorner != 0 {
 			canvas.PushState()
-			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.cornerRadius))
+			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.imageCorner))
 			canvas.ClipPath(path, true, true)
 		}
 		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
 		// zlog.Info(v.ObjectName(), "IV.DrawImage22:", v.Rect(), v.image.imageJS.IsUndefined(), v.image.imageJS.IsNull())
 		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
-		if v.cornerRadius != 0 {
+		if v.imageCorner != 0 {
 			canvas.PopState()
 		}
 		if v.strokeWidth != 0 {
-			corner := v.cornerRadius - v.strokeWidth
+			corner := v.imageCorner - v.strokeWidth
 			path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
 			canvas.SetColor(v.strokeColor, 1)
 			canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)

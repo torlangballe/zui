@@ -14,23 +14,26 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-type Item struct {
+type MenuedItem struct {
 	zdict.Item
 	Selected bool
+	Color    zgeo.Color
 }
+
 type MenuedShapeView struct {
 	ShapeView
 	maxWidth        float64
 	selectedHandler func()
-	items           []Item
+	items           []MenuedItem
 
 	ImagePath  string
 	IsStatic   bool // if set, user can't set a different value, but can press and see them. Shows number of items
 	IsMultiple bool
+	HasColor   bool
 	GetTitle   func(itemCount int) string
 }
 
-func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items zdict.Items, values []interface{}, isStatic, isMultiple bool) *MenuedShapeView {
+func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, isStatic, isMultiple bool) *MenuedShapeView {
 	v := &MenuedShapeView{}
 	if minSize.IsNull() {
 		minSize.Set(20, 26)
@@ -55,7 +58,7 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 		v.updateTitle()
 	})
 
-	v.UpdateItems(items, values)
+	v.UpdateMenuedItems(items)
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.SetFont(FontNice(14, FontStyleNormal))
 	// zlog.Info("MenuedShapeViewNew:", name, v.Color())
@@ -68,7 +71,7 @@ func (v *MenuedShapeView) SetPillStyle() {
 	v.SetTextColor(zgeo.ColorBlack)
 	v.SetTextAlignment(zgeo.Center)
 	v.SetMargin(zgeo.RectFromXY2(0, 2, 0, -2))
-	v.Ratio = 0.3
+	v.Ratio = 0.2
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.ImageMargin.Set(4, 4)
 }
@@ -95,7 +98,7 @@ func (v *MenuedShapeView) Empty() {
 }
 
 func (v *MenuedShapeView) AddSeparator() {
-	var item Item
+	var item MenuedItem
 
 	item.Name = separatorID
 	item.Value = nil
@@ -104,7 +107,10 @@ func (v *MenuedShapeView) AddSeparator() {
 
 func (v *MenuedShapeView) updateTitle() {
 	var nstr string
-	if v.IsStatic {
+	if v.IsStatic && v.GetTitle != nil {
+		name := v.GetTitle(len(v.items))
+		name = strings.Replace(name, `%d`, nstr, -1)
+		v.SetText(name)
 		return
 	}
 	if v.IsMultiple {
@@ -118,15 +124,13 @@ func (v *MenuedShapeView) updateTitle() {
 		if count == len(v.items) {
 			nstr = "all"
 		}
-	}
-	if v.GetTitle != nil {
-		if v.IsMultiple {
-			name := v.GetTitle(len(v.items))
+		if v.GetTitle != nil {
+			name := v.GetTitle(count)
 			name = strings.Replace(name, `%d`, nstr, -1)
 			v.SetText(name)
+		} else if v.IsMultiple {
+			v.SetText(nstr)
 		}
-	} else if v.IsMultiple {
-		v.SetText(nstr)
 	} else {
 		item := v.SelectedItem()
 		if item.Value != nil {
@@ -138,18 +142,24 @@ func (v *MenuedShapeView) updateTitle() {
 }
 
 func (v *MenuedShapeView) UpdateItems(items zdict.Items, values []interface{}) {
-	v.items = v.items[:0]
+	var mitems []MenuedItem
 	for _, item := range items {
-		var mi Item
-		mi.Item = item
+		var m MenuedItem
+		m.Item = item
 		for _, v := range values {
 			if reflect.DeepEqual(item.Value, v) {
-				mi.Selected = true
+				m.Selected = true
 				break
 			}
+			return
 		}
-		v.items = append(v.items, mi)
+		mitems = append(mitems, m)
 	}
+	v.UpdateMenuedItems(mitems)
+}
+
+func (v *MenuedShapeView) UpdateMenuedItems(items []MenuedItem) {
+	v.items = items
 	v.updateTitle()
 }
 
@@ -174,9 +184,8 @@ func (v *MenuedShapeView) MaxWidth() float64 {
 	return v.maxWidth
 }
 
-func (v *MenuedShapeView) SetMaxWidth(max float64) View {
+func (v *MenuedShapeView) SetMaxWidth(max float64) {
 	v.maxWidth = max
-	return v
 }
 
 const (
@@ -218,6 +227,10 @@ func (v *MenuedShapeView) popup() {
 	list.GetRowCount = func() int {
 		return len(v.items)
 	}
+	rm := float64(rightMarg)
+	if v.HasColor {
+		rm += 24
+	}
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
 		cv := CustomViewNew("row")
 		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
@@ -233,7 +246,7 @@ func (v *MenuedShapeView) popup() {
 			ti.Font = v.Font()
 			//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
 			ti.Alignment = zgeo.CenterLeft
-			ti.Rect = rect.Plus(zgeo.RectFromXY2(leftMarg, 0, -rightMarg, 0))
+			ti.Rect = rect.Plus(zgeo.RectFromXY2(leftMarg, 0, -rm, 0))
 			list.UpdateRowBGColor(i)
 			ti.Draw(canvas)
 			if list.IsRowSelected(i) {
@@ -241,6 +254,16 @@ func (v *MenuedShapeView) popup() {
 				ti.Rect = rect.Plus(zgeo.RectFromXY2(8, 0, 0, 0))
 				ti.Alignment = zgeo.Left
 				ti.Draw(canvas) // we keep black/white hightlighted color
+			}
+			if v.items[i].Color.Valid {
+				r := rect
+				r.SetMinX(rect.Max().X - rm + 6)
+				r = r.Expanded(zgeo.Size{-3, -3})
+				canvas.SetColor(v.items[i].Color, 1)
+				path := zgeo.PathNewRect(r, zgeo.Size{2, 2})
+				canvas.FillPath(path)
+				canvas.SetColor(zgeo.ColorBlack, 1)
+				canvas.StrokePath(path, 1, zgeo.PathLineRound)
 			}
 		})
 		return cv
@@ -259,7 +282,7 @@ func (v *MenuedShapeView) popup() {
 	}
 	bs.W = TextInfoWidthOfString(max, v.Font())
 	bs.H = float64(zint.Min(22, len(v.items))) * lineHeight
-	stack.SetMinSize(bs.Plus(zgeo.Size{leftMarg + rightMarg, topMarg + bottomMarg}))
+	stack.SetMinSize(bs.Plus(zgeo.Size{leftMarg + rm, topMarg + bottomMarg}))
 	// stack.SetCorner(8)
 
 	list.HandleRowSelected = func(i int, selected bool) {
@@ -281,7 +304,7 @@ func (v *MenuedShapeView) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
-		zlog.Info("menu pop closed", dismissed)
+		// zlog.Info("menu pop closed", dismissed)
 		if !dismissed || v.IsMultiple { // if multiple, we handle any select/deselect done
 			if v.selectedHandler != nil {
 				v.selectedHandler()

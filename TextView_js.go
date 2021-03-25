@@ -177,7 +177,8 @@ func (v *TextView) SetChangedHandler(handler func(view View)) {
 	}
 }
 
-func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {
+// TODO: Replace with NativeView version
+func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier)) {
 	v.keyPressed = handler
 	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		// zlog.Info("KeyUp")
@@ -201,7 +202,7 @@ func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods K
 					mods |= KeyboardModifierShift
 				}
 			*/
-			handler(v, key, mods)
+			handler(key, mods)
 			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil

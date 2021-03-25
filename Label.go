@@ -65,14 +65,12 @@ func (v *Label) MaxLines() int {
 	return v.maxLines
 }
 
-func (v *Label) SetMinWidth(min float64) View {
+func (v *Label) SetMinWidth(min float64) {
 	v.minWidth = min
-	return v
 }
 
-func (v *Label) SetMaxWidth(max float64) View {
+func (v *Label) SetMaxWidth(max float64) {
 	v.maxWidth = max
-	return v
 }
 
 func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *StackView, viewCell *ContainerViewCell) {

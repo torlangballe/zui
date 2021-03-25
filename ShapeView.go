@@ -39,7 +39,7 @@ type ShapeView struct {
 
 	TextXMargin  float64
 	ImageOpacity float32 // Float = Float(1)
-	Ratio        float32 // = 0.3
+	Ratio        float32 // = 0.3	
 	Count        int     // = 5
 	MaxSize      zgeo.Size
 	Value        float64
@@ -161,7 +161,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			}
 			ms.Subtract(v.ImageMargin.TimesD(2))
 			// zlog.Info("SV MS:", v.ObjectName(), ms)
-			is = is.ScaledInto(ms)
+			is = is.ShrunkInto(ms)
 		} else {
 			is.Maximize(v.image.CapInsets().Size.Negative())
 		}

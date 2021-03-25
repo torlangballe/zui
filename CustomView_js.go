@@ -13,6 +13,7 @@ func (v *CustomView) Init(view View, name string) {
 	v.MakeJSElement(view, "div")
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	v.DownsampleImages = true
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
@@ -98,6 +99,7 @@ func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
 		v.canvas = CanvasNew()
 		v.canvas.element.Set("id", v.ObjectName()+".canvas")
+		v.canvas.DownsampleImages = v.DownsampleImages
 		v.call("appendChild", v.canvas.element)
 		// v.canvas.element.Get("style").Set("zIndex", 200)
 		s := v.LocalRect().Size
@@ -108,6 +110,7 @@ func (v *CustomView) makeCanvas() {
 }
 
 func (v *CustomView) drawIfExposed() {
+	// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.LocalRect()
@@ -127,8 +130,9 @@ func (v *CustomView) drawIfExposed() {
 			// if !v.Usable() {
 			// 	v.canvas.PopState()
 			// }
-			v.exposed = false
+			//!!!			v.exposed = false // we move this to below, is some case where drawing can never happen if presenting or something, and exposed is never cleared
 			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}
 	}
+	v.exposed = false
 }

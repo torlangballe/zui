@@ -107,7 +107,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else {
-		zlog.Info("parse empty Coord:", v.Hierarchy()) // , zlog.GetCallingStackString()
+		zlog.Info("parse empty Coord:", v.Hierarchy(), zlog.GetCallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -334,13 +334,22 @@ func (v *NativeView) Text() string {
 }
 
 func (v *NativeView) AddChild(child View, index int) {
-	zlog.ErrorIf(index != -1, zlog.StackAdjust(1), "non -1 insert not implemented")
 	n := ViewGetNative(child)
 	if n == nil {
 		zlog.Fatal(nil, "NativeView AddChild child not native")
 	}
 	n.parent = v
-	v.call("appendChild", n.Element)
+	if index != -1 {
+		nodes := n.parent.getjs("childNodes").Length()
+		// zlog.Info("NS AddChild:", v.ObjectName(), child.ObjectName(), index, nodes)
+		if nodes == 0 {
+			v.call("appendChild", n.Element)
+		} else {
+			v.call("insertBefore", n.Element, v.getjs("firstChild"))
+		}
+	} else {
+		v.call("appendChild", n.Element)
+	}
 	n.style().Set("zIndex", 100)
 	for _, p := range n.AllParents() {
 		p.allChildrenPresented = false
@@ -490,27 +499,38 @@ func (v *NativeView) GetWindow() *Window {
 func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
 	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler != nil {
+			// zlog.Info("Mouse enter", v.ObjectName())
 			handler(true)
 		}
 		return nil
 	}))
 	v.setjs("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler != nil {
+			// zlog.Info("Mouse leave", v.ObjectName())
 			handler(false)
 		}
 		return nil
 	}))
 }
 
-func (v *NativeView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier) bool) {
+func (v *NativeView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {
 	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) bool {
-		return handler(v.View, key, mods)
+		return handler(key, mods)
 	})
 }
 
-func (v *NativeView) SetOnInputHandler(handler func(view View)) {
+func (v *NativeView) SetOnInputHandler(handler func()) {
 	v.Element.Set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		handler(v.View)
+		handler()
+		return nil
+	}))
+}
+func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos)) {
+	v.Element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		e := args[0]
+		x := e.Get("offsetX").Float()
+		y := e.Get("offsetY").Float()
+		handler(zgeo.Pos{x, y})
 		return nil
 	}))
 }

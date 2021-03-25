@@ -27,20 +27,21 @@ const (
 
 var presentCloseFunc func(dismissed bool)
 
-var presentedNativeViewStack []View
+var presentedViewStack []View
 
 func PresentedViewCurrentIsParent(v View) bool {
-	l := len(presentedNativeViewStack)
+	l := len(presentedViewStack)
 	if l <= 1 {
 		return true
 	}
 	nv := ViewGetNative(v)
-	p := presentedNativeViewStack[l-1]
-	if p == nv {
+	p := presentedViewStack[l-1]
+	// zlog.Info("PresentedViewCurrentIsParent", l, v.ObjectName(), p.ObjectName())
+	if p == v {
 		return true
 	}
 	for _, n := range nv.AllParents() {
-		if n == p {
+		if n.View == p {
 			return true
 		}
 	}
@@ -82,8 +83,10 @@ type PresentViewAttributes struct {
 	DeleteOld                bool
 	Modal                    bool
 	Title                    string
+	ModalCorner              float64
 	ModalCloseOnOutsidePress bool
 	ModalDimBackground       bool
+	ModalNoBlock             bool
 	ModalDropShadow          zgeo.DropShadow
 }
 
@@ -100,6 +103,7 @@ func PresentViewAttributesNew() PresentViewAttributes {
 		Blur:  8,
 		Color: zgeo.ColorNewGray(0.2, 1),
 	}
+	a.ModalCorner = 5
 	return a
 }
 
@@ -137,38 +141,44 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 	win := WindowGetMain()
 	if attributes.Modal {
 		ct, _ := v.(ContainerType)
-		if ct != nil {
-			v.SetCorner(5)
+		if ct != nil && attributes.ModalCorner != 0 {
+			v.SetCorner(attributes.ModalCorner)
 		}
 		nv := ViewGetNative(v)
 		if nv != nil {
-			nv.SetDropShadow(attributes.ModalDropShadow)
-			blocker := ContainerViewNew(nil, "$blocker")
-			outer = blocker
-			fullRect := win.ContentRect()
-			fullRect.Pos = zgeo.Pos{}
-			// zlog.Info("blocker rect:", fullRect)
-			blocker.SetRect(fullRect)
-			if attributes.ModalDimBackground {
-				blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
+			if !attributes.ModalDropShadow.Delta.IsNull() {
+				nv.SetDropShadow(attributes.ModalDropShadow)
+			}
+			if !attributes.ModalNoBlock {
+				blocker := ContainerViewNew(nil, "$blocker")
+				outer = blocker
+				fullRect := win.ContentRect()
+				fullRect.Pos = zgeo.Pos{}
+				// zlog.Info("blocker rect:", fullRect)
+				blocker.SetRect(fullRect)
+				if attributes.ModalDimBackground {
+					blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
+				} else {
+					blocker.SetBGColor(zgeo.ColorClear)
+				}
+				blocker.Add(v, zgeo.TopLeft)
+				if attributes.ModalCloseOnOutsidePress {
+					// lp, _ := v.(Pressable)
+					// if lp != nil {
+					// 	lp.SetPressedHandler(func() {
+					// 		zlog.Info("LP Pressed")
+					// 	})
+					// }
+					blocker.SetPressedHandler(func() {
+						// zlog.Info("blocker pressed")
+						dismissed := true
+						PresentViewClose(v, dismissed, closed)
+					})
+				}
+				win.AddView(blocker)
 			} else {
-				blocker.SetBGColor(zgeo.ColorClear)
+				win.AddView(v)
 			}
-			blocker.Add(v, zgeo.TopLeft)
-			if attributes.ModalCloseOnOutsidePress {
-				// lp, _ := v.(Pressable)
-				// if lp != nil {
-				// 	lp.SetPressedHandler(func() {
-				// 		zlog.Info("LP Pressed")
-				// 	})
-				// }
-				blocker.SetPressedHandler(func() {
-					// zlog.Info("blocker pressed")
-					dismissed := true
-					PresentViewClose(v, dismissed, closed)
-				})
-			}
-			win.AddView(blocker)
 		}
 	}
 	ct, _ := v.(ContainerType)
@@ -185,7 +195,7 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 var presentViewPresenting = true
 
 func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
-	presentedNativeViewStack = append(presentedNativeViewStack, ViewGetNative(v))
+	presentedViewStack = append(presentedViewStack, v)
 	presentCloseFunc = closed
 	presentViewPresenting = true
 	presentViewCallReady(v, true)
@@ -219,7 +229,13 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 		if nv != nil {
 			r := rect
 			if attributes.Pos != nil {
-				r.Pos = *attributes.Pos
+				if attributes.Alignment == zgeo.AlignmentNone {
+					r.Pos = *attributes.Pos
+				} else {
+					// zlog.Info("ALIGN1:", *attributes.Pos, size, attributes.Alignment)
+					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}, zgeo.Size{}).Pos
+					// zlog.Info("ALIGN2:", r.Pos)
+				}
 			}
 			r = r.MovedInto(fullRect)
 			v.SetRect(r)
@@ -273,7 +289,7 @@ func PresentViewClose(view View, dismissed bool, done func(dismissed bool)) {
 
 func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes PresentViewAttributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
-	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName())
+	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName(), zlog.GetCallingStackString())
 
 	nv := ViewGetNative(view)
 	parent := nv.Parent()
@@ -281,13 +297,21 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 		// zlog.Info("PresentViewCloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
-	presentedNativeViewStack = presentedNativeViewStack[:len(presentedNativeViewStack)-1]
+	plen := len(presentedViewStack)
+	win := nv.GetWindow()
+	presentedViewStack = presentedViewStack[:plen-1]
+	// zlog.Info("PresentViewCloseOverride:", plen, view.ObjectName())
+	if plen > 1 {
+		win.ProgrammaticView = presentedViewStack[plen-2] // stack has been tructated by 1 since plen calculated
+	} else {
+		win.ProgrammaticView = nil
+	}
 	nv.RemoveFromParent()
 	if done != nil {
 		done(dismissed)
 	}
 	if presentCloseFunc != nil {
-		ztimer.StartIn(0.2, func() {
+		ztimer.StartIn(0.1, func() {
 			presentCloseFunc(dismissed)
 		})
 		// presentCloseFunc = nil // can't do this, clears before StartIn

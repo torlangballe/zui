@@ -250,9 +250,15 @@ func (c *Canvas) setLineWidth(width float64) {
 	c.context.Set("lineWidth", width)
 }
 
+// DrawTextInPos fills or strokes *text* at bottom-left position *pos*.
+// Strokes if strokeWidth is non zero, and changes the canvases current *lineWidth*.
 func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
-	zlog.Assert(strokeWidth == 0)
-	c.context.Call("fillText", text, pos.X, pos.Y)
+	name := "fillText"
+	if strokeWidth != 0 {
+		c.context.Set("lineWidth", strokeWidth)
+		name = "strokeText"
+	}
+	c.context.Call(name, text, pos.X, pos.Y)
 }
 
 func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {

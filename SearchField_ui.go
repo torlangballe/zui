@@ -26,7 +26,7 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)
 	s.Add(iv, zgeo.CenterLeft, zgeo.Size{3, 0}).Free = true
-	t.SetOnInputHandler(func(view View) {
+	t.SetOnInputHandler(func() {
 		iv.Show(t.Text() == "")
 	})
 	// Call("addEventListener", "input", js.FuncOf(func(js.Value, []js.Value) interface{} {

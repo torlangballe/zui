@@ -24,7 +24,7 @@ type TextView struct {
 	alignment     zgeo.Alignment
 	changed       func(view View)
 	pushedBGColor zgeo.Color
-	keyPressed    func(view View, key KeyboardKey, mods KeyboardModifier)
+	keyPressed    func(key KeyboardKey, mods KeyboardModifier)
 	updateTimer   *ztimer.Timer
 	Columns       int
 	rows          int
@@ -102,19 +102,16 @@ func (v *TextView) MaxLines() int {
 	return v.rows
 }
 
-func (v *TextView) SetMinWidth(min float64) View {
+func (v *TextView) SetMinWidth(min float64) {
 	v.minWidth = min
-	return v
 }
 
-func (v *TextView) SetMaxWidth(max float64) View {
+func (v *TextView) SetMaxWidth(max float64) {
 	v.maxWidth = max
-	return v
 }
 
-func (v *TextView) SetMaxLines(max int) View {
+func (v *TextView) SetMaxLines(max int) {
 	v.rows = max
-	return v
 }
 
 func (v *TextView) IsMinimumOneLineHight() bool {

@@ -30,7 +30,7 @@ type View interface {
 
 	Opaque(opaque bool) View
 
-	SetRect(rect zgeo.Rect) 
+	SetRect(rect zgeo.Rect)
 	Rect() zgeo.Rect
 
 	Show(show bool) View
@@ -49,7 +49,7 @@ func ViewGetNative(view View) *NativeView {
 	if o != nil {
 		return o.GetNative()
 	}
-	zlog.Error(nil, "no view", view != nil)
+	zlog.Error(nil, "no view", view != nil, zlog.GetCallingStackString())
 	return nil
 }
 

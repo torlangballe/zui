@@ -76,7 +76,6 @@ func (v *MenuView) MaxWidth() float64 {
 	return v.maxWidth
 }
 
-func (v *MenuView) SetMaxWidth(max float64) View {
+func (v *MenuView) SetMaxWidth(max float64) {
 	v.maxWidth = max
-	return v
 }

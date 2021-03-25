@@ -1,3 +1,5 @@
+// +build server
+
 package zui
 
 import (
@@ -29,4 +31,3 @@ type PutDoc struct {
 	Path        string
 	HTML        string
 }
-	

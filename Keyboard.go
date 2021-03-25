@@ -15,13 +15,15 @@ const (
 )
 
 const (
-	KeyboardKeyReturn    = 13
-	KeyboardKeyEnter     = 131313 // not sure what it is elsewhere, doesn't exist in js/html
-	KeyboardKeyTab       = 9
-	KeyboardKeyBackspace = 8
-	KeyboardKeyEscape    = 27
-	KeyboardKeyUpArrow   = 38
-	KeyboardKeyDownArrow = 40
+	KeyboardKeyReturn     = 13
+	KeyboardKeyEnter      = 131313 // not sure what it is elsewhere, doesn't exist in js/html
+	KeyboardKeyTab        = 9
+	KeyboardKeyBackspace  = 8
+	KeyboardKeyEscape     = 27
+	KeyboardKeyLeftArrow  = 37
+	KeyboardKeyRightArrow = 39
+	KeyboardKeyUpArrow    = 38
+	KeyboardKeyDownArrow  = 40
 )
 
 const (

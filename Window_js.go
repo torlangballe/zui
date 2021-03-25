@@ -112,6 +112,7 @@ func (win *Window) setOnResize() {
 			if win.ProgrammaticView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				win.ProgrammaticView.SetRect(r)
+				// zlog.Info("On Resized Done", win.ProgrammaticView.ObjectName())
 				if win.HandleAfterResized != nil {
 					win.HandleAfterResized(r)
 				}
@@ -146,6 +147,7 @@ func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
 	// })
+	// zlog.Info("Wi:AddView", v.ObjectName())
 	w.ProgrammaticView = v
 	wn := &NativeView{}
 	wn.Element = w.element.Get("document").Get("documentElement")
@@ -189,6 +191,7 @@ func (win *Window) setOnKeyUp() {
 			for view, h := range win.keyHandlers {
 				// zlog.Info("win key:", key, view.ObjectName())
 				if PresentedViewCurrentIsParent(view) {
+					// zlog.Info("win key2:", key, view.ObjectName())
 					h(key, mods)
 				}
 			}

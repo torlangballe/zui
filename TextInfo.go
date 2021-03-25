@@ -118,7 +118,10 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 		allLines = []string{ti.Text}
 		widths = []float64{size.W}
 	} else {
-		count := zint.Max(ti.MaxLines, len(allLines))
+		count := len(allLines)
+		if ti.MaxLines != 0 {
+			zint.Minimize(&count, ti.MaxLines)
+		}
 		// zlog.Info("BOUNDS:", size, count, add)
 		//	count = ti.MaxLines
 		if count > 1 || ti.IsMinimumOneLineHight {
@@ -162,13 +165,17 @@ func (ti *TextInfo) MakeAttributes() zdict.Dict {
 	return zdict.Dict{}
 }
 
-func (ti *TextInfo) FillAndStroke(canvas *Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
+// StrokeAndFill strokes the text with *strokeColor* and width, then fills with ti.Color
+// canvas' width, color and stroke style are changed
+func (ti *TextInfo) StrokeAndFill(canvas *Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
 	t := *ti
-	t.Type = TextInfoFill
-	//	t.Draw(canvas)
+	old := t.Color
 	t.Color = strokeColor
 	t.Type = TextInfoStroke
 	t.StrokeWidth = width
+	t.Draw(canvas)
+	t.Color = old
+	t.Type = TextInfoFill
 	return t.Draw(canvas)
 }
 

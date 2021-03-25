@@ -11,12 +11,13 @@ type CustomView struct {
 	NativeView
 	LongPresser
 
-	OpaqueDraw   bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
-	canvas       *Canvas
-	minSize      zgeo.Size
-	pressed      func()
-	longPressed  func()
-	valueChanged func(view View)
+	OpaqueDraw       bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
+	DownsampleImages bool
+	canvas           *Canvas
+	minSize          zgeo.Size
+	pressed          func()
+	longPressed      func()
+	valueChanged     func(view View)
 	// pointerEnclosed func(inside bool)
 	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
@@ -42,11 +43,13 @@ func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (v *CustomView) Expose() {
 	// zlog.Info("CV Expose", v.ObjectName())
-	v.exposeInSecs(0.01) //0.01)
+	v.exposeInSecs(0.1) //0.01)
 }
 
 func (v *CustomView) exposeInSecs(secs float64) {
+	// if v.ObjectName() == "chart-drawer" {
 	// zlog.Info("exposeInSecs", v.ObjectName(), v.exposed, presentViewPresenting)
+	// }
 	if v.exposed || presentViewPresenting {
 		return
 	}
@@ -67,7 +70,9 @@ func (v *CustomView) exposeInSecs(secs float64) {
 		}
 		et, _ := v.View.(ExposableType)
 		if et != nil {
-			// zlog.Info("CV exposeInSecs draw", v.ObjectName())
+			// if v.ObjectName() == "chart-drawer" {
+			// 	zlog.Info("CV exposeInSecs draw", v.ObjectName())
+			// }
 			et.drawIfExposed()
 		}
 	})

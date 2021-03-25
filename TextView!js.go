@@ -28,7 +28,7 @@ func (v *TextView) IsPassword(is bool) *TextView {
 }
 
 func (v *TextView) SetChangedHandler(handler func(view View))                                     {}
-func (v *TextView) SetKeyHandler(handler func(view View, key KeyboardKey, mods KeyboardModifier)) {}
+func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier)) {}
 func (v *TextView) ScrollToBottom() {}
 func (v *TextView) SetIsStatic(s bool) {}
 
