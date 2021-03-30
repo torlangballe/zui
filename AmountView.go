@@ -69,7 +69,7 @@ func (v *AmountView) drawBar(rect zgeo.Rect, canvas *Canvas, view View) {
 		}
 		path := zgeo.PathNewRect(rect, zgeo.Size{3, 3})
 		col := v.getColorForValue()
-		canvas.SetColor(col, 1)
+		canvas.SetColor(col)
 		canvas.FillPath(path)
 	}
 }

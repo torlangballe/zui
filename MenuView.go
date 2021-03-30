@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -5,6 +7,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zwords"
 )
 
 const separatorID = "$sep"
@@ -36,7 +39,7 @@ func (v *MenuView) Dump() {
 }
 
 func (v *MenuView) getNumberOfItemsString() string {
-	return WordsPluralizeString("%d %s", "en", float64(v.items.Count()), "item")
+	return zwords.PluralWord("item", float64(v.items.Count()), "", "", 0)
 }
 
 // func MenuViewCalcItemsWidth(items zdict.Items, font *Font) float64 {

@@ -132,7 +132,7 @@ func (v *TextView) updateDone() {
 		v.SetBGColor(v.pushedBGColor)
 		v.pushedBGColor = zgeo.Color{}
 	}
-	v.changed(v)
+	v.changed()
 }
 
 func (v *TextView) startUpdate() {
@@ -150,7 +150,7 @@ func (v *TextView) startUpdate() {
 	//	v.updated = false
 }
 
-func (v *TextView) SetChangedHandler(handler func(view View)) {
+func (v *TextView) SetChangedHandler(handler func()) {
 	v.changed = handler
 	if handler != nil {
 		v.setjs("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
@@ -168,13 +168,17 @@ func (v *TextView) SetChangedHandler(handler func(view View)) {
 		v.setjs("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
 			// v.updated = true
 			if v.UpdateSecs == 0 {
-				v.changed(v)
+				v.changed()
 			} else {
 				v.startUpdate()
 			}
 			return nil
 		}))
 	}
+}
+
+func (v *TextView) ChangedHandler() func() {
+	return v.changed
 }
 
 // TODO: Replace with NativeView version

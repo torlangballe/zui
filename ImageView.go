@@ -13,12 +13,13 @@ import (
 
 type ImageView struct {
 	ContainerView
-	image       *Image
-	maxSize     zgeo.Size
-	alignment   zgeo.Alignment
-	imageCorner float64
-	strokeWidth float64
-	strokeColor zgeo.Color
+	image            *Image
+	maxSize          zgeo.Size
+	alignment        zgeo.Alignment
+	imageCorner      float64
+	strokeWidth      float64
+	strokeColor      zgeo.Color
+	DownsampleImages bool
 }
 
 func ImageViewNew(image *Image, imagePath string, maxSize zgeo.Size) *ImageView {
@@ -156,6 +157,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 
 func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 	v := view.(*ImageView)
+	canvas.DownsampleImages = v.DownsampleImages
 	if v.image != nil {
 		var path *zgeo.Path
 		drawImage := v.image
@@ -176,7 +178,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// zlog.Info("IV Draw:", v.image.Size(), view.ObjectName(), r, v.image.Path, rect, "->", ir)
 		if v.imageCorner != 0 {
 			canvas.PushState()
-			path = zgeo.PathNewRect(ir, zgeo.SizeBoth(v.imageCorner))
+			path = zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
 			canvas.ClipPath(path, true, true)
 		}
 		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
@@ -188,7 +190,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.strokeWidth != 0 {
 			corner := v.imageCorner - v.strokeWidth
 			path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
-			canvas.SetColor(v.strokeColor, 1)
+			canvas.SetColor(v.strokeColor)
 			canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)
 		}
 	}

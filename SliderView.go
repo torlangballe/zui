@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import "github.com/torlangballe/zutil/zgeo"
@@ -12,4 +14,3 @@ type SliderView struct {
 func (s *SliderView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{100, 20}
 }
-

@@ -9,11 +9,11 @@ func DrawUtilAmountPie(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float6
 	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, ScreenMain().SoftScale)
 	path.MoveTo(rect.Center())
 	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, value*360)
-	canvas.SetColor(color, 1)
+	canvas.SetColor(color)
 	canvas.FillPath(path)
 
 	line := zgeo.PathNew()
 	line.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, 360)
-	canvas.SetColor(strokeColor, 1)
+	canvas.SetColor(strokeColor)
 	canvas.StrokePath(line, strokeWidth, zgeo.PathLineRound)
 }

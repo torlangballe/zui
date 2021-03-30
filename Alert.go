@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
+	"github.com/torlangballe/zutil/zwords"
 )
 
 //  Created by Tor Langballe on /7/11/15.
@@ -35,7 +36,7 @@ type Alert struct {
 func AlertNew(items ...interface{}) *Alert {
 	a := &Alert{}
 	str := zstr.SprintSpaced(items...)
-	a.OKButton = WordsGetOK()
+	a.OKButton = zwords.OK()
 	a.Text = str
 	return a
 }
@@ -48,7 +49,7 @@ func AlertNewWithCancel(items ...interface{}) *Alert {
 
 func (a *Alert) SetCancel(text string) *Alert {
 	if text == "" {
-		text = WordsGetCancel()
+		text = zwords.Cancel()
 	}
 	a.CancelButton = text
 	return a

@@ -15,6 +15,6 @@ func FocusDraw(canvas *Canvas, rect zgeo.Rect, corner, width float64, opacity fl
 	w := width * ss
 	r := rect.ExpandedD(-width / 2 * ss)
 	path := zgeo.PathNewRect(r, zgeo.Size{corner, corner})
-	canvas.SetColor(focusColor, opacity)
+	canvas.SetColor(focusColor.WithOpacity(opacity))
 	canvas.StrokePath(path, w, zgeo.PathLineRound)
 }

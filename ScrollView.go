@@ -112,7 +112,7 @@ func (v *ScrollView) drawIfExposed() {
 	// zlog.Info("SV:drawIfExposed")
 	if v.child != nil {
 		//ViewGetNative(v.child).Presented = false
-		presentViewCallReady(v.child, true)
+		PresentViewCallReady(v.child, true)
 	}
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
@@ -121,7 +121,7 @@ func (v *ScrollView) drawIfExposed() {
 			// zlog.Info("SV:drawIfExposed child")
 			et.drawIfExposed()
 		}
-		presentViewCallReady(v.child, false)
+		PresentViewCallReady(v.child, false)
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 
 //  Created by Tor Langballe on /14/12/17.
 
+var ButtonViewDefaultName = "gray"
+
 type ButtonView struct {
 	ShapeView
 }
@@ -47,5 +49,8 @@ func (v *ButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ButtonView) SetImageName(name string, insets zgeo.Size) {
+	if name == "" {
+		name = ButtonViewDefaultName
+	}
 	v.SetNamedCapImage("images/buttons/"+name, insets)
 }

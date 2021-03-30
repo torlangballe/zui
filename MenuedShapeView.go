@@ -16,8 +16,9 @@ import (
 
 type MenuedItem struct {
 	zdict.Item
-	Selected bool
-	Color    zgeo.Color
+	Selected   bool
+	LabelColor zgeo.Color
+	TextColor  zgeo.Color
 }
 
 type MenuedShapeView struct {
@@ -26,11 +27,11 @@ type MenuedShapeView struct {
 	selectedHandler func()
 	items           []MenuedItem
 
-	ImagePath  string
-	IsStatic   bool // if set, user can't set a different value, but can press and see them. Shows number of items
-	IsMultiple bool
-	HasColor   bool
-	GetTitle   func(itemCount int) string
+	ImagePath     string
+	IsStatic      bool // if set, user can't set a different value, but can press and see them. Shows number of items
+	IsMultiple    bool
+	HasLabelColor bool
+	GetTitle      func(itemCount int) string
 }
 
 func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, isStatic, isMultiple bool) *MenuedShapeView {
@@ -228,7 +229,7 @@ func (v *MenuedShapeView) popup() {
 		return len(v.items)
 	}
 	rm := float64(rightMarg)
-	if v.HasColor {
+	if v.HasLabelColor {
 		rm += 24
 	}
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
@@ -239,8 +240,11 @@ func (v *MenuedShapeView) popup() {
 			// 	canvas.FillPath(zgeo.PathNewRect(rect, zgeo.Size{}))
 			// }
 			ti := TextInfoNew()
+
 			if list.IsRowHighlighted(i) {
 				ti.Color = zgeo.ColorWhite
+			} else if v.items[i].TextColor.Valid {
+				ti.Color = v.items[i].TextColor
 			}
 			ti.Text = v.items[i].Name
 			ti.Font = v.Font()
@@ -255,14 +259,14 @@ func (v *MenuedShapeView) popup() {
 				ti.Alignment = zgeo.Left
 				ti.Draw(canvas) // we keep black/white hightlighted color
 			}
-			if v.items[i].Color.Valid {
+			if v.HasLabelColor && v.items[i].LabelColor.Valid {
 				r := rect
 				r.SetMinX(rect.Max().X - rm + 6)
 				r = r.Expanded(zgeo.Size{-3, -3})
-				canvas.SetColor(v.items[i].Color, 1)
+				canvas.SetColor(v.items[i].LabelColor)
 				path := zgeo.PathNewRect(r, zgeo.Size{2, 2})
 				canvas.FillPath(path)
-				canvas.SetColor(zgeo.ColorBlack, 1)
+				canvas.SetColor(zgeo.ColorBlack.WithOpacity(v.items[i].LabelColor.Opacity()))
 				canvas.StrokePath(path, 1, zgeo.PathLineRound)
 			}
 		})
@@ -286,7 +290,7 @@ func (v *MenuedShapeView) popup() {
 	// stack.SetCorner(8)
 
 	list.HandleRowSelected = func(i int, selected bool) {
-		zlog.Info("list selected", i, selected)
+		// zlog.Info("list selected", i, selected)
 		v.items[i].Selected = selected
 		if !v.IsMultiple {
 			PresentViewClose(stack, false, nil)

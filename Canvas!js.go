@@ -46,9 +46,9 @@ func (c *Canvas) SetSize(size zgeo.Size) {
 func (c *Canvas) SetRect(rect zgeo.Rect) {
 }
 
-func (c *Canvas) SetColor(color zgeo.Color, opacity float32) {
+func (c *Canvas) SetColor(color zgeo.Color) {
 	// if opacity != -1 {
-	// 	color = color.OpacityChanged(opacity)
+	// 	color = color.WithOpacity(opacity)
 	// }
 	c.context.SetColor(color)
 

@@ -4,7 +4,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type VideoView struct {
@@ -33,7 +32,6 @@ func VideoViewNew(maxSize zgeo.Size) *VideoView {
 func (v *VideoView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if !v.StreamSize.IsNull() {
 		s := v.StreamSize.ShrunkInto(v.maxSize)
-		zlog.Info("video calcs:", s)
 		return s
 	}
 	return v.maxSize

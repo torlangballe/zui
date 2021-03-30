@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 type NativeView struct {
@@ -17,7 +19,7 @@ func (v *NativeView) StopStoppers() {
 	for _, f := range v.stopOnClose {
 		f()
 	}
-	ct, _ := v.View.((ContainerType))
+	ct, _ := v.View.(ContainerType)
 	if ct != nil {
 		for _, c := range ct.GetChildren() {
 			nv := ViewGetNative(c)

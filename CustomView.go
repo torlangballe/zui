@@ -118,6 +118,10 @@ func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas,
 	}
 }
 
+func (v *CustomView) DrawHandler() func(rect zgeo.Rect, canvas *Canvas, view View) {
+	return v.draw
+}
+
 func (v *CustomView) GetPosFromMe(pos zgeo.Pos, inView View) zgeo.Pos {
 	return zgeo.Pos{}
 }
@@ -156,7 +160,7 @@ func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
 		}
 	}
 	if !v.Usable() {
-		col = col.OpacityChanged(0.3)
+		col = col.WithOpacity(0.3)
 	}
 	return col
 }

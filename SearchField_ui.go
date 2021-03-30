@@ -4,6 +4,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type SearchField struct {
@@ -26,8 +27,13 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)
 	s.Add(iv, zgeo.CenterLeft, zgeo.Size{3, 0}).Free = true
-	t.SetOnInputHandler(func() {
+	old := t.ChangedHandler()
+	t.SetChangedHandler(func() {
+		zlog.Info("search changed", t.Text())
 		iv.Show(t.Text() == "")
+		if old != nil {
+			old()
+		}
 	})
 	// Call("addEventListener", "input", js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	iv.Show(t.Text() == "")

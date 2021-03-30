@@ -8,8 +8,6 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-const tabSeparatorID = "tab-separator"
-
 type tab struct {
 	id             string
 	create         func(delete bool) View
@@ -20,17 +18,25 @@ type tab struct {
 
 type TabsView struct {
 	StackView
-	Header              *StackView
-	ChildView           View
-	CurrentID           string
-	tabs                map[string]*tab
-	separatorForIDs     []string
-	SeparatorLineInset  float64
-	ChangedHandler      func(newID string)
-	ButtonName          string //
-	selectedButtonColor zgeo.Color
-	MaxImageSize        zgeo.Size
+	Header               *StackView
+	ChildView            View
+	CurrentID            string
+	tabs                 map[string]*tab
+	separatorForIDs      []string
+	SeparatorLineInset   float64
+	ChangedHandler       func(newID string)
+	ButtonName           string //
+	selectedImageBGColor zgeo.Color
+	MaxImageSize         zgeo.Size
 }
+
+const tabSeparatorID = "tab-separator"
+
+var (
+	TabsDefaultButtonName           = "gray-tab"
+	TabsDefaultTextColor            = zgeo.ColorWhite
+	TabsDefaultSelectedImageBGColor = zgeo.ColorNew(0, 0, 1, 0.2)
+)
 
 func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
@@ -42,12 +48,35 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 		v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
 		v.Header.SetMargin(zgeo.RectFromXY2(2, 0, 0, 0))
 	} else {
-		v.MaxImageSize = zgeo.Size{60, 20}
-		v.Header.SetMargin(zgeo.RectFromXY2(6, 3, -6, -3))
+		v.MaxImageSize = zgeo.Size{60, 24}
+		v.Header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
 	}
 	v.tabs = map[string]*tab{}
 	v.Header.SetSpacing(12)
 	v.Add(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
+	v.selectedImageBGColor = TabsDefaultSelectedImageBGColor
+	if !buttons {
+		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
+			zlog.Info("header draw:", sv != nil, v.CurrentID)
+			if sv != nil {
+				r := sv.Rect()
+				r.Pos.Y = 0
+				r.Size.H = rect.Size.H
+				r.SetMinX(r.Min().X - v.Header.Spacing()/2)
+				r.SetMaxX(r.Max().X + v.Header.Spacing()/2)
+				if i == 0 {
+					r.SetMinX(rect.Min().X)
+				}
+				if i == v.Header.CountChildren() && r.Max().X > rect.Max().X-8 {
+					r.SetMaxX(rect.Max().X)
+				}
+				canvas.SetColor(v.selectedImageBGColor)
+				path := zgeo.PathNewRect(r, zgeo.Size{})
+				canvas.FillPath(path)
+			}
+		})
+	}
 	return v
 }
 
@@ -55,8 +84,8 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 	cv := CustomViewNew(tabSeparatorID)
 	cv.SetMinSize(zgeo.Size{10, thickness})
 	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
-		selectedView := v.Header.FindViewWithName(v.CurrentID, false)
-		canvas.SetColor(color, 1)
+		selectedView, _ := v.Header.FindViewWithName(v.CurrentID, false)
+		canvas.SetColor(color)
 		if selectedView != nil {
 			r := selectedView.Rect()
 			x0 := r.Pos.X + v.SeparatorLineInset
@@ -77,9 +106,6 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 	v.Add(cv, zgeo.TopLeft|zgeo.HorExpand)
 	v.separatorForIDs = forIDs
 }
-
-var TabsDefaultButtonName = "gray-tab"
-var TabsDefaultTextColor = zgeo.ColorWhite
 
 // AddTab adds a new tab to the row of tabs.
 // id is unique id that identifies it.
@@ -107,8 +133,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 		button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 		view = b
 	} else {
-		button = ShapeViewNew(ShapeViewTypeRoundRect, minSize)
-		button.SetColor(v.selectedButtonColor)
+		button = ShapeViewNew(ShapeViewTypeNone, minSize)
 		button.MaxSize = v.MaxImageSize
 		button.ImageMargin = zgeo.Size{}
 		view = button
@@ -140,7 +165,7 @@ func (v *TabsView) AddTabWithView(id, title, ipath string, set bool, view View) 
 }
 
 func (v *TabsView) setButtonOn(id string, on bool) {
-	view := v.Header.FindViewWithName(id, false)
+	view, _ := v.Header.FindViewWithName(id, false)
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
 		button, _ := view.(*ButtonView)
@@ -154,11 +179,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 			button.SetImageName(str, zgeo.Size{11, 12})
 			button.SetFont(FontNice(FontDefaultSize, style))
 		} else { // image only
-			col := zgeo.ColorClear
-			if on {
-				col = v.selectedButtonColor
-			}
-			v.SetBGColor(col)
+			v.Header.Expose()
 		}
 	}
 }
@@ -213,7 +234,7 @@ func (v *TabsView) SetTab(id string) {
 		// if !v.Presented {
 		// 	return
 		// }
-		presentViewCallReady(v.ChildView, true)
+		PresentViewCallReady(v.ChildView, true)
 		presentViewPresenting = true
 		v.ArrangeChildren(nil) // This can create table rows and do all kinds of things that load images etc.
 
@@ -228,7 +249,7 @@ func (v *TabsView) SetTab(id string) {
 
 		// zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
 		presentViewPresenting = false
-		presentViewCallReady(v.ChildView, false)
+		PresentViewCallReady(v.ChildView, false)
 		if et != nil {
 			et.drawIfExposed()
 		}

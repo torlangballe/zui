@@ -19,6 +19,10 @@ func (a *Audio) Play() {
 	a.audio.Call("play")
 }
 
+func (a *Audio) Stop() {
+	a.audio.Call("stop")
+}
+
 func (a *Audio) SetVolume(v float32) {
 	a.audio.Set("volume", v)
 }

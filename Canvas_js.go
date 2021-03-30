@@ -40,11 +40,8 @@ func (c *Canvas) SetRect(rect zgeo.Rect) {
 	setElementRect(c.element, rect)
 }
 
-func (c *Canvas) setColor(color zgeo.Color, opacity float32, stroke bool) {
+func (c *Canvas) setColor(color zgeo.Color, stroke bool) {
 	var vcolor = color
-	if opacity != -1 {
-		vcolor = vcolor.OpacityChanged(opacity)
-	}
 	str := makeRGBAString(vcolor)
 	name := "fillStyle"
 	if stroke {
@@ -53,9 +50,9 @@ func (c *Canvas) setColor(color zgeo.Color, opacity float32, stroke bool) {
 	c.context.Set(name, str)
 }
 
-func (c *Canvas) SetColor(color zgeo.Color, opacity float32) {
-	c.setColor(color, opacity, false)
-	c.setColor(color, opacity, true)
+func (c *Canvas) SetColor(color zgeo.Color) {
+	c.setColor(color, false)
+	c.setColor(color, true)
 }
 
 func (c *Canvas) FillPath(path *zgeo.Path) {
@@ -103,7 +100,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	c.setPath(path)
 	c.context.Call("fill")
 	c.PushState()
-	c.setColor(strokeColor, 1, true)
+	c.setColor(strokeColor, true)
 	c.setLineType(ltype)
 	c.context.Call("stroke")
 	c.PopState()

@@ -174,6 +174,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	}
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	if v.NewStack {
+		zlog.Assert(onlyChild == nil) // going away...
 		rm := v.LocalRect().Plus(v.Margin())
 		var lays []zgeo.LayoutCell
 		for _, c := range v.cells {

@@ -104,9 +104,10 @@ func goImageFromPath(path string, isFile bool) image.Image {
 	} else {
 		params := zhttp.MakeParameters()
 		params.Method = http.MethodGet
+		params.Headers["Origin"] = "https://192.168.0.30:443"
 		resp, err := zhttp.GetResponse(path, params)
 		if err != nil {
-			zlog.Error(err, "get", path)
+			zlog.Error(err, "get", path, zlog.GetCallingStackString())
 			return nil
 		}
 		reader = resp.Body

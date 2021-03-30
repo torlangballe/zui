@@ -112,6 +112,7 @@ func (win *Window) setOnResize() {
 			if win.ProgrammaticView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				win.ProgrammaticView.SetRect(r)
+				// setElementRect(win.element, r)
 				// zlog.Info("On Resized Done", win.ProgrammaticView.ObjectName())
 				if win.HandleAfterResized != nil {
 					win.HandleAfterResized(r)
@@ -150,9 +151,10 @@ func (w *Window) AddView(v View) {
 	// zlog.Info("Wi:AddView", v.ObjectName())
 	w.ProgrammaticView = v
 	wn := &NativeView{}
-	wn.Element = w.element.Get("document").Get("documentElement")
+	//	wn.Element = w.element.Get("document").Get("documentElement")
+	wn.Element = w.element.Get("document").Get("body")
 	wn.View = wn
-
+	ViewGetNative(v).style().Set("overflowX", "hidden")
 	wn.AddChild(v, -1)
 }
 
@@ -205,6 +207,7 @@ func (win *Window) setOnKeyUp() {
 }
 
 func (win *Window) removeKeyPressHandlerViews(root View) {
+	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName())
 	ct := root.(ContainerType)
 	ContainerTypeRangeChildren(ct, true, func(view View) bool {
 		if win.keyHandlers[view] != nil {
@@ -216,6 +219,7 @@ func (win *Window) removeKeyPressHandlerViews(root View) {
 }
 
 func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {
+	// zlog.Info("Window AddKeypressHandler", v.ObjectName())
 	if handler == nil {
 		delete(win.keyHandlers, v)
 		return

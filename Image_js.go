@@ -60,10 +60,19 @@ func ImageFromNative(n image.Image) *Image {
 	return nil
 }
 
+func goImageFromImageUsingCanvas(img *Image) image.Image {
+	canvas := CanvasNew()
+	canvas.element.Set("id", "render-canvas")
+	s := img.Size()
+	canvas.SetSize(s)
+	canvas.context.Call("drawImage", img.imageJS, 0, 0, s.W, s.H)
+	goImage := canvas.Image(zgeo.Rect{})
+	return goImage
+}
+
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	// this can be better, use canvas.Image()
-	isFile := false
-	goImage := goImageFromPath(i.Path, isFile)
+	goImage := goImageFromImageUsingCanvas(i)
 	if goImage == nil {
 		zlog.Error(nil, "goImageFromPath")
 		return nil
@@ -103,6 +112,8 @@ func (i *Image) load(path string, done func(success bool)) {
 
 	imageF := js.Global().Get("Image")
 	i.imageJS = imageF.New()
+	// i.imageJS.Set("crossOrigin", "Anonymous")
+
 	i.imageJS.Set("onload", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
@@ -184,6 +195,7 @@ func (i *Image) FixedOrientation() *Image {
 }
 
 func ImageFromGo(image image.Image) *Image {
+	// maybe this can be better too, not go via PNG?
 	data, err := GoImagePNGData(image)
 	if err != nil {
 		zlog.Error(err)

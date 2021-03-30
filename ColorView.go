@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import "github.com/torlangballe/zutil/zgeo"

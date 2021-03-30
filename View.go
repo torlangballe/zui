@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -66,11 +68,6 @@ type ReadyToShowType interface {
 	ReadyToShow(beforeWindow bool)
 }
 
-type ContainerType interface {
-	GetChildren() []View
-	ArrangeChildren(onlyChild *View)
-	ReplaceChild(child, with View)
-}
 type Pressable interface {
 	SetPressedHandler(handler func())
 	SetLongPressedHandler(handler func())

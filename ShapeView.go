@@ -39,7 +39,7 @@ type ShapeView struct {
 
 	TextXMargin  float64
 	ImageOpacity float32 // Float = Float(1)
-	Ratio        float32 // = 0.3	
+	Ratio        float32 // = 0.3
 	Count        int     // = 5
 	MaxSize      zgeo.Size
 	Value        float64
@@ -259,7 +259,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if !v.Usable() {
 			o *= 0.6
 		}
-		canvas.SetColor(v.getStateColor(col), o)
+		canvas.SetColor(v.getStateColor(col.WithOpacity(o)))
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
@@ -268,13 +268,10 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if !v.Usable() {
 			o *= 0.6
 		}
-		canvas.SetColor(v.getStateColor(v.StrokeColor), o)
+		canvas.SetColor(v.getStateColor(v.StrokeColor).WithOpacity(o))
 		canvas.StrokePath(path, v.StrokeWidth, v.PathLineType)
 	}
 	imarg := v.ImageMargin
-	// if IsTVBox() {
-	// 	imarg.Maximize(Size{5.0, 5.0}.TimesD(ScreenMain().SoftScale))
-	// }
 	textRect := rect.Plus(v.margin)
 	if v.image != nil && !v.image.loading {
 		drawImage := v.image

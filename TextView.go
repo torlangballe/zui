@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -22,7 +24,7 @@ type TextView struct {
 	minWidth      float64
 	maxWidth      float64
 	alignment     zgeo.Alignment
-	changed       func(view View)
+	changed       func()
 	pushedBGColor zgeo.Color
 	keyPressed    func(key KeyboardKey, mods KeyboardModifier)
 	updateTimer   *ztimer.Timer

@@ -1,4 +1,8 @@
+// +build zui
+
 package zui
+
+//TODO: not used, do we need?
 
 import "github.com/torlangballe/zutil/zgeo"
 

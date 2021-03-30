@@ -1,4 +1,4 @@
-// +build !js
+// +build !js,zui
 
 package zui
 
@@ -27,10 +27,10 @@ func (v *TextView) IsPassword(is bool) *TextView {
 	return v
 }
 
-func (v *TextView) SetChangedHandler(handler func(view View))                                     {}
+func (v *TextView) SetChangedHandler(handler func(view View))                          {}
 func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier)) {}
-func (v *TextView) ScrollToBottom() {}
-func (v *TextView) SetIsStatic(s bool) {}
+func (v *TextView) ScrollToBottom()                                                    {}
+func (v *TextView) SetIsStatic(s bool)                                                 {}
 
 func (v *TextView) SetPlaceholder(str string) *TextView {
 	return v
@@ -39,4 +39,3 @@ func (v *TextView) SetPlaceholder(str string) *TextView {
 func (v *TextView) SetMargin(m zgeo.Rect) View {
 	return v
 }
-

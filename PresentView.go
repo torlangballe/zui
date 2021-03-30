@@ -107,7 +107,7 @@ func PresentViewAttributesNew() PresentViewAttributes {
 	return a
 }
 
-func presentViewCallReady(v View, beforeWindow bool) {
+func PresentViewCallReady(v View, beforeWindow bool) {
 	nv := ViewGetNative(v)
 	if nv == nil {
 		return
@@ -126,9 +126,9 @@ func presentViewCallReady(v View, beforeWindow bool) {
 	}
 	ct, _ := v.(ContainerType)
 	if ct != nil {
-		// zlog.Info("presentViewCallReady1:", v.ObjectName(), len(ct.GetChildren()))
+		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetChildren()))
 		for _, c := range ct.GetChildren() {
-			presentViewCallReady(c, beforeWindow)
+			PresentViewCallReady(c, beforeWindow)
 		}
 	}
 	if !beforeWindow {
@@ -198,7 +198,7 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 	presentedViewStack = append(presentedViewStack, v)
 	presentCloseFunc = closed
 	presentViewPresenting = true
-	presentViewCallReady(v, true)
+	PresentViewCallReady(v, true)
 
 	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
 	ct, _ := v.(ContainerType)
@@ -271,7 +271,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	// 	cvt.ArrangeChildren(nil)
 	// }
 	// NativeViewAddToRoot(v)
-	presentViewCallReady(outer, false)
+	PresentViewCallReady(outer, false)
 	presentViewPresenting = false
 	et, _ := outer.(ExposableType)
 	if et != nil {

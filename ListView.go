@@ -380,7 +380,7 @@ func (v *ListView) UnselectAll() {
 }
 
 func (v *ListView) Unselect(index int) {
-	zlog.Info("Unselect:", index)
+	// zlog.Info("Unselect:", index)
 	if v.selectionIndexes[index] {
 		delete(v.selectionIndexes, index)
 		v.HandleRowSelected(index, false)
@@ -513,9 +513,9 @@ func (v *ListView) UpdateWithOldNewSlice(oldSlice, newSlice ListViewIDGetter) {
 		row, _ := v.rows[focusedIndex]
 		if row != nil {
 			ct := row.(ContainerType)
-			newFocused := ContainerTypeFindViewWithName(ct, focusedObjectName, true)
+			newFocused, _ := ContainerTypeFindViewWithName(ct, focusedObjectName, true)
 			if newFocused != nil {
-				zlog.Info("listview focus something")
+				// zlog.Info("listview focus something")
 				newFocused.Focus(true)
 			}
 		}

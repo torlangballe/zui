@@ -184,7 +184,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	if ti.Text == "" {
 		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
 	}
-	canvas.SetColor(ti.Color, 1)
+	canvas.SetColor(ti.Color)
 	// switch ti.Type {
 	//     case ZTextDrawType.fill
 	//         //                    CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)

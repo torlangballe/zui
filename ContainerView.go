@@ -34,6 +34,16 @@ type ContainerViewCell struct {
 	View View
 }
 
+type ContainerType interface {
+	GetChildren() []View
+	ArrangeChildren(onlyChild *View)
+	ReplaceChild(child, with View)
+}
+
+type Collapser interface {
+	CollapseChild(view View, collapse bool, arrange bool) bool
+}
+
 func (v *ContainerView) GetChildren() (children []View) {
 	for _, c := range v.cells {
 		children = append(children, c.View)
@@ -41,22 +51,14 @@ func (v *ContainerView) GetChildren() (children []View) {
 	return
 }
 
-// func calculateAddAlignment(def, a zgeo.Alignment) zgeo.Alignment {
-// 	if a&zgeo.VertPos != 0 && def&zgeo.VertPos != 0 {
-// 		def &= ^zgeo.Vertical
-// 	}
-// 	if a&zgeo.HorPos != 0 && def&zgeo.HorPos != 0 {
-// 		def &= ^zgeo.HorPos
-// 	}
-// 	a |= def
-// 	if a&zgeo.VertPos == 0 {
-// 		a |= zgeo.Top
-// 	}
-// 	if a&zgeo.HorPos == 0 {
-// 		a |= zgeo.Left
-// 	}
-// 	return a
-// }
+func ArrangeParentContainer(view View) {
+	parent := ViewGetNative(view).Parent().View.(ContainerType)
+	parent.ArrangeChildren(nil)
+}
+
+func (v *ContainerView) CountChildren() int {
+	return len(v.cells)
+}
 
 func (v *ContainerView) Add(elements ...interface{}) (first *ContainerViewCell) {
 	var gotView View
@@ -207,7 +209,7 @@ func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *ContainerView) SetAsFullView(useableArea bool) {
 	v.SetRect(ScreenMain().Rect)
 	v.SetMinSize(ScreenMain().Rect.Size)
-	if !DefinesIsTVBox() {
+	if true { // !DefinesIsTVBox() {
 		h := ScreenStatusBarHeight()
 		r := v.Rect()
 		if h > 20 && !ScreenHasNotch() {
@@ -313,6 +315,9 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 
 func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
 	cell, _ := v.FindCellWithView(view)
+	if cell == nil {
+		return false
+	}
 	changed := (cell.Collapsed != collapse)
 	// zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
 	if collapse {
@@ -336,12 +341,17 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 	}
 	if !collapse {
 		cell.View.Show(true)
+		et, got := cell.View.(ExposableType)
+		// zlog.Info("Uncollapse:", et != nil, v.View.ObjectName())
+		if got {
+			et.Expose()
+		}
 	}
 	return changed
 }
 
 func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrange bool) bool {
-	view := v.FindViewWithName(name, false)
+	view, _ := v.FindViewWithName(name, false)
 	if view != nil {
 		return v.CollapseChild(view, collapse, arrange)
 	}
@@ -385,21 +395,24 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	return true
 }
 
-func (v *ContainerView) FindViewWithName(name string, recursive bool) View {
+func (v *ContainerView) FindViewWithName(name string, recursive bool) (View, int) {
 	return ContainerTypeFindViewWithName(v, name, recursive)
 }
 
-func ContainerTypeFindViewWithName(ct ContainerType, name string, recursive bool) View {
+func ContainerTypeFindViewWithName(ct ContainerType, name string, recursive bool) (View, int) {
 	var found View
+
+	i := 0
 	ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
 		// zlog.Info("FindViewWithName:", name, "==", view.ObjectName())
 		if view.ObjectName() == name {
 			found = view
 			return false
 		}
+		i++
 		return true
 	})
-	return found
+	return found, i
 }
 
 func (v *ContainerView) FindCellWithName(name string) (*ContainerViewCell, int) {
@@ -466,4 +479,11 @@ func (v *ContainerView) ReplaceChild(child, with View) {
 		v.RemoveChild(child)
 		v.AddChild(with, i)
 	}
+}
+
+// CollapseView collapses/uncollapses a view in it's parent which is Collapsable type. (ContainerView)
+func CollapseView(v View, collapse, arrange bool) bool {
+	p := ViewGetNative(v).Parent()
+	c := p.View.(Collapser) // crash if parent isn't ContainerView of some sort
+	return c.CollapseChild(v, collapse, arrange)
 }

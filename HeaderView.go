@@ -97,12 +97,13 @@ func (v *HeaderView) handleButtonPressed(button *ButtonView, h Header) {
 		zslice.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
 		for _, c := range v.GetChildren() {
-			tri := c.(*ButtonView).FindViewWithName("sort", false)
+			tri, _ := c.(*ButtonView).FindViewWithName("sort", false)
 			if tri != nil {
 				tri.SetAlpha(0.5)
 			}
 		}
-		triangle := button.FindViewWithName("sort", false).(*ImageView)
+		sort, _ := button.FindViewWithName("sort", false)
+		triangle := sort.(*ImageView)
 		v.updateTriangle(triangle, h.ID)
 		SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 		if v.SortingPressed != nil {
