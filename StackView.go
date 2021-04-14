@@ -77,7 +77,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignment, cell ContainerViewCell) (zgeo.Rect, zgeo.Rect) {
 	max := cell.MaxSize
-	var box = inRect.Align(size, a, zgeo.Size{}, max)
+	var box = inRect.AlignPro(size, a, zgeo.Size{}, max, zgeo.Size{})
 	// zlog.Info("handleAlign:", box, cell.View.ObjectName(), inRect, size, a, max, cell.Margin)
 	// var box = inRect.Align(size, a, cell.Margin, max)
 
@@ -88,7 +88,7 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 		s := cell.View.CalculatedSize(inRect.Size)
 		//!!		zlog.Fatal(nil, "strange align")
 		// zlog.Info("handleAlign", s, cell.Alignment, cell.Margin, max)
-		vr = box.Align(s, cell.Alignment, cell.Margin, max)
+		vr = box.AlignPro(s, cell.Alignment, cell.Margin, max, zgeo.Size{})
 	} else {
 		vr = box
 		if true { //cell.Alignment.Only(v.Vertical)&zgeo.Center != 0 {
@@ -172,6 +172,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
+	// v.NewStack = true
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	if v.NewStack {
 		zlog.Assert(onlyChild == nil) // going away...
@@ -180,15 +181,19 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 		for _, c := range v.cells {
 			l := c.LayoutCell
 			l.OriginalSize = c.View.CalculatedSize(rm.Size)
+			// zlog.Info("STv OSize:", c.View.ObjectName(), l.OriginalSize, rm.Size)
 			l.Name = c.View.ObjectName()
 			lays = append(lays, l)
 		}
 		rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
+		// for i, r := range rects {
+		// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
+		// }
 		for i, c := range v.cells {
 			r := rects[i]
+			// zlog.Info(i, "LAYOUT SETRECT:", r, c.Alignment, c.View.ObjectName())
 			if !r.IsNull() {
 				c.View.SetRect(r)
-				// zlog.Info("LAYOUT SETRECT:", r, c.Alignment, c.View.ObjectName())
 			}
 		}
 		return

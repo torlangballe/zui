@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -42,6 +43,7 @@ const TextViewDefaultMargin = 2.0
 
 func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
 	tv := &TextView{}
+	zlog.Assert(cols != 0)
 	tv.Init(text, style, rows, cols)
 	return tv
 }
@@ -55,17 +57,13 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	ti := TextInfoNew()
 	ti.Alignment = v.alignment
 	ti.IsMinimumOneLineHight = true
-	if v.Columns == 0 {
-		ti.Text = v.Text()
-	} else {
-		len := len(letters)
-		for i := 0; i < v.Columns; i++ {
-			c := string(letters[i%len])
-			if i%8 == 4 {
-				c = strings.ToUpper(c)
-			}
-			ti.Text += c
+	len := len(letters)
+	for i := 0; i < v.Columns; i++ {
+		c := string(letters[i%len])
+		if i%8 == 4 {
+			c = strings.ToUpper(c)
 		}
+		ti.Text += c
 	}
 	ti.Font = v.Font()
 	ti.MaxLines = v.rows

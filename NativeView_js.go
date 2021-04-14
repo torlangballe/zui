@@ -47,7 +47,9 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
+	// if v.ObjectName() == "v2" {
 	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
+	// }
 	rect = rect.ExpandedToInt()
 	setElementRect(v.Element, rect)
 }
@@ -391,7 +393,7 @@ func (v *NativeView) RemoveChild(child View) {
 	}
 	// zlog.Info("REMOVE CHILD:", child.ObjectName())
 	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
-	nv.parent = nil
+	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
 func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {

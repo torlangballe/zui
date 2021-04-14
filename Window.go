@@ -91,7 +91,7 @@ func getRectFromOptions(o WindowOptions) (rect zgeo.Rect, gotPos, gotSize bool) 
 		var minSum float64
 		for _, ai := range o.Alignment.SplitIntoIndividual() {
 			for _, wr := range wrects {
-				b4 := wr.Align(size, ai, zgeo.Size{}, zgeo.Size{})
+				b4 := wr.Align(size, ai, zgeo.Size{})
 				// zlog.Info("RECT:", wr, ai, b4)
 				r := b4.MovedInto(srect)
 				var sumArea float64

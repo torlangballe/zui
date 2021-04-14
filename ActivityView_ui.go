@@ -15,6 +15,10 @@ type ActivityView struct {
 	rotationSecs float64
 }
 
+func ActivityDefaultNew(size float64) *ActivityView {
+	return ActivityNew(zgeo.ColorNewGray(1, 0.4), zgeo.ColorNew(0.3, 0.3, 1, 1), size)
+}
+
 func ActivityNew(colCircle, colPart zgeo.Color, size float64) *ActivityView {
 	v := &ActivityView{}
 	v.CustomView.Init(v, "activity")

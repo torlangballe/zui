@@ -68,7 +68,7 @@ func (v *WebView) makeBar() *StackView {
 	v.Refresh = ImageViewNew(nil, "images/refresh.png", zgeo.Size{18, 18})
 	v.Refresh.SetPressedHandler(func() {
 		v.SetURL(v.url)
-		zlog.Info("refresh")
+		// zlog.Info("refresh")
 	})
 	v.Bar.Add(v.Refresh, zgeo.CenterRight)
 

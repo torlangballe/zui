@@ -88,6 +88,7 @@ type PresentViewAttributes struct {
 	ModalDimBackground       bool
 	ModalNoBlock             bool
 	ModalDropShadow          zgeo.DropShadow
+	ModalDismissOnEscapeKey  bool
 }
 
 var stack []PresentViewAttributes
@@ -222,7 +223,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	rect := fullRect
 	size := v.CalculatedSize(rect.Size)
 	if attributes.Modal || firstPresented {
-		rect = rect.Align(size, zgeo.Center, zgeo.Size{}, zgeo.Size{})
+		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
 	if attributes.Modal {
 		nv := ViewGetNative(v)
@@ -233,12 +234,20 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 					r.Pos = *attributes.Pos
 				} else {
 					// zlog.Info("ALIGN1:", *attributes.Pos, size, attributes.Alignment)
-					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}, zgeo.Size{}).Pos
+					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}).Pos
 					// zlog.Info("ALIGN2:", r.Pos)
 				}
 			}
 			r = r.MovedInto(fullRect)
 			v.SetRect(r)
+		}
+		if attributes.ModalDismissOnEscapeKey {
+			win := nv.GetWindow()
+			win.AddKeypressHandler(v, func(key KeyboardKey, mod KeyboardModifier) {
+				if mod == KeyboardModifierNone && key == KeyboardKeyEscape {
+					PresentViewClose(v, true, nil)
+				}
+			})
 		}
 	} else {
 		if !firstPresented {
@@ -312,7 +321,9 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 	}
 	if presentCloseFunc != nil {
 		ztimer.StartIn(0.1, func() {
-			presentCloseFunc(dismissed)
+			if presentCloseFunc != nil { // we do a re-check in case it was nilled in 0.1 second
+				presentCloseFunc(dismissed)
+			}
 		})
 		// presentCloseFunc = nil // can't do this, clears before StartIn
 	}

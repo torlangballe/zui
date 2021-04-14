@@ -20,7 +20,7 @@ func (a *Audio) Play() {
 }
 
 func (a *Audio) Stop() {
-	a.audio.Call("stop")
+	// a.audio.Call("stop")
 }
 
 func (a *Audio) SetVolume(v float32) {

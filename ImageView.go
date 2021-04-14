@@ -174,7 +174,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// 	a = AlignmentNone
 		// }
 		r := rect.Plus(v.margin)
-		ir := r.Align(v.image.Size(), a, zgeo.Size{}, zgeo.Size{})
+		ir := r.Align(v.image.Size(), a, zgeo.Size{})
 		// zlog.Info("IV Draw:", v.image.Size(), view.ObjectName(), r, v.image.Path, rect, "->", ir)
 		if v.imageCorner != 0 {
 			canvas.PushState()

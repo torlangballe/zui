@@ -40,9 +40,9 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 		minSize.Set(20, 26)
 	}
 	v.ShapeView.init(shapeType, minSize, name)
-	v.SetMargin(zgeo.RectFromXY2(10, 3, -3, -3))
 	v.IsStatic = isStatic
 	v.IsMultiple = isMultiple
+	v.ImageMargin = zgeo.Size{}
 	v.SetPressedHandler(func() {
 		if len(v.items) != 0 {
 			v.popup()
@@ -272,12 +272,6 @@ func (v *MenuedShapeView) popup() {
 		})
 		return cv
 	}
-	win := v.GetWindow()
-	win.AddKeypressHandler(stack.View, func(key KeyboardKey, mod KeyboardModifier) {
-		if mod == KeyboardModifierNone && key == KeyboardKeyEscape {
-			PresentViewClose(stack, true, nil)
-		}
-	})
 	var max string
 	for _, item := range v.items {
 		if len(item.Name) > len(max) {
@@ -302,6 +296,7 @@ func (v *MenuedShapeView) popup() {
 	att.ModalCloseOnOutsidePress = true
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
+	att.ModalDismissOnEscapeKey = true
 	pos := v.GetAbsoluteRect().Pos
 	att.Pos = &pos
 	//	list.Focus(true)

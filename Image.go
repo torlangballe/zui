@@ -69,7 +69,7 @@ func goImageShrunkInto(goImage image.Image, scale float64, size zgeo.Size, propo
 	b := goImage.Bounds()
 	s := zgeo.Size{float64(b.Dx()), float64(b.Dy())}
 	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{0, 0}, zgeo.Size{0, 0}).Size
+		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{}).Size
 	}
 	nSize := vsize.TimesD(scale)
 

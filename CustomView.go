@@ -43,10 +43,10 @@ func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
 
 func (v *CustomView) Expose() {
 	// zlog.Info("CV Expose", v.ObjectName())
-	v.exposeInSecs(0.1) //0.01)
+	v.ExposeInSecs(0.1) //0.01)
 }
 
-func (v *CustomView) exposeInSecs(secs float64) {
+func (v *CustomView) ExposeInSecs(secs float64) {
 	// if v.ObjectName() == "chart-drawer" {
 	// zlog.Info("exposeInSecs", v.ObjectName(), v.exposed, presentViewPresenting)
 	// }
@@ -64,14 +64,14 @@ func (v *CustomView) exposeInSecs(secs float64) {
 			}
 			if image != nil && image.loading {
 				// zlog.Info("CV exposeInSecs wait for loading", v.ObjectName())
-				v.exposeInSecs(0.1)
+				v.ExposeInSecs(0.1)
 				return
 			}
 		}
 		et, _ := v.View.(ExposableType)
 		if et != nil {
 			// if v.ObjectName() == "chart-drawer" {
-			// 	zlog.Info("CV exposeInSecs draw", v.ObjectName())
+			// 	zlog.Info("CV ExposeInSecs draw", v.ObjectName())
 			// }
 			et.drawIfExposed()
 		}

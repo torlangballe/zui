@@ -220,7 +220,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	}
 	ts, lines, widths := ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
-	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin, zgeo.Size{})
+	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.90 // 0.71

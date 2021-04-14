@@ -42,24 +42,6 @@ func (v *MenuView) getNumberOfItemsString() string {
 	return zwords.PluralWord("item", float64(v.items.Count()), "", "", 0)
 }
 
-// func MenuViewCalcItemsWidth(items zdict.Items, font *Font) float64 {
-// 	var maxString string
-// 	// zlog.Info("MV Calc size:", v)
-// 	for _, item := range items {
-// 		if len(item.Name) > len(maxString) {
-// 			maxString = item.Name
-// 		}
-// 	}
-// 	ti := TextInfoNew()
-// 	ti.Alignment = zgeo.Left
-// 	ti.Text = maxString
-// 	ti.IsMinimumOneLineHight = true
-// 	ti.Font = font
-// 	ti.MaxLines = 1
-// 	s, _, _ := ti.GetBounds()
-// 	return s.W
-// }
-
 func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var max string
 	for _, item := range v.items {
@@ -71,8 +53,9 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&w, v.maxWidth)
 	}
-	// zlog.Info("MenuView calcedsize:", v.Font().Size, v.ObjectName(), maxString, s)
-	return zgeo.Size{w + 38, menuViewHeight}
+	w += 25
+	s := zgeo.Size{w, menuViewHeight}
+	return s
 }
 
 func (v *MenuView) MaxWidth() float64 {

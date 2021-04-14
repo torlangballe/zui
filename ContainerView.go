@@ -231,7 +231,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
 		ir := r.Expanded(c.Margin.MinusD(2.0))
 		s := c.View.CalculatedSize(ir.Size)
-		var rv = r.Align(s, c.Alignment, c.Margin, c.MaxSize)
+		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.Size{})
 		c.View.SetRect(rv)
 	}
 }

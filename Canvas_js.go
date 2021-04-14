@@ -93,6 +93,12 @@ func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineT
 	c.setPath(path)
 	c.setLineType(ltype)
 	c.setLineWidth(width)
+
+	var array []interface{}
+	for _, d := range path.Dashes {
+		array = append(array, d)
+	}
+	c.context.Call("setLineDash", array)
 	c.context.Call("stroke")
 }
 
