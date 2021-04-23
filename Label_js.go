@@ -16,10 +16,11 @@ func LabelNew(text string) *Label {
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	style.Set("verticalAlign", "middle")
-	style.Set("whiteSpace", "pre-wrap")
+	style.Set("whiteSpace", "preWrap")
+	// style.Set("white-space", "pre-wrap")
 	//	style.Set("overflow", "hidden")
 	//	style.Set("textOverflow", "clip")
-	style.Set("wordWrap", "break-word")
+	// style.Set("wordWrap", "break-word")
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
@@ -47,7 +48,7 @@ func (v *Label) SetMaxLines(max int) View {
 	} else {
 		// zlog.Info("Label.SetMaxLines here2!")
 		style.Set("text-overflow", "initial")
-		style.Set("white-space", "normal")
+		style.Set("whiteSpace", "pre-wrap")
 	}
 	//	style.Set("textOverflow", "clip")
 	//	white-space: pre-wrap for multi-lines

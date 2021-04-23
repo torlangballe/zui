@@ -3,9 +3,9 @@
 package zui
 
 import (
-	"math"
+	// "math"
 
-	"github.com/torlangballe/zutil/zfloat"
+	// "github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -51,6 +51,7 @@ func (v *StackView) Spacing() float64 {
 	return v.spacing
 }
 
+/*
 // TODO: Cache sizes more, CalculatedSize will recalculate sub-childens size many times
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var size = zgeo.Size{}
@@ -106,11 +107,6 @@ func (v *StackView) handleAlign(size zgeo.Size, inRect zgeo.Rect, a zgeo.Alignme
 	return box, vr
 }
 
-// Function for setting better focus on Android, due to bug with ScrollViews.
-// Does nothing elsewhere
-func (v *StackView) ForceHorizontalFocusNavigation() {
-}
-
 func addDiff(size *zgeo.Size, maxSize float64, vertical bool, diff *float64, count *int) {
 	d := math.Floor(*diff / float64(*count))
 	if maxSize != 0 {
@@ -158,7 +154,51 @@ func (v *StackView) getCellSize(c ContainerViewCell, weightIndex *int) zgeo.Size
 	// zlog.Info("get cell size2:", c.MaxSize, c.MinSize, v.ObjectName(), c.View.ObjectName(), size)
 	return size
 }
+*/
 
+func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	lays := v.getLayoutCells(zgeo.Rect{Size: total})
+	s := zgeo.LayoutGetCellsStackedSize(v.Vertical, v.Spacing(), lays)
+	s.MaximizeNonZero(v.MinSize())
+	s.Subtract(v.Margin().Size)
+	// zlog.Info("SV CS:", v.ObjectName(), s)
+	return s
+}
+
+func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
+	for _, c := range v.cells {
+		l := c.LayoutCell
+		l.OriginalSize = c.View.CalculatedSize(rect.Size)
+		// zlog.Info("STv OSize:", c.View.ObjectName(), l.OriginalSize, rect.Size)
+		l.Name = c.View.ObjectName()
+		lays = append(lays, l)
+	}
+	return
+}
+
+func (v *StackView) ArrangeChildren(onlyChild *View) {
+	if v.layoutHandler != nil {
+		v.layoutHandler.HandleBeforeLayout()
+	}
+	// v.NewStack = true
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
+	zlog.Assert(onlyChild == nil) // going away...
+	rm := v.LocalRect().Plus(v.Margin())
+	lays := v.getLayoutCells(rm)
+	rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
+	// for i, r := range rects {
+	// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
+	// }
+	for i, c := range v.cells {
+		r := rects[i]
+		// zlog.Info(i, "LAYOUT SETRECT:", r, c.Alignment, c.View.ObjectName())
+		if !r.IsNull() {
+			c.View.SetRect(r)
+		}
+	}
+}
+
+/*
 func (v *StackView) ArrangeChildren(onlyChild *View) {
 	var incs = 0
 	var decs = 0
@@ -172,32 +212,7 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
-	// v.NewStack = true
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
-	if v.NewStack {
-		zlog.Assert(onlyChild == nil) // going away...
-		rm := v.LocalRect().Plus(v.Margin())
-		var lays []zgeo.LayoutCell
-		for _, c := range v.cells {
-			l := c.LayoutCell
-			l.OriginalSize = c.View.CalculatedSize(rm.Size)
-			// zlog.Info("STv OSize:", c.View.ObjectName(), l.OriginalSize, rm.Size)
-			l.Name = c.View.ObjectName()
-			lays = append(lays, l)
-		}
-		rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
-		// for i, r := range rects {
-		// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
-		// }
-		for i, c := range v.cells {
-			r := rects[i]
-			// zlog.Info(i, "LAYOUT SETRECT:", r, c.Alignment, c.View.ObjectName())
-			if !r.IsNull() {
-				c.View.SetRect(r)
-			}
-		}
-		return
-	}
 	var r = v.Rect()
 	r.Pos = zgeo.Pos{} // translate to 0,0 cause children are in parent
 
@@ -348,3 +363,4 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 
 	//        HandleAfterLayout()
 }
+*/

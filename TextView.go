@@ -3,8 +3,6 @@
 package zui
 
 import (
-	"strings"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -53,27 +51,17 @@ func (v *TextView) IsEditing() bool {
 }
 
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	const letters = "etaoinsrhdlucmfywgpbvkxqjz"
 	ti := TextInfoNew()
 	ti.Alignment = v.alignment
 	ti.IsMinimumOneLineHight = true
-	len := len(letters)
-	for i := 0; i < v.Columns; i++ {
-		c := string(letters[i%len])
-		if i%8 == 4 {
-			c = strings.ToUpper(c)
-		}
-		ti.Text += c
-	}
 	ti.Font = v.Font()
-	ti.MaxLines = v.rows
+	ti.MinLines = v.rows
 	if v.maxWidth != 0 {
 		ti.SetWidthFreeHight(v.maxWidth + v.margin.Size.W*2)
 	}
-	s, _, _ := ti.GetBounds()
-	// if v.ObjectName() == "search" {
-	// 	zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName(), zlog.GetCallingStackString())
-	// }
+
+	s := ti.GetColumnsSize(v.Columns)
+	// zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName(), zlog.GetCallingStackString())
 	s.Add(v.margin.Size.Negative())
 	if v.isSearch {
 		//		s.H += 14

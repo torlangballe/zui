@@ -69,7 +69,7 @@ func (v *VideoView) CreateStream(withAudio, selfie bool, continuousImageHandler 
 	}
 	v.Element.Set("autoplay", "true")
 	v.Element.Set("muted", "true")
-	v.Element.Set("playsInline", "true") // must be camel case!!!
+	v.Element.Set("playsInline", "true") // playsInline must be camel case!!!
 	stream := mediaDevs.Call("getUserMedia", constraints)
 	then := stream.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		stream := args[0]

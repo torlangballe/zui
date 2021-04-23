@@ -272,6 +272,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.StrokePath(path, v.StrokeWidth, v.PathLineType)
 	}
 	imarg := v.ImageMargin
+	useDownsampleCache := true
 	textRect := rect.Plus(v.margin)
 	if v.image != nil && !v.image.loading {
 		drawImage := v.image
@@ -285,7 +286,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.PushState()
 			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, rect, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, useDownsampleCache, rect, o, zgeo.Rect{})
 			canvas.PopState()
 		} else {
 			a := v.ImageAlign | zgeo.Shrink
@@ -309,7 +310,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				}
 			}
 			// zlog.Info("SV Image Draw:", v.ObjectName(), ir, rect, v.image.Size())
-			canvas.DrawImage(drawImage, ir, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, useDownsampleCache, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
 			}

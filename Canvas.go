@@ -21,13 +21,13 @@ func (c *Canvas) Size() zgeo.Size {
 	return c.size
 }
 
-func (c *Canvas) DrawImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) DrawImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	if image != nil {
 		if image.CapInsets().IsNull() {
 			if sourceRect.IsNull() {
 				sourceRect = zgeo.Rect{Size: image.Size()}
 			}
-			c.drawPlainImage(image, destRect, opacity, sourceRect)
+			c.drawPlainImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 		} else {
 			// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.Path, destRect, image.SetCapInsets())
 			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
@@ -42,12 +42,13 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 	zlog.ErrorIf(ds.W < -inset.Size.W, ds.W, -inset.Size.W, image.Path)
 	zlog.ErrorIf(ds.H < -inset.Size.H, ds.H, -inset.Size.H, image.Size(), image.Path, inset, "ds:", ds, "dest:", dest)
 
+	useDownsampleCache := false
 	insetMid := size.Minus(inset.Size.Negative())
-	c.drawPlainImage(image, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
 	// zlog.Info("drawInsetRow:", size)
-	c.drawPlainImage(image, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
-	c.drawPlainImage(image, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
 
 func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity float32) {

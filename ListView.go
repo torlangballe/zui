@@ -22,7 +22,7 @@ type ListView struct {
 	GetRowHeight         func(i int) float64
 	CreateRow            func(rowSize zgeo.Size, i int) View
 	RowUpdater           func(i int, edited bool)
-	HandleRowSelected    func(i int, selected bool)
+	HandleRowSelected    func(i int, selected, fromPress bool)
 	HandleScrolledToRows func(y float64, first, last int)
 
 	RowColors        []zgeo.Color
@@ -310,10 +310,10 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 func (v *ListView) doRowPressed(index int) {
 	if v.selectionIndexes[index] {
 		if v.MultiSelect || v.PressUnselectable {
-			v.Unselect(index)
+			v.Unselect(index, true)
 		}
 	} else {
-		v.Select(index, false)
+		v.Select(index, false, true)
 	}
 
 }
@@ -351,7 +351,7 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	}
 }
 
-func (v *ListView) Select(i int, scrollTo bool) {
+func (v *ListView) Select(i int, scrollTo, fromPress bool) {
 	// zlog.Info("SELECT:", i)
 	if scrollTo {
 		v.ScrollToMakeRowVisible(i, false) // scroll first, so unselect doesn't update row that might not be visible anyway
@@ -361,7 +361,7 @@ func (v *ListView) Select(i int, scrollTo bool) {
 	}
 	v.selectionIndexes[i] = true
 	if v.HandleRowSelected != nil {
-		v.HandleRowSelected(i, true)
+		v.HandleRowSelected(i, true, fromPress)
 	}
 	v.refreshRow(i) // this must be after v.HandleRowSelected, as it might make a new row, also for old above
 }
@@ -369,7 +369,7 @@ func (v *ListView) Select(i int, scrollTo bool) {
 func (v *ListView) UnselectAll() {
 	if v.HandleRowSelected != nil {
 		for index := range v.selectionIndexes {
-			v.HandleRowSelected(index, false)
+			v.HandleRowSelected(index, false, false)
 		}
 	}
 	oldIndexes := v.selectionIndexes
@@ -379,23 +379,23 @@ func (v *ListView) UnselectAll() {
 	}
 }
 
-func (v *ListView) Unselect(index int) {
+func (v *ListView) Unselect(index int, fromPress bool) {
 	// zlog.Info("Unselect:", index)
 	if v.selectionIndexes[index] {
 		delete(v.selectionIndexes, index)
-		v.HandleRowSelected(index, false)
+		v.HandleRowSelected(index, false, fromPress)
 		v.refreshRow(index)
 	}
 }
 
 func (v *ListView) FlashSelect(i int) {
 	count := 0
-	v.Select(i, true)
+	v.Select(i, true, false)
 	ztimer.RepeatNow(0.1, func() bool {
 		if count%2 == 0 {
-			v.Select(i, false)
+			v.Select(i, false, false)
 		} else {
-			v.Unselect(i)
+			v.Unselect(i, false)
 		}
 		count++
 		return (count < 8)

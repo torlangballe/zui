@@ -93,6 +93,7 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		cs := v.child.CalculatedSize(total)
 		s.W = cs.W
 	}
+	// zlog.Info("SV CalculatedSize:", s, v.child != nil)
 	return s
 }
 

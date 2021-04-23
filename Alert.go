@@ -121,7 +121,7 @@ func AlertShowStatus(text string, secs float64) {
 
 func addButtonIfNotEmpty(stack *StackView, text string, handle func(result AlertResult), result AlertResult) {
 	if text != "" {
-		button := ButtonViewNew(text, "gray", zgeo.Size{10, 28}, zgeo.Size{})
+		button := ButtonNew(text)
 		stack.AddAlertButton(button)
 		button.SetPressedHandler(func() {
 			PresentViewClose(stack, result == AlertCancel, func(dismissed bool) {
@@ -140,8 +140,11 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	}
 
 	textWidth := math.Min(640, ScreenMain().Rect.Size.W/2)
+
 	stack := StackViewVert("alert")
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
+	stack.SetBGColor(zgeo.ColorWhite)
+
 	label := LabelNew(a.Text)
 	label.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	label.SetMaxLines(0)
@@ -154,7 +157,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 		stack.Add(subLabel, zgeo.TopCenter)
 	}
 	bar := StackViewHor("bar")
-	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
+	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{0, 10})
 
 	addButtonIfNotEmpty(stack, a.OKButton, handle, AlertOK)
 	addButtonIfNotEmpty(stack, a.CancelButton, handle, AlertCancel)

@@ -112,6 +112,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	c.PopState()
 }
 
+// TODO: Use zcache?
 type scaledImage struct {
 	path string
 	size zgeo.Size
@@ -119,12 +120,15 @@ type scaledImage struct {
 
 var scaledImageMap = map[scaledImage]*Image{}
 
-func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawCachedScaledImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	proportional := false
 	ds := destRect.Size.Ceil()
 	si := scaledImage{image.Path, ds}
 	sourceRect = zgeo.Rect{Size: ds}
-	newImage, _ := scaledImageMap[si]
+	var newImage *Image
+	if useDownsampleCache {
+		newImage, _ = scaledImageMap[si]
+	}
 	if newImage != nil {
 		image = newImage
 		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
@@ -136,14 +140,16 @@ func (c *Canvas) drawCachedScaledImage(image *Image, destRect zgeo.Rect, opacity
 			scaledImageMap = map[scaledImage]*Image{}
 		}
 		image = image.ShrunkInto(ds, proportional)
-		scaledImageMap[si] = image
+		if useDownsampleCache {
+			scaledImageMap[si] = image
+		}
 		if image != nil {
 			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 		}
 	}()
 }
 
-func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	if destRect.Size.H < 0 {
 		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, c)
 		return
@@ -152,7 +158,7 @@ func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float3
 	ds := destRect.Size
 	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.size && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
-		c.drawCachedScaledImage(image, destRect, opacity, sourceRect)
+		c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 		return
 	}
 	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)

@@ -2,6 +2,7 @@ package zui
 
 import (
 	"math"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/torlangballe/zutil/zfloat"
@@ -55,6 +56,7 @@ type TextInfo struct {
 	LineSpacing           float64
 	StrokeWidth           float64
 	MaxLines              int
+	MinLines              int
 	MinimumFontScale      float64
 	IsMinimumOneLineHight bool
 	SplitItems            []string
@@ -122,11 +124,14 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 		if ti.MaxLines != 0 {
 			zint.Minimize(&count, ti.MaxLines)
 		}
-		// zlog.Info("BOUNDS:", size, count, add)
+		if ti.MinLines != 0 {
+			zint.Maximize(&count, ti.MinLines)
+		}
 		//	count = ti.MaxLines
 		if count > 1 || ti.IsMinimumOneLineHight {
 			size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
 		}
+		// zlog.Info("BOUNDS:", size, count, ti.Text)
 	}
 	return size, allLines, widths
 }
@@ -271,4 +276,18 @@ func TextInfoWidthOfString(str string, font *Font) float64 {
 	ti.MaxLines = 1
 	s, _, _ := ti.GetBounds()
 	return s.W
+}
+
+func (ti *TextInfo) GetColumnsSize(cols int) zgeo.Size {
+	const letters = "etaoinsrhdlucmfywgpbvkxqjz"
+	len := len(letters)
+	for i := 0; i < cols; i++ {
+		c := string(letters[i%len])
+		if i%8 == 4 {
+			c = strings.ToUpper(c)
+		}
+		ti.Text += c
+	}
+	s, _, _ := ti.GetBounds()
+	return s
 }

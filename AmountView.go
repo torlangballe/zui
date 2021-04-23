@@ -6,6 +6,8 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
+var AmountViewCircleDefaultDiameter = 20.0
+
 type AmountView struct {
 	CustomView
 	value           float64
@@ -53,7 +55,7 @@ func AmountViewCircleNew() *AmountView {
 	v.CustomView.Init(v, "amount")
 	v.StrokeColor = zgeo.ColorDarkGray
 	v.SetColor(zgeo.ColorNewGray(0.7, 1))
-	v.CustomView.SetMinSize(zgeo.SizeBoth(24))
+	v.CustomView.SetMinSize(zgeo.SizeBoth(AmountViewCircleDefaultDiameter))
 	v.StrokeWidth = 2
 	v.SetDrawHandler(v.drawCircle)
 	v.ColorsFromValue = map[float64]zgeo.Color{}

@@ -8,23 +8,23 @@ import (
 
 //  Created by Tor Langballe on /14/12/17.
 
-var ButtonViewDefaultName = "gray"
+var ImageButtonViewDefaultName = "gray"
 
-type ButtonView struct {
+type ImageButtonView struct {
 	ShapeView
 }
 
-func ButtonViewNewSimple(title, imageName string) *ButtonView {
-	return ButtonViewNew(title, imageName, zgeo.Size{20, 26}, zgeo.Size{6, 12})
+func ImageButtonViewNewSimple(title, imageName string) *ImageButtonView {
+	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 26}, zgeo.Size{6, 12})
 }
 
-func ButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *ButtonView {
-	b := &ButtonView{}
+func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *ImageButtonView {
+	b := &ImageButtonView{}
 	b.Init(title, imageName, minSize, insets)
 	return b
 }
 
-func (v *ButtonView) Init(title, imageName string, minSize zgeo.Size, insets zgeo.Size) {
+func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, insets zgeo.Size) {
 	v.ShapeView.init(ShapeViewTypeNone, minSize, title)
 	if insets.IsNull() {
 		insets = zgeo.Size{6, 12}
@@ -42,15 +42,15 @@ func (v *ButtonView) Init(title, imageName string, minSize zgeo.Size, insets zge
 	v.TextXMargin = 16
 }
 
-func (v *ButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.ShapeView.CalculatedSize(total)
 	// zlog.Info("ButtonCalc:", s, v.ObjectName(), v.image.Path, v.image.Size())
 	return s
 }
 
-func (v *ButtonView) SetImageName(name string, insets zgeo.Size) {
+func (v *ImageButtonView) SetImageName(name string, insets zgeo.Size) {
 	if name == "" {
-		name = ButtonViewDefaultName
+		name = ImageButtonViewDefaultName
 	}
 	v.SetNamedCapImage("images/buttons/"+name, insets)
 }

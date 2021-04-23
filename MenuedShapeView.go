@@ -280,13 +280,15 @@ func (v *MenuedShapeView) popup() {
 	}
 	bs.W = TextInfoWidthOfString(max, v.Font())
 	bs.H = float64(zint.Min(22, len(v.items))) * lineHeight
-	stack.SetMinSize(bs.Plus(zgeo.Size{leftMarg + rm, topMarg + bottomMarg}))
+	ms := bs.Plus(zgeo.Size{leftMarg + rm, 0}) // topMarg + bottomMarg
+	// zlog.Info("MenuedSize:", ms, stack.Margin())
+	stack.SetMinSize(ms)
 	// stack.SetCorner(8)
 
-	list.HandleRowSelected = func(i int, selected bool) {
+	list.HandleRowSelected = func(i int, selected, fromPressed bool) {
 		// zlog.Info("list selected", i, selected)
 		v.items[i].Selected = selected
-		if !v.IsMultiple {
+		if !v.IsMultiple && fromPressed {
 			PresentViewClose(stack, false, nil)
 		}
 	}
@@ -299,6 +301,7 @@ func (v *MenuedShapeView) popup() {
 	att.ModalDismissOnEscapeKey = true
 	pos := v.GetAbsoluteRect().Pos
 	att.Pos = &pos
+	// zlog.Info("menu popup")
 	//	list.Focus(true)
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)

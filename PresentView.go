@@ -216,12 +216,12 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 var firstPresented bool
 
 func presentLoaded(v, outer View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
-	// zlog.Info("PresentView", v.ObjectName(), reflect.ValueOf(v).Type())
 	win := WindowGetMain()
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
 	size := v.CalculatedSize(rect.Size)
+	// zlog.Info("PresentView", size, v.ObjectName(), reflect.ValueOf(v).Type())
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}

@@ -21,13 +21,17 @@ type Label struct {
 
 	pressed     func()
 	longPressed func()
+
+	Columns int
 }
 
 func (v *Label) GetTextInfo() TextInfo {
 	t := TextInfoNew()
 	t.Alignment = v.alignment
 	t.Font = v.Font()
-	t.Text = v.Text()
+	if v.Columns == 0 {
+		t.Text = v.Text()
+	}
 	if v.maxWidth != 0 {
 		t.SetWidthFreeHight(v.maxWidth)
 	}
@@ -36,12 +40,17 @@ func (v *Label) GetTextInfo() TextInfo {
 }
 
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
+	var s zgeo.Size
 	to := v.View.(TextInfoOwner)
 	ti := to.GetTextInfo()
-	s, _, _ := ti.GetBounds()
+	if v.Columns != 0 {
+		s = ti.GetColumnsSize(v.Columns)
+	} else {
+		s, _, _ = ti.GetBounds()
+	}
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
-	// zlog.Info("L CS:", v.Col s, v.maxWidth)
+	// zlog.Info("L CS:", v.ObjectName(), s, v.minWidth, v.maxWidth)
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}

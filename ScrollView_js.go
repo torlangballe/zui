@@ -16,6 +16,7 @@ func (v *ScrollView) Init(view View, name string) {
 	style.Set("overflow-y", "scroll")
 	v.setjs("tabindex", "-1")
 	style.Set("overscrollBehavior", "contain")
+	v.SetMinSize(zgeo.SizeBoth(10))
 	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
 		v.YOffset = pos.Y
 		if v.ScrollHandler != nil {

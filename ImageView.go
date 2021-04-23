@@ -13,19 +13,22 @@ import (
 
 type ImageView struct {
 	ContainerView
-	image            *Image
-	maxSize          zgeo.Size
-	alignment        zgeo.Alignment
-	imageCorner      float64
-	strokeWidth      float64
-	strokeColor      zgeo.Color
-	DownsampleImages bool
+	image              *Image
+	maxSize            zgeo.Size
+	alignment          zgeo.Alignment
+	imageCorner        float64
+	strokeWidth        float64
+	strokeColor        zgeo.Color
+	DownsampleImages   bool
+	UseDownsampleCache bool
 }
 
 func ImageViewNew(image *Image, imagePath string, maxSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.CustomView.Init(v, imagePath)
 	v.SetMaxSize(maxSize)
+	v.UseDownsampleCache = true
+	//	v.DownsampleImages = true
 	name := "image"
 	if imagePath != "" {
 		_, name = path.Split(imagePath)
@@ -183,7 +186,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		}
 		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
 		// zlog.Info(v.ObjectName(), "IV.DrawImage22:", v.Rect(), v.image.imageJS.IsUndefined(), v.image.imageJS.IsNull())
-		canvas.DrawImage(drawImage, ir, 1, zgeo.Rect{})
+		canvas.DrawImage(drawImage, v.UseDownsampleCache, ir, 1, zgeo.Rect{})
 		if v.imageCorner != 0 {
 			canvas.PopState()
 		}

@@ -4,26 +4,31 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/zusers"
 	"github.com/torlangballe/zutil/zwords"
 )
 
-type Authentication struct {
-	Email      string
-	Password   string
-	IsRegister bool
-}
+const emailKey = "zui.AuthenticationEmail"
 
-func AuthenticationOpenDialog(canCancel bool, email string, got func(auth Authentication)) {
+func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.AuthenticationResult)) {
 	const column = 120.0
 	v1 := StackViewVert("auth")
-
-	emailField := TextViewNew(email, TextViewStyle{}, 20, 1)
-	style := TextViewStyle{KeyboardType: KeyboardTypePassword}
+	v1.SetSpacing(10)
+	v1.SetMarginS(zgeo.Size{10, 10})
+	v1.SetBGColor(zgeo.ColorNewGray(0.9, 1))
+	email, _ := DefaultLocalKeyValueStore.GetString(emailKey)
+	style := TextViewStyle{KeyboardType: KeyboardTypeEmailAddress}
+	emailField := TextViewNew(email, style, 20, 1)
+	style = TextViewStyle{KeyboardType: KeyboardTypePassword}
 	passwordField := TextViewNew("", style, 20, 1)
-	register := ButtonViewNewSimple(zwords.Register(), "")
-	login := ButtonViewNewSimple("Register", "")
+	register := ButtonNew(zwords.Register())
+	register.SetMinWidth(90)
+	login := ButtonNew(zwords.Login())
+	login.SetMinWidth(90)
+	login.MakeEnterDefault()
 
 	_, s1, _ := Labelize(emailField, "Email", column)
 	v1.Add(s1, zgeo.TopLeft|zgeo.HorExpand)
@@ -32,29 +37,29 @@ func AuthenticationOpenDialog(canCancel bool, email string, got func(auth Authen
 	v1.Add(s2, zgeo.TopLeft|zgeo.HorExpand)
 
 	h1 := StackViewHor("buttons")
-	v1.Add(h1, zgeo.TopLeft|zgeo.HorExpand)
+	v1.Add(h1, zgeo.TopLeft|zgeo.HorExpand, zgeo.Size{0, 14})
 
 	h1.Add(register, zgeo.CenterRight)
 	h1.Add(login, zgeo.CenterRight)
 
 	register.SetPressedHandler(func() {
-		var a Authentication
+		var a zusers.Authentication
 
 		a.IsRegister = true
 		a.Email = emailField.Text()
 		a.Password = passwordField.Text()
-		go doAuth(v1, a)
+		go doAuth(v1, a, got)
 	})
 	login.SetPressedHandler(func() {
-		var a Authentication
+		var a zusers.Authentication
 
 		a.IsRegister = false
 		a.Email = emailField.Text()
 		a.Password = passwordField.Text()
-		go doAuth(v1, a)
+		go doAuth(v1, a, got)
 	})
 	if canCancel {
-		cancel := ButtonViewNewSimple("Cancel", "")
+		cancel := ImageButtonViewNewSimple("Cancel", "")
 		h1.Add(cancel, zgeo.CenterLeft)
 		cancel.SetPressedHandler(func() {
 			PresentViewClose(v1, true, nil)
@@ -65,16 +70,45 @@ func AuthenticationOpenDialog(canCancel bool, email string, got func(auth Authen
 	PresentView(v1, att, nil, nil)
 }
 
-func doAuth(view View, a Authentication) {
-	var token string
+func doAuth(view View, a zusers.Authentication, got func(auth zusers.AuthenticationResult)) {
+	var aret zusers.AuthenticationResult
 	if !zstr.IsValidEmail(a.Email) {
 		AlertShow("Invalid email format:\n", a.Email)
 		return
 	}
-	err := zrpc.ToServerClient.CallRemote("UsersCalls.Authenticate", &a, &token)
+	DefaultLocalKeyValueStore.SetString(a.Email, emailKey, true)
+
+	err := zrpc.ToServerClient.CallRemote("UsersCalls.Authenticate", &a, &aret)
 	if err != nil {
 		AlertShowError("Authenticate Call Error", err)
 		return
 	}
-	PresentViewClose(view, true, nil)
+	zlog.Info("Do auth:", aret)
+	PresentViewClose(view, false, func(dismissed bool) {
+		zlog.Info("Do auth2:", dismissed)
+		if !dismissed {
+			got(aret)
+		}
+	})
+}
+
+func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth zusers.AuthenticationResult)) {
+	const tokenKey = "zui.AuthenticationToken"
+	var user zusers.User
+
+	client.ID, _ = DefaultLocalKeyValueStore.GetString(tokenKey)
+	zlog.Info("CheckAndDoAuthentication:", client.ID)
+	if zrpc.ToServerClient.ID != "" {
+		err := client.CallRemote("UsersCalls.CheckIfUserLoggedInWithZRPCHeaderToken", nil, &user)
+		if err == nil {
+			return
+		}
+		AlertShowError("Authentication Error", err)
+	}
+	AuthenticationOpenDialog(canCancel, func(auth zusers.AuthenticationResult) {
+		client.ID = auth.Token
+		DefaultLocalKeyValueStore.SetString(auth.Token, tokenKey, true)
+		zlog.Info("got auth:", auth)
+		got(auth)
+	})
 }

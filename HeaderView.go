@@ -89,7 +89,7 @@ func (v *HeaderView) findSortInfo(sortOrderID string) int {
 	return -1
 }
 
-func (v *HeaderView) handleButtonPressed(button *ButtonView, h Header) {
+func (v *HeaderView) handleButtonPressed(button *ImageButtonView, h Header) {
 	if h.SortSmallFirst != zbool.Unknown {
 		si := v.findSortInfo(h.ID)
 		sorting := v.SortOrder[si]
@@ -97,7 +97,7 @@ func (v *HeaderView) handleButtonPressed(button *ButtonView, h Header) {
 		zslice.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
 		for _, c := range v.GetChildren() {
-			tri, _ := c.(*ButtonView).FindViewWithName("sort", false)
+			tri, _ := c.(*ImageButtonView).FindViewWithName("sort", false)
 			if tri != nil {
 				tri.SetAlpha(0.5)
 			}
@@ -160,7 +160,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell.Alignment = h.Align
 		header := h
 		s := zgeo.Size{h.MinWidth, 28}
-		button := ButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+		button := ImageButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)

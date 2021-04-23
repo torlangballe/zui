@@ -126,7 +126,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	tab.childAlignment = zgeo.Left | zgeo.Top | zgeo.Expand
 	if v.ButtonName != "" {
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
-		b := ButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
+		b := ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
 		button = &b.ShapeView
 		button.SetTextColor(TabsDefaultTextColor)
 		button.SetMarginS(zgeo.Size{10, 0})
@@ -168,7 +168,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 	view, _ := v.Header.FindViewWithName(id, false)
 	// zlog.Info("setButtonOn:", id, on, view != nil)
 	if view != nil {
-		button, _ := view.(*ButtonView)
+		button, _ := view.(*ImageButtonView)
 		if button != nil {
 			str := TabsDefaultButtonName
 			style := FontStyleNormal
