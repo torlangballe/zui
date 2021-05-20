@@ -12,7 +12,7 @@ const jsTextMargin = 2
 
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
-func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
+func (v *TextView) Init(view View, text string, style TextViewStyle, rows, cols int) {
 	v.SetMaxLines(rows)
 	if rows > 1 {
 		v.Element = DocumentJS.Call("createElement", "textarea")
@@ -23,12 +23,12 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 			v.setjs("type", "password")
 		case KeyboardTypeEmailAddress:
 			v.setjs("type", "email")
+		default:
+			v.setjs("type", "text")
 		}
 		if style.IsSearch {
 			v.isSearch = true
 			v.setjs("type", "search")
-		} else {
-			v.setjs("type", "text")
 		}
 	}
 
@@ -36,11 +36,11 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 	v.setjs("style", "position:absolute")
 	v.style().Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	v.style().Set("-webkitBoxShadow", "none") // doesn't work
-	if rows <= 1 {
-		v.SetMargin(zgeo.RectFromXY2(TextViewDefaultMargin, TextViewDefaultMargin, -TextViewDefaultMargin, -TextViewDefaultMargin))
-	}
+	// if rows <= 1 {
+	v.SetMargin(zgeo.RectFromXY2(TextViewDefaultMargin, TextViewDefaultMargin, -TextViewDefaultMargin, -TextViewDefaultMargin))
+	// }
 	v.setjs("value", text)
-	v.View = v
+	v.View = view
 	v.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	v.SetFont(f)
@@ -52,6 +52,15 @@ func (v *TextView) Init(text string, style TextViewStyle, rows, cols int) {
 		// event.stopPropagation();
 		return nil
 	}))
+	if TextViewDefaultColor.Valid {
+		v.SetColor(TextViewDefaultColor)
+	}
+	if TextViewDefaultBGColor.Valid {
+		v.SetBGColor(TextViewDefaultBGColor)
+	}
+	if TextViewDefaultBorderColor.Valid {
+		v.SetStroke(1, TextViewDefaultBorderColor)
+	}
 }
 
 func (v *TextView) SetIsStatic(s bool) {
@@ -99,18 +108,18 @@ func (v *TextView) SetMargin(m zgeo.Rect) View {
 	v.margin = m
 	// zlog.Info("TextView. SetMargin:", v.ObjectName(), m)
 	style := v.style()
-	style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.Min().X)))
-	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
-	style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
-	style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	style.Set("padding", fmt.Sprintf("%dpx %dpx %dpx %dpx", int(m.Min().Y), int(m.Max().X), int(m.Max().Y), int(m.Min().X)))
+	// style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.Min().X)))
+	// style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
+	// style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
+	// style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 	return v
 }
 
-func (v *TextView) SetText(str string) View {
-	if v.Text() != str {
-		v.setjs("value", str)
+func (v *TextView) SetText(text string) {
+	if v.Text() != text {
+		v.setjs("value", text)
 	}
-	return v
 }
 
 func (v *TextView) Text() string {
@@ -179,10 +188,6 @@ func (v *TextView) SetChangedHandler(handler func()) {
 			return nil
 		}))
 	}
-}
-
-func (v *TextView) ChangedHandler() func() {
-	return v.changed
 }
 
 // TODO: Replace with NativeView version

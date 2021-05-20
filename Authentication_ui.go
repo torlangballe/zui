@@ -97,10 +97,17 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 	var user zusers.User
 
 	client.ID, _ = DefaultLocalKeyValueStore.GetString(tokenKey)
-	zlog.Info("CheckAndDoAuthentication:", client.ID)
+	// zlog.Info("CheckAndDoAuthentication:", client.ID)
 	if zrpc.ToServerClient.ID != "" {
 		err := client.CallRemote("UsersCalls.CheckIfUserLoggedInWithZRPCHeaderToken", nil, &user)
 		if err == nil {
+			var auth zusers.AuthenticationResult
+			auth.ID = user.ID
+			auth.Token = client.ID
+			zlog.Info("CheckAndDoAuthentication existed:", auth)
+			if got != nil {
+				got(auth)
+			}
 			return
 		}
 		AlertShowError("Authentication Error", err)
@@ -109,6 +116,8 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 		client.ID = auth.Token
 		DefaultLocalKeyValueStore.SetString(auth.Token, tokenKey, true)
 		zlog.Info("got auth:", auth)
-		got(auth)
+		if got != nil {
+			got(auth)
+		}
 	})
 }

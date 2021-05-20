@@ -25,7 +25,7 @@ func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.
 }
 
 func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, insets zgeo.Size) {
-	v.ShapeView.init(ShapeViewTypeNone, minSize, title)
+	v.ShapeView.Init(v, ShapeViewTypeNone, minSize, title)
 	if insets.IsNull() {
 		insets = zgeo.Size{6, 12}
 	}

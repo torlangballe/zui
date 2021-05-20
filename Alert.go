@@ -96,34 +96,32 @@ func (a *Alert) ShowOK(handle func()) {
 	})
 }
 
-// AlertStatusLabel is a global Label you can point to somewhere in your visible gui, Alert.ShowStatus sets it's text for a limited time
-var AlertSetStatus func(str string)
+var AlertSetStatus func(parts ...interface{}) = func(parts ...interface{}) {
+	zlog.Info(parts...)
+}
 var statusTimer *ztimer.Timer
 
 // AlertShowStatus shows an status/error in a label on gui, and can hide it after secs
-func AlertShowStatus(text string, secs float64) {
-	// zlog.Info("AlertShowStatus", text, secs)
-	if AlertSetStatus != nil {
-		AlertSetStatus(text)
-		if statusTimer != nil {
-			statusTimer.Stop()
-		}
-		if secs != 0 {
-			statusTimer = ztimer.StartIn(secs, func() {
-				if AlertSetStatus != nil { // in case it is nil'ed
-					statusTimer = nil
-					AlertSetStatus("")
-				}
-			})
-		}
+func AlertShowStatus(secs float64, parts ...interface{}) {
+	// zlog.Info("AlertShowStatus", len(parts))
+	AlertSetStatus(parts...)
+	if statusTimer != nil {
+		statusTimer.Stop()
+	}
+	if secs != 0 {
+		statusTimer = ztimer.StartIn(secs, func() {
+			statusTimer = nil
+			AlertSetStatus("")
+		})
 	}
 }
 
-func addButtonIfNotEmpty(stack *StackView, text string, handle func(result AlertResult), result AlertResult) {
+func addButtonIfNotEmpty(stack, bar *StackView, text string, handle func(result AlertResult), result AlertResult) {
 	if text != "" {
 		button := ButtonNew(text)
-		stack.AddAlertButton(button)
+		bar.AddAlertButton(button)
 		button.SetPressedHandler(func() {
+			zlog.Info("Button pressed!")
 			PresentViewClose(stack, result == AlertCancel, func(dismissed bool) {
 				if handle != nil {
 					handle(result)
@@ -159,10 +157,10 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	bar := StackViewHor("bar")
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{0, 10})
 
-	addButtonIfNotEmpty(stack, a.OKButton, handle, AlertOK)
-	addButtonIfNotEmpty(stack, a.CancelButton, handle, AlertCancel)
-	addButtonIfNotEmpty(stack, a.DestructiveButton, handle, AlertDestructive)
-	addButtonIfNotEmpty(stack, a.OtherButton, handle, AlertOther)
+	addButtonIfNotEmpty(stack, bar, a.OKButton, handle, AlertOK)
+	addButtonIfNotEmpty(stack, bar, a.CancelButton, handle, AlertCancel)
+	addButtonIfNotEmpty(stack, bar, a.DestructiveButton, handle, AlertDestructive)
+	addButtonIfNotEmpty(stack, bar, a.OtherButton, handle, AlertOther)
 
 	att := PresentViewAttributesNew()
 	att.Modal = true

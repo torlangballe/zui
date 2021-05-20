@@ -99,13 +99,15 @@ func Labelize(view View, prefix string, minWidth float64) (label *Label, stack *
 	if checkBox != nil {
 		title = ""
 		clabel, cstack := checkBox.Labelize(prefix)
-		clabel.SetFont(font).SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
+		clabel.SetFont(font)
+		clabel.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
 		view = cstack
 	}
 	label = LabelNew(title)
 	label.SetObjectName("$labelize.label " + prefix)
 	label.SetTextAlignment(zgeo.Right)
-	label.SetFont(font).SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
+	label.SetFont(font)
+	label.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
 	stack = StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
 	stack.AddView(label, zgeo.Left|zgeo.VertCenter).MinSize.W = minWidth

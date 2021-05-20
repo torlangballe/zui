@@ -4,9 +4,9 @@ package zui
 
 type TextLayoutOwner interface {
 	//Font() *Font
-	SetText(text string) View
+	SetText(text string)
 	//Text() string
 	// SetTextAlignment(a zgeo.Alignment) View
-	SetFont(font *Font) View
+	SetFont(font *Font)
 	//TextAlignment() zgeo.Alignment
 }

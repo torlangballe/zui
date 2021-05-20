@@ -30,11 +30,12 @@ type Window struct {
 }
 
 type WindowOptions struct {
-	URL       string
-	ID        string
-	Pos       *zgeo.Pos
-	Size      zgeo.Size
-	Alignment zgeo.Alignment
+	URL          string
+	ID           string
+	Pos          *zgeo.Pos
+	Size         zgeo.Size
+	Alignment    zgeo.Alignment
+	FullScreenID int64 // screen id to go full screen on. -1 is use main. 0 is ignore.
 }
 
 func WindowNew() *Window {

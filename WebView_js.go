@@ -5,6 +5,10 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
+type nativeWebView struct {
+
+}
+
 func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	v.minSize = minSize
 	stype := "div"

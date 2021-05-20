@@ -207,18 +207,13 @@ func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
-	v.SetRect(ScreenMain().Rect)
-	v.SetMinSize(ScreenMain().Rect.Size)
-	if true { // !DefinesIsTVBox() {
-		h := ScreenStatusBarHeight()
-		r := v.Rect()
-		if h > 20 && !ScreenHasNotch() {
-			r.Size.H -= h
-			v.SetRect(r)
-		} else if useableArea {
-			v.margin.SetMinY(float64(h))
-		}
+	sm := ScreenMain()
+	r := sm.Rect
+	if useableArea {
+		r = sm.UsableRect
 	}
+	v.SetRect(r)
+	v.SetMinSize(r.Size)
 }
 
 func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {

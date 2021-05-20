@@ -4,6 +4,7 @@ package zui
 
 type NativeView struct {
 	baseNativeView
+	View                 View
 	Presented            bool
 	allChildrenPresented bool
 	stopOnClose          []func() // anything that needs to be stopped

@@ -21,18 +21,37 @@ func (c *Canvas) Size() zgeo.Size {
 	return c.size
 }
 
-func (c *Canvas) DrawImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	if image != nil {
-		if image.CapInsets().IsNull() {
-			if sourceRect.IsNull() {
-				sourceRect = zgeo.Rect{Size: image.Size()}
-			}
-			c.drawPlainImage(image, useDownsampleCache, destRect, opacity, sourceRect)
-		} else {
-			// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.Path, destRect, image.SetCapInsets())
-			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
-			// zlog.Info("Canvas.DrawImage Done", image.Path)
+func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, synchronous, useDownsampleCache bool, opacity float32) {
+	if image == nil {
+		return
+	}
+	s := image.Size()
+	sr := zgeo.Rect{Size: s}
+	dr := sr
+	dr.Pos = pos
+	c.DrawImage(image, synchronous, useDownsampleCache, dr, opacity, sr)
+}
+
+func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+	if image == nil {
+		return
+	}
+	if sourceRect.IsNull() {
+		sourceRect = zgeo.Rect{Size: image.Size()}
+	}
+	if image.CapInsets().IsNull() {
+		if sourceRect.IsNull() {
+			sourceRect = zgeo.Rect{Size: image.Size()}
 		}
+		c.drawPlainImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect)
+	} else {
+		// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.Path, destRect, image.SetCapInsets())
+		if synchronous {
+			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
+		} else {
+			go c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
+		}
+		// zlog.Info("Canvas.DrawImage Done", image.Path)
 	}
 }
 
@@ -44,11 +63,12 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 
 	useDownsampleCache := false
 	insetMid := size.Minus(inset.Size.Negative())
-	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
+	c.drawPlainImage(image, false, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
 	// zlog.Info("drawInsetRow:", size)
-	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
-	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
+	synchronous := true
+	c.drawPlainImage(image, synchronous, useDownsampleCache, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
+	c.drawPlainImage(image, synchronous, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
 
 func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity float32) {
@@ -61,6 +81,11 @@ func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity flo
 	c.drawInsetRow(image, inset, dest, size.H+inset.Max().Y, -inset.Max().Y, dest.Max().Y+inset.Max().Y, -inset.Max().Y, opacity)
 }
 
+func (c *Canvas) DrawRect(rect zgeo.Rect) {
+	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	c.FillPath(path)
+}
+
 func canvasCreateGradientLocations(colors int) []float64 {
 	locations := make([]float64, colors, colors)
 	last := colors - 1
@@ -71,29 +96,33 @@ func canvasCreateGradientLocations(colors int) []float64 {
 }
 
 // measureTextCanvases is a pool of canvases to do text measurements in. Might not actually speed things up in DOM, which maybe is single-thread
-var measureTextCanvases = map[*Canvas]bool{}
+type measurement struct {
+	Font Font
+	Text string
+}
+
+var measuredTexts = map[measurement]zgeo.Size{}
 var measureTextMutex sync.Mutex
+var measureCanvas *Canvas
 
 func canvasGetTextSize(text string, font *Font) zgeo.Size {
-	var canvas *Canvas
 	measureTextMutex.Lock()
-	// fmt.Println("canvas measure lock time:", time.Since(start), len(measureTextCanvases))
-	for c, used := range measureTextCanvases {
-		if !used {
-			measureTextCanvases[c] = true
-			canvas = c
-			break
-		}
-	}
+	m := measurement{Font: *font, Text: text}
+	s, got := measuredTexts[m]
 	measureTextMutex.Unlock()
-	if canvas == nil {
-		canvas = CanvasNew()
-		canvas.SetSize(zgeo.Size{500, 100})
+	if got {
+		// zlog.Info("canvas get Text size, using cache:", text)
+		return s
 	}
-	s := canvas.MeasureText(text, font)
+	// zlog.Info("canvas measure text")
+	if measureCanvas == nil {
+		measureCanvas = CanvasNew()
+		measureCanvas.SetSize(zgeo.Size{800, 100})
+	}
+	s = measureCanvas.MeasureText(text, font)
 	measureTextMutex.Lock()
 	// fmt.Println("canvas measure lock time 2:", time.Since(start), len(measureTextCanvases))
-	measureTextCanvases[canvas] = false
+	measuredTexts[m] = s
 	measureTextMutex.Unlock()
 	return s
 }
@@ -104,4 +133,11 @@ func (c *Canvas) ZImage(cut zgeo.Rect) *Image {
 		return nil
 	}
 	return ImageFromGo(gi)
+}
+
+func (c *Canvas) StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.PathLineType) {
+	path := zgeo.PathNew()
+	path.MoveTo(zgeo.Pos{x1, y})
+	path.LineTo(zgeo.Pos{x2, y})
+	c.StrokePath(path, width, ltype)
 }

@@ -3,10 +3,13 @@ package zui
 import (
 	"bytes"
 	"image"
+	"image/draw"
 	"image/png"
 	"io"
+	"math"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 
 	//"github.com/nfnt/resize"
@@ -77,7 +80,9 @@ func goImageShrunkInto(goImage image.Image, scale float64, size zgeo.Size, propo
 	width := int(nSize.W)
 	height := int(nSize.H)
 	var newImage image.Image
+	zlog.Info("** Shrink:", reflect.ValueOf(goImage).Type(), reflect.ValueOf(goImage).Kind())
 	if s.Max() > 1000 {
+		//		nrgba := NRGBAImage()
 		goRect := zgeo.Rect{Size: nSize}.GoRect()
 		newImage = image.NewRGBA(goRect)
 		err := rez.Convert(newImage, goImage, rez.NewBilinearFilter()) //NewBicubicFilter
@@ -128,4 +133,44 @@ func GoImagePNGData(goImage image.Image) ([]byte, error) {
 		return []byte{}, err
 	}
 	return out.Bytes(), nil
+}
+
+func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, marg, withMaxSize zgeo.Size) *Image {
+	zlog.Assert(i != nil)
+	zlog.Assert(with != nil)
+	s := i.Size()
+	if !myMaxSize.IsNull() {
+		s = s.ShrunkInto(myMaxSize)
+	}
+	ws := with.Size()
+	if !withMaxSize.IsNull() {
+		ws = ws.ShrunkInto(withMaxSize)
+	}
+	mr := zgeo.Rect{Size: s}
+	wr := mr.Align(ws, align, marg)
+	box := mr.UnionedWith(wr)
+	canvas := CanvasNew()
+	// canvas.DownsampleImages = false
+	delta := zgeo.Pos{-math.Min(wr.Pos.X, mr.Pos.X), -math.Min(wr.Pos.Y, mr.Pos.Y)}
+	// zlog.Info("image.Merge1:", box, mr, wr, delta)
+	mr.AddPos(delta)
+	wr.AddPos(delta)
+	// zlog.Info("image.Merge2:", box, mr, wr)
+	canvas.SetSize(box.Size)
+	// canvas.SetColor(zgeo.ColorBlue)
+	// canvas.DrawRect(mr)
+	// canvas.SetColor(zgeo.ColorRed)
+	// canvas.DrawRect(wr)
+	synchronous := true
+	downsampleCache := false
+	canvas.DrawImage(i, synchronous, downsampleCache, mr, 1, zgeo.Rect{})
+	canvas.DrawImage(with, synchronous, downsampleCache, wr, 1, zgeo.Rect{})
+	return canvas.ZImage(zgeo.Rect{})
+}
+
+func GoImageToGoRGBA(i image.Image) image.Image {
+	r := i.Bounds()
+	n := image.NewRGBA(r)
+	draw.Draw(n, r, i, image.Point{}, draw.Over)
+	return n
 }

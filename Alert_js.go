@@ -2,6 +2,8 @@ package zui
 
 import (
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zlog"
 )
 
 func (a *Alert) showNative(handle func(result AlertResult)) {
@@ -19,7 +21,7 @@ func (a *Alert) showNative(handle func(result AlertResult)) {
 		alert.Invoke(str)
 	}
 	go func() {
-		// defer zlog.LogRecoverAndExit()
+		defer zlog.HandlePanic(true)
 		if handle != nil {
 			if r {
 				handle(AlertOK)

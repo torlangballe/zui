@@ -14,7 +14,6 @@ import (
 
 type baseNativeView struct {
 	Element      js.Value
-	View         View
 	transparency float32
 	parent       *NativeView
 }
@@ -298,14 +297,22 @@ func (v *NativeView) RemoveFromParent() {
 	v.parent.RemoveChild(v)
 }
 
-func (v *NativeView) SetFont(font *Font) View {
+func (v *NativeView) SetFont(font *Font) {
+	// zlog.Debug("font:", v.ObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
 	cssStyle := v.style()
 	cssStyle.Set("font-style", string(font.Style&FontStyleItalic))
-	// zlog.Debug("font:", v.ObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
 	cssStyle.Set("font-weight", (font.Style & FontStyleBold).String())
 	cssStyle.Set("font-family", font.Name)
 	cssStyle.Set("font-size", fmt.Sprintf("%gpx", font.Size))
-	return v
+	// cssText := cssStyle.Get("cssText").String()
+	// cssText += fmt.Sprintf(";font-style:%v;font-weight:%v;font-family:%s;font-size:%gpx",
+	// 	font.Style&FontStyleItalic,
+	// 	font.Style&FontStyleBold,
+	// 	font.Name,
+	// 	font.Size,
+	// )
+	// // zlog.Info("Font csstext:", cssText)
+	// cssStyle.Set("cssText", cssText)
 }
 
 func (v *NativeView) Font() *Font {
@@ -324,10 +331,9 @@ func (v *NativeView) Font() *Font {
 	return FontNew(name, size, fstyle)
 }
 
-func (v *NativeView) SetText(text string) View {
+func (v *NativeView) SetText(text string) {
 	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
 	v.setjs("innerText", text)
-	return v
 }
 
 func (v *NativeView) Text() string {

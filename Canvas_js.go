@@ -21,8 +21,8 @@ func CanvasNew() *Canvas {
 	c.element = DocumentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute")
 	c.context = c.element.Call("getContext", "2d")
-	c.context.Set("imageSmoothingEnabled", true)
-	c.context.Set("imageSmoothingQuality", "high")
+	// c.context.Set("imageSmoothingEnabled", true)
+	// c.context.Set("imageSmoothingQuality", "high")
 	return &c
 }
 
@@ -120,7 +120,7 @@ type scaledImage struct {
 
 var scaledImageMap = map[scaledImage]*Image{}
 
-func (c *Canvas) drawCachedScaledImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	proportional := false
 	ds := destRect.Size.Ceil()
 	si := scaledImage{image.Path, ds}
@@ -129,27 +129,31 @@ func (c *Canvas) drawCachedScaledImage(image *Image, useDownsampleCache bool, de
 	if useDownsampleCache {
 		newImage, _ = scaledImageMap[si]
 	}
-	if newImage != nil {
-		image = newImage
-		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
-		return
-	}
-	go func() {
+	do := func() {
 		// zlog.Info("drawPlainImage cache scaled", image.Path, ds)
-		if len(scaledImageMap) > 500 {
-			scaledImageMap = map[scaledImage]*Image{}
-		}
-		image = image.ShrunkInto(ds, proportional)
-		if useDownsampleCache {
-			scaledImageMap[si] = image
+		if newImage != nil {
+			image = newImage
+		} else {
+			if len(scaledImageMap) > 500 {
+				scaledImageMap = map[scaledImage]*Image{}
+			}
+			image = image.ShrunkInto(ds, proportional)
+			if useDownsampleCache {
+				scaledImageMap[si] = image
+			}
 		}
 		if image != nil {
 			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 		}
-	}()
+	}
+	if synchronous {
+		do()
+	} else {
+		go do()
+	}
 }
 
-func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	if destRect.Size.H < 0 {
 		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, c)
 		return
@@ -158,10 +162,15 @@ func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect 
 	ds := destRect.Size
 	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.size && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
-		c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
+		// zlog.Info("Canvas DrawPlainImage:", image.Path, c.DownsampleImages, sourceRect, destRect)
+		c.drawCachedScaledImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect)
 		return
 	}
-	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+	if synchronous {
+		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+	} else {
+		go c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+	}
 }
 
 func (c *Canvas) rawDrawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
@@ -291,7 +300,7 @@ func (c *Canvas) Image(cut zgeo.Rect) image.Image {
 	buf := make([]byte, ilen, ilen)
 	js.CopyBytesToGo(buf, clamped)
 	// zlog.Info("canvas.Image:", cut, ilen, n)
-	newImage := image.NewRGBA(zgeo.Rect{Size: cut.Size}.GoRect())
+	newImage := image.NewNRGBA(zgeo.Rect{Size: cut.Size}.GoRect())
 	newImage.Pix = buf
 	return newImage
 }

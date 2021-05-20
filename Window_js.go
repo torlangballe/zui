@@ -6,6 +6,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -78,9 +79,13 @@ func WindowOpen(o WindowOptions) *Window {
 	}
 	// zlog.Info("OPEN WIN:", o.URL)
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
+	if win.element.IsNull() {
+		zlog.Error(nil, "open window failed", o.URL)
+		return nil
+	}
 	win.ID = o.ID
 	windows[win] = true
-	// zlog.Info("OPENEDWIN:", o.URL, specs, len(windows))
+	// zlog.Info("OPENEDWIN:", o.URL, specs, win.element, len(windows))
 	win.element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		if win.ProgrammaticView != nil {
 			pnv := ViewGetNative(win.ProgrammaticView)
@@ -96,7 +101,7 @@ func WindowOpen(o WindowOptions) *Window {
 	return win
 }
 
-func (win *Window) setOnResize() {
+func (win *Window) setOnResizeHandling() {
 	win.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		// zlog.Info("On Resize", win.hasResized)
 		if !win.hasResized {

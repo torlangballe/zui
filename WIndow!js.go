@@ -1,4 +1,4 @@
-// +build !js,zui
+// +build !js,zui,!catalyst
 
 // https://github.com/golang/mobile/tree/master/app
 
@@ -44,3 +44,4 @@ func (w *Window) SetHandleClosed(closed func())                                 
 func (win *Window) SetAddressBarURL(surl string)                                           {}
 func (win *Window) SetLocation(surl string)                                                {}
 func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {}
+func (win *Window) setOnResizeHandling()                                                   {}

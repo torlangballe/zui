@@ -3,14 +3,18 @@ package zui
 //  Created by Tor Langballe on /15/11/15.
 
 import (
+	"net/url"
 	"os"
 	"time"
 
+	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/znet"
 	"github.com/torlangballe/zutil/ztime"
 )
 
 type App struct {
 	//    static var appFile  ZFileUrl? = nil
+	nativeApp
 	activationTime time.Time
 	backgroundTime time.Time // IsNull if not in background
 	startTime      time.Time
@@ -57,6 +61,7 @@ func AppNew() *App {
 	a := &App{}
 	a.activationTime = time.Now()
 	AppMain = a
+	appNew(a)
 	return a
 }
 
@@ -75,3 +80,9 @@ func AppGetProcessId() int64 {
 	return 0
 }
 
+func AppHost() (host string, port int) {
+	u, err := url.Parse(AppURL())
+	zlog.AssertNotError(err)
+	host, port = znet.GetHostAndPort(u)
+	return
+}

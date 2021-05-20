@@ -199,13 +199,13 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 	presentedViewStack = append(presentedViewStack, v)
 	presentCloseFunc = closed
 	presentViewPresenting = true
+
 	PresentViewCallReady(v, true)
 
 	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
 	ct, _ := v.(ContainerType)
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("ready to present", reflect.ValueOf(v).Type(), v.ObjectName())
 			presentLoaded(v, outer, attributes, presented, closed)
 		})
 	} else {
@@ -272,6 +272,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 			}
 		}
 		v.SetRect(zgeo.Rect{Size: rect.Size})
+		// zlog.Info("Present SetRect", v.ObjectName(), time.Since(start))
 	}
 	firstPresented = true
 
@@ -286,7 +287,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	if et != nil {
 		et.drawIfExposed()
 	}
-	win.setOnResize()
+	win.setOnResizeHandling()
 	if presented != nil {
 		presented(win)
 	}
@@ -300,6 +301,9 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 	// TODO: Handle non-modal window too
 	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName(), zlog.GetCallingStackString())
 
+	if done != nil {
+		presentCloseFunc = nil
+	}
 	nv := ViewGetNative(view)
 	parent := nv.Parent()
 	if parent != nil && parent.ObjectName() == "$blocker" {
@@ -321,6 +325,7 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 	}
 	if presentCloseFunc != nil {
 		ztimer.StartIn(0.1, func() {
+			// zlog.Info("Check PresentCloseFunc:", presentCloseFunc != nil)
 			if presentCloseFunc != nil { // we do a re-check in case it was nilled in 0.1 second
 				presentCloseFunc(dismissed)
 			}

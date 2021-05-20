@@ -88,10 +88,11 @@ func (ti *TextInfo) SetWidthFreeHight(w float64) {
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
 func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
+	// zlog.PushTimingLog()
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := canvasGetTextSize(str, ti.Font)
-		//		zlog.Info("ti bounds:", str, s.W, s.H, ti.Font.Size)
+		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
 			// zlog.Info("TI split:", split, str)
@@ -116,6 +117,7 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 		zfloat.Maximize(&size.H, s.H)
 		// zlog.Info("TI GetBounds:", str, size.W, s.W)
 	}
+	// zlog.PrintTimingLog("ti bounds looped")
 	if ti.MaxLines == 1 { //|| ti.Rect.Size.W == 0 {
 		allLines = []string{ti.Text}
 		widths = []float64{size.W}
@@ -133,6 +135,7 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 		}
 		// zlog.Info("BOUNDS:", size, count, ti.Text)
 	}
+	// zlog.PopTimingLog()
 	return size, allLines, widths
 }
 

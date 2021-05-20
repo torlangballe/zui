@@ -39,9 +39,3 @@ func getKeyAndModsFromEvent(event js.Value) (key KeyboardKey, mods KeyboardModif
 // 	return
 // }
 
-// This should be done by functionality that exists in Window
-// func SetGlobalKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {
-// 	body := DocumentJS.Get("body")
-// 	//!!	v.keyPressed = handler
-// 	jsSetKeyHandler(body, handler)
-// }

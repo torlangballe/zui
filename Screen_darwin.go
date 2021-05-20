@@ -1,3 +1,5 @@
+// +build !js,zui
+
 package zui
 
 // #cgo LDFLAGS: -framework CoreVideo
@@ -5,9 +7,10 @@ package zui
 // #cgo LDFLAGS: -framework AppKit
 // #include <CoreGraphics/CoreGraphics.h>
 // typedef struct ScreenInfo {
-//     CGRect bounds;
+//     CGRect frame, visibleFrame;
 //     int scale;
 //     int ismain;
+//     long sid;
 // } ScreenInfo;
 // int GetAllScreens(struct ScreenInfo *sis, int max);
 // void SetMainScreenResolutionWithinWidths(long minw, long minh, long maxw, long maxh);
@@ -53,7 +56,9 @@ func ScreenGetAll() (screens []Screen) {
 	for i := 0; i < c; i++ {
 		var s Screen
 		si := cscreens[i]
-		s.Rect = zgeo.RectFromXYWH(float64(si.bounds.origin.x), float64(si.bounds.origin.y), float64(si.bounds.size.width), float64(si.bounds.size.height))
+		s.ID = int64(si.sid)
+		s.Rect = zgeo.RectFromXYWH(float64(si.frame.origin.x), float64(si.frame.origin.y), float64(si.frame.size.width), float64(si.frame.size.height))
+		s.UsableRect = zgeo.RectFromXYWH(float64(si.visibleFrame.origin.x), float64(si.visibleFrame.origin.y), float64(si.visibleFrame.size.width), float64(si.visibleFrame.size.height))
 		s.Scale = float64(si.scale)
 		s.IsMain = (si.ismain == 1)
 		s.SoftScale = 1

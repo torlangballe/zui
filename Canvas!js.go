@@ -224,7 +224,7 @@ func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
 	return zgeo.Size{w, h}
 }
 
-func (c *Canvas) drawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
 }
 

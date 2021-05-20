@@ -50,12 +50,12 @@ type ShapeView struct {
 
 func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
 	v := &ShapeView{}
-	v.init(shapeType, minSize, string(shapeType))
+	v.Init(v, shapeType, minSize, string(shapeType))
 	return v
 }
 
-func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string) {
-	v.CustomView.Init(v, name)
+func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, name string) {
+	v.CustomView.Init(view, name)
 	v.textInfo = *TextInfoNew()
 	v.Type = shapeType
 	v.ImageMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
@@ -76,7 +76,7 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 	default:
 		v.Ratio = 0.3
 	}
-	v.SetDrawHandler(shapeViewDraw)
+	v.SetDrawHandler(v.draw)
 	v.CustomView.SetMinSize(minSize)
 	f := FontNice(FontDefaultSize, FontStyleNormal)
 	v.SetFont(f)
@@ -92,10 +92,9 @@ func (v *ShapeView) init(shapeType ShapeViewType, minSize zgeo.Size, name string
 // }
 
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
-func (v *ShapeView) SetText(text string) View {
+func (v *ShapeView) SetText(text string) {
 	v.textInfo.Text = text
 	v.Expose()
-	return v
 }
 
 func (v *ShapeView) Text() string {
@@ -232,9 +231,8 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	v.image.SetCapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }
 
-func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
-	v := view.(*ShapeView)
 	// zlog.Info("shapeViewDraw:", v.Type, v.textInfo.Text, v.Color(), v.canvas != nil, v.MinSize(), rect, view.ObjectName(), view.Rect())
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -286,7 +284,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.PushState()
 			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, useDownsampleCache, rect, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, true, useDownsampleCache, rect, o, zgeo.Rect{})
 			canvas.PopState()
 		} else {
 			a := v.ImageAlign | zgeo.Shrink
@@ -310,7 +308,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 				}
 			}
 			// zlog.Info("SV Image Draw:", v.ObjectName(), ir, rect, v.image.Size())
-			canvas.DrawImage(drawImage, useDownsampleCache, ir, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, true, useDownsampleCache, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
 			}
@@ -322,7 +320,7 @@ func shapeViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
 		// t.Rect.Pos.Y += 3
-		// zlog.Info("Shape draw:", exp, v.textInfo.Text, t.Color)
+		//		zlog.Info("Shape draw:", v.ObjectName(), exp, v.textInfo.Text, t.Color)
 		t.Font = v.Font()
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????

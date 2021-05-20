@@ -1,3 +1,5 @@
+// +build zui
+
 package zui
 
 import (
@@ -17,12 +19,13 @@ const (
 )
 
 type Screen struct {
-	IsMain   bool
-	isLocked bool
-	Rect     zgeo.Rect
-	// UsableRect   zgeo.Rect //= ZRect(UIScreen.main.bounds)
-	Scale     float64 //= float64(UIScreen.main.scale)
-	SoftScale float64 // = 1.0
+	IsMain     bool
+	isLocked   bool
+	ID         int64
+	Rect       zgeo.Rect
+	UsableRect zgeo.Rect
+	Scale      float64 //= float64(UIScreen.main.scale)
+	SoftScale  float64 // = 1.0
 	//	KeyboardRect *zgeo.Rect
 }
 
@@ -41,48 +44,58 @@ func ScreenMain() Screen {
 	return s
 }
 
-func ScreenStatusBarHeight() float64 {
-	return 0
+func ScreenFromID(id int64) *Screen {
+	for _, s := range ScreenGetAll() {
+		// zlog.Info(id, "ScreenFromID", s)
+		if s.ID == id {
+			return &s
+		}
+	}
+	return nil
 }
 
-func ScreenIsTall() bool {
-	return ScreenMain().Rect.Size.H > 568
-}
+// func ScreenStatusBarHeight() float64 {
+// 	return 0
+// }
 
-func ScreenIsWide() bool {
-	return ScreenMain().Rect.Size.W > 320
-}
+// func ScreenIsTall() bool {
+// 	return ScreenMain().Rect.Size.H > 568
+// }
 
-func ScreenIsPortrait() bool {
-	s := ScreenMain().Rect.Size
-	return s.H > s.W
-}
+// func ScreenIsWide() bool {
+// 	return ScreenMain().Rect.Size.W > 320
+// }
 
-func ScreenShowNetworkActivityIndicator(show bool) {
-}
+// func ScreenIsPortrait() bool {
+// 	s := ScreenMain().Rect.Size
+// 	return s.H > s.W
+// }
 
-func ScreenHasSleepButtonOnSide() bool {
-	return false
-}
+// func ScreenShowNetworkActivityIndicator(show bool) {
+// }
 
-func ScreenStatusBarVisible() bool {
-	return false
-}
+// func ScreenHasSleepButtonOnSide() bool {
+// 	return false
+// }
 
-func ScreenSetStatusBarForLightContent(light bool) {
-}
+// func ScreenStatusBarVisible() bool {
+// 	return false
+// }
 
-func ScreenEnableIdle(on bool) {
-}
+// func ScreenSetStatusBarForLightContent(light bool) {
+// }
 
-func ScreenOrientation() ScreenLayout {
-	return ScreenLandscapeLeft
-}
+// func ScreenEnableIdle(on bool) {
+// }
 
-func ScreenHasNotch() bool {
-	return false
-}
+// func ScreenOrientation() ScreenLayout {
+// 	return ScreenLandscapeLeft
+// }
 
-func ScreenHasSwipeUpAtBottom() bool {
-	return false
-}
+// func ScreenHasNotch() bool {
+// 	return false
+// }
+
+// func ScreenHasSwipeUpAtBottom() bool {
+// 	return false
+// }

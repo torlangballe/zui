@@ -6,11 +6,13 @@ import (
 	"strings"
 	"sync"
 	"syscall/js"
+	"time"
 
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/ztime"
 )
 
 var remoteCache = zcache.New(3600, false)
@@ -23,8 +25,39 @@ type imageBase struct {
 	imageJS   js.Value
 }
 
+func ImagesGetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
+	added := make(chan struct{}, 100)
+	for i := 0; i < len(imagePaths); i++ {
+		imgPtr := imagePaths[i].(**Image)
+		i++
+		path := imagePaths[i].(string)
+		ImageFromPath(path, func(image *Image) {
+			*imgPtr = image
+			added <- struct{}{}
+			// zlog.Info("ImagesGetSynchronous got", path, image != nil)
+		})
+	}
+	var count int
+	for {
+		select {
+		case <-added:
+			count++
+			if count >= len(imagePaths)/2 {
+				return true
+			}
+		case <-time.After(ztime.SecondsDur(timeoutSecs)):
+			zlog.Info("ImagesGetSynchronous bail:", count)
+			return false
+		}
+	}
+	zlog.Fatal(nil, "ImagesGetSynchronous can't get here")
+	return false
+}
+
 func ImageFromPath(path string, got func(*Image)) *Image {
-	// zlog.Info("ImageFromPath:", path)
+	// if !strings.HasSuffix(path, ".png") {
+	// 	zlog.Info("ImageFromPath:", path, zlog.GetCallingStackString())
+	// }
 	if path == "" {
 		if got != nil {
 			got(nil)
@@ -42,6 +75,7 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		}
 		return i
 	}
+	// zlog.Info("ImageFromPath before load:", path)
 	i.load(path, func(success bool) {
 		// zlog.Info("ImageFromPath loaded:", path, success)
 		if !success {
@@ -114,11 +148,12 @@ func (i *Image) load(path string, done func(success bool)) {
 	i.imageJS = imageF.New()
 	// i.imageJS.Set("crossOrigin", "Anonymous")
 
-	i.imageJS.Set("onload", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	// i.imageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	i.imageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		i.loading = false
 		i.size.W = i.imageJS.Get("width").Float()
 		i.size.H = i.imageJS.Get("height").Float()
-		// zlog.Info("Image Load scale:", i.scale, path, i.Size(), i.loading)
+		// zlog.Info("Image Loaded", this, args, len(args))
 		if done != nil {
 			done(true)
 		}
@@ -128,13 +163,12 @@ func (i *Image) load(path string, done func(success bool)) {
 		i.loading = false
 		i.size.W = 5
 		i.size.H = 5
-		// zlog.Info("Image Load fail:", path)
+		zlog.Info("Image Load fail:", path)
 		if done != nil {
 			done(false)
 		}
 		return nil
 	}))
-
 	i.imageJS.Set("src", path)
 }
 

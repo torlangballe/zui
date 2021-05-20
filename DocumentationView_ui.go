@@ -20,7 +20,7 @@ var DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.init(ShapeViewTypeCircle, zgeo.Size{22, 22}, "documentation:"+path)
+	v.ShapeView.Init(v, ShapeViewTypeCircle, zgeo.Size{22, 22}, "documentation:"+path)
 	v.textInfo.Text = "?"
 	v.SetColor(DocumentationDefaultIconColor)
 	v.SetTextAlignment(zgeo.Center)
@@ -29,6 +29,10 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v.StrokeWidth = 2
 	v.SetColor(zgeo.ColorNew(0.9, 0.9, 1, 1))
 	v.SetPressedHandler(func() {
+		// editor := CodeEditorViewNew("editor")
+		// attr := PresentViewAttributes{}
+		// PresentView(editor, attr, func(win *Window) {
+		// }, nil)
 		go DocumentationViewPresent(path)
 	})
 	return v
@@ -44,12 +48,32 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v := &DocumentationView{}
 	v.Init(v, true, "docview")
 	v.SetSpacing(0)
+
+	hstack := StackViewHor("hstack")
+	hstack.SetSpacing(0)
+
 	isFrame := true
 	isMakeBar := true
 	v.WebView = WebViewNew(minSize, isFrame, isMakeBar)
 	v.Add(v.WebView.Bar, zgeo.TopLeft|zgeo.HorExpand)
-	v.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
+	v.Add(hstack, zgeo.TopLeft|zgeo.Expand)
+	hstack.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
+
+	if DebugOwnerMode {
+		edit := ImageViewNew(nil, "images/edit.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
+		edit.DownsampleImages = true
+		edit.SetPressedHandler(v.startEdit)
+		v.WebView.Bar.Add(edit, zgeo.CenterLeft)
+	}
 	return v
+}
+
+func (v *DocumentationView) startEdit() {
+	zlog.Info("Edit")
+	editor := CodeEditorViewNew("", 50, 50)
+	hstack := v.NativeView.Child("hstack").(*StackView)
+	hstack.Add(editor, zgeo.TopLeft|zgeo.Expand, 0)
+	v.ArrangeChildren(nil)
 }
 
 func DocumentationViewPresent(path string) error {

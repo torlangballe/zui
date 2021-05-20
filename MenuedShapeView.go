@@ -4,13 +4,13 @@ package zui
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -19,6 +19,7 @@ type MenuedItem struct {
 	Selected   bool
 	LabelColor zgeo.Color
 	TextColor  zgeo.Color
+	IsAction   bool
 }
 
 type MenuedShapeView struct {
@@ -32,14 +33,17 @@ type MenuedShapeView struct {
 	IsMultiple    bool
 	HasLabelColor bool
 	GetTitle      func(itemCount int) string
+	ActionHandler func(id string)
 }
+
+var MenuedItemSeparator = MenuedItem{Item: zdict.Item{Name: MenuSeparatorID}}
 
 func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, isStatic, isMultiple bool) *MenuedShapeView {
 	v := &MenuedShapeView{}
 	if minSize.IsNull() {
 		minSize.Set(20, 26)
 	}
-	v.ShapeView.init(shapeType, minSize, name)
+	v.ShapeView.Init(v, shapeType, minSize, name)
 	v.IsStatic = isStatic
 	v.IsMultiple = isMultiple
 	v.ImageMargin = zgeo.Size{}
@@ -99,11 +103,7 @@ func (v *MenuedShapeView) Empty() {
 }
 
 func (v *MenuedShapeView) AddSeparator() {
-	var item MenuedItem
-
-	item.Name = separatorID
-	item.Value = nil
-	v.items = append(v.items, item)
+	v.items = append(v.items, MenuedItemSeparator)
 }
 
 func (v *MenuedShapeView) updateTitle() {
@@ -207,7 +207,7 @@ func (v *MenuedShapeView) popup() {
 	stack := StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := ListViewNew("menu-list", selection)
-	list.MinRows = 1
+	list.MinRows = 0
 	stack.SetBGColor(zgeo.ColorWhite)
 	//	list.ScrollView.SetBGColor(zgeo.ColorClear)
 	list.PressSelectable = true
@@ -220,9 +220,11 @@ func (v *MenuedShapeView) popup() {
 	list.RowColors = []zgeo.Color{zgeo.ColorWhite}
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 	// zlog.Info("POP:", v.Font().Size)
-	var bs zgeo.Size
 	lineHeight := v.Font().LineHeight() + 4
 	list.GetRowHeight = func(index int) float64 {
+		if v.items[index].Name == MenuSeparatorID {
+			return lineHeight * 0.5
+		}
 		return lineHeight
 	}
 	list.GetRowCount = func() int {
@@ -235,23 +237,27 @@ func (v *MenuedShapeView) popup() {
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
 		cv := CustomViewNew("row")
 		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
-			// if i%2 == 1 {
-			// 	canvas.SetColor(zgeo.ColorRed, 1)
-			// 	canvas.FillPath(zgeo.PathNewRect(rect, zgeo.Size{}))
-			// }
+			list.UpdateRowBGColor(i)
+			item := v.items[i]
+			if item.Name == MenuSeparatorID {
+				canvas.SetColor(zgeo.ColorLightGray)
+				canvas.StrokeHorizontal(0, rect.Size.W, math.Floor(rect.Center().Y), 1, zgeo.PathLineSquare)
+				return
+			}
 			ti := TextInfoNew()
-
 			if list.IsRowHighlighted(i) {
 				ti.Color = zgeo.ColorWhite
-			} else if v.items[i].TextColor.Valid {
-				ti.Color = v.items[i].TextColor
+			} else if item.TextColor.Valid {
+				ti.Color = item.TextColor
 			}
-			ti.Text = v.items[i].Name
+			ti.Text = item.Name
 			ti.Font = v.Font()
+			if item.IsAction {
+				ti.Font.Style = FontStyleItalic
+			}
 			//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
 			ti.Alignment = zgeo.CenterLeft
 			ti.Rect = rect.Plus(zgeo.RectFromXY2(leftMarg, 0, -rm, 0))
-			list.UpdateRowBGColor(i)
 			ti.Draw(canvas)
 			if list.IsRowSelected(i) {
 				ti.Text = "√"
@@ -259,14 +265,14 @@ func (v *MenuedShapeView) popup() {
 				ti.Alignment = zgeo.Left
 				ti.Draw(canvas) // we keep black/white hightlighted color
 			}
-			if v.HasLabelColor && v.items[i].LabelColor.Valid {
+			if v.HasLabelColor && item.LabelColor.Valid {
 				r := rect
 				r.SetMinX(rect.Max().X - rm + 6)
 				r = r.Expanded(zgeo.Size{-3, -3})
-				canvas.SetColor(v.items[i].LabelColor)
+				canvas.SetColor(item.LabelColor)
 				path := zgeo.PathNewRect(r, zgeo.Size{2, 2})
 				canvas.FillPath(path)
-				canvas.SetColor(zgeo.ColorBlack.WithOpacity(v.items[i].LabelColor.Opacity()))
+				canvas.SetColor(zgeo.ColorBlack.WithOpacity(item.LabelColor.Opacity()))
 				canvas.StrokePath(path, 1, zgeo.PathLineRound)
 			}
 		})
@@ -278,16 +284,19 @@ func (v *MenuedShapeView) popup() {
 			max = item.Name
 		}
 	}
-	bs.W = TextInfoWidthOfString(max, v.Font())
-	bs.H = float64(zint.Min(22, len(v.items))) * lineHeight
-	ms := bs.Plus(zgeo.Size{leftMarg + rm, 0}) // topMarg + bottomMarg
-	// zlog.Info("MenuedSize:", ms, stack.Margin())
-	stack.SetMinSize(ms)
-	// stack.SetCorner(8)
+	w := TextInfoWidthOfString(max, v.Font())
+	w += leftMarg + rm
+	stack.SetMinSize(zgeo.Size{w, 0})
 
 	list.HandleRowSelected = func(i int, selected, fromPressed bool) {
-		// zlog.Info("list selected", i, selected)
+		// zlog.Info("list selected", i, selected, v.items[i].IsAction)
 		v.items[i].Selected = selected
+		if v.items[i].IsAction {
+			if selected {
+				PresentViewClose(stack, false, nil)
+			}
+			return
+		}
 		if !v.IsMultiple && fromPressed {
 			PresentViewClose(stack, false, nil)
 		}
@@ -299,6 +308,7 @@ func (v *MenuedShapeView) popup() {
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
+	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
 	pos := v.GetAbsoluteRect().Pos
 	att.Pos = &pos
 	// zlog.Info("menu popup")
@@ -308,6 +318,17 @@ func (v *MenuedShapeView) popup() {
 	}, func(dismissed bool) {
 		// zlog.Info("menu pop closed", dismissed)
 		if !dismissed || v.IsMultiple { // if multiple, we handle any select/deselect done
+			for i, item := range v.items {
+				if item.IsAction && item.Selected {
+					v.items[i].Selected = false
+					if v.ActionHandler != nil {
+						id := v.items[i].Value.(string)
+						v.ActionHandler(id)
+						v.updateTitle()
+					}
+					return
+				}
+			}
 			if v.selectedHandler != nil {
 				v.selectedHandler()
 			}

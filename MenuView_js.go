@@ -8,9 +8,9 @@ import (
 
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
-
 
 func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	v := &MenuView{}
@@ -46,7 +46,7 @@ func (v *MenuView) Empty() {
 func (v *MenuView) AddSeparator() {
 	var item zdict.Item
 
-	item.Name = separatorID
+	item.Name = MenuSeparatorID
 	item.Value = nil
 	v.items = append(v.items, item)
 }
@@ -70,7 +70,7 @@ func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
 
 func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 	option := DocumentJS.Call("createElement", "option")
-	if name == separatorID {
+	if name == MenuSeparatorID {
 		option.Set("disabled", true)
 		option.Set("class", "separator")
 	} else {
@@ -84,29 +84,28 @@ func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 
 func (v *MenuView) UpdateAndSelect(items zdict.Items, value interface{}) {
 	// zlog.Info("MV SetAndSelect:", v, items)
-	v.UpdateItems(items)
-	v.SelectWithValue(value, true)
+	v.UpdateItems(items, []interface{}{value})
+	v.SelectWithValue(value)
 }
 
-func (v *MenuView) UpdateItems(items zdict.Items) {
+func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
 	if !items.Equal(v.items) {
-		old := v.currentValue // we need to remember current value to re-set as Empty() below clears it
-		v.items = items       // must be before v.getNumberOfItemsString
+		v.items = items // must be before v.getNumberOfItemsString
 		var str string
 		for _, item := range v.items {
 			str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
 		}
 		// We use HTML here to add all at once, or slow.
 		v.setjs("innerHTML", str)
-		if old != nil {
-			v.SelectWithValue(old, true)
+		if len(values) != 0 {
+			v.SelectWithValue(values[0])
 		}
 	}
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
 
-func (v *MenuView) SelectWithValue(value interface{}, set bool) {
+func (v *MenuView) SelectWithValue(value interface{}) {
 	if zlog.ErrorIf(value == nil, v.ObjectName()) {
 		return
 	}
@@ -134,7 +133,7 @@ func (v *MenuView) SetSelectedHandler(handler func()) {
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value
 // https://stackoverflow.com/questions/17001961/how-to-add-drop-down-list-select-programmatically
 
-func (v *MenuView) SetFont(font *Font) View {
+func (v *MenuView) SetFont(font *Font) {
 	if font.Size != 14 {
 		panic("can't set menu view font size to anything except 14 in js")
 	}
@@ -143,5 +142,8 @@ func (v *MenuView) SetFont(font *Font) View {
 		f.Size = 16
 	}
 	v.NativeView.SetFont(&f)
-	return v
+}
+
+func (v *MenuView) SetRect(r zgeo.Rect) {
+	v.NativeView.SetRect(r.PlusPos(zgeo.Pos{0, 2}))
 }

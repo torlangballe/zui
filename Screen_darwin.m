@@ -1,19 +1,25 @@
-// #import <CoreGraphics/CoreGraphics.h>
-// #import <CoreFoundation/CoreFoundation.h>
+// +build !js,zui
+
 #import <AppKit/AppKit.h>
 
+// https://github.com/jakehilborn/displayplacer/blob/master/displayplacer.c
+
 struct ScreenInfo {
-    CGRect bounds;
+    CGRect frame, visibleFrame;
     int scale;
     int ismain;
+    long sid;
 };
 
 int GetAllScreens(struct ScreenInfo *sis, int max) {    
     NSArray *screens = [NSScreen screens];
     int i = 0;
     for (NSScreen *s in screens) {
-		sis[i].bounds = s.frame;
-		 sis[i].scale = (int)s.backingScaleFactor;
+        sis[i].sid = [[ s.deviceDescription objectForKey: @"NSScreenNumber"] longValue]; 
+        // NSLog(@"screen id: %ld %f %f", sis[i].sid, s.frame.origin.x, s.frame.origin.y);
+		sis[i].frame = s.frame;
+		sis[i].visibleFrame = s.visibleFrame;
+		sis[i].scale = (int)s.backingScaleFactor;
         sis[i].ismain = (i == 0) ? 1 : 0;
         i++;
         if (i >= max) {

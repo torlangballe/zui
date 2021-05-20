@@ -5,7 +5,6 @@ package zui
 import (
 	"bytes"
 	"image"
-	"image/draw"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -28,9 +27,9 @@ type imageBase struct {
 	//	hasAlpha  bool `json:"hasAlpha"`
 }
 
-func ImageNewRGBA(size zgeo.Size) *Image {
+func ImageNewNRGBA(size zgeo.Size) *Image {
 	i := &Image{}
-	i.GoImage = image.NewRGBA(zgeo.Rect{Size: size}.GoRect())
+	i.GoImage = image.NewNRGBA(zgeo.Rect{Size: size}.GoRect())
 	return i
 }
 
@@ -91,6 +90,7 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	scale := float64(i.scale)
 	newImage := goImageShrunkInto(i.GoImage, scale, size, proportional)
+	zlog.Assert(newImage != nil, "shunk image nil")
 	return ImageFromGo(newImage)
 }
 
@@ -204,8 +204,6 @@ func (i *Image) FixedOrientation() *Image {
 }
 
 func (i *Image) RGBAImage() *Image {
-	r := i.GoImage.Bounds()
-	n := image.NewRGBA(r)
-	draw.Draw(n, r, i.GoImage, image.Point{}, draw.Over)
+	n := GoImageToGoRGBA(i.GoImage)
 	return ImageFromGo(n)
 }

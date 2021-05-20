@@ -159,7 +159,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell := ContainerViewCell{}
 		cell.Alignment = h.Align
 		header := h
-		s := zgeo.Size{h.MinWidth, 28}
+		s := zgeo.Size{h.MinWidth, 24}
 		button := ImageButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)

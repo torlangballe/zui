@@ -42,11 +42,11 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
 	v.StackView.Init(v, true, name)
 	v.SetSpacing(0)
+	v.SetBGColor(ListViewDefaultBGColor)
 	v.Header = StackViewHor("header")
 	if buttons {
 		v.ButtonName = TabsDefaultButtonName
-		v.SetMargin(zgeo.RectFromXY2(0, 4, 0, 0))
-		v.Header.SetMargin(zgeo.RectFromXY2(2, 0, 0, 0))
+		v.Header.SetMargin(zgeo.RectFromXY2(2, 4, 0, 0))
 	} else {
 		v.MaxImageSize = zgeo.Size{60, 24}
 		v.Header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
@@ -58,7 +58,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	if !buttons {
 		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
-			zlog.Info("header draw:", sv != nil, v.CurrentID)
+			// zlog.Info("header draw:", sv != nil, v.CurrentID)
 			if sv != nil {
 				r := sv.Rect()
 				r.Pos.Y = 0
@@ -122,11 +122,11 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	var view View
 	tab := &tab{}
 	tab.id = id
-	minSize := zgeo.Size{20, 26}
+	minSize := zgeo.Size{20, 22}
 	tab.childAlignment = zgeo.Left | zgeo.Top | zgeo.Expand
 	if v.ButtonName != "" {
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
-		b := ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 12})
+		b := ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
 		button = &b.ShapeView
 		button.SetTextColor(TabsDefaultTextColor)
 		button.SetMarginS(zgeo.Size{10, 0})
@@ -176,7 +176,7 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 				str += "-selected"
 				style = FontStyleBold
 			}
-			button.SetImageName(str, zgeo.Size{11, 12})
+			button.SetImageName(str, zgeo.Size{11, 8})
 			button.SetFont(FontNice(FontDefaultSize, style))
 		} else { // image only
 			v.Header.Expose()
@@ -246,10 +246,9 @@ func (v *TabsView) SetTab(id string) {
 				v.ArrangeChildren(nil)
 			}
 		})
-
-		// zlog.Info("bt-banner tab arranged.", tab.childAlignment, v.ChildView.Rect())
 		presentViewPresenting = false
 		PresentViewCallReady(v.ChildView, false)
+		// zlog.Info("SetTab Loaded", time.Since(start))
 		if et != nil {
 			et.drawIfExposed()
 		}

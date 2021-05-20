@@ -47,7 +47,8 @@ type ListViewIDGetter interface {
 	GetID(index int) string
 }
 
-var DefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
+var ListViewDefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
+var ListViewDefaultBGColor = zgeo.ColorNewGray(0.9, 1)
 
 func ListViewNew(name string, selection map[int]bool) *ListView {
 	v := &ListView{}
@@ -60,14 +61,14 @@ func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.ScrollView.Init(view, name)
 	v.rows = map[int]View{}
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	v.SelectedColor = DefaultSelectedColor
+	v.SelectedColor = ListViewDefaultSelectedColor
 	if selection != nil {
 		v.selectionIndexes = selection
 	} else {
 		v.selectionIndexes = map[int]bool{}
 	}
 	v.highlightedIndex = -1
-	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
+	v.SetBGColor(ListViewDefaultBGColor)
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("ScrollTo:", pos.Y)
 		// v.topPos = pos.Y

@@ -6,6 +6,7 @@ import (
 	// "math"
 
 	// "github.com/torlangballe/zutil/zfloat"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -166,26 +167,32 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
+	// zlog.Info("Layout Stack getCells start", v.ObjectName())
 	for _, c := range v.cells {
 		l := c.LayoutCell
+		// start := time.Now()
 		l.OriginalSize = c.View.CalculatedSize(rect.Size)
-		// zlog.Info("STv OSize:", c.View.ObjectName(), l.OriginalSize, rect.Size)
+		// zlog.Info("STv OSize:", c.View.ObjectName(), l.OriginalSize, rect.Size, time.Since(start))
 		l.Name = c.View.ObjectName()
 		lays = append(lays, l)
 	}
+	// if v.ObjectName() == "59731866" {
+	// 	zlog.Info("Layout Stack getCells", v.ObjectName(), time.Since(start), zlog.GetCallingStackString())
+	// }
 	return
 }
 
 func (v *StackView) ArrangeChildren(onlyChild *View) {
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
-	// v.NewStack = true
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	zlog.Assert(onlyChild == nil) // going away...
 	rm := v.LocalRect().Plus(v.Margin())
 	lays := v.getLayoutCells(rm)
-	rects := zgeo.LayoutCellsInStack(rm, v.Vertical, v.spacing, lays)
+	// if v.ObjectName() == "header" {
+	// }
+	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
 	// for i, r := range rects {
 	// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
 	// }

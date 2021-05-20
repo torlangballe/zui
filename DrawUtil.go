@@ -4,7 +4,7 @@ import "github.com/torlangballe/zutil/zgeo"
 
 func DrawUtilAmountPie(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float64, color, strokeColor zgeo.Color) {
 	path := zgeo.PathNew()
-	s := rect.Size.MinusD(strokeWidth).DividedByD(2).TimesD(ScreenMain().SoftScale).MinusD(1)
+	s := rect.Size.MinusD(strokeWidth).DividedByD(2).MinusD(1)
 	w := s.Min()
 	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, ScreenMain().SoftScale)
 	path.MoveTo(rect.Center())

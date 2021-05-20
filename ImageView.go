@@ -186,7 +186,7 @@ func ImageViewDraw(rect zgeo.Rect, canvas *Canvas, view View) {
 		}
 		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
 		// zlog.Info(v.ObjectName(), "IV.DrawImage22:", v.Rect(), v.image.imageJS.IsUndefined(), v.image.imageJS.IsNull())
-		canvas.DrawImage(drawImage, v.UseDownsampleCache, ir, 1, zgeo.Rect{})
+		canvas.DrawImage(drawImage, true, v.UseDownsampleCache, ir, 1, zgeo.Rect{})
 		if v.imageCorner != 0 {
 			canvas.PopState()
 		}

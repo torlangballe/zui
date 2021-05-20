@@ -5,13 +5,16 @@ package zui
 import "github.com/torlangballe/zutil/zgeo"
 
 type baseNativeView struct {
-	View View
 }
 
 type LongPresser struct{}
 
 func (v *NativeView) GetView() *NativeView {
 	return v
+}
+
+func (v *NativeView) Child(path string) View {
+	return nil
 }
 
 func (v *NativeView) Rect() zgeo.Rect {
@@ -69,7 +72,7 @@ func (v *NativeView) SetCorner(radius float64) View {
 	return v
 }
 
-func (v *NativeView) SetStroke(width float64, c zgeo.Color, inside bool) View {
+func (v *NativeView) SetStroke(width float64, c zgeo.Color) View {
 	return v
 }
 
@@ -117,24 +120,18 @@ func (v *NativeView) GetChild(path string) *NativeView {
 	return nil
 }
 
-func (v *NativeView) DumpTree() {
-}
+func (v *NativeView) DumpTree()          {}
+func (v *NativeView) SetFont(font *Font) {}
 
 func (v *NativeView) RemoveFromParent() {
 	v.StopStoppers()
-}
-
-func (v *NativeView) SetFont(font *Font) View {
-	return v
 }
 
 func (v *NativeView) Font() *Font {
 	return nil
 }
 
-func (v *NativeView) SetText(text string) View {
-	return v
-}
+func (v *NativeView) SetText(text string) {}
 
 func (v *NativeView) Text() string {
 	return ""

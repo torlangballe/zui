@@ -23,11 +23,9 @@ func (v *MenuView) AddSeparator()                                           {}
 func (v *MenuView) SetValues(items zdict.NamedValues)                       {}
 func (v *MenuView) SetAndSelect(items zdict.NamedValues, value interface{}) {}
 func (v *MenuView) SelectWithValue(value interface{}) *MenuView             { return v }
+func (v *MenuView) SetFont(font *Font) {}
 
 func menuViewGetHackedFontForSize(font *Font) *Font {
 	return font
 }
 
-func (v *MenuView) SetFont(font *Font) View {
-	return v
-}

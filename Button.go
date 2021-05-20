@@ -5,7 +5,6 @@ package zui
 import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /19/apr/21.
@@ -45,7 +44,7 @@ func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
 	s = s.Ceil()
-	zlog.Info("Button CS:", s)
+	// zlog.Info("Button CS:", s)
 	return s
 }
 

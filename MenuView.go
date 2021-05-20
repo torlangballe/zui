@@ -10,12 +10,10 @@ import (
 	"github.com/torlangballe/zutil/zwords"
 )
 
-const separatorID = "$sep"
+const MenuSeparatorID = "$sep"
 
 type MenuType interface {
-	//	UpdateAndSelect(items zdict.Items, value interface{})
 	UpdateItems(items zdict.Items, values []interface{})
-	//	SelectWithValue(value interface{}, set bool)
 	SetSelectedHandler(handler func())
 }
 
@@ -27,7 +25,7 @@ type MenuView struct {
 	currentValue    interface{}
 }
 
-var menuViewHeight = 22.0
+var menuViewHeight = 21.0
 
 func (v *MenuView) CurrentValue() interface{} {
 	return v.currentValue

@@ -37,13 +37,16 @@ type TextView struct {
 	UpdateSecs float64
 }
 
-const TextViewDefaultMargin = 2.0
+var TextViewDefaultMargin = 2.0
+var TextViewDefaultColor zgeo.Color       // if undef, don't set, use whatever platform already has
+var TextViewDefaultBGColor zgeo.Color     // "
+var TextViewDefaultBorderColor zgeo.Color // "
 
 func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
-	tv := &TextView{}
+	v := &TextView{}
 	zlog.Assert(cols != 0)
-	tv.Init(text, style, rows, cols)
-	return tv
+	v.Init(v, text, style, rows, cols)
+	return v
 }
 
 func (v *TextView) IsEditing() bool {
@@ -104,4 +107,8 @@ func (v *TextView) SetMaxLines(max int) {
 
 func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
+}
+
+func (v *TextView) ChangedHandler() func() {
+	return v.changed
 }

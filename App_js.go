@@ -12,6 +12,9 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+type nativeApp struct {
+}
+
 // AppURL returns the url that invoked this app
 func AppURL() string {
 	return WindowJS.Get("location").Get("href").String()
@@ -46,3 +49,8 @@ func AppSetUIDefaults(useTokenAuth bool) (part string, args map[string]string) {
 	}
 	return
 }
+
+func appNew(a *App) {
+
+}
+

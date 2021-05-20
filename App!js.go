@@ -1,4 +1,4 @@
-// +build !js
+// +build !js,!catalyst
 
 package zui
 
@@ -14,8 +14,12 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+type nativeApp struct {
+}
+
 type FilesRedirector struct {
-	Override func(w http.ResponseWriter, req *http.Request) bool
+	Override         func(w http.ResponseWriter, req *http.Request) bool
+	ServeDirectories bool
 }
 
 const filePathPrefix = "www/"
@@ -35,6 +39,7 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
 			return
@@ -50,23 +55,49 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	filepath := filePathPrefix + path
-	if strings.HasSuffix(path, ".md") { // strings.HasPrefix(path, "doc/") &&
-		html, err := convertMarkdownToHTML(filepath, path)
-		if err != nil {
-			zrest.ReturnError(w, req, err.Error(), http.StatusInternalServerError)
+	if path != "" {
+		if strings.Contains(filepath, "*") {
+			files, _ := zfile.GetFilesFromPath(filepath, false)
+			if len(files) > 0 {
+				filepath = files[0]
+			}
+		}
+		if zfile.IsFolder(filepath) && r.ServeDirectories {
+			files, err := zfile.GetFilesFromPath(filepath, true)
+			if err != nil {
+				zlog.Error(err)
+				return
+			}
+			str := strings.Join(files, "\n")
+			zrest.AddCORSHeaders(w, req)
+			io.WriteString(w, str)
 			return
 		}
-		zrest.AddCORSHeaders(w, req)
-		io.WriteString(w, html)
-		return
+		if strings.HasSuffix(path, ".md") { // strings.HasPrefix(path, "doc/") &&
+			html, err := convertMarkdownToHTML(filepath, path)
+			if err != nil {
+				zrest.ReturnError(w, req, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			zrest.AddCORSHeaders(w, req)
+			io.WriteString(w, html)
+			return
+		}
 	}
 	// zlog.Info("Serve app:", path, filepath)
 	http.ServeFile(w, req, filepath)
 }
 
-func AppServeZUIWasm(override func(w http.ResponseWriter, req *http.Request) bool) {
+func AppServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
 	f := &FilesRedirector{
-		Override: override,
+		ServeDirectories: serveDirs,
+		Override:         override,
 	}
 	http.Handle(zrest.AppURLPrefix, f)
+}
+
+func appNew(a *App) {
+}
+
+func (a *App) Run() {
 }
