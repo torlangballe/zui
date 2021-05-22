@@ -4,7 +4,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -186,7 +185,6 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 
 func (v *TabsView) findTab(id string) *tab {
 	for _, t := range v.tabs {
-		zlog.Info("Find:", id, t.id)
 		if t.id == id {
 			return t
 		}
@@ -239,16 +237,8 @@ func (v *TabsView) SetTab(id string) {
 		v.ArrangeChildren(nil) // This can create table rows and do all kinds of things that load images etc.
 
 		ct := v.View.(ContainerType)
-		WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("SetTab Loaded")
-			// zlog.Info("Set Tab container loaded:", waited)
-			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-				v.ArrangeChildren(nil)
-			}
-		})
 		presentViewPresenting = false
 		PresentViewCallReady(v.ChildView, false)
-		// zlog.Info("SetTab Loaded", time.Since(start))
 		if et != nil {
 			et.drawIfExposed()
 		}
@@ -258,6 +248,12 @@ func (v *TabsView) SetTab(id string) {
 		if v.ChangedHandler != nil {
 			v.ChangedHandler(id)
 		}
+		WhenContainerLoaded(ct, func(waited bool) {
+			// zlog.Info("Set Tab container loaded:", waited)
+			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+				v.ArrangeChildren(nil)
+			}
+		})
 	}
 }
 

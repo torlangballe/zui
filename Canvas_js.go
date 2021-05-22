@@ -120,7 +120,8 @@ type scaledImage struct {
 
 var scaledImageMap = map[scaledImage]*Image{}
 
-func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+	var exitWithoutDrawing bool
 	proportional := false
 	ds := destRect.Size.Ceil()
 	si := scaledImage{image.Path, ds}
@@ -128,9 +129,12 @@ func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleC
 	var newImage *Image
 	if useDownsampleCache {
 		newImage, _ = scaledImageMap[si]
+		if newImage == nil {
+			exitWithoutDrawing = true
+			synchronous = false
+		}
 	}
 	do := func() {
-		// zlog.Info("drawPlainImage cache scaled", image.Path, ds)
 		if newImage != nil {
 			image = newImage
 		} else {
@@ -142,7 +146,7 @@ func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleC
 				scaledImageMap[si] = image
 			}
 		}
-		if image != nil {
+		if !exitWithoutDrawing && image != nil {
 			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 		}
 	}
@@ -151,6 +155,7 @@ func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleC
 	} else {
 		go do()
 	}
+	return !exitWithoutDrawing
 }
 
 func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
@@ -162,9 +167,9 @@ func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bo
 	ds := destRect.Size
 	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.size && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
-		// zlog.Info("Canvas DrawPlainImage:", image.Path, c.DownsampleImages, sourceRect, destRect)
-		c.drawCachedScaledImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect)
-		return
+		if c.drawCachedScaledImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect) { // if it retturns false, it wasn't in cache, so we draw unscaled
+			return
+		}
 	}
 	if synchronous {
 		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
@@ -289,7 +294,7 @@ func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
 	return s
 }
 
-func (c *Canvas) Image(cut zgeo.Rect) image.Image {
+func (c *Canvas) GoImage(cut zgeo.Rect) image.Image {
 	if cut.IsNull() {
 		cut = zgeo.Rect{Size: c.Size()}
 	}
@@ -303,4 +308,26 @@ func (c *Canvas) Image(cut zgeo.Rect) image.Image {
 	newImage := image.NewNRGBA(zgeo.Rect{Size: cut.Size}.GoRect())
 	newImage.Pix = buf
 	return newImage
+}
+
+func (c *Canvas) SetGoImage(img image.Image, pos zgeo.Pos) {
+	irgba := GoImageToGoRGBA(img)
+	rgba := irgba.(*image.RGBA)
+	bytes := rgba.Pix
+	array := js.Global().Get("Uint8ClampedArray").New(len(bytes))
+	js.CopyBytesToJS(array, bytes)
+	s := goImageSize(img)
+	iDataType := js.Global().Get("ImageData")
+	idata := iDataType.New(array, int(s.W), int(s.H))
+	c.context.Call("putImageData", idata, pos.X, pos.Y)
+}
+
+func (c *Canvas) ZImage() *Image {
+	// gi := c.GoImage(cut)
+	// if gi == nil {
+	// 	return nil
+	// }
+	// return ImageFromGo(gi)
+	surl := c.element.Call("toDataURL").String()
+	return ImageFromPath(surl, nil)
 }

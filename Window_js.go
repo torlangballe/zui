@@ -118,8 +118,8 @@ func (win *Window) setOnResizeHandling() {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				win.ProgrammaticView.SetRect(r)
 				// setElementRect(win.element, r)
-				// zlog.Info("On Resized Done", win.ProgrammaticView.ObjectName())
 				if win.HandleAfterResized != nil {
+					// zlog.Info("On Resized Call")
 					win.HandleAfterResized(r)
 				}
 			}

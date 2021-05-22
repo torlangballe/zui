@@ -2,9 +2,7 @@ package zui
 
 import (
 	"image"
-	"io"
 	"strings"
-	"sync"
 	"syscall/js"
 	"time"
 
@@ -89,46 +87,19 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 	return i
 }
 
-func ImageFromNative(n image.Image) *Image {
-	zlog.Fatal(nil, "Not implemented")
-	return nil
-}
-
-func goImageFromImageUsingCanvas(img *Image) image.Image {
+func ImageToGo(img *Image) image.Image {
 	canvas := CanvasNew()
 	canvas.element.Set("id", "render-canvas")
 	s := img.Size()
 	canvas.SetSize(s)
 	canvas.context.Call("drawImage", img.imageJS, 0, 0, s.W, s.H)
-	goImage := canvas.Image(zgeo.Rect{})
+	goImage := canvas.GoImage(zgeo.Rect{})
 	return goImage
-}
-
-func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
-	// this can be better, use canvas.Image()
-	goImage := goImageFromImageUsingCanvas(i)
-	if goImage == nil {
-		zlog.Error(nil, "goImageFromPath")
-		return nil
-	}
-	scale := float64(i.scale)
-	newGoImage := goImageShrunkInto(goImage, scale, size, proportional)
-	return ImageFromGo(newGoImage)
-}
-
-func (i *Image) Encode(w io.Writer, qualityPercent int) error {
-	zlog.Fatal(nil, "Not implemented")
-	return nil
 }
 
 func (i *Image) RGBAImage() *Image {
 	zlog.Fatal(nil, "Not implemented")
 	return nil
-}
-
-func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
-	zlog.Fatal(nil, "Not implemented")
-	return nil, nil
 }
 
 func (i *Image) load(path string, done func(success bool)) {
@@ -229,6 +200,10 @@ func (i *Image) FixedOrientation() *Image {
 }
 
 func ImageFromGo(image image.Image) *Image {
+	canvas := CanvasNew()
+
+	canvas.SetSize(goImageSize(image))
+	canvas.SetGoImage(image, zgeo.Pos{0, 0})
 	// maybe this can be better too, not go via PNG?
 	data, err := GoImagePNGData(image)
 	if err != nil {
@@ -236,13 +211,5 @@ func ImageFromGo(image image.Image) *Image {
 		return nil
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
-	i := &Image{}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	i.load(surl, func(success bool) {
-		wg.Done()
-	})
-	wg.Wait()
-	// zlog.Info("Loaded image from native", zlog.GetCallingStackString())
-	return i
+	return ImageFromPath(surl, nil)
 }

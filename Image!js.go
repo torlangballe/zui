@@ -3,11 +3,8 @@
 package zui
 
 import (
-	"bytes"
 	"image"
-	"image/jpeg"
 	"image/png"
-	"io"
 	"os"
 
 	"github.com/disintegration/imaging"
@@ -38,6 +35,10 @@ func ImageFromGo(n image.Image) *Image {
 	i.GoImage = n
 	i.scale = 1
 	return i
+}
+
+func ImageToGo(img *Image) image.Image {
+	return img.GoImage
 }
 
 func ImageFromPath(path string, got func(*Image)) *Image {
@@ -87,12 +88,13 @@ func (i *Image) TintedWithColor(color zgeo.Color) *Image {
 	return i
 }
 
-func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
-	scale := float64(i.scale)
-	newImage := goImageShrunkInto(i.GoImage, scale, size, proportional)
-	zlog.Assert(newImage != nil, "shunk image nil")
-	return ImageFromGo(newImage)
-}
+// func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
+// 	scale := float64(i.scale)
+// 	newImage := GoImageShrunkInto(i.GoImage, scale, size, proportional)
+// 	zlog.Assert(newImage != nil, "shunk image nil")
+// 	img := ImageFromGo(newImage)
+// 	return img
+// }
 
 func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
 	// config := cutter.Config{
@@ -132,11 +134,6 @@ func (i *Image) SaveToPNG(filepath string) error {
 	return nil
 }
 
-func (i *Image) Encode(w io.Writer, qualityPercent int) error {
-	options := jpeg.Options{Quality: qualityPercent}
-	return jpeg.Encode(w, i.GoImage, &options)
-}
-
 func ImageFromFile(filepath string) (i *Image, format string, err error) {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -149,33 +146,9 @@ func ImageFromFile(filepath string) (i *Image, format string, err error) {
 	return ImageFromGo(ni), f, nil
 }
 
-func (i *Image) SaveToJPEG(filepath string, qualityPercent int) error {
-	out, err := os.Create(filepath)
-	if err != nil {
-		return zlog.Error(err, "os.create", filepath)
-	}
-	defer out.Close()
-	err = i.Encode(out, qualityPercent)
-	if err != nil {
-		return zlog.Error(err, "encode")
-	}
-	return nil
-}
-
-func (i *Image) PNGData() ([]byte, error) {
-	return GoImagePNGData(i.GoImage)
-}
-
-func (i *Image) JPEGData(qualityPercent int) ([]byte, error) {
-	out := bytes.NewBuffer([]byte{})
-	options := jpeg.Options{Quality: qualityPercent}
-	err := jpeg.Encode(out, i.GoImage, &options)
-	if err != nil {
-		err = zlog.Error(err, "encode")
-		return []byte{}, err
-	}
-	return out.Bytes(), nil
-}
+// func (i *Image) PNGData() ([]byte, error) {
+// 	return GoImagePNGData(i.GoImage)
+// }
 
 func (i *Image) GetLeftRightFlipped() *Image {
 	return i

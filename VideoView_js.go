@@ -50,7 +50,7 @@ func (v *VideoView) getNextImage(continuousImageHandler func(image.Image) bool) 
 		v.makeRenderCanvas()
 	}
 	v.renderCanvas.context.Call("drawImage", v.Element, 0, 0, v.StreamSize.W, v.StreamSize.H)
-	goImage := v.renderCanvas.Image(zgeo.Rect{})
+	goImage := v.renderCanvas.GoImage(zgeo.Rect{})
 	continuousImageHandler(goImage)
 }
 

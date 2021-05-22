@@ -233,7 +233,6 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 
 func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	path := zgeo.PathNew()
-	// zlog.Info("shapeViewDraw:", v.Type, v.textInfo.Text, v.Color(), v.canvas != nil, v.MinSize(), rect, view.ObjectName(), view.Rect())
 	switch v.Type {
 	case ShapeViewTypeStar:
 		path.AddStar(rect, v.Count, v.Ratio)
@@ -307,7 +306,6 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 					textRect.SetMinX(ir.Max().X + v.ImageGap)
 				}
 			}
-			// zlog.Info("SV Image Draw:", v.ObjectName(), ir, rect, v.image.Size())
 			canvas.DrawImage(drawImage, true, useDownsampleCache, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()

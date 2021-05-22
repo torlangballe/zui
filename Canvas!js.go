@@ -240,3 +240,7 @@ func (c *Canvas) SetFillRuleEvenOdd(eo bool) {
 		c.context.SetFillRule(gg.FillRuleWinding)
 	}
 }
+
+func (c *Canvas) ZImage() *Image {
+	return ImageFromGo(c.Image(zgeo.Rect{}))
+}

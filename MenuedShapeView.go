@@ -316,7 +316,6 @@ func (v *MenuedShapeView) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
-		// zlog.Info("menu pop closed", dismissed)
 		if !dismissed || v.IsMultiple { // if multiple, we handle any select/deselect done
 			for i, item := range v.items {
 				if item.IsAction && item.Selected {
@@ -331,6 +330,11 @@ func (v *MenuedShapeView) popup() {
 			}
 			if v.selectedHandler != nil {
 				v.selectedHandler()
+			}
+			if v.IsStatic {
+				for i := range v.items {
+					v.items[i].Selected = false
+				}
 			}
 			v.updateTitle()
 		}

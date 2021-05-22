@@ -452,12 +452,11 @@ func (v *ContainerView) DetachChild(subView View) {
 }
 
 func (v *ContainerView) drawIfExposed() {
-	// zlog.Info("CoV drawIf:", v.ObjectName())
 	v.CustomView.drawIfExposed()
 	for _, c := range v.cells {
 		if !c.Collapsed {
 			et, got := c.View.(ExposableType)
-			//			zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
+			// zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
 			if got {
 				et.drawIfExposed()
 			}

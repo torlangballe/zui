@@ -45,7 +45,6 @@ func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, d
 		}
 		c.drawPlainImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect)
 	} else {
-		// zlog.Info("Canvas.DrawImage", image.Size(), sourceRect, image.Path, destRect, image.SetCapInsets())
 		if synchronous {
 			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
 		} else {
@@ -125,14 +124,6 @@ func canvasGetTextSize(text string, font *Font) zgeo.Size {
 	measuredTexts[m] = s
 	measureTextMutex.Unlock()
 	return s
-}
-
-func (c *Canvas) ZImage(cut zgeo.Rect) *Image {
-	gi := c.Image(cut)
-	if gi == nil {
-		return nil
-	}
-	return ImageFromGo(gi)
 }
 
 func (c *Canvas) StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.PathLineType) {
