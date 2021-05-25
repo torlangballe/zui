@@ -48,6 +48,7 @@ func WindowNew() *Window {
 // This can be used to decide if to create a window or not if it already exists
 func WindowExistsActivate(winID string) bool {
 	for w, _ := range windows {
+		// zlog.Info("WindowExistsActivate:", w.ID, "==", winID)
 		if w.ID == winID {
 			w.Activate()
 			return true

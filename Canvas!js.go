@@ -31,10 +31,10 @@ func (c *Canvas) String() string {
 	return fmt.Sprintf("context:%dx%d", c.context.Width(), c.context.Height())
 }
 
-func CanvasFromImage(image *Image) *Canvas {
-	zlog.Assert(image != nil && image.GoImage != nil)
+func CanvasFromGoImage(img image.Image) *Canvas {
+	zlog.Assert(img != nil)
 	c := &Canvas{}
-	c.context = gg.NewContextForImage(image.GoImage)
+	c.context = gg.NewContextForImage(img)
 	zlog.Assert(c.context != nil)
 	return c
 }
@@ -228,8 +228,9 @@ func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bo
 	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
 }
 
-func (c *Canvas) Image(cut zgeo.Rect) image.Image {
+func (c *Canvas) GoImage(cut zgeo.Rect) image.Image {
 	i := c.context.Image()
+	zlog.Assert(cut.IsNull())
 	return i
 }
 
@@ -242,5 +243,5 @@ func (c *Canvas) SetFillRuleEvenOdd(eo bool) {
 }
 
 func (c *Canvas) ZImage() *Image {
-	return ImageFromGo(c.Image(zgeo.Rect{}))
+	return ImageFromGo(c.GoImage(zgeo.Rect{}))
 }

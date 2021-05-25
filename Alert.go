@@ -82,10 +82,12 @@ func AlertAsk(title string, handle func(ok bool)) {
 	})
 }
 
-func AlertShowError(text string, err error) {
-	a := AlertNew(text + "\n" + err.Error())
+func AlertShowError(err error, items ...interface{}) {
+	str := zstr.SprintSpaced(items...)
+	str = zstr.Concat("\n", str, err)
+	a := AlertNew(str)
 	a.Show(nil)
-	zlog.Error(err, text)
+	zlog.Error(err, str)
 }
 
 func (a *Alert) ShowOK(handle func()) {

@@ -80,7 +80,7 @@ func doAuth(view View, a zusers.Authentication, got func(auth zusers.Authenticat
 
 	err := zrpc.ToServerClient.CallRemote("UsersCalls.Authenticate", &a, &aret)
 	if err != nil {
-		AlertShowError("Authenticate Call Error", err)
+		AlertShowError(err, "Authenticate Call Error")
 		return
 	}
 	zlog.Info("Do auth:", aret)
@@ -110,7 +110,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 			}
 			return
 		}
-		AlertShowError("Authentication Error", err)
+		AlertShowError(err, "Authentication Error")
 	}
 	AuthenticationOpenDialog(canCancel, func(auth zusers.AuthenticationResult) {
 		client.ID = auth.Token

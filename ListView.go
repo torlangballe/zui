@@ -338,10 +338,10 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
 		col := v.SelectedColor
-		if v.HighlightColor.Valid && i == v.highlightedIndex {
-			col = v.HighlightColor
-		} else if !v.selectionIndexes[i] {
-			if len(v.RowColors) == 0 {
+		if !v.selectionIndexes[i] {
+			if v.HighlightColor.Valid && i == v.highlightedIndex {
+				col = v.HighlightColor
+			} else if len(v.RowColors) == 0 {
 				col = zgeo.ColorWhite
 			} else {
 				col = v.RowColors[i%len(v.RowColors)]

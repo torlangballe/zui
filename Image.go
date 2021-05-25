@@ -59,7 +59,7 @@ func imageGetScaleFromPath(path string) int {
 	return 1
 }
 
-func goImageSize(img image.Image) zgeo.Size {
+func GoImageZSize(img image.Image) zgeo.Size {
 	return zgeo.Size{float64(img.Bounds().Dx()), float64(img.Bounds().Dy())}
 }
 
@@ -68,7 +68,7 @@ func goImageSize(img image.Image) zgeo.Size {
 // package to downsample, which works on underlying image types.
 func GoImageShrunkInto(goImage image.Image, screenScale float64, size zgeo.Size, proportional bool) image.Image {
 	var vsize = size
-	s := goImageSize(goImage)
+	s := GoImageZSize(goImage)
 	if proportional {
 		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{}).Size
 	}

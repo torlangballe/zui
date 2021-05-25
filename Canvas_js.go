@@ -316,7 +316,7 @@ func (c *Canvas) SetGoImage(img image.Image, pos zgeo.Pos) {
 	bytes := rgba.Pix
 	array := js.Global().Get("Uint8ClampedArray").New(len(bytes))
 	js.CopyBytesToJS(array, bytes)
-	s := goImageSize(img)
+	s := GoImageZSize(img)
 	iDataType := js.Global().Get("ImageData")
 	idata := iDataType.New(array, int(s.W), int(s.H))
 	c.context.Call("putImageData", idata, pos.X, pos.Y)

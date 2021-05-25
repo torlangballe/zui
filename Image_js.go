@@ -199,13 +199,15 @@ func (i *Image) FixedOrientation() *Image {
 	return i
 }
 
-func ImageFromGo(image image.Image) *Image {
+func CanvasFromGoImage(img image.Image) *Canvas {
 	canvas := CanvasNew()
+	canvas.SetSize(GoImageZSize(img))
+	canvas.SetGoImage(img, zgeo.Pos{0, 0})
+	return canvas
+}
 
-	canvas.SetSize(goImageSize(image))
-	canvas.SetGoImage(image, zgeo.Pos{0, 0})
-	// maybe this can be better too, not go via PNG?
-	data, err := GoImagePNGData(image)
+func ImageFromGo(img image.Image) *Image {
+	data, err := GoImagePNGData(img)
 	if err != nil {
 		zlog.Error(err)
 		return nil
