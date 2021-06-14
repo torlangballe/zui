@@ -2,6 +2,7 @@ package zui
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/torlangballe/zutil/zbool"
@@ -37,15 +38,25 @@ func AppMainArgs() (path string, args map[string]string) {
 func AppSetUIDefaults(useTokenAuth bool) (part string, args map[string]string) {
 	url, _ := url.Parse(AppURL())
 	host, _ := znet.GetHostAndPort(url)
-
+	args = map[string]string{}
+	for k, v := range url.Query() {
+		args[k] = v[0]
+	}
+	// fmt.Println("AppSetUIDefaults:", url.Query, args, AppURL())
 	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
-	// zlog.Info("AppSetUIDefaults:", host, url.Host)
-	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth)
+	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
+	port, _ := strconv.Atoi(args["zrpcport"])
+	if port != 0 {
+		zrpc.ToServerClient.Port = port
+	}
 	DefaultLocalKeyValueStore = KeyValueStoreNew(true)
 	part, args = AppMainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		DebugMode = true
+	}
+	if zbool.FromString(args["ztest"], false) {
+		zlog.IsInTests = true
 	}
 	return
 }
@@ -53,4 +64,3 @@ func AppSetUIDefaults(useTokenAuth bool) (part string, args map[string]string) {
 func appNew(a *App) {
 
 }
-

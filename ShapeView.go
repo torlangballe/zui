@@ -138,7 +138,7 @@ func (v *ShapeView) GetImage() *Image {
 
 func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
-	if v.textInfo.Text != "" {
+	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		ts, _, _ := v.textInfo.GetBounds()
 		ts.Add(zgeo.Size{16, 6})
 		ts.W *= 1.1
@@ -312,7 +312,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 			}
 		}
 	}
-	if v.textInfo.Text != "" {
+	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		t := v.textInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
 		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}

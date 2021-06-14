@@ -149,7 +149,7 @@ func (v *NativeView) SetOnInputHandler(handler func())                          
 func (v *NativeView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}
 
-func (v *NativeView) ReplaceChild(child, replace View) error {
+func (v *NativeView) ReplaceChild(child, with View) error {
 	return nil
 }
 func (v *NativeView) AllParents() (all []*NativeView) {

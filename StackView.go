@@ -66,6 +66,7 @@ func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 
 func (v *StackView) ArrangeChildren(onlyChild *View) {
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
+	// zlog.PushProfile(v.ObjectName())
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
@@ -74,7 +75,9 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 	lays := v.getLayoutCells(rm)
 	// if v.ObjectName() == "header" {
 	// }
+	// zlog.ProfileLog("got cells")
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
+	// zlog.ProfileLog("did layout")
 	// for i, r := range rects {
 	// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
 	// }
@@ -85,5 +88,5 @@ func (v *StackView) ArrangeChildren(onlyChild *View) {
 			c.View.SetRect(r)
 		}
 	}
-	// zlog.Info("*********** Stack.ArrangeChildren Done:", v.ObjectName())
+	// zlog.EndProfile("stack done rects")
 }

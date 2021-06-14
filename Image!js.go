@@ -42,8 +42,12 @@ func ImageToGo(img *Image) image.Image {
 }
 
 func ImageFromPath(path string, got func(*Image)) *Image {
-	isFile := !zhttp.StringStartsWithHTTPX(path)
-	goImage := goImageFromPath(path, isFile)
+	var goImage image.Image
+	if zhttp.StringStartsWithHTTPX(path) {
+		goImage, _ = GoImageFromURL(path)
+	} else {
+		goImage, _ = GoImageFromFile(path)
+	}
 	if goImage == nil {
 		if got != nil {
 			got(nil)

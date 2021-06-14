@@ -21,8 +21,8 @@ var windows = map[*Window]bool{}
 type Window struct {
 	windowNative
 	HandleClosed        func()
-	HandleBeforeResized func(r zgeo.Rect) bool // HandleBeforeResize  is called before window re-arranges child view
-	HandleAfterResized  func(r zgeo.Rect) bool // HandleAfterResize  is called after window re-arranges child view
+	HandleBeforeResized func(r zgeo.Rect) // HandleBeforeResize  is called before window re-arranges child view
+	HandleAfterResized  func(r zgeo.Rect) // HandleAfterResize  is called after window re-arranges child view
 	ID                  string
 	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
 	dismissed           bool // this stores if window is dismissed or closed for other reasons, used by present close functions

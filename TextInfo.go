@@ -193,20 +193,6 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
 	}
 	canvas.SetColor(ti.Color)
-	// switch ti.Type {
-	//     case ZTextDrawType.fill
-	//         //                    CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
-	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.fill)
-
-	//     case ZTextDrawType.stroke
-	//         canvas.context.setLineWidth(CGFloat(strokeWidth))
-	//         //                CGContextSetFillColorWithColor(canvas.context, canvaspfcolor)
-	//         // CGContextSetStrokeColorWithColor(canvas.context, canvaspfcolor)
-	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.stroke)
-
-	//     case ZTextDrawType.clip
-	//         canvas.context.setTextDrawingMode(CGTextDrawingMode.clip)
-	// }
 	if ti.Type == TextInfoStroke {
 		w = ti.StrokeWidth
 	}
@@ -282,6 +268,8 @@ func TextInfoWidthOfString(str string, font *Font) float64 {
 }
 
 func (ti *TextInfo) GetColumnsSize(cols int) zgeo.Size {
+	var temp = *ti
+	temp.Text = ""
 	const letters = "etaoinsrhdlucmfywgpbvkxqjz"
 	len := len(letters)
 	for i := 0; i < cols; i++ {
@@ -289,8 +277,8 @@ func (ti *TextInfo) GetColumnsSize(cols int) zgeo.Size {
 		if i%8 == 4 {
 			c = strings.ToUpper(c)
 		}
-		ti.Text += c
+		temp.Text += c
 	}
-	s, _, _ := ti.GetBounds()
+	s, _, _ := temp.GetBounds()
 	return s
 }

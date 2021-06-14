@@ -132,3 +132,9 @@ func (c *Canvas) StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.P
 	path.LineTo(zgeo.Pos{x2, y})
 	c.StrokePath(path, width, ltype)
 }
+
+func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color) {
+	colors := []zgeo.Color{col1, col2}
+	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
+}

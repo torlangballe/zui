@@ -13,9 +13,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-func init() {
-}
-
 type canvasNative struct {
 	context *gg.Context
 }

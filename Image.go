@@ -3,14 +3,15 @@ package zui
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
-	"io"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	//"github.com/nfnt/resize"
 
@@ -19,11 +20,17 @@ import (
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /20/10/15.
+
+type SetableImage interface {
+	image.Image
+	Set(x, y int, c color.Color)
+}
 
 type Image struct {
 	imageBase
@@ -94,33 +101,25 @@ func GoImageShrunkInto(goImage image.Image, screenScale float64, size zgeo.Size,
 	return newImage
 }
 
-func goImageFromPath(path string, isFile bool) image.Image {
-	var err error
-	var reader io.Reader
-	if isFile {
-		file, err := os.Open(path)
-		if err != nil {
-			zlog.Error(err, "open", path)
-			return nil
-		}
-		reader = file
-	} else {
-		params := zhttp.MakeParameters()
-		params.Method = http.MethodGet
-		params.Headers["Origin"] = "https://192.168.0.30:443"
-		resp, err := zhttp.GetResponse(path, params)
-		if err != nil {
-			zlog.Error(err, "get", path, zlog.GetCallingStackString())
-			return nil
-		}
-		reader = resp.Body
-	}
-	goImage, _, err := image.Decode(reader)
+func GoImageFromFile(path string) (image.Image, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		zlog.Error(err, "decode", path)
-		return nil
+		return nil, err
 	}
-	return goImage
+	goImage, _, err := image.Decode(file)
+	return goImage, err
+}
+
+func GoImageFromURL(path string) (image.Image, error) {
+	params := zhttp.MakeParameters()
+	params.Method = http.MethodGet
+	params.Headers["Origin"] = "https://192.168.0.30:443"
+	resp, err := zhttp.GetResponse(path, params)
+	if err != nil {
+		return nil, err
+	}
+	goImage, _, err := image.Decode(resp.Body)
+	return goImage, err
 }
 
 func GoImagePNGData(goImage image.Image) ([]byte, error) {
@@ -152,6 +151,19 @@ func GoImageToJPEGFile(img image.Image, filepath string, qualityPercent int) err
 	defer out.Close()
 	options := jpeg.Options{Quality: qualityPercent}
 	err = jpeg.Encode(out, img, &options)
+	if err != nil {
+		return zlog.Error(err, "encode")
+	}
+	return nil
+}
+
+func GoImageToPNGFile(img image.Image, filepath string) error {
+	out, err := os.Create(filepath)
+	if err != nil {
+		return zlog.Error(err, zlog.StackAdjust(1), "os.create", filepath)
+	}
+	defer out.Close()
+	err = png.Encode(out, img)
 	if err != nil {
 		return zlog.Error(err, "encode")
 	}
@@ -202,11 +214,126 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
 	// this can be better, use canvas.Image()
 	goImage := ImageToGo(i)
 	if goImage == nil {
-		zlog.Error(nil, "goImageFromPath")
+		zlog.Error(nil, "GoImageFromPath")
 		return nil
 	}
 	screenScale := float64(i.scale)
 	newGoImage := GoImageShrunkInto(goImage, screenScale, size, proportional)
 	img := ImageFromGo(newGoImage)
 	return img
+}
+
+func GoImagesAreIdentical(img1, img2 image.Image) bool {
+	b := img1.Bounds()
+	if b != img2.Bounds() {
+		return false
+	}
+	xlen := b.Dx()
+	ylen := b.Dy()
+	// xparts := zmath.LengthIntoDividePoints(xlen)
+	// yparts := zmath.LengthIntoDividePoints(ylen)
+	count := 0
+	for x := 0; x < xlen; x++ {
+		yend := ylen
+		if x != xlen-1 {
+			yend = zint.Min(x+1, ylen)
+		}
+		zlog.Info("c:", x, yend)
+		for y := 0; y < yend; y++ {
+			count++
+		}
+	}
+	zlog.Info("done", xlen, ylen, xlen*ylen, count)
+	return true
+}
+
+func GoImagesChangeDifference(img1, img2 image.Image, change func(imgSet SetableImage, amount float32, c1, c2 color.Color, x, y int)) (diffImage SetableImage, changedAmount float32) {
+	w := img1.Bounds().Dx()
+	h := img2.Bounds().Dy()
+	if w != img2.Bounds().Dx() || h != img2.Bounds().Dy() {
+		return nil, 1
+	}
+	di := image.NewNRGBA(image.Rectangle{Max: image.Pt(w, h)})
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c1 := img1.At(x, y)
+			c2 := img1.At(x, y)
+			change(di, -1, c1, c2, x, y) // this is for initing dest image
+		}
+	}
+	var count int
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c1 := img1.At(x, y)
+			c2 := img2.At(x, y)
+			if c1 == c2 {
+				change(di, 0, c1, c2, x, y)
+				continue
+			}
+			d := zgeo.ColorFromGo(c1).Difference(zgeo.ColorFromGo(c2))
+			if d < 0.02 {
+				change(di, 0, c1, c2, x, y)
+				continue
+			}
+			count++
+			change(di, d, c1, c2, x, y)
+		}
+	}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			c1 := img1.At(x, y)
+			c2 := img1.At(x, y)
+			change(di, -2, c1, c2, x, y) // this is for initing dest image
+		}
+	}
+	if count == 0 {
+		return nil, 0
+	}
+	return di, float32(count) / float32(w*h)
+}
+
+func DrawCircle(img SetableImage, circle zgeo.Circle, col zgeo.Color) {
+	// gcol := col.GoColor()
+	alpha := col.Colors.A
+	col.Colors.A = 1
+	x1 := int(math.Max(0, circle.Center.X-circle.Radius))
+	dx := float64(img.Bounds().Dx())
+	dy := float64(img.Bounds().Dy())
+	x2 := int(math.Ceil(math.Min(dx-1, circle.Center.X+circle.Radius)))
+	y1 := int(math.Max(0, circle.Center.Y-circle.Radius))
+	y2 := int(math.Ceil(math.Min(dy-1, circle.Center.Y+circle.Radius)))
+	iradius := math.Floor(circle.Radius)
+	// zlog.Info("circle:", x1, y1, x2, y2)
+	for j := y1; j <= y2; j++ {
+		var p zgeo.Pos
+		p.Y = float64(j) - circle.Center.Y
+		for i := x1; i <= x2; i++ {
+			a := alpha
+			c := col
+			p.X = float64(i) - circle.Center.X
+			len := p.Length()
+			ilen := math.Floor(len)
+			fract := float32(len - ilen)
+			if ilen == iradius {
+				a *= (1 - fract)
+			}
+			if ilen <= iradius {
+				if a != 1 {
+					old := zgeo.ColorFromGo(img.At(i, j))
+					c = c.Mixed(old, 1-a)
+				}
+				img.Set(i, j, c.GoColor())
+			}
+		}
+	}
+}
+
+func HasImageExtension(surl string) bool {
+	str := zstr.HeadUntil(surl, "?")
+	for _, ext := range []string{"png", "jpeg", "jpg"} {
+		if strings.HasSuffix(str, "."+ext) {
+			return true
+		}
+	}
+	return false
 }

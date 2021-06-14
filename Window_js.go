@@ -103,11 +103,11 @@ func WindowOpen(o WindowOptions) *Window {
 
 func (win *Window) setOnResizeHandling() {
 	win.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("On Resize", win.hasResized)
-		if !win.hasResized {
-			win.hasResized = true
-			return nil
-		}
+		// zlog.Info("On Resize1", win.hasResized)
+		// if !win.hasResized { // removing this so we can get first resize... what was it for?
+		// 	win.hasResized = true
+		// 	return nil
+		// }
 		ztimer.StartIn(0.2, func() {
 			r := win.ContentRect()
 			if win.HandleBeforeResized != nil {
@@ -119,7 +119,6 @@ func (win *Window) setOnResizeHandling() {
 				win.ProgrammaticView.SetRect(r)
 				// setElementRect(win.element, r)
 				if win.HandleAfterResized != nil {
-					// zlog.Info("On Resized Call")
 					win.HandleAfterResized(r)
 				}
 			}
@@ -159,6 +158,7 @@ func (w *Window) AddView(v View) {
 	//	wn.Element = w.element.Get("document").Get("documentElement")
 	wn.Element = w.element.Get("document").Get("body")
 	wn.View = wn
+	wn.SetObjectName("window")
 	ViewGetNative(v).style().Set("overflowX", "hidden")
 	wn.AddChild(v, -1)
 }

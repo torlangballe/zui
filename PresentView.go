@@ -221,10 +221,10 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
 	size := v.CalculatedSize(rect.Size)
-	// zlog.Info("PresentView", size, v.ObjectName(), reflect.ValueOf(v).Type())
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
+	// zlog.Info("PresentView", size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
 	if attributes.Modal {
 		nv := ViewGetNative(v)
 		if nv != nil {
@@ -258,7 +258,6 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 			o := attributes.WindowOptions
 			o.Pos = &rect.Pos
 			o.Size = size
-			// zlog.Info("PresentView:", rect.Pos, size, attributes.ID)
 			win = WindowOpen(o)
 			win.AddView(outer)
 			if attributes.Title != "" {
@@ -272,7 +271,6 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 			}
 		}
 		v.SetRect(zgeo.Rect{Size: rect.Size})
-		// zlog.Info("Present SetRect", v.ObjectName(), time.Since(start))
 	}
 	firstPresented = true
 

@@ -37,10 +37,12 @@ type ListView struct {
 	HoverHighlight       bool
 	ExposeSetsRowBGColor bool
 	SelectedColor        zgeo.Color
+	HasUniformHight      bool
 
 	// topPos float64
-	stack *CustomView
-	rows  map[int]View
+	stack      *CustomView
+	rows       map[int]View
+	rowHeights map[int]float64
 }
 
 type ListViewIDGetter interface {
@@ -60,6 +62,7 @@ func ListViewNew(name string, selection map[int]bool) *ListView {
 func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.ScrollView.Init(view, name)
 	v.rows = map[int]View{}
+	v.rowHeights = map[int]float64{}
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
 	v.SelectedColor = ListViewDefaultSelectedColor
 	if selection != nil {
@@ -103,7 +106,7 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			break
 			// something happening here, no size calculated in table when nested in something
 		}
-		h += v.GetRowHeight(i)
+		h += getRowHeight(v, i, total)
 		// zlog.Info("ListView.CalculatedSize2:", v.ObjectName(), i, h)
 	}
 	s.H = h
@@ -147,7 +150,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) {
 	var pos zgeo.Pos
 	h := 0.0
 	for i := 0; i < count; i++ {
-		h += v.GetRowHeight(i)
+		h += getRowHeight(v, i, rect.Size)
 		if i != 0 {
 			h += v.spacing
 		}
@@ -159,6 +162,25 @@ func (v *ListView) SetRect(rect zgeo.Rect) {
 	v.stack.SetRect(r)
 	// zlog.Info("List set rect: stack", rect, r)
 	v.layoutRows(-1)
+}
+
+func getRowHeight(v *ListView, i int, total zgeo.Size) float64 {
+	if v.GetRowHeight != nil {
+		return v.GetRowHeight(i)
+	}
+	if v.HasUniformHight {
+		for _, h := range v.rowHeights {
+			return h
+		}
+	}
+	h := v.rowHeights[i]
+	if h != 0 {
+		return h
+	}
+	row := v.CreateRow(total, i)
+	h = row.CalculatedSize(total).H
+	v.rowHeights[i] = h
+	return h
 }
 
 func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
@@ -177,10 +199,9 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 	// start := time.Now()
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
-		s.H = v.GetRowHeight(i)
+		s.H = getRowHeight(v, i, v.Rect().Size)
 		s.W = ls.W
 		r := zgeo.Rect{zgeo.Pos{0, y}, s}
-		// zlog.Info("layout row:", i, v.YOffset)
 		if (onlyIndex == -1 || i == onlyIndex) && r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+ls.H {
 			// zlog.Info("actually layout row:", i)
 			if first == -1 {
@@ -189,7 +210,23 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 			last = i
 			row := v.rows[i]
 			if row != nil {
-				if row.Rect() != r {
+				calc := (row.Rect() != r)
+				if !calc {
+					ct, _ := row.(ContainerType)
+					if ct != nil {
+						ContainerTypeRangeChildren(ct, true, func(view View) bool {
+							nv := ViewGetNative(view)
+							if !nv.Presented {
+								nv.Presented = true
+								calc = true
+								return false
+							}
+							return true
+						})
+					}
+				}
+				// zlog.Info("LayoutRow:", row.ObjectName(), i, r)
+				if calc {
 					row.SetRect(r)
 				}
 				delete(oldRows, i)
@@ -198,7 +235,6 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				row = v.makeRow(s, i)
 				v.stack.AddChild(row, -1)
 				row.SetRect(r)
-				// zlog.Info("LV Create Row:", i, r)
 			}
 		}
 		y += s.H + v.spacing
@@ -338,7 +374,7 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	row := v.rows[i]
 	if row != nil {
 		col := v.SelectedColor
-		if !v.selectionIndexes[i] {
+		if !v.selectionIndexes[i] || !col.Valid {
 			if v.HighlightColor.Valid && i == v.highlightedIndex {
 				col = v.HighlightColor
 			} else if len(v.RowColors) == 0 {
@@ -533,7 +569,7 @@ func (v *ListView) GetFirstLastVisibleRowIndexes() (first int, last int) {
 	count := v.GetRowCount()
 	ls := v.LocalRect().Size
 	for i := 0; i < count; i++ {
-		e := y + v.GetRowHeight(i)
+		e := y + getRowHeight(v, i, v.Rect().Size)
 		if e >= v.YOffset && y <= v.YOffset+ls.H {
 			if first == -1 {
 				first = i
@@ -557,7 +593,7 @@ func (v *ListView) GetRectOfRow(row int) zgeo.Rect {
 	ls := v.LocalRect().Size
 	for i := 0; i < count; i++ {
 		var s zgeo.Size
-		s.H = v.GetRowHeight(i)
+		s.H = getRowHeight(v, i, v.Rect().Size)
 		if row == i {
 			s.W = ls.W
 			r := zgeo.Rect{zgeo.Pos{0, y}, s}
@@ -617,7 +653,7 @@ func (v *ListView) ReadyToShow(beforeWindow bool) {
 	if !beforeWindow && v.HighlightColor.Valid {
 		win := v.GetWindow()
 		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {
-			// zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
+			zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
 			switch key {
 			case KeyboardKeyTab:
 				if v.HighlightColor.Valid && v.highlightedIndex != -1 {

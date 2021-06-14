@@ -85,6 +85,7 @@ func (v *ImageView) Path() string {
 
 func (v *ImageView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
+	// zlog.Info("IV SR", v.Hierarchy(), p, rect)
 	// zlog.Info("ImageView SetRect:", rect, v.getjs("id"))
 	if v.ObjectName() == "zap!" {
 		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
@@ -96,6 +97,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.image != nil {
 		s = v.image.Size()
 	}
+	// zlog.Info("IV CS", v.Hierarchy(), s, p, v.image != nil, zlog.GetCallingStackString())
 	margSize := v.margin.Size
 	if !v.maxSize.IsNull() {
 		s = s.ShrunkInto(v.maxSize.Plus(margSize))
@@ -137,6 +139,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 	// zlog.Info("IV SetImage", path, v.getjs("id").String(), v.Rect(), v.image != nil)
 	v.setjs("href", path)
 	v.exposed = false
+	v.Presented = false
 	if image != nil {
 		v.image = image
 		v.Expose()
@@ -150,6 +153,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())
 			// }
 			v.image = ni
+			v.Presented = false
 			v.Expose()
 			if got != nil {
 				got(ni)

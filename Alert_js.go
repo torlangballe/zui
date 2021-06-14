@@ -31,3 +31,11 @@ func (a *Alert) showNative(handle func(result AlertResult)) {
 		}
 	}()
 }
+
+func AlertPromptForText(title string, got func(str string)) {
+	prompt := js.Global().Get("prompt")
+	e := prompt.Invoke(title)
+	if !e.IsNull() {
+		go got(e.String())
+	}
+}

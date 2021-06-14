@@ -114,4 +114,7 @@ func (k KeyValueStore) prefixKey(key *string) {
 	if (*key)[0] != '/' && k.KeyPrefix != "" {
 		*key = k.KeyPrefix + "/" + *key
 	}
+	if zlog.IsInTests {
+		*key += "_test"
+	}
 }

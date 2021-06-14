@@ -107,7 +107,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 	if sw.String() != "" {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
-	} else {
+	} else if v.Presented {
 		zlog.Info("parse empty Coord:", v.Hierarchy(), zlog.GetCallingStackString())
 	}
 
@@ -364,11 +364,11 @@ func (v *NativeView) AddChild(child View, index int) {
 	}
 }
 
-func (v *NativeView) ReplaceChild(child, replace View) {
-	v.AddChild(replace, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
-	replace.SetRect(child.Rect())
+func (v *NativeView) ReplaceChild(child, with View) {
+	v.AddChild(with, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	with.SetRect(child.Rect())
 	v.RemoveChild(child)
-	et, _ := replace.(ExposableType)
+	et, _ := with.(ExposableType)
 	// zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
 	if et != nil {
 		et.Expose()
@@ -505,6 +505,9 @@ func (v *NativeView) GetWindow() *Window {
 }
 
 func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
+	if zlog.IsInTests {
+		return
+	}
 	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler != nil {
 			// zlog.Info("Mouse enter", v.ObjectName())

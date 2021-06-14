@@ -5,6 +5,7 @@ package zui
 import (
 	"fmt"
 	"math"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,11 +16,21 @@ import (
 )
 
 type MenuedItem struct {
-	zdict.Item
+	// zdict.Item
+	Name       string
+	Value      interface{}
 	Selected   bool
 	LabelColor zgeo.Color
 	TextColor  zgeo.Color
 	IsAction   bool
+}
+
+type MenuedOptions struct {
+	ImagePath     string
+	IsStatic      bool // if set, user can't set a different value, but can press and see them. Shows number of items
+	IsMultiple    bool
+	HasLabelColor bool
+	StoreKey      string
 }
 
 type MenuedShapeView struct {
@@ -28,24 +39,21 @@ type MenuedShapeView struct {
 	selectedHandler func()
 	items           []MenuedItem
 
-	ImagePath     string
-	IsStatic      bool // if set, user can't set a different value, but can press and see them. Shows number of items
-	IsMultiple    bool
-	HasLabelColor bool
 	GetTitle      func(itemCount int) string
 	ActionHandler func(id string)
+	Options       MenuedOptions
 }
 
-var MenuedItemSeparator = MenuedItem{Item: zdict.Item{Name: MenuSeparatorID}}
+//var MenuedItemSeparator = MenuedItem{Item: zdict.Item{Name: MenuSeparatorID}}
+var MenuedItemSeparator = MenuedItem{Name: MenuSeparatorID}
 
-func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, isStatic, isMultiple bool) *MenuedShapeView {
+func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, opts MenuedOptions) *MenuedShapeView {
 	v := &MenuedShapeView{}
 	if minSize.IsNull() {
 		minSize.Set(20, 26)
 	}
 	v.ShapeView.Init(v, shapeType, minSize, name)
-	v.IsStatic = isStatic
-	v.IsMultiple = isMultiple
+	v.Options = opts
 	v.ImageMargin = zgeo.Size{}
 	v.SetPressedHandler(func() {
 		if len(v.items) != 0 {
@@ -62,10 +70,19 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 		}
 		v.updateTitle()
 	})
-
-	v.UpdateMenuedItems(items)
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.SetFont(FontNice(14, FontStyleNormal))
+
+	if opts.StoreKey != "" {
+		dict, got := DefaultLocalKeyValueStore.GetDict(opts.StoreKey)
+		if got {
+			for i, item := range items {
+				str := fmt.Sprint(item.Value)
+				_, items[i].Selected = dict[str]
+			}
+		}
+	}
+	v.UpdateMenuedItems(items)
 	// zlog.Info("MenuedShapeViewNew:", name, v.Color())
 	return v
 }
@@ -81,18 +98,19 @@ func (v *MenuedShapeView) SetPillStyle() {
 	v.ImageMargin.Set(4, 4)
 }
 
-func (v *MenuedShapeView) SelectedItem() zdict.Item {
+func (v *MenuedShapeView) SelectedItem() *zdict.Item {
 	sitems := v.SelectedItems()
 	if len(sitems) == 0 {
-		return zdict.Item{}
+		return nil
 	}
-	return sitems[0]
+	si := sitems[0]
+	return &si
 }
 
 func (v *MenuedShapeView) SelectedItems() (sitems zdict.Items) {
 	for _, item := range v.items {
 		if item.Selected {
-			sitems = append(sitems, item.Item)
+			sitems = append(sitems, zdict.Item{Name: item.Name, Value: item.Value})
 		}
 	}
 	return
@@ -107,14 +125,15 @@ func (v *MenuedShapeView) AddSeparator() {
 }
 
 func (v *MenuedShapeView) updateTitle() {
+	// zlog.Info("Menued updateTitle")
 	var nstr string
-	if v.IsStatic && v.GetTitle != nil {
+	if v.Options.IsStatic && v.GetTitle != nil {
 		name := v.GetTitle(len(v.items))
 		name = strings.Replace(name, `%d`, nstr, -1)
 		v.SetText(name)
 		return
 	}
-	if v.IsMultiple {
+	if v.Options.IsMultiple {
 		var count int
 		for _, i := range v.items {
 			if i.Selected {
@@ -129,13 +148,24 @@ func (v *MenuedShapeView) updateTitle() {
 			name := v.GetTitle(count)
 			name = strings.Replace(name, `%d`, nstr, -1)
 			v.SetText(name)
-		} else if v.IsMultiple {
+		} else if v.Options.IsMultiple {
 			v.SetText(nstr)
 		}
 	} else {
+		var spath, sval string
 		item := v.SelectedItem()
-		if item.Value != nil {
-			v.SetText(fmt.Sprint(item.Value))
+		if item != nil {
+			sval = fmt.Sprint(item.Value)
+			if v.Options.ImagePath != "" {
+				spath = path.Join(v.Options.ImagePath, sval+".png")
+				// zlog.Info("Menued SetValImage:", str)
+			}
+		}
+		if v.Options.ImagePath != "" {
+			v.SetImage(nil, spath, nil)
+		}
+		if item != nil && item.Value != nil && v.textInfo.Alignment != zgeo.AlignmentNone {
+			v.SetText(sval)
 		} else {
 			v.SetText("")
 		}
@@ -146,7 +176,8 @@ func (v *MenuedShapeView) UpdateItems(items zdict.Items, values []interface{}) {
 	var mitems []MenuedItem
 	for _, item := range items {
 		var m MenuedItem
-		m.Item = item
+		m.Name = item.Name
+		m.Value = item.Value
 		for _, v := range values {
 			if reflect.DeepEqual(item.Value, v) {
 				m.Selected = true
@@ -211,9 +242,9 @@ func (v *MenuedShapeView) popup() {
 	stack.SetBGColor(zgeo.ColorWhite)
 	//	list.ScrollView.SetBGColor(zgeo.ColorClear)
 	list.PressSelectable = true
-	list.PressUnselectable = v.IsMultiple
-	list.MultiSelect = v.IsMultiple
-	list.SelectedColor = zgeo.ColorWhite
+	list.PressUnselectable = v.Options.IsMultiple
+	list.MultiSelect = v.Options.IsMultiple
+	list.SelectedColor = zgeo.Color{}
 	list.HighlightColor = zgeo.ColorNew(0, 0.341, 0.847, 1)
 	list.HoverHighlight = true
 	list.ExposeSetsRowBGColor = true
@@ -231,7 +262,7 @@ func (v *MenuedShapeView) popup() {
 		return len(v.items)
 	}
 	rm := float64(rightMarg)
-	if v.HasLabelColor {
+	if v.Options.HasLabelColor {
 		rm += 24
 	}
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
@@ -250,6 +281,7 @@ func (v *MenuedShapeView) popup() {
 			} else if item.TextColor.Valid {
 				ti.Color = item.TextColor
 			}
+			// zlog.Info("Menuedcol:", i, ti.Color, list.IsRowHighlighted(i))
 			ti.Text = item.Name
 			ti.Font = v.Font()
 			if item.IsAction {
@@ -265,7 +297,7 @@ func (v *MenuedShapeView) popup() {
 				ti.Alignment = zgeo.Left
 				ti.Draw(canvas) // we keep black/white hightlighted color
 			}
-			if v.HasLabelColor && item.LabelColor.Valid {
+			if v.Options.HasLabelColor && item.LabelColor.Valid {
 				r := rect
 				r.SetMinX(rect.Max().X - rm + 6)
 				r = r.Expanded(zgeo.Size{-3, -3})
@@ -297,7 +329,7 @@ func (v *MenuedShapeView) popup() {
 			}
 			return
 		}
-		if !v.IsMultiple && fromPressed {
+		if !v.Options.IsMultiple && fromPressed {
 			PresentViewClose(stack, false, nil)
 		}
 	}
@@ -316,7 +348,7 @@ func (v *MenuedShapeView) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
-		if !dismissed || v.IsMultiple { // if multiple, we handle any select/deselect done
+		if !dismissed || v.Options.IsMultiple { // if multiple, we handle any select/deselect done
 			for i, item := range v.items {
 				if item.IsAction && item.Selected {
 					v.items[i].Selected = false
@@ -331,7 +363,7 @@ func (v *MenuedShapeView) popup() {
 			if v.selectedHandler != nil {
 				v.selectedHandler()
 			}
-			if v.IsStatic {
+			if v.Options.IsStatic {
 				for i := range v.items {
 					v.items[i].Selected = false
 				}

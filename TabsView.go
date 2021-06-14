@@ -4,6 +4,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -145,7 +146,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	tab.create = create
 	v.tabs[id] = tab
 	button.SetPressedHandler(func() {
-		v.SetTab(id)
+		go v.SetTab(id)
 	})
 	v.Header.Add(view, zgeo.BottomLeft)
 	if set {
@@ -249,7 +250,7 @@ func (v *TabsView) SetTab(id string) {
 			v.ChangedHandler(id)
 		}
 		WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("Set Tab container loaded:", waited)
+			zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
 				v.ArrangeChildren(nil)
 			}

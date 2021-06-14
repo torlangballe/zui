@@ -13,6 +13,8 @@ import (
 
 const emailKey = "zui.AuthenticationEmail"
 
+var AuthenticationCurrentUserID int64
+
 func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.AuthenticationResult)) {
 	const column = 120.0
 	v1 := StackViewVert("auth")
@@ -30,10 +32,10 @@ func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.Authenticatio
 	login.SetMinWidth(90)
 	login.MakeEnterDefault()
 
-	_, s1, _ := Labelize(emailField, "Email", column)
+	_, s1, _ := Labelize(emailField, "Email", column, zgeo.CenterLeft)
 	v1.Add(s1, zgeo.TopLeft|zgeo.HorExpand)
 
-	_, s2, _ := Labelize(passwordField, "Password", column)
+	_, s2, _ := Labelize(passwordField, "Password", column, zgeo.CenterLeft)
 	v1.Add(s2, zgeo.TopLeft|zgeo.HorExpand)
 
 	h1 := StackViewHor("buttons")
@@ -103,8 +105,9 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 		if err == nil {
 			var auth zusers.AuthenticationResult
 			auth.ID = user.ID
+			AuthenticationCurrentUserID = user.ID
 			auth.Token = client.ID
-			zlog.Info("CheckAndDoAuthentication existed:", auth)
+			// zlog.Info("CheckAndDoAuthentication existed:", auth)
 			if got != nil {
 				got(auth)
 			}
@@ -117,6 +120,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 		DefaultLocalKeyValueStore.SetString(auth.Token, tokenKey, true)
 		zlog.Info("got auth:", auth)
 		if got != nil {
+			AuthenticationCurrentUserID = auth.ID
 			got(auth)
 		}
 	})
