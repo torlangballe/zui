@@ -239,6 +239,6 @@ func (c *Canvas) SetFillRuleEvenOdd(eo bool) {
 	}
 }
 
-func (c *Canvas) ZImage() *Image {
-	return ImageFromGo(c.GoImage(zgeo.Rect{}))
+func (c *Canvas) ZImage(got func(image *Image)) {
+	ImageFromGo(c.GoImage(zgeo.Rect{}), got)
 }

@@ -82,15 +82,6 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.SetFont(f)
 }
 
-// func (v *ShapeView) SetColor(c zgeo.Color) View {
-// 	v.textInfo.Color = c
-// 	return v
-// }
-
-// func (v *ShapeView) Color() zgeo.Color {
-// 	return v.textInfo.Color
-// }
-
 // Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
 func (v *ShapeView) SetText(text string) {
 	v.textInfo.Text = text
@@ -144,7 +135,6 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		ts.W *= 1.1
 		s.Maximize(ts)
 	}
-
 	if v.image != nil {
 		is := v.image.Size()
 		if !v.ImageMaxSize.IsNull() {
@@ -182,6 +172,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.MaxSize.H != 0.0 {
 		zfloat.Minimize(&s.H, v.MaxSize.H)
 	}
+
 	// zlog.Info(v.margin, v.MaxSize, v.ImageMargin, "SV Calcsize:", v.ObjectName(), s)
 	if v.Type == ShapeViewTypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
@@ -273,7 +264,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	textRect := rect.Plus(v.margin)
 	if v.image != nil && !v.image.loading {
 		drawImage := v.image
-		if v.IsHighlighted {
+		if v.IsHighlighted() {
 			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
 		}
 		o := v.ImageOpacity

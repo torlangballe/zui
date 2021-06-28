@@ -36,6 +36,7 @@ func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, d
 	if image == nil {
 		return
 	}
+	// zlog.Info("C.DrawImage:", image.Size(), image.Path)
 	if sourceRect.IsNull() {
 		sourceRect = zgeo.Rect{Size: image.Size()}
 	}
@@ -80,7 +81,7 @@ func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity flo
 	c.drawInsetRow(image, inset, dest, size.H+inset.Max().Y, -inset.Max().Y, dest.Max().Y+inset.Max().Y, -inset.Max().Y, opacity)
 }
 
-func (c *Canvas) DrawRect(rect zgeo.Rect) {
+func (c *Canvas) FillRect(rect zgeo.Rect) {
 	path := zgeo.PathNewRect(rect, zgeo.Size{})
 	c.FillPath(path)
 }
@@ -130,6 +131,13 @@ func (c *Canvas) StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.P
 	path := zgeo.PathNew()
 	path.MoveTo(zgeo.Pos{x1, y})
 	path.LineTo(zgeo.Pos{x2, y})
+	c.StrokePath(path, width, ltype)
+}
+
+func (c *Canvas) StrokeVertical(x, y1, y2 float64, width float64, ltype zgeo.PathLineType) {
+	path := zgeo.PathNew()
+	path.MoveTo(zgeo.Pos{x, y1})
+	path.LineTo(zgeo.Pos{x, y2})
 	c.StrokePath(path, width, ltype)
 }
 

@@ -12,30 +12,30 @@ import (
 type View interface {
 	CalculatedSize(total zgeo.Size) zgeo.Size
 
-	SetObjectName(name string) View
+	SetObjectName(name string)
 	ObjectName() string
 
-	SetUsable(usable bool) View
+	SetUsable(usable bool)
 	Usable() bool
 
-	SetAlpha(alpha float32) View
+	SetAlpha(alpha float32)
 	Alpha() float32
 
-	SetColor(color zgeo.Color) View   // Color is the main color of a view. If it is stroked and filled, it is fill color
-	SetBGColor(color zgeo.Color) View // BGColor is all color in background of view, not just fill color
-	SetCorner(radius float64) View
-	SetStroke(width float64, color zgeo.Color) View
+	SetColor(color zgeo.Color)   // Color is the main color of a view. If it is stroked and filled, it is fill color
+	SetBGColor(color zgeo.Color) // BGColor is all color in background of view, not just fill color
+	SetCorner(radius float64)
+	SetStroke(width float64, color zgeo.Color)
 
-	SetCanFocus(can bool) View
-	Focus(focus bool) View
+	SetCanFocus(can bool)
+	Focus(focus bool)
 	IsFocused() bool
 
-	Opaque(opaque bool) View
+	//Opaque(opaque bool) View
 
 	SetRect(rect zgeo.Rect)
 	Rect() zgeo.Rect
 
-	Show(show bool) View
+	Show(show bool)
 	IsShown() bool
 
 	AddChild(child View, index int) // -1 is add to end
@@ -110,7 +110,7 @@ func ViewChild(v View, path string) View {
 	}
 	ct := v.(ContainerType)
 	if ct != nil {
-		for _, ch := range ct.GetChildren() {
+		for _, ch := range ct.GetChildren(true) {
 			// zlog.Info("Childs:", name, "'"+ch.ObjectName()+"'")
 			if name == "*" || ch.ObjectName() == name {
 				if len(parts) == 1 {

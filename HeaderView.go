@@ -96,7 +96,7 @@ func (v *HeaderView) handleButtonPressed(button *ImageButtonView, h Header) {
 		sorting.SmallFirst = !sorting.SmallFirst
 		zslice.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
-		for _, c := range v.GetChildren() {
+		for _, c := range v.GetChildren(false) {
 			tri, _ := c.(*ImageButtonView).FindViewWithName("sort", false)
 			if tri != nil {
 				tri.SetAlpha(0.5)
@@ -202,7 +202,7 @@ func (v *HeaderView) Populate(headers []Header) {
 }
 
 func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
-	children := stack.GetChildren()
+	children := stack.GetChildren(false)
 	x := 0.0
 	w := stack.Rect().Size.W
 	for i := range children {

@@ -20,3 +20,6 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 func (v *CustomView) SetLongPressedHandler(handler func()) {
 	v.longPressed = handler
 }
+
+func (v *CustomView) Expose() {
+}

@@ -4,7 +4,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -212,7 +211,6 @@ func (v *TabsView) SetTab(id string) {
 			v.setButtonOn(v.CurrentID, false)
 		}
 		if v.ChildView != nil {
-			// zlog.Info("Remove Child!:", v.ChildView.ObjectName())
 			v.RemoveChild(v.ChildView)
 		}
 		tab := v.tabs[id]
@@ -222,7 +220,7 @@ func (v *TabsView) SetTab(id string) {
 		v.setButtonOn(id, true)
 		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-		// zlog.Info("Call collapse:", id, len(v.cells))
+		// zlog.Info("Call collapse:", id, len(v.cells), !hasSeparator)
 		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 		// zlog.Info("TV SetTab", v.Presented)
 		if !v.Presented {
@@ -243,24 +241,17 @@ func (v *TabsView) SetTab(id string) {
 		if et != nil {
 			et.drawIfExposed()
 		}
-		/*
-			})
-		*/
 		if v.ChangedHandler != nil {
 			v.ChangedHandler(id)
 		}
 		WhenContainerLoaded(ct, func(waited bool) {
-			zlog.Info("Set Tab container loaded:", waited)
+			// zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
 				v.ArrangeChildren(nil)
 			}
 		})
 	}
 }
-
-// func (v *TabsView) GetChildren() []View {
-// 	return v.StackView.GetChildren()
-// }
 
 func (v *TabsView) ArrangeChildren(onlyChild *View) {
 	// zlog.Info("TabView ArrangeChildren")

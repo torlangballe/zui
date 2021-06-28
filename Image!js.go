@@ -30,36 +30,35 @@ func ImageNewNRGBA(size zgeo.Size) *Image {
 	return i
 }
 
-func ImageFromGo(n image.Image) *Image {
+func ImageFromGo(img image.Image, got func(image *Image)) {
 	i := &Image{}
-	i.GoImage = n
+	i.GoImage = img
 	i.scale = 1
-	return i
+	got(i)
 }
 
-func ImageToGo(img *Image) image.Image {
-	return img.GoImage
+func (i *Image) ToGo() image.Image {
+	return i.GoImage
 }
 
-func ImageFromPath(path string, got func(*Image)) *Image {
+func ImageFromPath(path string, got func(*Image)) {
 	var goImage image.Image
 	if zhttp.StringStartsWithHTTPX(path) {
 		goImage, _ = GoImageFromURL(path)
 	} else {
-		goImage, _ = GoImageFromFile(path)
+		goImage, _, _ = GoImageFromFile(path)
 	}
 	if goImage == nil {
 		if got != nil {
 			got(nil)
-			return nil
 		}
 	}
-	i := ImageFromGo(goImage)
-	i.scale = imageGetScaleFromPath(path)
-	if got != nil {
-		got(i)
-	}
-	return i
+	ImageFromGo(goImage, func(i *Image) {
+		i.scale = imageGetScaleFromPath(path)
+		if got != nil {
+			got(i)
+		}
+	})
 }
 
 func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
@@ -138,16 +137,16 @@ func (i *Image) SaveToPNG(filepath string) error {
 	return nil
 }
 
-func ImageFromFile(filepath string) (i *Image, format string, err error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, "", err
+func ImageFromFile(filepath string, got func(i *Image, format string, err error)) {
+	var zi *Image
+	gi, format, err := GoImageFromFile(filepath)
+	if gi == nil {
+		got(nil, format, err)
+		return
 	}
-	ni, f, err := image.Decode(file)
-	if err != nil {
-		return nil, f, err
-	}
-	return ImageFromGo(ni), f, nil
+	ImageFromGo(gi, func(zi *Image) {
+		got(zi, format, err)
+	})
 }
 
 // func (i *Image) PNGData() ([]byte, error) {
@@ -180,7 +179,7 @@ func (i *Image) FixedOrientation() *Image {
 	return i
 }
 
-func (i *Image) RGBAImage() *Image {
+func (i *Image) RGBAImage(got func(img *Image)) {
 	n := GoImageToGoRGBA(i.GoImage)
-	return ImageFromGo(n)
+	ImageFromGo(n, got)
 }

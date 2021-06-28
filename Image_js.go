@@ -87,12 +87,12 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 	return i
 }
 
-func ImageToGo(img *Image) image.Image {
+func (i *Image) ToGo() image.Image {
 	canvas := CanvasNew()
 	canvas.element.Set("id", "render-canvas")
-	s := img.Size()
+	s := i.Size()
 	canvas.SetSize(s)
-	canvas.context.Call("drawImage", img.imageJS, 0, 0, s.W, s.H)
+	canvas.context.Call("drawImage", i.imageJS, 0, 0, s.W, s.H)
 	goImage := canvas.GoImage(zgeo.Rect{})
 	return goImage
 }
@@ -199,19 +199,19 @@ func (i *Image) FixedOrientation() *Image {
 	return i
 }
 
-func CanvasFromGoImage(img image.Image) *Canvas {
+func CanvasFromGoImage(i image.Image) *Canvas {
 	canvas := CanvasNew()
-	canvas.SetSize(GoImageZSize(img))
-	canvas.SetGoImage(img, zgeo.Pos{0, 0})
+	canvas.SetSize(GoImageZSize(i))
+	canvas.SetGoImage(i, zgeo.Pos{0, 0})
 	return canvas
 }
 
-func ImageFromGo(img image.Image) *Image {
+func ImageFromGo(img image.Image, got func(image *Image)) {
 	data, err := GoImagePNGData(img)
 	if err != nil {
 		zlog.Error(err)
-		return nil
+		got(nil)
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
-	return ImageFromPath(surl, nil)
+	ImageFromPath(surl, got)
 }

@@ -3,6 +3,8 @@
 package zui
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
@@ -110,11 +112,13 @@ func PresentViewAttributesNew() PresentViewAttributes {
 
 func PresentViewCallReady(v View, beforeWindow bool) {
 	nv := ViewGetNative(v)
+	// zlog.Info(beforeWindow, "PresentViewCallReady:", nv.Hierarchy(), nv.Presented)
 	if nv == nil {
 		return
 	}
 	if !nv.Presented {
 		if !beforeWindow {
+			// fmt.Printf("Set Presented: %s %p\n", nv.Hierarchy(), nv)
 			nv.Presented = true
 		}
 		r, _ := v.(ReadyToShowType)
@@ -127,13 +131,24 @@ func PresentViewCallReady(v View, beforeWindow bool) {
 	}
 	ct, _ := v.(ContainerType)
 	if ct != nil {
-		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetChildren()))
-		for _, c := range ct.GetChildren() {
+		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetVisibleChildren()))
+		for _, c := range ct.GetChildren(false) {
 			PresentViewCallReady(c, beforeWindow)
 		}
 	}
 	if !beforeWindow {
 		nv.allChildrenPresented = true
+	}
+}
+
+func PrintPresented(v View, space string) {
+	nv := ViewGetNative(v)
+	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.Presented)
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		for _, c := range ct.GetChildren(false) {
+			PrintPresented(c, space+"  ")
+		}
 	}
 }
 
@@ -185,7 +200,7 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 	ct, _ := v.(ContainerType)
 	if ct != nil {
 		recursive := true
-		ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
+		ContainerTypeRangeChildren(ct, recursive, false, func(view View) bool {
 			// TODO: focus something here...
 			return false
 		})
@@ -225,8 +240,8 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
 	// zlog.Info("PresentView", size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
+	nv := ViewGetNative(v)
 	if attributes.Modal {
-		nv := ViewGetNative(v)
 		if nv != nil {
 			r := rect
 			if attributes.Pos != nil {
@@ -279,10 +294,10 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	// 	cvt.ArrangeChildren(nil)
 	// }
 	// NativeViewAddToRoot(v)
-	PresentViewCallReady(outer, false)
 	presentViewPresenting = false
 	et, _ := outer.(ExposableType)
 	if et != nil {
+		PresentViewCallReady(outer, false)
 		et.drawIfExposed()
 	}
 	win.setOnResizeHandling()
@@ -365,10 +380,10 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	xmargin := 0.0 //10.0
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
-			a |= zgeo.VertCenter
+			a |= zgeo.Vertical
 		}
 		// zlog.Info("Bar add:", v.ObjectName())
-		bar.Add(v, 0, zgeo.TopCenter|zgeo.Expand, zgeo.Size{xmargin, 0})
+		bar.Add(v, 0, a, zgeo.Size{xmargin, 0})
 		xmargin = 0
 	}
 	stack.Add(bar, 0, zgeo.TopCenter|zgeo.HorExpand)

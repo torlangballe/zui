@@ -64,7 +64,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 
 	s := ti.GetColumnsSize(v.Columns)
-	// zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName(), zlog.GetCallingStackString())
+	// zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName()) //, zlog.GetCallingStackString())
 	s.Add(v.margin.Size.Negative())
 	if v.isSearch {
 		//		s.H += 14

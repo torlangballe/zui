@@ -27,16 +27,16 @@ import (
 
 //  Created by Tor Langballe on /20/10/15.
 
-type SetableImage interface {
-	image.Image
-	Set(x, y int, c color.Color)
-}
-
 type Image struct {
 	imageBase
 	scale   int
 	Path    string
 	loading bool
+}
+
+type SetableImage interface {
+	image.Image
+	Set(x, y int, c color.Color)
 }
 
 type ImageOwner interface {
@@ -73,22 +73,20 @@ func GoImageZSize(img image.Image) zgeo.Size {
 // GGoImageShrunkInto scales down the image to fit inside size.
 // It must be a subset of standard libarary image types, as it uses rez
 // package to downsample, which works on underlying image types.
-func GoImageShrunkInto(goImage image.Image, screenScale float64, size zgeo.Size, proportional bool) image.Image {
+func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) image.Image {
 	var vsize = size
 	s := GoImageZSize(goImage)
 	if proportional {
 		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{}).Size
 	}
-	nSize := vsize.TimesD(screenScale)
-
 	//	this didn't work for large image?
-	width := int(nSize.W)
-	height := int(nSize.H)
+	width := int(vsize.W)
+	height := int(vsize.H)
 	var newImage image.Image
 	// zlog.Info("** Shrink:", reflect.ValueOf(goImage).Type(), reflect.ValueOf(goImage).Kind(), zlog.GetCallingStackString())
 	if s.Max() > 1000 {
 		//		nrgba := NRGBAImage()
-		goRect := zgeo.Rect{Size: nSize}.GoRect()
+		goRect := zgeo.Rect{Size: vsize}.GoRect()
 		newImage = image.NewRGBA(goRect)
 		err := rez.Convert(newImage, goImage, rez.NewBilinearFilter()) //NewBicubicFilter
 		if err != nil {
@@ -101,13 +99,12 @@ func GoImageShrunkInto(goImage image.Image, screenScale float64, size zgeo.Size,
 	return newImage
 }
 
-func GoImageFromFile(path string) (image.Image, error) {
+func GoImageFromFile(path string) (image.Image, string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	goImage, _, err := image.Decode(file)
-	return goImage, err
+	return image.Decode(file)
 }
 
 func GoImageFromURL(path string) (image.Image, error) {
@@ -185,7 +182,6 @@ func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, ma
 	wr := mr.Align(ws, align, marg)
 	box := mr.UnionedWith(wr)
 	canvas := CanvasNew()
-	// canvas.DownsampleImages = false
 	delta := zgeo.Pos{-math.Min(wr.Pos.X, mr.Pos.X), -math.Min(wr.Pos.Y, mr.Pos.Y)}
 	// zlog.Info("image.Merge1:", box, mr, wr, delta)
 	mr.AddPos(delta)
@@ -210,17 +206,15 @@ func GoImageToGoRGBA(i image.Image) image.Image {
 	return n
 }
 
-func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
+func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) {
 	// this can be better, use canvas.Image()
-	goImage := ImageToGo(i)
+	goImage := i.ToGo()
 	if goImage == nil {
 		zlog.Error(nil, "GoImageFromPath")
-		return nil
+		got(nil)
 	}
-	screenScale := float64(i.scale)
-	newGoImage := GoImageShrunkInto(goImage, screenScale, size, proportional)
-	img := ImageFromGo(newGoImage)
-	return img
+	newGoImage := GoImageShrunkInto(goImage, size, proportional)
+	ImageFromGo(newGoImage, got)
 }
 
 func GoImagesAreIdentical(img1, img2 image.Image) bool {
@@ -328,7 +322,7 @@ func DrawCircle(img SetableImage, circle zgeo.Circle, col zgeo.Color) {
 	}
 }
 
-func HasImageExtension(surl string) bool {
+func ImageExtensionInName(surl string) bool {
 	str := zstr.HeadUntil(surl, "?")
 	for _, ext := range []string{"png", "jpeg", "jpg"} {
 		if strings.HasSuffix(str, "."+ext) {

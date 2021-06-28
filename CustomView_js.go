@@ -13,7 +13,6 @@ func (v *CustomView) Init(view View, name string) {
 	v.MakeJSElement(view, "div")
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
-	v.DownsampleImages = true
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
@@ -88,11 +87,10 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 	v.isSetup = true
 }
 
-func (v *CustomView) SetUsable(usable bool) View {
+func (v *CustomView) SetUsable(usable bool) {
 	v.NativeView.SetUsable(usable)
 	v.Expose()
 	// zlog.Info("CV SetUsable:", v.ObjectName(), usable, v.Usable())
-	return v
 }
 
 func (v *CustomView) makeCanvas() {
@@ -135,4 +133,8 @@ func (v *CustomView) drawIfExposed() {
 		}
 	}
 	v.exposed = false
+}
+
+func (v *CustomView) Expose() {
+	v.ExposeInSecs(0.1) //0.01)
 }

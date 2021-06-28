@@ -124,11 +124,10 @@ func (v *NativeView) ObjectName() string {
 
 var idCount int
 
-func (v *NativeView) SetObjectName(name string) View {
+func (v *NativeView) SetObjectName(name string) {
 	v.setjs("oname", name)
 	idCount++
 	v.setjs("id", fmt.Sprintf("%s-%d", name, idCount))
-	return v
 }
 
 func makeRGBAString(c zgeo.Color) string {
@@ -140,9 +139,8 @@ func makeRGBAString(c zgeo.Color) string {
 	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }
 
-func (v *NativeView) SetColor(c zgeo.Color) View {
+func (v *NativeView) SetColor(c zgeo.Color) {
 	v.style().Set("color", makeRGBAString(c))
-	return v
 }
 
 func (v *NativeView) Color() zgeo.Color {
@@ -158,21 +156,19 @@ func (v *NativeView) SetStyle(key, value string) {
 	v.style().Set(key, value)
 }
 
-func (v *NativeView) SetAlpha(alpha float32) View {
+func (v *NativeView) SetAlpha(alpha float32) {
 	v.transparency = 1 - alpha
 	//	v.style().Set("alpha", alpha)
 	v.style().Set("opacity", alpha)
-	return v
 }
 
 func (v *NativeView) Alpha() float32 {
 	return 1 - v.transparency
 }
 
-func (v *NativeView) SetBGColor(c zgeo.Color) View {
+func (v *NativeView) SetBGColor(c zgeo.Color) {
 	// zlog.Info("SetBGColor:", v.ObjectName(), c)
 	v.style().Set("backgroundColor", makeRGBAString(c))
-	return v
 }
 
 func (v *NativeView) BGColor() zgeo.Color {
@@ -181,46 +177,42 @@ func (v *NativeView) BGColor() zgeo.Color {
 	return zgeo.ColorFromString(str)
 }
 
-func (v *NativeView) SetCorner(radius float64) View {
+func (v *NativeView) SetCorner(radius float64) {
 	style := v.style()
 	s := fmt.Sprintf("%dpx", int(radius))
 	style.Set("-moz-border-radius", s)
 	style.Set("-webkit-border-radius", s)
 	style.Set("border-radius", s)
-	return v
 }
 
-func (v *NativeView) SetStroke(width float64, c zgeo.Color) View {
+func (v *NativeView) SetStroke(width float64, c zgeo.Color) {
 	str := "none"
 	if width != 0 {
 		str = fmt.Sprintf("%dpx solid %s", int(width), makeRGBAString(c))
 	}
 	v.style().Set("border", str)
-	return v
 }
 
-func (v *NativeView) Scale(scale float64) View {
-	return v
+func (v *NativeView) Scale(scale float64) {
 }
 
 func (v *NativeView) GetScale() float64 {
 	return 1
 }
 
-func (v *NativeView) Show(show bool) View {
+func (v *NativeView) Show(show bool) {
 	str := "hidden"
 	if show {
 		str = "visible"
 	}
 	v.style().Set("visibility", str)
-	return v
 }
 
 func (v *NativeView) IsShown() bool {
 	return v.style().Get("visibility").String() == "visible"
 }
 
-func (v *NativeView) SetUsable(usable bool) View {
+func (v *NativeView) SetUsable(usable bool) {
 	v.setjs("disabled", !usable)
 	style := v.style()
 	var alpha float32 = 0.4
@@ -234,7 +226,6 @@ func (v *NativeView) SetUsable(usable bool) View {
 	style.Set("pointer-events", str)
 	style.Set("opacity", alpha)
 	// zlog.Info("NV SetUSABLE:", v.ObjectName(), usable, alpha)
-	return v
 }
 
 func (v *NativeView) Usable() bool {
@@ -246,28 +237,25 @@ func (v *NativeView) Usable() bool {
 }
 
 func (v *NativeView) IsFocused() bool {
-	return false
+	f := DocumentJS.Call("hasFocus")
+	return f.Equal(v.Element)
 }
 
-func (v *NativeView) Focus(focus bool) View {
-	zlog.Assert(focus)
+func (v *NativeView) Focus(focus bool) {
 	// zlog.Info("FOCUS:", v.ObjectName(), focus)
 	v.call("focus")
-	return v
 }
 
-func (v *NativeView) SetCanFocus(can bool) View {
+func (v *NativeView) SetCanFocus(can bool) {
 	// zlog.Info("SetCanFocus:", v.ObjectName())
 	val := "-1"
 	if can {
 		val = "0"
 	}
 	v.setjs("tabindex", val)
-	return v
 }
 
-func (v *NativeView) Opaque(opaque bool) View {
-	return v
+func (v *NativeView) SetOpaque(opaque bool) {
 }
 
 func (v *NativeView) GetChild(path string) *NativeView {
@@ -288,11 +276,7 @@ func (v *NativeView) DumpTree() {
 }
 
 func (v *NativeView) RemoveFromParent() {
-	win := v.GetWindow()
 	// zlog.Info("RemoveFromParent:", v.ObjectName())
-	win.removeKeyPressHandlerViews(v.View)
-
-	v.StopStoppers()
 	zlog.Assert(v.parent != nil)
 	v.parent.RemoveChild(v)
 }
@@ -384,20 +368,19 @@ func (v *NativeView) AllParents() (all []*NativeView) {
 	return
 }
 
-// func (v *NativeView) SetStokeWidth(width float64) *NativeView { // spelt wrong too
-// 	return v
-// }
-
 func (v *NativeView) SetZIndex(index int) {
 	v.style().Set("zIndex", index)
 }
 
 func (v *NativeView) RemoveChild(child View) {
+	// zlog.Info("REMOVE CHILD:", child.ObjectName())
 	nv := ViewGetNative(child)
 	if nv == nil {
 		panic("NativeView AddChild child not native")
 	}
-	// zlog.Info("REMOVE CHILD:", child.ObjectName())
+	win := v.GetWindow()
+	win.removeKeyPressHandlerViews(child)
+	nv.StopStoppers()
 	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
@@ -411,7 +394,7 @@ func (v *NativeView) SetToolTip(str string) {
 	v.setjs("title", str)
 }
 
-func (v *NativeView) GetAbsoluteRect() zgeo.Rect {
+func (v *NativeView) AbsoluteRect() zgeo.Rect {
 	r := v.Element.Call("getBoundingClientRect")
 	x := r.Get("x").Float()
 	y := r.Get("y").Float()
@@ -456,6 +439,54 @@ func (lp *LongPresser) HandleOnMouseUp(view View) {
 	if lp.longTimer != nil {
 		lp.longTimer.Stop()
 	}
+}
+
+var mouseStartPos zgeo.Pos
+var mouseStartTime time.Time
+
+func getMousePos(e js.Value) (pos zgeo.Pos) {
+	pos.X = e.Get("clientX").Float()
+	pos.Y = e.Get("clientY").Float()
+	return
+}
+
+func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
+	const minDiff = 10.0
+	v.setjs("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if handler == nil {
+			return nil
+		}
+		mouseStartTime = time.Now()
+		mouseStartPos = getMousePos(args[0])
+		return nil
+	}))
+	v.setjs("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if handler == nil {
+			return nil
+		}
+		if time.Since(mouseStartTime) > time.Second/2 {
+			return nil
+		}
+		pos := getMousePos(args[0])
+		diff := pos.Minus(mouseStartPos)
+		a := diff.Abs()
+		if a.X >= minDiff || a.Y > minDiff {
+			if a.X < minDiff {
+				diff.X = 0
+			}
+			if a.Y < minDiff {
+				diff.Y = 0
+			}
+			mouseStartTime = time.Time{}
+			var vpos zgeo.Pos
+			r := v.Element.Call("getBoundingClientRect")
+			vpos.X = r.Get("left").Float()
+			vpos.Y = r.Get("top").Float()
+			pos := mouseStartPos.Minus(vpos)
+			handler(pos, diff)
+		}
+		return nil
+	}))
 }
 
 func (v *NativeView) SetAboveParent(above bool) {
@@ -504,21 +535,90 @@ func (v *NativeView) GetWindow() *Window {
 	return windowsFindForElement(w)
 }
 
-func (v *NativeView) SetPointerEnterHandler(handler func(inside bool)) {
+func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data []byte, name string) bool) {
+	handler(dtype, nil, "")
+	event.Call("preventDefault")
+}
+
+func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
+	// https://www.digitalocean.com/community/tutorials/js-drag-and-drop-vanilla-js
+	v.setjs("draggable", true)
+	v.setjs("ondragstart", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		event := args[0]
+		data, mime := getData()
+		//		array := js.Global().Get("Uint8Array").New(len(data))
+		//		js.CopyBytesToJS(array, []byte(data))
+		// zlog.Info("Dtrans:", mime, array.Length())
+		zlog.Info("Dtrans:", mime, data)
+		//		mime = "text/plain"
+		event.Get("dataTransfer").Call("setData", mime, data) //event.Get("target").Get("id"))
+		return nil
+	}))
+}
+
+func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []byte, name string) bool) {
+	if zlog.IsInTests {
+		return
+	}
+	v.setjs("ondragenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		dragEvent(args[0], DragEnter, handler)
+		return nil
+	}))
+	v.setjs("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		dragEvent(args[0], DragLeave, handler)
+		return nil
+	}))
+	v.setjs("ondragover", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		dragEvent(args[0], DragOver, handler)
+		return nil
+	}))
+	v.setjs("ondrop", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		event := args[0]
+		dt := event.Get("dataTransfer")
+		files := dt.Get("files")
+		if files.Length() == 0 {
+			dragEvent(event, DragDrop, handler)
+			return nil
+		}
+		file := files.Index(0)
+		reader := js.Global().Get("FileReader").New()
+		reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			array := js.Global().Get("Uint8Array").New(this.Get("result"))
+			bytes := make([]byte, array.Length())
+			js.CopyBytesToGo(bytes, array)
+			name := file.Get("name").String()
+			handler(DragDropFile, bytes, name)
+			//			event.Call("preventDefault")
+			return nil
+		}))
+		reader.Call("readAsArrayBuffer", file)
+		event.Call("preventDefault")
+		return nil
+	}))
+}
+
+func (v *NativeView) MakeUploader() {
+	e := DocumentJS.Call("createElement", "input")
+	e.Set("type", "file")
+	e.Get("style").Set("style", "opacity 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
+	v.call("appendChild", e)
+}
+
+func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool)) {
 	if zlog.IsInTests {
 		return
 	}
 	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler != nil {
 			// zlog.Info("Mouse enter", v.ObjectName())
-			handler(true)
+			handler(getMousePos(args[0]), true)
 		}
 		return nil
 	}))
 	v.setjs("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler != nil {
 			// zlog.Info("Mouse leave", v.ObjectName())
-			handler(false)
+			handler(getMousePos(args[0]), false)
 		}
 		return nil
 	}))
@@ -557,7 +657,8 @@ func (v *NativeView) GetFocusedView() (found View) {
 	foundID := e.Get("id").String()
 	// zlog.Info("GetFocusedView2:", foundID)
 	recursive := true
-	ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
+	includeCollapsed := false
+	ContainerTypeRangeChildren(ct, recursive, includeCollapsed, func(view View) bool {
 		n := ViewGetNative(view)
 		id := n.getjs("id").String()
 		if id == foundID {

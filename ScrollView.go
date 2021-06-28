@@ -32,7 +32,7 @@ func (v *ScrollView) AddChild(child View, index int) {
 	v.CustomView.AddChild(child, index)
 }
 
-func (v *ScrollView) GetChildren() []View {
+func (v *ScrollView) GetChildren(includeCollapsed bool) []View {
 	if v.child != nil {
 		return []View{v.child}
 	}
@@ -49,7 +49,7 @@ func (v *ScrollView) Update() {
 	ct, _ := v.child.(ContainerType)
 	var keepOffsetY *float64
 	if ct != nil {
-		for _, c := range ct.GetChildren() {
+		for _, c := range ct.GetChildren(false) {
 			// zlog.Info("SV Update1", c.ObjectName(), ViewGetNative(c).Presented)
 			if ViewGetNative(c).Presented {
 				diff := c.Rect().Min().Y - v.YOffset

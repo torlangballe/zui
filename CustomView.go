@@ -4,6 +4,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -22,9 +23,9 @@ type CustomView struct {
 	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
 	color         zgeo.Color
-	IsHighlighted bool
 	exposeTimer   ztimer.Timer
 	isSetup       bool
+	isHighlighted bool
 }
 
 func CustomViewNew(name string) *CustomView {
@@ -41,20 +42,26 @@ func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.MinSize()
 }
 
-func (v *CustomView) Expose() {
-	// zlog.Info("CV Expose", v.ObjectName())
-	v.ExposeInSecs(0.1) //0.01)
+func (v *CustomView) SetHighlighted(h bool) {
+	v.isHighlighted = h
+	v.Expose()
+}
+
+func (v *CustomView) IsHighlighted() bool {
+	return v.isHighlighted
 }
 
 func (v *CustomView) ExposeInSecs(secs float64) {
 	// if v.ObjectName() == "chart-drawer" {
-	// zlog.Info("exposeInSecs", v.ObjectName(), v.exposed, presentViewPresenting)
 	// }
+	// fmt.Printf("pre-exposedInSecs %s %p %v\n", v.Hierarchy(), v, v.Presented)
 	if v.exposed || presentViewPresenting {
 		return
 	}
+	// 	zlog.Info("Exposing:", v.Hierarchy(), v.Presented, zlog.GetCallingStackString())
 	v.exposed = true
 	v.exposeTimer.StartIn(secs, func() {
+		// fmt.Printf("exposedInSecs %s %p %v\n", v.Hierarchy(), v, v.Presented)
 		io, got := v.View.(ImageOwner)
 		// zlog.Info("exposeInSecs draw", v.ObjectName(), got)
 		if got {
@@ -63,11 +70,19 @@ func (v *CustomView) ExposeInSecs(secs float64) {
 				// zlog.Info("CV exposeInSecs draw image", v.ObjectName(), image.loading)
 			}
 			if image != nil && image.loading {
-				// zlog.Info("CV exposeInSecs wait for loading", v.ObjectName())
+				zlog.Info("CV exposeInSecs wait for loading", v.ObjectName())
 				v.ExposeInSecs(0.1)
 				return
 			}
 		}
+		//		nv := ViewGetNative(v)
+		// fmt.Printf("CV exposing: %s %p %v par:%p\n", v.Hierarchy(), nv, v.Presented, nv.Parent())
+		if !v.Presented {
+			// nv := ViewGetNative(v)
+			// fmt.Printf("Not exposing unpresented: %s %p %v\n", v.Hierarchy(), nv, nv.Presented)
+			return
+		}
+		//		if v.style().Get("width").String() == "" { // it's not arranged, could be collapsed in Container
 		et, _ := v.View.(ExposableType)
 		if et != nil {
 			// if v.ObjectName() == "chart-drawer" {
@@ -86,11 +101,10 @@ func (v *CustomView) LongPressedHandler() func() {
 	return v.longPressed
 }
 
-func (v *CustomView) SetColor(c zgeo.Color) View {
+func (v *CustomView) SetColor(c zgeo.Color) {
 	v.NativeView.SetColor(c)
 	v.color = c
-
-	return v
+	v.Expose()
 }
 
 func (v *CustomView) Color() zgeo.Color {
@@ -151,7 +165,7 @@ func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn zgeo.Size) zgeo.Si
 }
 
 func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
-	if v.IsHighlighted {
+	if v.isHighlighted {
 		g := col.GrayScale()
 		if g < 0.5 {
 			col = col.Mixed(zgeo.ColorWhite, 0.5)
@@ -163,4 +177,10 @@ func (v *CustomView) getStateColor(col zgeo.Color) zgeo.Color {
 		col = col.WithOpacity(0.3)
 	}
 	return col
+}
+
+func (v *CustomView) Focus(focus bool) {
+	v.NativeView.Focus(focus)
+	// zlog.Info("FOCUS:", v.ObjectName(), focus)
+	v.Expose()
 }

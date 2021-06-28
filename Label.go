@@ -34,6 +34,7 @@ func LabelNew(text string) *Label {
 	v.text = text
 	v.SetObjectName(text)
 	v.SetMaxLines(1)
+	v.alignment = zgeo.CenterLeft
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	v.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 		ti := v.GetTextInfo()

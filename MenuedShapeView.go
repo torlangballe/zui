@@ -341,7 +341,7 @@ func (v *MenuedShapeView) popup() {
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
 	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
-	pos := v.GetAbsoluteRect().Pos
+	pos := v.AbsoluteRect().Pos
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)

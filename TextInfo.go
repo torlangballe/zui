@@ -67,6 +67,10 @@ type TextInfoOwner interface {
 	GetTextInfo() TextInfo
 }
 
+type TextSetter interface {
+	SetText(etxt string)
+}
+
 func TextInfoNew() *TextInfo {
 	t := &TextInfo{}
 	t.Type = TextInfoFill

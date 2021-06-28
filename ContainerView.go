@@ -35,7 +35,7 @@ type ContainerViewCell struct {
 }
 
 type ContainerType interface {
-	GetChildren() []View
+	GetChildren(includeCollapsed bool) []View
 	ArrangeChildren(onlyChild *View)
 	ReplaceChild(child, with View)
 }
@@ -44,9 +44,11 @@ type Collapser interface {
 	CollapseChild(view View, collapse bool, arrange bool) bool
 }
 
-func (v *ContainerView) GetChildren() (children []View) {
+func (v *ContainerView) GetChildren(includeCollapsed bool) (children []View) {
 	for _, c := range v.cells {
-		children = append(children, c.View)
+		if includeCollapsed || !c.Collapsed {
+			children = append(children, c.View)
+		}
 	}
 	return
 }
@@ -233,7 +235,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 
 func ContainerIsLoading(ct ContainerType) bool {
 	// zlog.Info("ContainerIsLoading1", len(ct.GetChildren()))
-	for _, v := range ct.GetChildren() {
+	for _, v := range ct.GetChildren(false) {
 		iowner, got := v.(ImageOwner)
 		if got {
 			image := iowner.GetImage()
@@ -347,14 +349,16 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 
 func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrange bool) bool {
 	view, _ := v.FindViewWithName(name, false)
+	// zlog.Info("Collapse:", name, collapse, view != nil)
 	if view != nil {
 		return v.CollapseChild(view, collapse, arrange)
 	}
 	return false
 }
 
-func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(view View) bool) {
-	for _, c := range ct.GetChildren() {
+func ContainerTypeRangeChildren(ct ContainerType, subViews, includeCollapsed bool, foreach func(view View) bool) {
+	children := ct.GetChildren(includeCollapsed)
+	for _, c := range children {
 		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews)
 		if !foreach(c) {
 			return
@@ -363,10 +367,10 @@ func ContainerTypeRangeChildren(ct ContainerType, subViews bool, foreach func(vi
 	if !subViews {
 		return
 	}
-	for _, c := range ct.GetChildren() {
+	for _, c := range children {
 		sub, got := c.(ContainerType)
 		if got {
-			ContainerTypeRangeChildren(sub, subViews, foreach)
+			ContainerTypeRangeChildren(sub, subViews, includeCollapsed, foreach)
 		}
 	}
 }
@@ -398,7 +402,8 @@ func ContainerTypeFindViewWithName(ct ContainerType, name string, recursive bool
 	var found View
 
 	i := 0
-	ContainerTypeRangeChildren(ct, recursive, func(view View) bool {
+	includeCollapsed := true
+	ContainerTypeRangeChildren(ct, recursive, includeCollapsed, func(view View) bool {
 		// zlog.Info("FindViewWithName:", name, "==", view.ObjectName())
 		if view.ObjectName() == name {
 			found = view

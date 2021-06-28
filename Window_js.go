@@ -213,8 +213,12 @@ func (win *Window) setOnKeyUp() {
 
 func (win *Window) removeKeyPressHandlerViews(root View) {
 	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName())
-	ct := root.(ContainerType)
-	ContainerTypeRangeChildren(ct, true, func(view View) bool {
+	ct, is := root.(ContainerType)
+	if !is {
+		return
+	}
+	includeCollapsed := false
+	ContainerTypeRangeChildren(ct, true, includeCollapsed, func(view View) bool {
 		if win.keyHandlers[view] != nil {
 			// zlog.Info("removeKeyPressHandlerView:", view.ObjectName())
 			delete(win.keyHandlers, view) // I guess we could just call delete without checking if it exists first, faster?

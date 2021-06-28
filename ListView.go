@@ -177,8 +177,9 @@ func getRowHeight(v *ListView, i int, total zgeo.Size) float64 {
 	if h != 0 {
 		return h
 	}
-	row := v.CreateRow(total, i)
+	row := v.makeRow(total, i)
 	h = row.CalculatedSize(total).H
+	//	fmt.Printf("CreateRowH: %p %f\n", row, h)
 	v.rowHeights[i] = h
 	return h
 }
@@ -211,24 +212,29 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 			row := v.rows[i]
 			if row != nil {
 				calc := (row.Rect() != r)
-				if !calc {
-					ct, _ := row.(ContainerType)
-					if ct != nil {
-						ContainerTypeRangeChildren(ct, true, func(view View) bool {
-							nv := ViewGetNative(view)
-							if !nv.Presented {
-								nv.Presented = true
-								calc = true
-								return false
-							}
-							return true
-						})
-					}
+				ct, _ := row.(ContainerType)
+				if ct != nil {
+					includeCollapsed := false
+					ContainerTypeRangeChildren(ct, true, includeCollapsed, func(view View) bool {
+						nv := ViewGetNative(view)
+						if !nv.Presented {
+							calc = true
+							return false
+						}
+						return true
+					})
 				}
-				// zlog.Info("LayoutRow:", row.ObjectName(), i, r)
+				nv := ViewGetNative(row)
+				// fmt.Printf("ListLay: %s %p %v %p\n", nv.Hierarchy(), nv, calc)
+				if nv.Parent() == nil {
+					calc = true
+					v.stack.AddChild(row, -1)
+				}
 				if calc {
 					row.SetRect(r)
 				}
+				PresentViewCallReady(row, false)
+				// PrintPresented(row, "")
 				delete(oldRows, i)
 			} else {
 				// tart := time.Now()
@@ -305,10 +311,12 @@ func (v *ListView) refreshRow(index int) {
 
 func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 	row := v.CreateRow(rowSize, index)
+	// fmt.Printf("CreateRow: %p %d\n", row, index)
+	nv := ViewGetNative(row)
 	v.rows[index] = row
 	v.refreshRow(index)
 	if v.HoverHighlight && v.HighlightColor.Valid {
-		ViewGetNative(row).SetPointerEnterHandler(func(inside bool) {
+		nv.SetPointerEnterHandler(func(pos zgeo.Pos, inside bool) {
 			if time.Since(v.ScrolledAt) < time.Second {
 				return
 			}
@@ -375,13 +383,14 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	if row != nil {
 		col := v.SelectedColor
 		if !v.selectionIndexes[i] || !col.Valid {
-			if v.HighlightColor.Valid && i == v.highlightedIndex {
-				col = v.HighlightColor
-			} else if len(v.RowColors) == 0 {
+			if len(v.RowColors) == 0 {
 				col = zgeo.ColorWhite
 			} else {
 				col = v.RowColors[i%len(v.RowColors)]
 			}
+			// if v.HighlightColor.Valid && i == v.highlightedIndex {
+			// 	col = col.Mixed(v.HighlightColor, v.HighlightColor.Opacity())
+			// }
 		}
 		// zlog.Info("UpdateRowBGColor", i, col, v.selectionIndexes[i], v.highlightedIndex)
 		row.SetBGColor(col)
@@ -456,7 +465,8 @@ func findViewInRow(row, find View) bool {
 	ct, _ := row.(ContainerType)
 	found := false
 	if ct != nil {
-		ContainerTypeRangeChildren(ct, true, func(view View) bool {
+		includeCollapsed := false
+		ContainerTypeRangeChildren(ct, true, includeCollapsed, func(view View) bool {
 			if view == find {
 				found = true
 				return false
@@ -612,7 +622,7 @@ func (v *ListView) UpdateVisibleRows() {
 	}
 }
 
-func (v *ListView) GetChildren() []View {
+func (v *ListView) GetChildren(includeCollapsed bool) []View {
 	var views []View
 	for _, v := range v.rows {
 		views = append(views, v)
@@ -650,10 +660,11 @@ func (v *ListView) moveHighlight(delta int) {
 }
 
 func (v *ListView) ReadyToShow(beforeWindow bool) {
+	zlog.Info("List ReadyToShow:", beforeWindow)
 	if !beforeWindow && v.HighlightColor.Valid {
 		win := v.GetWindow()
 		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {
-			zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
+			// zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
 			switch key {
 			case KeyboardKeyTab:
 				if v.HighlightColor.Valid && v.highlightedIndex != -1 {
