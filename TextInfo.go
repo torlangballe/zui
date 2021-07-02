@@ -135,11 +135,12 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 		}
 		//	count = ti.MaxLines
 		if count > 1 || ti.IsMinimumOneLineHight {
-			size.H = float64(ti.Font.LineHeight()) * float64(zint.Max(count, 1))
+			size.H = float64(ti.Font.LineHeight()*1.1) * float64(zint.Max(count, 1))
 		}
 		// zlog.Info("BOUNDS:", size, count, ti.Text)
 	}
 	// zlog.PopTimingLog()
+	// zlog.Info("BOUNDS:", len(allLines), ti.Text)
 	return size, allLines, widths
 }
 
@@ -221,11 +222,11 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
-	y := ra.Pos.Y + h*0.90 // 0.71
+	y := ra.Pos.Y + h*0.95 // 0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
 	zlog.Assert(len(lines) == len(widths), len(lines), len(widths))
 	for i, s := range lines {
-		// zlog.Info("DRAW:", s, ti.Rect, ts, ra, "h:", h, "y:", y)
+		// zlog.Info("DRAW:", i, len(lines), s, ti.Rect, ts, ra, "h:", h, "y:", y)
 		x := ra.Pos.X
 		if ti.Alignment&zgeo.HorCenter != 0 {
 			x += (ra.Size.W - widths[i]) / 2

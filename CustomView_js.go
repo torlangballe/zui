@@ -98,7 +98,12 @@ func (v *CustomView) makeCanvas() {
 		v.canvas = CanvasNew()
 		v.canvas.element.Set("id", v.ObjectName()+".canvas")
 		v.canvas.DownsampleImages = v.DownsampleImages
-		v.call("appendChild", v.canvas.element)
+		firstChild := v.getjs("firstChild")
+		if firstChild.IsUndefined() {
+			v.call("appendChild", v.canvas.element)
+		} else {
+			v.call("insertBefore", v.canvas.element, firstChild)
+		}
 		// v.canvas.element.Get("style").Set("zIndex", 200)
 		s := v.LocalRect().Size
 		scale := ScreenMain().Scale

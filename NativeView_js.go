@@ -2,6 +2,7 @@ package zui
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"syscall/js"
 	"time"
@@ -272,7 +273,16 @@ func (v *NativeView) Hierarchy() string {
 	return str
 }
 
-func (v *NativeView) DumpTree() {
+func (v *NativeView) DumpTree(prefix string) {
+	includeCollapsed := true
+	zlog.Info(prefix+v.ObjectName(), reflect.ValueOf(v).Type(), reflect.ValueOf(v).Kind())
+	ct, _ := v.View.(ContainerType)
+	if ct != nil {
+		for _, v := range ct.GetChildren(includeCollapsed) {
+			nv := ViewGetNative(v)
+			nv.DumpTree(prefix + "**")
+		}
+	}
 }
 
 func (v *NativeView) RemoveFromParent() {
@@ -385,9 +395,13 @@ func (v *NativeView) RemoveChild(child View) {
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
-func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
+func nativeElementSetDropShadow(e js.Value, shadow zgeo.DropShadow) {
 	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(shadow.Delta.W), int(shadow.Delta.H), int(shadow.Blur), makeRGBAString(shadow.Color))
-	v.style().Set("boxShadow", str)
+	e.Get("style").Set("boxShadow", str)
+}
+
+func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
+	nativeElementSetDropShadow(v.Element, shadow)
 }
 
 func (v *NativeView) SetToolTip(str string) {
@@ -556,6 +570,19 @@ func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 	}))
 }
 
+func jsFileToGo(file js.Value, got func(data []byte, name string)) {
+	reader := js.Global().Get("FileReader").New()
+	reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		array := js.Global().Get("Uint8Array").New(this.Get("result"))
+		data := make([]byte, array.Length())
+		js.CopyBytesToGo(data, array)
+		name := file.Get("name").String()
+		got(data, name)
+		return nil
+	}))
+	reader.Call("readAsArrayBuffer", file)
+}
+
 func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []byte, name string) bool) {
 	if zlog.IsInTests {
 		return
@@ -581,27 +608,39 @@ func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []b
 			return nil
 		}
 		file := files.Index(0)
-		reader := js.Global().Get("FileReader").New()
-		reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			array := js.Global().Get("Uint8Array").New(this.Get("result"))
-			bytes := make([]byte, array.Length())
-			js.CopyBytesToGo(bytes, array)
-			name := file.Get("name").String()
-			handler(DragDropFile, bytes, name)
-			//			event.Call("preventDefault")
-			return nil
-		}))
-		reader.Call("readAsArrayBuffer", file)
+		jsFileToGo(file, func(data []byte, name string) {
+			handler(DragDropFile, data, name)
+		})
 		event.Call("preventDefault")
 		return nil
 	}))
 }
 
-func (v *NativeView) MakeUploader() {
+func (v *NativeView) MakeUploader(got func(data []byte, name string)) {
 	e := DocumentJS.Call("createElement", "input")
 	e.Set("type", "file")
-	e.Get("style").Set("style", "opacity 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
+	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
 	v.call("appendChild", e)
+
+	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		files := e.Get("files")
+		if files.Length() > 0 {
+			file := files.Index(0)
+			jsFileToGo(file, got)
+		}
+		return nil
+	}))
+}
+
+func MakeUploadButton() *ShapeView {
+	v := ShapeViewNew(ShapeViewTypeRoundRect, zgeo.Size{68, 22})
+	v.SetColor(zgeo.ColorWhite)
+	v.StrokeColor = zgeo.ColorNew(0, 0.6, 0, 1)
+	v.StrokeWidth = 2
+	v.Ratio = 0.3
+	v.SetBGColor(zgeo.ColorClear)
+	v.SetText("Upload")
+	return v
 }
 
 func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool)) {

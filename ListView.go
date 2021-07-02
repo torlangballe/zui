@@ -230,16 +230,16 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 					calc = true
 					v.stack.AddChild(row, -1)
 				}
+				PresentViewCallReady(row, false)
 				if calc {
 					row.SetRect(r)
 				}
-				PresentViewCallReady(row, false)
-				// PrintPresented(row, "")
 				delete(oldRows, i)
 			} else {
 				// tart := time.Now()
 				row = v.makeRow(s, i)
 				v.stack.AddChild(row, -1)
+				PresentViewCallReady(row, false)
 				row.SetRect(r)
 			}
 		}
@@ -388,10 +388,11 @@ func (v *ListView) UpdateRowBGColor(i int) {
 			} else {
 				col = v.RowColors[i%len(v.RowColors)]
 			}
-			// if v.HighlightColor.Valid && i == v.highlightedIndex {
-			// 	col = col.Mixed(v.HighlightColor, v.HighlightColor.Opacity())
-			// }
+			if v.HighlightColor.Valid && i == v.highlightedIndex {
+				col = col.Mixed(v.HighlightColor, v.HighlightColor.Opacity())
+			}
 		}
+		// zlog.Info("COL:", col, i, v.selectionIndexes[i], v.HighlightColor)
 		// zlog.Info("UpdateRowBGColor", i, col, v.selectionIndexes[i], v.highlightedIndex)
 		row.SetBGColor(col)
 	}
@@ -660,7 +661,7 @@ func (v *ListView) moveHighlight(delta int) {
 }
 
 func (v *ListView) ReadyToShow(beforeWindow bool) {
-	zlog.Info("List ReadyToShow:", beforeWindow)
+	// zlog.Info("List ReadyToShow:", beforeWindow)
 	if !beforeWindow && v.HighlightColor.Valid {
 		win := v.GetWindow()
 		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {

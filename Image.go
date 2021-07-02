@@ -102,7 +102,7 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) i
 func GoImageFromFile(path string) (image.Image, string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	return image.Decode(file)
 }
@@ -167,7 +167,7 @@ func GoImageToPNGFile(img image.Image, filepath string) error {
 	return nil
 }
 
-func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, marg, withMaxSize zgeo.Size) *Image {
+func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, marg, withMaxSize zgeo.Size, done func(img *Image)) {
 	zlog.Assert(i != nil)
 	zlog.Assert(with != nil)
 	s := i.Size()
@@ -196,7 +196,7 @@ func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, ma
 	downsampleCache := false
 	canvas.DrawImage(i, synchronous, downsampleCache, mr, 1, zgeo.Rect{})
 	canvas.DrawImage(with, synchronous, downsampleCache, wr, 1, zgeo.Rect{})
-	return canvas.ZImage()
+	canvas.ZImage(done)
 }
 
 func GoImageToGoRGBA(i image.Image) image.Image {

@@ -3,6 +3,8 @@
 package zui
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -78,8 +80,8 @@ func (v *CustomView) ExposeInSecs(secs float64) {
 		//		nv := ViewGetNative(v)
 		// fmt.Printf("CV exposing: %s %p %v par:%p\n", v.Hierarchy(), nv, v.Presented, nv.Parent())
 		if !v.Presented {
-			// nv := ViewGetNative(v)
-			// fmt.Printf("Not exposing unpresented: %s %p %v\n", v.Hierarchy(), nv, nv.Presented)
+			nv := ViewGetNative(v)
+			fmt.Printf("Not exposing unpresented: %s %p %v\n", v.Hierarchy(), nv, nv.Presented)
 			return
 		}
 		//		if v.style().Get("width").String() == "" { // it's not arranged, could be collapsed in Container

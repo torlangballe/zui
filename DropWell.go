@@ -51,7 +51,6 @@ func DropWellNew(imagePath string, size zgeo.Size) *DropWell {
 			canvas.FillPath(path)
 		}
 	})
-	v.MakeUploader()
 	// v.SetBGColor(zgeo.ColorGreen)
 	return v
 }

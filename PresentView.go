@@ -186,7 +186,6 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 					// 	})
 					// }
 					blocker.SetPressedHandler(func() {
-						// zlog.Info("blocker pressed")
 						dismissed := true
 						PresentViewClose(v, dismissed, closed)
 					})
@@ -253,7 +252,9 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 					// zlog.Info("ALIGN2:", r.Pos)
 				}
 			}
-			r = r.MovedInto(fullRect)
+			frect := fullRect.Expanded(zgeo.SizeBoth(-4))
+			r = r.MovedInto(frect)
+			r = r.Intersected(frect)
 			v.SetRect(r)
 		}
 		if attributes.ModalDismissOnEscapeKey {

@@ -150,6 +150,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 		}
 	} else {
 		v.image = ImageFromPath(path, func(ni *Image) {
+			// zlog.Info("IV SetImage", path, v.Rect(), ni != nil)
 			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())

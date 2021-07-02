@@ -138,7 +138,6 @@ func (i *Image) SaveToPNG(filepath string) error {
 }
 
 func ImageFromFile(filepath string, got func(i *Image, format string, err error)) {
-	var zi *Image
 	gi, format, err := GoImageFromFile(filepath)
 	if gi == nil {
 		got(nil, format, err)

@@ -323,12 +323,12 @@ func (c *Canvas) SetGoImage(img image.Image, pos zgeo.Pos) {
 	c.context.Call("putImageData", idata, pos.X, pos.Y)
 }
 
-func (c *Canvas) ZImage() *Image {
+func (c *Canvas) ZImage(got func(img *Image)) {
 	// gi := c.GoImage(cut)
 	// if gi == nil {
 	// 	return nil
 	// }
 	// return ImageFromGo(gi)
 	surl := c.element.Call("toDataURL").String()
-	return ImageFromPath(surl, nil)
+	ImageFromPath(surl, got)
 }

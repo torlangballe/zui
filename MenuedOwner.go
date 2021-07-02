@@ -57,16 +57,16 @@ type MenuedOwner struct {
 //var MenuedOItemSeparator = MenuedOItem{Item: zdict.Item{Name: MenuSeparatorID}}
 var (
 	MenuedOItemSeparator              = MenuedOItem{Name: MenuSeparatorID}
-	MenuedOwnerDefaultBGColor         = zgeo.ColorNew(0.40, 0.43, 0.50, 1)
-	MenuedOwnerDefaultTextColor       = zgeo.ColorNewGray(0.9, 1)
-	MenuedOwnerDefaultHightlightColor = zgeo.ColorNewGray(0, 0.4)
+	MenuedOwnerDefaultBGColor         = zgeo.ColorNew(0.92, 0.91, 0.90, 1)
+	MenuedOwnerDefaultTextColor       = zgeo.ColorNewGray(0.1, 1)
+	MenuedOwnerDefaultHightlightColor = zgeo.ColorNewGray(0, 0.7)
 )
 
 func MenuedOwnerNew() *MenuedOwner {
 	o := &MenuedOwner{}
-	o.Font = FontNice(FontDefaultSize-3, FontStyleNormal)
+	o.Font = FontNice(FontDefaultSize-1, FontStyleNormal)
 	o.HighlightColor = MenuedOwnerDefaultHightlightColor
-	o.BGColor = MenuedOwnerDefaultHightlightColor
+	o.BGColor = MenuedOwnerDefaultBGColor
 	o.TextColor = MenuedOwnerDefaultTextColor
 	return o
 }
@@ -93,7 +93,7 @@ func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
 			for i := range o.items {
 				o.items[i].Selected = set
 			}
-			o.updateTitle()
+			o.updateTitleAndImage()
 		})
 	}
 	if len(items) == 0 {
@@ -112,10 +112,10 @@ func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
 }
 
 func (o *MenuedOwner) Stop() {
-	zlog.Info("Stopping MenuOwner:", o.View != nil)
-	zlog.Info("Stopping MenuOwner for:", o.View)
+	// zlog.Info("Stopping MenuOwner:", o.View != nil)
+	// zlog.Info("Stopping MenuOwner for:", o.View)
 	presser := o.View.(Pressable)
-	zlog.Info("Stopping MenuOwner for2:", presser)
+	// zlog.Info("Stopping MenuOwner for2:", presser)
 	presser.SetPressedHandler(nil)
 	presser.SetLongPressedHandler(nil)
 	*o = MenuedOwner{} // this will
@@ -156,8 +156,8 @@ func (o *MenuedOwner) AddSeparator() {
 	o.items = append(o.items, MenuedOItemSeparator)
 }
 
-func (o *MenuedOwner) updateTitle() {
-	// zlog.Info("Menued updateTitle")
+func (o *MenuedOwner) updateTitleAndImage() {
+	// zlog.Info("Menued updateTitleAndImage")
 	var nstr string
 	if o.IsStatic && o.GetTitle != nil {
 		name := o.GetTitle(len(o.items))
@@ -194,6 +194,7 @@ func (o *MenuedOwner) updateTitle() {
 			}
 		}
 		if o.ImagePath != "" {
+			zlog.Info("MO SetImagePath:", spath)
 			io := o.View.(ImageOwner)
 			io.SetImage(nil, spath, nil)
 		}
@@ -225,7 +226,7 @@ func (o *MenuedOwner) UpdateItems(items zdict.Items, values []interface{}) {
 
 func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 	o.items = items
-	o.updateTitle()
+	o.updateTitleAndImage()
 }
 
 func (o *MenuedOwner) SetSingleValue(val interface{}) {
@@ -238,6 +239,7 @@ func (o *MenuedOwner) SetSingleValue(val interface{}) {
 			o.items[i].Selected = false
 		}
 	}
+	o.updateTitleAndImage()
 }
 
 func (o *MenuedOwner) getItems() []MenuedOItem {
@@ -260,10 +262,79 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
 	zlog.Error(nil, "no value to change name for")
 }
 
+func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Canvas, allAction bool, imageWidth, imageMarg, rightMarg float64) {
+	list.UpdateRowBGColor(i)
+	item := o.items[i]
+	x := 8.0
+	// zlog.Info("DrawMenuedRow:", i, rect, list.HighlightColor)
+	if item.Name == MenuSeparatorID {
+		canvas.SetColor(zgeo.ColorLightGray)
+		canvas.StrokeHorizontal(0, rect.Size.W, math.Floor(rect.Center().Y), 1, zgeo.PathLineSquare)
+		return
+	}
+
+	ti := TextInfoNew()
+	if list.IsRowHighlighted(i) {
+		ti.Color = list.HighlightColor.GetContrastingGray()
+	} else if item.TextColor.Valid {
+		ti.Color = item.TextColor
+	} else {
+		ti.Color = o.TextColor
+	}
+	ti.Font = o.Font
+	if !item.IsAction {
+		if list.IsRowSelected(i) {
+			ti.Text = "√"
+			ti.Rect = rect.Plus(zgeo.RectFromXY2(8, 0, 0, 0))
+			ti.Alignment = zgeo.Left
+			ti.Draw(canvas) // we keep black/white hightlighted color
+		}
+		x += 14
+	}
+
+	if o.ImagePath != "" {
+		canvas.DownsampleImages = true
+		sval := fmt.Sprint(item.Value)
+		spath := path.Join(o.ImagePath, sval+".png")
+		imageX := x // we need to store this since, ImageFromPath resulting closure uses it later
+		ImageFromPath(spath, func(img *Image) {
+			if img != nil {
+				inRect := zgeo.RectFromXYWH(imageX, 0, imageWidth, rect.Size.H)
+				drect := inRect.Align(img.Size(), zgeo.CenterLeft|zgeo.Shrink|zgeo.Proportional, zgeo.Size{2, 4})
+				// canvas.SetColor(zgeo.ColorGreen)
+				// canvas.FillRect(inRect)
+				// zlog.Info("DrawMenuedImage:", item.Name, drect, allAction, x)
+				canvas.DrawImage(img, false, true, drect, 1, zgeo.Rect{})
+			}
+		})
+		x += imageWidth + imageMarg
+	}
+
+	if item.IsAction {
+		ti.Font.Style = FontStyleItalic
+	}
+	//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
+	ti.Text = item.Name
+	ti.Alignment = zgeo.CenterLeft
+	ti.Rect = rect.Plus(zgeo.RectFromXY2(x, 0, -rightMarg, 0))
+	ti.Draw(canvas)
+
+	if o.HasLabelColor && item.LabelColor.Valid {
+		r := rect
+		r.SetMinX(rect.Max().X - rightMarg + 6)
+		r = r.Expanded(zgeo.Size{-3, -3})
+		canvas.SetColor(item.LabelColor)
+		path := zgeo.PathNewRect(r, zgeo.Size{2, 2})
+		canvas.FillPath(path)
+		canvas.SetColor(zgeo.ColorBlack.WithOpacity(item.LabelColor.Opacity()))
+		canvas.StrokePath(path, 1, zgeo.PathLineRound)
+	}
+}
+
 func (o *MenuedOwner) popup() {
 	const (
 		imageWidth = 40
-		ImageMarg  = 8
+		imageMarg  = 8
 		checkWidth = 14
 		topMarg    = 6
 		bottomMarg = 6
@@ -312,75 +383,11 @@ func (o *MenuedOwner) popup() {
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
 		cv := CustomViewNew("row")
 		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
-			list.UpdateRowBGColor(i)
-			item := o.items[i]
-			x := 8.0
-			zlog.Info("DrawMenuedRow:", i, rect, x)
-			if item.Name == MenuSeparatorID {
-				canvas.SetColor(zgeo.ColorLightGray)
-				canvas.StrokeHorizontal(0, rect.Size.W, math.Floor(rect.Center().Y), 1, zgeo.PathLineSquare)
-				return
-			}
-
-			ti := TextInfoNew()
-			if list.IsRowHighlighted(i) {
-				ti.Color = list.HighlightColor.GetContrastingGray()
-			} else if item.TextColor.Valid {
-				ti.Color = item.TextColor
-			} else {
-				ti.Color = o.TextColor
-			}
-			ti.Font = o.Font
-			if !item.IsAction {
-				if list.IsRowSelected(i) {
-					ti.Text = "√"
-					ti.Rect = rect.Plus(zgeo.RectFromXY2(8, 0, 0, 0))
-					ti.Alignment = zgeo.Left
-					ti.Draw(canvas) // we keep black/white hightlighted color
-				}
-				x += 14
-			}
-
-			if o.ImagePath != "" {
-				canvas.DownsampleImages = true
-				sval := fmt.Sprint(item.Value)
-				spath := path.Join(o.ImagePath, sval+".png")
-				imageX := x // we need to store this since, ImageFromPath resulting closure uses it later
-				ImageFromPath(spath, func(img *Image) {
-					if img != nil {
-						inRect := zgeo.RectFromXYWH(imageX, 0, imageWidth, rect.Size.H)
-						drect := inRect.Align(img.Size(), zgeo.CenterLeft|zgeo.Shrink|zgeo.Proportional, zgeo.Size{2, 4})
-						// canvas.SetColor(zgeo.ColorGreen)
-						// canvas.FillRect(inRect)
-						zlog.Info("DrawMenuedImage:", item.Name, drect, allAction, x)
-						canvas.DrawImage(img, false, true, drect, 1, zgeo.Rect{})
-					}
-				})
-				x += imageWidth + ImageMarg
-			}
-
-			if item.IsAction {
-				ti.Font.Style = FontStyleItalic
-			}
-			//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
-			ti.Text = item.Name
-			ti.Alignment = zgeo.CenterLeft
-			ti.Rect = rect.Plus(zgeo.RectFromXY2(x, 0, -rm, 0))
-			ti.Draw(canvas)
-
-			if o.HasLabelColor && item.LabelColor.Valid {
-				r := rect
-				r.SetMinX(rect.Max().X - rm + 6)
-				r = r.Expanded(zgeo.Size{-3, -3})
-				canvas.SetColor(item.LabelColor)
-				path := zgeo.PathNewRect(r, zgeo.Size{2, 2})
-				canvas.FillPath(path)
-				canvas.SetColor(zgeo.ColorBlack.WithOpacity(item.LabelColor.Opacity()))
-				canvas.StrokePath(path, 1, zgeo.PathLineRound)
-			}
+			o.rowDraw(list, i, rect, canvas, allAction, imageWidth, imageMarg, rm)
 		})
 		return cv
 	}
+
 	var max string
 	for _, item := range o.items {
 		if len(item.Name) > len(max) {
@@ -392,13 +399,15 @@ func (o *MenuedOwner) popup() {
 		w += checkWidth
 	}
 	if o.ImagePath != "" {
-		w += imageWidth + ImageMarg
+		w += imageWidth + imageMarg
 	}
+	w += 18 // test
 	stack.SetMinSize(zgeo.Size{w, 0})
 
 	list.HandleRowSelected = func(i int, selected, fromPressed bool) {
-		// zlog.Info("list selected", i, selected, o.items[i].IsAction)
+		zlog.Info("list selected", i, selected, o.items[i].IsAction)
 		o.items[i].Selected = selected
+		o.updateTitleAndImage()
 		if o.items[i].IsAction {
 			if selected {
 				PresentViewClose(stack, false, nil)
@@ -425,6 +434,7 @@ func (o *MenuedOwner) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
+		zlog.Info("menued closed", dismissed, o.IsMultiple)
 		if !dismissed || o.IsMultiple { // if multiple, we handle any select/deselect done
 			for i, item := range o.items {
 				if item.IsAction && item.Selected {
@@ -432,7 +442,7 @@ func (o *MenuedOwner) popup() {
 					if o.ActionHandler != nil {
 						id := o.items[i].Value.(string)
 						o.ActionHandler(id)
-						o.updateTitle()
+						o.updateTitleAndImage()
 					}
 					return
 				}
@@ -445,7 +455,7 @@ func (o *MenuedOwner) popup() {
 					o.items[i].Selected = false
 				}
 			}
-			o.updateTitle()
+			o.updateTitleAndImage()
 		}
 	})
 }

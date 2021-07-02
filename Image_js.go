@@ -117,7 +117,7 @@ func (i *Image) load(path string, done func(success bool)) {
 
 	imageF := js.Global().Get("Image")
 	i.imageJS = imageF.New()
-	// i.imageJS.Set("crossOrigin", "Anonymous")
+	i.imageJS.Set("crossOrigin", "Anonymous")
 
 	// i.imageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 	i.imageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {

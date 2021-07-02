@@ -80,6 +80,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
+	s.Maximize(v.minSize)
 	s = s.Ceil()
 	// if v.ObjectName() == "thumbSetTime" {
 	// 	zlog.Info("CS:", s, v.Columns, v.maxWidth, v.minWidth, ti.Text)
@@ -124,13 +125,14 @@ func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignme
 		font.Style = FontStyleBold
 	}
 	title := prefix
-	checkBox, _ := view.(*CheckBox)
-	if checkBox != nil {
+	checkBox, isCheck := view.(*CheckBox)
+	if checkBox != nil && alignment&zgeo.Right != 0 {
 		title = ""
-		clabel, cstack := checkBox.Labelize(prefix)
-		clabel.SetFont(font)
-		clabel.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
+		_, cstack := checkBox.Labelize(prefix)
+		// clabel.SetFont(font)
+		// clabel.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
 		view = cstack
+		alignment = alignment.FlippedHorizontal()
 	}
 	label = LabelNew(title)
 	label.SetObjectName("$labelize.label " + prefix)
@@ -140,7 +142,11 @@ func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignme
 	stack = StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
 	stack.AddView(label, zgeo.CenterLeft).MinSize.W = minWidth
-	viewCell = stack.AddView(view, alignment)
+	marg := zgeo.Size{}
+	if isCheck {
+		marg.W = -6 // in html cell has a box around it of 20 pixels
+	}
+	viewCell = stack.Add(view, alignment, marg)
 	return
 }
 

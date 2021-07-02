@@ -13,7 +13,10 @@ import (
 
 const emailKey = "zui.AuthenticationEmail"
 
-var AuthenticationCurrentUserID int64
+var (
+	AuthenticationCurrentUserID int64
+	AuthenticationCurrentToken  string
+)
 
 func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.AuthenticationResult)) {
 	const column = 120.0
@@ -107,6 +110,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 			auth.ID = user.ID
 			AuthenticationCurrentUserID = user.ID
 			auth.Token = client.ID
+			AuthenticationCurrentToken = client.ID
 			// zlog.Info("CheckAndDoAuthentication existed:", auth)
 			if got != nil {
 				got(auth)
@@ -121,6 +125,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 		zlog.Info("got auth:", auth)
 		if got != nil {
 			AuthenticationCurrentUserID = auth.ID
+			AuthenticationCurrentToken = auth.Token
 			got(auth)
 		}
 	})

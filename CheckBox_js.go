@@ -12,6 +12,7 @@ func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	s.Element = DocumentJS.Call("createElement", "input")
 	s.setjs("style", "position:absolute")
 	s.setjs("type", "checkbox")
+	s.style().Set("margin-top", "4px")
 	s.SetCanFocus(true)
 	s.View = s
 	s.SetValue(on)
