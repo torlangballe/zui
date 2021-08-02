@@ -5,33 +5,60 @@ package zui
 import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /2/11/15.
 
-type Label struct {
-	NativeView
-	LongPresser
+type LabelCV struct {
+	// NativeView
+	// LongPresser
+	CustomView
 
 	minWidth  float64
 	maxWidth  float64
 	maxLines  int
 	margin    zgeo.Rect
 	alignment zgeo.Alignment
+	text      string
 
-	pressed     func()
-	longPressed func()
+	// pressed     func()
+	// longPressed func()
 
 	Columns int
 }
 
-func (v *Label) GetTextInfo() TextInfo {
+func LabelCVNew(text string) *LabelCV {
+	v := &LabelCV{}
+	v.Init(v, zstr.Head(text, 100))
+	v.text = text
+	v.SetObjectName(text)
+	v.SetMaxLines(1)
+	v.alignment = zgeo.CenterLeft
+	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	v.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+		ti := v.GetTextInfo()
+		ti.Rect = v.LocalRect()
+		ti.Draw(canvas)
+	})
+	return v
+}
+
+func (v *LabelCV) SetText(text string) {
+	v.text = text
+	v.Expose()
+}
+
+func (v *LabelCV) Text() string {
+	return v.text
+}
+
+func (v *LabelCV) GetTextInfo() TextInfo {
 	t := TextInfoNew()
 	t.Alignment = v.alignment
 	t.Font = v.Font()
-	if v.Columns == 0 {
-		t.Text = v.Text()
-	}
+	t.Color = v.Color()
+	t.Text = v.Text()
 	if v.maxWidth != 0 {
 		t.SetWidthFreeHight(v.maxWidth)
 	}
@@ -39,7 +66,7 @@ func (v *Label) GetTextInfo() TextInfo {
 	return *t
 }
 
-func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *LabelCV) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
 	to := v.View.(TextInfoOwner)
 	ti := to.GetTextInfo()
@@ -50,43 +77,46 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
-	// zlog.Info("L CS:", v.ObjectName(), s, v.minWidth, v.maxWidth)
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
+	s.Maximize(v.minSize)
 	s = s.Ceil()
+	// if v.ObjectName() == "thumbSetTime" {
+	// 	zlog.Info("CS:", s, v.Columns, v.maxWidth, v.minWidth, ti.Text)
+	// }
 	return s
 }
 
-func (v *Label) IsMinimumOneLineHight() bool {
+func (v *LabelCV) IsMinimumOneLineHight() bool {
 	return v.maxLines > 0
 }
 
-func (v *Label) TextAlignment() zgeo.Alignment {
+func (v *LabelCV) TextAlignment() zgeo.Alignment {
 	return v.alignment
 }
 
-func (v *Label) MinWidth() float64 {
+func (v *LabelCV) MinWidth() float64 {
 	return v.minWidth
 }
 
-func (v *Label) MaxWidth() float64 {
+func (v *LabelCV) MaxWidth() float64 {
 	return v.maxWidth
 }
 
-func (v *Label) MaxLines() int {
+func (v *LabelCV) MaxLines() int {
 	return v.maxLines
 }
 
-func (v *Label) SetMinWidth(min float64) {
+func (v *LabelCV) SetMinWidth(min float64) {
 	v.minWidth = min
 }
 
-func (v *Label) SetMaxWidth(max float64) {
+func (v *LabelCV) SetMaxWidth(max float64) {
 	v.maxWidth = max
 }
 
-func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
+func LabelizeCV(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *LabelCV, stack *StackView, viewCell *ContainerViewCell) {
 	font := FontNice(FontDefaultSize, FontStyleBold)
 	to, _ := view.(TextInfoOwner)
 	if to != nil {
@@ -104,7 +134,7 @@ func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignme
 		view = cstack
 		alignment = alignment.FlippedHorizontal()
 	}
-	label = LabelNew(title)
+	label = LabelCVNew(title)
 	label.SetObjectName("$labelize.label " + prefix)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font)
@@ -120,10 +150,18 @@ func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignme
 	return
 }
 
-func (v *Label) PressedHandler() func() {
-	return v.pressed
+func (v *LabelCV) SetMaxLines(max int) {
+	// zlog.Info("Label.SetMaxLines:", max, v.ObjectName())
+	v.maxLines = max
+	v.Expose()
 }
 
-func (v *Label) LongPressedHandler() func() {
-	return v.longPressed
+func (v *LabelCV) SetTextAlignment(a zgeo.Alignment) {
+	v.alignment = a
+	v.Expose()
+}
+
+func (v *LabelCV) SetMargin(m zgeo.Rect) {
+	v.margin = m
+	v.Expose()
 }

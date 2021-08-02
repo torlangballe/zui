@@ -36,13 +36,16 @@ type ListView struct {
 	MultiSelect          bool
 	HoverHighlight       bool
 	ExposeSetsRowBGColor bool
+	PreCreateRows        int
 	SelectedColor        zgeo.Color
 	HasUniformHight      bool
 
 	// topPos float64
-	stack      *CustomView
-	rows       map[int]View
-	rowHeights map[int]float64
+	scrollTimer      *ztimer.Timer
+	scrollToYOnTimer float64
+	stack            *CustomView
+	rows             map[int]View
+	rowHeights       map[int]float64
 }
 
 type ListViewIDGetter interface {
@@ -63,6 +66,7 @@ func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.ScrollView.Init(view, name)
 	v.rows = map[int]View{}
 	v.rowHeights = map[int]float64{}
+	v.scrollTimer = ztimer.TimerNew()
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
 	v.SelectedColor = ListViewDefaultSelectedColor
 	if selection != nil {
@@ -75,9 +79,14 @@ func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("ScrollTo:", pos.Y)
 		// v.topPos = pos.Y
-		first, last := v.layoutRows(-1)
-		if v.HandleScrolledToRows != nil {
-			v.HandleScrolledToRows(pos.Y, first, last)
+		v.scrollToYOnTimer = pos.Y
+		if !v.scrollTimer.IsRunning() {
+			v.scrollTimer.StartIn(0.2, func() {
+				first, last := v.layoutRows()
+				if v.HandleScrolledToRows != nil {
+					v.HandleScrolledToRows(v.scrollToYOnTimer, first, last)
+				}
+			})
 		}
 	})
 }
@@ -161,7 +170,7 @@ func (v *ListView) SetRect(rect zgeo.Rect) {
 	r := zgeo.Rect{pos, zgeo.Size{w, h}}
 	v.stack.SetRect(r)
 	// zlog.Info("List set rect: stack", rect, r)
-	v.layoutRows(-1)
+	v.layoutRows()
 }
 
 func getRowHeight(v *ListView, i int, total zgeo.Size) float64 {
@@ -184,16 +193,17 @@ func getRowHeight(v *ListView, i int, total zgeo.Size) float64 {
 	return h
 }
 
-func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
+// var ListLayoutStart time.Time
+
+func (v *ListView) layoutRows() (first, last int) {
 	// zlog.Info("layout rows", v.ObjectName())
+	// ListLayoutStart = time.Now()
 	count := v.GetRowCount()
 	ls := v.LocalRect().Size
 	oldRows := map[int]View{}
 	y := 0.0
 	for k, v := range v.rows {
-		if onlyIndex == -1 || k == onlyIndex {
-			oldRows[k] = v
-		}
+		oldRows[k] = v
 	}
 	first = -1
 	// zlog.Info("\nlayout rows", len(oldRows), count)
@@ -203,15 +213,20 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 		s.H = getRowHeight(v, i, v.Rect().Size)
 		s.W = ls.W
 		r := zgeo.Rect{zgeo.Pos{0, y}, s}
-		if (onlyIndex == -1 || i == onlyIndex) && r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+ls.H {
+		if r.Min().Y > v.YOffset+ls.H {
+			break
+		}
+		if r.Max().Y >= v.YOffset {
 			// zlog.Info("actually layout row:", i)
 			if first == -1 {
+				// zlog.Info("layout rows", v.ObjectName(), i, y)
 				first = i
 			}
 			last = i
 			row := v.rows[i]
 			if row != nil {
-				calc := (row.Rect() != r)
+				nv := ViewGetNative(row)
+				calc := !nv.Presented || (row.Rect() != r)
 				ct, _ := row.(ContainerType)
 				if ct != nil {
 					includeCollapsed := false
@@ -224,16 +239,17 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 						return true
 					})
 				}
-				nv := ViewGetNative(row)
 				// fmt.Printf("ListLay: %s %p %v %p\n", nv.Hierarchy(), nv, calc)
 				if nv.Parent() == nil {
 					calc = true
 					v.stack.AddChild(row, -1)
 				}
-				PresentViewCallReady(row, false)
+				v.UpdateRow(i, false)
+				PresentViewCallReady(row, false) // do we need this?
 				if calc {
 					row.SetRect(r)
 				}
+				v.refreshRow(i)
 				delete(oldRows, i)
 			} else {
 				// tart := time.Now()
@@ -241,27 +257,41 @@ func (v *ListView) layoutRows(onlyIndex int) (first, last int) {
 				v.stack.AddChild(row, -1)
 				PresentViewCallReady(row, false)
 				row.SetRect(r)
+				v.refreshRow(i)
 			}
 		}
 		y += s.H + v.spacing
+	}
+	if v.PreCreateRows > 0 {
+		go v.preCreateRows(first, last)
 	}
 	for i, view := range oldRows {
 		v.stack.RemoveChild(view)
 		delete(v.rows, i)
 	}
-	et, _ := v.View.(ExposableType)
-	if et != nil {
-		et.drawIfExposed()
-	}
+	// et, _ := v.View.(ExposableType)
+	// if et != nil {
+	// 	et.drawIfExposed()
+	// }
+	// zlog.Info("ListLayout done:", time.Since(ListLayoutStart))
 	return
 }
 
-func (v *ListView) ExposeRows() {
-	// for i in indexPathsForVisibleRows ?? [] {
-	//     if let c = self.cellForRow(at i) {
-	//         exposeAll(c.contentView)
-	//     }
-	// }
+func (v *ListView) preCreateRows(before, after int) {
+	ls := v.LocalRect().Size
+	for i := after; i < v.GetRowCount(); i++ {
+		if i > after+v.PreCreateRows {
+			break
+		}
+		_, got := v.rows[i]
+		if !got {
+			var s zgeo.Size
+			s.H = getRowHeight(v, i, v.Rect().Size)
+			s.W = ls.W
+			v.makeRow(s, i)
+			// PresentViewCallReady(row, false)
+		}
+	}
 }
 
 func (v *ListView) ScrollToMakeRowVisible(row int, animate bool) {
@@ -280,7 +310,9 @@ func (v *ListView) ScrollToMakeRowVisible(row int, animate bool) {
 
 func (v *ListView) ReloadData() {
 	for _, view := range v.rows {
-		v.stack.RemoveChild(view)
+		if ViewGetNative(view).Parent() != nil {
+			v.stack.RemoveChild(view)
+		}
 	}
 	v.rows = map[int]View{}
 	v.SetRect(v.Rect()) // this will cause layoutrows and resizing of v.stack
@@ -299,9 +331,9 @@ func (v *ListView) ReloadRow(i int) {
 func (v *ListView) refreshRow(index int) {
 	row, _ := v.rows[index]
 	if row != nil {
-		cv, _ := row.(*CustomView)
-		if cv != nil {
-			cv.Expose()
+		et, got := row.(ExposableType)
+		if got {
+			et.Expose()
 		}
 	}
 	if !v.ExposeSetsRowBGColor {
@@ -314,7 +346,7 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 	// fmt.Printf("CreateRow: %p %d\n", row, index)
 	nv := ViewGetNative(row)
 	v.rows[index] = row
-	v.refreshRow(index)
+	// v.refreshRow(index)
 	if v.HoverHighlight && v.HighlightColor.Valid {
 		nv.SetPointerEnterHandler(func(pos zgeo.Pos, inside bool) {
 			if time.Since(v.ScrolledAt) < time.Second {
@@ -617,10 +649,17 @@ func (v *ListView) GetRectOfRow(row int) zgeo.Rect {
 
 func (v *ListView) UpdateVisibleRows() {
 	first, last := v.GetFirstLastVisibleRowIndexes()
+	edited := false
 	for i := first; i <= last; i++ {
-		edited := false
 		v.UpdateRow(i, edited)
 	}
+	// go func() {
+	// 	for i, _ := range v.rows {
+	// 		if i < first || i > last {
+	// 			v.UpdateRow(i, edited)
+	// 		}
+	// 	}
+	// }()
 }
 
 func (v *ListView) GetChildren(includeCollapsed bool) []View {

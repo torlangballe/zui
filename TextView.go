@@ -35,6 +35,7 @@ type TextView struct {
 	margin zgeo.Rect
 	// ContinuousUpdateCalls bool
 	UpdateSecs float64
+	editDone   func(canceled bool)
 }
 
 var TextViewDefaultMargin = 2.0
@@ -47,6 +48,10 @@ func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
 	zlog.Assert(cols != 0)
 	v.Init(v, text, style, rows, cols)
 	return v
+}
+
+func (v *TextView) SelectAll() {
+	v.Select(0, -1)
 }
 
 func (v *TextView) IsEditing() bool {

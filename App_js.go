@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zutil/znet"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
-	"github.com/torlangballe/zutil/zstr"
 )
 
 type nativeApp struct {
@@ -26,16 +25,14 @@ func AppMainArgs() (path string, args map[string]string) {
 	args = map[string]string{}
 	u, err := url.Parse(AppURL())
 	zlog.AssertNotError(err)
-	path = u.Path
-	zstr.HasPrefix(path, zrest.AppURLPrefix+"page/", &path)
-	path = strings.TrimRight(path, "/")
+	path = strings.TrimRight(u.Path, "/")
 	for k, v := range u.Query() {
 		args[k] = v[0]
 	}
 	return
 }
 
-func AppSetUIDefaults(useTokenAuth bool) (part string, args map[string]string) {
+func AppSetUIDefaults(useTokenAuth bool) (path string, args map[string]string) {
 	url, _ := url.Parse(AppURL())
 	host, _ := znet.GetHostAndPort(url)
 	args = map[string]string{}
@@ -51,7 +48,7 @@ func AppSetUIDefaults(useTokenAuth bool) (part string, args map[string]string) {
 		zrpc.ToServerClient.Port = port
 	}
 	DefaultLocalKeyValueStore = KeyValueStoreNew(true)
-	part, args = AppMainArgs()
+	path, args = AppMainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		DebugMode = true
 	}

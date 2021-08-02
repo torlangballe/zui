@@ -2,6 +2,7 @@ package zui
 
 import (
 	"fmt"
+	"path"
 	"reflect"
 	"strconv"
 	"syscall/js"
@@ -35,6 +36,14 @@ func (v *NativeView) Parent() *NativeView {
 	// v.Element = e
 	// v.View = n
 	// return n
+	if v.parent != nil && v.parent.View != nil {
+		// zlog.Info("PAR:", reflect.ValueOf(v.parent.View).Type())
+		nv := ViewGetNative(v.parent.View)
+		// zlog.Info("PAR2:", reflect.ValueOf(nv.View).Type())
+		if nv != nil {
+			return nv
+		}
+	}
 	return v.parent
 }
 
@@ -286,9 +295,10 @@ func (v *NativeView) DumpTree(prefix string) {
 }
 
 func (v *NativeView) RemoveFromParent() {
-	// zlog.Info("RemoveFromParent:", v.ObjectName())
+	// zlog.Info("RemoveFromParent:", v.ObjectName(), reflect.ValueOf(v.View).Type())
 	zlog.Assert(v.parent != nil)
-	v.parent.RemoveChild(v)
+	v.parent.RemoveChild(v.View)
+	v.parent = nil
 }
 
 func (v *NativeView) SetFont(font *Font) {
@@ -361,6 +371,7 @@ func (v *NativeView) AddChild(child View, index int) {
 func (v *NativeView) ReplaceChild(child, with View) {
 	v.AddChild(with, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	with.SetRect(child.Rect())
+	// zlog.Info("RemoveFromParent:", v.ObjectName(), reflect.ValueOf(v.View).Type())
 	v.RemoveChild(child)
 	et, _ := with.(ExposableType)
 	// zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
@@ -383,12 +394,13 @@ func (v *NativeView) SetZIndex(index int) {
 }
 
 func (v *NativeView) RemoveChild(child View) {
-	// zlog.Info("REMOVE CHILD:", child.ObjectName())
 	nv := ViewGetNative(child)
 	if nv == nil {
 		panic("NativeView AddChild child not native")
 	}
 	win := v.GetWindow()
+	// zlog.Info("RemoveChild:", v.ObjectName(), child.ObjectName(), reflect.ValueOf(child).Type())
+
 	win.removeKeyPressHandlerViews(child)
 	nv.StopStoppers()
 	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
@@ -616,7 +628,7 @@ func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []b
 	}))
 }
 
-func (v *NativeView) MakeUploader(got func(data []byte, name string)) {
+func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	e := DocumentJS.Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
@@ -630,17 +642,6 @@ func (v *NativeView) MakeUploader(got func(data []byte, name string)) {
 		}
 		return nil
 	}))
-}
-
-func MakeUploadButton() *ShapeView {
-	v := ShapeViewNew(ShapeViewTypeRoundRect, zgeo.Size{68, 22})
-	v.SetColor(zgeo.ColorWhite)
-	v.StrokeColor = zgeo.ColorNew(0, 0.6, 0, 1)
-	v.StrokeWidth = 2
-	v.Ratio = 0.3
-	v.SetBGColor(zgeo.ColorClear)
-	v.SetText("Upload")
-	return v
 }
 
 func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool)) {
@@ -707,4 +708,20 @@ func (v *NativeView) GetFocusedView() (found View) {
 		return true
 	})
 	return found
+}
+
+func (v *NativeView) SetDownloader(surl, name string) {
+	if name == "" {
+		_, name = path.Split(surl)
+	}
+	v.setjs("download", name)
+	v.setjs("href", surl)
+}
+
+func (v *NativeView) WrapInLink(surl, name string) *StackView {
+	s := StackViewVert("#type:a")
+	s.setjs("download", name)
+	s.setjs("href", surl)
+	s.Add(v.View, zgeo.Center|zgeo.Expand)
+	return s
 }

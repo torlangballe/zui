@@ -13,8 +13,11 @@ import (
 	"github.com/torlangballe/zutil/ztime"
 )
 
-var remoteCache = zcache.New(3600, false)
-var localCache = zcache.New(0, false) // cache for with-app images, no expiry
+var (
+	remoteCache          = zcache.New(3600, false)
+	localCache           = zcache.New(0, false) // cache for with-app images, no expiry
+	ImageGlobalURLPrefix string
+)
 
 type imageBase struct {
 	size      zgeo.Size `json:"size"`
@@ -54,13 +57,17 @@ func ImagesGetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 
 func ImageFromPath(path string, got func(*Image)) *Image {
 	// if !strings.HasSuffix(path, ".png") {
-	// 	zlog.Info("ImageFromPath:", path, zlog.GetCallingStackString())
+	// zlog.Info("ImageFromPath:", path, zlog.GetCallingStackString())
 	// }
 	if path == "" {
 		if got != nil {
 			got(nil)
 		}
 		return nil
+	}
+	// zlog.Info("ImageFromPath:", ImageGlobalURLPrefix, "#", path)
+	if !strings.HasPrefix(path, "data:") && !zhttp.StringStartsWithHTTPX(path) {
+		path = ImageGlobalURLPrefix + path
 	}
 	cache := remoteCache
 	if strings.HasPrefix(path, "images/") {

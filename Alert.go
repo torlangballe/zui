@@ -84,7 +84,9 @@ func AlertAsk(title string, handle func(ok bool)) {
 
 func AlertShowError(err error, items ...interface{}) {
 	str := zstr.SprintSpaced(items...)
-	str = zstr.Concat("\n", str, err)
+	if err != nil {
+		str = zstr.Concat("\n", str, err)
+	}
 	a := AlertNew(str)
 	a.Show(nil)
 	zlog.Error(err, str)
@@ -118,12 +120,23 @@ func AlertShowStatus(secs float64, parts ...interface{}) {
 	}
 }
 
+func alertMakeUploadButton() *ShapeView {
+	v := ShapeViewNew(ShapeViewTypeRoundRect, zgeo.Size{68, 22})
+	v.SetColor(zgeo.ColorWhite)
+	v.StrokeColor = zgeo.ColorNew(0, 0.6, 0, 1)
+	v.StrokeWidth = 2
+	v.Ratio = 0.3
+	v.SetBGColor(zgeo.ColorClear)
+	v.SetText("Upload")
+	return v
+}
+
 func (a *Alert) addButtonIfNotEmpty(stack, bar *StackView, text string, handle func(result AlertResult), result AlertResult) {
 	if text != "" {
 		if result == AlertUpload {
 			zlog.Assert(a.HandleUpload != nil)
-			button := MakeUploadButton()
-			button.MakeUploader(func(data []byte, filename string) {
+			button := alertMakeUploadButton()
+			button.SetUploader(func(data []byte, filename string) {
 				a.HandleUpload(data, filename)
 				PresentViewClose(a.DialogView, false, nil)
 			})
@@ -186,21 +199,23 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	PresentView(stack, att, nil, nil)
 }
 
-func addButton(view View, bar *StackView, title string, ok bool, done func(ok bool)) {
+func addButton(view View, bar *StackView, title string, ok bool, done func(ok bool) bool) {
 	button := ButtonNew(title)
 	button.SetMinWidth(60)
 	bar.AddAlertButton(button)
 	button.SetPressedHandler(func() {
-		PresentViewClose(view, !ok, func(dismissed bool) {
-			done(ok)
-		})
+		parent := ViewGetNative(view).Parent()
+		close := done(ok)
+		if close {
+			PresentViewClose(parent, !ok, nil)
+		}
 	})
 }
 
-func PresentOKCanceledView(view View, done func(ok bool)) {
+func PresentOKCanceledView(view View, title string, done func(ok bool) bool) {
 	stack := StackViewVert("alert")
-	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
 	stack.SetBGColor(zgeo.ColorWhite)
+	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
 
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	bar := StackViewHor("bar")
@@ -211,5 +226,9 @@ func PresentOKCanceledView(view View, done func(ok bool)) {
 
 	att := PresentViewAttributesNew()
 	att.Modal = true
-	PresentView(stack, att, nil, nil)
+	if title != "" {
+		PresentTitledView(stack, title, att, nil, nil, nil, nil)
+	} else {
+		PresentView(stack, att, nil, nil)
+	}
 }

@@ -112,10 +112,13 @@ func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
 }
 
 func (o *MenuedOwner) Stop() {
+	if o.View == nil {
+		zlog.Info("Stopping MenuOwner view==nil:", zlog.GetCallingStackString())
+	}
 	// zlog.Info("Stopping MenuOwner:", o.View != nil)
-	// zlog.Info("Stopping MenuOwner for:", o.View)
+	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())
 	presser := o.View.(Pressable)
-	// zlog.Info("Stopping MenuOwner for2:", presser)
+	// zlog.Info("Stopping MenuOwner for2:", presser != nil)
 	presser.SetPressedHandler(nil)
 	presser.SetLongPressedHandler(nil)
 	*o = MenuedOwner{} // this will
@@ -405,7 +408,7 @@ func (o *MenuedOwner) popup() {
 	stack.SetMinSize(zgeo.Size{w, 0})
 
 	list.HandleRowSelected = func(i int, selected, fromPressed bool) {
-		zlog.Info("list selected", i, selected, o.items[i].IsAction)
+		// zlog.Info("list selected", i, selected, o.items[i].IsAction)
 		o.items[i].Selected = selected
 		o.updateTitleAndImage()
 		if o.items[i].IsAction {
@@ -434,7 +437,7 @@ func (o *MenuedOwner) popup() {
 	PresentView(stack, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
-		zlog.Info("menued closed", dismissed, o.IsMultiple)
+		// zlog.Info("menued closed", dismissed, o.IsMultiple)
 		if !dismissed || o.IsMultiple { // if multiple, we handle any select/deselect done
 			for i, item := range o.items {
 				if item.IsAction && item.Selected {

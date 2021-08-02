@@ -13,10 +13,14 @@ import (
 
 type DocumentationIconView struct {
 	ShapeView
+	Modal bool
 }
 
-var DocumentationPathPrefix = "doc/"
-var DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
+var (
+	DocumentationPathPrefix       = "doc/"
+	DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
+	DocumentationViewDefaultModal = false
+)
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v := &DocumentationIconView{}
@@ -28,12 +32,13 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v.StrokeColor = DocumentationDefaultIconColor
 	v.StrokeWidth = 2
 	v.SetColor(zgeo.ColorNew(0.9, 0.9, 1, 1))
+	v.Modal = DocumentationViewDefaultModal
 	v.SetPressedHandler(func() {
 		// editor := CodeEditorViewNew("editor")
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {
 		// }, nil)
-		go DocumentationViewPresent(path)
+		go DocumentationViewPresent(path, v.Modal)
 	})
 	return v
 }
@@ -49,8 +54,10 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v.Init(v, true, "docview")
 	v.SetSpacing(0)
 
+	// v.SetBGColor(zgeo.ColorWhite)
 	hstack := StackViewHor("hstack")
 	hstack.SetSpacing(0)
+	//	hstack.SetMarginS(zgeo.Size{30, 30})
 
 	isFrame := true
 	isMakeBar := true
@@ -76,25 +83,49 @@ func (v *DocumentationView) startEdit() {
 	v.ArrangeChildren(nil)
 }
 
-func DocumentationViewPresent(path string) error {
+// func setCSSFile(win *Window, surl string) {
+// 	var css string
+// 	params := zhttp.MakeParameters()
+// 	_, err := zhttp.Get(surl, params, &css)
+// 	if zlog.OnError(err) {
+// 		return
+// 	}
+// 	wdoc := win.element.Get("document")
+// 	style := wdoc.Call("createElement", "style")
+// 	style.Set("innerHTML", css)
+// 	body := wdoc.Get("body")
+// 	body.Call("insertBefore", style, body.Get("firstElementChild"))
+// 	zlog.Info("DOCSTYLE:", style, len(css))
+
+// }
+
+func DocumentationViewPresent(path string, modal bool) error {
 	opts := WindowOptions{}
 	opts.ID = "doc:" + path
 	if WindowExistsActivate(opts.ID) {
 		return nil
 	}
 	v := DocumentationViewNew(zgeo.Size{980, 800})
-	filepath := path
 	if !zhttp.StringStartsWithHTTPX(path) {
-		filepath = DocumentationPathPrefix + path
+		path = DocumentationPathPrefix + path
 	}
-	zlog.Info("SetDocPath:", filepath)
-	v.WebView.SetURL(filepath)
 	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
-	attr := PresentViewAttributes{
-		WindowOptions: opts,
+	attr := PresentViewAttributesNew()
+	attr.WindowOptions = opts
+	if modal {
+		attr.ModalCloseOnOutsidePress = true
+		attr.Modal = true
 	}
-	PresentView(v, attr, nil, nil)
+	PresentView(v, attr, func(win *Window) {
+		// zlog.Info("SetDocPath:", path, modal)
+		v.WebView.SetURL(path)
+		// go func() {
+		// 	setCSSFile(win, cssURL)
+		// 	v.WebView.FetchHTMLAndSet(path)
+		// 	//			setCSSFile(win, cssURL)
+		// }()
+	}, nil)
 	return nil
 }
 

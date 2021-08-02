@@ -152,7 +152,7 @@ func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
 	// })
-	// zlog.Info("Wi:AddView", v.ObjectName())
+	// zlog.Info("Win:AddView", v.ObjectName(), reflect.ValueOf(v).Type())
 	w.ProgrammaticView = v
 	wn := &NativeView{}
 	//	wn.Element = w.element.Get("document").Get("documentElement")
@@ -198,7 +198,7 @@ func (win *Window) setOnKeyUp() {
 			for view, h := range win.keyHandlers {
 				// zlog.Info("win key:", key, view.ObjectName())
 				if PresentedViewCurrentIsParent(view) {
-					// zlog.Info("win key2:", key, view.ObjectName())
+					// zlog.Info("win key2:", key, ViewGetNative(view).Hierarchy())
 					h(key, mods)
 				}
 			}
@@ -212,14 +212,16 @@ func (win *Window) setOnKeyUp() {
 }
 
 func (win *Window) removeKeyPressHandlerViews(root View) {
-	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName())
+	// fmt.Printf("removeKeyPressHandlerViews1: %+v\n", root)
+	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName(), reflect.ValueOf(root).Type())
 	ct, is := root.(ContainerType)
 	if !is {
 		return
 	}
 	includeCollapsed := false
 	ContainerTypeRangeChildren(ct, true, includeCollapsed, func(view View) bool {
-		if win.keyHandlers[view] != nil {
+		// zlog.Info("removeKeyPressHandlerView try:", view.ObjectName(), win != nil)
+		if win.keyHandlers != nil {
 			// zlog.Info("removeKeyPressHandlerView:", view.ObjectName())
 			delete(win.keyHandlers, view) // I guess we could just call delete without checking if it exists first, faster?
 		}

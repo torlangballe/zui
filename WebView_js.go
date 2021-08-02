@@ -2,11 +2,12 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
 type nativeWebView struct {
-
 }
 
 func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
@@ -62,6 +63,7 @@ func (v *WebView) setTitle() {
 		v.TitleLabel.SetText(str)
 	}
 }
+
 func (v *WebView) SetURL(surl string) {
 	v.Element.Set("src", surl)
 	old := v.url
@@ -70,6 +72,18 @@ func (v *WebView) SetURL(surl string) {
 		v.URLChangedHandler(surl)
 	}
 	v.setTitle()
+}
+
+func (v *WebView) FetchHTMLAndSet(surl string) {
+	var html string
+	zlog.Info("WebView.FetchHTMLAndSet:", surl)
+	params := zhttp.MakeParameters()
+	_, err := zhttp.Get(surl, params, &html)
+	if err != nil {
+		AlertShowError(err)
+		return
+	}
+	v.SetHTMLContent(html)
 }
 
 func (v *WebView) SetHTMLContent(html string) {

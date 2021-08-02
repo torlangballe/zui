@@ -5,12 +5,16 @@ import (
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 // TODO: store pressed/logpressed js function, and release when adding new one
 
 func (v *CustomView) Init(view View, name string) {
-	v.MakeJSElement(view, "div")
+	stype := "div"
+	zstr.HasPrefix(name, "#type:", &stype)
+	// zlog.Info("CUSTOMVIEW:", stype)
+	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc

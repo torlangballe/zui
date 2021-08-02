@@ -65,6 +65,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.StrokeColor = zgeo.ColorWhite
 	v.ImageAlign = zgeo.Center | zgeo.Proportional
 	v.PathLineType = zgeo.PathLineRound
+	v.TextXMargin = 4
 	v.SetColor(zgeo.ColorGray)
 	//	v.Proportional = true
 
@@ -92,15 +93,17 @@ func (v *ShapeView) Text() string {
 	return v.textInfo.Text
 }
 
-func (v *ShapeView) SetTextAlignment(a zgeo.Alignment) View {
+func (v *ShapeView) SetTextAlignment(a zgeo.Alignment) {
 	v.textInfo.Alignment = a
-	return v
 }
 
-func (v *ShapeView) SetTextColor(col zgeo.Color) View {
+func (v *ShapeView) SetTextWrap(w TextInfoWrap) {
+	v.textInfo.Wrap = w
+}
+
+func (v *ShapeView) SetTextColor(col zgeo.Color) {
 	v.textInfo.Color = col
 	v.Expose()
-	return v
 }
 
 func (v *ShapeView) MinWidth() float64 {
@@ -111,16 +114,14 @@ func (v *ShapeView) MaxLines() int {
 	return v.textInfo.MaxLines
 }
 
-func (v *ShapeView) SetMinWidth(min float64) View {
+func (v *ShapeView) SetMinWidth(min float64) {
 	s := v.MinSize()
 	s.W = min
 	v.SetMinSize(s)
-	return v
 }
 
-func (v *ShapeView) SetMaxLines(max int) View {
+func (v *ShapeView) SetMaxLines(max int) {
 	v.textInfo.MaxLines = max
-	return v
 }
 
 func (v *ShapeView) GetImage() *Image {
@@ -180,7 +181,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// if v.image.loading {
 	// 	zlog.Info("SH image loading:", v.ObjectName(), v.image.capInsets.Size.Negative())
 	// }
-	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s)
+	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.MinSize(), v.MaxSize.H)
 	s = s.Ceil()
 	return s
 }
@@ -194,7 +195,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
 		v.SetObjectName(name)
 	}
 	if image == nil && spath != "" {
-		v.image = ImageFromPath(spath, func(i *Image) {
+		ImageFromPath(spath, func(i *Image) {
 			// zlog.Info("sv image loaded: "+spath+": "+v.ObjectName(), i.loading)
 			v.Expose()
 			v.image = i // we must set it here, or it's not set yet in done() below
@@ -214,15 +215,19 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 
 	// zlog.Info("SetImageButtonName:", str)
 	v.SetImage(nil, str, func(image *Image) {
-		if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {
-			zlog.Error(nil, "Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
-			return
+		v.image = image
+		if image != nil {
+			if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {
+				zlog.Error(nil, "Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
+				return
+			}
+			v.image.SetCapInsetsCorner(insets)
 		}
 	})
-	v.image.SetCapInsets(zgeo.RectFromMinMax(insets.Pos(), insets.Pos().Negative()))
 }
 
 func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
+	// zlog.Info("shapeViewDraw:", view.ObjectName(), rect)
 	path := zgeo.PathNew()
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -234,7 +239,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
 
 	case ShapeViewTypeRoundRect:
-		r := rect.Expanded(zgeo.Size{-1, -1}.TimesD(ScreenMain().SoftScale))
+		r := rect.Expanded(zgeo.Size{-1, -1}) //.TimesD(ScreenMain().SoftScale))
 		corner := math.Round(math.Min(math.Min(r.Size.W, r.Size.H)*float64(v.Ratio), 15))
 		path.AddRect(r, zgeo.Size{corner, corner})
 
@@ -251,7 +256,6 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
-		// zlog.Info("shapeViewDraw stroke:", view.ObjectName())
 		var o = v.StrokeColor.Opacity()
 		if !v.Usable() {
 			o *= 0.6
@@ -308,16 +312,19 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		t.Color = v.getStateColor(t.Color)
 		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
-		// t.Rect.Pos.Y += 3
+		t.Rect.Pos.Y -= 1
 		//		zlog.Info("Shape draw:", v.ObjectName(), exp, v.textInfo.Text, t.Color)
 		t.Font = v.Font()
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
-		// 	zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		// zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 
+		// canvas.SetColor(zgeo.ColorGreen)
+		// canvas.FillRect(t.Rect)
+		// zlog.Info("shapeViewDraw text:", view.ObjectName(), v.margin, rect, t.Rect, v.TextXMargin)
 		t.Draw(canvas)
 		if v.IsImageFill {
 			canvas.SetDropShadowOff(1)

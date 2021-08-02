@@ -55,30 +55,30 @@ func (v *WebView) makeBar() *StackView {
 	v.TitleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
 	v.Bar.Add(v.TitleLabel, zgeo.Center|zgeo.HorExpand)
 
-	v.Back = ImageViewNew(nil, "images/triangle-left-gray.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
-	v.Back.DownsampleImages = true
-	v.Back.SetPressedHandler(func() {
-		zlog.Info("back")
-	})
-	v.Back.SetUsable(false)
-	v.Bar.Add(v.Back, zgeo.CenterLeft)
+	// v.Back = ImageViewNew(nil, "images/triangle-left-gray.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
+	// v.Back.DownsampleImages = true
+	// v.Back.SetPressedHandler(func() {
+	// 	zlog.Info("back")
+	// })
+	// v.Back.SetUsable(false)
+	// v.Bar.Add(v.Back, zgeo.CenterLeft)
+	// v.Forward = ImageViewNew(nil, "images/triangle-right-gray.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
+	// v.Forward.SetPressedHandler(func() {
+	// 	zlog.Info("forward")
+	// })
+	// v.Forward.DownsampleImages = true
+	// v.Forward.SetUsable(false)
+	// v.Bar.Add(v.Forward, zgeo.CenterLeft)
 
-	v.Forward = ImageViewNew(nil, "images/triangle-right-gray.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
-	v.Forward.SetPressedHandler(func() {
-		zlog.Info("forward")
-	})
-	v.Forward.DownsampleImages = true
-	v.Forward.SetUsable(false)
-	v.Bar.Add(v.Forward, zgeo.CenterLeft)
-
-	v.Refresh = ImageViewNew(nil, "images/refresh.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
-	v.Refresh.SetPressedHandler(func() {
-		v.SetURL(v.url)
-		// zlog.Info("refresh")
-	})
-	v.Refresh.DownsampleImages = true
-	v.Bar.Add(v.Refresh, zgeo.CenterRight)
-
+	if DebugOwnerMode {
+		v.Refresh = ImageViewNew(nil, "images/refresh.png", zgeo.SizeBoth(WebViewDefaultBarIconSize))
+		v.Refresh.SetPressedHandler(func() {
+			v.SetURL(v.url)
+			// zlog.Info("refresh")
+		})
+		v.Refresh.DownsampleImages = true
+		v.Bar.Add(v.Refresh, zgeo.CenterRight)
+	}
 	return v.Bar
 }
 

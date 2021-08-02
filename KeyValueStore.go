@@ -102,7 +102,7 @@ func (k KeyValueStore) SetString(value string, key string, sync bool)  { k.setIt
 func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.setItem(key, dict, sync) }
 func (k KeyValueStore) SetInt64(value int64, key string, sync bool)    { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetInt(value int, key string, sync bool) {
-	zlog.Info("KVS: SetInt:", value, key)
+	// zlog.Info("KVS: SetInt:", value, key)
 	k.setItem(key, value, sync)
 }
 func (k KeyValueStore) SetDouble(value float64, key string, sync bool) { k.setItem(key, value, sync) }

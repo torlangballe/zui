@@ -26,7 +26,8 @@ const (
 )
 
 const (
-	TextInfoWrapWord TextInfoWrap = iota
+	TextInfoWrapNone TextInfoWrap = iota
+	TextInfoWrapWord
 	TextInfoWrapChar
 	TextInfoWrapClip
 	TextInfoWrapHeadTruncate
@@ -74,7 +75,6 @@ type TextSetter interface {
 func TextInfoNew() *TextInfo {
 	t := &TextInfo{}
 	t.Type = TextInfoFill
-	t.Wrap = TextInfoWrapWord
 	t.Color = zgeo.ColorBlack
 	t.Alignment = zgeo.Center
 	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
@@ -82,6 +82,40 @@ func TextInfoNew() *TextInfo {
 	t.MinimumFontScale = 0.5
 	t.SplitItems = []string{"\r\n", "\n", "\r"}
 	return t
+}
+
+func reduceStringByOneToWrap(str string, wrap TextInfoWrap) (reduced, withSymbol string) {
+	if str == "" {
+		return
+	}
+	switch wrap {
+	case TextInfoWrapWord:
+		i := strings.IndexAny(str, " \t,.-_!@#$%^&**()=+<>?|:;")
+		if i != -1 {
+			s := str[:i]
+			return s, s
+		}
+		fallthrough
+	case TextInfoWrapChar:
+		s := zstr.TruncatedCharsAtEnd(str, 1)
+		return s, s
+
+	case TextInfoWrapHeadTruncate:
+		s := str[1:]
+		return s, "…" + s
+
+	case TextInfoWrapTailTruncate:
+		s := zstr.TruncatedCharsAtEnd(str, 1)
+		return s, s + "…"
+
+	case TextInfoWrapMiddleTruncate:
+		r := []rune(str)
+		m := len(r) / 2
+		left := string(r[:m])
+		right := string(r[m+1:])
+		return left + right, left + "…" + right
+	}
+	return str, str
 }
 
 func (ti *TextInfo) SetWidthFreeHight(w float64) {
@@ -217,7 +251,19 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, w)
 		return zgeo.Rect{}
 	}
-	ts, lines, widths := ti.GetBounds()
+	var ts zgeo.Size
+	var lines []string
+	var widths []float64
+	text := ti.Text
+	for {
+		ts, lines, widths = ti.GetBounds()
+		if ti.Wrap == TextInfoWrapClip || ti.Wrap == TextInfoWrapNone || len(lines) != 1 || ts.W <= ti.Rect.Size.W {
+			// zlog.Info("REDUCED:", lines)
+			break
+		}
+		text, ti.Text = reduceStringByOneToWrap(text, ti.Wrap)
+		zlog.Info("REDUCE:", ti.Wrap, ti.Text, ts.W, ti.Rect.Size.W, lines)
+	}
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562

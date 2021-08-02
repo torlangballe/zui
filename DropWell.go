@@ -19,9 +19,10 @@ type DropWell struct {
 	SetIconOnDrop     bool
 }
 
-func DropWellNew(imagePath string, size zgeo.Size) *DropWell {
+func DropWellNew(filePath string, size zgeo.Size) *DropWell {
 	v := &DropWell{}
-	if imagePath == "" {
+	imagePath := filePath
+	if !ImageExtensionInName(imagePath) {
 		imagePath = wellBorderPath
 	}
 	v.Init(v, nil, "", size)

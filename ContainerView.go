@@ -123,12 +123,9 @@ func (v *ContainerView) AddAlertButton(button View) {
 	v.Add(button, a)
 }
 
-func ContainerViewNew(view View, name string) *ContainerView {
+func ContainerViewNew(name string) *ContainerView {
 	v := &ContainerView{}
-	if view == nil {
-		view = v
-	}
-	v.Init(view, name)
+	v.Init(v, name)
 	return v
 }
 
@@ -160,16 +157,18 @@ func (v *ContainerView) SingleOrientation(single bool) *ContainerView {
 	return v
 }
 
-func (v *ContainerView) AddCell(cell ContainerViewCell, index int) *ContainerViewCell {
+func (v *ContainerView) AddCell(cell ContainerViewCell, index int) (cvs *ContainerViewCell) {
 	if index == -1 {
 		v.cells = append(v.cells, cell)
 		v.AddChild(cell.View, -1)
-		return &v.cells[len(v.cells)-1]
+		cvs = &v.cells[len(v.cells)-1]
 	} else {
 		v.cells = append([]ContainerViewCell{cell}, v.cells...)
 		v.AddChild(cell.View, index)
-		return &v.cells[index]
+		cvs = &v.cells[index]
 	}
+	// zlog.Info("CV ADD CELL:", cell.View.ObjectName(), v.Presented)
+	return cvs
 }
 
 func (v *ContainerView) AddView(view View, align zgeo.Alignment) *ContainerViewCell {
@@ -230,6 +229,7 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 		s := c.View.CalculatedSize(ir.Size)
 		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.Size{})
 		c.View.SetRect(rv)
+		ViewGetNative(c.View).Presented = true
 	}
 }
 
@@ -458,10 +458,10 @@ func (v *ContainerView) DetachChild(subView View) {
 
 func (v *ContainerView) drawIfExposed() {
 	v.CustomView.drawIfExposed()
+	// zlog.Info("CoV drawIf:", v.Hierarchy())
 	for _, c := range v.cells {
 		if !c.Collapsed {
 			et, got := c.View.(ExposableType)
-			// zlog.Info("CoV drawIf:", c.View.ObjectName(), got)
 			if got {
 				et.drawIfExposed()
 			}

@@ -63,6 +63,18 @@ func (v *TextView) Init(view View, text string, style TextViewStyle, rows, cols 
 	}
 }
 
+func (v *TextView) Select(from, to int) {
+	if to == -1 {
+		to = len(v.Text())
+	}
+	v.Element.Call("setSelectionRange", from, to)
+}
+
+func (v *TextView) SetBGColor(c zgeo.Color) {
+	//	zlog.Info("TextSetBGColor:", v.ObjectName(), c, zlog.GetCallingStackString())
+	v.NativeView.SetBGColor(c)
+}
+
 func (v *TextView) SetIsStatic(s bool) {
 	v.setjs("readOnly", s)
 }
@@ -142,10 +154,16 @@ func (v *TextView) updateDone() {
 		v.updateTimer = nil
 	}
 	if v.UpdateSecs > 1 {
-		v.SetBGColor(v.pushedBGColor)
+		col := v.pushedBGColor
+		if !col.Valid {
+			col = TextViewDefaultBGColor
+		}
+		v.SetBGColor(col)
 		v.pushedBGColor = zgeo.Color{}
 	}
-	v.changed()
+	if v.changed != nil {
+		v.changed()
+	}
 }
 
 func (v *TextView) startUpdate() {
@@ -166,24 +184,48 @@ func (v *TextView) startUpdate() {
 func (v *TextView) SetChangedHandler(handler func()) {
 	v.changed = handler
 	if handler != nil {
+		v.updateEnterHandlers()
+		v.setjs("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+			// v.updated = true
+			if v.UpdateSecs < 0 {
+				return nil
+			}
+			if v.UpdateSecs == 0 {
+				if v.changed != nil {
+					v.changed()
+				}
+			} else {
+				v.startUpdate()
+			}
+			return nil
+		}))
+	}
+}
+
+func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
+	v.editDone = handler
+	v.updateEnterHandlers()
+}
+
+func (v *TextView) updateEnterHandlers() {
+	if v.changed != nil || v.editDone != nil {
 		v.setjs("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-			if v.UpdateSecs != 0 { //  && v.updated
-				event := vs[0]
-				key := event.Get("which").Int()
-				//				zlog.Info("down-key:", key, v.ObjectName())
-				if key == KeyboardKeyReturn || key == KeyboardKeyTab {
+			event := vs[0]
+			key := event.Get("which").Int()
+			if key == KeyboardKeyReturn || key == KeyboardKeyTab {
+				if v.editDone != nil {
+					v.editDone(false)
+				}
+				if v.UpdateSecs != 0 { //  && v.updated
+					//				zlog.Info("down-key:", key, v.ObjectName())
 					//					zlog.Info("push:", v.ContinuousUpdateCalls, v.updated)
 					v.updateDone()
 				}
 			}
-			return nil
-		}))
-		v.setjs("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
-			// v.updated = true
-			if v.UpdateSecs == 0 {
-				v.changed()
-			} else {
-				v.startUpdate()
+			if key == KeyboardKeyEscape {
+				if v.editDone != nil {
+					v.editDone(true)
+				}
 			}
 			return nil
 		}))

@@ -57,15 +57,29 @@ func WindowExistsActivate(winID string) bool {
 	return false
 }
 
+func setValues(v url.Values, add url.Values) {
+	for k, ss := range add {
+		for _, s := range ss {
+			v.Set(k, s)
+		}
+	}
+}
+
 func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) string {
-	u, err := url.Parse(win.GetURL())
+	uBase, err := url.Parse(win.GetURL())
 	zlog.OnError(err)
 	// spath = zstr.Concat("/", zrest.AppURLPrefix, spath)
-	u.Path = spath //path.Join(zrest.AppURLPrefix, spath)
-	// zlog.Info("GetURLWithNewPathAndArgs:", spath, args, u)
-	q := args.ToURLValues()
-	u.RawQuery = q.Encode()
-	return u.String()
+	// u.Path = spath //path.Join(zrest.AppURLPrefix, spath)
+	uAdd, err := url.Parse(spath)
+	zlog.OnError(err)
+
+	uBase.Path = uAdd.Path
+	vals := uBase.Query()
+	setValues(vals, uAdd.Query())
+	setValues(vals, args.ToURLValues())
+	uBase.RawQuery = vals.Encode()
+	// zlog.Info("GetURLWithNewPathAndArgs:", uBase)
+	return uBase.String()
 }
 
 func (win *Window) SetPathAndArgs(path string, args zdict.Dict) {

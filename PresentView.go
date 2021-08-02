@@ -165,8 +165,9 @@ func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, c
 			if !attributes.ModalDropShadow.Delta.IsNull() {
 				nv.SetDropShadow(attributes.ModalDropShadow)
 			}
+			// zlog.Info("makeEmbeddingViewAndAddToWindow:", nv.Hierarchy(), attributes.ModalNoBlock)
 			if !attributes.ModalNoBlock {
-				blocker := ContainerViewNew(nil, "$blocker")
+				blocker := ContainerViewNew("$blocker")
 				outer = blocker
 				fullRect := win.ContentRect()
 				fullRect.Pos = zgeo.Pos{}
@@ -218,6 +219,7 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 
 	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
 	ct, _ := v.(ContainerType)
+	// zlog.Info("Present4:", ct != nil, reflect.ValueOf(outer).Type())
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
 			presentLoaded(v, outer, attributes, presented, closed)
@@ -313,13 +315,17 @@ func PresentViewClose(view View, dismissed bool, done func(dismissed bool)) {
 
 func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes PresentViewAttributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
-	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName(), zlog.GetCallingStackString())
+	// zlog.Info("PresentViewCloseOverride", dismissed, view.ObjectName(), reflect.ValueOf(view).Type())
 
 	if done != nil {
 		presentCloseFunc = nil
 	}
 	nv := ViewGetNative(view)
 	parent := nv.Parent()
+	if parent != nil && parent.ObjectName() == "$titled" {
+		// zlog.Info("PresentViewCloseOverride remove blocker instead", view.ObjectName())
+		nv = parent
+	}
 	if parent != nil && parent.ObjectName() == "$blocker" {
 		// zlog.Info("PresentViewCloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
@@ -333,6 +339,7 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 	} else {
 		win.ProgrammaticView = nil
 	}
+	// zlog.Info("PresentViewCloseOverride:", nv.Hierarchy())
 	nv.RemoveFromParent()
 	if done != nil {
 		done(dismissed)
@@ -357,26 +364,28 @@ func PresentViewRecusivelyHandleActivation(activated bool) {
 	}
 }
 
-func PresentTitledView(view View, stitle string, winOptions WindowOptions, barViews map[View]zgeo.Alignment, ready func(stack, bar *StackView), presented func(*Window), closed func(dismissed bool)) {
-	stack, _ := view.(*StackView)
-	if stack == nil {
-		stack = StackViewVert("present-titled-stack")
-		stack.SetSpacing(0)
-		stack.Add(view, zgeo.TopCenter|zgeo.Expand)
-	}
+func PresentTitledView(view View, stitle string, att PresentViewAttributes, barViews map[View]zgeo.Alignment, ready func(stack, bar *StackView, title *Label), presented func(*Window), closed func(dismissed bool)) {
+	stack := StackViewVert("$titled")
+	stack.SetSpacing(0)
+	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
+
 	bar := StackViewHor("bar")
 	bar.SetSpacing(2)
-	// bar.SetMarginS(zgeo.Size{6, 2})
+	bar.SetMarginS(zgeo.Size{6, 2})
 	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
 		path := zgeo.PathNewRect(rect, zgeo.Size{})
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
-	stitle = zstr.TruncatedMiddle(stitle, 80, "…")
+	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := LabelNew(stitle)
-	titleLabel.SetFont(FontNew("Arial", 16, FontStyleBold))
-	titleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
-	bar.Add(titleLabel, zgeo.Left|zgeo.VertCenter) //, zgeo.Size{20, 0})
+	titleLabel.SetFont(FontNew("Arial", FontDefaultSize+1, FontStyleBold))
+	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
+	a := zgeo.Left
+	if len(barViews) == 0 {
+		a = zgeo.HorCenter
+	}
+	bar.Add(titleLabel, a|zgeo.VertCenter) //, zgeo.Size{20, 0})
 
 	xmargin := 0.0 //10.0
 	for v, a := range barViews {
@@ -389,10 +398,8 @@ func PresentTitledView(view View, stitle string, winOptions WindowOptions, barVi
 	}
 	stack.Add(bar, 0, zgeo.TopCenter|zgeo.HorExpand)
 	if ready != nil {
-		ready(stack, bar)
+		ready(stack, bar, titleLabel)
 	}
-	att := PresentViewAttributesNew()
 	att.Title = stitle
-	att.WindowOptions = winOptions
 	PresentView(stack, att, presented, closed)
 }

@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/torlangballe/zutil/zdict"
-	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zjson"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -18,12 +17,10 @@ var fpath string
 
 func KeyValueStoreFileNew(path string) *KeyValueStore {
 	fpath = path
-	if zfile.Exists(path) {
-		err := zjson.UnmarshalFromFile(&dict, fpath)
-		if err != nil {
-			zlog.Error(err, "unmarshal")
-			return nil
-		}
+	err := zjson.UnmarshalFromFile(&dict, fpath, true)
+	if err != nil {
+		zlog.Error(err, "unmarshal")
+		return nil
 	}
 	return &KeyValueStore{Local: true}
 }

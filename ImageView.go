@@ -20,6 +20,7 @@ type ImageView struct {
 	strokeWidth        float64
 	strokeColor        zgeo.Color
 	UseDownsampleCache bool
+	CapInsetCorner     zgeo.Size
 }
 
 func ImageViewNew(image *Image, imagePath string, fitSize zgeo.Size) *ImageView {
@@ -115,7 +116,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// }
 	s.Add(margSize.Negative())
 	s.Maximize(zgeo.Size{2, 2})
-	// zlog.Info("IV CalculatedSize:", v.alignment, v.getjs("id"), v.image != nil, v.MinSize(), v.FitSize(), "got:", s)
+	// zlog.Info("IV CalculatedSize:", v.alignment, v.image != nil, v.MinSize(), v.FitSize(), "got:", s)
 	return s
 }
 
@@ -149,12 +150,15 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 			got(image)
 		}
 	} else {
-		v.image = ImageFromPath(path, func(ni *Image) {
+		ImageFromPath(path, func(ni *Image) {
 			// zlog.Info("IV SetImage", path, v.Rect(), ni != nil)
 			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())
 			// }
+			if ni != nil && !v.CapInsetCorner.IsNull() {
+				ni.SetCapInsetsCorner(v.CapInsetCorner)
+			}
 			v.image = ni
 			v.Expose()
 			if got != nil {

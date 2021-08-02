@@ -202,9 +202,10 @@ func (v *HeaderView) Populate(headers []Header) {
 }
 
 func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
-	children := stack.GetChildren(false)
+	children := stack.GetChildren(true)
 	x := 0.0
 	w := stack.Rect().Size.W
+	// zlog.Info("HeaderFit", v.ObjectName(), len(v.cells), len(children))
 	for i := range children {
 		var e float64
 		if i < len(children)-1 {
@@ -215,6 +216,7 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 		}
 		if v.cells[i].Collapsed {
 			zlog.Info("Header collapsed!", v.ObjectName(), i)
+			continue
 		}
 		hv := v.cells[i].View
 		hr := hv.Rect()

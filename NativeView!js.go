@@ -118,6 +118,7 @@ func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bo
 func (v *NativeView) SetDraggable(getData func() (data string, mime string))         {}
 func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []byte, name string) bool) {
 }
+func (v *NativeView) SetUploader(got func(data []byte, name string))                          {}
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}
 func (v *NativeView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}

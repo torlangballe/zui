@@ -39,7 +39,7 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// zlog.Info("FilesRedir1:", req.URL.Path)
+	zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
 			return
@@ -47,13 +47,6 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	path := req.URL.Path
 	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
-	if zstr.HasPrefix(path, "page/", &path) {
-		part := zstr.ExtractStringTilSeparator(&path, "/")
-		switch part {
-		case "images", "js", "css", "fonts", "templates":
-			path = part + "/" + path
-		}
-	}
 	filepath := filePathPrefix + path
 	if path != "" {
 		if strings.Contains(filepath, "*") {
