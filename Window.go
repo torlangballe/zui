@@ -10,6 +10,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -90,12 +91,13 @@ func (win *Window) SetPathAndArgs(path string, args zdict.Dict) {
 func (win *Window) GetScreen() {
 
 }
+
 func getRectFromOptions(o WindowOptions) (rect zgeo.Rect, gotPos, gotSize bool) {
 	size := o.Size
 	if o.Alignment != zgeo.AlignmentNone {
 		zlog.Assert(!o.Size.IsNull())
 		wrects := []zgeo.Rect{WindowGetMain().Rect()}
-		srect := ScreenMain().Rect
+		srect := zscreen.GetMain().Rect
 		for w := range windows {
 			wrects = append(wrects, w.Rect())
 		}

@@ -262,7 +262,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 			break
 		}
 		text, ti.Text = reduceStringByOneToWrap(text, ti.Wrap)
-		zlog.Info("REDUCE:", ti.Wrap, ti.Text, ts.W, ti.Rect.Size.W, lines)
+		// zlog.Info("REDUCE:", ti.Wrap, ti.Text, ts.W, ti.Rect.Size.W, lines)
 	}
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)

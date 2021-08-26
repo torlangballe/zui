@@ -22,7 +22,7 @@ func (v *TextView) SetTextAlignment(a zgeo.Alignment) {
 // 	return v
 // }
 
-func (v *TextView) SetChangedHandler(handler func())
+func (v *TextView) SetChangedHandler(handler func())                                   {}
 func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier)) {}
 func (v *TextView) ScrollToBottom()                                                    {}
 func (v *TextView) SetIsStatic(s bool)                                                 {}

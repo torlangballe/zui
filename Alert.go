@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwords"
@@ -85,7 +86,7 @@ func AlertAsk(title string, handle func(ok bool)) {
 func AlertShowError(err error, items ...interface{}) {
 	str := zstr.SprintSpaced(items...)
 	if err != nil {
-		str = zstr.Concat("\n", str, err)
+		str = zstr.Concat("\n", err, str)
 	}
 	a := AlertNew(str)
 	a.Show(nil)
@@ -165,7 +166,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 		return
 	}
 
-	textWidth := math.Min(640, ScreenMain().Rect.Size.W/2)
+	textWidth := math.Min(640, zscreen.GetMain().Rect.Size.W/2)
 
 	stack := StackViewVert("alert")
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
@@ -201,7 +202,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 
 func addButton(view View, bar *StackView, title string, ok bool, done func(ok bool) bool) {
 	button := ButtonNew(title)
-	button.SetMinWidth(60)
+	button.SetMinWidth(80)
 	bar.AddAlertButton(button)
 	button.SetPressedHandler(func() {
 		parent := ViewGetNative(view).Parent()
@@ -212,7 +213,7 @@ func addButton(view View, bar *StackView, title string, ok bool, done func(ok bo
 	})
 }
 
-func PresentOKCanceledView(view View, title string, done func(ok bool) bool) {
+func PresentOKCanceledView(view View, title string, done func(ok bool) bool) { // move this to PresentView?
 	stack := StackViewVert("alert")
 	stack.SetBGColor(zgeo.ColorWhite)
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))

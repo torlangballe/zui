@@ -46,15 +46,6 @@ type NativeViewOwner interface {
 	GetNative() *NativeView
 }
 
-func ViewGetNative(view View) *NativeView {
-	o, _ := view.(NativeViewOwner)
-	if o != nil {
-		return o.GetNative()
-	}
-	zlog.Error(nil, "no view", view != nil, zlog.GetCallingStackString())
-	return nil
-}
-
 type ViewDrawProtocol interface {
 	Draw(rect zgeo.Rect, canvas Canvas, view View)
 }
@@ -84,6 +75,16 @@ type ViewLayoutProtocol interface {
 	HandleRotation()
 	HandleBackButton() // only android has hardware back button...
 	RefreshAccessibility()
+}
+
+
+func ViewGetNative(view View) *NativeView {
+	o, _ := view.(NativeViewOwner)
+	if o != nil {
+		return o.GetNative()
+	}
+	zlog.Error(nil, "no view", view != nil, zlog.GetCallingStackString())
+	return nil
 }
 
 func ExposeView(v View) {

@@ -10,14 +10,14 @@ type NativeView struct {
 	stopOnClose          []func() // anything that needs to be stopped
 }
 
-type DragType int
+type DragType string
 
 const (
-	DragEnter = iota + 1
-	DragLeave
-	DragOver
-	DragDrop
-	DragDropFile
+	DragEnter    DragType = "enter"
+	DragLeave    DragType = "leave"
+	DragOver     DragType = "over"
+	DragDrop     DragType = "drop"
+	DragDropFile DragType = "file"
 )
 
 func (v *NativeView) AddStopper(f func()) {

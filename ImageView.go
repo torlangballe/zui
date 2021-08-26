@@ -19,6 +19,7 @@ type ImageView struct {
 	imageCorner        float64
 	strokeWidth        float64
 	strokeColor        zgeo.Color
+	loading            bool
 	UseDownsampleCache bool
 	CapInsetCorner     zgeo.Size
 }
@@ -77,6 +78,10 @@ func (v *ImageView) SetImageCorner(radius float64) {
 
 func (v *ImageView) GetImage() *Image {
 	return v.image
+}
+
+func (v *ImageView) IsLoading() bool {
+	return v.loading
 }
 
 func (v *ImageView) Path() string {
@@ -144,14 +149,16 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 	v.setjs("href", path)
 	v.exposed = false
 	if image != nil {
+		v.loading = false
 		v.image = image
 		v.Expose()
 		if got != nil {
 			got(image)
 		}
 	} else {
+		v.loading = true
 		ImageFromPath(path, func(ni *Image) {
-			// zlog.Info("IV SetImage", path, v.Rect(), ni != nil)
+			v.loading = false
 			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {
 			// 	zlog.Info("IV SetImage got", path, ni.Size())

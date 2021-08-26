@@ -2,6 +2,7 @@ package zui
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -10,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -39,10 +42,16 @@ type SetableImage interface {
 	Set(x, y int, c color.Color)
 }
 
+type ImageLoader interface {
+	IsLoading() bool
+}
+
 type ImageOwner interface {
 	GetImage() *Image
 	SetImage(image *Image, path string, got func(*Image))
 }
+
+var ImageGlobalURLPrefix string
 
 func (i *Image) ForPixels(got func(pos zgeo.Pos, color zgeo.Color)) {
 }
@@ -50,6 +59,25 @@ func (i *Image) ForPixels(got func(pos zgeo.Pos, color zgeo.Color)) {
 func (i *Image) SetCapInsetsCorner(c zgeo.Size) *Image {
 	r := zgeo.RectFromMinMax(c.Pos(), c.Pos().Negative())
 	return i.SetCapInsets(r)
+}
+
+func ImagePathAddedScale(spath string, scale int) string {
+	dir, _, stub, ext := zfile.Split(spath)
+	size := fmt.Sprintf("@%dx", scale)
+	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
+	return path.Join(dir, stub+size+ext)
+}
+
+func ImageFromPathAddScale(spath string, got func(*Image)) {
+	dir, _, stub, ext := zfile.Split(spath)
+	size := ""
+	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
+	if zscreen.MainScale >= 2 {
+		size = "@2x"
+	}
+	spath = path.Join(dir, stub+size+ext)
+	zlog.Info("ImageFromPathAddScale:", spath, zscreen.MainScale)
+	ImageFromPath(spath, got)
 }
 
 func imageGetScaleFromPath(path string) int {

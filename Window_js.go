@@ -77,7 +77,7 @@ func WindowOpen(o WindowOptions) *Window {
 	if o.URL != "" && !zhttp.StringStartsWithHTTPX(o.URL) {
 		o.URL = WindowGetMain().GetURLWithNewPathAndArgs(o.URL, nil)
 	}
-	// zlog.Info("OPEN WIN:", o.URL)
+	// zlog.Info("OPEN WIN:", o.URL, zlog.GetCallingStackString())
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.element.IsNull() {
 		zlog.Error(nil, "open window failed", o.URL)
@@ -148,6 +148,19 @@ func (w *Window) SetTitle(title string) {
 	w.element.Get("document").Set("title", title)
 }
 
+func setDarkCSSStylings(doc js.Value) {
+	css := `
+*::selection {
+background-color: #774433;
+color: #ddd;
+}`
+	head := doc.Call("getElementsByTagName", "head").Index(0)
+	style := doc.Call("createElement", "style")
+	style.Set("type", "text/css")
+	style.Call("appendChild", doc.Call("createTextNode", css))
+	head.Call("appendChild", style)
+}
+
 func (w *Window) AddView(v View) {
 	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
 	// 	return nil
@@ -156,8 +169,12 @@ func (w *Window) AddView(v View) {
 	w.ProgrammaticView = v
 	wn := &NativeView{}
 	//	wn.Element = w.element.Get("document").Get("documentElement")
-	wn.Element = w.element.Get("document").Get("body")
+	doc := w.element.Get("document")
+	wn.Element = doc.Get("body")
 	wn.View = wn
+	if StyleDark {
+		//		setDarkCSSStylings(doc)
+	}
 	wn.SetObjectName("window")
 	ViewGetNative(v).style().Set("overflowX", "hidden")
 	wn.AddChild(v, -1)
@@ -221,7 +238,7 @@ func (win *Window) removeKeyPressHandlerViews(root View) {
 	includeCollapsed := false
 	ContainerTypeRangeChildren(ct, true, includeCollapsed, func(view View) bool {
 		// zlog.Info("removeKeyPressHandlerView try:", view.ObjectName(), win != nil)
-		if win.keyHandlers != nil {
+		if win != nil && win.keyHandlers != nil {
 			// zlog.Info("removeKeyPressHandlerView:", view.ObjectName())
 			delete(win.keyHandlers, view) // I guess we could just call delete without checking if it exists first, faster?
 		}

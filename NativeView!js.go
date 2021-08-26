@@ -116,7 +116,7 @@ func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))               
 func (v *NativeView) setjs(property string, value interface{})                       {}
 func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool)) {}
 func (v *NativeView) SetDraggable(getData func() (data string, mime string))         {}
-func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []byte, name string) bool) {
+func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string) bool) {
 }
 func (v *NativeView) SetUploader(got func(data []byte, name string))                          {}
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}

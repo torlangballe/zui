@@ -219,9 +219,11 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 
 	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
 	ct, _ := v.(ContainerType)
-	// zlog.Info("Present4:", ct != nil, reflect.ValueOf(outer).Type())
+	//zlog.Info("Present1:", ct != nil, reflect.ValueOf(outer).Type())
+	// zlog.Info("Present1:", zlog.GetCallingStackString())
 	if ct != nil {
 		WhenContainerLoaded(ct, func(waited bool) {
+			// zlog.Info("Present2", firstPresented)
 			presentLoaded(v, outer, attributes, presented, closed)
 		})
 	} else {
@@ -240,7 +242,8 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
-	// zlog.Info("PresentView", size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
+	// zlog.Info("presentLoaded", firstPresented, size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
+	// zlog.Info("presentLoaded", firstPresented, size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
 	nv := ViewGetNative(v)
 	if attributes.Modal {
 		if nv != nil {
@@ -294,7 +297,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 
 	// cvt, _ := v.(ContainerViewType)
 	// if cvt != nil {
-	// 	cvt.ArrangeChildren(nil)
+	// 	cvt.ArrangeChildren()
 	// }
 	// NativeViewAddToRoot(v)
 	presentViewPresenting = false

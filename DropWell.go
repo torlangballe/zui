@@ -30,7 +30,7 @@ func DropWellNew(filePath string, size zgeo.Size) *DropWell {
 	v.SetImageFromURL(imagePath)
 	v.SetMinSize(size)
 	v.SetCanFocus(true)
-	v.SetPointerDragHandler(func(dtype DragType, data []byte, name string) bool {
+	v.SetPointerDropHandler(func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool {
 		v.SetHighlighted(dtype == DragEnter || dtype == DragOver)
 		switch dtype {
 		case DragDropFile:

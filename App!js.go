@@ -39,7 +39,7 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 }
 
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	zlog.Info("FilesRedir1:", req.URL.Path)
+	// zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
 			return

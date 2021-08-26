@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /13/11/15.
@@ -63,7 +64,7 @@ func (v *ScrollView) Update() {
 			}
 		}
 	}
-	v.ArrangeChildren(nil)
+	v.ArrangeChildren()
 	// if keepOffsetY != nil {
 	// 	zlog.Info("SV Update KeepOffset:", *keepOffsetY)
 	// 	// v.SetContentOffset(*keepOffsetY, false)
@@ -71,7 +72,7 @@ func (v *ScrollView) Update() {
 	v.Expose()
 }
 
-func (v *ScrollView) ArrangeChildren(onlyChild *View) {
+func (v *ScrollView) ArrangeChildren() {
 	if v.child != nil {
 		ls := v.Rect().Size
 		ls.H = 20000
@@ -127,6 +128,7 @@ func (v *ScrollView) drawIfExposed() {
 }
 
 func (v *ScrollView) Expose() {
+	zlog.Info("SV:Expose")
 	v.CustomView.Expose()
 	et, _ := v.child.(ExposableType)
 	if et != nil {
@@ -150,43 +152,3 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
 	v.ScrollHandler = handler
 }
-
-// type HorNavigator struct {
-// 	NativeView
-// 	MaxItems    int
-// 	ItemMaxSize zgeo.Size
-// 	items []View
-// }
-
-// func HorNavigatorNew(name string) *HorNavigator {
-// 	v := &HorNavigator{}
-// 	v.Init(v, false, name)
-// 	return v
-// }
-
-// func (v *HorNavigator) CalculatedSize(total zgeo.Size) zgeo.Size {
-// 	var s zgeo.Size
-
-// 	h := math.Max(20, item.MaxSize.H)
-// 	s := = zgeo.Size{v.ItemMaxSize.W * v.MaxItems, h}
-// 	return s
-// }
-
-// func (v *HorNavigator) SetRect(rect zgeo.Rect) {
-// 	v.NativeView.SetRect(r)
-// 	v.MaxItems = rect.Size.W / v.ItemMaxSize
-// 	v.ArrangeChildren(nil)
-// }
-
-// func (v *HorNavigator) ArrangeChildren(onlyChild *View) {
-// 	r := zgeo.Rect{ItemMaxSize.W, v.Rect.Size.H}
-// 	for _, item := range v.items {
-// 		item.SetRect(r)
-// 		r.Pos.X += ItemMaxSize.W
-// 	}
-// }
-
-// func (v *HorNavigator) AddItem(view View) {
-// 	items = append(items, view)
-// 	ArrangeChildren(nil)
-// }

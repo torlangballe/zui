@@ -19,6 +19,7 @@ type KeyValueStore struct {
 	Local     bool   // if true, only for single browser or device, otherwise for user anywhere
 	Secure    bool   // true if key/value stored in secure key chain
 	KeyPrefix string // this can be a user id. Not used if key starts with /
+	filepath  string // Some variants of store use this
 }
 
 var DefaultLocalKeyValueStore *KeyValueStore
@@ -45,7 +46,7 @@ func (k KeyValueStore) GetString(key string) (str string, got bool) {
 }
 
 func (k KeyValueStore) GetDict(key string) (dict zdict.Dict, got bool) {
-	got = k.getItem(key, &dict)
+	got = k.GetObject(key, &dict)
 	return
 }
 
@@ -99,7 +100,7 @@ func (k KeyValueStore) SetObject(object interface{}, key string, sync bool) {
 	k.setItem(key, string(data), sync)
 }
 func (k KeyValueStore) SetString(value string, key string, sync bool)  { k.setItem(key, value, sync) }
-func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.setItem(key, dict, sync) }
+func (k KeyValueStore) SetDict(dict zdict.Dict, key string, sync bool) { k.SetObject(dict, key, sync) }
 func (k KeyValueStore) SetInt64(value int64, key string, sync bool)    { k.setItem(key, value, sync) }
 func (k KeyValueStore) SetInt(value int, key string, sync bool) {
 	// zlog.Info("KVS: SetInt:", value, key)

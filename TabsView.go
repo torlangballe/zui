@@ -33,15 +33,15 @@ const tabSeparatorID = "tab-separator"
 
 var (
 	TabsDefaultButtonName           = "gray-tab"
-	TabsDefaultTextColor            = zgeo.ColorWhite
-	TabsDefaultSelectedImageBGColor = zgeo.ColorNew(0, 0, 1, 0.2)
+	TabsDefaultTextColor            = StyleGrayF(0.1, 0.9)
+	TabsDefaultSelectedImageBGColor = StyleColF(zgeo.ColorNew(0, 0, 1, 0.2), zgeo.ColorNew(0, 0, 9, 0.2))
 )
 
 func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
 	v.StackView.Init(v, true, name)
 	v.SetSpacing(0)
-	v.SetBGColor(ListViewDefaultBGColor)
+	v.SetBGColor(ListViewDefaultBGColor())
 	v.Header = StackViewHor("header")
 	if buttons {
 		v.ButtonName = TabsDefaultButtonName
@@ -53,7 +53,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v.tabs = map[string]*tab{}
 	v.Header.SetSpacing(12)
 	v.Add(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
-	v.selectedImageBGColor = TabsDefaultSelectedImageBGColor
+	v.selectedImageBGColor = TabsDefaultSelectedImageBGColor()
 	if !buttons {
 		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
@@ -127,7 +127,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
 		b := ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
 		button = &b.ShapeView
-		button.SetTextColor(TabsDefaultTextColor)
+		button.SetTextColor(TabsDefaultTextColor())
 		button.SetMarginS(zgeo.Size{10, 0})
 		button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
 		view = b
@@ -170,13 +170,10 @@ func (v *TabsView) setButtonOn(id string, on bool) {
 		button, _ := view.(*ImageButtonView)
 		if button != nil {
 			str := TabsDefaultButtonName
-			style := FontStyleNormal
 			if on {
 				str += "-selected"
-				style = FontStyleBold
 			}
 			button.SetImageName(str, zgeo.Size{11, 8})
-			button.SetFont(FontNice(FontDefaultSize, style))
 		} else { // image only
 			v.Header.Expose()
 		}
@@ -233,7 +230,7 @@ func (v *TabsView) SetTab(id string) {
 		// }
 		PresentViewCallReady(v.ChildView, true)
 		presentViewPresenting = true
-		v.ArrangeChildren(nil) // This can create table rows and do all kinds of things that load images etc.
+		v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
 
 		ct := v.View.(ContainerType)
 		presentViewPresenting = false
@@ -247,15 +244,15 @@ func (v *TabsView) SetTab(id string) {
 		WhenContainerLoaded(ct, func(waited bool) {
 			// zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-				v.ArrangeChildren(nil)
+				v.ArrangeChildren()
 			}
 		})
 	}
 }
 
-func (v *TabsView) ArrangeChildren(onlyChild *View) {
+func (v *TabsView) ArrangeChildren() {
 	// zlog.Info("TabView ArrangeChildren")
-	v.StackView.ArrangeChildren(onlyChild)
+	v.StackView.ArrangeChildren()
 }
 
 func GetParentTabsCurrentID(child View) string {

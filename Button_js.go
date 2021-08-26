@@ -45,7 +45,7 @@ func (v *Button) SetPressedHandler(handler func()) {
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
-	v.setjs("class", "widget")
+	v.setjs("className", "widget")
 }
 
 func (v *Button) SetLongPressedHandler(handler func()) {

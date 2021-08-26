@@ -12,13 +12,13 @@ const jsTextMargin = 2
 
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
-func (v *TextView) Init(view View, text string, style TextViewStyle, rows, cols int) {
+func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, cols int) {
 	v.SetMaxLines(rows)
 	if rows > 1 {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
-		switch style.KeyboardType {
+		switch textStyle.KeyboardType {
 		case KeyboardTypePassword:
 			v.setjs("type", "password")
 		case KeyboardTypeEmailAddress:
@@ -26,20 +26,25 @@ func (v *TextView) Init(view View, text string, style TextViewStyle, rows, cols 
 		default:
 			v.setjs("type", "text")
 		}
-		if style.IsSearch {
+		if textStyle.IsSearch {
 			v.isSearch = true
 			v.setjs("type", "search")
 		}
 	}
 
+	v.SetObjectName("textview")
 	v.Columns = cols
 	v.setjs("style", "position:absolute")
-	v.style().Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
-	v.style().Set("-webkitBoxShadow", "none") // doesn't work
+	style := v.style()
+	style.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	style.Set("-webkitBoxShadow", "none") // doesn't work
+
 	// if rows <= 1 {
-	v.SetMargin(zgeo.RectFromXY2(TextViewDefaultMargin, TextViewDefaultMargin, -TextViewDefaultMargin, -TextViewDefaultMargin))
+	v.SetMargin(TextViewDefaultMargin)
+	style = v.style()
 	// }
 	v.setjs("value", text)
+	v.setjs("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
 	f := FontNice(FontDefaultSize, FontStyleNormal)
@@ -52,14 +57,14 @@ func (v *TextView) Init(view View, text string, style TextViewStyle, rows, cols 
 		// event.stopPropagation();
 		return nil
 	}))
-	if TextViewDefaultColor.Valid {
-		v.SetColor(TextViewDefaultColor)
+	if TextViewDefaultColor().Valid {
+		v.SetColor(TextViewDefaultColor())
 	}
-	if TextViewDefaultBGColor.Valid {
-		v.SetBGColor(TextViewDefaultBGColor)
+	if TextViewDefaultBGColor().Valid {
+		v.SetBGColor(TextViewDefaultBGColor())
 	}
-	if TextViewDefaultBorderColor.Valid {
-		v.SetStroke(1, TextViewDefaultBorderColor)
+	if TextViewDefaultBorderColor().Valid {
+		v.SetStroke(1, TextViewDefaultBorderColor())
 	}
 }
 
@@ -71,7 +76,6 @@ func (v *TextView) Select(from, to int) {
 }
 
 func (v *TextView) SetBGColor(c zgeo.Color) {
-	//	zlog.Info("TextSetBGColor:", v.ObjectName(), c, zlog.GetCallingStackString())
 	v.NativeView.SetBGColor(c)
 }
 
@@ -118,13 +122,13 @@ func (v *TextView) SetPlaceholder(str string) *TextView {
 
 func (v *TextView) SetMargin(m zgeo.Rect) View {
 	v.margin = m
-	// zlog.Info("TextView. SetMargin:", v.ObjectName(), m)
 	style := v.style()
-	style.Set("padding", fmt.Sprintf("%dpx %dpx %dpx %dpx", int(m.Min().Y), int(m.Max().X), int(m.Max().Y), int(m.Min().X)))
-	// style.Set("paddingLeft", fmt.Sprintf("%dpx", int(m.Min().X)))
-	// style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
-	// style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
-	// style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	str := fmt.Sprintf("%dpx", int(m.Min().X))
+	style.Set("paddingLeft", str)
+	style.Set("-webkit-padding-start", str)
+	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
+	style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
+	style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 	return v
 }
 
@@ -156,7 +160,7 @@ func (v *TextView) updateDone() {
 	if v.UpdateSecs > 1 {
 		col := v.pushedBGColor
 		if !col.Valid {
-			col = TextViewDefaultBGColor
+			col = TextViewDefaultBGColor()
 		}
 		v.SetBGColor(col)
 		v.pushedBGColor = zgeo.Color{}
@@ -169,7 +173,8 @@ func (v *TextView) updateDone() {
 func (v *TextView) startUpdate() {
 	if v.UpdateSecs > 1 && !v.pushedBGColor.Valid {
 		v.pushedBGColor = v.BGColor()
-		v.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
+		col := TextViewDefaultBGColor().Mixed(zgeo.ColorNew(1, 0.3, 0.3, 1), 0.3)
+		v.SetBGColor(col)
 	}
 	// zlog.Info("call Text Update", v.UpdateSecs)
 	if v.updateTimer != nil {

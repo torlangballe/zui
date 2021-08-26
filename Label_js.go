@@ -24,7 +24,10 @@ func LabelNew(text string) *Label {
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
+	v.SetColor(StyleDefaultFGColor())
 	v.View = v
+	// zlog.Info("LABCOL:", StyleDefaultFGColor)
+	//	v.SetColor(zgeo.ColorRed)
 	v.SetObjectName(text)
 	v.SetMaxLines(1)
 	textNode := DocumentJS.Call("createTextNode", text)

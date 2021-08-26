@@ -129,8 +129,6 @@ func LabelizeCV(view View, prefix string, minWidth float64, alignment zgeo.Align
 	if checkBox != nil && alignment&zgeo.Right != 0 {
 		title = ""
 		_, cstack := checkBox.Labelize(prefix)
-		// clabel.SetFont(font)
-		// clabel.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
 		view = cstack
 		alignment = alignment.FlippedHorizontal()
 	}
@@ -138,7 +136,7 @@ func LabelizeCV(view View, prefix string, minWidth float64, alignment zgeo.Align
 	label.SetObjectName("$labelize.label " + prefix)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetFont(font)
-	label.SetColor(zgeo.ColorDefaultForeground.WithOpacity(0.7))
+	label.SetColor(StyleDefaultFGColor().WithOpacity(0.7))
 	stack = StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
 	stack.AddView(label, zgeo.CenterLeft).MinSize.W = minWidth

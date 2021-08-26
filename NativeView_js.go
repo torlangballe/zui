@@ -177,13 +177,11 @@ func (v *NativeView) Alpha() float32 {
 }
 
 func (v *NativeView) SetBGColor(c zgeo.Color) {
-	// zlog.Info("SetBGColor:", v.ObjectName(), c)
 	v.style().Set("backgroundColor", makeRGBAString(c))
 }
 
 func (v *NativeView) BGColor() zgeo.Color {
 	str := v.style().Get("backgroundColor").String()
-	zlog.Info("nv bgcolor", str)
 	return zgeo.ColorFromString(str)
 }
 
@@ -353,7 +351,7 @@ func (v *NativeView) AddChild(child View, index int) {
 	n.parent = v
 	if index != -1 {
 		nodes := n.parent.getjs("childNodes").Length()
-		// zlog.Info("NS AddChild:", v.ObjectName(), child.ObjectName(), index, nodes)
+		// zlog.Info("NS InsertChild:", v.ObjectName(), child.ObjectName(), index, nodes)
 		if nodes == 0 {
 			v.call("appendChild", n.Element)
 		} else {
@@ -561,8 +559,24 @@ func (v *NativeView) GetWindow() *Window {
 	return windowsFindForElement(w)
 }
 
-func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data []byte, name string) bool) {
-	handler(dtype, nil, "")
+func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
+	dt := event.Get("dataTransfer")
+	item := dt.Get("items").Index(0)
+	mime := item.Get("type").String()
+
+	var pos zgeo.Pos
+	pos.X = event.Get("offsetX").Float()
+	pos.Y = event.Get("offsetY").Float()
+
+	if dtype != DragDrop {
+		handler(dtype, nil, mime, pos)
+	} else {
+		item.Call("getAsString", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			val := []byte(args[0].String())
+			handler(DragDrop, val, mime, pos)
+			return nil
+		}))
+	}
 	event.Call("preventDefault")
 }
 
@@ -575,7 +589,7 @@ func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 		//		array := js.Global().Get("Uint8Array").New(len(data))
 		//		js.CopyBytesToJS(array, []byte(data))
 		// zlog.Info("Dtrans:", mime, array.Length())
-		zlog.Info("Dtrans:", mime, data)
+		// zlog.Info("Dtrans:", mime, data)
 		//		mime = "text/plain"
 		event.Get("dataTransfer").Call("setData", mime, data) //event.Get("target").Get("id"))
 		return nil
@@ -595,15 +609,28 @@ func jsFileToGo(file js.Value, got func(data []byte, name string)) {
 	reader.Call("readAsArrayBuffer", file)
 }
 
-func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []byte, name string) bool) {
+var dragEnterView *NativeView
+
+func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 	if zlog.IsInTests {
 		return
 	}
+	//	v.setjs("className", "zdropper")
 	v.setjs("ondragenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		dragEvent(args[0], DragEnter, handler)
+		if dragEnterView == nil {
+			dragEvent(args[0], DragEnter, handler)
+		}
+		zlog.Info("ondragenter:", v.ObjectName())
+		dragEnterView = v
 		return nil
 	}))
 	v.setjs("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// zlog.Info("ondragleave1:", dragEnterView != nil, dragEnterView == v, v.ObjectName())
+		zlog.Info("ondragleave:", v.ObjectName(), dragEnterView != v)
+		// if dragEnterView != v {
+		// 	return nil
+		// }
+		dragEnterView = nil
 		dragEvent(args[0], DragLeave, handler)
 		return nil
 	}))
@@ -615,15 +642,22 @@ func (v *NativeView) SetPointerDragHandler(handler func(dtype DragType, data []b
 		event := args[0]
 		dt := event.Get("dataTransfer")
 		files := dt.Get("files")
+		dragEnterView = nil
+
 		if files.Length() == 0 {
 			dragEvent(event, DragDrop, handler)
 			return nil
 		}
 		file := files.Index(0)
 		jsFileToGo(file, func(data []byte, name string) {
-			handler(DragDropFile, data, name)
+			var pos zgeo.Pos
+			pos.X = event.Get("offsetX").Float()
+			pos.Y = event.Get("offsetY").Float()
+			zlog.Info("Drop offset:", pos)
+			if handler(DragDropFile, data, name, pos) {
+				event.Call("preventDefault")
+			}
 		})
-		event.Call("preventDefault")
 		return nil
 	}))
 }
@@ -714,14 +748,23 @@ func (v *NativeView) SetDownloader(surl, name string) {
 	if name == "" {
 		_, name = path.Split(surl)
 	}
-	v.setjs("download", name)
+	// v.setjs("download", name)
 	v.setjs("href", surl)
 }
 
 func (v *NativeView) WrapInLink(surl, name string) *StackView {
 	s := StackViewVert("#type:a")
+	//	if name != "" {
 	s.setjs("download", name)
+	//	}
 	s.setjs("href", surl)
 	s.Add(v.View, zgeo.Center|zgeo.Expand)
 	return s
+}
+
+func (v *NativeView) SetTilePath(spath string) {
+	spath2 := ImagePathAddedScale(spath, 2)
+	format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
+	s := fmt.Sprintf(format, spath, spath2)
+	v.style().Set("backgroundImage", s)
 }

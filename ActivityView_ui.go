@@ -4,59 +4,56 @@ package zui
 
 import (
 	"fmt"
-	"math"
+	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztime"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type ActivityView struct {
-	CustomView
-	stop         bool
-	rotationSecs float64
+	ImageView
+	rotationSecs  float64
+	AlwaysVisible bool
+	repeater      *ztimer.Repeater
+	start         time.Time
 }
 
-func ActivityDefaultNew(size float64) *ActivityView {
-	return ActivityNew(zgeo.ColorNewGray(1, 0.4), zgeo.ColorNew(0.3, 0.3, 1, 1), size)
-}
-
-func ActivityNew(colCircle, colPart zgeo.Color, size float64) *ActivityView {
+func ActivityNew(size zgeo.Size) *ActivityView {
 	v := &ActivityView{}
-	v.CustomView.Init(v, "activity")
-	v.SetMinSize(zgeo.SizeBoth(size))
-	v.SetCorner(size)
-	v.stop = true
-	w := math.Floor(size / 5)
-	v.SetStroke(w, colCircle)
-	v.SetStyle("borderTop", fmt.Sprintf("%dpx solid %s", int(w), colPart.Hex()))
-	v.SetStyle("boxSizing", "border-box")
+	// zlog.Info("ActivityNew:", size)
+	v.Init(v, nil, "images/activity.png", size)
 	v.rotationSecs = 1.5
-
+	v.repeater = ztimer.RepeaterNew()
 	return v
 }
 
 func (v *ActivityView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("AV ReadyToShow!:", v.stop, beforeWindow)
-	if !v.stop && !beforeWindow {
-		v.Start()
-	}
+	// if !v.AlwaysVisible && v.repeater.IsStopped() {
+	// 	v.Show(false)
+	// }
 }
 
 func (v *ActivityView) Start() {
-	v.stop = false
 	if !v.Presented {
 		return
 	}
 	v.Show(true)
-	// Animate(v, 99999, func(secPos float64) bool {
-	// 	if v.stop {
-	// 		return false
-	// 	}
-	// 	v.RotateDeg(secPos * 360 / v.rotationSecs)
-	// 	return true
-	// })
+	v.start = time.Now()
+	v.repeater.Set(0.1, false, func() bool {
+		t := ztime.Since(v.start)
+		deg := 360 * (t / v.rotationSecs)
+		rot := fmt.Sprintf("rotate(%ddeg)", int(deg)) // move this to a method in NativeView
+		v.style().Set("webkitTransform", rot)
+		return true
+	})
 }
 
 func (v *ActivityView) Stop() {
-	v.stop = true
-	v.Show(false)
+	// zlog.Info("Act Stop:")
+	v.repeater.Stop()
+	if !v.AlwaysVisible {
+		v.Show(false)
+	}
 }

@@ -19,6 +19,7 @@ const (
 	FontStyleBoldItalic FontStyle = FontStyleBold | FontStyleItalic
 )
 
+// TODO: Make font NOT pointer when passing around. Too easy to change something used elsewhere then
 type Font struct {
 	Name  string    `json:"name"`
 	Style FontStyle `json:"style"`

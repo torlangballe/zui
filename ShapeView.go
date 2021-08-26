@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 )
 
 type ShapeViewType string
@@ -25,7 +26,6 @@ const (
 
 type ShapeView struct {
 	ContainerView
-	image        *Image
 	Type         ShapeViewType
 	StrokeWidth  float64
 	StrokeColor  zgeo.Color // = ZColor.White()
@@ -46,6 +46,9 @@ type ShapeView struct {
 	PathLineType zgeo.PathLineType
 	//	Proportional bool
 	DropShadow zgeo.DropShadow
+
+	image   *Image
+	loading bool
 }
 
 func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
@@ -58,7 +61,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.CustomView.Init(view, name)
 	v.textInfo = *TextInfoNew()
 	v.Type = shapeType
-	v.ImageMargin = zgeo.Size{4, 1}.TimesD(ScreenMain().SoftScale)
+	v.ImageMargin = zgeo.Size{4, 1}.TimesD(zscreen.MainSoftScale)
 	v.ImageOpacity = 1
 	v.ImageGap = 4
 	v.Count = 5
@@ -67,7 +70,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.PathLineType = zgeo.PathLineRound
 	v.TextXMargin = 4
 	v.SetColor(zgeo.ColorGray)
-	//	v.Proportional = true
+	v.SetTextColor(StyleDefaultFGColor())
 
 	switch shapeType {
 	case ShapeViewTypeRoundRect:
@@ -187,18 +190,20 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
-	// zlog.Info("sv.setimage:", spath)
 	v.image = image
 	v.exposed = false
 	if v.ObjectName() == "" {
 		_, name := path.Split(spath)
 		v.SetObjectName(name)
 	}
+	v.loading = false
 	if image == nil && spath != "" {
+		v.loading = true
 		ImageFromPath(spath, func(i *Image) {
+			v.loading = false
 			// zlog.Info("sv image loaded: "+spath+": "+v.ObjectName(), i.loading)
-			v.Expose()
 			v.image = i // we must set it here, or it's not set yet in done() below
+			v.Expose()
 			if done != nil {
 				done(i)
 			}
@@ -206,9 +211,13 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
 	}
 }
 
+func (v *ShapeView) IsLoading() bool {
+	return v.loading
+}
+
 func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	s := ""
-	if ScreenMain().Scale >= 2 {
+	if zscreen.MainScale >= 2 {
 		s = "@2x"
 	}
 	str := pathedName + s + ".png"
@@ -234,12 +243,12 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		path.AddStar(rect, v.Count, v.Ratio)
 
 	case ShapeViewTypeCircle:
-		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(ScreenMain().SoftScale)
+		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(zscreen.MainSoftScale)
 		w := s.Min()
 		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
 
 	case ShapeViewTypeRoundRect:
-		r := rect.Expanded(zgeo.Size{-1, -1}) //.TimesD(ScreenMain().SoftScale))
+		r := rect.Expanded(zgeo.Size{-1, -1}) //.TimesD(zscreen.GetMain().SoftScale))
 		corner := math.Round(math.Min(math.Min(r.Size.W, r.Size.H)*float64(v.Ratio), 15))
 		path.AddRect(r, zgeo.Size{corner, corner})
 
@@ -301,6 +310,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 					textRect.SetMinX(ir.Max().X + v.ImageGap)
 				}
 			}
+			// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
 			canvas.DrawImage(drawImage, true, useDownsampleCache, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
@@ -310,7 +320,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		t := v.textInfo // .Copy()
 		t.Color = v.getStateColor(t.Color)
-		exp := zgeo.Size{-v.TextXMargin * ScreenMain().SoftScale, 0}
+		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
 		t.Rect.Pos.Y -= 1
 		//		zlog.Info("Shape draw:", v.ObjectName(), exp, v.textInfo.Text, t.Color)

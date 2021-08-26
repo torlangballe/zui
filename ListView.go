@@ -52,8 +52,8 @@ type ListViewIDGetter interface {
 	GetID(index int) string
 }
 
-var ListViewDefaultSelectedColor = zgeo.ColorNew(0.4, 0.4, 0.8, 1)
-var ListViewDefaultBGColor = zgeo.ColorNewGray(0.9, 1)
+var ListViewDefaultSelectedColor = StyleGrayF(0.6, 0.5)
+var ListViewDefaultBGColor = StyleGrayF(0.9, 0.45)
 
 func ListViewNew(name string, selection map[int]bool) *ListView {
 	v := &ListView{}
@@ -68,14 +68,14 @@ func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.rowHeights = map[int]float64{}
 	v.scrollTimer = ztimer.TimerNew()
 	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	v.SelectedColor = ListViewDefaultSelectedColor
+	v.SelectedColor = ListViewDefaultSelectedColor()
 	if selection != nil {
 		v.selectionIndexes = selection
 	} else {
 		v.selectionIndexes = map[int]bool{}
 	}
 	v.highlightedIndex = -1
-	v.SetBGColor(ListViewDefaultBGColor)
+	v.SetBGColor(ListViewDefaultBGColor())
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("ScrollTo:", pos.Y)
 		// v.topPos = pos.Y
@@ -126,6 +126,7 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ListView) drawIfExposed() {
+	v.ScrollView.drawIfExposed()
 	// zlog.Info("LV:drawIfExposed")
 	for _, view := range v.rows {
 		et, got := view.(ExposableType)
@@ -670,12 +671,12 @@ func (v *ListView) GetChildren(includeCollapsed bool) []View {
 	return views
 }
 
-func (v *ListView) ArrangeChildren(onlyChild *View) {
+func (v *ListView) ArrangeChildren() {
 	// zlog.Info("ListView ArrangeChildren:", len(v.rows))
 	for _, v := range v.rows {
 		ct, _ := v.(ContainerType)
 		if ct != nil {
-			ct.ArrangeChildren(nil)
+			ct.ArrangeChildren()
 		}
 	}
 }

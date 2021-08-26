@@ -37,7 +37,7 @@ func (v *MenuView) Dump() {
 }
 
 func (v *MenuView) getNumberOfItemsString() string {
-	return zwords.PluralWord("item", float64(v.items.Count()), "", "", 0)
+	return zwords.PluralWordWithCount("item", float64(v.items.Count()), "", "", 0)
 }
 
 func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {

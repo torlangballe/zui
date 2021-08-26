@@ -32,7 +32,7 @@ func AppMainArgs() (path string, args map[string]string) {
 	return
 }
 
-func AppSetUIDefaults(useTokenAuth bool) (path string, args map[string]string) {
+func AppSetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
 	url, _ := url.Parse(AppURL())
 	host, _ := znet.GetHostAndPort(url)
 	args = map[string]string{}
@@ -43,9 +43,11 @@ func AppSetUIDefaults(useTokenAuth bool) (path string, args map[string]string) {
 	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
 	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
-	port, _ := strconv.Atoi(args["zrpcport"])
-	if port != 0 {
-		zrpc.ToServerClient.Port = port
+	if rpcPort == 0 {
+		rpcPort, _ = strconv.Atoi(args["zrpcport"])
+	}
+	if rpcPort != 0 {
+		zrpc.ToServerClient.Port = rpcPort
 	}
 	DefaultLocalKeyValueStore = KeyValueStoreNew(true)
 	path, args = AppMainArgs()

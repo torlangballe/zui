@@ -38,10 +38,12 @@ type TextView struct {
 	editDone   func(canceled bool)
 }
 
-var TextViewDefaultMargin = 2.0
-var TextViewDefaultColor zgeo.Color       // if undef, don't set, use whatever platform already has
-var TextViewDefaultBGColor zgeo.Color     // "
-var TextViewDefaultBorderColor zgeo.Color // "
+var (
+	TextViewDefaultMargin      = zgeo.RectFromXY2(4, 2, -3, -2)
+	TextViewDefaultColor       = StyleDefaultFGColor
+	TextViewDefaultBGColor     = StyleGrayF(0.95, 0.3)
+	TextViewDefaultBorderColor = StyleGrayF(0.3, 0.5)
+)
 
 func TextViewNew(text string, style TextViewStyle, cols, rows int) *TextView {
 	v := &TextView{}

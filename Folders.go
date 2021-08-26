@@ -4,6 +4,7 @@ package zui
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
@@ -17,7 +18,6 @@ const (
 	FoldersPreferences           FolderType = 1
 	FoldersCaches                           = 4
 	FoldersTemporary                        = 8
-	FoldersAppSupport                       = 16
 	FoldersTemporaryUniqueFolder            = 32
 )
 
@@ -28,8 +28,12 @@ func FoldersGetFileInFolderType(ftype FolderType, addPath string) string {
 	}
 
 	switch ftype {
-	case FoldersAppSupport:
-		return zfile.ExpandTildeInFilepath("~/" + addPath)
+	case FoldersPreferences:
+		path := "~/"
+		if runtime.GOOS == "darwin" {
+			path += "Library/Preferences/"
+		}
+		return zfile.ExpandTildeInFilepath(path + addPath)
 
 	case FoldersCaches:
 		udir, _ := os.UserCacheDir()
@@ -37,9 +41,6 @@ func FoldersGetFileInFolderType(ftype FolderType, addPath string) string {
 
 	case FoldersTemporary:
 		return os.TempDir() + addPath
-
-	case FoldersPreferences:
-		return zfile.ExpandTildeInFilepath("~/" + addPath)
 	}
 	zlog.Fatal(nil, "wrong type:", ftype)
 	return ""

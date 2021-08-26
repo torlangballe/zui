@@ -4,6 +4,8 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -36,7 +38,7 @@ type ContainerViewCell struct {
 
 type ContainerType interface {
 	GetChildren(includeCollapsed bool) []View
-	ArrangeChildren(onlyChild *View)
+	ArrangeChildren()
 	ReplaceChild(child, with View)
 }
 
@@ -55,7 +57,7 @@ func (v *ContainerView) GetChildren(includeCollapsed bool) (children []View) {
 
 func ArrangeParentContainer(view View) {
 	parent := ViewGetNative(view).Parent().View.(ContainerType)
-	parent.ArrangeChildren(nil)
+	parent.ArrangeChildren()
 }
 
 func (v *ContainerView) CountChildren() int {
@@ -163,6 +165,7 @@ func (v *ContainerView) AddCell(cell ContainerViewCell, index int) (cvs *Contain
 		v.AddChild(cell.View, -1)
 		cvs = &v.cells[len(v.cells)-1]
 	} else {
+		zlog.Assert(index == 0)
 		v.cells = append([]ContainerViewCell{cell}, v.cells...)
 		v.AddChild(cell.View, index)
 		cvs = &v.cells[index]
@@ -196,7 +199,7 @@ func (v *ContainerView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
 	ct := v.View.(ContainerType) // in case we are a stack or something inheriting from ContainerView
 	//	start := time.Now()
-	ct.ArrangeChildren(nil)
+	ct.ArrangeChildren()
 	// d := time.Since(start)
 	// if d > time.Millisecond*50 {
 	// 	zlog.Info("CV SetRect2", v.ObjectName(), d)
@@ -208,7 +211,7 @@ func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ContainerView) SetAsFullView(useableArea bool) {
-	sm := ScreenMain()
+	sm := zscreen.GetMain()
 	r := sm.Rect
 	if useableArea {
 		r = sm.UsableRect
@@ -217,13 +220,13 @@ func (v *ContainerView) SetAsFullView(useableArea bool) {
 	v.SetMinSize(r.Size)
 }
 
-func (v *ContainerView) ArrangeChildrenAnimated(onlyChild *View) {
+func (v *ContainerView) ArrangeChildrenAnimated() {
 	//        ZAnimation.Do(duration 0.6, animations  { [weak self] () in
-	v.ArrangeChildren(onlyChild)
+	v.ArrangeChildren()
 	//        })
 }
 
-func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
+func (v *ContainerView) ArrangeChild(c ContainerViewCell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
 		ir := r.Expanded(c.Margin.MinusD(2.0))
 		s := c.View.CalculatedSize(ir.Size)
@@ -234,13 +237,13 @@ func (v *ContainerView) arrangeChild(c ContainerViewCell, r zgeo.Rect) {
 }
 
 func ContainerIsLoading(ct ContainerType) bool {
-	// zlog.Info("ContainerIsLoading1", len(ct.GetChildren()))
+	// zlog.Info("ContainerIsLoading1", ct.(View).ObjectName(), len(ct.GetChildren(false)))
 	for _, v := range ct.GetChildren(false) {
-		iowner, got := v.(ImageOwner)
+		iloader, got := v.(ImageLoader)
 		if got {
-			image := iowner.GetImage()
-			if image != nil && image.loading {
-				// zlog.Info("ContainerIsLoading image loading", len(ct.GetChildren()))
+			loading := iloader.IsLoading()
+			// zlog.Info("ContainerIsLoading image loading", v.ObjectName(), loading)
+			if loading {
 				return true
 			}
 		} else {
@@ -254,32 +257,33 @@ func ContainerIsLoading(ct ContainerType) bool {
 			}
 		}
 	}
-	// zlog.Info("ContainerIsLoading Done", len(ct.GetChildren()))
+	// zlog.Info("ContainerIsLoading Done", ct.(View).ObjectName())
 	return false
 }
 
 // WhenContainerLoaded waits for all sub-parts images etc to be loaded before calling done.
 // done received waited=true if it had to wait
 func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
-	// if done != nil {
-	// 	done(false)
-	// }
-	// return
 	// start := time.Now()
 	ztimer.RepeatNow(0.1, func() bool {
+		// zlog.Info("WhenContainerLoaded", ct.(View).ObjectName())
 		if ContainerIsLoading(ct) {
+			// zlog.Info("Wait:", ct.(View).ObjectName())
 			return true
 		}
 		if done != nil {
-			// zlog.Info("Wait:", time.Since(start), ct.(View).ObjectName())
+			// zlog.Info("Waited:", time.Since(start), ct.(View).ObjectName())
 			done(true)
 		}
 		return false
 	})
 }
 
-func (v *ContainerView) ArrangeChildren(onlyChild *View) {
-	// zlog.Info("CV ArrangeChildren", v.ObjectName())
+func (v *ContainerView) ArrangeChildren() {
+	v.ArrangeAdvanced(false)
+}
+
+func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
@@ -289,13 +293,13 @@ func (v *ContainerView) ArrangeChildren(onlyChild *View) {
 		if got && v.layoutHandler != nil {
 			cv.layoutHandler.HandleBeforeLayout()
 		}
-		if c.Alignment != zgeo.AlignmentNone {
-			if onlyChild == nil || c.View == *onlyChild {
-				v.arrangeChild(c, r)
-			}
+		// zlog.Info("ArrangeAdvanced:", v.ObjectName(), c.View.ObjectName(), c.Free, freeOnly)
+		if c.Alignment != zgeo.AlignmentNone && (!freeOnly || c.Free) {
+			v.ArrangeChild(c, r)
+			// zlog.Info("ArrangeAdvanced inside:", v.ObjectName(), c.View.ObjectName(), c.Free, freeOnly, c.View.Rect())
 			ct, _ := c.View.(ContainerType) // we might be "inherited" by StackView or something
 			if ct != nil {
-				ct.ArrangeChildren(onlyChild)
+				ct.ArrangeChildren()
 			}
 		}
 	}
@@ -334,7 +338,7 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 	}
 	if arrange && v.Presented {
 		ct := v.View.(ContainerType) // we might be "inherited" by StackView or something
-		ct.ArrangeChildren(nil)
+		ct.ArrangeChildren()
 	}
 	if !collapse {
 		cell.View.Show(true)
@@ -458,7 +462,7 @@ func (v *ContainerView) DetachChild(subView View) {
 
 func (v *ContainerView) drawIfExposed() {
 	v.CustomView.drawIfExposed()
-	// zlog.Info("CoV drawIf:", v.Hierarchy())
+	// zlog.Info("CoV drawIfExp:", v.Hierarchy())
 	for _, c := range v.cells {
 		if !c.Collapsed {
 			et, got := c.View.(ExposableType)

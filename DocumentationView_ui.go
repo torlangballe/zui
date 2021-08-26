@@ -18,20 +18,20 @@ type DocumentationIconView struct {
 
 var (
 	DocumentationPathPrefix       = "doc/"
-	DocumentationDefaultIconColor = zgeo.ColorNewGray(0.5, 1)
+	DocumentationDefaultIconColor = StyleGrayF(0.9, 0.5)
 	DocumentationViewDefaultModal = false
 )
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.Init(v, ShapeViewTypeCircle, zgeo.Size{22, 22}, "documentation:"+path)
+	v.ShapeView.Init(v, ShapeViewTypeCircle, zgeo.Size{20, 20}, "documentation:"+path)
+	v.MaxSize = v.MinSize()
 	v.textInfo.Text = "?"
-	v.SetColor(DocumentationDefaultIconColor)
+	v.SetColor(DocumentationDefaultIconColor())
 	v.SetTextAlignment(zgeo.Center)
-	v.SetFont(FontNice(16, FontStyleBold))
-	v.StrokeColor = DocumentationDefaultIconColor
+	v.SetFont(FontNice(16, FontStyleNormal))
+	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
 	v.StrokeWidth = 2
-	v.SetColor(zgeo.ColorNew(0.9, 0.9, 1, 1))
 	v.Modal = DocumentationViewDefaultModal
 	v.SetPressedHandler(func() {
 		// editor := CodeEditorViewNew("editor")
@@ -80,7 +80,7 @@ func (v *DocumentationView) startEdit() {
 	editor := CodeEditorViewNew("", 50, 50)
 	hstack := v.NativeView.Child("hstack").(*StackView)
 	hstack.Add(editor, zgeo.TopLeft|zgeo.Expand, 0)
-	v.ArrangeChildren(nil)
+	v.ArrangeChildren()
 }
 
 // func setCSSFile(win *Window, surl string) {

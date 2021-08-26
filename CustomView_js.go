@@ -5,6 +5,7 @@ import (
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -83,7 +84,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 	if v.canvas != nil && s != rect.Size {
 		// zlog.Debug("set", v.ObjectName(), s, rect.Size)
 		s := v.LocalRect().Size
-		scale := ScreenMain().Scale
+		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
 		v.Expose()
 	}
@@ -110,14 +111,14 @@ func (v *CustomView) makeCanvas() {
 		}
 		// v.canvas.element.Get("style").Set("zIndex", 200)
 		s := v.LocalRect().Size
-		scale := ScreenMain().Scale
+		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
 	}
 	// set z index!!
 }
 
 func (v *CustomView) drawIfExposed() {
-	// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
+	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.LocalRect()

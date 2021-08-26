@@ -6,7 +6,7 @@ func DrawUtilAmountPie(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float6
 	path := zgeo.PathNew()
 	s := rect.Size.MinusD(strokeWidth).DividedByD(2).MinusD(1)
 	w := s.Min()
-	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, ScreenMain().SoftScale)
+	// zlog.Info("AmountCircleDraw:", rect, strokeWidth, zscreen.GetMain().SoftScale)
 	path.MoveTo(rect.Center())
 	path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, value*360)
 	canvas.SetColor(color)

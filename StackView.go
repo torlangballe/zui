@@ -4,7 +4,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -64,13 +63,12 @@ func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 	return
 }
 
-func (v *StackView) ArrangeChildren(onlyChild *View) {
+func (v *StackView) ArrangeChildren() {
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.ObjectName(), v.Rect(), len(v.cells))
 	// zlog.PushProfile(v.ObjectName())
 	if v.layoutHandler != nil {
 		v.layoutHandler.HandleBeforeLayout()
 	}
-	zlog.Assert(onlyChild == nil) // going away...
 	rm := v.LocalRect().Plus(v.Margin())
 	lays := v.getLayoutCells(rm)
 	// if v.ObjectName() == "header" {

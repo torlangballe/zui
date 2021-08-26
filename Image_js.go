@@ -14,9 +14,8 @@ import (
 )
 
 var (
-	remoteCache          = zcache.New(3600, false)
-	localCache           = zcache.New(0, false) // cache for with-app images, no expiry
-	ImageGlobalURLPrefix string
+	remoteCache = zcache.New(3600, false)
+	localCache  = zcache.New(0, false) // cache for with-app images, no expiry
 )
 
 type imageBase struct {
@@ -55,7 +54,7 @@ func ImagesGetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	return false
 }
 
-func ImageFromPath(path string, got func(*Image)) *Image {
+func ImageFromPath(path string, got func(*Image)) {
 	// if !strings.HasSuffix(path, ".png") {
 	// zlog.Info("ImageFromPath:", path, zlog.GetCallingStackString())
 	// }
@@ -63,7 +62,7 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		if got != nil {
 			got(nil)
 		}
-		return nil
+		return
 	}
 	// zlog.Info("ImageFromPath:", ImageGlobalURLPrefix, "#", path)
 	if !strings.HasPrefix(path, "data:") && !zhttp.StringStartsWithHTTPX(path) {
@@ -78,7 +77,7 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 		if got != nil {
 			got(i)
 		}
-		return i
+		return
 	}
 	// zlog.Info("ImageFromPath before load:", path)
 	i.load(path, func(success bool) {
@@ -91,7 +90,6 @@ func ImageFromPath(path string, got func(*Image)) *Image {
 			got(i)
 		}
 	})
-	return i
 }
 
 func (i *Image) ToGo() image.Image {

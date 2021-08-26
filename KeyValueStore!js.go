@@ -7,22 +7,23 @@ import (
 	"sync"
 
 	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zjson"
 	"github.com/torlangballe/zutil/zlog"
 )
 
 var lock sync.Mutex
 var dict = zdict.Dict{}
-var fpath string
 
 func KeyValueStoreFileNew(path string) *KeyValueStore {
-	fpath = path
-	err := zjson.UnmarshalFromFile(&dict, fpath, true)
+	k := &KeyValueStore{Local: true}
+	k.filepath = zfile.ChangedExtension(path, ".json")
+	err := zjson.UnmarshalFromFile(&dict, k.filepath, true)
 	if err != nil {
 		zlog.Error(err, "unmarshal")
 		return nil
 	}
-	return &KeyValueStore{Local: true}
+	return k
 }
 
 func (k KeyValueStore) getItem(key string, pointer interface{}) bool {
@@ -43,7 +44,7 @@ func (k *KeyValueStore) setItem(key string, v interface{}, sync bool) error {
 	go func() {
 		lock.Lock()
 		dict[key] = v
-		zjson.MarshalToFile(dict, fpath)
+		zjson.MarshalToFile(dict, k.filepath)
 		lock.Unlock()
 	}()
 	return nil

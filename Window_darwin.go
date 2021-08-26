@@ -37,7 +37,7 @@ func (w *Window) ContentRect() zgeo.Rect {
 
 func WindowOpen(o WindowOptions) *Window {
 	w := &Window{}
-	sm := ScreenMain()
+	sm := zscreen.GetMain()
 	var r zgeo.Rect
 	zlog.Assert(o.FullScreenID != 0 || !o.Size.IsNull())
 	if o.FullScreenID == 0 {

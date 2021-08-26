@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 )
 
@@ -97,9 +96,12 @@ func (v *HeaderView) handleButtonPressed(button *ImageButtonView, h Header) {
 		zslice.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
 		for _, c := range v.GetChildren(false) {
-			tri, _ := c.(*ImageButtonView).FindViewWithName("sort", false)
-			if tri != nil {
-				tri.SetAlpha(0.5)
+			ib, _ := c.(*ImageButtonView)
+			if ib != nil {
+				tri, _ := ib.FindViewWithName("sort", false)
+				if tri != nil {
+					tri.SetAlpha(0.5)
+				}
 			}
 		}
 		sort, _ := button.FindViewWithName("sort", false)
@@ -159,7 +161,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell := ContainerViewCell{}
 		cell.Alignment = h.Align
 		header := h
-		s := zgeo.Size{h.MinWidth, 24}
+		s := zgeo.Size{h.MinWidth, 26}
 		button := ImageButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)
@@ -206,7 +208,14 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 	x := 0.0
 	w := stack.Rect().Size.W
 	// zlog.Info("HeaderFit", v.ObjectName(), len(v.cells), len(children))
+	hi := 0
 	for i := range children {
+		for v.cells[hi].Collapsed || v.cells[hi].Free {
+			hi++
+			if hi >= len(children) {
+				return
+			}
+		}
 		var e float64
 		if i < len(children)-1 {
 			e = children[i+1].Rect().Pos.X
@@ -214,16 +223,13 @@ func (v *HeaderView) FitToRowStack(stack *StackView, marg float64) {
 		} else {
 			e = w
 		}
-		if v.cells[i].Collapsed {
-			zlog.Info("Header collapsed!", v.ObjectName(), i)
-			continue
-		}
-		hv := v.cells[i].View
+		hv := v.cells[hi].View
 		hr := hv.Rect()
 		hr.Pos.X = x
 		hr.SetMaxX(e)
 		x = e
 		hv.SetRect(hr)
+		hi++
 		// zlog.Info("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())
 	}
 }

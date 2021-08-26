@@ -54,6 +54,17 @@ func (c *Canvas) SetColor(color zgeo.Color) {
 	c.setColor(color, true)
 }
 
+// func (c *Canvas) SetTile(image *Image, hor, vert bool) {
+// 	rep := "repeat"
+// 	if !hor {
+// 		rep += "-y"
+// 	} else if !vert {
+// 		rep += "-x"
+// 	}
+// 	pattern := c.context.Call("createPattern", image.imageJS, rep)
+// 	c.context.Set("fillStyle", pattern)
+// }
+
 func (c *Canvas) FillPath(path *zgeo.Path) {
 	c.setPath(path)
 	c.context.Call("fill")
