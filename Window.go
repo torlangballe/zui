@@ -14,11 +14,6 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-// WindowBarHeight is height of a normal window's title bar, can be different for each os
-var WindowBarHeight = 21.0
-
-var windows = map[*Window]bool{}
-
 type Window struct {
 	windowNative
 	HandleClosed        func()
@@ -38,6 +33,11 @@ type WindowOptions struct {
 	Alignment    zgeo.Alignment
 	FullScreenID int64 // screen id to go full screen on. -1 is use main. 0 is ignore.
 }
+
+var (
+	WindowBarHeight = 21.0 // WindowBarHeight is height of a normal window's title bar, can be different for each os
+	windows         = map[*Window]bool{}
+)
 
 func WindowNew() *Window {
 	w := &Window{}

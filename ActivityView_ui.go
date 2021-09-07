@@ -3,7 +3,6 @@
 package zui
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
@@ -44,8 +43,7 @@ func (v *ActivityView) Start() {
 	v.repeater.Set(0.1, false, func() bool {
 		t := ztime.Since(v.start)
 		deg := 360 * (t / v.rotationSecs)
-		rot := fmt.Sprintf("rotate(%ddeg)", int(deg)) // move this to a method in NativeView
-		v.style().Set("webkitTransform", rot)
+		v.Rotate(deg)
 		return true
 	})
 }

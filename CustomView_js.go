@@ -71,18 +71,19 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 
 func (v *CustomView) SetRect(rect zgeo.Rect) {
 
+	r := rect.ExpandedToInt()
 	s := zgeo.Size{}
 	if v.HasSize() {
 		s = v.Rect().Size
 	}
-	v.NativeView.SetRect(rect)
+	v.NativeView.SetRect(r)
 	// r := v.Rect()
 	// if v.ObjectName() == "streams" {
 	// 	zlog.Info("CV SetRect:", v.ObjectName(), rect, r)
 	// }
 	// if rect != r {
-	if v.canvas != nil && s != rect.Size {
-		// zlog.Debug("set", v.ObjectName(), s, rect.Size)
+	if v.canvas != nil && s != r.Size {
+		// zlog.Debug("set", v.ObjectName(), s, r.Size)
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
@@ -104,21 +105,22 @@ func (v *CustomView) makeCanvas() {
 		v.canvas.element.Set("id", v.ObjectName()+".canvas")
 		v.canvas.DownsampleImages = v.DownsampleImages
 		firstChild := v.getjs("firstChild")
+		v.canvas.element.Get("style").Set("zIndex", 1)
+		s := v.LocalRect().Size
+		scale := zscreen.MainScale
+		v.setCanvasSize(s, scale)
+
 		if firstChild.IsUndefined() {
 			v.call("appendChild", v.canvas.element)
 		} else {
 			v.call("insertBefore", v.canvas.element, firstChild)
 		}
-		// v.canvas.element.Get("style").Set("zIndex", 200)
-		s := v.LocalRect().Size
-		scale := zscreen.MainScale
-		v.setCanvasSize(s, scale)
 	}
 	// set z index!!
 }
 
 func (v *CustomView) drawIfExposed() {
-	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
+	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, zlog.GetCallingStackString())
 	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.LocalRect()
@@ -146,5 +148,8 @@ func (v *CustomView) drawIfExposed() {
 }
 
 func (v *CustomView) Expose() {
+	// if v.ObjectName() == "5345904" {
+	// 	zlog.Info("CustV Expose", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, zlog.GetCallingStackString())
+	// }
 	v.ExposeInSecs(0.1) //0.01)
 }

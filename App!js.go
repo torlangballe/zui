@@ -81,12 +81,17 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filepath)
 }
 
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "www/favicon.ico")
+}
+
 func AppServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
 	f := &FilesRedirector{
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
 	http.Handle(zrest.AppURLPrefix, f)
+	http.HandleFunc("/favicon.ico", faviconHandler)
 }
 
 func appNew(a *App) {

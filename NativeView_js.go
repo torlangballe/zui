@@ -140,15 +140,6 @@ func (v *NativeView) SetObjectName(name string) {
 	v.setjs("id", fmt.Sprintf("%s-%d", name, idCount))
 }
 
-func makeRGBAString(c zgeo.Color) string {
-	if !c.Valid {
-		return "initial"
-	}
-	return c.Hex()
-	//	rgba := c.GetRGBA()
-	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
-}
-
 func (v *NativeView) SetColor(c zgeo.Color) {
 	v.style().Set("color", makeRGBAString(c))
 }
@@ -202,6 +193,11 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color) {
 }
 
 func (v *NativeView) Scale(scale float64) {
+}
+
+func (v *NativeView) Rotate(deg float64) {
+	rot := fmt.Sprintf("rotate(%ddeg)", int(deg))
+	v.style().Set("webkitTransform", rot)
 }
 
 func (v *NativeView) GetScale() float64 {

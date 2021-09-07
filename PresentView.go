@@ -12,8 +12,6 @@ import (
 
 //  Created by Tor Langballe on /22/9/14.
 
-//var forcingRotationForPortraitOnly = false
-
 type PresentViewTransition int
 
 const (
@@ -26,52 +24,6 @@ const (
 	PresentViewTransitionReverse
 	PresentViewTransitionSame
 )
-
-var presentCloseFunc func(dismissed bool)
-
-var presentedViewStack []View
-
-func PresentedViewCurrentIsParent(v View) bool {
-	l := len(presentedViewStack)
-	if l <= 1 {
-		return true
-	}
-	nv := ViewGetNative(v)
-	p := presentedViewStack[l-1]
-	// zlog.Info("PresentedViewCurrentIsParent", l, v.ObjectName(), p.ObjectName())
-	if p == v {
-		return true
-	}
-	for _, n := range nv.AllParents() {
-		if n.View == p {
-			return true
-		}
-	}
-	return false
-}
-
-func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.Rect, fade float32) {
-	var me = screen
-	var out = me
-	switch transition {
-	case PresentViewTransitionFromLeft:
-		out.Pos.X += -me.Max().X
-
-	case PresentViewTransitionFromRight:
-		out.Pos.X += screen.Size.W - me.Pos.X
-
-	case PresentViewTransitionFromTop:
-		out.Pos.Y += -me.Max().Y
-
-	case PresentViewTransitionFromBottom:
-		out.Pos.Y += screen.Size.H - me.Pos.Y
-
-	default:
-		break
-	}
-	n.SetAlpha(fade)
-	n.SetRect(out)
-}
 
 type PresentViewAttributes struct {
 	WindowOptions
@@ -93,122 +45,13 @@ type PresentViewAttributes struct {
 	ModalDismissOnEscapeKey  bool
 }
 
-var stack []PresentViewAttributes
-
-func PresentViewAttributesNew() PresentViewAttributes {
-	a := PresentViewAttributes{}
-	a.DurationSecs = 0.5
-	a.MakeFull = false
-	a.PortraitOnly = false
-	a.ModalDimBackground = true
-	a.ModalDropShadow = zgeo.DropShadow{
-		Delta: zgeo.Size{4, 4},
-		Blur:  8,
-		Color: zgeo.ColorNewGray(0.2, 1),
-	}
-	a.ModalCorner = 5
-	return a
-}
-
-func PresentViewCallReady(v View, beforeWindow bool) {
-	nv := ViewGetNative(v)
-	// zlog.Info(beforeWindow, "PresentViewCallReady:", nv.Hierarchy(), nv.Presented)
-	if nv == nil {
-		return
-	}
-	if !nv.Presented {
-		if !beforeWindow {
-			// fmt.Printf("Set Presented: %s %p\n", nv.Hierarchy(), nv)
-			nv.Presented = true
-		}
-		r, _ := v.(ReadyToShowType)
-		if r != nil {
-			r.ReadyToShow(beforeWindow)
-		}
-	}
-	if nv.allChildrenPresented {
-		return
-	}
-	ct, _ := v.(ContainerType)
-	if ct != nil {
-		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetVisibleChildren()))
-		for _, c := range ct.GetChildren(false) {
-			PresentViewCallReady(c, beforeWindow)
-		}
-	}
-	if !beforeWindow {
-		nv.allChildrenPresented = true
-	}
-}
-
-func PrintPresented(v View, space string) {
-	nv := ViewGetNative(v)
-	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.Presented)
-	ct, _ := v.(ContainerType)
-	if ct != nil {
-		for _, c := range ct.GetChildren(false) {
-			PrintPresented(c, space+"  ")
-		}
-	}
-}
-
-func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, closed func(dismissed bool)) (outer View) {
-	outer = v
-	win := WindowGetMain()
-	if attributes.Modal {
-		ct, _ := v.(ContainerType)
-		if ct != nil && attributes.ModalCorner != 0 {
-			v.SetCorner(attributes.ModalCorner)
-		}
-		nv := ViewGetNative(v)
-		if nv != nil {
-			if !attributes.ModalDropShadow.Delta.IsNull() {
-				nv.SetDropShadow(attributes.ModalDropShadow)
-			}
-			// zlog.Info("makeEmbeddingViewAndAddToWindow:", nv.Hierarchy(), attributes.ModalNoBlock)
-			if !attributes.ModalNoBlock {
-				blocker := ContainerViewNew("$blocker")
-				outer = blocker
-				fullRect := win.ContentRect()
-				fullRect.Pos = zgeo.Pos{}
-				// zlog.Info("blocker rect:", fullRect)
-				blocker.SetRect(fullRect)
-				if attributes.ModalDimBackground {
-					blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
-				} else {
-					blocker.SetBGColor(zgeo.ColorClear)
-				}
-				blocker.Add(v, zgeo.TopLeft)
-				if attributes.ModalCloseOnOutsidePress {
-					// lp, _ := v.(Pressable)
-					// if lp != nil {
-					// 	lp.SetPressedHandler(func() {
-					// 		zlog.Info("LP Pressed")
-					// 	})
-					// }
-					blocker.SetPressedHandler(func() {
-						dismissed := true
-						PresentViewClose(v, dismissed, closed)
-					})
-				}
-				win.AddView(blocker)
-			} else {
-				win.AddView(v)
-			}
-		}
-	}
-	ct, _ := v.(ContainerType)
-	if ct != nil {
-		recursive := true
-		ContainerTypeRangeChildren(ct, recursive, false, func(view View) bool {
-			// TODO: focus something here...
-			return false
-		})
-	}
-	return
-}
-
-var presentViewPresenting = true
+var (
+	stack                 []PresentViewAttributes
+	presentCloseFunc      func(dismissed bool)
+	presentedViewStack    []View
+	firstPresented        bool
+	presentViewPresenting = true
+)
 
 func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
 	presentedViewStack = append(presentedViewStack, v)
@@ -231,8 +74,6 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 	}
 }
 
-var firstPresented bool
-
 func presentLoaded(v, outer View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
 	win := WindowGetMain()
 	fullRect := win.ContentRect()
@@ -242,8 +83,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
-	// zlog.Info("presentLoaded", firstPresented, size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
-	// zlog.Info("presentLoaded", firstPresented, size, rect, v.ObjectName(), reflect.ValueOf(v).Type())
+	// zlog.Info("presentLoaded", firstPresented, size, rect, fullRect)
 	nv := ViewGetNative(v)
 	if attributes.Modal {
 		if nv != nil {
@@ -356,6 +196,161 @@ func PresentViewCloseOverride(view View, dismissed bool, overrideAttributes Pres
 		})
 		// presentCloseFunc = nil // can't do this, clears before StartIn
 	}
+}
+
+func PresentedViewCurrentIsParent(v View) bool {
+	l := len(presentedViewStack)
+	if l <= 1 {
+		return true
+	}
+	nv := ViewGetNative(v)
+	p := presentedViewStack[l-1]
+	// zlog.Info("PresentedViewCurrentIsParent", l, v.ObjectName(), p.ObjectName())
+	if p == v {
+		return true
+	}
+	for _, n := range nv.AllParents() {
+		if n.View == p {
+			return true
+		}
+	}
+	return false
+}
+
+func setTransition(n *NativeView, transition PresentViewTransition, screen zgeo.Rect, fade float32) {
+	var me = screen
+	var out = me
+	switch transition {
+	case PresentViewTransitionFromLeft:
+		out.Pos.X += -me.Max().X
+
+	case PresentViewTransitionFromRight:
+		out.Pos.X += screen.Size.W - me.Pos.X
+
+	case PresentViewTransitionFromTop:
+		out.Pos.Y += -me.Max().Y
+
+	case PresentViewTransitionFromBottom:
+		out.Pos.Y += screen.Size.H - me.Pos.Y
+
+	default:
+		break
+	}
+	n.SetAlpha(fade)
+	n.SetRect(out)
+}
+
+func PresentViewAttributesNew() PresentViewAttributes {
+	a := PresentViewAttributes{}
+	a.DurationSecs = 0.5
+	a.MakeFull = false
+	a.PortraitOnly = false
+	a.ModalDimBackground = true
+	a.ModalDropShadow = zgeo.DropShadow{
+		Delta: zgeo.Size{4, 4},
+		Blur:  8,
+		Color: zgeo.ColorNewGray(0.2, 1),
+	}
+	a.ModalCorner = 5
+	return a
+}
+
+func PresentViewCallReady(v View, beforeWindow bool) {
+	nv := ViewGetNative(v)
+	// zlog.Info(beforeWindow, "PresentViewCallReady:", nv.Hierarchy(), nv.Presented)
+	if nv == nil {
+		return
+	}
+	if !nv.Presented {
+		if !beforeWindow {
+			// fmt.Printf("Set Presented: %s %p\n", nv.Hierarchy(), nv)
+			nv.Presented = true
+		}
+		r, _ := v.(ReadyToShowType)
+		if r != nil {
+			r.ReadyToShow(beforeWindow)
+		}
+	}
+	if nv.allChildrenPresented {
+		return
+	}
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetVisibleChildren()))
+		for _, c := range ct.GetChildren(false) {
+			PresentViewCallReady(c, beforeWindow)
+		}
+	}
+	if !beforeWindow {
+		nv.allChildrenPresented = true
+	}
+}
+
+func PrintPresented(v View, space string) {
+	nv := ViewGetNative(v)
+	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.Presented)
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		for _, c := range ct.GetChildren(false) {
+			PrintPresented(c, space+"  ")
+		}
+	}
+}
+
+func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, closed func(dismissed bool)) (outer View) {
+	outer = v
+	win := WindowGetMain()
+	if attributes.Modal {
+		ct, _ := v.(ContainerType)
+		if ct != nil && attributes.ModalCorner != 0 {
+			v.SetCorner(attributes.ModalCorner)
+		}
+		nv := ViewGetNative(v)
+		if nv != nil {
+			if !attributes.ModalDropShadow.Delta.IsNull() {
+				nv.SetDropShadow(attributes.ModalDropShadow)
+			}
+			// zlog.Info("makeEmbeddingViewAndAddToWindow:", nv.Hierarchy(), attributes.ModalNoBlock)
+			if !attributes.ModalNoBlock {
+				blocker := ContainerViewNew("$blocker")
+				outer = blocker
+				fullRect := win.ContentRect()
+				fullRect.Pos = zgeo.Pos{}
+				// zlog.Info("blocker rect:", fullRect)
+				blocker.SetRect(fullRect)
+				if attributes.ModalDimBackground {
+					blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
+				} else {
+					blocker.SetBGColor(zgeo.ColorClear)
+				}
+				blocker.Add(v, zgeo.TopLeft)
+				if attributes.ModalCloseOnOutsidePress {
+					// lp, _ := v.(Pressable)
+					// if lp != nil {
+					// 	lp.SetPressedHandler(func() {
+					// 		zlog.Info("LP Pressed")
+					// 	})
+					// }
+					blocker.SetPressedHandler(func() {
+						dismissed := true
+						PresentViewClose(v, dismissed, closed)
+					})
+				}
+				win.AddView(blocker)
+			} else {
+				win.AddView(v)
+			}
+		}
+	}
+	ct, _ := v.(ContainerType)
+	if ct != nil {
+		recursive := true
+		ContainerTypeRangeChildren(ct, recursive, false, func(view View) bool {
+			// TODO: focus something here...
+			return false
+		})
+	}
+	return
 }
 
 func PresentViewGetTopPushed() *CustomView {

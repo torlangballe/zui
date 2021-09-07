@@ -235,11 +235,11 @@ func (v *MenuedShapeView) popup() {
 		}
 	}
 
-	stack := StackViewVert("menued-pop-stack")
-	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
+	// stack := StackViewVert("menued-pop-stack")
+	// stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := ListViewNew("menu-list", selection)
-	list.MinRows = 0
-	stack.SetBGColor(zgeo.ColorWhite)
+	// list.MinRows = 10
+	//stack.SetBGColor(zgeo.ColorWhite)
 	//	list.ScrollView.SetBGColor(zgeo.ColorClear)
 	list.PressSelectable = true
 	list.PressUnselectable = v.Options.IsMultiple
@@ -248,8 +248,7 @@ func (v *MenuedShapeView) popup() {
 	list.HighlightColor = zgeo.ColorNew(0, 0.341, 0.847, 1)
 	list.HoverHighlight = true
 	list.ExposeSetsRowBGColor = true
-	list.RowColors = []zgeo.Color{zgeo.ColorWhite}
-	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
+	//	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 	// zlog.Info("POP:", v.Font().Size)
 	lineHeight := v.Font().LineHeight() + 4
 	list.GetRowHeight = func(index int) float64 {
@@ -318,19 +317,19 @@ func (v *MenuedShapeView) popup() {
 	}
 	w := TextInfoWidthOfString(max, v.Font())
 	w += leftMarg + rm
-	stack.SetMinSize(zgeo.Size{w, 0})
+	list.SetMinSize(zgeo.Size{w, 0})
 
 	list.HandleRowSelected = func(i int, selected, fromPressed bool) {
 		// zlog.Info("list selected", i, selected, v.items[i].IsAction)
 		v.items[i].Selected = selected
 		if v.items[i].IsAction {
 			if selected {
-				PresentViewClose(stack, false, nil)
+				PresentViewClose(list, false, nil)
 			}
 			return
 		}
 		if !v.Options.IsMultiple && fromPressed {
-			PresentViewClose(stack, false, nil)
+			PresentViewClose(list, false, nil)
 		}
 	}
 	att := PresentViewAttributesNew()
@@ -340,12 +339,12 @@ func (v *MenuedShapeView) popup() {
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
-	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
+	list.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
 	pos := v.AbsoluteRect().Pos
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)
-	PresentView(stack, att, func(*Window) {
+	PresentView(list, att, func(*Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
 		if !dismissed || v.Options.IsMultiple { // if multiple, we handle any select/deselect done

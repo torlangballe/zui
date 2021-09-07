@@ -25,7 +25,7 @@ type ListView struct {
 	HandleRowSelected    func(i int, selected, fromPress bool)
 	HandleScrolledToRows func(y float64, first, last int)
 
-	RowColors        []zgeo.Color
+	GetRowColor      func(i int) zgeo.Color
 	HighlightColor   zgeo.Color
 	highlightedIndex int
 	MinRows          int // MinRows is the minimum number of rows used to calculate size of list
@@ -67,7 +67,9 @@ func (v *ListView) Init(view View, name string, selection map[int]bool) {
 	v.rows = map[int]View{}
 	v.rowHeights = map[int]float64{}
 	v.scrollTimer = ztimer.TimerNew()
-	v.RowColors = []zgeo.Color{zgeo.ColorWhite}
+	v.GetRowColor = func(i int) zgeo.Color {
+		return zgeo.ColorWhite
+	}
 	v.SelectedColor = ListViewDefaultSelectedColor()
 	if selection != nil {
 		v.selectionIndexes = selection
@@ -245,12 +247,12 @@ func (v *ListView) layoutRows() (first, last int) {
 					calc = true
 					v.stack.AddChild(row, -1)
 				}
-				v.UpdateRow(i, false)
+				//! v.UpdateRow(i, false)
 				PresentViewCallReady(row, false) // do we need this?
 				if calc {
 					row.SetRect(r)
 				}
-				v.refreshRow(i)
+				//!	v.refreshRow(i)
 				delete(oldRows, i)
 			} else {
 				// tart := time.Now()
@@ -416,11 +418,7 @@ func (v *ListView) UpdateRowBGColor(i int) {
 	if row != nil {
 		col := v.SelectedColor
 		if !v.selectionIndexes[i] || !col.Valid {
-			if len(v.RowColors) == 0 {
-				col = zgeo.ColorWhite
-			} else {
-				col = v.RowColors[i%len(v.RowColors)]
-			}
+			col = v.GetRowColor(i)
 			if v.HighlightColor.Valid && i == v.highlightedIndex {
 				col = col.Mixed(v.HighlightColor, v.HighlightColor.Opacity())
 			}

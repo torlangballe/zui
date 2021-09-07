@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zdevice"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 // https://github.com/siongui/godom
@@ -96,4 +97,13 @@ func jsCreateDotSeparatedObject(f string) js.Value {
 		parent = parent.Get(p)
 	}
 	return parent
+}
+
+func makeRGBAString(c zgeo.Color) string {
+	if !c.Valid {
+		return "initial"
+	}
+	return c.Hex()
+	//	rgba := c.GetRGBA()
+	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
 }

@@ -54,6 +54,15 @@ func (v *CustomView) IsHighlighted() bool {
 	return v.isHighlighted
 }
 
+// func (v *CustomView) ReadyToShow(beforeWindow bool) {
+// 	if v.draw != nil && !beforeWindow {
+// 		if v.ObjectName() == "5345904" {
+// 			zlog.Info("CustV Redy2Show", v.exposed, presentViewPresenting, v.draw)
+// 		}
+// 		v.drawIfExposed()
+// 	}
+// }
+
 func (v *CustomView) ExposeInSecs(secs float64) {
 	// if v.ObjectName() == "chart-drawer" {
 	// }

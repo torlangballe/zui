@@ -3,6 +3,8 @@
 package zui
 
 import (
+	"sort"
+
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -489,4 +491,12 @@ func CollapseView(v View, collapse, arrange bool) bool {
 	p := ViewGetNative(v).Parent()
 	c := p.View.(Collapser) // crash if parent isn't ContainerView of some sort
 	return c.CollapseChild(v, collapse, arrange)
+}
+
+// SortChildren re-arranges order of cells with views in them.
+// It does not curr
+func (v *ContainerView) SortChildren(less func(a, b View) bool) {
+	sort.Slice(v.cells, func(i, j int) bool {
+		return less(v.cells[i].View, v.cells[i].View)
+	})
 }

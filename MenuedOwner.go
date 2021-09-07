@@ -291,7 +291,7 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Can
 
 	ti := TextInfoNew()
 	if list.IsRowHighlighted(i) {
-		ti.Color = list.HighlightColor.GetContrastingGray()
+		ti.Color = list.HighlightColor.ContrastingGray()
 	} else if item.TextColor.Valid {
 		ti.Color = item.TextColor
 	} else {
@@ -378,7 +378,7 @@ func (o *MenuedOwner) popup() {
 	stack := StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := ListViewNew("menu-list", selection)
-	list.MinRows = 0
+	list.MinRows = 10
 	stack.SetBGColor(o.BGColor)
 	list.PressSelectable = true
 	list.PressUnselectable = o.IsMultiple
@@ -387,7 +387,9 @@ func (o *MenuedOwner) popup() {
 	list.HighlightColor = o.HighlightColor
 	list.HoverHighlight = true
 	list.ExposeSetsRowBGColor = true
-	list.RowColors = []zgeo.Color{o.BGColor}
+	list.GetRowColor = func(i int) zgeo.Color {
+		return o.BGColor
+	}
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 
 	lineHeight := o.Font.LineHeight() + 6

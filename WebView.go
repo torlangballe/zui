@@ -31,7 +31,7 @@ func WebViewNew(minSize zgeo.Size, isFrame, makeBar bool) (webView *WebView) {
 	webView.View = webView
 	webView.init(minSize, isFrame)
 	if makeBar {
-		webView.Bar = webView.makeBar()
+		webView.Bar = webView.MakeBar()
 	}
 	return webView
 }
@@ -40,7 +40,7 @@ func (v *WebView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.minSize
 }
 
-func (v *WebView) makeBar() *StackView {
+func (v *WebView) MakeBar() *StackView {
 	v.Bar = StackViewHor("bar")
 	v.Bar.SetSpacing(8)
 	v.Bar.SetMarginS(zgeo.Size{8, 6})
