@@ -23,6 +23,7 @@ func (v *NativeView) SetColor(c zgeo.Color)                                     
 func (v *NativeView) SetAlpha(alpha float32)                                                  {}
 func (v *NativeView) SetBGColor(c zgeo.Color)                                                 {}
 func (v *NativeView) SetCorner(radius float64)                                                {}
+func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment)                         {}
 func (v *NativeView) SetStroke(width float64, c zgeo.Color)                                   {}
 func (v *NativeView) Scale(scale float64)                                                     {}
 func (v *NativeView) Rotate(deg float64)                                                      {}
@@ -69,6 +70,6 @@ func (v *NativeView) AbsoluteRect() zgeo.Rect                                   
 func (v *NativeView) SetStyle(key, value string)                                              {}
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}
-
+func (v *NativeView) HandleExposed(handle func(intersects bool))                              {}
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }

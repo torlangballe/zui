@@ -165,7 +165,7 @@ func (o *MenuedOwner) Empty() {
 }
 
 func (o *MenuedOwner) SetText(text string) {
-	if o.SetTitle {
+	if o.SetTitle || o.GetTitle != nil {
 		zlog.Assert(o.View != nil)
 		ts, got := o.View.(TextSetter)
 		if got {
@@ -175,7 +175,6 @@ func (o *MenuedOwner) SetText(text string) {
 }
 
 func (o *MenuedOwner) updateTitleAndImage() {
-	//  zlog.Info("Menued updateTitleAndImage")
 	var nstr string
 	if o.IsMultiple {
 		var count, total int
@@ -195,26 +194,29 @@ func (o *MenuedOwner) updateTitleAndImage() {
 		} else {
 			nstr = strconv.Itoa(count)
 		}
-	} else {
-		var spath, sval string
-		item := o.SelectedItem()
-		if item != nil {
-			sval = fmt.Sprint(item.Value)
-			if o.ImagePath != "" {
-				spath = path.Join(o.ImagePath, sval+".png")
-				// zlog.Info("Menued SetValImage:", str)
-			}
-		}
+		return
+	}
+	if o.GetTitle != nil {
+		nstr = o.GetTitle(1)
+		o.SetText(nstr)
+		return
+	}
+	var spath, sval string
+	item := o.SelectedItem()
+	if item != nil && item.Value != nil {
+		sval = fmt.Sprint(item.Value)
 		if o.ImagePath != "" {
-			// zlog.Info("MO SetImagePath:", spath)
-			io := o.View.(ImageOwner)
-			io.SetImage(nil, spath, nil)
+			spath = path.Join(o.ImagePath, sval+".png")
+			// zlog.Info("Menued SetValImage:", str)
 		}
-		if item != nil && item.Value != nil {
-			nstr = sval
-		}
+		nstr = sval
 	}
 	o.SetText(nstr)
+	if o.ImagePath != "" {
+		// zlog.Info("MO SetImagePath:", spath)
+		io := o.View.(ImageOwner)
+		io.SetImage(nil, spath, nil)
+	}
 }
 
 func (o *MenuedOwner) UpdateItems(items zdict.Items, values []interface{}) {
@@ -509,10 +511,10 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem) *ShapeView {
 	v.SetImage(nil, "images/zmenu-arrows.png", nil)
 	v.ImageMargin = zgeo.Size{3, 3}
 	v.ImageGap = 4
-	v.SetColor(zgeo.ColorWhite)
+	v.SetColor(StyleDefaultFGColor().Mixed(zgeo.ColorGray, 0.2))
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.3)
 	v.StrokeWidth = 1
-	v.SetTextColor(StyleDefaultFGColor())
+	v.SetTextColor(StyleDefaultBGColor())
 	menu.Build(v, items)
 	return v
 }

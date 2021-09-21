@@ -21,6 +21,7 @@ type Window struct {
 	HandleAfterResized  func(r zgeo.Rect) // HandleAfterResize  is called after window re-arranges child view
 	ID                  string
 	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
+	resizeHandlingView  View
 	dismissed           bool // this stores if window is dismissed or closed for other reasons, used by present close functions
 	keyHandlers         map[View]func(KeyboardKey, KeyboardModifier)
 }

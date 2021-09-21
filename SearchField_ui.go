@@ -14,11 +14,11 @@ type SearchField struct {
 func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	s := &SearchField{}
 	s.StackView.Init(s, false, "search-stack")
-	style.IsSearch = true
+	style.Type = TextViewSearch
 	t := TextViewNew("", style, chars, 1)
 	s.TextView = t
-	// size := t.CalculatedSize(zgeo.Size{300, 50})
-	// t.SetCorner(size.H / 2)
+	size := t.CalculatedSize(zgeo.Size{300, 50})
+	t.SetCorner(size.H / 2)
 	t.SetObjectName("search")
 	// t.SetMargin(zgeo.RectFromXY2(24, 0, 0, 0))
 	t.setjs("inputmode", "search")

@@ -5,6 +5,7 @@ import (
 	"path"
 	"reflect"
 	"strconv"
+	"strings"
 	"syscall/js"
 	"time"
 
@@ -118,7 +119,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else if v.Presented {
-		zlog.Info("parse empty Coord:", v.Hierarchy(), zlog.GetCallingStackString())
+		zlog.Info("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.GetCallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -174,6 +175,29 @@ func (v *NativeView) SetBGColor(c zgeo.Color) {
 func (v *NativeView) BGColor() zgeo.Color {
 	str := v.style().Get("backgroundColor").String()
 	return zgeo.ColorFromString(str)
+}
+
+func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
+	style := v.style()
+	for _, a := range []zgeo.Alignment{zgeo.TopLeft, zgeo.TopRight, zgeo.BottomLeft, zgeo.BottomRight} {
+		if align&a != a {
+			continue
+		}
+		srad := fmt.Sprintf("%dpx", int(radius))
+		pos := "border-" + strings.Replace(a.String(), "|", "-", -1) + "-radius"
+		style.Set("-moz-"+pos, srad)
+		style.Set("-webkit-"+pos, srad)
+		style.Set(pos, srad)
+	}
+}
+
+func (v *NativeView) SetSelectable(on bool) {
+	val := "none"
+	if on {
+		val = "all"
+	}
+	v.style().Set("user-select", val)
+	v.style().Set("-webkit-user-select", val)
 }
 
 func (v *NativeView) SetCorner(radius float64) {
@@ -367,12 +391,7 @@ func (v *NativeView) ReplaceChild(child, with View) {
 	with.SetRect(child.Rect())
 	// zlog.Info("RemoveFromParent:", v.ObjectName(), reflect.ValueOf(v.View).Type())
 	v.RemoveChild(child)
-	et, _ := with.(ExposableType)
-	// zlog.Info("ReplaceChild:", et != nil, replace.ObjectName())
-	if et != nil {
-		et.Expose()
-		et.drawIfExposed()
-	}
+	ExposeView(with)
 }
 
 func (v *NativeView) AllParents() (all []*NativeView) {
@@ -616,13 +635,13 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		if dragEnterView == nil {
 			dragEvent(args[0], DragEnter, handler)
 		}
-		zlog.Info("ondragenter:", v.ObjectName())
+		// zlog.Info("ondragenter:", v.ObjectName())
 		dragEnterView = v
 		return nil
 	}))
 	v.setjs("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("ondragleave1:", dragEnterView != nil, dragEnterView == v, v.ObjectName())
-		zlog.Info("ondragleave:", v.ObjectName(), dragEnterView != v)
+		// zlog.Info("ondragleave:", v.ObjectName(), dragEnterView != v)
 		// if dragEnterView != v {
 		// 	return nil
 		// }
@@ -649,7 +668,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 			var pos zgeo.Pos
 			pos.X = event.Get("offsetX").Float()
 			pos.Y = event.Get("offsetY").Float()
-			zlog.Info("Drop offset:", pos)
+			// zlog.Info("Drop offset:", pos)
 			if handler(DragDropFile, data, name, pos) {
 				event.Call("preventDefault")
 			}
@@ -763,4 +782,21 @@ func (v *NativeView) SetTilePath(spath string) {
 	format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
 	s := fmt.Sprintf(format, spath, spath2)
 	v.style().Set("backgroundImage", s)
+}
+
+func (v *NativeView) HandleExposed(handle func(intersects bool)) {
+	f := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		entries := args[0]
+		for i := 0; i < entries.Length(); i++ {
+			e := entries.Index(i)
+			inter := e.Get("isIntersecting").Bool()
+			handle(inter)
+		}
+		return nil
+	})
+	observer := js.Global().Get("IntersectionObserver").New(f) //, opts)
+	observer.Call("observe", v.Element)
+	v.AddStopper(func() {
+		observer.Call("disconnect")
+	})
 }

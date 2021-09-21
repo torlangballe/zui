@@ -167,7 +167,9 @@ func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleC
 }
 
 func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	// zlog.Info("rawDrawPlainImage1:", image.Size(), image.Path)
+	// if strings.Contains(image.Path, "edit") {
+	// 	zlog.Info("rawDrawPlainImage1:", image.Size(), destRect, image.Path)
+	// }
 	if destRect.Size.H < 0 {
 		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, c)
 		return
@@ -190,9 +192,6 @@ func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bo
 
 func (c *Canvas) rawDrawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
-	if image.Path == "images/plus-circled-white.png" {
-		zlog.Info("rawDrawPlain:", image.Size(), image.Path, sr, destRect, zlog.GetCallingStackString())
-	}
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 }
 

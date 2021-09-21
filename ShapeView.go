@@ -135,8 +135,8 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		ts, _, _ := v.textInfo.GetBounds()
-		ts.Add(zgeo.Size{16, 6})
-		ts.W *= 1.1
+		ts.Add(zgeo.Size{12, 6})
+		// ts.W *= 1.1
 		s.Maximize(ts)
 	}
 	if v.image != nil {

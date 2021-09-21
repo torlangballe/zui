@@ -316,12 +316,12 @@ func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 	}
 }
 
-func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bool {
+func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) (changed bool) {
 	cell, _ := v.FindCellWithView(view)
 	if cell == nil {
 		return false
 	}
-	changed := (cell.Collapsed != collapse)
+	changed = (cell.Collapsed != collapse)
 	// zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
 	if collapse {
 		cell.View.Show(false)
@@ -344,11 +344,7 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) bo
 	}
 	if !collapse {
 		cell.View.Show(true)
-		et, got := cell.View.(ExposableType)
-		// zlog.Info("Uncollapse:", et != nil, v.View.ObjectName())
-		if got {
-			et.Expose()
-		}
+		ExposeView(cell.View)
 	}
 	return changed
 }
@@ -462,6 +458,7 @@ func (v *ContainerView) DetachChild(subView View) {
 	}
 }
 
+/*
 func (v *ContainerView) drawIfExposed() {
 	v.CustomView.drawIfExposed()
 	// zlog.Info("CoV drawIfExp:", v.Hierarchy())
@@ -475,6 +472,7 @@ func (v *ContainerView) drawIfExposed() {
 	}
 	v.exposed = false
 }
+*/
 
 func (v *ContainerView) ReplaceChild(child, with View) {
 	c, i := v.FindCellWithView(child)
@@ -497,6 +495,6 @@ func CollapseView(v View, collapse, arrange bool) bool {
 // It does not curr
 func (v *ContainerView) SortChildren(less func(a, b View) bool) {
 	sort.Slice(v.cells, func(i, j int) bool {
-		return less(v.cells[i].View, v.cells[i].View)
+		return less(v.cells[i].View, v.cells[j].View)
 	})
 }

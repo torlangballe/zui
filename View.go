@@ -51,7 +51,7 @@ type ViewDrawProtocol interface {
 }
 
 type ExposableType interface {
-	drawIfExposed()
+	// drawSelf()
 	Expose()
 }
 
@@ -76,7 +76,6 @@ type ViewLayoutProtocol interface {
 	HandleBackButton() // only android has hardware back button...
 	RefreshAccessibility()
 }
-
 
 func ViewGetNative(view View) *NativeView {
 	o, _ := view.(NativeViewOwner)

@@ -13,35 +13,37 @@ const jsTextMargin = 2
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
 func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, cols int) {
+	v.textStyle = textStyle
 	v.SetMaxLines(rows)
 	if rows > 1 {
 		v.Element = DocumentJS.Call("createElement", "textarea")
 	} else {
 		v.Element = DocumentJS.Call("createElement", "input")
+		stype := "text"
 		switch textStyle.KeyboardType {
 		case KeyboardTypePassword:
-			v.setjs("type", "password")
+			stype = "password"
 		case KeyboardTypeEmailAddress:
-			v.setjs("type", "email")
-		default:
-			v.setjs("type", "text")
+			stype = "email"
 		}
-		if textStyle.IsSearch {
-			v.isSearch = true
-			v.setjs("type", "search")
+		if textStyle.Type == TextViewSearch {
+			stype = "search"
 		}
+		if textStyle.Type == TextViewDate {
+			stype = "date"
+		}
+		v.setjs("type", stype)
 	}
 
 	v.SetObjectName("textview")
 	v.Columns = cols
 	v.setjs("style", "position:absolute")
-	style := v.style()
-	style.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
-	style.Set("-webkitBoxShadow", "none") // doesn't work
+	css := v.style()
+	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	css.Set("-webkitBoxShadow", "none") // doesn't work
 
 	// if rows <= 1 {
 	v.SetMargin(TextViewDefaultMargin)
-	style = v.style()
 	// }
 	v.setjs("value", text)
 	v.setjs("className", "texter")
@@ -238,35 +240,21 @@ func (v *TextView) updateEnterHandlers() {
 }
 
 // TODO: Replace with NativeView version
-func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier)) {
+func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {
 	v.keyPressed = handler
-	v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("KeyUp")
-		if handler != nil {
-			event := vs[0]
-			key, mods := getKeyAndModsFromEvent(event) // replaces below code?
-			/*
-				key := KeyboardKey(event.Get("which").Int())
-				// key := event.Get("which").Int()
-				var mods KeyboardModifier
-				if event.Get("altKey").Bool() {
-					mods |= KeyboardModifierAlt
-				}
-				if event.Get("ctrlKey").Bool() {
-					mods |= KeyboardModifierControl
-				}
-				if event.Get("metaKey").Bool() {
-					mods |= KeyboardModifierCommand
-				}
-				if event.Get("shiftKey").Bool() {
-					mods |= KeyboardModifierShift
-				}
-			*/
-			handler(key, mods)
-			// zlog.Info("KeyUp:", key, mods)
-		}
-		return nil
-	}))
+	v.NativeView.SetKeyHandler(handler)
+	/*
+		v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+			// zlog.Info("KeyUp")
+			if handler != nil {
+				event := vs[0]
+				key, mods := getKeyAndModsFromEvent(event) // replaces below code?
+				handler(key, mods)
+				// zlog.Info("KeyUp:", key, mods)
+			}
+			return nil
+		}))
+	*/
 }
 
 func (v *TextView) ScrollToBottom() {

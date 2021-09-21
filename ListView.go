@@ -127,17 +127,6 @@ func (v *ListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ListView) drawIfExposed() {
-	v.ScrollView.drawIfExposed()
-	// zlog.Info("LV:drawIfExposed")
-	for _, view := range v.rows {
-		et, got := view.(ExposableType)
-		if got {
-			et.drawIfExposed()
-		}
-	}
-}
-
 func (v *ListView) SetSpacing(spacing float64) *ListView {
 	v.spacing = spacing
 	return v
@@ -148,7 +137,7 @@ func (v *ListView) Spacing() float64 {
 }
 
 func (v *ListView) SetRect(rect zgeo.Rect) {
-	// zlog.Info("ListView SetRect:", v.ObjectName(), rect)
+	//  zlog.Info("ListView SetRect:", v.ObjectName(), rect)
 	v.ScrollView.SetRect(rect)
 	if v.stack == nil {
 		v.stack = CustomViewNew("listview.stack")

@@ -98,9 +98,9 @@ func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 		}
 		// We use HTML here to add all at once, or slow.
 		v.setjs("innerHTML", str)
-		if len(values) != 0 {
-			v.SelectWithValue(values[0])
-		}
+	}
+	if len(values) != 0 {
+		v.SelectWithValue(values[0])
 	}
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }

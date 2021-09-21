@@ -77,7 +77,7 @@ func WindowOpen(o WindowOptions) *Window {
 	if o.URL != "" && !zhttp.StringStartsWithHTTPX(o.URL) {
 		o.URL = WindowGetMain().GetURLWithNewPathAndArgs(o.URL, nil)
 	}
-	// zlog.Info("OPEN WIN:", o.URL, zlog.GetCallingStackString())
+	zlog.Info("OPEN WIN:", o.URL, zlog.GetCallingStackString())
 	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.element.IsNull() {
 		zlog.Error(nil, "open window failed", o.URL)
@@ -103,7 +103,7 @@ func WindowOpen(o WindowOptions) *Window {
 
 func (win *Window) setOnResizeHandling() {
 	win.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("On Resize1", win.hasResized)
+		// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName())
 		// if !win.hasResized { // removing this so we can get first resize... what was it for?
 		// 	win.hasResized = true
 		// 	return nil
@@ -114,9 +114,9 @@ func (win *Window) setOnResizeHandling() {
 				win.HandleBeforeResized(r)
 			}
 			r.Pos = zgeo.Pos{}
-			if win.ProgrammaticView != nil {
+			if win.resizeHandlingView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
-				win.ProgrammaticView.SetRect(r)
+				win.resizeHandlingView.SetRect(r)
 				// setElementRect(win.element, r)
 				if win.HandleAfterResized != nil {
 					win.HandleAfterResized(r)

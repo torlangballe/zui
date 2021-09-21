@@ -38,6 +38,7 @@ func CanvasFromGoImage(img image.Image) *Canvas {
 
 func (c *Canvas) SetSize(size zgeo.Size) {
 	c.context = gg.NewContext(int(size.W), int(size.H))
+	c.context.Clear()
 }
 
 func (c *Canvas) SetRect(rect zgeo.Rect) {

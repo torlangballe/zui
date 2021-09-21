@@ -36,7 +36,9 @@ func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, d
 	if image == nil {
 		return
 	}
-	// zlog.Info("C.DrawImage:", image.Size(), image.Path)
+	// if strings.Contains(image.Path, "edit") {
+	// zlog.Info("C.DrawImage:", image.Size(), destRect, image.Path)
+	// }
 	if sourceRect.IsNull() {
 		sourceRect = zgeo.Rect{Size: image.Size()}
 	}

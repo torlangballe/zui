@@ -3,7 +3,7 @@
 
 package zui
 
-func (v *CustomView) drawIfExposed() {
+func (v *CustomView) drawSelf() {
 }
 
 func (c *CustomView) Init(view View, name string) {

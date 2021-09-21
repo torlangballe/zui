@@ -110,6 +110,7 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 	}
 }
 
+/*
 func (v *ScrollView) drawIfExposed() {
 	// zlog.Info("SV:drawIfExposed")
 	if v.child != nil {
@@ -118,23 +119,20 @@ func (v *ScrollView) drawIfExposed() {
 	}
 	v.CustomView.drawIfExposed()
 	if v.child != nil {
-		et, got := v.child.(ExposableType)
-		if got {
-			// zlog.Info("SV:drawIfExposed child")
-			et.drawIfExposed()
-		}
+		// et, got := v.child.(ExposableType)
+		// if got {
+		// 	// zlog.Info("SV:drawIfExposed child")
+		// 		et.drawIfExposed()
+		// }
 		PresentViewCallReady(v.child, false)
 	}
 }
+*/
 
 func (v *ScrollView) Expose() {
 	zlog.Info("SV:Expose")
 	v.CustomView.Expose()
-	et, _ := v.child.(ExposableType)
-	if et != nil {
-		// zlog.Info("SV:Expose child!")
-		et.Expose()
-	}
+	ExposeView(v.child)
 }
 
 func (v *ScrollView) ScrollToBottom(animate bool) {

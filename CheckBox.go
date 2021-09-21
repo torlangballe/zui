@@ -2,14 +2,17 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type CheckBox struct {
 	NativeView
 	valueChanged func(view View)
 }
 
-func (s *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (c *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{20, 20}
 }
 
@@ -22,4 +25,8 @@ func (c *CheckBox) Labelize(title string) (*Label, *StackView) {
 	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.Size{6, 0})
 
 	return label, stack
+}
+
+func (c *CheckBox) On() bool {
+	return c.Value() == zbool.True
 }

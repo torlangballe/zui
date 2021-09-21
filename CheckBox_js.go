@@ -8,15 +8,15 @@ import (
 )
 
 func CheckBoxNew(on zbool.BoolInd) *CheckBox {
-	s := &CheckBox{}
-	s.Element = DocumentJS.Call("createElement", "input")
-	s.setjs("style", "position:absolute")
-	s.setjs("type", "checkbox")
-	s.style().Set("margin-top", "4px")
-	s.SetCanFocus(true)
-	s.View = s
-	s.SetValue(on)
-	return s
+	c := &CheckBox{}
+	c.Element = DocumentJS.Call("createElement", "input")
+	c.setjs("style", "position:absolute")
+	c.setjs("type", "checkbox")
+	c.style().Set("margin-top", "4px")
+	c.SetCanFocus(true)
+	c.View = c
+	c.SetValue(on)
+	return c
 }
 
 func (v *CheckBox) SetRect(rect zgeo.Rect) {
@@ -24,30 +24,29 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) {
 	v.NativeView.SetRect(rect)
 }
 
-func (s *CheckBox) SetValueHandler(handler func(view View)) {
-	s.valueChanged = handler
-	s.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if s.valueChanged != nil {
-			s.valueChanged(s)
+func (c *CheckBox) SetValueHandler(handler func(view View)) {
+	c.valueChanged = handler
+	c.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if c.valueChanged != nil {
+			c.valueChanged(c)
 		}
 		return nil
 	}))
 }
 
-func (s *CheckBox) Value() zbool.BoolInd {
-	i := s.getjs("indeterminate").Bool()
+func (c *CheckBox) Value() zbool.BoolInd {
+	i := c.getjs("indeterminate").Bool()
 	if i {
 		return zbool.Unknown
 	}
-	b := s.getjs("checked").Bool()
+	b := c.getjs("checked").Bool()
 	return zbool.ToBoolInd(b)
 }
 
-func (s *CheckBox) SetValue(b zbool.BoolInd) *CheckBox {
+func (c *CheckBox) SetValue(b zbool.BoolInd) {
 	if b.IsUndetermined() {
-		s.setjs("indeterminate", true)
+		c.setjs("indeterminate", true)
 	} else {
-		s.setjs("checked", b.BoolValue())
+		c.setjs("checked", b.BoolValue())
 	}
-	return s
 }

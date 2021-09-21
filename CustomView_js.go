@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 // TODO: store pressed/logpressed js function, and release when adding new one
@@ -18,6 +19,8 @@ func (v *CustomView) Init(view View, name string) {
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	v.exposeTimer = ztimer.TimerNew()
+	v.exposed = true
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
@@ -33,8 +36,12 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		// }
 		// zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
 		//		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
-		(&v.LongPresser).HandleOnClick(v)
 		event := args[0]
+		v.PressedPos.X = event.Get("offsetX").Float()
+		v.PressedPos.Y = event.Get("offsetY").Float()
+		(&v.LongPresser).HandleOnClick(v)
+		// zlog.Info("Pressed", v.ObjectName(), v.PressedPos)
+
 		_, KeyboardModifiersAtPress = getKeyAndModsFromEvent(event)
 		event.Call("stopPropagation")
 		//		}
@@ -119,9 +126,10 @@ func (v *CustomView) makeCanvas() {
 	// set z index!!
 }
 
-func (v *CustomView) drawIfExposed() {
+func (v *CustomView) drawSelf() {
 	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, zlog.GetCallingStackString())
-	if !presentViewPresenting && v.draw != nil && v.Parent() != nil { //&& v.exposed
+	if !v.drawing && !presentViewPresenting && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
+		v.drawing = true
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.LocalRect()
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
@@ -143,13 +151,21 @@ func (v *CustomView) drawIfExposed() {
 			//!!!			v.exposed = false // we move this to below, is some case where drawing can never happen if presenting or something, and exposed is never cleared
 			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}
+		v.drawing = false
 	}
 	v.exposed = false
 }
 
 func (v *CustomView) Expose() {
-	// if v.ObjectName() == "5345904" {
-	// 	zlog.Info("CustV Expose", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, zlog.GetCallingStackString())
+	// if v.ObjectName() == "BBC Earth" {
+	// 	zlog.Info("CustV Expose", v.ObjectName(), v.exposed, v.draw, zlog.GetCallingStackString())
 	// }
-	v.ExposeInSecs(0.1) //0.01)
+	if v.visible {
+		v.exposeTimer.StartIn(0.1, func() {
+			go v.drawSelf()
+		})
+		v.exposed = false
+	} else {
+		v.exposed = true
+	}
 }

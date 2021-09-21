@@ -10,8 +10,16 @@ import (
 
 //  Originally created by Tor Langballe on /2/11/15.
 
+type TextViewType string
+
+const (
+	TextViewNormal = ""
+	TextViewSearch = "search"
+	TextViewDate   = "date"
+)
+
 type TextViewStyle struct {
-	IsSearch      bool
+	Type          TextViewType
 	KeyboardType  KeyboardType
 	AutoCapType   KeyboardAutoCapType
 	ReturnKeyType KeyboardReturnKeyType
@@ -25,11 +33,12 @@ type TextView struct {
 	alignment     zgeo.Alignment
 	changed       func()
 	pushedBGColor zgeo.Color
-	keyPressed    func(key KeyboardKey, mods KeyboardModifier)
+	keyPressed    func(key KeyboardKey, mods KeyboardModifier) bool
 	updateTimer   *ztimer.Timer
 	Columns       int
 	rows          int
-	isSearch      bool
+	textStyle     TextViewStyle
+	//	isSearch      bool
 	//	updated       bool
 
 	margin zgeo.Rect
@@ -39,7 +48,7 @@ type TextView struct {
 }
 
 var (
-	TextViewDefaultMargin      = zgeo.RectFromXY2(4, 2, -3, -2)
+	TextViewDefaultMargin      = zgeo.RectFromXY2(4, 3, -3, -2)
 	TextViewDefaultColor       = StyleDefaultFGColor
 	TextViewDefaultBGColor     = StyleGrayF(0.95, 0.3)
 	TextViewDefaultBorderColor = StyleGrayF(0.3, 0.5)
@@ -73,9 +82,6 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := ti.GetColumnsSize(v.Columns)
 	// zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName()) //, zlog.GetCallingStackString())
 	s.Add(v.margin.Size.Negative())
-	if v.isSearch {
-		//		s.H += 14
-	}
 	s = s.Ceil()
 	return s
 }

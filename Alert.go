@@ -215,7 +215,7 @@ func addButton(view View, bar *StackView, title string, ok bool, done func(ok bo
 
 func PresentOKCanceledView(view View, title string, done func(ok bool) bool) { // move this to PresentView?
 	stack := StackViewVert("alert")
-	stack.SetBGColor(zgeo.ColorWhite)
+	stack.SetBGColor(StyleDefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
 
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)

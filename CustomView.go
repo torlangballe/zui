@@ -3,11 +3,7 @@
 package zui
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -25,10 +21,13 @@ type CustomView struct {
 	// pointerEnclosed func(inside bool)
 	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
 	exposed       bool
+	visible       bool
+	drawing       bool
 	color         zgeo.Color
-	exposeTimer   ztimer.Timer
+	exposeTimer   *ztimer.Timer
 	isSetup       bool
 	isHighlighted bool
+	PressedPos    zgeo.Pos
 }
 
 func CustomViewNew(name string) *CustomView {
@@ -52,60 +51,6 @@ func (v *CustomView) SetHighlighted(h bool) {
 
 func (v *CustomView) IsHighlighted() bool {
 	return v.isHighlighted
-}
-
-// func (v *CustomView) ReadyToShow(beforeWindow bool) {
-// 	if v.draw != nil && !beforeWindow {
-// 		if v.ObjectName() == "5345904" {
-// 			zlog.Info("CustV Redy2Show", v.exposed, presentViewPresenting, v.draw)
-// 		}
-// 		v.drawIfExposed()
-// 	}
-// }
-
-func (v *CustomView) ExposeInSecs(secs float64) {
-	// if v.ObjectName() == "chart-drawer" {
-	// }
-	// fmt.Printf("pre-exposedInSecs %s %p %v\n", v.Hierarchy(), v, v.Presented)
-	if v.exposed || presentViewPresenting {
-		return
-	}
-	// 	zlog.Info("Exposing:", v.Hierarchy(), v.Presented, zlog.GetCallingStackString())
-	v.exposed = true
-	v.exposeTimer.StartIn(secs, func() {
-		// fmt.Printf("exposedInSecs %s %p %v\n", v.Hierarchy(), v, v.Presented)
-		io, got := v.View.(ImageOwner)
-		// zlog.Info("exposeInSecs draw", v.ObjectName(), got)
-		if got {
-			image := io.GetImage()
-			if image != nil {
-				// zlog.Info("CV exposeInSecs draw image", v.ObjectName(), image.loading)
-			}
-			if image != nil && image.loading {
-				zlog.Info("CV exposeInSecs wait for loading", v.ObjectName())
-				v.ExposeInSecs(0.1)
-				return
-			}
-		}
-		//		nv := ViewGetNative(v)
-		// fmt.Printf("CV exposing: %s %p %v par:%p\n", v.Hierarchy(), nv, v.Presented, nv.Parent())
-		if !v.Presented {
-			// if nv.Hierarchy()
-			hierarchy := v.Hierarchy()
-			if strings.HasPrefix(hierarchy, "/window/") {
-				fmt.Printf("Not exposing unpresented: %s %p %v\n", hierarchy, v, v.Presented)
-			}
-			return
-		}
-		//		if v.style().Get("width").String() == "" { // it's not arranged, could be collapsed in Container
-		et, _ := v.View.(ExposableType)
-		if et != nil {
-			// if v.ObjectName() == "chart-drawer" {
-			// 	zlog.Info("CV ExposeInSecs draw", v.ObjectName())
-			// }
-			et.drawIfExposed()
-		}
-	})
 }
 
 func (v *CustomView) PressedHandler() func() {
@@ -140,11 +85,16 @@ func (v *CustomView) SetValueHandler(handler func(view View)) {
 }
 
 func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
-	v.draw = func(rect zgeo.Rect, canvas *Canvas, view View) {
-		if handler != nil {
-			handler(rect, canvas, view)
+	v.draw = handler
+	v.HandleExposed(func(intersects bool) {
+		// if v.ObjectName() == "BBC Earth" {
+		// 	zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
+		// }
+		if intersects && v.exposed {
+			go v.drawSelf()
 		}
-	}
+		v.visible = intersects
+	})
 }
 
 func (v *CustomView) DrawHandler() func(rect zgeo.Rect, canvas *Canvas, view View) {

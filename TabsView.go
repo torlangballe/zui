@@ -224,7 +224,8 @@ func (v *TabsView) SetTab(id string) {
 			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
-		et, _ := v.View.(ExposableType)
+		ExposeView(v.View)
+		//!		et, _ := v.View.(ExposableType)
 		// if !v.Presented {
 		// 	return
 		// }
@@ -235,9 +236,9 @@ func (v *TabsView) SetTab(id string) {
 		ct := v.View.(ContainerType)
 		presentViewPresenting = false
 		PresentViewCallReady(v.ChildView, false)
-		if et != nil {
-			et.drawIfExposed()
-		}
+		//! if et != nil {
+		// 	et.drawIfExposed()
+		// }
 		if v.ChangedHandler != nil {
 			v.ChangedHandler(id)
 		}

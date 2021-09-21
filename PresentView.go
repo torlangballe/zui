@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -50,7 +51,7 @@ var (
 	presentCloseFunc      func(dismissed bool)
 	presentedViewStack    []View
 	firstPresented        bool
-	presentViewPresenting = true
+	presentViewPresenting = true // true for first pre-present
 )
 
 func PresentView(v View, attributes PresentViewAttributes, presented func(win *Window), closed func(dismissed bool)) {
@@ -60,7 +61,10 @@ func PresentView(v View, attributes PresentViewAttributes, presented func(win *W
 
 	PresentViewCallReady(v, true)
 
-	outer := makeEmbeddingViewAndAddToWindow(v, attributes, closed)
+	outer := v
+	if attributes.Modal {
+		outer = makeEmbeddingViewAndAddToWindow(v, attributes, closed)
+	}
 	ct, _ := v.(ContainerType)
 	//zlog.Info("Present1:", ct != nil, reflect.ValueOf(outer).Type())
 	// zlog.Info("Present1:", zlog.GetCallingStackString())
@@ -112,7 +116,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 		}
 	} else {
 		if !firstPresented {
-			win.AddView(outer)
+			win.AddView(v)
 		} else {
 			size.H += WindowBarHeight
 			//			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
@@ -120,7 +124,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 			o.Pos = &rect.Pos
 			o.Size = size
 			win = WindowOpen(o)
-			win.AddView(outer)
+			win.AddView(v)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
 			}
@@ -131,6 +135,7 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 				}
 			}
 		}
+		win.resizeHandlingView = v
 		v.SetRect(zgeo.Rect{Size: rect.Size})
 	}
 	firstPresented = true
@@ -141,12 +146,14 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 	// }
 	// NativeViewAddToRoot(v)
 	presentViewPresenting = false
-	et, _ := outer.(ExposableType)
-	if et != nil {
-		PresentViewCallReady(outer, false)
-		et.drawIfExposed()
+	// et, _ := outer.(ExposableType)
+	// if et != nil {
+	PresentViewCallReady(outer, false)
+	// et.drawIfExposed()
+	// }
+	if !attributes.Modal {
+		win.setOnResizeHandling()
 	}
-	win.setOnResizeHandling()
 	if presented != nil {
 		presented(win)
 	}
@@ -300,56 +307,42 @@ func PrintPresented(v View, space string) {
 func makeEmbeddingViewAndAddToWindow(v View, attributes PresentViewAttributes, closed func(dismissed bool)) (outer View) {
 	outer = v
 	win := WindowGetMain()
-	if attributes.Modal {
-		ct, _ := v.(ContainerType)
-		if ct != nil && attributes.ModalCorner != 0 {
-			v.SetCorner(attributes.ModalCorner)
-		}
-		nv := ViewGetNative(v)
-		if nv != nil {
-			if !attributes.ModalDropShadow.Delta.IsNull() {
-				nv.SetDropShadow(attributes.ModalDropShadow)
-			}
-			// zlog.Info("makeEmbeddingViewAndAddToWindow:", nv.Hierarchy(), attributes.ModalNoBlock)
-			if !attributes.ModalNoBlock {
-				blocker := ContainerViewNew("$blocker")
-				outer = blocker
-				fullRect := win.ContentRect()
-				fullRect.Pos = zgeo.Pos{}
-				// zlog.Info("blocker rect:", fullRect)
-				blocker.SetRect(fullRect)
-				if attributes.ModalDimBackground {
-					blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
-				} else {
-					blocker.SetBGColor(zgeo.ColorClear)
-				}
-				blocker.Add(v, zgeo.TopLeft)
-				if attributes.ModalCloseOnOutsidePress {
-					// lp, _ := v.(Pressable)
-					// if lp != nil {
-					// 	lp.SetPressedHandler(func() {
-					// 		zlog.Info("LP Pressed")
-					// 	})
-					// }
-					blocker.SetPressedHandler(func() {
-						dismissed := true
-						PresentViewClose(v, dismissed, closed)
-					})
-				}
-				win.AddView(blocker)
-			} else {
-				win.AddView(v)
-			}
-		}
-	}
 	ct, _ := v.(ContainerType)
-	if ct != nil {
-		recursive := true
-		ContainerTypeRangeChildren(ct, recursive, false, func(view View) bool {
-			// TODO: focus something here...
-			return false
-		})
+	if ct != nil && attributes.ModalCorner != 0 {
+		v.SetCorner(attributes.ModalCorner)
 	}
+	nv := ViewGetNative(v)
+	zlog.Assert(nv != nil)
+	if !attributes.ModalDropShadow.Delta.IsNull() {
+		nv.SetDropShadow(attributes.ModalDropShadow)
+	}
+	if !attributes.ModalNoBlock {
+		blocker := ContainerViewNew("$blocker")
+		outer = blocker
+		fullRect := win.ContentRect()
+		fullRect.Pos = zgeo.Pos{}
+		// zlog.Info("blocker rect:", fullRect)
+		blocker.SetRect(fullRect)
+		if attributes.ModalDimBackground {
+			blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
+		} else {
+			blocker.SetBGColor(zgeo.ColorClear)
+		}
+		blocker.Add(v, zgeo.TopLeft)
+		if attributes.ModalCloseOnOutsidePress {
+			// lp, _ := v.(Pressable)
+			// if lp != nil {
+			// 	lp.SetPressedHandler(func() {
+			// 		zlog.Info("LP Pressed")
+			// 	})
+			// }
+			blocker.SetPressedHandler(func() {
+				dismissed := true
+				PresentViewClose(v, dismissed, closed)
+			})
+		}
+	}
+	win.AddView(outer)
 	return
 }
 
