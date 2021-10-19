@@ -213,7 +213,7 @@ func addButton(view View, bar *StackView, title string, ok bool, done func(ok bo
 	})
 }
 
-func PresentOKCanceledView(view View, title string, done func(ok bool) bool) { // move this to PresentView?
+func PresentOKCanceledView(view View, title string, att PresentViewAttributes, done func(ok bool) bool) { // move this to PresentView?
 	stack := StackViewVert("alert")
 	stack.SetBGColor(StyleDefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
@@ -225,7 +225,6 @@ func PresentOKCanceledView(view View, title string, done func(ok bool) bool) { /
 	addButton(stack, bar, "Cancel", false, done)
 	addButton(stack, bar, "OK", true, done)
 
-	att := PresentViewAttributesNew()
 	att.Modal = true
 	if title != "" {
 		PresentTitledView(stack, title, att, nil, nil, nil, nil)

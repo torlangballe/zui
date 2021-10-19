@@ -9,7 +9,7 @@ import (
 
 type CheckBox struct {
 	NativeView
-	valueChanged func(view View)
+	valueChanged func()
 }
 
 func (c *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -29,4 +29,8 @@ func (c *CheckBox) Labelize(title string) (*Label, *StackView) {
 
 func (c *CheckBox) On() bool {
 	return c.Value() == zbool.True
+}
+
+func (c *CheckBox) SetOn(on bool) {
+	c.SetValue(zbool.ToBoolInd(on))
 }

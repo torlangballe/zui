@@ -57,7 +57,6 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	if !buttons {
 		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
-			// zlog.Info("header draw:", sv != nil, v.CurrentID)
 			if sv != nil {
 				r := sv.Rect()
 				r.Pos.Y = 0
@@ -145,11 +144,11 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 	tab.create = create
 	v.tabs[id] = tab
 	button.SetPressedHandler(func() {
-		go v.SetTab(id)
+		go v.SetTab(id, nil)
 	})
 	v.Header.Add(view, zgeo.BottomLeft)
 	if set {
-		v.SetTab(id)
+		v.SetTab(id, nil)
 	}
 }
 
@@ -196,12 +195,15 @@ func (v *TabsView) SetChildAlignment(id string, a zgeo.Alignment) {
 
 func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
 	cell, _ := v.Header.FindCellWithName(id)
-	// zlog.Info("FIND:", id, cell)
 	cell.Alignment = a
 }
 
-func (v *TabsView) SetTab(id string) {
-	if v.CurrentID != id {
+func (v *TabsView) SetTab(id string, done func()) {
+	if v.CurrentID == id {
+		if done != nil {
+			done()
+		}
+	} else {
 		// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells))
 		if v.CurrentID != "" {
 			v.tabs[v.CurrentID].create(true)
@@ -217,11 +219,8 @@ func (v *TabsView) SetTab(id string) {
 		v.setButtonOn(id, true)
 		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-		// zlog.Info("Call collapse:", id, len(v.cells), !hasSeparator)
 		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
-		// zlog.Info("TV SetTab", v.Presented)
 		if !v.Presented {
-			// zlog.Info("Set Tab, exit because not presented yet", id)
 			return
 		}
 		ExposeView(v.View)
@@ -229,12 +228,12 @@ func (v *TabsView) SetTab(id string) {
 		// if !v.Presented {
 		// 	return
 		// }
-		PresentViewCallReady(v.ChildView, true)
-		presentViewPresenting = true
+		//		PresentViewCallReady(v.ChildView, true)
+		// presentViewPresenting = true
 		v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
 
 		ct := v.View.(ContainerType)
-		presentViewPresenting = false
+		// presentViewPresenting = false
 		PresentViewCallReady(v.ChildView, false)
 		//! if et != nil {
 		// 	et.drawIfExposed()
@@ -246,6 +245,9 @@ func (v *TabsView) SetTab(id string) {
 			// zlog.Info("Set Tab container loaded:", waited)
 			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
 				v.ArrangeChildren()
+			}
+			if done != nil {
+				done()
 			}
 		})
 	}

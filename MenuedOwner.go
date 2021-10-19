@@ -92,7 +92,7 @@ func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
 		o.View = view
 		nv := ViewGetNative(view)
 		// zlog.Info("MO ADDStopper:", nv.Hierarchy(), zlog.GetCallingStackString())
-		nv.AddStopper(o.Stop)
+		nv.AddOnRemoveFunc(o.Stop)
 		presser := view.(Pressable)
 		presser.SetPressedHandler(func() {
 			if o.CreateItems != nil {

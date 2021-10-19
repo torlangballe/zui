@@ -42,7 +42,7 @@ func (v *NativeView) SetUsable(usable bool)                                     
 func (v *NativeView) Usable() bool                                                            { return true }
 func (v *NativeView) IsFocused() bool                                                         { return true }
 func (v *NativeView) GetChild(path string) *NativeView                                        { return nil }
-func (v *NativeView) RemoveFromParent()                                                       { v.StopStoppers() }
+func (v *NativeView) RemoveFromParent()                                                       {}
 func (v *NativeView) Font() *Font                                                             { return nil }
 func (v *NativeView) SetText(text string)                                                     {}
 func (v *NativeView) Text() string                                                            { return "" }
@@ -70,6 +70,6 @@ func (v *NativeView) AbsoluteRect() zgeo.Rect                                   
 func (v *NativeView) SetStyle(key, value string)                                              {}
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}
-func (v *NativeView) HandleExposed(handle func(intersects bool))                              {}
+func (v *NativeView) SetHandleExposed(handle func(intersects bool))                           {}
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }

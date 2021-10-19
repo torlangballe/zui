@@ -258,6 +258,7 @@ func (v *ListView) layoutRows() (first, last int) {
 		go v.preCreateRows(first, last)
 	}
 	for i, view := range oldRows {
+		// zlog.Info("LV DelRow:", view.ObjectName(), view.Rect())
 		v.stack.RemoveChild(view)
 		delete(v.rows, i)
 	}

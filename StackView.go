@@ -85,7 +85,5 @@ func (v *StackView) ArrangeChildren() {
 		if !r.IsNull() {
 			c.View.SetRect(r)
 		}
-		ViewGetNative(c.View).Presented = true
 	}
-	// zlog.EndProfile("stack done rects")
 }

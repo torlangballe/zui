@@ -28,7 +28,7 @@ func (v *ScrollView) Init(view View, name string) {
 					dir = -1
 					// zlog.Info("Infin-scroll up:", pos.Y)
 					v.lastEdgeScroll = now
-				} else if pos.Y > v.child.Rect().Size.H-v.Rect().Size.H-scrollOutsideDelta {
+				} else if v.child != nil && pos.Y > v.child.Rect().Size.H-v.Rect().Size.H-scrollOutsideDelta {
 					dir = 1
 					v.lastEdgeScroll = now
 				}

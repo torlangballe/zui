@@ -24,11 +24,11 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) {
 	v.NativeView.SetRect(rect)
 }
 
-func (c *CheckBox) SetValueHandler(handler func(view View)) {
+func (c *CheckBox) SetValueHandler(handler func()) {
 	c.valueChanged = handler
 	c.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if c.valueChanged != nil {
-			c.valueChanged(c)
+			c.valueChanged()
 		}
 		return nil
 	}))

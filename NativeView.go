@@ -6,8 +6,10 @@ type NativeView struct {
 	baseNativeView
 	View                 View
 	Presented            bool
-	allChildrenPresented bool
-	stopOnClose          []func() // anything that needs to be stopped
+	// allChildrenPresented bool
+	doOnRemove           []func() // anything that needs to be stopped
+	doOnAdd              []func() // anything that needs to be stopped
+	doOnReady            []func() // anything that needs to be stopped
 }
 
 type DragType string
@@ -20,25 +22,40 @@ const (
 	DragDropFile DragType = "file"
 )
 
-func (v *NativeView) AddStopper(f func()) {
+func (v *NativeView) AddOnRemoveFunc(f func()) {
 	// zlog.Info("AddStopper:", v.ObjectName())
-	v.stopOnClose = append(v.stopOnClose, f)
+	v.doOnRemove = append(v.doOnRemove, f)
 }
 
-func (v *NativeView) StopStoppers() {
-	// zlog.Info("StopStoppers:", v.View.ObjectName(), len(v.stopOnClose))
-	for _, f := range v.stopOnClose {
-		f()
-	}
-	ct, _ := v.View.(ContainerType)
-	if ct != nil {
-		for _, c := range ct.GetChildren(true) {
-			nv := ViewGetNative(c)
-			if nv != nil {
-				nv.StopStoppers()
-			}
+func (v *NativeView) AddOnAddFunc(f func()) {
+	// zlog.Info("AddStopper:", v.ObjectName())
+	v.doOnAdd = append(v.doOnAdd, f)
+}
+
+func (v *NativeView) AddOnReadyFunc(f func()) {
+	// zlog.Info("AddStopper:", v.ObjectName())
+	v.doOnReady = append(v.doOnReady, f)
+}
+
+func (v *NativeView) PerformAddRemoveFuncs(add bool) {
+	if add {
+		for _, f := range v.doOnAdd {
+			f()
+		}
+	} else {
+		for _, f := range v.doOnRemove {
+			f()
 		}
 	}
+	// ct, _ := v.View.(ContainerType)
+	// if ct != nil {
+	// 	for _, c := range ct.GetChildren(true) {
+	// 		nv := ViewGetNative(c)
+	// 		if nv != nil {
+	// 			nv.PerformAddRemoveFuncs(add)
+	// 		}
+	// 	}
+	// }
 }
 
 func (v *NativeView) RootParent() *NativeView {

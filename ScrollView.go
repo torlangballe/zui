@@ -79,7 +79,6 @@ func (v *ScrollView) ArrangeChildren() {
 		cs := v.child.CalculatedSize(ls)
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
-		// zlog.Info("SV Arrange:", r)
 		v.child.SetRect(r) // this will call arrange children on child if container
 		// ct, got := v.child.(ContainerType)
 		// if got {
@@ -110,25 +109,6 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 	}
 }
 
-/*
-func (v *ScrollView) drawIfExposed() {
-	// zlog.Info("SV:drawIfExposed")
-	if v.child != nil {
-		//ViewGetNative(v.child).Presented = false
-		PresentViewCallReady(v.child, true)
-	}
-	v.CustomView.drawIfExposed()
-	if v.child != nil {
-		// et, got := v.child.(ExposableType)
-		// if got {
-		// 	// zlog.Info("SV:drawIfExposed child")
-		// 		et.drawIfExposed()
-		// }
-		PresentViewCallReady(v.child, false)
-	}
-}
-*/
-
 func (v *ScrollView) Expose() {
 	zlog.Info("SV:Expose")
 	v.CustomView.Expose()
@@ -139,7 +119,6 @@ func (v *ScrollView) ScrollToBottom(animate bool) {
 	h := v.child.Rect().Size.H
 	h -= v.Rect().Size.H
 	h = math.Max(0, h)
-	// zlog.Info("Scroll2Bottom:", h)
 	v.SetContentOffset(h, animate)
 }
 
@@ -149,4 +128,20 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 
 func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
 	v.ScrollHandler = handler
+}
+
+func (v *ScrollView) MakeOffspringVisible(offspring View, animate bool) {
+	var y float64
+	sp := v.AbsoluteRect().Pos
+	or := ViewGetNative(offspring).AbsoluteRect()
+	or.Pos.Subtract(sp)
+	h := v.LocalRect().Size.H
+	if or.Min().Y < v.YOffset {
+		y = or.Min().Y
+	} else if or.Max().Y > v.YOffset+h {
+		y = or.Max().Y - h
+	} else {
+		return
+	}
+	v.SetContentOffset(y, animate)
 }

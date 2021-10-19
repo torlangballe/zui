@@ -14,5 +14,5 @@ func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	return c
 }
 
-func (c *CheckBox) SetValue(b zbool.BoolInd)                {}
-func (s *CheckBox) SetValueHandler(handler func(view View)) {}
+func (c *CheckBox) SetValue(b zbool.BoolInd)       {}
+func (s *CheckBox) SetValueHandler(handler func()) {}

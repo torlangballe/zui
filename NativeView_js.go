@@ -21,6 +21,10 @@ type baseNativeView struct {
 	parent       *NativeView
 }
 
+type AddHandler interface {
+	HandleAddAsChild()
+}
+
 func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element = DocumentJS.Call("createElement", etype)
 	v.Element.Set("style", "position:absolute")
@@ -57,6 +61,9 @@ func (v *NativeView) GetNative() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
+	// if rect.Pos.Y > 3000 || rect.Size.H > 3000 {
+	// 	zlog.Error(nil, "strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
+	// }
 	// if v.ObjectName() == "v2" {
 	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
 	// }
@@ -119,7 +126,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else if v.Presented {
-		zlog.Info("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.GetCallingStackString())
+		zlog.Error(nil, "parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.GetCallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
@@ -142,12 +149,18 @@ func (v *NativeView) SetObjectName(name string) {
 }
 
 func (v *NativeView) SetColor(c zgeo.Color) {
-	v.style().Set("color", makeRGBAString(c))
+	//	v.style().Set("color", makeRGBAString(c))
+	str := makeRGBAString(c)
+	v.style().Set("color", str)
+
 }
 
 func (v *NativeView) Color() zgeo.Color {
 	str := v.style().Get("color").String()
-	return zgeo.ColorFromString(str)
+
+	col := zgeo.ColorFromString(str)
+	return col
+
 }
 
 func (v *NativeView) style() js.Value {
@@ -231,7 +244,7 @@ func (v *NativeView) GetScale() float64 {
 func (v *NativeView) Show(show bool) {
 	str := "hidden"
 	if show {
-		str = "visible"
+		str = "inherit" //visible"
 	}
 	v.style().Set("visibility", str)
 }
@@ -253,7 +266,6 @@ func (v *NativeView) SetUsable(usable bool) {
 	}
 	style.Set("pointer-events", str)
 	style.Set("opacity", alpha)
-	// zlog.Info("NV SetUSABLE:", v.ObjectName(), usable, alpha)
 }
 
 func (v *NativeView) Usable() bool {
@@ -270,12 +282,10 @@ func (v *NativeView) IsFocused() bool {
 }
 
 func (v *NativeView) Focus(focus bool) {
-	// zlog.Info("FOCUS:", v.ObjectName(), focus)
 	v.call("focus")
 }
 
 func (v *NativeView) SetCanFocus(can bool) {
-	// zlog.Info("SetCanFocus:", v.ObjectName())
 	val := "-1"
 	if can {
 		val = "0"
@@ -313,7 +323,6 @@ func (v *NativeView) DumpTree(prefix string) {
 }
 
 func (v *NativeView) RemoveFromParent() {
-	// zlog.Info("RemoveFromParent:", v.ObjectName(), reflect.ValueOf(v.View).Type())
 	zlog.Assert(v.parent != nil)
 	v.parent.RemoveChild(v.View)
 	v.parent = nil
@@ -369,6 +378,7 @@ func (v *NativeView) AddChild(child View, index int) {
 		zlog.Fatal(nil, "NativeView AddChild child not native")
 	}
 	n.parent = v
+	n.PerformAddRemoveFuncs(true)
 	if index != -1 {
 		nodes := n.parent.getjs("childNodes").Length()
 		// zlog.Info("NS InsertChild:", v.ObjectName(), child.ObjectName(), index, nodes)
@@ -381,8 +391,13 @@ func (v *NativeView) AddChild(child View, index int) {
 		v.call("appendChild", n.Element)
 	}
 	n.style().Set("zIndex", 100)
-	for _, p := range n.AllParents() {
-		p.allChildrenPresented = false
+	// for _, p := range n.AllParents() {
+	// 	p.allChildrenPresented = false
+	// }
+	if v.Presented {
+		// zlog.Info("Set Presented For New Add:", n.Hierarchy(), len(n.doOnReady))
+		PresentViewCallReady(child, true)
+		PresentViewCallReady(child, false)
 	}
 }
 
@@ -415,7 +430,7 @@ func (v *NativeView) RemoveChild(child View) {
 	// zlog.Info("RemoveChild:", v.ObjectName(), child.ObjectName(), reflect.ValueOf(child).Type())
 
 	win.removeKeyPressHandlerViews(child)
-	nv.StopStoppers()
+	nv.PerformAddRemoveFuncs(false)
 	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
@@ -682,8 +697,15 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
 	v.call("appendChild", e)
+	zlog.Info("set uploader")
 
-	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		e.Call("click")
+		return nil
+	}))
+
+	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} { // was onchange????
+		zlog.Info("uploader on change")
 		files := e.Get("files")
 		if files.Length() > 0 {
 			file := files.Index(0)
@@ -784,19 +806,26 @@ func (v *NativeView) SetTilePath(spath string) {
 	v.style().Set("backgroundImage", s)
 }
 
-func (v *NativeView) HandleExposed(handle func(intersects bool)) {
+func (v *NativeView) SetHandleExposed(handle func(intersects bool)) {
 	f := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		entries := args[0]
 		for i := 0; i < entries.Length(); i++ {
 			e := entries.Index(i)
 			inter := e.Get("isIntersecting").Bool()
+			//			ratio := e.Get("intersectionRatio").Float()
+			// zlog.Info("HandleExposed:", v.Hierarchy(), v.AbsoluteRect(), inter, ratio, e.Get("intersectionRect"))
 			handle(inter)
 		}
 		return nil
 	})
-	observer := js.Global().Get("IntersectionObserver").New(f) //, opts)
-	observer.Call("observe", v.Element)
-	v.AddStopper(func() {
-		observer.Call("disconnect")
+	// opts := map[string]interface{}{"threshold": 0.1}
+
+	v.AddOnReadyFunc(func() {
+		// zlog.Info("SetHandleExposed:", v.Hierarchy())
+		observer := v.GetWindow().element.Get("IntersectionObserver").New(f) //, opts)
+		observer.Call("observe", v.Element)
+		v.AddOnRemoveFunc(func() {
+			observer.Call("disconnect")
+		})
 	})
 }

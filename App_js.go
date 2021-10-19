@@ -39,16 +39,17 @@ func AppSetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[str
 	for k, v := range url.Query() {
 		args[k] = v[0]
 	}
-	// fmt.Println("AppSetUIDefaults:", url.Query, args, AppURL())
 	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
 	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
-	if rpcPort == 0 {
-		rpcPort, _ = strconv.Atoi(args["zrpcport"])
+	port, _ := strconv.Atoi(args["zrpcport"])
+	if port != 0 {
+		rpcPort = port
 	}
 	if rpcPort != 0 {
 		zrpc.ToServerClient.Port = rpcPort
 	}
+	// fmt.Println("AppSetUIDefaults:", url.Query, args, AppURL(), zrpc.ToServerClient.Port)
 	DefaultLocalKeyValueStore = KeyValueStoreNew(true)
 	path, args = AppMainArgs()
 	if zbool.FromString(args["zdebug"], false) {

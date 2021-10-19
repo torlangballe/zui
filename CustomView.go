@@ -17,13 +17,13 @@ type CustomView struct {
 	minSize          zgeo.Size
 	pressed          func()
 	longPressed      func()
-	valueChanged     func(view View)
+	valueChanged     func()
 	// pointerEnclosed func(inside bool)
-	draw          func(rect zgeo.Rect, canvas *Canvas, view View)
-	exposed       bool
-	visible       bool
-	drawing       bool
-	color         zgeo.Color
+	draw    func(rect zgeo.Rect, canvas *Canvas, view View)
+	exposed bool
+	visible bool
+	drawing bool
+	// color         zgeo.Color
 	exposeTimer   *ztimer.Timer
 	isSetup       bool
 	isHighlighted bool
@@ -63,31 +63,30 @@ func (v *CustomView) LongPressedHandler() func() {
 
 func (v *CustomView) SetColor(c zgeo.Color) {
 	v.NativeView.SetColor(c)
-	v.color = c
+	//	v.color = c
 	v.Expose()
 }
 
-func (v *CustomView) Color() zgeo.Color {
-	return v.color
-}
+// func (v *CustomView) Color() zgeo.Color {
+// 	return v.color
+// }
 
-func (v *CustomView) SetMinSize(s zgeo.Size) *CustomView {
+func (v *CustomView) SetMinSize(s zgeo.Size) {
 	v.minSize = s
-	return v
 }
 
 func (v *CustomView) MinSize() zgeo.Size {
 	return v.minSize
 }
 
-func (v *CustomView) SetValueHandler(handler func(view View)) {
+func (v *CustomView) SetValueHandler(handler func()) {
 	v.valueChanged = handler
 }
 
 func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
 	v.draw = handler
-	v.HandleExposed(func(intersects bool) {
-		// if v.ObjectName() == "BBC Earth" {
+	v.SetHandleExposed(func(intersects bool) {
+		// if v.ObjectName() == "xxx" {
 		// 	zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
 		// }
 		if intersects && v.exposed {
@@ -112,17 +111,6 @@ func (v *CustomView) GetPosToMe(pos zgeo.Pos, inView View) zgeo.Pos {
 func (v *CustomView) GetViewsRectInMyCoordinates(view View) zgeo.Rect {
 	return zgeo.Rect{}
 }
-
-// func (v *CustomView) HandleClosing() {
-// 	zlog.Info("CV HandleClosing")
-// 	for _, st := range v.StopOnClose {
-// 		st.Stop()
-// 	}
-// 	v.StopOnClose = v.StopOnClose[:]
-// }
-
-// func (v *CustomView) Activate(activate bool) { // like being activated/deactivated for first time
-// }
 
 func zConvertViewSizeThatFitstToSize(view *NativeView, sizeIn zgeo.Size) zgeo.Size {
 	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))

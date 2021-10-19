@@ -45,7 +45,6 @@ func (v *ImageView) Init(view View, image *Image, imagePath string, fitSize zgeo
 	if imagePath != "" {
 		v.SetImage(image, imagePath, nil)
 	}
-	//        isAccessibilityElement = true
 	return v
 }
 
@@ -129,19 +128,17 @@ func (v *ImageView) FitSize() zgeo.Size {
 	return v.fitSize
 }
 
-func (v *ImageView) SetFitSize(s zgeo.Size) *ImageView {
+func (v *ImageView) SetFitSize(s zgeo.Size) {
 	v.fitSize = s
-	return v
 }
 
 func (v *ImageView) Alignment() zgeo.Alignment {
 	return v.alignment
 }
 
-func (v *ImageView) SetAlignment(a zgeo.Alignment) *ImageView {
+func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 	v.alignment = a
 	v.Expose()
-	return v
 }
 
 func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
@@ -199,7 +196,7 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// 	o *= 0.6
 		// }
 		ir := v.GetImageRect(rect)
-		// zlog.Info("IV Draw:", v.DownsampleImages, v.image.Size(), view.ObjectName(), rect, v.image.Path, rect, "->", ir)
+		// zlog.Info("IV Draw:", v.Hierarchy(), v.DownsampleImages, v.image.Size(), rect, v.image.Path, rect, "->", ir)
 		if v.imageCorner != 0 {
 			canvas.PushState()
 			path = zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))

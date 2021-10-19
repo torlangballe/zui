@@ -190,6 +190,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
+	// zlog.Info("SVSetImage:", v.ObjectName(), spath)
 	v.image = image
 	v.exposed = false
 	if v.ObjectName() == "" {
@@ -201,7 +202,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
 		v.loading = true
 		ImageFromPath(spath, func(i *Image) {
 			v.loading = false
-			// zlog.Info("sv image loaded: "+spath+": "+v.ObjectName(), i.loading)
+			// zlog.Info("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.image = i // we must set it here, or it's not set yet in done() below
 			v.Expose()
 			if done != nil {
@@ -226,6 +227,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	v.SetImage(nil, str, func(image *Image) {
 		v.image = image
 		if image != nil {
+			// zlog.Info("SetImageButtonName:", str)
 			if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {
 				zlog.Error(nil, "Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
 				return
@@ -236,7 +238,9 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 }
 
 func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
-	// zlog.Info("shapeViewDraw:", view.ObjectName(), rect)
+	// if v.Text() == "½" {
+	// 	zlog.Info("shapeViewDraw:", view.ObjectName(), rect, v.Type, v.Color())
+	// }
 	path := zgeo.PathNew()
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -255,7 +259,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	case ShapeViewTypeRectangle:
 		path.AddRect(rect, zgeo.Size{})
 	}
-	col := v.color
+	col := v.Color()
 	if col.Valid {
 		var o = col.Opacity()
 		if !v.Usable() {
@@ -343,4 +347,10 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	if v.IsFocused() {
 		FocusDraw(canvas, rect, 15, 0, 1)
 	}
+}
+
+func (v *ShapeView) SetColor(c zgeo.Color) {
+	v.NativeView.SetColor(c)
+	// zlog.Info("SV.SetColor:", v.Hierarchy(), c, v.Color())
+	v.Expose()
 }

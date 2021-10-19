@@ -203,11 +203,10 @@ func (c *Canvas) PopState() {
 	c.context.Call("restore")
 }
 
-func (c *Canvas) ClearRect(rect zgeo.Rect) {
-	if rect.IsNull() {
-		rect.Size.W = c.Element().Get("width").Float()
-		rect.Size.H = c.Element().Get("height").Float()
-	}
+func (c *Canvas) Clear() {
+	var rect zgeo.Rect
+	rect.Size.W = c.Element().Get("width").Float()
+	rect.Size.H = c.Element().Get("height").Float()
 	c.context.Call("clearRect", rect.Pos.X, rect.Pos.Y, rect.Size.W, rect.Size.H)
 }
 
@@ -333,7 +332,7 @@ func (c *Canvas) SetGoImage(img image.Image, pos zgeo.Pos) {
 	c.context.Call("putImageData", idata, pos.X, pos.Y)
 }
 
-func (c *Canvas) ZImage(got func(img *Image)) {
+func (c *Canvas) ZImage(ensureCopy bool, got func(img *Image)) {
 	// gi := c.GoImage(cut)
 	// if gi == nil {
 	// 	return nil

@@ -133,8 +133,8 @@ func (c *Canvas) PopState() {
 	c.context.Pop()
 }
 
-func (c *Canvas) ClearRect(rect zgeo.Rect) {
-	//      context.clear(Rectrect.GetCGRect())
+func (c *Canvas) Clear() {
+	c.context.Clear()
 }
 
 func (c *Canvas) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
@@ -240,6 +240,10 @@ func (c *Canvas) SetFillRuleEvenOdd(eo bool) {
 	}
 }
 
-func (c *Canvas) ZImage(got func(image *Image)) {
-	ImageFromGo(c.GoImage(zgeo.Rect{}), got)
+func (c *Canvas) ZImage(ensureCopy bool, got func(image *Image)) {
+	ni := c.GoImage(zgeo.Rect{})
+	if ensureCopy {
+		ni = CloneGoImage(ni)
+	}
+	ImageFromGo(ni, got)
 }

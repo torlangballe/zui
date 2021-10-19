@@ -48,7 +48,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		}
 		return true
 	})
-	v.AddStopper(repeater.Stop)
+	v.AddOnRemoveFunc(repeater.Stop)
 	//	v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 

@@ -224,7 +224,7 @@ func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, ma
 	downsampleCache := false
 	canvas.DrawImage(i, synchronous, downsampleCache, mr, 1, zgeo.Rect{})
 	canvas.DrawImage(with, synchronous, downsampleCache, wr, 1, zgeo.Rect{})
-	canvas.ZImage(done)
+	canvas.ZImage(false, done)
 }
 
 func GoImageToGoRGBA(i image.Image) image.Image {
@@ -358,4 +358,11 @@ func ImageExtensionInName(surl string) bool {
 		}
 	}
 	return false
+}
+
+func CloneGoImage(src image.Image) draw.Image {
+	b := src.Bounds()
+	dst := image.NewRGBA(b)
+	draw.Draw(dst, b, src, b.Min, draw.Src)
+	return dst
 }

@@ -270,27 +270,31 @@ func PresentViewCallReady(v View, beforeWindow bool) {
 	}
 	if !nv.Presented {
 		if !beforeWindow {
-			// fmt.Printf("Set Presented: %s %p\n", nv.Hierarchy(), nv)
+			// zlog.Info("Set Presented:", nv.Hierarchy(), len(nv.doOnReady), zlog.GetCallingStackString())
 			nv.Presented = true
+			for _, f := range nv.doOnReady {
+				f()
+			}
+			nv.doOnReady = nv.doOnReady[:0]
 		}
 		r, _ := v.(ReadyToShowType)
 		if r != nil {
 			r.ReadyToShow(beforeWindow)
 		}
 	}
-	if nv.allChildrenPresented {
-		return
-	}
+	// if nv.allChildrenPresented {
+	// 	return
+	// }
 	ct, _ := v.(ContainerType)
 	if ct != nil {
-		// zlog.Info("PresentViewCallReady1:", v.ObjectName(), len(ct.GetVisibleChildren()))
+		// zlog.Info("PresentViewCallReady1:", nv.Hierarchy(), nv.Presented, len(ct.GetChildren(false)))
 		for _, c := range ct.GetChildren(false) {
 			PresentViewCallReady(c, beforeWindow)
 		}
 	}
-	if !beforeWindow {
-		nv.allChildrenPresented = true
-	}
+	// if !beforeWindow {
+	// 	nv.allChildrenPresented = true
+	// }
 }
 
 func PrintPresented(v View, space string) {

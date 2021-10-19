@@ -162,8 +162,18 @@ func (v *TimeTextView) Parse() time.Time {
 	if time.Since(t) > 0 {
 		return t
 	}
-	if sdate == "" && day > 1 {
-		t = time.Date(year, month, day-1, hour, min, 0, 0, time.Local)
+	if sdate == "" {
+		t = t.Add(-ztime.Day)
+		if time.Since(t) > 0 {
+			return t
+		}
+	}
+	if smonth == "" && month != 0 {
+		month--
+		if month == 0 {
+			month = 12
+		}
+		t = time.Date(year, month, day, hour, min, 0, 0, time.Local)
 		if time.Since(t) > 0 {
 			return t
 		}

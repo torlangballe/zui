@@ -72,7 +72,9 @@ func (v *ContainerView) Add(elements ...interface{}) (first *ContainerViewCell) 
 	var gotMargin zgeo.Size
 	var gotIndex = -1
 
-	// zlog.Info("CV ADD1:", v.ObjectName())
+	if len(v.cells) == 1200 {
+		zlog.Info("CV ADD1:", v.ObjectName(), zlog.GetCallingStackString())
+	}
 	for _, e := range elements {
 		if cell, got := e.(ContainerViewCell); got {
 			cell := v.AddCell(cell, -1)
@@ -234,7 +236,7 @@ func (v *ContainerView) ArrangeChild(c ContainerViewCell, r zgeo.Rect) {
 		s := c.View.CalculatedSize(ir.Size)
 		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.Size{})
 		c.View.SetRect(rv)
-		ViewGetNative(c.View).Presented = true
+		// ViewGetNative(c.View).Presented = true
 	}
 }
 
@@ -322,7 +324,9 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) (c
 		return false
 	}
 	changed = (cell.Collapsed != collapse)
-	// zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
+	// if cell.View.ObjectName() == "xxx" {
+	// 	zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
+	// }
 	if collapse {
 		cell.View.Show(false)
 	}
@@ -344,6 +348,13 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) (c
 	}
 	if !collapse {
 		cell.View.Show(true)
+		// cv, _ := cell.View.(*ShapeView)
+		// if cell.View.ObjectName() == "xxx" {
+		// 	zlog.Info("Uncollapse Disco", cv != nil)
+		// }
+		// if cv != nil && cv.Presented {
+		// 	cv.visible = true
+		// }
 		ExposeView(cell.View)
 	}
 	return changed

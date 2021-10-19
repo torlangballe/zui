@@ -127,17 +127,17 @@ func (v *CustomView) makeCanvas() {
 }
 
 func (v *CustomView) drawSelf() {
-	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, zlog.GetCallingStackString())
+	// zlog.Info("CustV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw)     //, zlog.GetCallingStackString())
 	if !v.drawing && !presentViewPresenting && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
 		v.drawing = true
-		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil)
 		r := v.LocalRect()
+		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil, !r.Size.IsNull())
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
 			// println("CV drawIfExposed2:", v.ObjectName())
 			v.exposeTimer.Stop()
 			v.makeCanvas()
 			if !v.OpaqueDraw {
-				v.canvas.ClearRect(zgeo.Rect{})
+				v.canvas.Clear()
 			}
 			// if !v.Usable() {
 			// 	// zlog.Info("cv: push for disabled")
@@ -152,13 +152,16 @@ func (v *CustomView) drawSelf() {
 			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}
 		v.drawing = false
+	} else {
+		// zlog.Info("CustV NOT drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw) //, zlog.GetCallingStackString())
 	}
 	v.exposed = false
 }
 
 func (v *CustomView) Expose() {
-	// if v.ObjectName() == "BBC Earth" {
-	// 	zlog.Info("CustV Expose", v.ObjectName(), v.exposed, v.draw, zlog.GetCallingStackString())
+	// iv, _ := v.View.(*ImageView)
+	// if iv != nil {
+	// zlog.Info("CustV Expose", v.visible, v.Hierarchy(), v.exposed, v.draw, presentViewPresenting, "hs:", v.HasSize())
 	// }
 	if v.visible {
 		v.exposeTimer.StartIn(0.1, func() {
