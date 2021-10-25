@@ -136,7 +136,7 @@ func (v *HeaderView) Populate(headers []Header) {
 	for _, h := range headers {
 		// zlog.Info("POPULATE:", h.ID)
 		if h.SortSmallFirst != zbool.Unknown && v.findSortInfo(h.ID) == -1 {
-			newSorts = append(newSorts, newSort{id: h.ID, small: h.SortSmallFirst.BoolValue(), pri: h.SortPriority})
+			newSorts = append(newSorts, newSort{id: h.ID, small: h.SortSmallFirst.Bool(), pri: h.SortPriority})
 		}
 	}
 	sort.Slice(newSorts, func(i, j int) bool {

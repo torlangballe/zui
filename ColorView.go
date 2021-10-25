@@ -11,6 +11,6 @@ type ColorView struct {
 	valueChanged func(view View)
 }
 
-func (s *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return zgeo.Size{30, 20}
 }

@@ -9,6 +9,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
@@ -153,6 +154,10 @@ func (v *NativeView) SetColor(c zgeo.Color) {
 	str := makeRGBAString(c)
 	v.style().Set("color", str)
 
+}
+
+func (v *NativeView) SetCursor(cursor CursorType) {
+	v.style().Set("cursor", string(cursor))
 }
 
 func (v *NativeView) Color() zgeo.Color {
@@ -715,21 +720,28 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	}))
 }
 
-func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool)) {
+func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
 	if zlog.IsInTests {
 		return
 	}
 	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		if handler != nil {
-			// zlog.Info("Mouse enter", v.ObjectName())
-			handler(getMousePos(args[0]), true)
+		// zlog.Info("Mouse enter", v.ObjectName())
+		handler(getMousePos(args[0]), zbool.True)
+		if moves {
+			v.GetWindow().element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+				x := args[0].Get("offsetX").Float()
+				y := args[0].Get("offsetY").Float()
+				handler(zgeo.Pos{x, y}, zbool.Unknown)
+				return nil
+			}))
 		}
 		return nil
 	}))
 	v.setjs("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		if handler != nil {
-			// zlog.Info("Mouse leave", v.ObjectName())
-			handler(getMousePos(args[0]), false)
+		// zlog.Info("Mouse leave", v.ObjectName())
+		handler(getMousePos(args[0]), zbool.False)
+		if moves {
+			v.GetWindow().element.Set("onmousemove", nil)
 		}
 		return nil
 	}))
@@ -747,12 +759,32 @@ func (v *NativeView) SetOnInputHandler(handler func()) {
 		return nil
 	}))
 }
-func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos)) {
-	v.Element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		e := args[0]
-		x := e.Get("offsetX").Float()
-		y := e.Get("offsetY").Float()
-		handler(zgeo.Pos{x, y})
+
+var movingPos *zgeo.Pos
+
+func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
+	const minDiff = 10.0
+	v.setjs("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		m := getMousePos(args[0])
+		movingPos = &m
+		handler(*movingPos, zbool.True)
+		v.GetWindow().element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			if movingPos != nil {
+				pos := getMousePos(args[0])
+				pos2 := pos.Minus(*movingPos)
+				handler(pos2, zbool.Unknown)
+			}
+			return nil
+		}))
+		return nil
+	}))
+	v.GetWindow().element.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// zlog.Info("MOUSEUP")
+		movingPos = nil
+		v.GetWindow().element.Set("onmousemove", nil)
+		pos := getMousePos(args[0])
+		pos = pos.Minus(v.AbsoluteRect().Pos)
+		handler(pos, zbool.False)
 		return nil
 	}))
 }

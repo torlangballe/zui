@@ -5,6 +5,7 @@ package zui
 import (
 	"time"
 
+	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
@@ -341,13 +342,13 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 	v.rows[index] = row
 	// v.refreshRow(index)
 	if v.HoverHighlight && v.HighlightColor.Valid {
-		nv.SetPointerEnterHandler(func(pos zgeo.Pos, inside bool) {
+		nv.SetPointerEnterHandler(false, func(pos zgeo.Pos, inside zbool.BoolInd) {
 			if time.Since(v.ScrolledAt) < time.Second {
 				return
 			}
 			if v.GetRowCount() > 1 {
 				old := v.highlightedIndex
-				if inside {
+				if inside.Bool() {
 					v.highlightedIndex = index
 				} else {
 					v.highlightedIndex = -1
@@ -355,7 +356,7 @@ func (v *ListView) makeRow(rowSize zgeo.Size, index int) View {
 				if old != -1 && old != v.highlightedIndex {
 					v.refreshRow(old)
 				}
-				if inside {
+				if inside.Bool() {
 					v.refreshRow(index)
 				}
 			}

@@ -4,12 +4,12 @@ package zui
 
 type NativeView struct {
 	baseNativeView
-	View                 View
-	Presented            bool
+	View      View
+	Presented bool
 	// allChildrenPresented bool
-	doOnRemove           []func() // anything that needs to be stopped
-	doOnAdd              []func() // anything that needs to be stopped
-	doOnReady            []func() // anything that needs to be stopped
+	doOnRemove []func() // anything that needs to be stopped
+	doOnAdd    []func() // anything that needs to be stopped
+	doOnReady  []func() // anything that needs to be stopped
 }
 
 type DragType string
@@ -78,3 +78,4 @@ func (v *NativeView) IsParentOf(c *NativeView) bool {
 func (v *NativeView) FocusNext(forward bool) {
 	// TODO
 }
+

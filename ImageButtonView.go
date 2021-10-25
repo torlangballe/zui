@@ -15,7 +15,7 @@ type ImageButtonView struct {
 }
 
 func ImageButtonViewNewSimple(title, imageName string) *ImageButtonView {
-	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 26}, zgeo.Size{6, 12})
+	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 22}, zgeo.Size{6, 10})
 }
 
 func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *ImageButtonView {
@@ -27,7 +27,7 @@ func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.
 func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, insets zgeo.Size) {
 	v.ShapeView.Init(v, ShapeViewTypeNone, minSize, title)
 	if insets.IsNull() {
-		insets = zgeo.Size{6, 12}
+		insets = zgeo.Size{6, 10}
 	}
 	v.MaxSize.H = minSize.H
 	v.SetCanFocus(true)

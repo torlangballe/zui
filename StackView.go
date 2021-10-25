@@ -58,6 +58,10 @@ func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 		l := c.LayoutCell
 		l.OriginalSize = c.View.CalculatedSize(rect.Size)
 		l.Name = c.View.ObjectName()
+		div, _ := c.View.(*DividerView)
+		if div != nil {
+			l.Divider = div.Delta
+		}
 		lays = append(lays, l)
 	}
 	return

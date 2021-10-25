@@ -77,6 +77,14 @@ type ViewLayoutProtocol interface {
 	RefreshAccessibility()
 }
 
+type MinSizeGettable interface {
+	GetMinSize(s zgeo.Size)
+}
+
+type MaxSizeGettable interface {
+	GetMaxSize() zgeo.Size
+}
+
 func ViewGetNative(view View) *NativeView {
 	o, _ := view.(NativeViewOwner)
 	if o != nil {
