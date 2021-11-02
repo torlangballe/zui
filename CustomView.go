@@ -85,15 +85,6 @@ func (v *CustomView) SetValueHandler(handler func()) {
 
 func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
 	v.draw = handler
-	v.SetHandleExposed(func(intersects bool) {
-		// if v.ObjectName() == "xxx" {
-		// 	zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
-		// }
-		if intersects && v.exposed {
-			go v.drawSelf()
-		}
-		v.visible = intersects
-	})
 }
 
 func (v *CustomView) DrawHandler() func(rect zgeo.Rect, canvas *Canvas, view View) {

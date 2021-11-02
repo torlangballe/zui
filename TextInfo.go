@@ -34,16 +34,6 @@ const (
 	TextInfoWrapTailTruncate
 	TextInfoWrapMiddleTruncate
 
-	// TextPaintType   = "paint-type"
-	// TextWrapType    = "wrap"
-	// TextColor       = "color"
-	// TextAlignment   = "alignemnt"
-	// TextFontName    = "font-name"
-	// TextFontSize    = "font-size"
-	// TextFontStyle   = "font-style"
-	// TextLineSpacing = "line-spacing"
-	// TextStrokeWidth = "stroke-width"
-	// TextStrokeColor = "stroke-color"
 )
 
 type TextInfo struct {
@@ -52,7 +42,7 @@ type TextInfo struct {
 	Text                  string
 	Color                 zgeo.Color
 	Alignment             zgeo.Alignment
-	Font                  *Font
+	Font                  *zgeo.Font
 	Rect                  zgeo.Rect
 	LineSpacing           float64
 	StrokeWidth           float64
@@ -77,7 +67,7 @@ func TextInfoNew() *TextInfo {
 	t.Type = TextInfoFill
 	t.Color = zgeo.ColorBlack
 	t.Alignment = zgeo.Center
-	t.Font = FontNice(FontDefaultSize, FontStyleNormal)
+	t.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	t.StrokeWidth = 1
 	t.MinimumFontScale = 0.5
 	t.SplitItems = []string{"\r\n", "\n", "\r"}
@@ -285,7 +275,7 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 	return ra
 }
 
-func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
+func (ti *TextInfo) ScaledFontToFit(minScale float64) *zgeo.Font {
 	w := ti.Rect.Size.W
 	w -= ti.Margin.W
 	if ti.Alignment&zgeo.HorCenter != 0 {
@@ -304,10 +294,10 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *Font {
 	} else {
 		return ti.Font
 	}
-	return FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
+	return zgeo.FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
 }
 
-func TextInfoWidthOfString(str string, font *Font) float64 {
+func TextInfoWidthOfString(str string, font *zgeo.Font) float64 {
 	ti := TextInfoNew()
 	ti.Alignment = zgeo.Left
 	ti.Text = str

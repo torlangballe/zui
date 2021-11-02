@@ -35,7 +35,7 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.SetColor(zgeo.Color{})
 	v.SetImageName(imageName, insets)
 	v.textInfo.Text = title
-	v.textInfo.Font = FontNice(FontDefaultSize, FontStyleNormal)
+	v.textInfo.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
 	v.ImageMargin = zgeo.Size{}

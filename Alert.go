@@ -173,7 +173,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	stack.SetBGColor(zgeo.ColorWhite)
 
 	label := LabelNew(a.Text)
-	label.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	label.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 	label.SetMaxLines(0)
 	label.SetMaxWidth(textWidth)
 	stack.Add(label, zgeo.TopCenter|zgeo.HorExpand)
@@ -181,7 +181,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 		subLabel := LabelNew(a.SubText)
 		subLabel.SetMaxLines(0)
 		// subLabel.SetMinSize(zgeo.Size{100, 100})
-		subLabel.SetFont(FontNice(FontDefaultSize-2, FontStyleNormal))
+		subLabel.SetFont(zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal))
 		// subLabel.SetMaxLines(4)
 		stack.Add(subLabel, zgeo.TopCenter|zgeo.HorExpand)
 	}

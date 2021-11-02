@@ -18,7 +18,7 @@ type ActivityView struct {
 	start         time.Time
 }
 
-func ActivityNew(size zgeo.Size) *ActivityView {
+func ActivityViewNew(size zgeo.Size) *ActivityView {
 	v := &ActivityView{}
 	// zlog.Info("ActivityNew:", size)
 	v.Init(v, nil, "images/activity.png", size)
@@ -54,4 +54,8 @@ func (v *ActivityView) Stop() {
 	if !v.AlwaysVisible {
 		v.Show(false)
 	}
+}
+
+func (v *ActivityView) IsStopped() bool {
+	return v.repeater.IsStopped()
 }

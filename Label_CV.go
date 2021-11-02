@@ -35,7 +35,7 @@ func LabelCVNew(text string) *LabelCV {
 	v.SetObjectName(text)
 	v.SetMaxLines(1)
 	v.alignment = zgeo.CenterLeft
-	v.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+	v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 	v.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 		ti := v.GetTextInfo()
 		ti.Rect = v.LocalRect()
@@ -117,12 +117,12 @@ func (v *LabelCV) SetMaxWidth(max float64) {
 }
 
 func LabelizeCV(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *LabelCV, stack *StackView, viewCell *ContainerViewCell) {
-	font := FontNice(FontDefaultSize, FontStyleBold)
+	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
 	to, _ := view.(TextInfoOwner)
 	if to != nil {
 		ti := to.GetTextInfo()
 		font = ti.Font
-		font.Style = FontStyleBold
+		font.Style = zgeo.FontStyleBold
 	}
 	title := prefix
 	checkBox, isCheck := view.(*CheckBox)

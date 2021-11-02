@@ -330,15 +330,23 @@ func (v *ContainerView) CollapseChild(view View, collapse bool, arrange bool) (c
 	if collapse {
 		cell.View.Show(false)
 	}
+	nc, _ := view.(*CustomView)
+
 	if changed {
 		cell.Collapsed = collapse
 		if collapse {
 			//detachFromContainer := false
 			v.CustomView.RemoveChild(view)
+			// if view.ObjectName() == "SL01@dash" {
+			// 	zlog.Info("Collapse:", view.ObjectName())
+			// }
 			// v.RemoveChild(view)
 			cell = nil // force this to avoid use from here on
 			// zlog.Info("COLLAPSED:", view.ObjectName())
 		} else {
+			if nc != nil {
+				nc.visible = true
+			}
 			v.AddChild(cell.View, -1)
 		}
 	}

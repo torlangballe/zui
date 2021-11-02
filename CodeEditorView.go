@@ -20,7 +20,7 @@ func CodeEditorViewNew(text string, cols, rows int) *CodeEditorView {
 	v.SetColor(zgeo.ColorNewGray(0.8, 1))
 	v.SetObjectName("editor2")
 	v.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
-	font := FontNew("Lucida Console, Monaco, monospace", 14, FontStyleNormal)
+	font := zgeo.FontNew("Lucida Console, Monaco, monospace", 14, zgeo.FontStyleNormal)
 	v.SetFont(font)
 	return v
 }

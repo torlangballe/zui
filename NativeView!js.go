@@ -2,7 +2,10 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type baseNativeView struct {
 }
@@ -31,9 +34,11 @@ func (v *NativeView) Focus(focus bool)                                          
 func (v *NativeView) SetCanFocus(can bool)                                                    {}
 func (v *NativeView) SetOpaque(opaque bool)                                                   {}
 func (v *NativeView) DumpTree()                                                               {}
-func (v *NativeView) SetFont(font *Font)                                                      {}
+func (v *NativeView) SetFont(font *zgeo.Font)                                                 {}
 func (v *NativeView) Color() zgeo.Color                                                       { return zgeo.Color{} }
 func (v *NativeView) BGColor() zgeo.Color                                                     { return zgeo.Color{} }
+func (v *NativeView) SetCursor(cursor CursorType)                                             {}
+func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd))    {}
 func (v *NativeView) Alpha() float32                                                          { return 1 }
 func (v *NativeView) GetScale() float64                                                       { return 1 }
 func (v *NativeView) Show(show bool)                                                          {}
@@ -43,7 +48,7 @@ func (v *NativeView) Usable() bool                                              
 func (v *NativeView) IsFocused() bool                                                         { return true }
 func (v *NativeView) GetChild(path string) *NativeView                                        { return nil }
 func (v *NativeView) RemoveFromParent()                                                       {}
-func (v *NativeView) Font() *Font                                                             { return nil }
+func (v *NativeView) Font() *zgeo.Font                                                        { return nil }
 func (v *NativeView) SetText(text string)                                                     {}
 func (v *NativeView) Text() string                                                            { return "" }
 func (v *NativeView) AddChild(child View, index int)                                          {}
@@ -54,7 +59,6 @@ func (v *NativeView) SetAboveParent(above bool)                                 
 func NativeViewAddToRoot(v View)                                                              {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))                             {}
 func (v *NativeView) setjs(property string, value interface{})                                {}
-func (v *NativeView) SetPointerEnterHandler(handler func(pos zgeo.Pos, inside bool))          {}
 func (v *NativeView) SetDraggable(getData func() (data string, mime string))                  {}
 func (v *NativeView) SetUploader(got func(data []byte, name string))                          {}
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}
@@ -72,4 +76,6 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))           
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}
 func (v *NativeView) SetHandleExposed(handle func(intersects bool))                           {}
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
+}
+func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
 }

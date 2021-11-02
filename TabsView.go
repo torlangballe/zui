@@ -83,6 +83,7 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 	cv.SetMinSize(zgeo.Size{10, thickness})
 	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
 		selectedView, _ := v.Header.FindViewWithName(v.CurrentID, false)
+		// zlog.Info("SepDRAW:", selectedView.Rect())
 		canvas.SetColor(color)
 		if selectedView != nil {
 			r := selectedView.Rect()
@@ -128,7 +129,7 @@ func (v *TabsView) AddTab(id, title, ipath string, set bool, create func(delete 
 		button = &b.ShapeView
 		button.SetTextColor(TabsDefaultTextColor())
 		button.SetMarginS(zgeo.Size{10, 0})
-		button.SetFont(FontNice(FontDefaultSize, FontStyleNormal))
+		button.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 		view = b
 	} else {
 		button = ShapeViewNew(ShapeViewTypeNone, minSize)
@@ -223,6 +224,8 @@ func (v *TabsView) SetTab(id string, done func()) {
 		if !v.Presented {
 			return
 		}
+		// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells), "collapse:", !hasSeparator)
+
 		ExposeView(v.View)
 		//!		et, _ := v.View.(ExposableType)
 		// if !v.Presented {

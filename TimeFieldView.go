@@ -88,7 +88,7 @@ func TimeTextViewNew() *TimeTextView {
 }
 
 func (v *TimeTextView) setLabel(str string) {
-	s := FontDefaultSize
+	s := zgeo.FontDefaultSize
 	marg := 0.0
 	if str == "" {
 		str = "📅"
@@ -99,7 +99,7 @@ func (v *TimeTextView) setLabel(str string) {
 	c, _ := v.FindCellWithView(v.ParsedLabel)
 	c.Margin.H = marg
 	v.ParsedLabel.SetText(str)
-	v.ParsedLabel.SetFont(FontNice(s, FontStyleNormal))
+	v.ParsedLabel.SetFont(zgeo.FontNice(s, zgeo.FontStyleNormal))
 	v.ArrangeChildren()
 }
 

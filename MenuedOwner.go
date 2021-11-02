@@ -24,7 +24,7 @@ type MenuedOwner struct {
 	ActionHandler   func(id string)
 	CreateItems     func() []MenuedOItem
 	PluralableWord  string // if set, used instead of GetTitle, and pluralized
-	Font            *Font
+	Font            *zgeo.Font
 	ImagePath       string
 	IsStatic        bool // if set, user can't set a different value, but can press and see them. Shows number of items
 	IsMultiple      bool
@@ -58,7 +58,7 @@ var (
 
 func MenuedOwnerNew() *MenuedOwner {
 	o := &MenuedOwner{}
-	o.Font = FontNice(FontDefaultSize-1, FontStyleNormal)
+	o.Font = zgeo.FontNice(zgeo.FontDefaultSize-1, zgeo.FontStyleNormal)
 	o.HighlightColor = MenuedOwnerDefaultHightlightColor()
 	o.BGColor = MenuedOwnerDefaultBGColor()
 	o.TextColor = MenuedOwnerDefaultTextColor()
@@ -300,7 +300,7 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Can
 		ti.Color = o.TextColor
 	}
 	// zlog.Info("DrawMenuedRow:", i, item.Name, item.IsAction, o.Font.Style)
-	ti.Font = &Font{}
+	ti.Font = &zgeo.Font{}
 	*ti.Font = *o.Font
 	if item.IsDisabled {
 		ti.Color.SetOpacity(0.5)
@@ -334,7 +334,7 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Can
 	}
 
 	if item.IsAction {
-		ti.Font.Style = FontStyleItalic
+		ti.Font.Style = zgeo.FontStyleItalic
 	}
 	//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
 	ti.Text = item.Name

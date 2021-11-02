@@ -49,7 +49,7 @@ func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, c
 	v.setjs("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
-	f := FontNice(FontDefaultSize, FontStyleNormal)
+	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
 
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {

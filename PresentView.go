@@ -374,7 +374,7 @@ func PresentTitledView(view View, stitle string, att PresentViewAttributes, barV
 	})
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := LabelNew(stitle)
-	titleLabel.SetFont(FontNew("Arial", FontDefaultSize+1, FontStyleBold))
+	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
 	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
 	a := zgeo.Left
 	if len(barViews) == 0 {

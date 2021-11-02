@@ -82,7 +82,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	}
 	v.SetDrawHandler(v.draw)
 	v.CustomView.SetMinSize(minSize)
-	f := FontNice(FontDefaultSize, FontStyleNormal)
+	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
 }
 

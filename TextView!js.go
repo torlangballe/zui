@@ -6,7 +6,7 @@ import "github.com/torlangballe/zutil/zgeo"
 
 func (tv *TextView) Init(view View, text string, style TextViewStyle, rows, cols int) {
 	tv.View = view
-	f := FontNice(FontDefaultSize, FontStyleNormal)
+	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	tv.SetFont(f)
 }
 

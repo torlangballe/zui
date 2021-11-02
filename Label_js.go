@@ -32,7 +32,7 @@ func LabelNew(text string) *Label {
 	v.SetMaxLines(1)
 	textNode := DocumentJS.Call("createTextNode", text)
 	v.call("appendChild", textNode)
-	f := FontNice(FontDefaultSize, FontStyleNormal)
+	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
 	return v
 }

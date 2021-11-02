@@ -71,7 +71,7 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 		v.updateTitle()
 	})
 	v.SetTextAlignment(zgeo.CenterLeft)
-	v.SetFont(FontNice(14, FontStyleNormal))
+	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 
 	if opts.StoreKey != "" {
 		dict, got := DefaultLocalKeyValueStore.GetDict(opts.StoreKey)
@@ -284,7 +284,7 @@ func (v *MenuedShapeView) popup() {
 			ti.Text = item.Name
 			ti.Font = v.Font()
 			if item.IsAction {
-				ti.Font.Style = FontStyleItalic
+				ti.Font.Style = zgeo.FontStyleItalic
 			}
 			//			zlog.Info("Draw Menu row:", ti.Text, ti.Font.Size)
 			ti.Alignment = zgeo.CenterLeft

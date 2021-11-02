@@ -25,10 +25,11 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	iv := ImageViewNew(nil, "images/magnifier.png", zgeo.Size{10, 10})
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)
-	s.Add(iv, zgeo.CenterLeft, zgeo.Size{3, 0}).Free = true
+	s.Add(iv, zgeo.TopLeft, zgeo.Size{5, 6}).Free = true
 	old := t.ChangedHandler()
 	t.SetChangedHandler(func() {
 		iv.Show(t.Text() == "")
+		// zlog.Info("Show:", t.Text() == "")
 		if old != nil {
 			old()
 		}

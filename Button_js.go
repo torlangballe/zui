@@ -18,7 +18,7 @@ func ButtonNew(text string) *Button {
 	// style.Set("display", "block")
 	// style.Set("verticalAlign", "middle")
 	// style.Set("whiteSpace", "preWrap")
-	f := FontNice(FontDefaultSize-2, FontStyleNormal)
+	f := zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal)
 	v.SetFont(f)
 
 	return v

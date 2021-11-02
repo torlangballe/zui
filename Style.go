@@ -8,33 +8,11 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-/*
-type StyleColor struct {
-	Light Color
-	Dark  Color
-}
-*/
 var (
-	StyleDark bool
+	StyleDark           bool
+	StyleDefaultFGColor = StyleGrayF(0.2, 0.8)
+	StyleDefaultBGColor = StyleGrayF(0.8, 0.2)
 )
-
-// func (c StyleColor) Get() zgeo.Color {
-// 	if StyleDark {
-// 		return c.Dark
-// 	}
-// 	return c.Light
-// }
-
-// func StyleCol(l, d zgeo.Color) StyleColor {
-// 	return StyleColor{Light: l, Dark: d}
-// }
-
-// func StyleGray(l, d float64) StyleColor {
-// 	return StyleColor{
-// 		Light: zgeo.ColorNewGray(l, 1),
-// 		Dark:  zgeo.ColorNewGray(d, 1),
-// 	}
-// }
 
 func StyleCol(l, d zgeo.Color) zgeo.Color {
 	if StyleDark {
@@ -72,6 +50,3 @@ func StyleImagePath(spath string) string {
 	}
 	return path.Join(dir, stub+"_dark"+size+ext)
 }
-
-var StyleDefaultFGColor = StyleGrayF(0.2, 0.8)
-var StyleDefaultBGColor = StyleGrayF(0.8, 0.2)

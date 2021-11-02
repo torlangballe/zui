@@ -18,7 +18,7 @@ func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
-	v.SetFont(FontNice(14, FontStyleNormal))
+	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	v.SetObjectName(name)
 	v.UpdateAndSelect(items, value)
 
@@ -133,7 +133,7 @@ func (v *MenuView) SetSelectedHandler(handler func()) {
 // https://stackoverflow.com/questions/23718753/javascript-to-create-a-dropdown-list-and-get-the-selected-value
 // https://stackoverflow.com/questions/17001961/how-to-add-drop-down-list-select-programmatically
 
-func (v *MenuView) SetFont(font *Font) {
+func (v *MenuView) SetFont(font *zgeo.Font) {
 	if font.Size != 14 {
 		panic("can't set menu view font size to anything except 14 in js")
 	}

@@ -23,7 +23,7 @@ var WindowJS = js.Global().Get("window")
 
 func init() {
 	if zdevice.OS() == zdevice.MacOSType && zdevice.WasmBrowser() == "safari" {
-		FontDefaultName = "-apple-system"
+		zgeo.FontDefaultName = "-apple-system"
 	}
 }
 
@@ -76,12 +76,12 @@ func jsGetBoolIfDefined(e js.Value, get string) bool {
 	return v.Bool()
 }
 
-func getFontStyle(font *Font) string {
+func getFontStyle(font *zgeo.Font) string {
 	var parts []string
-	if font.Style&FontStyleBold != 0 {
+	if font.Style&zgeo.FontStyleBold != 0 {
 		parts = append(parts, "bold")
 	}
-	if font.Style&FontStyleItalic != 0 {
+	if font.Style&zgeo.FontStyleItalic != 0 {
 		parts = append(parts, "italic")
 	}
 	parts = append(parts, fmt.Sprintf("%dpx", int(font.Size)))

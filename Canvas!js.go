@@ -64,14 +64,14 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 
 var fontMutex sync.Mutex
 
-func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
+func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 	//	fmt.Printf("CANVAS SETFONT: %v %p %s\n", c, c, zlog.GetCallingStackString())
 	var err error
 	name := font.Name
-	if font.Style&FontStyleBold != 0 {
+	if font.Style&zgeo.FontStyleBold != 0 {
 		name += " Bold"
 	}
-	if font.Style&FontStyleItalic != 0 {
+	if font.Style&zgeo.FontStyleItalic != 0 {
 		name += " Italic"
 	}
 	var paths = []string{"Fonts/"}
@@ -214,7 +214,7 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 	fontMutex.Unlock()
 }
 
-func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
+func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
 	c.SetFont(font, nil)
 	fontMutex.Lock()
 	w, h := c.context.MeasureString(text)

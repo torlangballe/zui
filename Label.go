@@ -55,6 +55,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
 	s = s.Ceil()
+	s.W += 1
 	return s
 }
 
@@ -87,12 +88,12 @@ func (v *Label) SetMaxWidth(max float64) {
 }
 
 func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
-	font := FontNice(FontDefaultSize, FontStyleBold)
+	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
 	to, _ := view.(TextInfoOwner)
 	if to != nil {
 		ti := to.GetTextInfo()
 		font = ti.Font
-		font.Style = FontStyleBold
+		font.Style = zgeo.FontStyleBold
 	}
 	title := prefix
 	checkBox, isCheck := view.(*CheckBox)

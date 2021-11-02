@@ -333,11 +333,11 @@ func (v *NativeView) RemoveFromParent() {
 	v.parent = nil
 }
 
-func (v *NativeView) SetFont(font *Font) {
+func (v *NativeView) SetFont(font *zgeo.Font) {
 	// zlog.Debug("font:", v.ObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
 	cssStyle := v.style()
-	cssStyle.Set("font-style", string(font.Style&FontStyleItalic))
-	cssStyle.Set("font-weight", (font.Style & FontStyleBold).String())
+	cssStyle.Set("font-style", string(font.Style&zgeo.FontStyleItalic))
+	cssStyle.Set("font-weight", (font.Style & zgeo.FontStyleBold).String())
 	cssStyle.Set("font-family", font.Name)
 	cssStyle.Set("font-size", fmt.Sprintf("%gpx", font.Size))
 	// cssText := cssStyle.Get("cssText").String()
@@ -351,20 +351,20 @@ func (v *NativeView) SetFont(font *Font) {
 	// cssStyle.Set("cssText", cssText)
 }
 
-func (v *NativeView) Font() *Font {
+func (v *NativeView) Font() *zgeo.Font {
 	cssStyle := v.style()
-	fstyle := FontStyleNormal
+	fstyle := zgeo.FontStyleNormal
 	name := cssStyle.Get("font-family").String()
 	if cssStyle.Get("font-weight").String() == "bold" {
-		fstyle |= FontStyleBold
+		fstyle |= zgeo.FontStyleBold
 	}
 	if cssStyle.Get("font-style").String() == "italic" {
-		fstyle |= FontStyleItalic
+		fstyle |= zgeo.FontStyleItalic
 	}
 	ss := cssStyle.Get("font-size")
 	size := v.parseElementCoord(ss)
 
-	return FontNew(name, size, fstyle)
+	return zgeo.FontNew(name, size, fstyle)
 }
 
 func (v *NativeView) SetText(text string) {
@@ -383,6 +383,9 @@ func (v *NativeView) AddChild(child View, index int) {
 		zlog.Fatal(nil, "NativeView AddChild child not native")
 	}
 	n.parent = v
+	// if child.ObjectName() == "tab-separator" {
+	// 	zlog.Info("Call On Add:", n.Hierarchy(), len(n.doOnAdd))
+	// }
 	n.PerformAddRemoveFuncs(true)
 	if index != -1 {
 		nodes := n.parent.getjs("childNodes").Length()
@@ -839,25 +842,36 @@ func (v *NativeView) SetTilePath(spath string) {
 }
 
 func (v *NativeView) SetHandleExposed(handle func(intersects bool)) {
+	// if v.ObjectName() == "tab-separator" {
+	// 	zlog.Info("NV.SetHandleExposed:", v.Hierarchy())
+	// }
 	f := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		entries := args[0]
 		for i := 0; i < entries.Length(); i++ {
 			e := entries.Index(i)
 			inter := e.Get("isIntersecting").Bool()
 			//			ratio := e.Get("intersectionRatio").Float()
-			// zlog.Info("HandleExposed:", v.Hierarchy(), v.AbsoluteRect(), inter, ratio, e.Get("intersectionRect"))
+			// if v.ObjectName() == "SL01@dash" {
+			// 	zlog.Info("NV.HandleExposed:", v.Hierarchy(), v.AbsoluteRect(), inter, e.Get("intersectionRect"))
+			// }
 			handle(inter)
 		}
 		return nil
 	})
 	// opts := map[string]interface{}{"threshold": 0.1}
 
-	v.AddOnReadyFunc(func() {
-		// zlog.Info("SetHandleExposed:", v.Hierarchy())
-		observer := v.GetWindow().element.Get("IntersectionObserver").New(f) //, opts)
-		observer.Call("observe", v.Element)
-		v.AddOnRemoveFunc(func() {
-			observer.Call("disconnect")
-		})
+	// v.AddOnReadyFunc(func() {
+	// if v.ObjectName() == "tab-separator" {
+	// 	zlog.Info("SetHandleExposed:", v.Hierarchy())
+	// }
+	observer := v.GetWindow().element.Get("IntersectionObserver").New(f) //, opts)
+	observer.Call("observe", v.Element)
+	v.AddOnRemoveFunc(func() {
+		observer.Call("disconnect")
+		handle(false)
 	})
+	// })
+	// if v.ObjectName() == "tab-separator" {
+	// 	zlog.Info("NV.SetHandleExposed: DONE", v.Hierarchy(), len(v.doOnRemove))
+	// }
 }

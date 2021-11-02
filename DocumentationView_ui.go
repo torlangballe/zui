@@ -29,7 +29,7 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v.textInfo.Text = "?"
 	v.SetColor(DocumentationDefaultIconColor())
 	v.SetTextAlignment(zgeo.Center)
-	v.SetFont(FontNice(16, FontStyleNormal))
+	v.SetFont(zgeo.FontNice(16, zgeo.FontStyleNormal))
 	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
 	v.StrokeWidth = 2
 	v.Modal = DocumentationViewDefaultModal

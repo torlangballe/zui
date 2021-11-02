@@ -99,7 +99,7 @@ func canvasCreateGradientLocations(colors int) []float64 {
 
 // measureTextCanvases is a pool of canvases to do text measurements in. Might not actually speed things up in DOM, which maybe is single-thread
 type measurement struct {
-	Font Font
+	Font zgeo.Font
 	Text string
 }
 
@@ -107,7 +107,7 @@ var measuredTexts = map[measurement]zgeo.Size{}
 var measureTextMutex sync.Mutex
 var measureCanvas *Canvas
 
-func canvasGetTextSize(text string, font *Font) zgeo.Size {
+func canvasGetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	measureTextMutex.Lock()
 	m := measurement{Font: *font, Text: text}
 	s, got := measuredTexts[m]

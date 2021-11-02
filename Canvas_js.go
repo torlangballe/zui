@@ -73,7 +73,7 @@ func (c *Canvas) FillPath(path *zgeo.Path) {
 func (c *Canvas) FillPathEO(path *zgeo.Path) {
 }
 
-func (c *Canvas) SetFont(font *Font, matrix *zgeo.Matrix) error {
+func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 	str := getFontStyle(font)
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
@@ -294,7 +294,7 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 	c.context.Call(name, text, pos.X, pos.Y)
 }
 
-func (c *Canvas) MeasureText(text string, font *Font) zgeo.Size {
+func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
 	var s zgeo.Size
 	c.SetFont(font, nil)
 	var metrics = c.context.Call("measureText", text)

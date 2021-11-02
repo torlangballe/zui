@@ -3,7 +3,10 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zdict"
+import (
+	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	return &MenuView{}
@@ -23,9 +26,8 @@ func (v *MenuView) AddSeparator()                                           {}
 func (v *MenuView) SetValues(items zdict.NamedValues)                       {}
 func (v *MenuView) SetAndSelect(items zdict.NamedValues, value interface{}) {}
 func (v *MenuView) SelectWithValue(value interface{}) *MenuView             { return v }
-func (v *MenuView) SetFont(font *Font) {}
+func (v *MenuView) SetFont(font *zgeo.Font)                                 {}
 
-func menuViewGetHackedFontForSize(font *Font) *Font {
+func menuViewGetHackedFontForSize(font *zgeo.Font) *zgeo.Font {
 	return font
 }
-

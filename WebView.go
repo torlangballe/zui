@@ -50,7 +50,7 @@ func (v *WebView) MakeBar() *StackView {
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	v.TitleLabel = LabelNew("")
-	v.TitleLabel.SetFont(FontNew("Arial", 16, FontStyleBold))
+	v.TitleLabel.SetFont(zgeo.FontNew("Arial", 16, zgeo.FontStyleBold))
 	v.TitleLabel.SetTextAlignment(zgeo.Center)
 	v.TitleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
 	v.Bar.Add(v.TitleLabel, zgeo.Center|zgeo.HorExpand)
