@@ -15,6 +15,7 @@ import (
 
 type canvasNative struct {
 	context *gg.Context
+	setFont zgeo.Font
 }
 
 func CanvasNew() *Canvas {
@@ -37,6 +38,7 @@ func CanvasFromGoImage(img image.Image) *Canvas {
 }
 
 func (c *Canvas) SetSize(size zgeo.Size) {
+	c.size = size
 	c.context = gg.NewContext(int(size.W), int(size.H))
 	c.context.Clear()
 }
@@ -65,7 +67,11 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 var fontMutex sync.Mutex
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
-	//	fmt.Printf("CANVAS SETFONT: %v %p %s\n", c, c, zlog.GetCallingStackString())
+	if *font == c.setFont {
+		return nil
+	}
+	// fmt.Printf("CANVAS SETFONT: %p %+v %+v %s\n", c, *font, c.setFont, zlog.GetCallingStackString())
+	c.setFont = *font
 	var err error
 	name := font.Name
 	if font.Style&zgeo.FontStyleBold != 0 {
@@ -86,7 +92,7 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 			err = c.context.LoadFontFace(p, font.Size)
 			fontMutex.Unlock()
 			if err != nil {
-				zlog.Info(err, "Load font:", p)
+				//				zlog.Info(err, "Load font:", p)
 			} else {
 				return nil
 			}

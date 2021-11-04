@@ -88,6 +88,12 @@ func (c *Canvas) FillRect(rect zgeo.Rect) {
 	c.FillPath(path)
 }
 
+func (c *Canvas) Fill() {
+	rect := zgeo.Rect{Size: c.size}
+	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	c.FillPath(path)
+}
+
 func canvasCreateGradientLocations(colors int) []float64 {
 	locations := make([]float64, colors, colors)
 	last := colors - 1
