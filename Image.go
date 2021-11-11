@@ -15,8 +15,6 @@ import (
 	"strconv"
 	"strings"
 
-	//"github.com/nfnt/resize"
-
 	"github.com/bamiaux/rez"
 	"github.com/disintegration/imaging"
 	"github.com/torlangballe/zutil/zfile"

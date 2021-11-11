@@ -103,7 +103,7 @@ func WindowOpen(o WindowOptions) *Window {
 
 func (win *Window) setOnResizeHandling() {
 	win.element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName())
+		// fmt.Println("On Resize1", win.ProgrammaticView.ObjectName())
 		// if !win.hasResized { // removing this so we can get first resize... what was it for?
 		// 	win.hasResized = true
 		// 	return nil
