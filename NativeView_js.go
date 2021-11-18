@@ -841,37 +841,24 @@ func (v *NativeView) SetTilePath(spath string) {
 	v.style().Set("backgroundImage", s)
 }
 
-func (v *NativeView) SetHandleExposed(handle func(intersects bool)) {
-	// if v.ObjectName() == "tab-separator" {
-	// 	zlog.Info("NV.SetHandleExposed:", v.Hierarchy())
-	// }
+// SetHandleExposed sets a handler for v that is called with intersectsViewport=true, when v becomes visible.
+// It calls with intersectsViewport=false when it becomes inivisble.
+// In this js implementation is uses the IntersectionObserver, and removed the observation on view removal.
+// Note that it has to be called AFTER the window v will be in is opened, so v.GetWindow() gives correct window observe with.
+func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 	f := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		entries := args[0]
 		for i := 0; i < entries.Length(); i++ {
 			e := entries.Index(i)
 			inter := e.Get("isIntersecting").Bool()
-			//			ratio := e.Get("intersectionRatio").Float()
-			// if v.ObjectName() == "SL01@dash" {
-			// 	zlog.Info("NV.HandleExposed:", v.Hierarchy(), v.AbsoluteRect(), inter, e.Get("intersectionRect"))
-			// }
 			handle(inter)
 		}
 		return nil
 	})
-	// opts := map[string]interface{}{"threshold": 0.1}
-
-	// v.AddOnReadyFunc(func() {
-	// if v.ObjectName() == "tab-separator" {
-	// 	zlog.Info("SetHandleExposed:", v.Hierarchy())
-	// }
 	observer := v.GetWindow().element.Get("IntersectionObserver").New(f) //, opts)
 	observer.Call("observe", v.Element)
 	v.AddOnRemoveFunc(func() {
 		observer.Call("disconnect")
 		handle(false)
 	})
-	// })
-	// if v.ObjectName() == "tab-separator" {
-	// 	zlog.Info("NV.SetHandleExposed: DONE", v.Hierarchy(), len(v.doOnRemove))
-	// }
 }
