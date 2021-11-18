@@ -380,7 +380,7 @@ func (v *NativeView) Text() string {
 func (v *NativeView) AddChild(child View, index int) {
 	n := ViewGetNative(child)
 	if n == nil {
-		zlog.Fatal(nil, "NativeView AddChild child not native")
+		zlog.Fatal(nil, "NativeView AddChild child not native", v.Hierarchy(), child.ObjectName())
 	}
 	n.parent = v
 	// if child.ObjectName() == "tab-separator" {
