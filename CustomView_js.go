@@ -21,20 +21,6 @@ func (v *CustomView) Init(view View, name string) {
 	v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
-
-	v.SetHandleExposed(func(intersects bool) {
-		// if v.ObjectName() == "tab-separator" {
-		// 	zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
-		// }
-		if intersects && v.exposed {
-			go v.drawSelf()
-		}
-		v.visible = intersects
-		// if v.ObjectName() == "tab-separator" {
-		// 	zlog.Info("exposed2:", v.ObjectName(), v.visible)
-		// }
-	})
-
 	// v.style().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
@@ -90,6 +76,24 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
 
+func (v *CustomView) ReadyToShow(beforeWindow bool) {
+	if beforeWindow {
+		return
+	}
+	v.SetHandleExposed(func(intersectsViewport bool) {
+		// if v.ObjectName() == "tab-separator" {
+		//  zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
+		// }
+		if intersects && v.exposed {
+			go v.drawSelf()
+		}
+		v.visible = intersects
+		// if v.ObjectName() == "tab-separator" {
+		//  zlog.Info("exposed2:", v.ObjectName(), v.visible)
+		// }
+	})
+
+}
 func (v *CustomView) SetRect(rect zgeo.Rect) {
 
 	r := rect.ExpandedToInt()
