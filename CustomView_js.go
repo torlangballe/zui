@@ -29,23 +29,13 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.setjs("className", "widget")
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
-		// target := args[0].Get("target") // is it not event?
-		// zlog.Info("Pressed:", v.ObjectName(), target.Get("id"), this.Equal(target), v.canvas != nil)
-		// if v.canvas != nil {
-		// 	zlog.Info("Eq:", v.canvas.element.Equal(target))
-		// }
-		// zlog.Info("Pressed", v.ObjectName(), this.Equal(target), v.canvas != nil && v.canvas.element.Equal(target))
-		//		if this.Equal(target) || (v.canvas != nil && v.canvas.element.Equal(target)) {
 		event := args[0]
 		v.PressedPos.X = event.Get("offsetX").Float()
 		v.PressedPos.Y = event.Get("offsetY").Float()
 		(&v.LongPresser).HandleOnClick(v)
 		// zlog.Info("Pressed", v.ObjectName(), v.PressedPos)
-
 		_, KeyboardModifiersAtPress = getKeyAndModsFromEvent(event)
 		event.Call("stopPropagation")
-		//		}
-		// }
 		return nil
 	}))
 }
@@ -67,9 +57,6 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 
 func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	s := size.TimesD(scale)
-	// if v.ObjectName() == "provider" {
-	// zlog.Info("setCanvasSize:", v.ObjectName(), s, zlog.GetCallingStackString())
-	// }
 	v.canvas.SetSize(s) // scale?
 	// zlog.Info("setCanvasSize:", v.ObjectName(), scale)
 	v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
@@ -81,40 +68,26 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	v.SetHandleExposed(func(intersectsViewport bool) {
-		// if v.ObjectName() == "tab-separator" {
-		//  zlog.Info("exposed:", v.ObjectName(), intersects, v.exposed, v.visible)
-		// }
-		if intersects && v.exposed {
+		if intersectsViewport && v.exposed {
 			go v.drawSelf()
 		}
-		v.visible = intersects
-		// if v.ObjectName() == "tab-separator" {
-		//  zlog.Info("exposed2:", v.ObjectName(), v.visible)
-		// }
+		v.visible = intersectsViewport
 	})
 
 }
 func (v *CustomView) SetRect(rect zgeo.Rect) {
-
 	r := rect.ExpandedToInt()
 	s := zgeo.Size{}
 	if v.HasSize() {
 		s = v.Rect().Size
 	}
 	v.NativeView.SetRect(r)
-	// r := v.Rect()
-	// if v.ObjectName() == "streams" {
-	// 	zlog.Info("CV SetRect:", v.ObjectName(), rect, r)
-	// }
-	// if rect != r {
 	if v.canvas != nil && s != r.Size {
-		// zlog.Debug("set", v.ObjectName(), s, r.Size)
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
 		v.Expose()
 	}
-	// }
 	v.isSetup = true
 }
 
@@ -151,35 +124,19 @@ func (v *CustomView) drawSelf() {
 		r := v.LocalRect()
 		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil, !r.Size.IsNull())
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
-			// println("CV drawIfExposed2:", v.ObjectName())
 			v.exposeTimer.Stop()
 			v.makeCanvas()
 			if !v.OpaqueDraw {
 				v.canvas.Clear()
 			}
-			// if !v.Usable() {
-			// 	// zlog.Info("cv: push for disabled")
-			// 	v.canvas.PushState()
-			// 	v.canvas.context.Set("globalAlpha", 0.4)
-			// }
 			v.draw(r, v.canvas, v.View)
-			// if !v.Usable() {
-			// 	v.canvas.PopState()
-			// }
-			//!!!			v.exposed = false // we move this to below, is some case where drawing can never happen if presenting or something, and exposed is never cleared
-			//		println("CV drawIfExposed end: " + v.ObjectName() + " " + time.Since(start).String())
 		}
 		v.drawing = false
-	} else {
-		// zlog.Info("CustV NOT drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw) //, zlog.GetCallingStackString())
 	}
 	v.exposed = false
 }
 
 func (v *CustomView) Expose() {
-	// if v.ObjectName() == "tab-separator" {
-	// 	zlog.Info("CustV Expose", v.visible, v.Hierarchy(), v.exposed, v.draw, presentViewPresenting, "hs:", v.HasSize())
-	// }
 	if v.visible {
 		v.exposeTimer.StartIn(0.1, func() {
 			go v.drawSelf()
