@@ -71,6 +71,8 @@ func (c *Canvas) FillPath(path *zgeo.Path) {
 }
 
 func (c *Canvas) FillPathEO(path *zgeo.Path) {
+	c.setPath(path)
+	c.context.Call("fill", "evenodd")
 }
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {

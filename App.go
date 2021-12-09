@@ -17,7 +17,7 @@ type App struct {
 	nativeApp
 	activationTime time.Time
 	backgroundTime time.Time // IsNull if not in background
-	startTime      time.Time
+	StartTime      time.Time
 	startedCount   int
 	oldVersion     float32
 	handler        AppHandler
@@ -59,7 +59,9 @@ func (a *App) GetbackgroundTimeSecs() float64 {
 
 func AppNew() *App {
 	a := &App{}
-	a.activationTime = time.Now()
+	now := time.Now()
+	a.activationTime = now
+	a.StartTime = now
 	AppMain = a
 	appNew(a)
 	return a
