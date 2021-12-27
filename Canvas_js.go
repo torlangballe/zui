@@ -194,7 +194,14 @@ func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bo
 
 func (c *Canvas) rawDrawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
+	oldAlpha := c.context.Get("globalAlpha").Float()
+	if opacity != 1 {
+		c.context.Set("globalAlpha", opacity)
+	}
 	c.context.Call("drawImage", image.imageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
+	if opacity != 1 {
+		c.context.Set("globalAlpha", oldAlpha)
+	}
 }
 
 func (c *Canvas) PushState() {
