@@ -18,7 +18,7 @@ type canvasNative struct {
 func CanvasNew() *Canvas {
 	c := Canvas{}
 	c.element = DocumentJS.Call("createElement", "canvas")
-	c.element.Set("style", "position:absolute")
+	c.element.Set("style", "position:absolute;pointer-events:none") // pointer-events:none makes canvas not be target when pressed
 	c.context = c.element.Call("getContext", "2d")
 	// c.context.Set("imageSmoothingEnabled", true)
 	// c.context.Set("imageSmoothingQuality", "high")
