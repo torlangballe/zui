@@ -377,6 +377,13 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 	return false
 }
 
+func ViewRangeChildren(view View, subViews, includeCollapsed bool, foreach func(view View) bool) {
+	ct, _ := view.(ContainerType)
+	if ct != nil {
+		ContainerTypeRangeChildren(ct, subViews, includeCollapsed, foreach)
+	}
+}
+
 func ContainerTypeRangeChildren(ct ContainerType, subViews, includeCollapsed bool, foreach func(view View) bool) {
 	children := ct.GetChildren(includeCollapsed)
 	for _, c := range children {
