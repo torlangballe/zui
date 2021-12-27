@@ -30,11 +30,14 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
 		event := args[0]
+		// zlog.Info("Pressed", reflect.ValueOf(v).Type(), v.ObjectName(), event.Get("target").Get("id").String())
+		if !event.Get("target").Equal(v.Element) {
+			return nil
+		}
 		v.PressedPos.X = event.Get("offsetX").Float()
 		v.PressedPos.Y = event.Get("offsetY").Float()
-		(&v.LongPresser).HandleOnClick(v)
-		// zlog.Info("Pressed", v.ObjectName(), v.PressedPos)
 		_, KeyboardModifiersAtPress = getKeyAndModsFromEvent(event)
+		(&v.LongPresser).HandleOnClick(v)
 		event.Call("stopPropagation")
 		return nil
 	}))
