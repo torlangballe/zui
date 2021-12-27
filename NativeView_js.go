@@ -862,3 +862,20 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 		handle(false)
 	})
 }
+
+func (v *NativeView) hasElement(e js.Value) (got *NativeView) {
+	if v.Element.Equal(e) {
+		return v
+	}
+	zlog.Info("FIND:", reflect.ValueOf(v).Type(), v.Hierarchy())
+	ViewRangeChildren(v, true, true, func(view View) bool {
+		nv, _ := (view.(*NativeView))
+		fmt.Printf("FIND: %+v\n", nv.Element)
+		if nv != nil && nv.Element.Equal(e) {
+			got = nv
+			return false
+		}
+		return true
+	})
+	return
+}
