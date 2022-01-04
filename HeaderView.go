@@ -17,6 +17,7 @@ type Header struct {
 	ID             string
 	Title          string
 	Align          zgeo.Alignment
+	Justify        zgeo.Alignment
 	Height         float64
 	ImagePath      string
 	MinWidth       float64
@@ -163,6 +164,12 @@ func (v *HeaderView) Populate(headers []Header) {
 		header := h
 		s := zgeo.Size{h.MinWidth, 26}
 		button := ImageButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+		// zlog.Info("HEADER:", h.Title, h.Justify)
+		j := h.Justify
+		if j == zgeo.AlignmentNone {
+			j = zgeo.Left
+		}
+		button.SetTextAlignment(j)
 		if h.ImagePath != "" {
 			iv := ImageViewNew(nil, h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
@@ -170,7 +177,6 @@ func (v *HeaderView) Populate(headers []Header) {
 			button.Add(iv, zgeo.Center, zgeo.Size{})
 		}
 		button.SetTextColor(zgeo.ColorWhite)
-		button.TextXMargin = 0
 		button.SetObjectName(h.ID)
 		// if !h.ImageSize.IsNull() {
 		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
