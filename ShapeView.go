@@ -68,7 +68,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.StrokeColor = zgeo.ColorWhite
 	v.ImageAlign = zgeo.Center | zgeo.Proportional
 	v.PathLineType = zgeo.PathLineRound
-	v.TextXMargin = 4
+	v.TextXMargin = 8
 	v.SetColor(zgeo.ColorGray)
 	v.SetTextColor(StyleDefaultFGColor())
 
@@ -333,7 +333,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
-		// zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 
 		// canvas.SetColor(zgeo.ColorGreen)

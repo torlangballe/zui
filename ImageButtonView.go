@@ -39,7 +39,6 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
 	v.ImageMargin = zgeo.Size{}
-	v.TextXMargin = 16
 }
 
 func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
