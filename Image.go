@@ -218,10 +218,9 @@ func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, ma
 	// canvas.DrawRect(mr)
 	// canvas.SetColor(zgeo.ColorRed)
 	// canvas.DrawRect(wr)
-	synchronous := true
 	downsampleCache := false
-	canvas.DrawImage(i, synchronous, downsampleCache, mr, 1, zgeo.Rect{})
-	canvas.DrawImage(with, synchronous, downsampleCache, wr, 1, zgeo.Rect{})
+	canvas.DrawImage(i, downsampleCache, mr, 1, zgeo.Rect{})
+	canvas.DrawImage(with, downsampleCache, wr, 1, zgeo.Rect{})
 	canvas.ZImage(false, done)
 }
 
@@ -240,7 +239,12 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 		got(nil)
 	}
 	newGoImage := GoImageShrunkInto(goImage, size, proportional)
-	ImageFromGo(newGoImage, got)
+	ImageFromGo(newGoImage, func(img *Image) {
+		if img != nil {
+			img.Path = i.Path + fmt.Sprint("|", size)
+		}
+		got(img)
+	})
 }
 
 func GoImagesAreIdentical(img1, img2 image.Image) bool {
