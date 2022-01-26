@@ -779,9 +779,11 @@ var movingPos *zgeo.Pos
 func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
 	const minDiff = 10.0
 	v.setjs("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		m := getMousePos(args[0])
+		e := args[0]
+		m := getMousePos(e)
 		movingPos = &m
 		handler(*movingPos, zbool.True)
+		e.Call("preventDefault")
 		v.GetWindow().element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			if movingPos != nil {
 				pos := getMousePos(args[0])
