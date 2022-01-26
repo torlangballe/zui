@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -46,7 +47,9 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.ByRows {
 		rows = int((fit.W + v.Spacing.W) / (childSize.W + v.Spacing.W))
 		zint.Minimize(&rows, count)
-		cols = (count + rows - 1) / rows
+		if rows != 0 {
+			cols = (count + rows - 1) / rows
+		}
 	} else {
 		zlog.FatalNotImplemented()
 	}
