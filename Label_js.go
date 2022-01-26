@@ -5,6 +5,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 func LabelNew(text string) *Label {
@@ -37,7 +38,16 @@ func LabelNew(text string) *Label {
 	return v
 }
 
-func (v *Label) SetMaxLines(max int) View {
+func (v *Label) SetWrap(wrap TextInfoWrap) {
+	zlog.Assert(wrap == TextInfoWrapTailTruncate)
+	style := v.style()
+	style.Set("textOverflow", "ellipsis")
+	style.Set("overflow", "hidden")
+	style.Set("whiteSpace", "nowrap")
+
+}
+
+func (v *Label) SetMaxLines(max int) {
 	// zlog.Info("Label.SetMaxLines:", max, v.ObjectName())
 	v.maxLines = max
 	style := v.style()
@@ -55,8 +65,6 @@ func (v *Label) SetMaxLines(max int) View {
 	}
 	//	style.Set("textOverflow", "clip")
 	//	white-space: pre-wrap for multi-lines
-
-	return v
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
