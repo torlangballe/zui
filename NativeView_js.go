@@ -700,17 +700,13 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 	}))
 }
 
+var lastUploadClick time.Time
+
 func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	e := DocumentJS.Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
-	v.call("appendChild", e)
-	zlog.Info("set uploader")
-
-	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		e.Call("click")
-		return nil
-	}))
+	// e.Set("accept", "*/*")
 
 	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} { // was onchange????
 		zlog.Info("uploader on change")
@@ -721,6 +717,21 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 		}
 		return nil
 	}))
+
+	zlog.Info("NV SetUploader", v.ObjectName())
+	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if time.Since(lastUploadClick) < time.Millisecond*100 { // e.Call("click") below causes v onclick to be re-called, bail + preventDefault important or it doesn't work (error started on Tor's M1 Mac Pro)
+			args[0].Call("preventDefault")
+			zlog.Info("cancel clickthru")
+			return nil
+		}
+		lastUploadClick = time.Now()
+		zlog.Info("uploader clickthru")
+		e.Call("click")
+		return nil
+	}))
+
+	v.call("appendChild", e)
 }
 
 func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
