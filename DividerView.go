@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -18,18 +19,23 @@ type DividerView struct {
 	Delta          float64
 	downAt         time.Time
 	doubleClicking bool
+	storeKey       string
 }
 
-func newDiv() *DividerView {
+func newDiv(storeKey string) *DividerView {
 	v := &DividerView{}
 	v.CustomView.Init(v, "div")
 	v.SetCursor(CursorRowResize)
 	v.SetDrawHandler(v.draw)
+	if storeKey != "" {
+		v.storeKey = storeKey
+		v.Delta, _ = DefaultLocalKeyValueStore.GetDouble(storeKey, 0)
+	}
 	v.SetUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) {
 		switch down {
 		case zbool.False:
-			v.startDelta = v.Delta
 		case zbool.True:
+			v.startDelta = v.Delta
 			since := ztime.Since(v.downAt)
 			if since > 1 {
 				v.downAt = time.Time{}
@@ -38,6 +44,7 @@ func newDiv() *DividerView {
 				v.doubleClicking = true
 				v.downAt = time.Time{}
 				v.Delta = 0
+				v.storeDelta()
 				ct, _ := v.Parent().View.(ContainerType)
 				ct.ArrangeChildren()
 			} else {
@@ -53,7 +60,7 @@ func newDiv() *DividerView {
 				break
 			}
 			v.Delta = v.startDelta + pos.Vertice(v.Vertical)
-			// zlog.Info("DevView:", pos.Y, v.Delta)
+			v.storeDelta()
 			ct, _ := v.Parent().View.(ContainerType)
 			ct.ArrangeChildren()
 		}
@@ -61,14 +68,20 @@ func newDiv() *DividerView {
 	return v
 }
 
-func DividerViewNewVert() *DividerView {
-	v := newDiv()
+func (v *DividerView) storeDelta() {
+	if v.storeKey != "" {
+		DefaultLocalKeyValueStore.SetDouble(v.Delta, v.storeKey, true)
+	}
+}
+
+func DividerViewNewVert(storeKey string) *DividerView {
+	v := newDiv(storeKey)
 	v.Vertical = true
 	return v
 }
 
-func DividerViewNewHor() *DividerView {
-	v := newDiv()
+func DividerViewNewHor(storeKey string) *DividerView {
+	v := newDiv(storeKey)
 	v.Vertical = false
 	return v
 }
