@@ -81,7 +81,7 @@ func ImageFromPath(path string, got func(*Image)) {
 	}
 	// zlog.Info("ImageFromPath before load:", path)
 	i.load(path, func(success bool) {
-		// zlog.Info("ImageFromPath loaded:", path, success)
+		// zlog.Info("ImageFromPath loaded:", success, got != nil, path)
 		if !success {
 			i = nil
 		}
@@ -219,4 +219,8 @@ func ImageFromGo(img image.Image, got func(image *Image)) {
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
 	ImageFromPath(surl, got)
+}
+
+func (i *Image) IsLoaded() bool {
+	return i.imageJS.Get("complete").Bool() && i.imageJS.Get("naturalHeight").Float() > 0
 }
