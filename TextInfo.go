@@ -33,7 +33,6 @@ const (
 	TextInfoWrapHeadTruncate
 	TextInfoWrapTailTruncate
 	TextInfoWrapMiddleTruncate
-
 )
 
 type TextInfo struct {
@@ -168,36 +167,6 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 	return size, allLines, widths
 }
 
-func (ti *TextInfo) getNativeWrapMode(w TextInfoWrap) int {
-	switch w {
-	case TextInfoWrapWord:
-		return 1
-	case TextInfoWrapChar:
-		return 1
-	case TextInfoWrapHeadTruncate:
-		return 1
-	case TextInfoWrapTailTruncate:
-		return 1
-	case TextInfoWrapMiddleTruncate:
-		return 1
-	default:
-		return 1
-	}
-}
-
-func getNativeTextAdjustment(style zgeo.Alignment) int {
-	if style&zgeo.Left != 0 {
-		return 0
-	} else if style&zgeo.Right != 0 {
-		return 0
-	} else if style&zgeo.HorCenter != 0 {
-		return 0
-	} else if style&zgeo.HorExpand != 0 {
-		panic("bad text adjust")
-	}
-	return 0 //NSTextAlignment.left
-}
-
 func (ti *TextInfo) MakeAttributes() zdict.Dict {
 	return zdict.Dict{}
 }
@@ -226,9 +195,9 @@ func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
 		w = ti.StrokeWidth
 	}
 	font := ti.Font
-	if ti.Alignment&zgeo.HorCenter != 0 {
-		//        r = r.Expanded(ZSize(1, 0))
-	}
+	// if ti.Alignment&zgeo.HorCenter != 0 {
+	//        r = r.Expanded(ZSize(1, 0))
+	// }
 
 	if ti.Alignment&zgeo.HorShrink != 0 {
 		zlog.Assert(!ti.Rect.Size.IsNull())
