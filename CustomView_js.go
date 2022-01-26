@@ -1,13 +1,12 @@
 package zui
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
+	"syscall/js"
 )
 
 // TODO: store pressed/logpressed js function, and release when adding new one
@@ -61,7 +60,7 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	s := size.TimesD(scale)
 	v.canvas.SetSize(s) // scale?
-	// zlog.Info("setCanvasSize:", v.ObjectName(), scale)
+	// zlog.Info("setCanvasSize:", v.ObjectName(), size, scale)
 	v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
 	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
 }
@@ -117,7 +116,6 @@ func (v *CustomView) makeCanvas() {
 			v.call("insertBefore", v.canvas.element, firstChild)
 		}
 	}
-	// set z index!!
 }
 
 func (v *CustomView) drawSelf() {
@@ -125,7 +123,6 @@ func (v *CustomView) drawSelf() {
 	if !v.drawing && !presentViewPresenting && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
 		v.drawing = true
 		r := v.LocalRect()
-		// zlog.Info("CV drawIfExposed", v.ObjectName(), presentViewPresenting, v.exposed, v.draw, v.Parent() != nil, !r.Size.IsNull())
 		if !r.Size.IsNull() { // if r.Size.IsNull(), it hasn't been caclutated yet in first ArrangeChildren
 			v.exposeTimer.Stop()
 			v.makeCanvas()

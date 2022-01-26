@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -327,7 +328,7 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Can
 				// canvas.SetColor(zgeo.ColorGreen)
 				// canvas.FillRect(inRect)
 				// zlog.Info("DrawMenuedImage:", item.Name, drect, allAction, x)
-				canvas.DrawImage(img, false, true, drect, 1, zgeo.Rect{})
+				canvas.DrawImage(img, true, drect, 1, zgeo.Rect{})
 			}
 		})
 		x += imageWidth + imageMarg
