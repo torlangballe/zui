@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package zui
@@ -228,8 +229,9 @@ func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
 	return zgeo.Size{w, h}
 }
 
-func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
+	return true
 }
 
 func (c *Canvas) GoImage(cut zgeo.Rect) image.Image {

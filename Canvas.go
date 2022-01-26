@@ -21,7 +21,7 @@ func (c *Canvas) Size() zgeo.Size {
 	return c.size
 }
 
-func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, synchronous, useDownsampleCache bool, opacity float32) {
+func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, useDownsampleCache bool, opacity float32) {
 	if image == nil {
 		return
 	}
@@ -29,14 +29,14 @@ func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, synchronous, useDownsam
 	sr := zgeo.Rect{Size: s}
 	dr := sr
 	dr.Pos = pos
-	c.DrawImage(image, synchronous, useDownsampleCache, dr, opacity, sr)
+	c.DrawImage(image, useDownsampleCache, dr, opacity, sr)
 }
 
-func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
+func (c *Canvas) DrawImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	if image == nil {
-		return
+		return true
 	}
-	// if strings.Contains(image.Path, "edit") {
+	// if strings.Contains(image.Path, "auth") {
 	// zlog.Info("C.DrawImage:", image.Size(), destRect, image.Path)
 	// }
 	if sourceRect.IsNull() {
@@ -46,15 +46,11 @@ func (c *Canvas) DrawImage(image *Image, synchronous, useDownsampleCache bool, d
 		if sourceRect.IsNull() {
 			sourceRect = zgeo.Rect{Size: image.Size()}
 		}
-		c.drawPlainImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect)
-	} else {
-		if synchronous {
-			c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
-		} else {
-			go c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
-		}
-		// zlog.Info("Canvas.DrawImage Done", image.Path)
+		return c.drawPlainImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 	}
+	c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
+	return true
+	// zlog.Info("Canvas.DrawImage Done", image.Path)
 }
 
 func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, dh float64, opacity float32) {
@@ -65,12 +61,11 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 
 	useDownsampleCache := false
 	insetMid := size.Minus(inset.Size.Negative())
-	c.drawPlainImage(image, false, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
 	// zlog.Info("drawInsetRow:", size)
-	synchronous := true
-	c.drawPlainImage(image, synchronous, useDownsampleCache, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
-	c.drawPlainImage(image, synchronous, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(inset.Pos.X, dy, math.Ceil(midMaxX-inset.Pos.X), dh), opacity, zgeo.RectFromXYWH(inset.Pos.X, sy, insetMid.W, sh))
+	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
 
 func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity float32) {

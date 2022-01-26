@@ -1,11 +1,10 @@
 package zui
 
 import (
-	"image"
-	"syscall/js"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"image"
+	"syscall/js"
 )
 
 // interesting: https://github.com/markfarnan/go-canvas
@@ -132,7 +131,7 @@ type scaledImage struct {
 
 var scaledImageMap = map[scaledImage]*Image{}
 
-func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+func (c *Canvas) drawCachedScaledImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	proportional := false
 	ds := destRect.Size.Ceil()
 	si := scaledImage{image.Path, ds}
@@ -140,60 +139,53 @@ func (c *Canvas) drawCachedScaledImage(image *Image, synchronous, useDownsampleC
 	var newImage *Image
 	if useDownsampleCache {
 		newImage, _ = scaledImageMap[si]
-		if newImage == nil {
-			synchronous = false
-		}
 	}
-	do := func() {
-		if newImage != nil {
-			image = newImage
-			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
-			return
-		}
-		if len(scaledImageMap) > 500 {
-			scaledImageMap = map[scaledImage]*Image{}
-		}
-		image.ShrunkInto(ds, proportional, func(image *Image) {
-			if useDownsampleCache {
-				scaledImageMap[si] = image
-			}
-			c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
-		})
+	// if strings.Contains(image.Path, "gear-white") {
+	// 	zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, newImage != nil)
+	// }
+	if newImage != nil {
+		image = newImage
+		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+		return true
 	}
-	if synchronous {
-		do()
-	} else {
-		go do()
+	if len(scaledImageMap) > 500 {
+		scaledImageMap = map[scaledImage]*Image{}
 	}
-	return synchronous
+	image.ShrunkInto(ds, proportional, func(shrunkImage *Image) {
+		if useDownsampleCache {
+			scaledImageMap[si] = shrunkImage
+		}
+		c.rawDrawPlainImage(shrunkImage, destRect, opacity, sourceRect)
+	})
+	return false
 }
 
-func (c *Canvas) drawPlainImage(image *Image, synchronous, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
-	// if strings.Contains(image.Path, "edit") {
-	// 	zlog.Info("rawDrawPlainImage1:", image.Size(), destRect, image.Path)
-	// }
+func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	if destRect.Size.H < 0 {
 		zlog.Info("drawPlainImage BAD!:", image.loading, image.Size(), destRect, sourceRect, c)
-		return
+		return true
 	}
 	ss := sourceRect.Size
 	ds := destRect.Size
+	drawnNow := true
+	// if true || strings.Contains(image.Path, "auth") {
 	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
+	// }
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.size && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
-		if c.drawCachedScaledImage(image, synchronous, useDownsampleCache, destRect, opacity, sourceRect) { // if it retturns false, it wasn't in cache, so we draw unscaled
+		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
+		if drawnNow {
+			return true
 		}
-		return
+		// if it returns false, it wasn't in cache, so we draw unscaled below
 	}
-	if synchronous {
-		// zlog.Info("rawDrawPlainImage:", image.Size(), ss, ds, image.Path)
-		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
-	} else {
-		go c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
-	}
+	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
+	return drawnNow
 }
 
 func (c *Canvas) rawDrawPlainImage(image *Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.scale))
+
+	// zlog.Info("drawRaw:", image.Path, image.imageJS.Get("complete").Bool(), image.imageJS.Get("naturalHeight").Float(), sr, destRect)
 	oldAlpha := c.context.Get("globalAlpha").Float()
 	if opacity != 1 {
 		c.context.Set("globalAlpha", opacity)

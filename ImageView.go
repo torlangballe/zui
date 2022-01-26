@@ -1,12 +1,11 @@
-// +build zui
+//go:build zui
 
 package zui
 
 import (
-	"path"
-
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"path"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -196,15 +195,18 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		// 	o *= 0.6
 		// }
 		ir := v.GetImageRect(rect)
+		//		if strings.Contains(v.image.Path, "auth") {
+		// if v.ObjectName() == "auth" {
 		// zlog.Info("IV Draw:", v.Hierarchy(), v.DownsampleImages, v.image.Size(), rect, v.image.Path, rect, "->", ir)
+		// }
 		if v.imageCorner != 0 {
 			canvas.PushState()
 			path = zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
 			canvas.ClipPath(path, true, true)
 		}
-		// zlog.Info(v.ObjectName(), "IV.DrawImage:", v.getjs("id").String())
-		// zlog.Info(v.ObjectName(), "IV.DrawImage22:", v.Rect(), v.image.imageJS.IsUndefined(), v.image.imageJS.IsNull())
-		canvas.DrawImage(drawImage, true, v.UseDownsampleCache, ir, 1, zgeo.Rect{})
+		if !canvas.DrawImage(drawImage, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
+			v.Expose()
+		}
 		if v.imageCorner != 0 {
 			canvas.PopState()
 		}
