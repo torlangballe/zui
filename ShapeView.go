@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -5,13 +6,12 @@ package zui
 //  Created by Tor Langballe on /22/10/15.
 
 import (
-	"math"
-	"path"
-
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
+	"math"
+	"path"
 )
 
 type ShapeViewType string
@@ -238,9 +238,6 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 }
 
 func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
-	// if v.Text() == "½" {
-	// 	zlog.Info("shapeViewDraw:", view.ObjectName(), rect, v.Type, v.Color())
-	// }
 	path := zgeo.PathNew()
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -291,7 +288,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		if v.IsImageFill {
 			canvas.PushState()
 			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, true, useDownsampleCache, rect, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, useDownsampleCache, rect, o, zgeo.Rect{})
 			canvas.PopState()
 		} else {
 			a := v.ImageAlign | zgeo.Shrink
@@ -315,7 +312,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 				}
 			}
 			// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
-			canvas.DrawImage(drawImage, true, useDownsampleCache, ir, o, zgeo.Rect{})
+			canvas.DrawImage(drawImage, useDownsampleCache, ir, o, zgeo.Rect{})
 			if v.IsRoundImage {
 				canvas.PopState()
 			}
@@ -333,7 +330,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
-		zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		// zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 
 		// canvas.SetColor(zgeo.ColorGreen)
