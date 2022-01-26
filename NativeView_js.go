@@ -794,7 +794,11 @@ func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool
 		}))
 		return nil
 	}))
-	v.GetWindow().element.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	win := v.GetWindow()
+	if win == nil {
+		return
+	}
+	win.element.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("MOUSEUP")
 		movingPos = nil
 		v.GetWindow().element.Set("onmousemove", nil)
