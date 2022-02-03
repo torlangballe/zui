@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -44,7 +45,7 @@ func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
 	s = s.Ceil()
-	// zlog.Info("Button CS:", s)
+	// zlog.Info("Button CS:", v.ObjectName(), s)
 	return s
 }
 

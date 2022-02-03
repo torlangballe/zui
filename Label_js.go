@@ -98,7 +98,7 @@ func (v *Label) SetLongPressedHandler(handler func()) {
 	}))
 }
 
-func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
+func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 	str := "left"
 	if a&zgeo.Right != 0 {
 		str = "right"
@@ -106,7 +106,6 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) View {
 		str = "center"
 	}
 	v.style().Set("textAlign", str)
-	return v
 }
 
 func (v *Label) SetMargin(m zgeo.Rect) *Label {

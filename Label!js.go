@@ -1,5 +1,5 @@
-// +build !js
-// +build zui
+//go:build !js && zui
+// +build !js,zui
 
 package zui
 
@@ -14,6 +14,8 @@ func (l *Label) SetTextAlignment(a zgeo.Alignment) View {
 	return l
 }
 
+func (v *Label) SetWrap(wrap TextInfoWrap) {}
+
 func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m
 	return v
@@ -26,5 +28,3 @@ func (v *Label) SetMaxLines(max int) View {
 	v.maxLines = max
 	return v
 }
-
-

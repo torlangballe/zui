@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -115,6 +116,7 @@ func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignme
 	if isCheck {
 		marg.W = -6 // in html cell has a box around it of 20 pixels
 	}
+	// zlog.Info("Labelize view:", view.ObjectName(), alignment, marg)
 	viewCell = stack.Add(view, alignment, marg)
 	return
 }
