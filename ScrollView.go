@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -7,7 +8,6 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /13/11/15.
@@ -110,7 +110,6 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 }
 
 func (v *ScrollView) Expose() {
-	zlog.Info("SV:Expose")
 	v.CustomView.Expose()
 	ExposeView(v.child)
 }
@@ -135,7 +134,9 @@ func (v *ScrollView) MakeOffspringVisible(offspring View, animate bool) {
 	sp := v.AbsoluteRect().Pos
 	or := ViewGetNative(offspring).AbsoluteRect()
 	or.Pos.Subtract(sp)
+	or.Pos.Y += v.YOffset
 	h := v.LocalRect().Size.H
+	// zlog.Debug("SV MakeOffspringVisible:", v.YOffset, sp, or, h, or.Min().Y < v.YOffset, or.Max().Y > v.YOffset+h)
 	if or.Min().Y < v.YOffset {
 		y = or.Min().Y
 	} else if or.Max().Y > v.YOffset+h {
@@ -143,5 +144,5 @@ func (v *ScrollView) MakeOffspringVisible(offspring View, animate bool) {
 	} else {
 		return
 	}
-	v.SetContentOffset(y, animate)
+	v.SetContentOffset(y, false)
 }
