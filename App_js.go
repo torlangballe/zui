@@ -15,6 +15,8 @@ import (
 type nativeApp struct {
 }
 
+var DownloadPathPrefix string // this might need to be in _ui.go later
+
 // AppURL returns the url that invoked this app
 func AppURL() string {
 	return WindowJS.Get("location").Get("href").String()
@@ -39,7 +41,8 @@ func AppSetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[str
 	for k, v := range url.Query() {
 		args[k] = v[0]
 	}
-	DocumentationPathPrefix = "http://" + host + zrest.AppURLPrefix + "doc/"
+	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
+	DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 	port, _ := strconv.Atoi(args["zrpcport"])
