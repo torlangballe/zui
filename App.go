@@ -23,7 +23,10 @@ type App struct {
 	handler        AppHandler
 }
 
-var AppMain *App
+var (
+	AppMain            *App
+	DownloadPathPrefix string
+)
 
 func (a *App) SetHandler(handler AppHandler) {
 	a.handler = handler

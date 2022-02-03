@@ -15,7 +15,6 @@ import (
 type nativeApp struct {
 }
 
-var DownloadPathPrefix string // this might need to be in _ui.go later
 
 // AppURL returns the url that invoked this app
 func AppURL() string {
