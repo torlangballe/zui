@@ -458,8 +458,8 @@ func (v *NativeView) SetToolTip(str string) {
 
 func (v *NativeView) AbsoluteRect() zgeo.Rect {
 	r := v.Element.Call("getBoundingClientRect")
-	x := r.Get("x").Float()
-	y := r.Get("y").Float()
+	x := r.Get("left").Float() // x
+	y := r.Get("top").Float()  // y
 	w := r.Get("width").Float()
 	h := r.Get("height").Float()
 	return zgeo.RectFromXYWH(x, y, w, h)
@@ -709,7 +709,7 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	// e.Set("accept", "*/*")
 
 	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} { // was onchange????
-		zlog.Info("uploader on change")
+		// zlog.Info("uploader on change")
 		files := e.Get("files")
 		if files.Length() > 0 {
 			file := files.Index(0)
@@ -718,15 +718,15 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 		return nil
 	}))
 
-	zlog.Info("NV SetUploader", v.ObjectName())
+	// zlog.Info("NV SetUploader", v.ObjectName())
 	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if time.Since(lastUploadClick) < time.Millisecond*100 { // e.Call("click") below causes v onclick to be re-called, bail + preventDefault important or it doesn't work (error started on Tor's M1 Mac Pro)
 			args[0].Call("preventDefault")
-			zlog.Info("cancel clickthru")
+			// zlog.Info("cancel clickthru")
 			return nil
 		}
 		lastUploadClick = time.Now()
-		zlog.Info("uploader clickthru")
+		// zlog.Info("uploader clickthru")
 		e.Call("click")
 		return nil
 	}))
@@ -841,14 +841,11 @@ func (v *NativeView) SetDownloader(surl, name string) {
 	v.setjs("href", surl)
 }
 
-func (v *NativeView) WrapInLink(surl, name string) *StackView {
-	s := StackViewVert("#type:a")
-	//	if name != "" {
-	s.setjs("download", name)
-	//	}
-	s.setjs("href", surl)
-	s.Add(v.View, zgeo.Center|zgeo.Expand)
-	return s
+func (v *NativeView) MakeLink(surl, name string) {
+	stype := strings.ToLower(v.Element.Get("nodeName").String())
+	zlog.Assert(stype == "a", stype)
+	v.setjs("download", name)
+	v.setjs("href", surl)
 }
 
 func (v *NativeView) SetTilePath(spath string) {

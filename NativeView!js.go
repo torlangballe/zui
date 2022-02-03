@@ -1,3 +1,4 @@
+//go:build !js && zui
 // +build !js,zui
 
 package zui
@@ -75,6 +76,7 @@ func (v *NativeView) SetStyle(key, value string)                                
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}
 func (v *NativeView) SetHandleExposed(handle func(intersects bool))                           {}
+func (v *NativeView) MakeLink(surl, name string)                                              {}
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }
 func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
