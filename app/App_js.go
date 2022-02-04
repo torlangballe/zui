@@ -1,10 +1,11 @@
-package zui
+package app
 
 import (
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/znet"
@@ -15,16 +16,15 @@ import (
 type nativeApp struct {
 }
 
-
-// AppURL returns the url that invoked this app
-func AppURL() string {
-	return WindowJS.Get("location").Get("href").String()
+// URL returns the url that invoked this app
+func URL() string {
+	return zui.WindowJS.Get("location").Get("href").String()
 }
 
 // MainArgs returns the path of browser and url parameters as args map of max one parameter of each key
-func AppMainArgs() (path string, args map[string]string) {
+func MainArgs() (path string, args map[string]string) {
 	args = map[string]string{}
-	u, err := url.Parse(AppURL())
+	u, err := url.Parse(URL())
 	zlog.AssertNotError(err)
 	path = strings.TrimRight(u.Path, "/")
 	for k, v := range u.Query() {
@@ -33,15 +33,15 @@ func AppMainArgs() (path string, args map[string]string) {
 	return
 }
 
-func AppSetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
-	url, _ := url.Parse(AppURL())
+func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
+	url, _ := url.Parse(URL())
 	host, _ := znet.GetHostAndPort(url)
 	args = map[string]string{}
 	for k, v := range url.Query() {
 		args[k] = v[0]
 	}
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
-	DocumentationPathPrefix = DownloadPathPrefix + "doc/"
+	zui.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 	port, _ := strconv.Atoi(args["zrpcport"])
@@ -51,18 +51,14 @@ func AppSetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[str
 	if rpcPort != 0 {
 		zrpc.ToServerClient.Port = rpcPort
 	}
-	// fmt.Println("AppSetUIDefaults:", url.Query, args, AppURL(), zrpc.ToServerClient.Port)
-	DefaultLocalKeyValueStore = KeyValueStoreNew(true)
-	path, args = AppMainArgs()
+	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
+	zui.DefaultLocalKeyValueStore = zui.KeyValueStoreNew(true)
+	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
-		DebugMode = true
+		zui.DebugMode = true
 	}
 	if zbool.FromString(args["ztest"], false) {
 		zlog.IsInTests = true
 	}
 	return
-}
-
-func appNew(a *App) {
-
 }

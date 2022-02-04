@@ -1,6 +1,7 @@
+//go:build !js && !windows && catalyst
 // +build !js,!windows,catalyst
 
-package zui
+package app
 
 // #cgo CFLAGS: -x objective-c
 // #cgo LDFLAGS: -framework Cocoa

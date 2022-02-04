@@ -1,4 +1,4 @@
-package zui
+package app
 
 import (
 	"github.com/torlangballe/zutil/zdict"

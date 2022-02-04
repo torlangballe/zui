@@ -1,10 +1,10 @@
+//go:build !js
 // +build !js
 
 package zui
 
 import (
 	"os"
-	"strings"
 )
 
 // // TextInfo
@@ -16,11 +16,6 @@ import (
 // }
 
 // App:
-
-// AppURL returns the url/command that invoked this app
-func AppURL() string {
-	return strings.Join(os.Args, " ")
-}
 
 // MainArgs returns the path of the executable and arguments given
 func AppArgs() (path string, args []string) {

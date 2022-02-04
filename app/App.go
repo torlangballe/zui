@@ -1,4 +1,4 @@
-package zui
+package app
 
 //  Created by Tor Langballe on /15/11/15.
 
@@ -60,13 +60,12 @@ func (a *App) GetbackgroundTimeSecs() float64 {
 	return ztime.DurSeconds(time.Since(a.backgroundTime))
 }
 
-func AppNew() *App {
+func New() *App {
 	a := &App{}
 	now := time.Now()
 	a.activationTime = now
 	a.StartTime = now
 	AppMain = a
-	appNew(a)
 	return a
 }
 
@@ -86,7 +85,7 @@ func AppGetProcessId() int64 {
 }
 
 func AppHost() (host string, port int) {
-	u, err := url.Parse(AppURL())
+	u, err := url.Parse(URL())
 	zlog.AssertNotError(err)
 	host, port = znet.GetHostAndPort(u)
 	return

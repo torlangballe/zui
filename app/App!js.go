@@ -1,10 +1,12 @@
+//go:build !js && !catalyst
 // +build !js,!catalyst
 
-package zui
+package app
 
 import (
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/torlangballe/zutil/zfile"
@@ -24,7 +26,7 @@ type FilesRedirector struct {
 
 const filePathPrefix = "www/"
 
-// AppURLPrefix is the first part of the path to your webapp, everything, including assets etc are within this prefix.
+// URLPrefix is the first part of the path to your webapp, everything, including assets etc are within this prefix.
 
 func convertMarkdownToHTML(filepath, title string) (string, error) {
 	markdown, err := zfile.ReadStringFromFile(filepath)
@@ -85,7 +87,7 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "www/favicon.ico")
 }
 
-func AppServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
+func ServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
 	f := &FilesRedirector{
 		ServeDirectories: serveDirs,
 		Override:         override,
@@ -94,8 +96,10 @@ func AppServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *h
 	http.HandleFunc("/favicon.ico", faviconHandler)
 }
 
-func appNew(a *App) {
+func (a *App) Run() {
 }
 
-func (a *App) Run() {
+// URL returns the url/command that invoked this app
+func URL() string {
+	return strings.Join(os.Args, " ")
 }
