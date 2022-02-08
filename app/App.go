@@ -1,6 +1,6 @@
 package app
 
-//  Created by Tor Langballe on /15/11/15.
+// Created by Tor Langballe on /15/11/15.
 
 import (
 	"net/url"
@@ -40,15 +40,15 @@ func (a *App) IsBackgrounded() bool {
 	return !a.backgroundTime.IsZero()
 }
 
-func AppVersion() (string, float32, int) { // version string, version with comma 1.2, build
+func Version() (string, float32, int) { // version string, version with comma 1.2, build
 	return "", 0, 0
 }
 
-func AppId() string {
+func Id() string {
 	return ""
 }
 
-func AppQuit() {
+func Quit() {
 	os.Exit(-1)
 }
 
@@ -80,11 +80,11 @@ type AudioRemoteCommand int
 func (a *App) EnableAudioRemote(command AudioRemoteCommand, on bool) {
 }
 
-func AppGetProcessId() int64 {
+func GetProcessId() int64 {
 	return 0
 }
 
-func AppHost() (host string, port int) {
+func Host() (host string, port int) {
 	u, err := url.Parse(URL())
 	zlog.AssertNotError(err)
 	host, port = znet.GetHostAndPort(u)
