@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -51,7 +52,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&w, v.maxWidth)
 	}
-	w += 25
+	w += 28
 	s := zgeo.Size{w, menuViewHeight}
 	return s
 }
