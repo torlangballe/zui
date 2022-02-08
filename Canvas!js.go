@@ -6,6 +6,7 @@ package zui
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"runtime"
 	"sync"
 
@@ -229,8 +230,30 @@ func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
 	return zgeo.Size{w, h}
 }
 
+func (c *Canvas) setAlphaMask(opacity float32) {
+	var b image.Rectangle
+	b.Max.X = c.context.Width()
+	b.Max.Y = c.context.Height()
+	a := image.NewAlpha(b)
+	var alpha color.Alpha
+	alpha.A = uint8(opacity * 255)
+	for y := 0; y < b.Max.Y; y++ {
+		for x := 0; x < b.Max.X; x++ {
+			a.Set(x, y, alpha)
+		}
+	}
+	c.context.SetMask(a)
+}
+
 func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+	if opacity != 1 {
+		// TODO: Cache this alpha mask, made each time now...
+		c.setAlphaMask(opacity)
+	}
 	c.context.DrawImage(image.GoImage, int(destRect.Pos.X), int(destRect.Pos.Y))
+	if opacity != 1 {
+		c.context.ResetClip()
+	}
 	return true
 }
 
