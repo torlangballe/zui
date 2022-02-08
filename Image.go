@@ -14,10 +14,12 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/bamiaux/rez"
 	"github.com/disintegration/imaging"
 	"github.com/torlangballe/zutil/zfile"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zint"
@@ -51,7 +53,15 @@ type ImageOwner interface {
 
 var ImageGlobalURLPrefix string
 
-func (i *Image) ForPixels(got func(pos zgeo.Pos, color zgeo.Color)) {
+func (i *Image) ForPixels(got func(x, y int, color zgeo.Color)) {
+	gi := i.ToGo()
+	b := gi.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			c := gi.At(x, y)
+			got(x, y, zgeo.ColorFromGo(c))
+		}
+	}
 }
 
 func (i *Image) SetCapInsetsCorner(c zgeo.Size) *Image {
@@ -367,4 +377,87 @@ func CloneGoImage(src image.Image) draw.Image {
 	dst := image.NewRGBA(b)
 	draw.Draw(dst, b, src, b.Min, draw.Src)
 	return dst
+}
+
+func (i *Image) TintedWithColor(color zgeo.Color, amount float32, got func(i *Image)) {
+	gi := i.ToGo()
+	amount = float32(zfloat.Clamped(float64(amount), 0, 1))
+	out := image.NewRGBA(gi.Bounds())
+	i.ForPixels(func(x, y int, c zgeo.Color) {
+		n := c.Mixed(color, amount).GoColor()
+		out.Set(x, y, n)
+	})
+	ImageFromGo(out, got)
+}
+
+type ImageGetter struct {
+	Path       string
+	Image      *Image
+	Tint       zgeo.Color
+	TintAmount float32
+	MaxSize    zgeo.Size
+
+	Alignment zgeo.Alignment
+	Margin    zgeo.Size
+	Opacity   float32
+}
+
+func ImageGetterNew() *ImageGetter {
+	return &ImageGetter{TintAmount: 1, Opacity: 1, Alignment: zgeo.Center}
+}
+
+func tryChangeTint(ig *ImageGetter, wg *sync.WaitGroup) {
+	if ig.Tint.Valid {
+		ig.Image.TintedWithColor(ig.Tint, ig.TintAmount, func(ti *Image) {
+			ig.Image = ti
+			wg.Done()
+		})
+	} else {
+		wg.Done()
+	}
+}
+
+func GetImages(images []*ImageGetter, got func(all bool)) {
+	var wg sync.WaitGroup
+	var count int
+	for _, ig := range images {
+		wg.Add(1)
+		ImageFromPath(ig.Path, func(img *Image) {
+			if img != nil {
+				count++
+				ig.Image = img
+				if !ig.MaxSize.IsNull() {
+					img.ShrunkInto(ig.MaxSize, true, func(shrunk *Image) {
+						tryChangeTint(ig, &wg)
+					})
+				}
+				tryChangeTint(ig, &wg)
+			} else {
+				wg.Done()
+			}
+		})
+	}
+	wg.Wait()
+	got(count == len(images))
+}
+
+func MergeImages(box zgeo.Size, images []*ImageGetter, done func(img *Image)) {
+	GetImages(images, func(all bool) {
+		if !all {
+			zlog.Error(nil, "Not all images got")
+			return
+		}
+		if box.IsNull() {
+			for _, ig := range images {
+				box.Maximize(ig.Image.Size())
+			}
+		}
+		canvas := CanvasNew()
+		canvas.SetSize(box)
+		for _, ig := range images {
+			r := zgeo.Rect{Size: box}.Align(ig.Image.Size(), ig.Alignment, ig.Margin)
+			canvas.DrawImageAt(ig.Image, r.Pos, false, ig.Opacity)
+		}
+		canvas.ZImage(false, done)
+	})
 }

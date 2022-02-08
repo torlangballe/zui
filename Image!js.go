@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package zui
@@ -85,10 +86,6 @@ func (i *Image) CapInsets() zgeo.Rect {
 
 func (i *Image) HasAlpha() bool {
 	return true
-}
-
-func (i *Image) TintedWithColor(color zgeo.Color) *Image {
-	return i
 }
 
 // func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {

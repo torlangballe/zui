@@ -170,10 +170,6 @@ func (i *Image) HasAlpha() bool {
 	return i.hasAlpha
 }
 
-func (i *Image) TintedWithColor(color zgeo.Color) *Image {
-	return i
-}
-
 func (i *Image) GetCropped(crop zgeo.Rect) *Image {
 	return i
 }
