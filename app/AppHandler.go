@@ -1,4 +1,4 @@
-package app
+package zapp
 
 import (
 	"github.com/torlangballe/zutil/zdict"

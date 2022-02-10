@@ -1,4 +1,4 @@
-package app
+package zapp
 
 // Copyright 2022 Tor Langballe. All rights reserved.
 // Created by Tor Langballe on /15/11/15.

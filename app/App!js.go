@@ -1,7 +1,6 @@
 //go:build !js && !catalyst
-// +build !js,!catalyst
 
-package app
+package zapp
 
 import (
 	"io"
