@@ -1,6 +1,12 @@
 package app
 
+// Copyright 2022 Tor Langballe. All rights reserved.
 // Created by Tor Langballe on /15/11/15.
+
+// Package app implements an Application.
+// This can be the gui serverd to a browser,
+// A simple client app, or a server, possibly serving
+// a gui-app counterpart of itself.
 
 import (
 	"net/url"
@@ -13,10 +19,8 @@ import (
 )
 
 type App struct {
-	//    static var appFile  ZFileUrl? = nil
-	nativeApp
+	nativeApp      // nativeApp adds platform-specific fields to App
 	activationTime time.Time
-	backgroundTime time.Time // IsNull if not in background
 	StartTime      time.Time
 	startedCount   int
 	oldVersion     float32
@@ -36,10 +40,6 @@ func (a *App) IsActive() bool {
 	return !a.activationTime.IsZero()
 }
 
-func (a *App) IsBackgrounded() bool {
-	return !a.backgroundTime.IsZero()
-}
-
 func Version() (string, float32, int) { // version string, version with comma 1.2, build
 	return "", 0, 0
 }
@@ -54,10 +54,6 @@ func Quit() {
 
 func (a *App) GetRuntimeSecs() float64 {
 	return ztime.DurSeconds(time.Since(a.activationTime))
-}
-
-func (a *App) GetbackgroundTimeSecs() float64 {
-	return ztime.DurSeconds(time.Since(a.backgroundTime))
 }
 
 func New() *App {
