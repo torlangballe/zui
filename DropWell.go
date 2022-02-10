@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -6,6 +7,7 @@ import (
 	"bytes"
 	"image"
 
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -22,7 +24,7 @@ type DropWell struct {
 func DropWellNew(filePath string, size zgeo.Size) *DropWell {
 	v := &DropWell{}
 	imagePath := filePath
-	if !ImageExtensionInName(imagePath) {
+	if !zimage.IsImageExtensionInName(imagePath) {
 		imagePath = wellBorderPath
 	}
 	v.Init(v, nil, "", size)
@@ -35,7 +37,7 @@ func DropWellNew(filePath string, size zgeo.Size) *DropWell {
 		switch dtype {
 		case DragDropFile:
 			if v.HandleDroppedFile(data, name) {
-				if v.SetIconOnDrop && ImageExtensionInName(name) {
+				if v.SetIconOnDrop && zimage.IsImageExtensionInName(name) {
 					go v.SetIconFromBytes(data, name)
 				}
 			}
@@ -63,8 +65,8 @@ func (v *DropWell) SetIconFromBytes(data []byte, name string) error {
 	}
 	if img != nil {
 		size := v.Rect().Size
-		img = GoImageShrunkInto(img, size, true)
-		ImageFromGo(img, func(zi *Image) {
+		img = zimage.GoImageShrunkInto(img, size, true)
+		zimage.FromGo(img, func(zi *zimage.Image) {
 			v.SetImage(zi, "", nil)
 		})
 	}
@@ -72,7 +74,7 @@ func (v *DropWell) SetIconFromBytes(data []byte, name string) error {
 }
 
 func (v *DropWell) SetImageFromURL(surl string) {
-	v.SetImage(nil, surl, func(img *Image) {
+	v.SetImage(nil, surl, func(img *zimage.Image) {
 		if img == nil {
 			v.SetImage(nil, wellBorderPath, nil)
 		}

@@ -3,16 +3,18 @@
 package zui
 
 import (
+	"path"
+
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"path"
 )
 
 //  Created by Tor Langballe on /20/10/15.
 
 type ImageView struct {
 	ContainerView
-	image              *Image
+	image              *zimage.Image
 	fitSize            zgeo.Size
 	alignment          zgeo.Alignment
 	imageCorner        float64
@@ -23,13 +25,13 @@ type ImageView struct {
 	CapInsetCorner     zgeo.Size
 }
 
-func ImageViewNew(image *Image, imagePath string, fitSize zgeo.Size) *ImageView {
+func ImageViewNew(image *zimage.Image, imagePath string, fitSize zgeo.Size) *ImageView {
 	v := &ImageView{}
 	v.Init(v, image, imagePath, fitSize)
 	return v
 }
 
-func (v *ImageView) Init(view View, image *Image, imagePath string, fitSize zgeo.Size) *ImageView {
+func (v *ImageView) Init(view View, image *zimage.Image, imagePath string, fitSize zgeo.Size) *ImageView {
 	v.CustomView.Init(view, imagePath)
 	v.SetFitSize(fitSize)
 	v.UseDownsampleCache = true
@@ -74,7 +76,7 @@ func (v *ImageView) SetImageCorner(radius float64) {
 	v.Expose()
 }
 
-func (v *ImageView) GetImage() *Image {
+func (v *ImageView) GetImage() *zimage.Image {
 	return v.image
 }
 
@@ -140,7 +142,7 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 	v.Expose()
 }
 
-func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
+func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
 	// zlog.Info("IV SetImage", path, v.getjs("id").String(), v.Rect(), v.image != nil)
 	v.setjs("href", path)
 	v.exposed = false
@@ -153,7 +155,7 @@ func (v *ImageView) SetImage(image *Image, path string, got func(i *Image)) {
 		}
 	} else {
 		v.loading = true
-		ImageFromPath(path, func(ni *Image) {
+		zimage.FromPath(path, func(ni *zimage.Image) {
 			v.loading = false
 			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {
@@ -184,38 +186,32 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	canvas.DownsampleImages = v.DownsampleImages
 	if v.image != nil {
-		var path *zgeo.Path
-		drawImage := v.image
 		if v.IsHighlighted() {
-			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
+			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ni *zimage.Image) {
+
+			})
 		}
-		// o := 1.0
-		// v.ImageOpacity
-		// if !v.Usable() {
-		// 	o *= 0.6
-		// }
-		ir := v.GetImageRect(rect)
-		//		if strings.Contains(v.image.Path, "auth") {
-		// if v.ObjectName() == "auth" {
-		// zlog.Info("IV Draw:", v.Hierarchy(), v.DownsampleImages, v.image.Size(), rect, v.image.Path, rect, "->", ir)
-		// }
-		if v.imageCorner != 0 {
-			canvas.PushState()
-			path = zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
-			canvas.ClipPath(path, true, true)
-		}
-		if !canvas.DrawImage(drawImage, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
-			v.Expose()
-		}
-		if v.imageCorner != 0 {
-			canvas.PopState()
-		}
-		if v.strokeWidth != 0 {
-			corner := v.imageCorner - v.strokeWidth
-			path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
-			canvas.SetColor(v.strokeColor)
-			canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)
-		}
+	}
+}
+
+func (v *ImageView) drawImage(img *zimage.Image, rect zgeo.Rect, canvas *Canvas) {
+	ir := v.GetImageRect(rect)
+	if v.imageCorner != 0 {
+		canvas.PushState()
+		path := zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
+		canvas.ClipPath(path, true, true)
+	}
+	if !canvas.DrawImage(img, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
+		v.Expose()
+	}
+	if v.imageCorner != 0 {
+		canvas.PopState()
+	}
+	if v.strokeWidth != 0 {
+		corner := v.imageCorner - v.strokeWidth
+		path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
+		canvas.SetColor(v.strokeColor)
+		canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)
 	}
 	if v.IsFocused() {
 		FocusDraw(canvas, rect, 15, 0, 1)

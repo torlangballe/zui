@@ -6,6 +6,7 @@ package zui
 import (
 	"sort"
 
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -244,7 +245,7 @@ func (v *ContainerView) ArrangeChild(c ContainerViewCell, r zgeo.Rect) {
 func ContainerIsLoading(ct ContainerType) bool {
 	// zlog.Info("ContainerIsLoading1", ct.(View).ObjectName(), len(ct.GetChildren(false)))
 	for _, v := range ct.GetChildren(false) {
-		iloader, got := v.(ImageLoader)
+		iloader, got := v.(zimage.Loader)
 		if got {
 			loading := iloader.IsLoading()
 			// zlog.Info("ContainerIsLoading image loading", v.ObjectName(), loading)

@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/fogleman/gg"
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -245,7 +246,7 @@ func (c *Canvas) setAlphaMask(opacity float32) {
 	c.context.SetMask(a)
 }
 
-func (c *Canvas) drawPlainImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	if opacity != 1 {
 		// TODO: Cache this alpha mask, made each time now...
 		c.setAlphaMask(opacity)
@@ -271,10 +272,10 @@ func (c *Canvas) SetFillRuleEvenOdd(eo bool) {
 	}
 }
 
-func (c *Canvas) ZImage(ensureCopy bool, got func(image *Image)) {
+func (c *Canvas) ZImage(ensureCopy bool, got func(image *zimage.Image)) {
 	ni := c.GoImage(zgeo.Rect{})
 	if ensureCopy {
-		ni = CloneGoImage(ni)
+		ni = zimage.CloneGoImage(ni)
 	}
-	ImageFromGo(ni, got)
+	zimage.FromGo(ni, got)
 }

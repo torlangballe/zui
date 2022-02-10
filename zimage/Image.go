@@ -1,4 +1,11 @@
-package zui
+// Copyright 2022 Tor Langballe. All rights reserved.
+// Created by Tor Langballe on /20/10/15.
+// Package image implements a pixel image;
+// On a browser it a javascript image,
+// otherwise a wrapper to a go image.Image
+// (and other native images in future)
+
+package zimage
 
 import (
 	"bytes"
@@ -28,13 +35,11 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-//  Created by Tor Langballe on /20/10/15.
-
 type Image struct {
 	imageBase
-	scale   int
+	Scale   int
 	Path    string
-	loading bool
+	Loading bool
 }
 
 type SetableImage interface {
@@ -42,16 +47,16 @@ type SetableImage interface {
 	Set(x, y int, c color.Color)
 }
 
-type ImageLoader interface {
+type Loader interface {
 	IsLoading() bool
 }
 
-type ImageOwner interface {
+type Owner interface {
 	GetImage() *Image
 	SetImage(image *Image, path string, got func(*Image))
 }
 
-var ImageGlobalURLPrefix string
+var GlobalURLPrefix string
 
 func (i *Image) ForPixels(got func(x, y int, color zgeo.Color)) {
 	gi := i.ToGo()
@@ -69,14 +74,14 @@ func (i *Image) SetCapInsetsCorner(c zgeo.Size) *Image {
 	return i.SetCapInsets(r)
 }
 
-func ImagePathAddedScale(spath string, scale int) string {
+func MakeImagePathWithAddedScale(spath string, scale int) string {
 	dir, _, stub, ext := zfile.Split(spath)
 	size := fmt.Sprintf("@%dx", scale)
 	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
 	return path.Join(dir, stub+size+ext)
 }
 
-func ImageFromPathAddScale(spath string, got func(*Image)) {
+func FromPathAddScreenScaleSuffix(spath string, got func(*Image)) {
 	dir, _, stub, ext := zfile.Split(spath)
 	size := ""
 	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
@@ -84,8 +89,8 @@ func ImageFromPathAddScale(spath string, got func(*Image)) {
 		size = "@2x"
 	}
 	spath = path.Join(dir, stub+size+ext)
-	zlog.Info("ImageFromPathAddScale:", spath, zscreen.MainScale)
-	ImageFromPath(spath, got)
+	zlog.Info("FromPathAddScreenScaleSuffix:", spath, zscreen.MainScale)
+	FromPath(spath, got)
 }
 
 func imageGetScaleFromPath(path string) int {
@@ -203,6 +208,7 @@ func GoImageToPNGFile(img image.Image, filepath string) error {
 	return nil
 }
 
+/*
 func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, marg, withMaxSize zgeo.Size, done func(img *Image)) {
 	zlog.Assert(i != nil)
 	zlog.Assert(with != nil)
@@ -233,6 +239,7 @@ func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, ma
 	canvas.DrawImage(with, downsampleCache, wr, 1, zgeo.Rect{})
 	canvas.ZImage(false, done)
 }
+*/
 
 func GoImageToGoRGBA(i image.Image) image.Image {
 	r := i.Bounds()
@@ -245,11 +252,11 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 	// this can be better, use canvas.Image()
 	goImage := i.ToGo()
 	if goImage == nil {
-		zlog.Error(nil, "GoImageFromPath")
+		zlog.Error(nil, "ToGo")
 		got(nil)
 	}
 	newGoImage := GoImageShrunkInto(goImage, size, proportional)
-	ImageFromGo(newGoImage, func(img *Image) {
+	FromGo(newGoImage, func(img *Image) {
 		if img != nil {
 			img.Path = i.Path + fmt.Sprint("|", size)
 		}
@@ -362,7 +369,7 @@ func DrawCircle(img SetableImage, circle zgeo.Circle, col zgeo.Color) {
 	}
 }
 
-func ImageExtensionInName(surl string) bool {
+func IsImageExtensionInName(surl string) bool {
 	str := zstr.HeadUntil(surl, "?")
 	for _, ext := range []string{"png", "jpeg", "jpg"} {
 		if strings.HasSuffix(str, "."+ext) {
@@ -387,7 +394,7 @@ func (i *Image) TintedWithColor(color zgeo.Color, amount float32, got func(i *Im
 		n := c.Mixed(color, amount).GoColor()
 		out.Set(x, y, n)
 	})
-	ImageFromGo(out, got)
+	FromGo(out, got)
 }
 
 type ImageGetter struct {
@@ -422,7 +429,7 @@ func GetImages(images []*ImageGetter, got func(all bool)) {
 	var count int
 	for _, ig := range images {
 		wg.Add(1)
-		ImageFromPath(ig.Path, func(img *Image) {
+		FromPath(ig.Path, func(img *Image) {
 			if img != nil {
 				count++
 				ig.Image = img
@@ -439,25 +446,4 @@ func GetImages(images []*ImageGetter, got func(all bool)) {
 	}
 	wg.Wait()
 	got(count == len(images))
-}
-
-func MergeImages(box zgeo.Size, images []*ImageGetter, done func(img *Image)) {
-	GetImages(images, func(all bool) {
-		if !all {
-			zlog.Error(nil, "Not all images got")
-			return
-		}
-		if box.IsNull() {
-			for _, ig := range images {
-				box.Maximize(ig.Image.Size())
-			}
-		}
-		canvas := CanvasNew()
-		canvas.SetSize(box)
-		for _, ig := range images {
-			r := zgeo.Rect{Size: box}.Align(ig.Image.Size(), ig.Alignment, ig.Margin)
-			canvas.DrawImageAt(ig.Image, r.Pos, false, ig.Opacity)
-		}
-		canvas.ZImage(false, done)
-	})
 }

@@ -9,6 +9,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -849,7 +850,7 @@ func (v *NativeView) MakeLink(surl, name string) {
 }
 
 func (v *NativeView) SetTilePath(spath string) {
-	spath2 := ImagePathAddedScale(spath, 2)
+	spath2 := zimage.MakeImagePathWithAddedScale(spath, 2)
 	format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
 	s := fmt.Sprintf(format, spath, spath2)
 	v.style().Set("backgroundImage", s)

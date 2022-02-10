@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -215,7 +216,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 	o.SetText(nstr)
 	if o.ImagePath != "" {
 		// zlog.Info("MO SetImagePath:", spath)
-		io := o.View.(ImageOwner)
+		io := o.View.(zimage.Owner)
 		io.SetImage(nil, spath, nil)
 	}
 }
@@ -320,8 +321,8 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Can
 		canvas.DownsampleImages = true
 		sval := fmt.Sprint(item.Value)
 		spath := path.Join(o.ImagePath, sval+".png")
-		imageX := x // we need to store this since, ImageFromPath resulting closure uses it later
-		ImageFromPath(spath, func(img *Image) {
+		imageX := x // we need to store this since, FromPath resulting closure uses it later
+		zimage.FromPath(spath, func(img *zimage.Image) {
 			if img != nil {
 				inRect := zgeo.RectFromXYWH(imageX, 0, imageWidth, rect.Size.H)
 				drect := inRect.Align(img.Size(), zgeo.CenterLeft|zgeo.Shrink|zgeo.Proportional, zgeo.Size{2, 4})

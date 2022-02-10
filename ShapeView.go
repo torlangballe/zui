@@ -6,12 +6,14 @@ package zui
 //  Created by Tor Langballe on /22/10/15.
 
 import (
+	"math"
+	"path"
+
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
-	"math"
-	"path"
 )
 
 type ShapeViewType string
@@ -47,7 +49,7 @@ type ShapeView struct {
 	//	Proportional bool
 	DropShadow zgeo.DropShadow
 
-	image   *Image
+	image   *zimage.Image
 	loading bool
 }
 
@@ -127,7 +129,7 @@ func (v *ShapeView) SetMaxLines(max int) {
 	v.textInfo.MaxLines = max
 }
 
-func (v *ShapeView) GetImage() *Image {
+func (v *ShapeView) GetImage() *zimage.Image {
 	return v.image
 }
 
@@ -189,7 +191,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
+func (v *ShapeView) SetImage(image *zimage.Image, spath string, done func(i *zimage.Image)) {
 	// zlog.Info("SVSetImage:", v.ObjectName(), spath)
 	v.image = image
 	v.exposed = false
@@ -200,7 +202,7 @@ func (v *ShapeView) SetImage(image *Image, spath string, done func(i *Image)) {
 	v.loading = false
 	if image == nil && spath != "" {
 		v.loading = true
-		ImageFromPath(spath, func(i *Image) {
+		zimage.FromPath(spath, func(i *zimage.Image) {
 			v.loading = false
 			// zlog.Info("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.image = i // we must set it here, or it's not set yet in done() below
@@ -224,7 +226,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	str := pathedName + s + ".png"
 
 	// zlog.Info("SetImageButtonName:", str)
-	v.SetImage(nil, str, func(image *Image) {
+	v.SetImage(nil, str, func(image *zimage.Image) {
 		v.image = image
 		if image != nil {
 			// zlog.Info("SetImageButtonName:", str)
@@ -273,49 +275,12 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 		canvas.SetColor(v.getStateColor(v.StrokeColor).WithOpacity(o))
 		canvas.StrokePath(path, v.StrokeWidth, v.PathLineType)
 	}
-	imarg := v.ImageMargin
-	useDownsampleCache := true
 	textRect := rect.Plus(v.margin)
-	if v.image != nil && !v.image.loading {
-		drawImage := v.image
+	if v.image != nil && !v.image.Loading {
 		if v.IsHighlighted() {
-			drawImage = drawImage.TintedWithColor(zgeo.ColorNewGray(0.2, 1))
-		}
-		o := v.ImageOpacity
-		if !v.Usable() {
-			o *= 0.6
-		}
-		if v.IsImageFill {
-			canvas.PushState()
-			canvas.ClipPath(path, false, false)
-			canvas.DrawImage(drawImage, useDownsampleCache, rect, o, zgeo.Rect{})
-			canvas.PopState()
-		} else {
-			a := v.ImageAlign | zgeo.Shrink
-			ir := rect.AlignPro(v.image.Size(), a, v.ImageMargin, v.ImageMaxSize, zgeo.Size{})
-			var corner float64
-			if v.IsRoundImage {
-				if v.Type == ShapeViewTypeRoundRect {
-					corner = math.Min(15, rect.Size.Min()*float64(v.Ratio)) - imarg.Min()
-				} else if v.Type == ShapeViewTypeCircle {
-					corner = v.image.Size().Max() / 2
-				}
-				clipPath := zgeo.PathNewRect(ir, zgeo.Size{corner, corner})
-				canvas.PushState()
-				canvas.ClipPath(clipPath, false, false)
-			}
-			if v.textInfo.Text != "" {
-				if v.ImageAlign&zgeo.Right != 0 {
-					textRect.SetMaxX(ir.Min().X - v.ImageGap)
-				} else if v.ImageAlign&zgeo.Left != 0 {
-					textRect.SetMinX(ir.Max().X + v.ImageGap)
-				}
-			}
-			// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
-			canvas.DrawImage(drawImage, useDownsampleCache, ir, o, zgeo.Rect{})
-			if v.IsRoundImage {
-				canvas.PopState()
-			}
+			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ni *zimage.Image) {
+				v.drawImage(canvas, ni, path, rect, textRect)
+			})
 		}
 	}
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
@@ -343,6 +308,47 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	}
 	if v.IsFocused() {
 		FocusDraw(canvas, rect, 15, 0, 1)
+	}
+}
+
+func (v *ShapeView) drawImage(canvas *Canvas, img *zimage.Image, shapePath *zgeo.Path, rect, textRect zgeo.Rect) {
+	useDownsampleCache := true
+	imarg := v.ImageMargin
+	o := v.ImageOpacity
+	if !v.Usable() {
+		o *= 0.6
+	}
+	if v.IsImageFill {
+		canvas.PushState()
+		canvas.ClipPath(shapePath, false, false)
+		canvas.DrawImage(img, useDownsampleCache, rect, o, zgeo.Rect{})
+		canvas.PopState()
+	} else {
+		a := v.ImageAlign | zgeo.Shrink
+		ir := rect.AlignPro(v.image.Size(), a, v.ImageMargin, v.ImageMaxSize, zgeo.Size{})
+		var corner float64
+		if v.IsRoundImage {
+			if v.Type == ShapeViewTypeRoundRect {
+				corner = math.Min(15, rect.Size.Min()*float64(v.Ratio)) - imarg.Min()
+			} else if v.Type == ShapeViewTypeCircle {
+				corner = v.image.Size().Max() / 2
+			}
+			clipPath := zgeo.PathNewRect(ir, zgeo.Size{corner, corner})
+			canvas.PushState()
+			canvas.ClipPath(clipPath, false, false)
+		}
+		if v.textInfo.Text != "" {
+			if v.ImageAlign&zgeo.Right != 0 {
+				textRect.SetMaxX(ir.Min().X - v.ImageGap)
+			} else if v.ImageAlign&zgeo.Left != 0 {
+				textRect.SetMinX(ir.Max().X + v.ImageGap)
+			}
+		}
+		// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
+		canvas.DrawImage(img, useDownsampleCache, ir, o, zgeo.Rect{})
+		if v.IsRoundImage {
+			canvas.PopState()
+		}
 	}
 }
 

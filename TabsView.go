@@ -1,8 +1,10 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -12,7 +14,7 @@ type tab struct {
 	create         func(delete bool) View
 	view           View
 	childAlignment zgeo.Alignment
-	image          *Image
+	image          *zimage.Image
 }
 
 type TabsView struct {

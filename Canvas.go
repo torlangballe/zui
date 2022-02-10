@@ -4,6 +4,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -21,7 +22,7 @@ func (c *Canvas) Size() zgeo.Size {
 	return c.size
 }
 
-func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, useDownsampleCache bool, opacity float32) {
+func (c *Canvas) DrawImageAt(image *zimage.Image, pos zgeo.Pos, useDownsampleCache bool, opacity float32) {
 	if image == nil {
 		return
 	}
@@ -32,7 +33,7 @@ func (c *Canvas) DrawImageAt(image *Image, pos zgeo.Pos, useDownsampleCache bool
 	c.DrawImage(image, useDownsampleCache, dr, opacity, sr)
 }
 
-func (c *Canvas) DrawImage(image *Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	if image == nil {
 		return true
 	}
@@ -53,7 +54,7 @@ func (c *Canvas) DrawImage(image *Image, useDownsampleCache bool, destRect zgeo.
 	// zlog.Info("Canvas.DrawImage Done", image.Path)
 }
 
-func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, dh float64, opacity float32) {
+func (c *Canvas) drawInsetRow(image *zimage.Image, inset, dest zgeo.Rect, sy, sh, dy, dh float64, opacity float32) {
 	size := image.Size()
 	ds := dest.Size
 	zlog.ErrorIf(ds.W < -inset.Size.W, ds.W, -inset.Size.W, image.Path)
@@ -68,7 +69,7 @@ func (c *Canvas) drawInsetRow(image *Image, inset, dest zgeo.Rect, sy, sh, dy, d
 	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(midMaxX, dy, -inset.Max().X, dh), opacity, zgeo.RectFromXYWH(size.W+inset.Max().X, sy, -inset.Max().X, sh))
 }
 
-func (c *Canvas) drawInsetImage(image *Image, inset, dest zgeo.Rect, opacity float32) {
+func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opacity float32) {
 	size := image.Size()
 	insetMid := size.Minus(inset.Size.Negative())
 	diff := dest.Size.Minus(size).Plus(insetMid)
@@ -148,4 +149,25 @@ func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color)
 	colors := []zgeo.Color{col1, col2}
 	path := zgeo.PathNewRect(rect, zgeo.Size{})
 	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
+}
+
+func MergeImages(box zgeo.Size, images []*zimage.ImageGetter, done func(img *zimage.Image)) {
+	zimage.GetImages(images, func(all bool) {
+		if !all {
+			zlog.Error(nil, "Not all images got")
+			return
+		}
+		if box.IsNull() {
+			for _, ig := range images {
+				box.Maximize(ig.Image.Size())
+			}
+		}
+		canvas := CanvasNew()
+		canvas.SetSize(box)
+		for _, ig := range images {
+			r := zgeo.Rect{Size: box}.Align(ig.Image.Size(), ig.Alignment, ig.Margin)
+			canvas.DrawImageAt(ig.Image, r.Pos, false, ig.Opacity)
+		}
+		canvas.ZImage(false, done)
+	})
 }

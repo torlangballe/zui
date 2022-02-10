@@ -1,7 +1,6 @@
 //go:build !js
-// +build !js
 
-package zui
+package zimage
 
 import (
 	"image"
@@ -31,10 +30,10 @@ func ImageNewNRGBA(size zgeo.Size) *Image {
 	return i
 }
 
-func ImageFromGo(img image.Image, got func(image *Image)) {
+func FromGo(img image.Image, got func(image *Image)) {
 	i := &Image{}
 	i.GoImage = img
-	i.scale = 1
+	i.Scale = 1
 	got(i)
 }
 
@@ -42,7 +41,7 @@ func (i *Image) ToGo() image.Image {
 	return i.GoImage
 }
 
-func ImageFromPath(path string, got func(*Image)) {
+func FromPath(path string, got func(*Image)) {
 	var goImage image.Image
 	if zhttp.StringStartsWithHTTPX(path) {
 		goImage, _ = GoImageFromURL(path)
@@ -54,8 +53,8 @@ func ImageFromPath(path string, got func(*Image)) {
 			got(nil)
 		}
 	}
-	ImageFromGo(goImage, func(i *Image) {
-		i.scale = imageGetScaleFromPath(path)
+	FromGo(goImage, func(i *Image) {
+		i.Scale = imageGetScaleFromPath(path)
 		if got != nil {
 			got(i)
 		}
@@ -89,10 +88,10 @@ func (i *Image) HasAlpha() bool {
 }
 
 // func (i *Image) ShrunkInto(size zgeo.Size, proportional bool) *Image {
-// 	scale := float64(i.scale)
+// 	scale := float64(i.Scale)
 // 	newImage := GoImageShrunkInto(i.GoImage, scale, size, proportional)
 // 	zlog.Assert(newImage != nil, "shunk image nil")
-// 	img := ImageFromGo(newImage)
+// 	img := FromGo(newImage)
 // 	return img
 // }
 
@@ -116,7 +115,7 @@ func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
 	newImage := imaging.Crop(i.GoImage, r)
 
 	ni := &Image{}
-	ni.scale = i.scale
+	ni.Scale = i.Scale
 	ni.GoImage = newImage
 	return ni
 }
@@ -140,7 +139,7 @@ func ImageFromFile(filepath string, got func(i *Image, format string, err error)
 		got(nil, format, err)
 		return
 	}
-	ImageFromGo(gi, func(zi *Image) {
+	FromGo(gi, func(zi *Image) {
 		got(zi, format, err)
 	})
 }
@@ -177,5 +176,5 @@ func (i *Image) FixedOrientation() *Image {
 
 func (i *Image) RGBAImage(got func(img *Image)) {
 	n := GoImageToGoRGBA(i.GoImage)
-	ImageFromGo(n, got)
+	FromGo(n, got)
 }

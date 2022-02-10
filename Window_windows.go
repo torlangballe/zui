@@ -20,7 +20,7 @@ func WindowGetImageForTitle(title string, crop zgeo.Rect) (*Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	image := ImageFromPath(filepath, nil)
+	image := FromPath(filepath, nil)
 	if image == nil {
 		return nil, zlog.Error(nil, "image from path")
 	}

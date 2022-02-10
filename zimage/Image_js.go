@@ -1,4 +1,4 @@
-package zui
+package zimage
 
 import (
 	"image"
@@ -14,27 +14,28 @@ import (
 )
 
 var (
-	remoteCache = zcache.New(3600, false)
-	localCache  = zcache.New(0, false) // cache for with-app images, no expiry
+	remoteCache      = zcache.New(3600, false)
+	localCache       = zcache.New(0, false) // cache for with-app images, no expiry
+	DrawInCanvasFunc func(size zgeo.Size, draw func(e js.Value)) image.Image
 )
 
 type imageBase struct {
 	size      zgeo.Size `json:"size"`
 	capInsets zgeo.Rect `json:"capInsets"`
 	hasAlpha  bool      `json:"hasAlpha"`
-	imageJS   js.Value
+	ImageJS   js.Value
 }
 
-func ImagesGetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
+func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	added := make(chan struct{}, 100)
 	for i := 0; i < len(imagePaths); i++ {
 		imgPtr := imagePaths[i].(**Image)
 		i++
 		path := imagePaths[i].(string)
-		ImageFromPath(path, func(image *Image) {
+		FromPath(path, func(image *Image) {
 			*imgPtr = image
 			added <- struct{}{}
-			// zlog.Info("ImagesGetSynchronous got", path, image != nil)
+			// zlog.Info("GetSynchronous got", path, image != nil)
 		})
 	}
 	var count int
@@ -46,17 +47,17 @@ func ImagesGetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 				return true
 			}
 		case <-time.After(ztime.SecondsDur(timeoutSecs)):
-			zlog.Info("ImagesGetSynchronous bail:", count)
+			zlog.Info("GetSynchronous bail:", count)
 			return false
 		}
 	}
-	zlog.Fatal(nil, "ImagesGetSynchronous can't get here")
+	zlog.Fatal(nil, "GetSynchronous can't get here")
 	return false
 }
 
-func ImageFromPath(path string, got func(*Image)) {
+func FromPath(path string, got func(*Image)) {
 	// if !strings.HasSuffix(path, ".png") {
-	// zlog.Info("ImageFromPath:", path, zlog.GetCallingStackString())
+	// zlog.Info("FromPath:", path, zlog.GetCallingStackString())
 	// }
 	if path == "" {
 		if got != nil {
@@ -64,9 +65,9 @@ func ImageFromPath(path string, got func(*Image)) {
 		}
 		return
 	}
-	// zlog.Info("ImageFromPath:", ImageGlobalURLPrefix, "#", path)
+	// zlog.Info("FromPath:", GlobalURLPrefix, "#", path)
 	if !strings.HasPrefix(path, "data:") && !zhttp.StringStartsWithHTTPX(path) {
-		path = ImageGlobalURLPrefix + path
+		path = GlobalURLPrefix + path
 	}
 	cache := remoteCache
 	if strings.HasPrefix(path, "images/") {
@@ -79,9 +80,9 @@ func ImageFromPath(path string, got func(*Image)) {
 		}
 		return
 	}
-	// zlog.Info("ImageFromPath before load:", path)
+	// zlog.Info("FromPath before load:", path)
 	i.load(path, func(success bool) {
-		// zlog.Info("ImageFromPath loaded:", success, got != nil, path)
+		// zlog.Info("FromPath loaded:", success, got != nil, path)
 		if !success {
 			i = nil
 		}
@@ -93,13 +94,10 @@ func ImageFromPath(path string, got func(*Image)) {
 }
 
 func (i *Image) ToGo() image.Image {
-	canvas := CanvasNew()
-	canvas.element.Set("id", "render-canvas")
 	s := i.Size()
-	canvas.SetSize(s)
-	canvas.context.Call("drawImage", i.imageJS, 0, 0, s.W, s.H)
-	goImage := canvas.GoImage(zgeo.Rect{})
-	return goImage
+	return DrawInCanvasFunc(s, func(canvasContext js.Value) {
+		canvasContext.Call("drawImage", i.ImageJS, 0, 0, s.W, s.H)
+	})
 }
 
 func (i *Image) RGBAImage() *Image {
@@ -116,27 +114,27 @@ func (i *Image) load(path string, done func(success bool)) {
 	// zlog.Info("Image Load:", path)
 
 	i.Path = path
-	i.loading = true
-	i.loading = strings.HasPrefix(path, "images/")
-	i.scale = imageGetScaleFromPath(path)
+	i.Loading = true
+	i.Loading = strings.HasPrefix(path, "images/")
+	i.Scale = imageGetScaleFromPath(path)
 
 	imageF := js.Global().Get("Image")
-	i.imageJS = imageF.New()
-	i.imageJS.Set("crossOrigin", "Anonymous")
+	i.ImageJS = imageF.New()
+	i.ImageJS.Set("crossOrigin", "Anonymous")
 
-	// i.imageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	i.imageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		i.loading = false
-		i.size.W = i.imageJS.Get("width").Float()
-		i.size.H = i.imageJS.Get("height").Float()
+	// i.ImageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	i.ImageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		i.Loading = false
+		i.size.W = i.ImageJS.Get("width").Float()
+		i.size.H = i.ImageJS.Get("height").Float()
 		// zlog.Info("Image Loaded", this, args, len(args))
 		if done != nil {
 			done(true)
 		}
 		return nil
 	}))
-	i.imageJS.Set("onerror", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		i.loading = false
+	i.ImageJS.Set("onerror", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		i.Loading = false
 		i.size.W = 5
 		i.size.H = 5
 		zlog.Info("Image Load fail:", path)
@@ -145,7 +143,7 @@ func (i *Image) load(path string, done func(success bool)) {
 		}
 		return nil
 	}))
-	i.imageJS.Set("src", path)
+	i.ImageJS.Set("src", path)
 }
 
 func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
@@ -154,7 +152,7 @@ func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
 }
 
 func (i *Image) Size() zgeo.Size {
-	return i.size.DividedByD(float64(i.scale))
+	return i.size.DividedByD(float64(i.Scale))
 }
 
 func (i *Image) SetCapInsets(capInsets zgeo.Rect) *Image {
@@ -200,23 +198,16 @@ func (i *Image) FixedOrientation() *Image {
 	return i
 }
 
-func CanvasFromGoImage(i image.Image) *Canvas {
-	canvas := CanvasNew()
-	canvas.SetSize(GoImageZSize(i))
-	canvas.SetGoImage(i, zgeo.Pos{0, 0})
-	return canvas
-}
-
-func ImageFromGo(img image.Image, got func(image *Image)) {
+func FromGo(img image.Image, got func(image *Image)) {
 	data, err := GoImagePNGData(img)
 	if err != nil {
 		zlog.Error(err)
 		got(nil)
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
-	ImageFromPath(surl, got)
+	FromPath(surl, got)
 }
 
 func (i *Image) IsLoaded() bool {
-	return i.imageJS.Get("complete").Bool() && i.imageJS.Get("naturalHeight").Float() > 0
+	return i.ImageJS.Get("complete").Bool() && i.ImageJS.Get("naturalHeight").Float() > 0
 }
