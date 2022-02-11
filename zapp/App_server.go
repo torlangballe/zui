@@ -1,3 +1,7 @@
+// The server variant of App is an App (program) in it's own right, but also contains functionality to
+// serve a wasm app to a browser.
+// It is invoked with ServeZUIWasm (below), which uses a FilesRedirector (below) instance to handle serving the wasm, html and assets.
+
 //go:build !js && !catalyst
 
 package zapp
@@ -5,7 +9,6 @@ package zapp
 import (
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/torlangballe/zutil/zfile"
@@ -15,31 +18,19 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+// nativeApp is used in App in zapp.go, so must be defined even if empty:
 type nativeApp struct {
 }
 
+// FilesRedirector is a type that can handle serving files
 type FilesRedirector struct {
-	Override         func(w http.ResponseWriter, req *http.Request) bool
-	ServeDirectories bool
+	Override         func(w http.ResponseWriter, req *http.Request) bool // Override is a method to handle special cases of files, return true if handled
+	ServeDirectories bool                                                // if ServeDirectories is true, it serves content list of directory
 }
 
-const filePathPrefix = "www/"
-
-// URLPrefix is the first part of the path to your webapp, everything, including assets etc are within this prefix.
-
-func convertMarkdownToHTML(filepath, title string) (string, error) {
-	markdown, err := zfile.ReadStringFromFile(filepath)
-	if err != nil {
-		return "", zlog.Error(err, "read markdown", filepath)
-	}
-	html, err := zmarkdown.ConvertToHTML(markdown, title)
-	if err != nil {
-		return "", zlog.Error(err, "convert", filepath)
-	}
-	return html, nil
-}
-
+// FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	const filePathPrefix = "www/"
 	// zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
@@ -82,8 +73,17 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filepath)
 }
 
-func faviconHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "www/favicon.ico")
+// convertMarkdownToHTML is used by FilesRedirector to convert an .md file to html
+func convertMarkdownToHTML(filepath, title string) (string, error) {
+	markdown, err := zfile.ReadStringFromFile(filepath)
+	if err != nil {
+		return "", zlog.Error(err, "read markdown", filepath)
+	}
+	html, err := zmarkdown.ConvertToHTML(markdown, title)
+	if err != nil {
+		return "", zlog.Error(err, "convert", filepath)
+	}
+	return html, nil
 }
 
 func ServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
@@ -92,13 +92,12 @@ func ServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http
 		Override:         override,
 	}
 	http.Handle(zrest.AppURLPrefix, f)
-	http.HandleFunc("/favicon.ico", faviconHandler)
-}
-
-func (a *App) Run() {
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "www/favicon.ico")
+	})
 }
 
 // URL returns the url/command that invoked this app
-func URL() string {
-	return strings.Join(os.Args, " ")
-}
+// func URL() string {
+// 	return strings.Join(os.Args, " ")
+// }
