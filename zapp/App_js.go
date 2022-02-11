@@ -33,6 +33,7 @@ func MainArgs() (path string, args map[string]string) {
 	return
 }
 
+// SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart 
 func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
 	url, _ := url.Parse(URL())
 	host, _ := znet.GetHostAndPort(url)

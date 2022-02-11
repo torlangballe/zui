@@ -1,3 +1,6 @@
+// the AppHandler type can be implemented and added to App to handle app-level events.
+// Not used yet, but copied from old Apple code for future reference
+
 package zapp
 
 import (
@@ -15,7 +18,7 @@ type AppHandler interface {
 	HandleAudiointerrupted()
 	HandleAudioResume()
 	HandleAudioRouteChanged(reason int)
-	HandleAudioRemote(command AudioRemoteCommand)
+	// HandleAudioRemote(command AudioRemoteCommand)
 	HandleRemoteAudioSeekTo(posSecs float64)
 	HandleVoiceOverStatusChanged()
 	HandleBackgrounded(background bool)
