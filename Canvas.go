@@ -38,7 +38,7 @@ func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRec
 		return true
 	}
 	// if strings.Contains(image.Path, "auth") {
-	// zlog.Info("C.DrawImage:", image.Size(), destRect, image.Path)
+	// zlog.Info("Canvas.DrawImage:", image.Size(), destRect, image.Path)
 	// }
 	if sourceRect.IsNull() {
 		sourceRect = zgeo.Rect{Size: image.Size()}

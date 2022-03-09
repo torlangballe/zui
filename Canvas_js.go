@@ -10,6 +10,10 @@ import (
 
 // interesting: https://github.com/markfarnan/go-canvas
 
+func init() {
+	zimage.DrawInCanvasFunc = RenderToImage
+}
+
 type canvasNative struct {
 	element js.Value
 	context js.Value
