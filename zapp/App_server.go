@@ -31,7 +31,7 @@ type FilesRedirector struct {
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const filePathPrefix = "www/"
-	// zlog.Info("FilesRedir1:", req.URL.Path)
+	zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
 			return
@@ -69,7 +69,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	// zlog.Info("Serve app:", path, filepath)
+	zlog.Info("Serve app:", path, filepath)
 	http.ServeFile(w, req, filepath)
 }
 
@@ -91,6 +91,7 @@ func ServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
+	zlog.Info("HandleApp:", zrest.AppURLPrefix)
 	http.Handle(zrest.AppURLPrefix, f)
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/favicon.ico")

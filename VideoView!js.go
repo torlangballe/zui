@@ -1,9 +1,8 @@
-// +build zui
-// +build !js
+//go:build zui && !js
 
 package zui
 
-// CHeck out: https://github.com/pion/mediadevices
+// Check out: https://github.com/pion/mediadevices
 
 import "github.com/torlangballe/zutil/zgeo"
 

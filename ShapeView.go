@@ -281,6 +281,8 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ni *zimage.Image) {
 				v.drawImage(canvas, ni, path, rect, textRect)
 			})
+		} else {
+			v.drawImage(canvas, v.image, path, rect, textRect)
 		}
 	}
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {

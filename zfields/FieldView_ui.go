@@ -47,7 +47,7 @@ type FieldViewParameters struct {
 }
 
 func FieldViewParametersDefault() FieldViewParameters {
-	return FieldViewParameters{ImmediateEdit: true, Spacing: 10}
+	return FieldViewParameters{ImmediateEdit: true, Spacing: 6}
 }
 
 var fieldViewEdited = map[string]time.Time{}
@@ -756,7 +756,7 @@ func getTextFromNumberishItem(item zreflect.Item, f *Field) string {
 }
 
 func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zui.View {
-	// zlog.Info("make Text:", item.FieldName, f.Name, v.structure)
+	// zlog.Info("make Text:", item.FieldName, f.Name, f.Rows)
 	str := getTextFromNumberishItem(item, f)
 	if f.IsStatic() {
 		label := zui.LabelNew(str)
@@ -1200,6 +1200,9 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	if labelizeWidth != 0 {
 		var lstack *zui.StackView
 		title := f.Name
+		if f.Title != "" {
+			title = f.Title
+		}
 		if f.Flags&flagNoTitle != 0 {
 			title = ""
 		}
