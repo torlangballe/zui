@@ -187,14 +187,16 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	canvas.DownsampleImages = v.DownsampleImages
 	if v.image != nil {
 		if v.IsHighlighted() {
-			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ni *zimage.Image) {
-
+			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ti *zimage.Image) {
+				v.drawImage(canvas, ti, rect)
 			})
+		} else {
+			v.drawImage(canvas, v.image, rect)
 		}
 	}
 }
 
-func (v *ImageView) drawImage(img *zimage.Image, rect zgeo.Rect, canvas *Canvas) {
+func (v *ImageView) drawImage(canvas *Canvas, img *zimage.Image, rect zgeo.Rect) {
 	ir := v.GetImageRect(rect)
 	if v.imageCorner != 0 {
 		canvas.PushState()
