@@ -31,7 +31,7 @@ type FilesRedirector struct {
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const filePathPrefix = "www/"
-	zlog.Info("FilesRedir1:", req.URL.Path)
+	// zlog.Info("FilesRedir1:", req.URL.Path)
 	if r.Override != nil {
 		if r.Override(w, req) {
 			return
