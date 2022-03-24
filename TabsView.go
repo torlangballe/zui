@@ -206,56 +206,54 @@ func (v *TabsView) SetTab(id string, done func()) {
 		if done != nil {
 			done()
 		}
-	} else {
-		// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells))
-		if v.CurrentID != "" {
-			v.tabs[v.CurrentID].create(true)
-			v.setButtonOn(v.CurrentID, false)
-		}
-		if v.ChildView != nil {
-			v.RemoveChild(v.ChildView)
-		}
-		tab := v.tabs[id]
-		v.ChildView = tab.create(false)
-		v.Add(v.ChildView, tab.childAlignment)
-		v.CurrentID = id
-		v.setButtonOn(id, true)
-		hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
-		arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-		v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
-		if !v.Presented {
-			return
-		}
-		// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells), "collapse:", !hasSeparator)
-
-		ExposeView(v.View)
-		//!		et, _ := v.View.(ExposableType)
-		// if !v.Presented {
-		// 	return
-		// }
-		//		PresentViewCallReady(v.ChildView, true)
-		// presentViewPresenting = true
-		v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
-
-		ct := v.View.(ContainerType)
-		// presentViewPresenting = false
-		PresentViewCallReady(v.ChildView, false)
-		//! if et != nil {
-		// 	et.drawIfExposed()
-		// }
-		if v.ChangedHandler != nil {
-			v.ChangedHandler(id)
-		}
-		WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("Set Tab container loaded:", waited)
-			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-				v.ArrangeChildren()
-			}
-			if done != nil {
-				done()
-			}
-		})
+		return
 	}
+	if v.CurrentID != "" {
+		v.tabs[v.CurrentID].create(true)
+		v.setButtonOn(v.CurrentID, false)
+	}
+	if v.ChildView != nil {
+		v.RemoveChild(v.ChildView)
+	}
+	tab := v.tabs[id]
+	v.ChildView = tab.create(false)
+	v.Add(v.ChildView, tab.childAlignment)
+	v.CurrentID = id
+	v.setButtonOn(id, true)
+	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
+	arrange := false // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
+	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
+	if !v.Presented {
+		return
+	}
+	// zlog.Info("SetTab!:", v.CurrentID, id, len(v.cells), "collapse:", !hasSeparator)
+
+	ExposeView(v.View)
+	//!		et, _ := v.View.(ExposableType)
+	// if !v.Presented {
+	// 	return
+	// }
+	//		PresentViewCallReady(v.ChildView, true)
+	// presentViewPresenting = true
+	v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
+	ct := v.View.(ContainerType)
+	// presentViewPresenting = false
+	PresentViewCallReady(v.ChildView, false)
+	//! if et != nil {
+	// 	et.drawIfExposed()
+	// }
+	if v.ChangedHandler != nil {
+		v.ChangedHandler(id)
+	}
+	WhenContainerLoaded(ct, func(waited bool) {
+		// zlog.Info("Set Tab container loaded:", waited)
+		if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+			v.ArrangeChildren()
+		}
+		if done != nil {
+			done()
+		}
+	})
 }
 
 func (v *TabsView) ArrangeChildren() {
