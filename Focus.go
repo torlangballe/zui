@@ -1,15 +1,17 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zscreen"
 )
 
 var focusColor = zgeo.ColorNew(0.5, 0.5, 1, 1)
 
-func FocusDraw(canvas *Canvas, rect zgeo.Rect, corner, width float64, opacity float32) {
+func FocusDraw(canvas *zcanvas.Canvas, rect zgeo.Rect, corner, width float64, opacity float32) {
 	if corner == 0 {
 		corner = 7
 	}

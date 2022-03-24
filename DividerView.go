@@ -6,6 +6,7 @@ package zui
 import (
 	"time"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztime"
@@ -86,7 +87,7 @@ func DividerViewNewHor(storeKey string) *DividerView {
 	return v
 }
 
-func (v *DividerView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	canvas.SetColor(StyleDefaultFGColor())
 	path := zgeo.PathNew()
 	path.Circle(rect.Center(), zgeo.SizeBoth(4))

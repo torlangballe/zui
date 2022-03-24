@@ -7,6 +7,7 @@ import (
 	"image"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -51,7 +52,7 @@ func (v *VideoView) getNextImage(continuousImageHandler func(image.Image) bool) 
 	if v.renderCanvas == nil {
 		v.makeRenderCanvas()
 	}
-	v.renderCanvas.context.Call("drawImage", v.Element, 0, 0, v.StreamSize.W, v.StreamSize.H)
+	v.renderCanvas.JSContext().Call("drawImage", v.Element, 0, 0, v.StreamSize.W, v.StreamSize.H)
 	goImage := v.renderCanvas.GoImage(zgeo.Rect{})
 	continuousImageHandler(goImage)
 }
@@ -118,13 +119,13 @@ func (v *VideoView) CreateStream(withAudio, selfie bool, continuousImageHandler 
 }
 
 func (v *VideoView) makeRenderCanvas() {
-	v.renderCanvas = CanvasNew()
-	v.renderCanvas.element.Set("id", "render-canvas")
+	v.renderCanvas = zcanvas.New()
+	v.renderCanvas.JSElement().Set("id", "render-canvas")
 	v.renderCanvas.SetSize(v.StreamSize)
-	//			v.renderCanvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
-	v.Element.Call("appendChild", v.renderCanvas.element)
-	v.renderCanvas.element.Get("style").Set("visible", "hidden")
-	setElementRect(v.renderCanvas.element, zgeo.Rect{Size: v.StreamSize})
+	//			v.renderCanvas.context.Call("scale", scale, scale) // this must be AFTER SetElementRect, doesn't do anything!
+	v.Element.Call("appendChild", v.renderCanvas.JSElement())
+	v.renderCanvas.JSElement().Get("style").Set("visible", "hidden")
+	SetElementRect(v.renderCanvas.JSElement(), zgeo.Rect{Size: v.StreamSize})
 }
 
 // func (v *VideoView) Capture() {

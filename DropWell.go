@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"image"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -44,7 +45,7 @@ func DropWellNew(filePath string, size zgeo.Size) *DropWell {
 		}
 		return true
 	})
-	v.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 		v.Draw(rect, canvas, view)
 		if v.IsHighlighted() {
 			r := v.GetImageRect(rect)

@@ -1,8 +1,10 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -11,12 +13,12 @@ type MapView struct {
 	NativeView
 	baseMapView
 	LongPresser
-	canvas      *Canvas
+	canvas      *zcanvas.Canvas
 	minSize     zgeo.Size
 	pressed     func()
 	longPressed func()
 
-	draw func(rect zgeo.Rect, canvas *Canvas, view View)
+	draw func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View)
 }
 
 func MapViewNew(center zgeo.Pos, zoom int) *MapView {

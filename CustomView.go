@@ -4,6 +4,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -14,13 +15,13 @@ type CustomView struct {
 
 	OpaqueDraw       bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
 	DownsampleImages bool
-	canvas           *Canvas
+	canvas           *zcanvas.Canvas
 	minSize          zgeo.Size
 	pressed          func()
 	longPressed      func()
 	valueChanged     func()
 	// pointerEnclosed func(inside bool)
-	draw    func(rect zgeo.Rect, canvas *Canvas, view View)
+	draw    func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View)
 	exposed bool
 	visible bool
 	drawing bool
@@ -37,7 +38,7 @@ func CustomViewNew(name string) *CustomView {
 	return c
 }
 
-func (v *CustomView) Canvas() *Canvas {
+func (v *CustomView) Canvas() *zcanvas.Canvas {
 	return v.canvas
 }
 
@@ -84,11 +85,11 @@ func (v *CustomView) SetValueHandler(handler func()) {
 	v.valueChanged = handler
 }
 
-func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *Canvas, view View)) {
+func (v *CustomView) SetDrawHandler(handler func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View)) {
 	v.draw = handler
 }
 
-func (v *CustomView) DrawHandler() func(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *CustomView) DrawHandler() func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	return v.draw
 }
 

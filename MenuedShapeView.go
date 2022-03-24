@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -266,7 +268,7 @@ func (v *MenuedShapeView) popup() {
 	}
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
 		cv := CustomViewNew("row")
-		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 			list.UpdateRowBGColor(i)
 			item := v.items[i]
 			if item.Name == MenuSeparatorID {

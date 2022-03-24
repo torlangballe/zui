@@ -1,8 +1,10 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
@@ -36,7 +38,7 @@ func LabelCVNew(text string) *LabelCV {
 	v.SetMaxLines(1)
 	v.alignment = zgeo.CenterLeft
 	v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
-	v.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 		ti := v.GetTextInfo()
 		ti.Rect = v.LocalRect()
 		ti.Draw(canvas)

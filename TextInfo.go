@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zfloat"
 
 	"github.com/torlangballe/zutil/zdict"
@@ -118,7 +119,7 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 	// zlog.PushTimingLog()
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
-		s := canvasGetTextSize(str, ti.Font)
+		s := zcanvas.GetTextSize(str, ti.Font)
 		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
@@ -173,7 +174,7 @@ func (ti *TextInfo) MakeAttributes() zdict.Dict {
 
 // StrokeAndFill strokes the text with *strokeColor* and width, then fills with ti.Color
 // canvas' width, color and stroke style are changed
-func (ti *TextInfo) StrokeAndFill(canvas *Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
+func (ti *TextInfo) StrokeAndFill(canvas *zcanvas.Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
 	t := *ti
 	old := t.Color
 	t.Color = strokeColor
@@ -185,7 +186,7 @@ func (ti *TextInfo) StrokeAndFill(canvas *Canvas, strokeColor zgeo.Color, width 
 	return t.Draw(canvas)
 }
 
-func (ti *TextInfo) Draw(canvas *Canvas) zgeo.Rect {
+func (ti *TextInfo) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	w := 0.0
 	if ti.Text == "" {
 		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}

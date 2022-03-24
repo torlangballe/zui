@@ -9,6 +9,7 @@ import (
 	"math"
 	"path"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -239,7 +240,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	})
 }
 
-func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	path := zgeo.PathNew()
 	switch v.Type {
 	case ShapeViewTypeStar:
@@ -313,7 +314,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	}
 }
 
-func (v *ShapeView) drawImage(canvas *Canvas, img *zimage.Image, shapePath *zgeo.Path, rect, textRect zgeo.Rect) {
+func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePath *zgeo.Path, rect, textRect zgeo.Rect) {
 	useDownsampleCache := true
 	imarg := v.ImageMargin
 	o := v.ImageOpacity

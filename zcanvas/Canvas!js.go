@@ -1,7 +1,6 @@
 //go:build !js
-// +build !js
 
-package zui
+package zcanvas
 
 import (
 	"fmt"
@@ -21,7 +20,7 @@ type canvasNative struct {
 	setFont zgeo.Font
 }
 
-func CanvasNew() *Canvas {
+func New() *Canvas {
 	return &Canvas{}
 }
 

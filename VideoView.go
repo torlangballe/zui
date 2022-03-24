@@ -3,6 +3,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -13,14 +14,14 @@ type VideoView struct {
 	LongPresser
 	streaming        bool
 	StreamSize       zgeo.Size
-	renderCanvas     *Canvas
+	renderCanvas     *zcanvas.Canvas
 	maxSize          zgeo.Size
 	pressed          func()
 	longPressed      func()
 	StreamingStarted func()
 	Overlay          View
 
-	draw func(rect zgeo.Rect, canvas *Canvas, view View)
+	draw func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View)
 }
 
 func VideoViewNew(maxSize zgeo.Size) *VideoView {

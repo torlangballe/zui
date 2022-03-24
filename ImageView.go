@@ -5,6 +5,7 @@ package zui
 import (
 	"path"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -183,7 +184,7 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 	return ir
 }
 
-func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	canvas.DownsampleImages = v.DownsampleImages
 	if v.image != nil {
 		if v.IsHighlighted() {
@@ -196,7 +197,7 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *Canvas, view View) {
 	}
 }
 
-func (v *ImageView) drawImage(canvas *Canvas, img *zimage.Image, rect zgeo.Rect) {
+func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zgeo.Rect) {
 	ir := v.GetImageRect(rect)
 	if v.imageCorner != 0 {
 		canvas.PushState()

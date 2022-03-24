@@ -70,7 +70,7 @@ func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
 	// }
 	rect = rect.ExpandedToInt()
-	setElementRect(v.Element, rect)
+	SetElementRect(v.Element, rect)
 }
 
 func (v *NativeView) HasSize() bool {
@@ -107,7 +107,7 @@ func (v *NativeView) Rect() zgeo.Rect {
 	return zgeo.Rect{pos, size}
 }
 
-func setElementRect(e js.Value, rect zgeo.Rect) {
+func SetElementRect(e js.Value, rect zgeo.Rect) {
 	style := e.Get("style")
 	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
 	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))

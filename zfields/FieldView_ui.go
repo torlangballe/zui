@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
@@ -904,7 +905,7 @@ func (v *FieldView) MakeGroup(f *Field) {
 	v.SetMargin(zgeo.RectFromXY2(10, 20, -10, -10))
 	v.SetBGColor(zgeo.ColorNewGray(0, 0.05))
 	v.SetCorner(8)
-	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zui.Canvas, view zui.View) {
+	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
 		t := zui.TextInfoNew()
 		t.Rect = rect
 		t.Text = f.Name

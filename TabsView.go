@@ -4,6 +4,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
@@ -57,7 +58,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v.Add(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
 	v.selectedImageBGColor = TabsDefaultSelectedImageBGColor()
 	if !buttons {
-		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
 			if sv != nil {
 				r := sv.Rect()
@@ -83,7 +84,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner float64, forIDs []string) {
 	cv := CustomViewNew(tabSeparatorID)
 	cv.SetMinSize(zgeo.Size{10, thickness})
-	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 		selectedView, _ := v.Header.FindViewWithName(v.CurrentID, false)
 		// zlog.Info("SepDRAW:", selectedView.Rect())
 		canvas.SetColor(color)

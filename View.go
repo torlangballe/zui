@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -5,6 +6,7 @@ package zui
 import (
 	"strings"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -47,7 +49,7 @@ type NativeViewOwner interface {
 }
 
 type ViewDrawProtocol interface {
-	Draw(rect zgeo.Rect, canvas Canvas, view View)
+	Draw(rect zgeo.Rect, canvas zcanvas.Canvas, view View)
 }
 
 type ExposableType interface {

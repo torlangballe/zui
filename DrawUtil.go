@@ -1,8 +1,11 @@
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
-func DrawUtilAmountPie(rect zgeo.Rect, canvas *Canvas, value, strokeWidth float64, color, strokeColor zgeo.Color) {
+func DrawUtilAmountPie(rect zgeo.Rect, canvas *zcanvas.Canvas, value, strokeWidth float64, color, strokeColor zgeo.Color) {
 	path := zgeo.PathNew()
 	s := rect.Size.MinusD(strokeWidth).DividedByD(2).MinusD(1)
 	w := s.Min()

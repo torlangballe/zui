@@ -1,4 +1,4 @@
-package zui
+package zcanvas
 
 import (
 	"math"
@@ -109,7 +109,7 @@ var measuredTexts = map[measurement]zgeo.Size{}
 var measureTextMutex sync.Mutex
 var measureCanvas *Canvas
 
-func canvasGetTextSize(text string, font *zgeo.Font) zgeo.Size {
+func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	measureTextMutex.Lock()
 	m := measurement{Font: *font, Text: text}
 	s, got := measuredTexts[m]
@@ -120,7 +120,7 @@ func canvasGetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	}
 	// zlog.Info("canvas measure text")
 	if measureCanvas == nil {
-		measureCanvas = CanvasNew()
+		measureCanvas = New()
 		measureCanvas.SetSize(zgeo.Size{800, 100})
 	}
 	s = measureCanvas.MeasureText(text, font)
@@ -162,7 +162,7 @@ func MergeImages(box zgeo.Size, images []*zimage.ImageGetter, done func(img *zim
 				box.Maximize(ig.Image.Size())
 			}
 		}
-		canvas := CanvasNew()
+		canvas := New()
 		canvas.SetSize(box)
 		for _, ig := range images {
 			r := zgeo.Rect{Size: box}.Align(ig.Image.Size(), ig.Alignment, ig.Margin)

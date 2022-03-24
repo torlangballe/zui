@@ -1,6 +1,8 @@
-package zui
+package zcanvas
 
 import (
+	"fmt"
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -9,6 +11,8 @@ import (
 )
 
 // interesting: https://github.com/markfarnan/go-canvas
+
+var documentJS = js.Global().Get("document")
 
 func init() {
 	zimage.DrawInCanvasFunc = RenderToImage
@@ -19,14 +23,22 @@ type canvasNative struct {
 	context js.Value
 }
 
-func CanvasNew() *Canvas {
+func New() *Canvas {
 	c := Canvas{}
-	c.element = DocumentJS.Call("createElement", "canvas")
+	c.element = documentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute;pointer-events:none") // pointer-events:none makes canvas not be target when pressed
 	c.context = c.element.Call("getContext", "2d")
 	// c.context.Set("imageSmoothingEnabled", true)
 	// c.context.Set("imageSmoothingQuality", "high")
 	return &c
+}
+
+func (c *Canvas) JSContext() js.Value {
+	return c.context
+}
+
+func (c *Canvas) JSElement() js.Value {
+	return c.element
 }
 
 func (c *Canvas) SetSize(size zgeo.Size) {
@@ -39,13 +51,21 @@ func (c *Canvas) Element() js.Value {
 	return c.element
 }
 
+func setElementRect(e js.Value, rect zgeo.Rect) {
+	style := e.Get("style")
+	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
+	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))
+	style.Set("width", fmt.Sprintf("%fpx", rect.Size.W))
+	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
+}
+
 func (c *Canvas) SetRect(rect zgeo.Rect) {
 	setElementRect(c.element, rect)
 }
 
 func (c *Canvas) setColor(color zgeo.Color, stroke bool) {
 	var vcolor = color
-	str := makeRGBAString(vcolor)
+	str := vcolor.Hex()
 	name := "fillStyle"
 	if stroke {
 		name = "strokeStyle"
@@ -80,7 +100,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 }
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
-	str := getFontStyle(font)
+	str := zdom.GetFontStyle(font)
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
 	return nil
@@ -237,7 +257,7 @@ func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Po
 		locations = canvasCreateGradientLocations(len(colors))
 	}
 	for i, c := range colors {
-		gradient.Call("addColorStop", locations[i], makeRGBAString(c))
+		gradient.Call("addColorStop", locations[i], c.Hex())
 	}
 	c.context.Set("fillStyle", gradient)
 	c.FillPath(path)
@@ -349,14 +369,14 @@ func (c *Canvas) ZImage(ensureCopy bool, got func(img *zimage.Image)) {
 }
 
 func CanvasFromGoImage(i image.Image) *Canvas {
-	canvas := CanvasNew()
+	canvas := New()
 	canvas.SetSize(zimage.GoImageZSize(i))
 	canvas.SetGoImage(i, zgeo.Pos{0, 0})
 	return canvas
 }
 
 func RenderToImage(size zgeo.Size, draw func(canvasContext js.Value)) image.Image {
-	canvas := CanvasNew()
+	canvas := New()
 	canvas.element.Set("id", "render-canvas")
 	canvas.SetSize(size)
 	draw(canvas.context)

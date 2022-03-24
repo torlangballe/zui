@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -61,8 +62,8 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	s := size.TimesD(scale)
 	v.canvas.SetSize(s) // scale?
 	// zlog.Info("setCanvasSize:", v.ObjectName(), size, scale)
-	v.canvas.context.Call("scale", scale, scale) // this must be AFTER setElementRect, doesn't do anything!
-	setElementRect(v.canvas.element, zgeo.Rect{Size: size})
+	v.canvas.JSContext().Call("scale", scale, scale) // this must be AFTER SetElementRectmentRect, doesn't do anything!
+	SetElementRect(v.canvas.JSElement(), zgeo.Rect{Size: size})
 }
 
 func (v *CustomView) ReadyToShow(beforeWindow bool) {
@@ -101,19 +102,19 @@ func (v *CustomView) SetUsable(usable bool) {
 
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
-		v.canvas = CanvasNew()
-		v.canvas.element.Set("id", v.ObjectName()+".canvas")
+		v.canvas = zcanvas.New()
+		v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
 		v.canvas.DownsampleImages = v.DownsampleImages
 		firstChild := v.getjs("firstChild")
-		v.canvas.element.Get("style").Set("zIndex", 1)
+		v.canvas.JSElement().Get("style").Set("zIndex", 1)
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
 
 		if firstChild.IsUndefined() {
-			v.call("appendChild", v.canvas.element)
+			v.call("appendChild", v.canvas.JSElement())
 		} else {
-			v.call("insertBefore", v.canvas.element, firstChild)
+			v.call("insertBefore", v.canvas.JSElement(), firstChild)
 		}
 	}
 }

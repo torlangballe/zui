@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
@@ -283,7 +284,7 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
 	zlog.Error(nil, "no value to change name for")
 }
 
-func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *Canvas, allAction bool, imageWidth, imageMarg, rightMarg float64) {
+func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *zcanvas.Canvas, allAction bool, imageWidth, imageMarg, rightMarg float64) {
 	list.UpdateRowBGColor(i)
 	item := o.items[i]
 	x := 8.0
@@ -412,7 +413,7 @@ func (o *MenuedOwner) popup() {
 	}
 	list.CreateRow = func(rowSize zgeo.Size, i int) View {
 		cv := CustomViewNew("row")
-		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *Canvas, view View) {
+		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 			o.rowDraw(list, i, rect, canvas, allAction, imageWidth, imageMarg, rm)
 		})
 		return cv

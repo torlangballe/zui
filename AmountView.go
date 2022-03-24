@@ -1,8 +1,10 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -45,7 +47,7 @@ func (v *AmountView) getColorForValue() zgeo.Color {
 	return col
 }
 
-func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	rect.Size.W = rect.Size.H
 	DrawUtilAmountPie(rect, canvas, v.Value(), v.StrokeWidth, v.getColorForValue(), v.StrokeColor)
 }
@@ -62,7 +64,7 @@ func AmountViewCircleNew() *AmountView {
 	return v
 }
 
-func (v *AmountView) drawBar(rect zgeo.Rect, canvas *Canvas, view View) {
+func (v *AmountView) drawBar(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
 	val := v.Value()
 	if val != -1 {
 		rect.Size.W *= val
