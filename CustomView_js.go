@@ -136,7 +136,7 @@ func (v *CustomView) drawSelf() {
 	v.exposed = false
 }
 
-func (v *CustomView) Expose() {
+func (v *CustomView) ExposeIn(secs float64) {
 	if v.visible {
 		v.exposeTimer.StartIn(0.1, func() {
 			go v.drawSelf()
@@ -145,4 +145,8 @@ func (v *CustomView) Expose() {
 	} else {
 		v.exposed = true
 	}
+}
+
+func (v *CustomView) Expose() {
+	v.ExposeIn(0.1)
 }
