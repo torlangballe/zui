@@ -204,7 +204,7 @@ func (v *ImageView) drawImage(canvas *Canvas, img *zimage.Image, rect zgeo.Rect)
 		canvas.ClipPath(path, true, true)
 	}
 	if !canvas.DrawImage(img, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
-		v.Expose()
+		//		v.Expose() // causes endless loop of drawing...
 	}
 	if v.imageCorner != 0 {
 		canvas.PopState()
