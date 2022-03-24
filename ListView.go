@@ -1,4 +1,4 @@
-// +build zui
+//go:build zui
 
 package zui
 
