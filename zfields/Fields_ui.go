@@ -378,11 +378,10 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 						f.FontSize = float64(n)
 					}
 				} else {
-					if f.FontName == "" && f.FontSize == 0 {
+					f.FontStyle = zgeo.FontStyleFromStr(part)
+					if f.FontStyle == zgeo.FontStyleNormal {
 						f.FontName = part
-					} else {
-						f.FontStyle = zgeo.FontStyleFromStr(part)
-					}
+					} 					
 				}
 			}
 
