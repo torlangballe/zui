@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zwords"
@@ -86,7 +87,7 @@ func (o *MenuedOwner) IsKeyStored() bool {
 	if o.StoreKey == "" {
 		return false
 	}
-	_, got := DefaultLocalKeyValueStore.GetDict(o.StoreKey)
+	_, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
 	return got
 }
 
@@ -117,7 +118,7 @@ func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
 		})
 	}
 	if o.StoreKey != "" {
-		dict, got := DefaultLocalKeyValueStore.GetDict(o.StoreKey)
+		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
 		if got {
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
@@ -505,7 +506,7 @@ func (o *MenuedOwner) saveToStore() {
 				dict[str] = true
 			}
 		}
-		DefaultLocalKeyValueStore.SetDict(dict, o.StoreKey, true)
+		zkeyvalue.DefaultStore.SetDict(dict, o.StoreKey, true)
 	}
 }
 

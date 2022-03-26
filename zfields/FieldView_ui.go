@@ -18,6 +18,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zstr"
@@ -302,7 +303,7 @@ func (v *FieldView) Update(dontOverwriteEdited bool) {
 			// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, fview)
 			var selectedIndex int
 			if f.Flags&flagIsNamedSelection != 0 {
-				selectedIndex, _ = zui.DefaultLocalKeyValueStore.GetInt(v.makeNamedSelectionKey(f), 0)
+				selectedIndex, _ = zkeyvalue.DefaultStore.GetInt(v.makeNamedSelectionKey(f), 0)
 			}
 			updateSliceFieldView(fview, selectedIndex, item, f, dontOverwriteEdited)
 		}

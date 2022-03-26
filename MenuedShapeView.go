@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -76,7 +77,7 @@ func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string,
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 
 	if opts.StoreKey != "" {
-		dict, got := DefaultLocalKeyValueStore.GetDict(opts.StoreKey)
+		dict, got := zkeyvalue.DefaultStore.GetDict(opts.StoreKey)
 		if got {
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)

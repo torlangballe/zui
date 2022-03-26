@@ -1,9 +1,11 @@
+//go:build zui
 // +build zui
 
 package zui
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
@@ -24,7 +26,7 @@ func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.Authenticatio
 	v1.SetSpacing(10)
 	v1.SetMarginS(zgeo.Size{10, 10})
 	v1.SetBGColor(zgeo.ColorNewGray(0.9, 1))
-	email, _ := DefaultLocalKeyValueStore.GetString(emailKey)
+	email, _ := zkeyvalue.DefaultStore.GetString(emailKey)
 	style := TextViewStyle{KeyboardType: KeyboardTypeEmailAddress}
 	emailField := TextViewNew(email, style, 20, 1)
 	style = TextViewStyle{KeyboardType: KeyboardTypePassword}
@@ -81,7 +83,7 @@ func doAuth(view View, a zusers.Authentication, got func(auth zusers.Authenticat
 		AlertShow("Invalid email format:\n", a.Email)
 		return
 	}
-	DefaultLocalKeyValueStore.SetString(a.Email, emailKey, true)
+	zkeyvalue.DefaultStore.SetString(a.Email, emailKey, true)
 
 	err := zrpc.ToServerClient.CallRemote("UsersCalls.Authenticate", &a, &aret)
 	if err != nil {
@@ -101,7 +103,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 	const tokenKey = "zui.AuthenticationToken"
 	var user zusers.User
 
-	client.ID, _ = DefaultLocalKeyValueStore.GetString(tokenKey)
+	client.ID, _ = zkeyvalue.DefaultStore.GetString(tokenKey)
 	// zlog.Info("CheckAndDoAuthentication:", client.ID)
 	if zrpc.ToServerClient.ID != "" {
 		err := client.CallRemote("UsersCalls.CheckIfUserLoggedInWithZRPCHeaderToken", nil, &user)
@@ -121,7 +123,7 @@ func CheckAndDoAuthentication(client *zrpc.Client, canCancel bool, got func(auth
 	}
 	AuthenticationOpenDialog(canCancel, func(auth zusers.AuthenticationResult) {
 		client.ID = auth.Token
-		DefaultLocalKeyValueStore.SetString(auth.Token, tokenKey, true)
+		zkeyvalue.DefaultStore.SetString(auth.Token, tokenKey, true)
 		zlog.Info("got auth:", auth)
 		if got != nil {
 			AuthenticationCurrentUserID = auth.ID

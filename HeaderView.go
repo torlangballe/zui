@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zslice"
 )
 
@@ -72,13 +73,13 @@ func makeKey(name string) string {
 
 func getUserAdjustedSortOrder(tableName string) (order []SortInfo) {
 	key := makeKey(tableName)
-	DefaultLocalKeyValueStore.GetObject(key, &order)
+	zkeyvalue.DefaultStore.GetObject(key, &order)
 	return
 }
 
 func SetUserAdjustedSortOrder(tableName string, order []SortInfo) {
 	key := makeKey(tableName)
-	DefaultLocalKeyValueStore.SetObject(order, key, true)
+	zkeyvalue.DefaultStore.SetObject(order, key, true)
 }
 
 func (v *HeaderView) findSortInfo(sortOrderID string) int {

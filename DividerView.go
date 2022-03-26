@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -30,7 +31,7 @@ func newDiv(storeKey string) *DividerView {
 	v.SetDrawHandler(v.draw)
 	if storeKey != "" {
 		v.storeKey = storeKey
-		v.Delta, _ = DefaultLocalKeyValueStore.GetDouble(storeKey, 0)
+		v.Delta, _ = zkeyvalue.DefaultStore.GetDouble(storeKey, 0)
 	}
 	v.SetUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) {
 		switch down {
@@ -71,7 +72,7 @@ func newDiv(storeKey string) *DividerView {
 
 func (v *DividerView) storeDelta() {
 	if v.storeKey != "" {
-		DefaultLocalKeyValueStore.SetDouble(v.Delta, v.storeKey, true)
+		zkeyvalue.DefaultStore.SetDouble(v.Delta, v.storeKey, true)
 	}
 }
 

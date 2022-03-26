@@ -10,6 +10,7 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
@@ -70,7 +71,7 @@ func (v *FieldView) makeNamedSelectionKey(f *Field) string {
 
 func (v *FieldView) changeNamedSelectionIndex(i int, f *Field) {
 	key := v.makeNamedSelectionKey(f)
-	zui.DefaultLocalKeyValueStore.SetInt(i, key, true)
+	zkeyvalue.DefaultStore.SetInt(i, key, true)
 }
 
 func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showStatic bool, f *Field) zui.View {
@@ -88,7 +89,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 	var fieldView *FieldView
 	// zlog.Info("buildStackFromSlice:", vertical, f.ID, val.Len())
 	if single {
-		selectedIndex, _ = zui.DefaultLocalKeyValueStore.GetInt(key, 0)
+		selectedIndex, _ = zkeyvalue.DefaultStore.GetInt(key, 0)
 		// zlog.Info("buildStackFromSlice:", key, selectedIndex, vertical, f.ID)
 		zint.Minimize(&selectedIndex, sliceVal.Len()-1)
 		zint.Maximize(&selectedIndex, 0)

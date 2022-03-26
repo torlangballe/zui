@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/znet"
 	"github.com/torlangballe/zutil/zrest"
@@ -33,7 +34,7 @@ func MainArgs() (path string, args map[string]string) {
 	return
 }
 
-// SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart 
+// SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
 func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
 	url, _ := url.Parse(URL())
 	host, _ := znet.GetHostAndPort(url)
@@ -53,7 +54,7 @@ func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string
 		zrpc.ToServerClient.Port = rpcPort
 	}
 	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
-	zui.DefaultLocalKeyValueStore = zui.KeyValueStoreNew(true)
+	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		zui.DebugMode = true
