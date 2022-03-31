@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -6,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
@@ -51,8 +53,8 @@ func TimeTextViewNew() *TimeTextView {
 	v.Add(v.DateText, zgeo.CenterLeft, zgeo.Size{-1, 0})
 	// if !v.UseYear {
 	// 	year := strconv.Itoa(time.Now().Year())
-	// 	v.DateText.setjs("min", year+"-01-01")
-	// 	v.DateText.setjs("max", year+"-12-31")
+	// 	v.DateText.JSSet("min", year+"-01-01")
+	// 	v.DateText.JSSet("max", year+"-12-31")
 
 	// }
 	v.ParsedLabel = LabelNew("")
@@ -70,9 +72,9 @@ func TimeTextViewNew() *TimeTextView {
 	}
 	v.TimeText.SetChangedHandler(changed)
 	v.DateText.SetChangedHandler(changed)
-	keyHandler := func(key KeyboardKey, mods KeyboardModifier) bool {
+	keyHandler := func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
 		// zlog.Info("key:", key)
-		if key == KeyboardKeyReturn {
+		if key == zkeyboard.KeyReturn {
 			if v.Handle != nil {
 				t := v.Parse()
 				v.Handle(t)

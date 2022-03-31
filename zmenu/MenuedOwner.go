@@ -1,7 +1,6 @@
 //go:build zui
-// +build zui
 
-package zui
+package zmenu
 
 import (
 	"fmt"
@@ -10,8 +9,10 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -21,7 +22,7 @@ import (
 )
 
 type MenuedOwner struct {
-	View            View
+	View            zui.View
 	PopPos          zgeo.Pos // either View or PopPos
 	SelectedHandler func()
 	GetTitle        func(itemCount int) string
@@ -55,12 +56,12 @@ type MenuedOItem struct {
 
 var (
 	MenuedOItemSeparator              = MenuedOItem{IsSeparator: true}
-	MenuedOwnerDefaultBGColor         = StyleColF(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
-	MenuedOwnerDefaultTextColor       = StyleGrayF(0.1, 0.9)
-	MenuedOwnerDefaultHightlightColor = StyleColF(zgeo.ColorNewGray(0, 0.7), zgeo.ColorNewGray(1, 0.7))
+	MenuedOwnerDefaultBGColor         = zui.StyleColF(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
+	MenuedOwnerDefaultTextColor       = zui.StyleGrayF(0.1, 0.9)
+	MenuedOwnerDefaultHightlightColor = zui.StyleColF(zgeo.ColorNewGray(0, 0.7), zgeo.ColorNewGray(1, 0.7))
 )
 
-func MenuedOwnerNew() *MenuedOwner {
+func NewMenuedOwner() *MenuedOwner {
 	o := &MenuedOwner{}
 	o.Font = zgeo.FontNice(zgeo.FontDefaultSize-1, zgeo.FontStyleNormal)
 	o.HighlightColor = MenuedOwnerDefaultHightlightColor()
@@ -91,13 +92,13 @@ func (o *MenuedOwner) IsKeyStored() bool {
 	return got
 }
 
-func (o *MenuedOwner) Build(view View, items []MenuedOItem) {
+func (o *MenuedOwner) Build(view zui.View, items []MenuedOItem) {
 	if view != nil {
 		o.View = view
-		nv := ViewGetNative(view)
+		nv := zui.ViewGetNative(view)
 		// zlog.Info("MO ADDStopper:", nv.Hierarchy(), zlog.GetCallingStackString())
 		nv.AddOnRemoveFunc(o.Stop)
-		presser := view.(Pressable)
+		presser := view.(zui.Pressable)
 		presser.SetPressedHandler(func() {
 			if o.CreateItems != nil {
 				o.items = o.CreateItems()
@@ -139,7 +140,7 @@ func (o *MenuedOwner) Stop() {
 	}
 	// zlog.Info("Stopping MenuOwner:", o.View != nil)
 	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())
-	presser := o.View.(Pressable)
+	presser := o.View.(zui.Pressable)
 	// zlog.Info("Stopping MenuOwner for2:", presser != nil)
 	presser.SetPressedHandler(nil)
 	presser.SetLongPressedHandler(nil)
@@ -171,7 +172,7 @@ func (o *MenuedOwner) Empty() {
 func (o *MenuedOwner) SetText(text string) {
 	if o.SetTitle || o.GetTitle != nil {
 		zlog.Assert(o.View != nil)
-		ts, got := o.View.(TextSetter)
+		ts, got := o.View.(ztextinfo.TextSetter)
 		if got {
 			ts.SetText(text)
 		}
@@ -285,7 +286,7 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
 	zlog.Error(nil, "no value to change name for")
 }
 
-func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *zcanvas.Canvas, allAction bool, imageWidth, imageMarg, rightMarg float64) {
+func (o *MenuedOwner) rowDraw(list *zui.ListView, i int, rect zgeo.Rect, canvas *zcanvas.Canvas, allAction bool, imageWidth, imageMarg, rightMarg float64) {
 	list.UpdateRowBGColor(i)
 	item := o.items[i]
 	x := 8.0
@@ -295,7 +296,7 @@ func (o *MenuedOwner) rowDraw(list *ListView, i int, rect zgeo.Rect, canvas *zca
 		return
 	}
 
-	ti := TextInfoNew()
+	ti := ztextinfo.New()
 	if list.IsRowHighlighted(i) {
 		ti.Color = list.HighlightColor.ContrastingGray()
 	} else if item.TextColor.Valid {
@@ -381,9 +382,9 @@ func (o *MenuedOwner) popup() {
 			allAction = false
 		}
 	}
-	stack := StackViewVert("menued-pop-stack")
+	stack := zui.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
-	list := ListViewNew("menu-list", selection)
+	list := zui.ListViewNew("menu-list", selection)
 	list.MinRows = 10
 	stack.SetBGColor(o.BGColor)
 	list.PressSelectable = true
@@ -412,9 +413,9 @@ func (o *MenuedOwner) popup() {
 	if o.HasLabelColor {
 		rm += 24
 	}
-	list.CreateRow = func(rowSize zgeo.Size, i int) View {
-		cv := CustomViewNew("row")
-		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
+	list.CreateRow = func(rowSize zgeo.Size, i int) zui.View {
+		cv := zui.CustomViewNew("row")
+		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
 			o.rowDraw(list, i, rect, canvas, allAction, imageWidth, imageMarg, rm)
 		})
 		return cv
@@ -426,7 +427,7 @@ func (o *MenuedOwner) popup() {
 			max = item.Name
 		}
 	}
-	w := TextInfoWidthOfString(max, o.Font) * 1.1
+	w := ztextinfo.WidthOfString(max, o.Font) * 1.1
 	if !allAction && !o.IsStatic {
 		w += checkWidth
 	}
@@ -442,15 +443,15 @@ func (o *MenuedOwner) popup() {
 		o.updateTitleAndImage()
 		if o.items[i].IsAction {
 			if selected {
-				PresentViewClose(stack, false, nil)
+				zui.PresentViewClose(stack, false, nil)
 			}
 			return
 		}
 		if !o.IsMultiple && fromPressed {
-			PresentViewClose(stack, false, nil)
+			zui.PresentViewClose(stack, false, nil)
 		}
 	}
-	att := PresentViewAttributesNew()
+	att := zui.PresentViewAttributesNew()
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
@@ -460,13 +461,13 @@ func (o *MenuedOwner) popup() {
 	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
 	pos := o.PopPos
 	if o.View != nil {
-		nv := ViewGetNative(o.View)
+		nv := zui.ViewGetNative(o.View)
 		pos = nv.AbsoluteRect().Pos
 	}
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)
-	PresentView(stack, att, func(*Window) {
+	zui.PresentView(stack, att, func(*zui.Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
 		// zlog.Info("menued closed", dismissed, o.IsMultiple)
@@ -510,15 +511,15 @@ func (o *MenuedOwner) saveToStore() {
 	}
 }
 
-func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem) *ShapeView {
-	v := ShapeViewNew(ShapeViewTypeRoundRect, zgeo.Size{20, 24})
+func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem) *zui.ShapeView {
+	v := zui.ShapeViewNew(zui.ShapeViewTypeRoundRect, zgeo.Size{20, 24})
 	v.SetImage(nil, "images/zmenu-arrows.png", nil)
 	v.ImageMargin = zgeo.Size{3, 3}
 	v.ImageGap = 4
-	v.SetColor(StyleDefaultFGColor().Mixed(zgeo.ColorGray, 0.2))
+	v.SetColor(zui.StyleDefaultFGColor().Mixed(zgeo.ColorGray, 0.2))
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.3)
 	v.StrokeWidth = 1
-	v.SetTextColor(StyleDefaultBGColor())
+	v.SetTextColor(zui.StyleDefaultBGColor())
 	menu.Build(v, items)
 	return v
 }

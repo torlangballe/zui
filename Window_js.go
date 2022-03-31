@@ -5,11 +5,12 @@ import (
 	"strings"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
-
-	"github.com/torlangballe/zutil/zgeo"
 )
 
 var winMain *Window
@@ -21,7 +22,7 @@ type windowNative struct {
 }
 
 func init() {
-	WindowJS.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
+	zdom.WindowJS.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		// zlog.Info("Main window closed or refreshed?")
 		for w, _ := range windows {
 			w.Close()
@@ -30,7 +31,7 @@ func init() {
 		return nil
 	}))
 	winMain = WindowNew()
-	winMain.element = WindowJS
+	winMain.element = zdom.WindowJS
 	windows[winMain] = true
 }
 
@@ -78,7 +79,7 @@ func WindowOpen(o WindowOptions) *Window {
 		o.URL = WindowGetMain().GetURLWithNewPathAndArgs(o.URL, nil)
 	}
 	// zlog.Info("OPEN WIN:", o.URL, zlog.GetCallingStackString())
-	win.element = WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
+	win.element = zdom.WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.element.IsNull() {
 		zlog.Error(nil, "open window failed", o.URL)
 		return nil
@@ -203,7 +204,7 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.element.Get("history").Call("pushState", "", "", surl)
 }
 
-// func setKeyHandler(doc js.Value, handler func(KeyboardKey, KeyboardModifier)) {
+// func setKeyHandler(doc js.Value, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
 // }
 
 func (win *Window) setOnKeyUp() {
@@ -211,7 +212,7 @@ func (win *Window) setOnKeyUp() {
 	// zlog.Info("win keydown")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		if len(win.keyHandlers) != 0 {
-			key, mods := getKeyAndModsFromEvent(args[0])
+			key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
 			for view, h := range win.keyHandlers {
 				// zlog.Info("win key:", key, view.ObjectName())
 				if PresentedViewCurrentIsParent(view) {
@@ -219,7 +220,7 @@ func (win *Window) setOnKeyUp() {
 					h(key, mods)
 				}
 			}
-			if key == KeyboardKeyDownArrow || key == KeyboardKeyUpArrow {
+			if key == zkeyboard.KeyDownArrow || key == zkeyboard.KeyUpArrow {
 				event := args[0]
 				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
 			}
@@ -246,7 +247,7 @@ func (win *Window) removeKeyPressHandlerViews(root View) {
 	})
 }
 
-func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {
+func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
 	// zlog.Info("Window AddKeypressHandler", v.ObjectName())
 	if handler == nil {
 		delete(win.keyHandlers, v)

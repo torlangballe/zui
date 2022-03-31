@@ -5,6 +5,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
@@ -55,8 +56,8 @@ func (v *LabelCV) Text() string {
 	return v.text
 }
 
-func (v *LabelCV) GetTextInfo() TextInfo {
-	t := TextInfoNew()
+func (v *LabelCV) GetTextInfo() ztextinfo.Info {
+	t := ztextinfo.New()
 	t.Alignment = v.alignment
 	t.Font = v.Font()
 	t.Color = v.Color()
@@ -70,7 +71,7 @@ func (v *LabelCV) GetTextInfo() TextInfo {
 
 func (v *LabelCV) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
-	to := v.View.(TextInfoOwner)
+	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
 	if v.Columns != 0 {
 		s = ti.GetColumnsSize(v.Columns)
@@ -120,7 +121,7 @@ func (v *LabelCV) SetMaxWidth(max float64) {
 
 func LabelizeCV(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *LabelCV, stack *StackView, viewCell *ContainerViewCell) {
 	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
-	to, _ := view.(TextInfoOwner)
+	to, _ := view.(ztextinfo.Owner)
 	if to != nil {
 		ti := to.GetTextInfo()
 		font = ti.Font

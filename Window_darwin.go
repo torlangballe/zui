@@ -1,3 +1,4 @@
+//go:build zui && catalyst
 // +build zui,catalyst
 
 package zui
@@ -12,8 +13,9 @@ import "C"
 import (
 	"unsafe"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zkeyboard"
 )
 
 // https://github.com/alediaferia/gogoa/blob/master/window.go
@@ -79,7 +81,7 @@ func (w *Window) AddView(v View) {
 	C.AddView(w.windowPtr, wv.webViewPtr)
 }
 
-func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {
+func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
 }
 
 func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {}

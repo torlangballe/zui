@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
 
 func LabelNew(text string) *Label {
 	v := &Label{}
-	v.Element = DocumentJS.Call("createElement", "label")
-	// zlog.Info("Label New:", v.TextInfo.SplitItems, text)
+	v.Element = zdom.DocumentJS.Call("createElement", "label")
+	// zlog.Info("Label New:", v.textInfo.SplitItems, text)
 	style := v.style()
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
@@ -31,15 +33,15 @@ func LabelNew(text string) *Label {
 	//	v.SetColor(zgeo.ColorRed)
 	v.SetObjectName(text)
 	v.SetMaxLines(1)
-	textNode := DocumentJS.Call("createTextNode", text)
-	v.call("appendChild", textNode)
+	textNode := zdom.DocumentJS.Call("createTextNode", text)
+	v.JSCall("appendChild", textNode)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
 	return v
 }
 
-func (v *Label) SetWrap(wrap TextInfoWrap) {
-	zlog.Assert(wrap == TextInfoWrapTailTruncate)
+func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
+	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
 	style := v.style()
 	style.Set("textOverflow", "ellipsis")
 	style.Set("overflow", "hidden")
@@ -75,23 +77,23 @@ func (v *Label) SetRect(r zgeo.Rect) {
 
 func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 		return nil
 	}))
-	v.setjs("class", "widget")
+	v.JSSet("class", "widget")
 }
 
 func (v *Label) SetLongPressedHandler(handler func()) {
 	// zlog.Info("Label.SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
-	v.setjs("className", "widget")
-	v.setjs("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("className", "widget")
+	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
-	v.setjs("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil

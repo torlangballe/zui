@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -16,14 +18,14 @@ func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, c
 	v.textStyle = textStyle
 	v.SetMaxLines(rows)
 	if rows > 1 {
-		v.Element = DocumentJS.Call("createElement", "textarea")
+		v.Element = zdom.DocumentJS.Call("createElement", "textarea")
 	} else {
-		v.Element = DocumentJS.Call("createElement", "input")
+		v.Element = zdom.DocumentJS.Call("createElement", "input")
 		stype := "text"
 		switch textStyle.KeyboardType {
-		case KeyboardTypePassword:
+		case zkeyboard.TypePassword:
 			stype = "password"
-		case KeyboardTypeEmailAddress:
+		case zkeyboard.TypeEmailAddress:
 			stype = "email"
 		}
 		if textStyle.Type == TextViewSearch {
@@ -32,12 +34,12 @@ func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, c
 		if textStyle.Type == TextViewDate {
 			stype = "date"
 		}
-		v.setjs("type", stype)
+		v.JSSet("type", stype)
 	}
 
 	v.SetObjectName("textview")
 	v.Columns = cols
-	v.setjs("style", "position:absolute")
+	v.JSSet("style", "position:absolute")
 	css := v.style()
 	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	css.Set("-webkitBoxShadow", "none") // doesn't work
@@ -45,14 +47,14 @@ func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, c
 	// if rows <= 1 {
 	v.SetMargin(TextViewDefaultMargin)
 	// }
-	v.setjs("value", text)
-	v.setjs("className", "texter")
+	v.JSSet("value", text)
+	v.JSSet("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
 
-	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		event.Call("stopPropagation")
 		//		zlog.Info("onclick textview:", args)
@@ -82,7 +84,7 @@ func (v *TextView) SetBGColor(c zgeo.Color) {
 }
 
 func (v *TextView) SetIsStatic(s bool) {
-	v.setjs("readOnly", s)
+	v.JSSet("readOnly", s)
 }
 
 func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
@@ -98,27 +100,27 @@ func (v *TextView) SetTextAlignment(a zgeo.Alignment) View {
 }
 
 func (v *TextView) SetReadOnly(is bool) *TextView {
-	v.setjs("readonly", is)
+	v.JSSet("readonly", is)
 	return v
 }
 
 func (v *TextView) SetMin(min float64) *TextView {
-	v.setjs("min", min)
+	v.JSSet("min", min)
 	return v
 }
 
 func (v *TextView) SetMax(max float64) *TextView {
-	v.setjs("max", max)
+	v.JSSet("max", max)
 	return v
 }
 
 func (v *TextView) SetStep(step float64) *TextView {
-	v.setjs("step", step)
+	v.JSSet("step", step)
 	return v
 }
 
 func (v *TextView) SetPlaceholder(str string) *TextView {
-	v.setjs("placeholder", str)
+	v.JSSet("placeholder", str)
 	return v
 }
 
@@ -136,12 +138,12 @@ func (v *TextView) SetMargin(m zgeo.Rect) View {
 
 func (v *TextView) SetText(text string) {
 	if v.Text() != text {
-		v.setjs("value", text)
+		v.JSSet("value", text)
 	}
 }
 
 func (v *TextView) Text() string {
-	text := v.getjs("value").String()
+	text := v.JSGet("value").String()
 	return text
 }
 
@@ -192,7 +194,7 @@ func (v *TextView) SetChangedHandler(handler func()) {
 	v.changed = handler
 	if handler != nil {
 		v.updateEnterHandlers()
-		v.setjs("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		v.JSSet("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
 			// v.updated = true
 			if v.UpdateSecs < 0 {
 				return nil
@@ -216,10 +218,10 @@ func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
 
 func (v *TextView) updateEnterHandlers() {
 	if v.changed != nil || v.editDone != nil {
-		v.setjs("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			event := vs[0]
 			key := event.Get("which").Int()
-			if key == KeyboardKeyReturn || key == KeyboardKeyTab {
+			if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
 				if v.editDone != nil {
 					v.editDone(false)
 				}
@@ -229,7 +231,7 @@ func (v *TextView) updateEnterHandlers() {
 					v.updateDone()
 				}
 			}
-			if key == KeyboardKeyEscape {
+			if key == zkeyboard.KeyEscape {
 				if v.editDone != nil {
 					v.editDone(true)
 				}
@@ -239,24 +241,11 @@ func (v *TextView) updateEnterHandlers() {
 	}
 }
 
-// TODO: Replace with NativeView version
-func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {
+func (v *TextView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
 	v.keyPressed = handler
 	v.NativeView.SetKeyHandler(handler)
-	/*
-		v.setjs("onkeyup", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-			// zlog.Info("KeyUp")
-			if handler != nil {
-				event := vs[0]
-				key, mods := getKeyAndModsFromEvent(event) // replaces below code?
-				handler(key, mods)
-				// zlog.Info("KeyUp:", key, mods)
-			}
-			return nil
-		}))
-	*/
 }
 
 func (v *TextView) ScrollToBottom() {
-	v.setjs("scrollTop", v.getjs("scrollHeight"))
+	v.JSSet("scrollTop", v.JSGet("scrollHeight"))
 }

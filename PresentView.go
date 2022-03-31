@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
@@ -110,8 +111,8 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			win := nv.GetWindow()
-			win.AddKeypressHandler(v, func(key KeyboardKey, mod KeyboardModifier) {
-				if mod == KeyboardModifierNone && key == KeyboardKeyEscape {
+			win.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+				if mod == zkeyboard.ModifierNone && key == zkeyboard.KeyEscape {
 					PresentViewClose(v, true, nil)
 				}
 			})

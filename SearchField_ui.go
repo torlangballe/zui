@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -21,7 +22,7 @@ func SearchFieldNew(style TextViewStyle, chars int) *SearchField {
 	t.SetCorner(size.H / 2)
 	t.SetObjectName("search")
 	// t.SetMargin(zgeo.RectFromXY2(24, 0, 0, 0))
-	t.setjs("inputmode", "search")
+	t.JSSet("inputmode", "search")
 	iv := ImageViewNew(nil, "images/magnifier.png", zgeo.Size{10, 10})
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)

@@ -95,7 +95,7 @@ func (v *ImageView) Path() string {
 func (v *ImageView) SetRect(rect zgeo.Rect) {
 	v.CustomView.SetRect(rect)
 	// zlog.Info("IV SR", v.Hierarchy(), p, rect)
-	// zlog.Info("ImageView SetRect:", rect, v.getjs("id"))
+	// zlog.Info("ImageView SetRect:", rect, v.JSGet("id"))
 	if v.ObjectName() == "zap!" {
 		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
 	}
@@ -144,8 +144,8 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 }
 
 func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
-	// zlog.Info("IV SetImage", path, v.getjs("id").String(), v.Rect(), v.image != nil)
-	v.setjs("href", path)
+	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
+	v.JSSet("href", path)
 	v.exposed = false
 	if image != nil {
 		v.loading = false

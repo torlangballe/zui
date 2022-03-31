@@ -12,8 +12,6 @@ import (
 
 // interesting: https://github.com/markfarnan/go-canvas
 
-var documentJS = js.Global().Get("document")
-
 func init() {
 	zimage.DrawInCanvasFunc = RenderToImage
 }
@@ -25,7 +23,7 @@ type canvasNative struct {
 
 func New() *Canvas {
 	c := Canvas{}
-	c.element = documentJS.Call("createElement", "canvas")
+	c.element = zdom.DocumentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute;pointer-events:none") // pointer-events:none makes canvas not be target when pressed
 	c.context = c.element.Call("getContext", "2d")
 	// c.context.Set("imageSmoothingEnabled", true)

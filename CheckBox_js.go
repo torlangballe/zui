@@ -3,15 +3,16 @@ package zui
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
 func CheckBoxNew(on zbool.BoolInd) *CheckBox {
 	c := &CheckBox{}
-	c.Element = DocumentJS.Call("createElement", "input")
-	c.setjs("style", "position:absolute")
-	c.setjs("type", "checkbox")
+	c.Element = zdom.DocumentJS.Call("createElement", "input")
+	c.JSSet("style", "position:absolute")
+	c.JSSet("type", "checkbox")
 	c.style().Set("margin-top", "4px")
 	c.SetCanFocus(true)
 	c.View = c
@@ -26,7 +27,7 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) {
 
 func (c *CheckBox) SetValueHandler(handler func()) {
 	c.valueChanged = handler
-	c.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	c.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if c.valueChanged != nil {
 			c.valueChanged()
 		}
@@ -35,18 +36,18 @@ func (c *CheckBox) SetValueHandler(handler func()) {
 }
 
 func (c *CheckBox) Value() zbool.BoolInd {
-	i := c.getjs("indeterminate").Bool()
+	i := c.JSGet("indeterminate").Bool()
 	if i {
 		return zbool.Unknown
 	}
-	b := c.getjs("checked").Bool()
+	b := c.JSGet("checked").Bool()
 	return zbool.ToBoolInd(b)
 }
 
 func (c *CheckBox) SetValue(b zbool.BoolInd) {
 	if b.IsUndetermined() {
-		c.setjs("indeterminate", true)
+		c.JSSet("indeterminate", true)
 	} else {
-		c.setjs("checked", b.Bool())
+		c.JSSet("checked", b.Bool())
 	}
 }

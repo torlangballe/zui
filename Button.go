@@ -4,6 +4,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -22,8 +23,8 @@ type Button struct {
 	longPressed func()
 }
 
-func (v *Button) GetTextInfo() TextInfo {
-	t := TextInfoNew()
+func (v *Button) GetTextInfo() ztextinfo.Info {
+	t := ztextinfo.New()
 	t.Font = v.Font()
 	t.Text = v.Text()
 	if v.maxWidth != 0 {
@@ -36,7 +37,7 @@ func (v *Button) GetTextInfo() TextInfo {
 
 func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
-	to := v.View.(TextInfoOwner)
+	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
 	s, _, _ = ti.GetBounds()
 	s.Add(v.margin.Size.Negative())

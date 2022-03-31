@@ -4,6 +4,8 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -21,9 +23,9 @@ const (
 
 type TextViewStyle struct {
 	Type          TextViewType
-	KeyboardType  KeyboardType
-	AutoCapType   KeyboardAutoCapType
-	ReturnKeyType KeyboardReturnKeyType
+	KeyboardType  zkeyboard.Type
+	AutoCapType   zkeyboard.AutoCapType
+	ReturnKeyType zkeyboard.ReturnKeyType
 	IsAutoCorrect bool
 }
 
@@ -34,7 +36,7 @@ type TextView struct {
 	alignment     zgeo.Alignment
 	changed       func()
 	pushedBGColor zgeo.Color
-	keyPressed    func(key KeyboardKey, mods KeyboardModifier) bool
+	keyPressed    func(key zkeyboard.Key, mods zkeyboard.Modifier) bool
 	updateTimer   *ztimer.Timer
 	Columns       int
 	rows          int
@@ -71,7 +73,7 @@ func (v *TextView) IsEditing() bool {
 }
 
 func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	ti := TextInfoNew()
+	ti := ztextinfo.New()
 	ti.Alignment = v.alignment
 	ti.IsMinimumOneLineHight = true
 	ti.Font = v.Font()

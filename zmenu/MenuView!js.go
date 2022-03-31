@@ -1,14 +1,13 @@
-// +build !js
-// +build zui
+//go:build !js
 
-package zui
+package zmenu
 
 import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
+func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	return &MenuView{}
 }
 

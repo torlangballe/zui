@@ -9,7 +9,9 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -28,7 +30,7 @@ type AddHandler interface {
 }
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
-	v.Element = DocumentJS.Call("createElement", etype)
+	v.Element = zdom.DocumentJS.Call("createElement", etype)
 	v.Element.Set("style", "position:absolute")
 	v.View = view
 }
@@ -139,20 +141,20 @@ func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
 }
 
 func (v *NativeView) ObjectName() string {
-	return v.getjs("oname").String()
+	return v.JSGet("oname").String()
 }
 
 var idCount int
 
 func (v *NativeView) SetObjectName(name string) {
-	v.setjs("oname", name)
+	v.JSSet("oname", name)
 	idCount++
-	v.setjs("id", fmt.Sprintf("%s-%d", name, idCount))
+	v.JSSet("id", fmt.Sprintf("%s-%d", name, idCount))
 }
 
 func (v *NativeView) SetColor(c zgeo.Color) {
-	//	v.style().Set("color", makeRGBAString(c))
-	str := makeRGBAString(c)
+	//	v.style().Set("color", zdom.MakeRGBAString(c))
+	str := zdom.MakeRGBAString(c)
 	v.style().Set("color", str)
 
 }
@@ -170,7 +172,7 @@ func (v *NativeView) Color() zgeo.Color {
 }
 
 func (v *NativeView) style() js.Value {
-	return v.getjs("style")
+	return v.JSGet("style")
 }
 
 func (v *NativeView) SetStyle(key, value string) {
@@ -188,7 +190,7 @@ func (v *NativeView) Alpha() float32 {
 }
 
 func (v *NativeView) SetBGColor(c zgeo.Color) {
-	v.style().Set("backgroundColor", makeRGBAString(c))
+	v.style().Set("backgroundColor", zdom.MakeRGBAString(c))
 }
 
 func (v *NativeView) BGColor() zgeo.Color {
@@ -230,7 +232,7 @@ func (v *NativeView) SetCorner(radius float64) {
 func (v *NativeView) SetStroke(width float64, c zgeo.Color) {
 	str := "none"
 	if width != 0 {
-		str = fmt.Sprintf("%dpx solid %s", int(width), makeRGBAString(c))
+		str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
 	}
 	v.style().Set("border", str)
 }
@@ -260,7 +262,7 @@ func (v *NativeView) IsShown() bool {
 }
 
 func (v *NativeView) SetUsable(usable bool) {
-	v.setjs("disabled", !usable)
+	v.JSSet("disabled", !usable)
 	style := v.style()
 	var alpha float32 = 0.4
 	if usable {
@@ -283,12 +285,12 @@ func (v *NativeView) Usable() bool {
 }
 
 func (v *NativeView) IsFocused() bool {
-	f := DocumentJS.Call("hasFocus")
+	f := zdom.DocumentJS.Call("hasFocus")
 	return f.Equal(v.Element)
 }
 
 func (v *NativeView) Focus(focus bool) {
-	v.call("focus")
+	v.JSCall("focus")
 }
 
 func (v *NativeView) SetCanFocus(can bool) {
@@ -296,7 +298,7 @@ func (v *NativeView) SetCanFocus(can bool) {
 	if can {
 		val = "0"
 	}
-	v.setjs("tabindex", val)
+	v.JSSet("tabindex", val)
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
@@ -370,11 +372,11 @@ func (v *NativeView) Font() *zgeo.Font {
 
 func (v *NativeView) SetText(text string) {
 	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
-	v.setjs("innerText", text)
+	v.JSSet("innerText", text)
 }
 
 func (v *NativeView) Text() string {
-	text := v.getjs("innerText").String()
+	text := v.JSGet("innerText").String()
 	return text
 }
 
@@ -389,15 +391,15 @@ func (v *NativeView) AddChild(child View, index int) {
 	// }
 	n.PerformAddRemoveFuncs(true)
 	if index != -1 {
-		nodes := n.parent.getjs("childNodes").Length()
+		nodes := n.parent.JSGet("childNodes").Length()
 		// zlog.Info("NS InsertChild:", v.ObjectName(), child.ObjectName(), index, nodes)
 		if nodes == 0 {
-			v.call("appendChild", n.Element)
+			v.JSCall("appendChild", n.Element)
 		} else {
-			v.call("insertBefore", n.Element, v.getjs("firstChild"))
+			v.JSCall("insertBefore", n.Element, v.JSGet("firstChild"))
 		}
 	} else {
-		v.call("appendChild", n.Element)
+		v.JSCall("appendChild", n.Element)
 	}
 	n.style().Set("zIndex", 100)
 	// for _, p := range n.AllParents() {
@@ -440,12 +442,12 @@ func (v *NativeView) RemoveChild(child View) {
 
 	win.removeKeyPressHandlerViews(child)
 	nv.PerformAddRemoveFuncs(false)
-	nv.Element = v.call("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
+	nv.Element = v.JSCall("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
 func nativeElementSetDropShadow(e js.Value, shadow zgeo.DropShadow) {
-	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(shadow.Delta.W), int(shadow.Delta.H), int(shadow.Blur), makeRGBAString(shadow.Color))
+	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(shadow.Delta.W), int(shadow.Delta.H), int(shadow.Blur), zdom.MakeRGBAString(shadow.Color))
 	e.Get("style").Set("boxShadow", str)
 }
 
@@ -454,7 +456,7 @@ func (v *NativeView) SetDropShadow(shadow zgeo.DropShadow) {
 }
 
 func (v *NativeView) SetToolTip(str string) {
-	v.setjs("title", str)
+	v.JSSet("title", str)
 }
 
 func (v *NativeView) AbsoluteRect() zgeo.Rect {
@@ -515,7 +517,7 @@ func getMousePos(e js.Value) (pos zgeo.Pos) {
 
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 	const minDiff = 10.0
-	v.setjs("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler == nil {
 			return nil
 		}
@@ -523,7 +525,7 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 		mouseStartPos = getMousePos(args[0])
 		return nil
 	}))
-	v.setjs("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if handler == nil {
 			return nil
 		}
@@ -561,22 +563,22 @@ func (v *NativeView) SetAboveParent(above bool) {
 	v.style().Set("overflow", str)
 }
 
-func (v *NativeView) call(method string, args ...interface{}) js.Value {
+func (v *NativeView) JSCall(method string, args ...interface{}) js.Value {
 	return v.Element.Call(method, args...)
 }
 
-func (v *NativeView) setjs(property string, value interface{}) {
+func (v *NativeView) JSSet(property string, value interface{}) {
 	v.Element.Set(property, value)
 }
 
-func (v *NativeView) getjs(property string) js.Value {
+func (v *NativeView) JSGet(property string) js.Value {
 	return v.Element.Get(property)
 }
 
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
-	v.setjs("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if handler != nil {
-			y := v.getjs("scrollTop").Float()
+			y := v.JSGet("scrollTop").Float()
 			handler(zgeo.Pos{0, y})
 		}
 		return nil
@@ -593,7 +595,7 @@ func (v *NativeView) GetWindow() *Window {
 	if len(all) > 1 {
 		root = all[0]
 	}
-	w := root.getjs("ownerDocument").Get("defaultView")
+	w := root.JSGet("ownerDocument").Get("defaultView")
 	// zlog.Info("NV.GetWindow:", w, root.ObjectName())
 	return windowsFindForElement(w)
 }
@@ -621,8 +623,8 @@ func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data
 
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 	// https://www.digitalocean.com/community/tutorials/js-drag-and-drop-vanilla-js
-	v.setjs("draggable", true)
-	v.setjs("ondragstart", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("draggable", true)
+	v.JSSet("ondragstart", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		data, mime := getData()
 		//		array := js.Global().Get("Uint8Array").New(len(data))
@@ -654,8 +656,8 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 	if zlog.IsInTests {
 		return
 	}
-	//	v.setjs("className", "zdropper")
-	v.setjs("ondragenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	//	v.JSSet("className", "zdropper")
+	v.JSSet("ondragenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if dragEnterView == nil {
 			dragEvent(args[0], DragEnter, handler)
 		}
@@ -663,7 +665,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		dragEnterView = v
 		return nil
 	}))
-	v.setjs("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("ondragleave1:", dragEnterView != nil, dragEnterView == v, v.ObjectName())
 		// zlog.Info("ondragleave:", v.ObjectName(), dragEnterView != v)
 		// if dragEnterView != v {
@@ -673,11 +675,11 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		dragEvent(args[0], DragLeave, handler)
 		return nil
 	}))
-	v.setjs("ondragover", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("ondragover", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		dragEvent(args[0], DragOver, handler)
 		return nil
 	}))
-	v.setjs("ondrop", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("ondrop", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		event := args[0]
 		dt := event.Get("dataTransfer")
 		files := dt.Get("files")
@@ -704,7 +706,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 var lastUploadClick time.Time
 
 func (v *NativeView) SetUploader(got func(data []byte, name string)) {
-	e := DocumentJS.Call("createElement", "input")
+	e := zdom.DocumentJS.Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
 	// e.Set("accept", "*/*")
@@ -720,7 +722,7 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	}))
 
 	// zlog.Info("NV SetUploader", v.ObjectName())
-	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if time.Since(lastUploadClick) < time.Millisecond*100 { // e.Call("click") below causes v onclick to be re-called, bail + preventDefault important or it doesn't work (error started on Tor's M1 Mac Pro)
 			args[0].Call("preventDefault")
 			// zlog.Info("cancel clickthru")
@@ -732,14 +734,14 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 		return nil
 	}))
 
-	v.call("appendChild", e)
+	v.JSCall("appendChild", e)
 }
 
 func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
 	if zlog.IsInTests {
 		return
 	}
-	v.setjs("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("Mouse enter", v.ObjectName())
 		handler(getMousePos(args[0]), zbool.True)
 		if moves {
@@ -752,7 +754,7 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 		}
 		return nil
 	}))
-	v.setjs("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("Mouse leave", v.ObjectName())
 		handler(getMousePos(args[0]), zbool.False)
 		if moves {
@@ -762,8 +764,8 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 	}))
 }
 
-func (v *NativeView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {
-	jsSetKeyHandler(v.Element, func(key KeyboardKey, mods KeyboardModifier) bool {
+func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+	zkeyboard.SetKeyHandler(v.Element, func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
 		return handler(key, mods)
 	})
 }
@@ -779,7 +781,7 @@ var movingPos *zgeo.Pos
 
 func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
 	const minDiff = 10.0
-	v.setjs("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		e := args[0]
 		m := getMousePos(e)
 		movingPos = &m
@@ -812,7 +814,7 @@ func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool
 
 func (v *NativeView) GetFocusedView() (found View) {
 	ct := v.View.(ContainerType)
-	e := DocumentJS.Get("activeElement")
+	e := zdom.DocumentJS.Get("activeElement")
 	// zlog.Info("GetFocusedView:", e, e.IsUndefined())
 	if e.IsUndefined() {
 		return nil
@@ -824,7 +826,7 @@ func (v *NativeView) GetFocusedView() (found View) {
 	includeCollapsed := false
 	ContainerTypeRangeChildren(ct, recursive, includeCollapsed, func(view View) bool {
 		n := ViewGetNative(view)
-		id := n.getjs("id").String()
+		id := n.JSGet("id").String()
 		if id == foundID {
 			found = n.View
 			return false
@@ -838,15 +840,15 @@ func (v *NativeView) SetDownloader(surl, name string) {
 	if name == "" {
 		_, name = path.Split(surl)
 	}
-	// v.setjs("download", name)
-	v.setjs("href", surl)
+	// v.JSSet("download", name)
+	v.JSSet("href", surl)
 }
 
 func (v *NativeView) MakeLink(surl, name string) {
 	stype := strings.ToLower(v.Element.Get("nodeName").String())
 	zlog.Assert(stype == "a", stype)
-	v.setjs("download", name)
-	v.setjs("href", surl)
+	v.JSSet("download", name)
+	v.JSSet("href", surl)
 }
 
 func (v *NativeView) SetTilePath(spath string) {
@@ -893,4 +895,14 @@ func (v *NativeView) hasElement(e js.Value) (got *NativeView) {
 		return true
 	})
 	return
+}
+
+func AddTextNode(e *NativeView, text string) {
+	textNode := zdom.DocumentJS.Call("createTextNode", text)
+	e.JSCall("appendChild", textNode)
+	//	js.Value(*e).Call("appendChild", textNode)
+}
+
+func AddView(parent, child *NativeView) {
+	parent.JSCall("appendChild", child.Element)
 }

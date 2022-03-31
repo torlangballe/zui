@@ -1,3 +1,4 @@
+//go:build !js && zui && !catalyst
 // +build !js,zui,!catalyst
 
 // https://github.com/golang/mobile/tree/master/app
@@ -5,6 +6,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -36,12 +38,12 @@ func (win *Window) GetURL() string {
 func (win *Window) setOnResize() {}
 
 // func (win *Window) SetAddressBarPathAndArgs(path string, args zdict.Dict) {}
-func (w *Window) Close()                                                                   {}
-func (w *Window) Activate()                                                                {}
-func (w *Window) AddView(v View)                                                           {}
-func (w *Window) SetTitle(title string)                                                    {}
-func (w *Window) SetHandleClosed(closed func())                                            {}
-func (win *Window) SetAddressBarURL(surl string)                                           {}
-func (win *Window) SetLocation(surl string)                                                {}
-func (win *Window) AddKeypressHandler(v View, handler func(KeyboardKey, KeyboardModifier)) {}
-func (win *Window) setOnResizeHandling()                                                   {}
+func (w *Window) Close()                                                                       {}
+func (w *Window) Activate()                                                                    {}
+func (w *Window) AddView(v View)                                                               {}
+func (w *Window) SetTitle(title string)                                                        {}
+func (w *Window) SetHandleClosed(closed func())                                                {}
+func (win *Window) SetAddressBarURL(surl string)                                               {}
+func (win *Window) SetLocation(surl string)                                                    {}
+func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier)) {}
+func (win *Window) setOnResizeHandling()                                                       {}

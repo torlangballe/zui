@@ -1,8 +1,12 @@
+//go:build !js && zui
 // +build !js,zui
 
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 func (tv *TextView) Init(view View, text string, style TextViewStyle, rows, cols int) {
 	tv.View = view
@@ -22,10 +26,10 @@ func (v *TextView) SetTextAlignment(a zgeo.Alignment) {
 // 	return v
 // }
 
-func (v *TextView) SetChangedHandler(handler func())                                        {}
-func (v *TextView) SetKeyHandler(handler func(key KeyboardKey, mods KeyboardModifier) bool) {}
-func (v *TextView) ScrollToBottom()                                                         {}
-func (v *TextView) SetIsStatic(s bool)                                                      {}
-func (v *TextView) Select(from, to int)                                                     {}
-func (v *TextView) SetPlaceholder(str string)                                               {}
-func (v *TextView) SetMargin(m zgeo.Rect)                                                   {}
+func (v *TextView) SetChangedHandler(handler func())                                            {}
+func (v *TextView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {}
+func (v *TextView) ScrollToBottom()                                                             {}
+func (v *TextView) SetIsStatic(s bool)                                                          {}
+func (v *TextView) Select(from, to int)                                                         {}
+func (v *TextView) SetPlaceholder(str string)                                                   {}
+func (v *TextView) SetMargin(m zgeo.Rect)                                                       {}

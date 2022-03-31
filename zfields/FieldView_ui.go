@@ -13,6 +13,9 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zmenu"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -280,7 +283,7 @@ func (v *FieldView) Update(dontOverwriteEdited bool) {
 				continue
 			}
 		}
-		menuType, _ := fview.(zui.MenuType)
+		menuType, _ := fview.(zmenu.MenuType)
 		if menuType != nil && ((f.Enum != "" && f.Kind != zreflect.KindSlice) || f.LocalEnum != "") {
 			var enum zdict.Items
 			// zlog.Info("Update FV: Menu:", f.Name, f.Enum, f.LocalEnum)
@@ -323,7 +326,7 @@ func (v *FieldView) Update(dontOverwriteEdited bool) {
 			getter, _ := item.Interface.(zdict.ItemsGetter)
 			if getter != nil {
 				items := getter.GetItems()
-				mt := fview.(zui.MenuType)
+				mt := fview.(zmenu.MenuType)
 				// zlog.Info("fv update slice:", f.Name, len(items), mt != nil, reflect.ValueOf(fview).Type())
 				if mt != nil {
 					// assert menu is static...
@@ -617,9 +620,9 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zu
 		if isImage {
 			shape = zui.ShapeViewTypeNone
 		}
-		var mItems []zui.MenuedItem
+		var mItems []zmenu.MenuedItem
 		for i := range items {
-			var m zui.MenuedItem
+			var m zmenu.MenuedItem
 			for j := range vals {
 				if reflect.DeepEqual(items[i], vals[j]) {
 					m.Selected = true
@@ -633,11 +636,11 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zu
 			m.Value = items[i].Value
 			mItems = append(mItems, m)
 		}
-		opts := zui.MenuedOptions{}
+		opts := zmenu.MenuedOptions{}
 		opts.IsStatic = f.IsStatic()
 		opts.IsMultiple = multi
 		opts.StoreKey = f.ValueStoreKey
-		menu := zui.MenuedShapeViewNew(shape, zgeo.Size{20, 20}, f.ID, mItems, opts)
+		menu := zmenu.MenuedShapeViewNew(shape, zgeo.Size{20, 20}, f.ID, mItems, opts)
 		if isImage {
 			menu.SetImage(nil, f.ImageFixedPath, nil)
 			menu.ImageAlign = zgeo.Center | zgeo.Proportional
@@ -672,24 +675,26 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zu
 			v.fieldToDataItem(f, menu, false)
 			if menu.Options.IsStatic {
 				sel := menu.SelectedItem()
-				kind := reflect.ValueOf(sel.Value).Kind()
-				// zlog.Info("action pressed", kind, sel.Name, "val:", sel.Value)
-				if kind != reflect.Ptr && kind != reflect.Struct {
-					nf := *f
-					nf.ActionValue = sel.Value
-					v.callActionHandlerFunc(&nf, PressedAction, item.Interface, &view)
+				if sel != nil {
+					kind := reflect.ValueOf(sel.Value).Kind()
+					// zlog.Info("action pressed", kind, sel.Name, "val:", sel.Value)
+					if kind != reflect.Ptr && kind != reflect.Struct {
+						nf := *f
+						nf.ActionValue = sel.Value
+						v.callActionHandlerFunc(&nf, PressedAction, item.Interface, &view)
+					}
 				}
 			} else {
 				v.callActionHandlerFunc(f, EditedAction, item.Interface, &view)
 			}
 		})
 	} else {
-		menu := zui.MenuViewNew(f.Name+"Menu", items, item.Interface)
+		menu := zmenu.NewView(f.Name+"Menu", items, item.Interface)
 		menu.SetMaxWidth(f.MaxWidth)
 		view = menu
 		menu.SetSelectedHandler(func() {
 			// valInterface, _ := v.fieldToDataItem(f, menu, false)
-			// v.updateField(f, view, valInterface, v.getStructItems())
+			v.fieldToDataItem(f, menu, false)
 			v.callActionHandlerFunc(f, EditedAction, item.Interface, &view)
 		})
 	}
@@ -794,7 +799,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zui.Vi
 		cols = 20
 	}
 	if f.Flags&flagIsPassword != 0 {
-		style.KeyboardType = zui.KeyboardTypePassword
+		style.KeyboardType = zkeyboard.TypePassword
 	}
 	tv := zui.TextViewNew(str, style, cols, f.Rows)
 	tv.SetObjectName(f.ID)
@@ -815,7 +820,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zui.Vi
 		view := zui.View(tv)
 		v.callActionHandlerFunc(f, EditedAction, item.Value.Interface(), &view)
 	})
-	// tv.SetKeyHandler(func(key zui.KeyboardKey, mods zui.KeyboardModifier) bool {
+	// tv.SetKeyHandler(func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
 	// zlog.Info("keyup!")
 	// })
 	// zlog.Info("FV makeText:", f.FieldName, tv.MinWidth, tv.Columns)
@@ -907,7 +912,7 @@ func (v *FieldView) MakeGroup(f *Field) {
 	v.SetBGColor(zgeo.ColorNewGray(0, 0.05))
 	v.SetCorner(8)
 	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
-		t := zui.TextInfoNew()
+		t := ztextinfo.New()
 		t.Rect = rect
 		t.Text = f.Name
 		t.Alignment = zgeo.TopLeft
@@ -1007,7 +1012,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 			return nil
 		}
 		return menu
-		// mt := view.(zui.MenuType)
+		// mt := view.(zmenu.MenuType)
 		//!!					mt.SelectWithValue(item.Interface)
 	}
 	if f.Enum != "" {
@@ -1275,12 +1280,12 @@ func (v *FieldView) fieldToDataItem(f *Field, view zui.View, showError bool) (va
 	// zlog.Info("fieldViewToDataItem before:", f.Name, f.Index, len(children), "s:", structure)
 	item := children[f.Index]
 	if (f.Enum != "" || f.LocalEnum != "") && !f.IsStatic() {
-		mo, _ := view.(*zui.MenuedShapeView)
+		mo, _ := view.(*zmenu.MenuedShapeView)
 		if mo != nil {
 
 			return
 		}
-		mv, _ := view.(*zui.MenuView)
+		mv, _ := view.(*zmenu.MenuView)
 		if mv != nil {
 			iface := mv.CurrentValue()
 			vo := reflect.ValueOf(iface)

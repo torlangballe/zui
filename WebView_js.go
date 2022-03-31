@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -16,7 +17,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	if isFrame {
 		stype = "iframe"
 	}
-	v.Element = DocumentJS.Call("createElement", stype)
+	v.Element = zdom.DocumentJS.Call("createElement", stype)
 	v.Element.Set("id", "ifrm")
 	if isFrame {
 		v.Element.Set("allow", "encrypted-media")
@@ -27,9 +28,9 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	v.View = v
 
 	repeater := ztimer.RepeatIn(0.5, func() bool {
-		// zlog.Info("cddoc:", v.getjs("contentDocument"))
-		contentDoc := v.getjs("contentDocument")
-		// zlog.Info("CDOC:", contentDoc, DocumentJS)
+		// zlog.Info("cddoc:", v.JSGet("contentDocument"))
+		contentDoc := v.JSGet("contentDocument")
+		// zlog.Info("CDOC:", contentDoc, zdom.DocumentJS)
 		if !contentDoc.IsUndefined() && !contentDoc.IsNull() {
 			// zlog.Info("LOC:", contentDoc.Get("location"))
 			newURL := contentDoc.Get("location").Get("href").String()

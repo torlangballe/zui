@@ -4,6 +4,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -26,8 +27,8 @@ type Label struct {
 	Columns int
 }
 
-func (v *Label) GetTextInfo() TextInfo {
-	t := TextInfoNew()
+func (v *Label) GetTextInfo() ztextinfo.Info {
+	t := ztextinfo.New()
 	t.Alignment = v.alignment
 	t.Font = v.Font()
 	if v.Columns == 0 {
@@ -42,7 +43,7 @@ func (v *Label) GetTextInfo() TextInfo {
 
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
-	to := v.View.(TextInfoOwner)
+	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
 	if v.Columns != 0 {
 		s = ti.GetColumnsSize(v.Columns)
@@ -90,7 +91,7 @@ func (v *Label) SetMaxWidth(max float64) {
 
 func Labelize(view View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *Label, stack *StackView, viewCell *ContainerViewCell) {
 	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
-	to, _ := view.(TextInfoOwner)
+	to, _ := view.(ztextinfo.Owner)
 	if to != nil {
 		ti := to.GetTextInfo()
 		font = ti.Font

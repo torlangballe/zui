@@ -2,6 +2,7 @@ package zui
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -26,8 +27,8 @@ func (v *CustomView) Init(view View, name string) {
 
 func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.setjs("className", "widget")
-	v.setjs("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSSet("className", "widget")
+	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		zlog.Assert(len(args) > 0)
 		event := args[0]
 		// zlog.Info("Pressed", reflect.ValueOf(v).Type(), v.ObjectName(), event.Get("target").Get("id").String())
@@ -36,7 +37,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		}
 		v.PressedPos.X = event.Get("offsetX").Float()
 		v.PressedPos.Y = event.Get("offsetY").Float()
-		_, KeyboardModifiersAtPress = getKeyAndModsFromEvent(event)
+		_, zkeyboard.ModifiersAtPress = zkeyboard.GetKeyAndModsFromEvent(event)
 		(&v.LongPresser).HandleOnClick(v)
 		event.Call("stopPropagation")
 		return nil
@@ -46,12 +47,12 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 func (v *CustomView) SetLongPressedHandler(handler func()) {
 	// zlog.Info("SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
-	v.setjs("className", "widget")
-	v.setjs("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("className", "widget")
+	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
-	v.setjs("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil
@@ -105,16 +106,16 @@ func (v *CustomView) makeCanvas() {
 		v.canvas = zcanvas.New()
 		v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
 		v.canvas.DownsampleImages = v.DownsampleImages
-		firstChild := v.getjs("firstChild")
+		firstChild := v.JSGet("firstChild")
 		v.canvas.JSElement().Get("style").Set("zIndex", 1)
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale
 		v.setCanvasSize(s, scale)
 
 		if firstChild.IsUndefined() {
-			v.call("appendChild", v.canvas.JSElement())
+			v.JSCall("appendChild", v.canvas.JSElement())
 		} else {
-			v.call("insertBefore", v.canvas.JSElement(), firstChild)
+			v.JSCall("insertBefore", v.canvas.JSElement(), firstChild)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package zui
+package ztextinfo
 
 import (
 	"math"
@@ -17,28 +17,28 @@ import (
 
 //  Created by Tor Langballe on /22/10/15.
 
-type TextInfoType int
-type TextInfoWrap int
+type ActionType int
+type WrapType int
 
 const (
-	TextInfoFill TextInfoType = iota
-	TextInfoStroke
-	TextInfoClip
+	Fill ActionType = iota
+	Stroke
+	Clip
 )
 
 const (
-	TextInfoWrapNone TextInfoWrap = iota
-	TextInfoWrapWord
-	TextInfoWrapChar
-	TextInfoWrapClip
-	TextInfoWrapHeadTruncate
-	TextInfoWrapTailTruncate
-	TextInfoWrapMiddleTruncate
+	WrapNone WrapType = iota
+	WrapWord
+	WrapChar
+	WrapClip
+	WrapHeadTruncate
+	WrapTailTruncate
+	WrapMiddleTruncate
 )
 
-type TextInfo struct {
-	Type                  TextInfoType
-	Wrap                  TextInfoWrap
+type Info struct {
+	Type                  ActionType
+	Wrap                  WrapType
 	Text                  string
 	Color                 zgeo.Color
 	Alignment             zgeo.Alignment
@@ -54,17 +54,17 @@ type TextInfo struct {
 	Margin                zgeo.Size
 }
 
-type TextInfoOwner interface {
-	GetTextInfo() TextInfo
+type Owner interface {
+	GetTextInfo() Info
 }
 
 type TextSetter interface {
 	SetText(etxt string)
 }
 
-func TextInfoNew() *TextInfo {
-	t := &TextInfo{}
-	t.Type = TextInfoFill
+func New() *Info {
+	t := &Info{}
+	t.Type = Fill
 	t.Color = zgeo.ColorBlack
 	t.Alignment = zgeo.Center
 	t.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
@@ -74,31 +74,31 @@ func TextInfoNew() *TextInfo {
 	return t
 }
 
-func reduceStringByOneToWrap(str string, wrap TextInfoWrap) (reduced, withSymbol string) {
+func reduceStringByOneToWrap(str string, wrap WrapType) (reduced, withSymbol string) {
 	if str == "" {
 		return
 	}
 	switch wrap {
-	case TextInfoWrapWord:
+	case WrapWord:
 		i := strings.IndexAny(str, " \t,.-_!@#$%^&**()=+<>?|:;")
 		if i != -1 {
 			s := str[:i]
 			return s, s
 		}
 		fallthrough
-	case TextInfoWrapChar:
+	case WrapChar:
 		s := zstr.TruncatedCharsAtEnd(str, 1)
 		return s, s
 
-	case TextInfoWrapHeadTruncate:
+	case WrapHeadTruncate:
 		s := str[1:]
 		return s, "…" + s
 
-	case TextInfoWrapTailTruncate:
+	case WrapTailTruncate:
 		s := zstr.TruncatedCharsAtEnd(str, 1)
 		return s, s + "…"
 
-	case TextInfoWrapMiddleTruncate:
+	case WrapMiddleTruncate:
 		r := []rune(str)
 		m := len(r) / 2
 		left := string(r[:m])
@@ -108,14 +108,14 @@ func reduceStringByOneToWrap(str string, wrap TextInfoWrap) (reduced, withSymbol
 	return str, str
 }
 
-func (ti *TextInfo) SetWidthFreeHight(w float64) {
+func (ti *Info) SetWidthFreeHight(w float64) {
 	ti.Rect = zgeo.RectFromWH(w, 99999)
 }
 
 // GetBounds returns rect of size of text.
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
-func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
+func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
 	// zlog.PushTimingLog()
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
@@ -168,31 +168,31 @@ func (ti *TextInfo) GetBounds() (size zgeo.Size, allLines []string, widths []flo
 	return size, allLines, widths
 }
 
-func (ti *TextInfo) MakeAttributes() zdict.Dict {
+func (ti *Info) MakeAttributes() zdict.Dict {
 	return zdict.Dict{}
 }
 
 // StrokeAndFill strokes the text with *strokeColor* and width, then fills with ti.Color
 // canvas' width, color and stroke style are changed
-func (ti *TextInfo) StrokeAndFill(canvas *zcanvas.Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
+func (ti *Info) StrokeAndFill(canvas *zcanvas.Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
 	t := *ti
 	old := t.Color
 	t.Color = strokeColor
-	t.Type = TextInfoStroke
+	t.Type = Stroke
 	t.StrokeWidth = width
 	t.Draw(canvas)
 	t.Color = old
-	t.Type = TextInfoFill
+	t.Type = Fill
 	return t.Draw(canvas)
 }
 
-func (ti *TextInfo) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
+func (ti *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	w := 0.0
 	if ti.Text == "" {
 		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
 	}
 	canvas.SetColor(ti.Color)
-	if ti.Type == TextInfoStroke {
+	if ti.Type == Stroke {
 		w = ti.StrokeWidth
 	}
 	font := ti.Font
@@ -217,7 +217,7 @@ func (ti *TextInfo) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	text := ti.Text
 	for {
 		ts, lines, widths = ti.GetBounds()
-		if ti.Wrap == TextInfoWrapClip || ti.Wrap == TextInfoWrapNone || len(lines) != 1 || ts.W <= ti.Rect.Size.W {
+		if ti.Wrap == WrapClip || ti.Wrap == WrapNone || len(lines) != 1 || ts.W <= ti.Rect.Size.W {
 			// zlog.Info("REDUCED:", lines)
 			break
 		}
@@ -245,7 +245,7 @@ func (ti *TextInfo) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	return ra
 }
 
-func (ti *TextInfo) ScaledFontToFit(minScale float64) *zgeo.Font {
+func (ti *Info) ScaledFontToFit(minScale float64) *zgeo.Font {
 	w := ti.Rect.Size.W
 	w -= ti.Margin.W
 	if ti.Alignment&zgeo.HorCenter != 0 {
@@ -267,8 +267,8 @@ func (ti *TextInfo) ScaledFontToFit(minScale float64) *zgeo.Font {
 	return zgeo.FontNew(ti.Font.Name, ti.Font.PointSize()*r, ti.Font.Style)
 }
 
-func TextInfoWidthOfString(str string, font *zgeo.Font) float64 {
-	ti := TextInfoNew()
+func WidthOfString(str string, font *zgeo.Font) float64 {
+	ti := New()
 	ti.Alignment = zgeo.Left
 	ti.Text = str
 	ti.IsMinimumOneLineHight = true
@@ -278,7 +278,7 @@ func TextInfoWidthOfString(str string, font *zgeo.Font) float64 {
 	return s.W
 }
 
-func (ti *TextInfo) GetColumnsSize(cols int) zgeo.Size {
+func (ti *Info) GetColumnsSize(cols int) zgeo.Size {
 	var temp = *ti
 	temp.Text = ""
 	const letters = "etaoinsrhdlucmfywgpbvkxqjz"

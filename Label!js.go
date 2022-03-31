@@ -3,7 +3,10 @@
 
 package zui
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zui/ztextinfo"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 func LabelNew(text string) *Label {
 	return nil
@@ -14,7 +17,7 @@ func (l *Label) SetTextAlignment(a zgeo.Alignment) View {
 	return l
 }
 
-func (v *Label) SetWrap(wrap TextInfoWrap) {}
+func (v *Label) SetWrap(wrap ztextinfo.WrapType) {}
 
 func (v *Label) SetMargin(m zgeo.Rect) *Label {
 	v.margin = m

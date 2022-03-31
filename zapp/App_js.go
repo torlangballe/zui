@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
@@ -19,7 +20,7 @@ type nativeApp struct {
 
 // URL returns the url that invoked this app
 func URL() string {
-	return zui.WindowJS.Get("location").Get("href").String()
+	return zdom.WindowJS.Get("location").Get("href").String()
 }
 
 // MainArgs returns the path of browser and url parameters as args map of max one parameter of each key

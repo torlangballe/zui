@@ -3,6 +3,7 @@ package zui
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -22,11 +23,11 @@ func makeLatLingJS(pos zgeo.Pos) js.Value {
 }
 
 func (v *MapView) Init(view View, center zgeo.Pos, zoom int) {
-	v.Element = DocumentJS.Call("createElement", "div")
+	v.Element = zdom.DocumentJS.Call("createElement", "div")
 	v.Element.Set("style", "position:absolute")
 	v.View = view
 	v.SetObjectName("map")
-	mapConstructor := jsCreateDotSeparatedObject("google.maps.Map")
+	mapConstructor := zdom.CreateDotSeparatedObject("google.maps.Map")
 	opts := map[string]interface{}{
 		"zoom": zoom,
 	}

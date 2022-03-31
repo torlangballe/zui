@@ -1,6 +1,7 @@
 package zui
 
 import (
+	"github.com/torlangballe/zui/zdom"
 	"syscall/js"
 )
 
@@ -10,7 +11,7 @@ type nativeCodeEditorView struct {
 
 func (v *CodeEditorView) Init(view View, name string) {
 	// v.MakeJSElement(view, "div")
-	v.Element = DocumentJS.Call("createElement", "div")
+	v.Element = zdom.DocumentJS.Call("createElement", "div")
 	//	v.Element.Set("style", "position:absolute")
 	v.View = view
 	v.Element.Set("id", "editor")

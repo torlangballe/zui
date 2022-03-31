@@ -11,6 +11,7 @@ import (
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -32,7 +33,7 @@ type ShapeView struct {
 	Type         ShapeViewType
 	StrokeWidth  float64
 	StrokeColor  zgeo.Color // = ZColor.White()
-	textInfo     TextInfo
+	textInfo     ztextinfo.Info
 	ImageMargin  zgeo.Size //  ZSize(4.0, 1.0) * ZScreen.SoftScale
 	ImageGap     float64
 	ImageAlign   zgeo.Alignment // .Center
@@ -62,7 +63,7 @@ func ShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size) *ShapeView {
 
 func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, name string) {
 	v.CustomView.Init(view, name)
-	v.textInfo = *TextInfoNew()
+	v.textInfo = *ztextinfo.New()
 	v.Type = shapeType
 	v.ImageMargin = zgeo.Size{4, 1}.TimesD(zscreen.MainSoftScale)
 	v.ImageOpacity = 1
@@ -89,7 +90,7 @@ func (v *ShapeView) Init(view View, shapeType ShapeViewType, minSize zgeo.Size, 
 	v.SetFont(f)
 }
 
-// Text sets the ShapeView's TextInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
+// Text sets the ShapeView's textInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
 func (v *ShapeView) SetText(text string) {
 	v.textInfo.Text = text
 	v.Expose()
@@ -103,7 +104,7 @@ func (v *ShapeView) SetTextAlignment(a zgeo.Alignment) {
 	v.textInfo.Alignment = a
 }
 
-func (v *ShapeView) SetTextWrap(w TextInfoWrap) {
+func (v *ShapeView) SetTextWrap(w ztextinfo.WrapType) {
 	v.textInfo.Wrap = w
 }
 

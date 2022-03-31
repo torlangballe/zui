@@ -8,6 +8,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -134,5 +135,5 @@ func (v *VideoView) makeRenderCanvas() {
 // }
 
 func getMediaDevices() js.Value {
-	return jsCreateDotSeparatedObject("navigator.mediaDevices")
+	return zdom.CreateDotSeparatedObject("navigator.mediaDevices")
 }

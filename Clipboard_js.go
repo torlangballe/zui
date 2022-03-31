@@ -1,12 +1,14 @@
 package zui
 
+import "github.com/torlangballe/zui/zdom"
+
 func ClipboardSetString(str string) {
-	textArea := DocumentJS.Call("createElement", "textarea")
+	textArea := zdom.DocumentJS.Call("createElement", "textarea")
 	textArea.Set("value", str)
 	textArea.Get("style").Set("position", "fixed") //avoid scrolling to bottom
-	DocumentJS.Get("body").Call("appendChild", textArea)
+	zdom.DocumentJS.Get("body").Call("appendChild", textArea)
 	textArea.Call("focus")
 	textArea.Call("select")
-	DocumentJS.Call("execCommand", "copy")
-	DocumentJS.Get("body").Call("removeChild", textArea)
+	zdom.DocumentJS.Call("execCommand", "copy")
+	zdom.DocumentJS.Get("body").Call("removeChild", textArea)
 }

@@ -5,6 +5,7 @@ package zui
 import (
 	"time"
 
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
@@ -693,24 +694,24 @@ func (v *ListView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("List ReadyToShow:", beforeWindow)
 	if !beforeWindow && v.HighlightColor.Valid {
 		win := v.GetWindow()
-		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {
-			// zlog.Info("List keypress!", v.ObjectName(), key, mod == KeyboardModifierNone)
+		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
 			switch key {
-			case KeyboardKeyTab:
+			case zkeyboard.KeyTab:
 				if v.HighlightColor.Valid && v.highlightedIndex != -1 {
 					row := v.rows[v.highlightedIndex]
-					ViewGetNative(row).FocusNext(mod != KeyboardModifierShift)
+					ViewGetNative(row).FocusNext(mod != zkeyboard.ModifierShift)
 				}
-			case KeyboardKeyUpArrow:
-				if mod == KeyboardModifierNone {
+			case zkeyboard.KeyUpArrow:
+				if mod == zkeyboard.ModifierNone {
 					v.moveHighlight(-1)
 				}
-			case KeyboardKeyDownArrow:
-				if mod == KeyboardModifierNone {
+			case zkeyboard.KeyDownArrow:
+				if mod == zkeyboard.ModifierNone {
 					v.moveHighlight(1)
 				}
-			case KeyboardKeyReturn, KeyboardKeyEnter:
-				if mod == KeyboardModifierNone {
+			case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
+				if mod == zkeyboard.ModifierNone {
 					if v.PressSelectable && v.HighlightColor.Valid && v.highlightedIndex != -1 {
 						v.doRowPressed(v.highlightedIndex)
 					}

@@ -1,4 +1,4 @@
-package zui
+package zmenu
 
 import (
 	"fmt"
@@ -6,15 +6,16 @@ import (
 	"reflect"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
 
-func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
+func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v := &MenuView{}
-	sel := DocumentJS.Call("createElement", "select")
+	sel := zdom.DocumentJS.Call("createElement", "select")
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
@@ -22,9 +23,9 @@ func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 	v.SetObjectName(name)
 	v.UpdateAndSelect(items, value)
 
-	v.setjs("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
-		index := v.getjs("selectedIndex").Int()
+		index := v.JSGet("selectedIndex").Int()
 		zlog.Assert(index < len(v.items))
 		v.currentValue = v.items[index].Value
 		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
@@ -37,7 +38,7 @@ func MenuViewNew(name string, items zdict.Items, value interface{}) *MenuView {
 }
 
 func (v *MenuView) Empty() {
-	options := v.getjs("options")
+	options := v.JSGet("options")
 	options.Set("length", 0)
 	v.items = v.items[:0]
 	v.currentValue = nil
@@ -57,7 +58,7 @@ func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
 	}
 	for i, item := range v.items {
 		if reflect.DeepEqual(item.Value, value) {
-			options := v.getjs("options")
+			options := v.JSGet("options")
 			// zlog.Info("MV ChangeNameForValue:", i, v.ObjectName(), name, value)
 			v.items[i].Name = name
 			o := options.Index(i)
@@ -69,7 +70,7 @@ func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
 }
 
 func (v *MenuView) menuViewAddItem(name string, value interface{}) {
-	option := DocumentJS.Call("createElement", "option")
+	option := zdom.DocumentJS.Call("createElement", "option")
 	if name == MenuSeparatorID {
 		option.Set("disabled", true)
 		option.Set("class", "separator")
@@ -79,7 +80,7 @@ func (v *MenuView) menuViewAddItem(name string, value interface{}) {
 		option.Set("text", id)
 		// option.Set("innerHTML", name)
 	}
-	v.call("appendChild", option)
+	v.JSCall("appendChild", option)
 }
 
 func (v *MenuView) UpdateAndSelect(items zdict.Items, value interface{}) {
@@ -97,7 +98,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 			str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
 		}
 		// We use HTML here to add all at once, or slow.
-		v.setjs("innerHTML", str)
+		v.JSSet("innerHTML", str)
 	}
 	if len(values) != 0 {
 		v.SelectWithValue(values[0])
@@ -113,7 +114,7 @@ func (v *MenuView) SelectWithValue(value interface{}) {
 	for i, item := range v.items {
 		if reflect.DeepEqual(item.Value, value) {
 			v.currentValue = item.Value
-			options := v.getjs("options")
+			options := v.JSGet("options")
 			// zlog.Info("MV SelectWithValue Set:", i, v.ObjectName(), len(v.items), options, value)
 			o := options.Index(i)
 			o.Set("selected", "true")

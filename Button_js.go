@@ -3,6 +3,7 @@ package zui
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -30,8 +31,8 @@ func (v *Button) MakeEnterDefault() {
 	//	v.margin.Size.H += 4
 	ztimer.StartIn(0.01, func() {
 		win := v.GetWindow()
-		win.AddKeypressHandler(v.View, func(key KeyboardKey, mod KeyboardModifier) {
-			if key == KeyboardKeyReturn && mod == KeyboardModifierNone {
+		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+			if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
 				v.Element.Call("click")
 			}
 		})
@@ -41,22 +42,22 @@ func (v *Button) MakeEnterDefault() {
 
 func (v *Button) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.setjs("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
-	v.setjs("className", "widget")
+	v.JSSet("className", "widget")
 }
 
 func (v *Button) SetLongPressedHandler(handler func()) {
 	// zlog.Info("Button.SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
-	v.setjs("className", "widget")
-	v.setjs("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("className", "widget")
+	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
-	v.setjs("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		// fmt.Println("MOUSEUP")
 		(&v.LongPresser).HandleOnMouseUp(v)
 		return nil

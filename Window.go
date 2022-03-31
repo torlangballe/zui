@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -6,6 +7,7 @@ import (
 	"math"
 	"net/url"
 
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -23,7 +25,7 @@ type Window struct {
 	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
 	resizeHandlingView  View
 	dismissed           bool // this stores if window is dismissed or closed for other reasons, used by present close functions
-	keyHandlers         map[View]func(KeyboardKey, KeyboardModifier)
+	keyHandlers         map[View]func(zkeyboard.Key, zkeyboard.Modifier)
 }
 
 type WindowOptions struct {
@@ -42,7 +44,7 @@ var (
 
 func WindowNew() *Window {
 	w := &Window{}
-	w.keyHandlers = map[View]func(KeyboardKey, KeyboardModifier){}
+	w.keyHandlers = map[View]func(zkeyboard.Key, zkeyboard.Modifier){}
 	return w
 }
 

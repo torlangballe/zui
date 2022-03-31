@@ -1,9 +1,10 @@
 //go:build zui
-// +build zui
 
-package zui
+package zmenu
 
 import (
+	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -19,7 +20,7 @@ type MenuType interface {
 }
 
 type MenuView struct {
-	NativeView
+	zui.NativeView
 	maxWidth        float64
 	selectedHandler func()
 	items           zdict.Items
@@ -48,7 +49,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			max = item.Name
 		}
 	}
-	w := TextInfoWidthOfString(max, v.Font())
+	w := ztextinfo.WidthOfString(max, v.Font())
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&w, v.maxWidth)
 	}

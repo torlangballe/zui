@@ -1,7 +1,6 @@
 //go:build zui
-// +build zui
 
-package zui
+package zmenu
 
 import (
 	"fmt"
@@ -11,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -37,7 +38,7 @@ type MenuedOptions struct {
 }
 
 type MenuedShapeView struct {
-	ShapeView
+	zui.ShapeView
 	maxWidth        float64
 	selectedHandler func()
 	items           []MenuedItem
@@ -50,7 +51,7 @@ type MenuedShapeView struct {
 //var MenuedItemSeparator = MenuedItem{Item: zdict.Item{Name: MenuSeparatorID}}
 var MenuedItemSeparator = MenuedItem{Name: MenuSeparatorID}
 
-func MenuedShapeViewNew(shapeType ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, opts MenuedOptions) *MenuedShapeView {
+func MenuedShapeViewNew(shapeType zui.ShapeViewType, minSize zgeo.Size, name string, items []MenuedItem, opts MenuedOptions) *MenuedShapeView {
 	v := &MenuedShapeView{}
 	if minSize.IsNull() {
 		minSize.Set(20, 26)
@@ -167,7 +168,7 @@ func (v *MenuedShapeView) updateTitle() {
 		if v.Options.ImagePath != "" {
 			v.SetImage(nil, spath, nil)
 		}
-		if item != nil && item.Value != nil && v.textInfo.Alignment != zgeo.AlignmentNone {
+		if item != nil && item.Value != nil && v.View.(ztextinfo.Owner).GetTextInfo().Alignment != zgeo.AlignmentNone {
 			v.SetText(sval)
 		} else {
 			v.SetText("")
@@ -240,7 +241,7 @@ func (v *MenuedShapeView) popup() {
 
 	// stack := StackViewVert("menued-pop-stack")
 	// stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
-	list := ListViewNew("menu-list", selection)
+	list := zui.ListViewNew("menu-list", selection)
 	// list.MinRows = 10
 	//stack.SetBGColor(zgeo.ColorWhite)
 	//	list.ScrollView.SetBGColor(zgeo.ColorClear)
@@ -267,9 +268,9 @@ func (v *MenuedShapeView) popup() {
 	if v.Options.HasLabelColor {
 		rm += 24
 	}
-	list.CreateRow = func(rowSize zgeo.Size, i int) View {
-		cv := CustomViewNew("row")
-		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view View) {
+	list.CreateRow = func(rowSize zgeo.Size, i int) zui.View {
+		cv := zui.CustomViewNew("row")
+		cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
 			list.UpdateRowBGColor(i)
 			item := v.items[i]
 			if item.Name == MenuSeparatorID {
@@ -277,7 +278,7 @@ func (v *MenuedShapeView) popup() {
 				canvas.StrokeHorizontal(0, rect.Size.W, math.Floor(rect.Center().Y), 1, zgeo.PathLineSquare)
 				return
 			}
-			ti := TextInfoNew()
+			ti := ztextinfo.New()
 			if list.IsRowHighlighted(i) {
 				ti.Color = zgeo.ColorWhite
 			} else if item.TextColor.Valid {
@@ -318,7 +319,7 @@ func (v *MenuedShapeView) popup() {
 			max = item.Name
 		}
 	}
-	w := TextInfoWidthOfString(max, v.Font())
+	w := ztextinfo.WidthOfString(max, v.Font())
 	w += leftMarg + rm
 	list.SetMinSize(zgeo.Size{w, 0})
 
@@ -327,15 +328,15 @@ func (v *MenuedShapeView) popup() {
 		v.items[i].Selected = selected
 		if v.items[i].IsAction {
 			if selected {
-				PresentViewClose(list, false, nil)
+				zui.PresentViewClose(list, false, nil)
 			}
 			return
 		}
 		if !v.Options.IsMultiple && fromPressed {
-			PresentViewClose(list, false, nil)
+			zui.PresentViewClose(list, false, nil)
 		}
 	}
-	att := PresentViewAttributesNew()
+	att := zui.PresentViewAttributesNew()
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
@@ -347,7 +348,7 @@ func (v *MenuedShapeView) popup() {
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)
-	PresentView(list, att, func(*Window) {
+	zui.PresentView(list, att, func(*zui.Window) {
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
 		if !dismissed || v.Options.IsMultiple { // if multiple, we handle any select/deselect done

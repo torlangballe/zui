@@ -1,7 +1,9 @@
 package zui
 
+import "github.com/torlangballe/zui/zdom"
+
 func PresentViewSetURL(surl string) {
-	WindowJS.Get("location").Call("assign", surl)
+	zdom.WindowJS.Get("location").Call("assign", surl)
 }
 
 // https://bubblin.io/blog/fullscreen-api-ipad
