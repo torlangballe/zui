@@ -141,28 +141,24 @@ func (v *ContainerView) Init(view View, name string) {
 	v.CustomView.Init(view, name)
 }
 
-func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) *ContainerView {
+func (v *ContainerView) LayoutHandler(handler ViewLayoutProtocol) {
 	v.layoutHandler = handler
-	return v
 }
 
-func (v *ContainerView) SetMargin(margin zgeo.Rect) *ContainerView {
+func (v *ContainerView) SetMargin(margin zgeo.Rect) {
 	v.margin = margin
-	return v
 }
 
 func (v *ContainerView) Margin() zgeo.Rect {
 	return v.margin
 }
 
-func (v *ContainerView) SetMarginS(margin zgeo.Size) *ContainerView {
+func (v *ContainerView) SetMarginS(margin zgeo.Size) {
 	v.margin = zgeo.RectFromMinMax(margin.Pos(), margin.Pos().Negative())
-	return v
 }
 
-func (v *ContainerView) SingleOrientation(single bool) *ContainerView {
+func (v *ContainerView) SetSingleOrientation(single bool) {
 	v.singleOrientation = single
-	return v
 }
 
 func (v *ContainerView) AddCell(cell ContainerViewCell, index int) (cvs *ContainerViewCell) {
