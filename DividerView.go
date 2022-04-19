@@ -33,7 +33,7 @@ func newDiv(storeKey string) *DividerView {
 		v.storeKey = storeKey
 		v.Delta, _ = zkeyvalue.DefaultStore.GetDouble(storeKey, 0)
 	}
-	v.SetUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) {
+	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) {
 		switch down {
 		case zbool.False:
 		case zbool.True:
