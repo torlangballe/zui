@@ -29,7 +29,6 @@ type CustomView struct {
 	exposeTimer   *ztimer.Timer
 	isSetup       bool
 	isHighlighted bool
-	PressedPos    zgeo.Pos
 }
 
 func CustomViewNew(name string) *CustomView {
