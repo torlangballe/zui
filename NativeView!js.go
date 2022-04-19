@@ -40,7 +40,7 @@ func (v *NativeView) SetFont(font *zgeo.Font)                                   
 func (v *NativeView) Color() zgeo.Color                                                           { return zgeo.Color{} }
 func (v *NativeView) BGColor() zgeo.Color                                                         { return zgeo.Color{} }
 func (v *NativeView) SetCursor(cursor CursorType)                                                 {}
-func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd))        {}
+func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd))   {}
 func (v *NativeView) Alpha() float32                                                              { return 1 }
 func (v *NativeView) GetScale() float64                                                           { return 1 }
 func (v *NativeView) Show(show bool)                                                              {}
@@ -78,6 +78,7 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))           
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                                {}
 func (v *NativeView) SetHandleExposed(handle func(intersects bool))                               {}
 func (v *NativeView) MakeLink(surl, name string)                                                  {}
+func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment)                 {}
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }
 func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
