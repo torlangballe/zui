@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
@@ -25,7 +26,8 @@ type nativeApp struct {
 // FilesRedirector is a type that can handle serving files
 type FilesRedirector struct {
 	Override         func(w http.ResponseWriter, req *http.Request) bool // Override is a method to handle special cases of files, return true if handled
-	ServeDirectories bool                                                // if ServeDirectories is true, it serves content list of directory
+	ServeDirectories bool
+	Router           *mux.Router // if ServeDirectories is true, it serves content list of directory
 }
 
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
@@ -69,7 +71,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	zlog.Info("Serve app:", path, filepath)
+	// zlog.Info("Serve app:", path, filepath)
 	http.ServeFile(w, req, filepath)
 }
 
@@ -86,14 +88,15 @@ func convertMarkdownToHTML(filepath, title string) (string, error) {
 	return html, nil
 }
 
-func ServeZUIWasm(serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
+func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request) bool) {
 	f := &FilesRedirector{
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
 	zlog.Info("HandleApp:", zrest.AppURLPrefix)
-	http.Handle(zrest.AppURLPrefix, f)
-	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+	route := router.PathPrefix(zrest.AppURLPrefix)
+	route.Handler(f)
+	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/favicon.ico")
 	})
 }
