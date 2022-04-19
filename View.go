@@ -53,8 +53,15 @@ type ViewDrawProtocol interface {
 }
 
 type ExposableType interface {
-	// drawSelf()
 	Expose()
+}
+
+type Marginalizer interface {
+	SetMargin(m zgeo.Rect)
+}
+
+type MarginOwner interface {
+	Margin() zgeo.Rect
 }
 
 type ReadyToShowType interface {
