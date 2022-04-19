@@ -129,20 +129,23 @@ func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int
 	v.ScrollHandler = handler
 }
 
-func (v *ScrollView) MakeOffspringVisible(offspring View, animate bool) {
+func (v *ScrollView) MakeRectVisible(rect zgeo.Rect, animate bool) {
 	var y float64
-	sp := v.AbsoluteRect().Pos
-	or := ViewGetNative(offspring).AbsoluteRect()
-	or.Pos.Subtract(sp)
-	or.Pos.Y += v.YOffset
 	h := v.LocalRect().Size.H
-	// zlog.Debug("SV MakeOffspringVisible:", v.YOffset, sp, or, h, or.Min().Y < v.YOffset, or.Max().Y > v.YOffset+h)
-	if or.Min().Y < v.YOffset {
-		y = or.Min().Y
-	} else if or.Max().Y > v.YOffset+h {
-		y = or.Max().Y - h
+	if rect.Min().Y < v.YOffset {
+		y = rect.Min().Y
+	} else if rect.Max().Y > v.YOffset+h {
+		y = rect.Max().Y - h
 	} else {
 		return
 	}
 	v.SetContentOffset(y, false)
+}
+
+func (v *ScrollView) MakeOffspringVisible(offspring View, animate bool) {
+	sp := v.AbsoluteRect().Pos
+	or := ViewGetNative(offspring).AbsoluteRect()
+	or.Pos.Subtract(sp)
+	or.Pos.Y += v.YOffset
+	v.MakeRectVisible(or, animate)
 }

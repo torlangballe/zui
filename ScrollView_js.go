@@ -12,7 +12,6 @@ func (v *ScrollView) Init(view View, name string) {
 	v.CustomView.Init(view, name)
 	style := v.style()
 	style.Set("overflow-x", "hidden")
-	//	style.Set("overflow-y", "auto")
 	style.Set("overflow-y", "scroll")
 	v.JSSet("tabindex", "-1")
 	style.Set("overscrollBehavior", "contain")
