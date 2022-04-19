@@ -72,6 +72,7 @@ func (v *Label) SetMaxLines(max int) {
 func (v *Label) SetRect(r zgeo.Rect) {
 	//	zlog.Info("Label SetRect:", v.ObjectName(), r)
 	//	r.Pos.Y -= 6
+	// inner := r.Plus(v.margin)
 	v.NativeView.SetRect(r)
 }
 
@@ -110,13 +111,12 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 	v.style().Set("textAlign", str)
 }
 
-func (v *Label) SetMargin(m zgeo.Rect) *Label {
+func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
 	style := v.style()
 	// zlog.Info("Label SetMarg:", v.ObjectName(), m)
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
-	style.Set("padding-bottom", fmt.Sprintf("%dpx", int(m.Max().Y)))
-	style.Set("padding-right", fmt.Sprintf("%dpx", int(m.Max().X)))
-	return v
+	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	style.Set("padding-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
 }

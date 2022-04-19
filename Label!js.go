@@ -19,9 +19,8 @@ func (l *Label) SetTextAlignment(a zgeo.Alignment) View {
 
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {}
 
-func (v *Label) SetMargin(m zgeo.Rect) *Label {
+func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	return v
 }
 
 func (v *Label) SetPressedHandler(handler func()) {
