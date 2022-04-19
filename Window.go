@@ -25,7 +25,7 @@ type Window struct {
 	ProgrammaticView    View // this is set if the window has zui views added to it. If from URL, it is nil
 	resizeHandlingView  View
 	dismissed           bool // this stores if window is dismissed or closed for other reasons, used by present close functions
-	keyHandlers         map[View]func(zkeyboard.Key, zkeyboard.Modifier)
+	keyHandlers         map[View]func(zkeyboard.Key, zkeyboard.Modifier) bool
 }
 
 type WindowOptions struct {
@@ -44,7 +44,7 @@ var (
 
 func WindowNew() *Window {
 	w := &Window{}
-	w.keyHandlers = map[View]func(zkeyboard.Key, zkeyboard.Modifier){}
+	w.keyHandlers = map[View]func(zkeyboard.Key, zkeyboard.Modifier) bool{}
 	return w
 }
 

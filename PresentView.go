@@ -111,10 +111,12 @@ func presentLoaded(v, outer View, attributes PresentViewAttributes, presented fu
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			win := nv.GetWindow()
-			win.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+			win.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 				if mod == zkeyboard.ModifierNone && key == zkeyboard.KeyEscape {
 					PresentViewClose(v, true, nil)
+					return true
 				}
+				return false
 			})
 		}
 	} else {

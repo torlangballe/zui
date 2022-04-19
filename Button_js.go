@@ -31,10 +31,12 @@ func (v *Button) MakeEnterDefault() {
 	//	v.margin.Size.H += 4
 	ztimer.StartIn(0.01, func() {
 		win := v.GetWindow()
-		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 			if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
 				v.Element.Call("click")
+				return true
 			}
+			return false
 		})
 	})
 

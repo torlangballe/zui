@@ -694,7 +694,7 @@ func (v *ListView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("List ReadyToShow:", beforeWindow)
 	if !beforeWindow && v.HighlightColor.Valid {
 		win := v.GetWindow()
-		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) {
+		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
 			switch key {
 			case zkeyboard.KeyTab:
@@ -717,6 +717,7 @@ func (v *ListView) ReadyToShow(beforeWindow bool) {
 					}
 				}
 			}
+			return true
 		})
 	}
 }

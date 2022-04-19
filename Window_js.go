@@ -211,16 +211,20 @@ func (win *Window) setOnKeyUp() {
 	doc := win.element.Get("document")
 	// zlog.Info("win keydown")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
+		// zlog.Info("win key:", key)
 		if len(win.keyHandlers) != 0 {
-			key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
+			var used bool
 			for view, h := range win.keyHandlers {
-				// zlog.Info("win key:", key, view.ObjectName())
+				// zlog.Info("win key2:", key, view.ObjectName())
 				if PresentedViewCurrentIsParent(view) {
 					// zlog.Info("win key2:", key, ViewGetNative(view).Hierarchy())
-					h(key, mods)
+					if h(key, mods) {
+						used = true
+					}
 				}
 			}
-			if key == zkeyboard.KeyDownArrow || key == zkeyboard.KeyUpArrow {
+			if used {
 				event := args[0]
 				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
 			}
@@ -247,18 +251,18 @@ func (win *Window) removeKeyPressHandlerViews(root View) {
 	})
 }
 
-func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
-	// zlog.Info("Window AddKeypressHandler", v.ObjectName())
+func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier) bool) {
 	if handler == nil {
 		delete(win.keyHandlers, v)
 		return
 	}
 	win.keyHandlers[v] = handler
 	win.setOnKeyUp()
+	zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))
 	doc := win.element.Get("document")
 	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		win.setOnKeyUp()
-		// zlog.Info("WIN activate!")
+		zlog.Info("WIN activate!")
 		return nil
 	}))
 }
