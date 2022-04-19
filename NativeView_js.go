@@ -229,6 +229,25 @@ func (v *NativeView) SetCorner(radius float64) {
 	style.Set("border-radius", s)
 }
 
+func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment) {
+	str := "none"
+	if width != 0 {
+		str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
+	}
+	if a&zgeo.Left != 0 {
+		v.style().Set("borderLeft", str)
+	}
+	if a&zgeo.Right != 0 {
+		v.style().Set("borderRight", str)
+	}
+	if a&zgeo.Top != 0 {
+		v.style().Set("borderTop", str)
+	}
+	if a&zgeo.Bottom != 0 {
+		v.style().Set("borderBottom", str)
+	}
+}
+
 func (v *NativeView) SetStroke(width float64, c zgeo.Color) {
 	str := "none"
 	if width != 0 {
