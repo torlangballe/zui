@@ -1071,7 +1071,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				// zlog.Info("struct make field view:", f.Name, f.Kind, exp)
 				childStruct := item.Address
 				vert := true
-				if !f.Vertical.IsUndetermined() {
+				if !f.Vertical.IsUnknown() {
 					vert = f.Vertical.Bool()
 				}
 				// zlog.Info("struct fieldViewNew", f.ID, vert, f.Vertical)
