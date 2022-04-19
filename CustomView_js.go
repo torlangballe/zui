@@ -2,7 +2,6 @@ package zui
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
-	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -35,9 +34,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		if !event.Get("target").Equal(v.Element) {
 			return nil
 		}
-		v.PressedPos.X = event.Get("offsetX").Float()
-		v.PressedPos.Y = event.Get("offsetY").Float()
-		_, zkeyboard.ModifiersAtPress = zkeyboard.GetKeyAndModsFromEvent(event)
+		v.setStateOnDownPress(event)
 		(&v.LongPresser).HandleOnClick(v)
 		event.Call("stopPropagation")
 		return nil
@@ -48,7 +45,8 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 	// zlog.Info("SetLongPressedHandler:", v.ObjectName())
 	v.longPressed = handler
 	v.JSSet("className", "widget")
-	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		v.setStateOnDownPress(args[0])
 		(&v.LongPresser).HandleOnMouseDown(v)
 		return nil
 	}))
@@ -101,6 +99,10 @@ func (v *CustomView) SetUsable(usable bool) {
 	// zlog.Info("CV SetUsable:", v.ObjectName(), usable, v.Usable())
 }
 
+func (v *CustomView) MC() {
+	v.makeCanvas()
+}
+
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
 		v.canvas = zcanvas.New()
@@ -140,7 +142,7 @@ func (v *CustomView) drawSelf() {
 
 func (v *CustomView) ExposeIn(secs float64) {
 	if v.visible {
-		v.exposeTimer.StartIn(0.1, func() {
+		v.exposeTimer.StartIn(secs, func() {
 			go v.drawSelf()
 		})
 		v.exposed = false

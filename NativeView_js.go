@@ -796,21 +796,27 @@ func (v *NativeView) SetOnInputHandler(handler func()) {
 	}))
 }
 
-var movingPos *zgeo.Pos
+func (v *NativeView) setStateOnDownPress(event js.Value) {
+	var pos zgeo.Pos
+	pos.X = event.Get("offsetX").Float()
+	pos.Y = event.Get("offsetY").Float()
+	LastPressedPos = pos.Minus(v.AbsoluteRect().Pos)
+	_, zkeyboard.ModifiersAtPress = zkeyboard.GetKeyAndModsFromEvent(event)
+}
 
-func (v *NativeView) SetUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
+func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
 	const minDiff = 10.0
 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		e := args[0]
-		m := getMousePos(e)
-		movingPos = &m
+		v.setStateOnDownPress(e)
+		pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
+		movingPos = &pos
 		handler(*movingPos, zbool.True)
 		e.Call("preventDefault")
 		v.GetWindow().element.Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			if movingPos != nil {
-				pos := getMousePos(args[0])
-				pos2 := pos.Minus(*movingPos)
-				handler(pos2, zbool.Unknown)
+				pos := getMousePos(args[0]).Minus(v.AbsoluteRect().Pos)
+				handler(pos, zbool.Unknown)
 			}
 			return nil
 		}))
