@@ -29,6 +29,16 @@ type AddHandler interface {
 	HandleAddAsChild()
 }
 
+var (
+	dragEnterView   *NativeView
+	LastPressedPos  zgeo.Pos
+	idCount         int
+	mouseStartPos   zgeo.Pos
+	mouseStartTime  time.Time
+	lastUploadClick time.Time
+	movingPos       *zgeo.Pos
+)
+
 func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element = zdom.DocumentJS.Call("createElement", etype)
 	v.Element.Set("style", "position:absolute")
@@ -143,8 +153,6 @@ func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
 func (v *NativeView) ObjectName() string {
 	return v.JSGet("oname").String()
 }
-
-var idCount int
 
 func (v *NativeView) SetObjectName(name string) {
 	v.JSSet("oname", name)
@@ -525,9 +533,6 @@ func (lp *LongPresser) HandleOnMouseUp(view View) {
 	}
 }
 
-var mouseStartPos zgeo.Pos
-var mouseStartTime time.Time
-
 func getMousePos(e js.Value) (pos zgeo.Pos) {
 	pos.X = e.Get("clientX").Float()
 	pos.Y = e.Get("clientY").Float()
@@ -669,8 +674,6 @@ func jsFileToGo(file js.Value, got func(data []byte, name string)) {
 	reader.Call("readAsArrayBuffer", file)
 }
 
-var dragEnterView *NativeView
-
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 	if zlog.IsInTests {
 		return
@@ -721,8 +724,6 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		return nil
 	}))
 }
-
-var lastUploadClick time.Time
 
 func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 	e := zdom.DocumentJS.Call("createElement", "input")
