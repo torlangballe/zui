@@ -830,8 +830,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		// zlog.Info("MOUSEUP")
 		movingPos = nil
 		v.GetWindow().element.Set("onmousemove", nil)
-		pos := getMousePos(args[0])
-		pos = pos.Minus(v.AbsoluteRect().Pos)
+		pos := getMousePos(args[0]).Minus(v.AbsoluteRect().Pos)
 		handler(pos, zbool.False)
 		return nil
 	}))
