@@ -34,7 +34,7 @@ type GridListView struct {
 	CellCount              func() int
 	IDAtIndex              func(i int) string
 	CreateCell             func(id string) zui.View
-	UpdateCell             func(id string)
+	UpdateCell             func(grid *GridListView, id string)
 	UpdateSelection        func(id string)
 	CellHeight             func(id string) float64 // only need to have variable-height
 	HandleSelectionChanged func()
@@ -389,7 +389,7 @@ func (v *GridListView) makeOrGetChild(id string) zui.View {
 	zui.PresentViewCallReady(child, false)
 	if v.UpdateCell != nil {
 		// zlog.Info("UpdateNewCell", id, len(v.children))
-		v.UpdateCell(id)
+		v.UpdateCell(v, id)
 	}
 	child.(zui.ExposableType).Expose()
 	return child
@@ -500,7 +500,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			child.SetRect(o)
 			v.updateCellBackground(cid, x, y, child)
 			if updateCells && v.UpdateCell != nil {
-				v.UpdateCell(cid)
+				v.UpdateCell(v, cid)
 			}
 			placed[cid] = true
 		}
