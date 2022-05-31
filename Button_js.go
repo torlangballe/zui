@@ -26,13 +26,26 @@ func ButtonNew(text string) *Button {
 }
 
 func (v *Button) MakeEnterDefault() {
-	v.SetStroke(2, zgeo.ColorNew(0.3, 0.3, 1, 1))
+	v.SetStroke(1, zgeo.ColorNew(0.3, 0.3, 1, 1))
 	v.SetCorner(6)
 	//	v.margin.Size.H += 4
 	ztimer.StartIn(0.01, func() {
 		win := v.GetWindow()
 		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 			if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
+				v.Element.Call("click")
+				return true
+			}
+			return false
+		})
+	})
+}
+
+func (v *Button) MakeEscapeCanceler() {
+	ztimer.StartIn(0.01, func() {
+		win := v.GetWindow()
+		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+			if key == zkeyboard.KeyEscape && mod == zkeyboard.ModifierNone {
 				v.Element.Call("click")
 				return true
 			}

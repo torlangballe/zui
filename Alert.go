@@ -1,3 +1,4 @@
+//go:build zui
 // +build zui
 
 package zui
@@ -200,7 +201,7 @@ func (a *Alert) Show(handle func(result AlertResult)) {
 	PresentView(stack, att, nil, nil)
 }
 
-func addButton(view View, bar *StackView, title string, ok bool, done func(ok bool) bool) {
+func addButton(view View, bar *StackView, title string, ok bool, done func(ok bool) bool) *Button {
 	button := ButtonNew(title)
 	button.SetMinWidth(80)
 	bar.AddAlertButton(button)
@@ -211,9 +212,10 @@ func addButton(view View, bar *StackView, title string, ok bool, done func(ok bo
 			PresentViewClose(parent, !ok, nil)
 		}
 	})
+	return button
 }
 
-func PresentOKCanceledView(view View, title string, att PresentViewAttributes, done func(ok bool) bool) { // move this to PresentView?
+func PresentOKCanceledView(view View, title string, att PresentViewAttributes, done func(ok bool) bool) {
 	stack := StackViewVert("alert")
 	stack.SetBGColor(StyleDefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
@@ -222,13 +224,25 @@ func PresentOKCanceledView(view View, title string, att PresentViewAttributes, d
 	bar := StackViewHor("bar")
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{0, 10})
 
-	addButton(stack, bar, "Cancel", false, done)
-	addButton(stack, bar, "OK", true, done)
+	cancelButton := addButton(stack, bar, "Cancel", false, done)
+	okButton := addButton(stack, bar, "OK", true, done)
+	okButton.MakeEnterDefault()
+	cancelButton.MakeEscapeCanceler()
 
 	att.Modal = true
+	focusFunc := func(win *Window) {
+		ContainerTypeRangeChildren(stack, true, false, func(view View) bool {
+			tv, _ := view.(*TextView)
+			if tv != nil {
+				tv.Focus(true)
+				return false
+			}
+			return true
+		})
+	}
 	if title != "" {
-		PresentTitledView(stack, title, att, nil, nil, nil, nil)
+		PresentTitledView(stack, title, att, nil, nil, focusFunc, nil)
 	} else {
-		PresentView(stack, att, nil, nil)
+		PresentView(stack, att, focusFunc, nil)
 	}
 }
