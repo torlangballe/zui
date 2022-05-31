@@ -499,12 +499,10 @@ func (v *ContainerView) drawIfExposed() {
 */
 
 func (v *ContainerView) ReplaceChild(child, with View) {
-	c, i := v.FindCellWithView(child)
+	c, _ := v.FindCellWithView(child)
 	if c != nil {
+		v.ReplaceChild(child, with)
 		c.View = with
-		with.SetRect(child.Rect())
-		v.RemoveChild(child)
-		v.AddChild(with, i)
 	}
 }
 
