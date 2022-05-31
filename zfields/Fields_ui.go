@@ -381,7 +381,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 					f.FontStyle = zgeo.FontStyleFromStr(part)
 					if f.FontStyle == zgeo.FontStyleNormal {
 						f.FontName = part
-					} 					
+					}
 				}
 			}
 
@@ -461,7 +461,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 		}
 	}
 	if immediateEdit {
-		f.UpdateSecs = -1
+		f.UpdateSecs = 0
 	}
 	if f.HeaderSize.IsNull() {
 		f.HeaderSize = f.Size
