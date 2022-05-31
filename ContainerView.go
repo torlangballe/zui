@@ -104,6 +104,7 @@ func (v *ContainerView) Add(elements ...interface{}) (first *ContainerViewCell) 
 		}
 		if a, got := e.(zgeo.Alignment); got {
 			gotAlign = a
+			zlog.Assert(a&(zgeo.VertPos|zgeo.HorPos) != 0)
 			continue
 		}
 		if m, got := e.(zgeo.Size); got {
@@ -382,23 +383,27 @@ func ViewRangeChildren(view View, subViews, includeCollapsed bool, foreach func(
 	}
 }
 
-func ContainerTypeRangeChildren(ct ContainerType, subViews, includeCollapsed bool, foreach func(view View) bool) {
+func ContainerTypeRangeChildren(ct ContainerType, subViews, includeCollapsed bool, foreach func(view View) bool) bool {
 	children := ct.GetChildren(includeCollapsed)
 	for _, c := range children {
-		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews)
-		if !foreach(c) {
-			return
+		cont := foreach(c)
+		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews, cont)
+		if !cont {
+			return false
 		}
 	}
 	if !subViews {
-		return
+		return true
 	}
 	for _, c := range children {
 		sub, got := c.(ContainerType)
 		if got {
-			ContainerTypeRangeChildren(sub, subViews, includeCollapsed, foreach)
+			if !ContainerTypeRangeChildren(sub, subViews, includeCollapsed, foreach) {
+				return false
+			}
 		}
 	}
+	return true
 }
 
 func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
