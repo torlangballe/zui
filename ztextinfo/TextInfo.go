@@ -159,7 +159,7 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 		}
 		//	count = ti.MaxLines
 		if count > 1 || ti.IsMinimumOneLineHight {
-			size.H = float64(ti.Font.LineHeight()*1.1) * float64(zint.Max(count, 1))
+			size.H = float64(ti.Font.LineHeight()*1.2) * float64(zint.Max(count, 1))
 		}
 		// zlog.Info("BOUNDS:", size, count, ti.Text)
 	}
