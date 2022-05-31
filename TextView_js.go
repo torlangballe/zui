@@ -41,6 +41,7 @@ func (v *TextView) Init(view View, text string, textStyle TextViewStyle, rows, c
 	v.Columns = cols
 	v.JSSet("style", "position:absolute")
 	css := v.style()
+	css.Set("resize", "none")
 	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	css.Set("-webkitBoxShadow", "none") // doesn't work
 
