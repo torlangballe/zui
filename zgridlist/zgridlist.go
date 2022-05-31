@@ -8,12 +8,11 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zbool"
-	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/zmap"
 )
 
 type GridListView struct {
@@ -23,7 +22,7 @@ type GridListView struct {
 	MultiSelectable bool
 	MaxColumns      int
 	MinColumns      int
-	CellIDs         []string
+	//	CellIDs         []string
 
 	BorderColor       zgeo.Color
 	CellColor         zgeo.Color
@@ -32,11 +31,14 @@ type GridListView struct {
 	SelectColor       zgeo.Color
 	HoverColor        zgeo.Color
 
-	CreateChild            func(id string) zui.View
+	CellCount              func() int
+	IDAtIndex              func(i int) string
+	CreateCell             func(id string) zui.View
 	UpdateCell             func(id string)
 	UpdateSelection        func(id string)
-	RowHeight              func(id string) float64
+	CellHeight             func(id string) float64 // only need to have variable-height
 	HandleSelectionChanged func()
+	HandkeKey              func(key zkeyboard.Key, mod zkeyboard.Modifier) bool
 	children               map[string]zui.View
 	selectedIDs            map[string]bool
 	pressedIDs             map[string]bool
@@ -47,6 +49,7 @@ type GridListView struct {
 	margin                 zgeo.Rect
 	columns                int
 	rows                   int
+	layoutDirty            bool
 }
 
 func New(name string) *GridListView {
@@ -62,8 +65,8 @@ func (v *GridListView) Init(view zui.View, name string) {
 	v.children = map[string]zui.View{}
 	v.selectedIDs = map[string]bool{}
 	v.pressedIDs = map[string]bool{}
-
-	v.grid = zui.CustomViewNew("grid")
+	v.SetObjectName("GridListView (Scroller)")
+	v.grid = zui.CustomViewNew("GridListView.grid")
 	v.AddChild(v.grid, -1)
 	v.grid.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 
@@ -72,16 +75,53 @@ func (v *GridListView) Init(view zui.View, name string) {
 	v.SelectColor = zui.StyleDefaultFGColor().WithOpacity(0.3)
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("Scroll:", pos)
-		v.layoutCells(false)
+		v.LayoutCells(false)
 	})
+}
+
+func (v *GridListView) IndexOfID(id string) int {
+	for i := 0; i < v.CellCount(); i++ {
+		if v.IDAtIndex(i) == id {
+			return i
+		}
+	}
+	return -1
 }
 
 func (v *GridListView) IsSelected(id string) bool {
 	return v.selectedIDs[id]
 }
 
-func (v *GridListView) SelectedIDs() map[string]bool {
-	return v.selectedIDs
+func (v *GridListView) SelectedIDs() []string {
+	ids := make([]string, len(v.selectedIDs))
+	i := 0
+	for sid := range v.selectedIDs {
+		ids[i] = sid
+		i++
+	}
+	return ids
+}
+
+func (v *GridListView) SelectCell(id string, animateScroll bool) {
+	v.SelectCells([]string{id}, animateScroll)
+}
+
+func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
+	v.selectedIDs = map[string]bool{}
+	for _, id := range ids {
+		v.selectedIDs[id] = true
+	}
+	v.layoutDirty = true
+	for i := 0; i < v.CellCount(); i++ {
+		sid := v.IDAtIndex(i)
+		if v.selectedIDs[sid] {
+			v.ScrollToCell(sid, animateScroll)
+			break
+		}
+	}
+	if v.layoutDirty { // this is to avoid layout if scroll did it
+		v.LayoutCells(true)
+	}
 }
 
 func (v *GridListView) IsPressed(id string) bool {
@@ -136,37 +176,10 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zui.View
 	}
 }
 
-func (v *GridListView) findNearestSelected(index int) int {
-	nearIndex := index
-	up := index + 1
-	down := index - 1
-	for {
-		upIn := (up < len(v.CellIDs))
-		if upIn {
-			if v.selectedIDs[v.CellIDs[up]] {
-				nearIndex = up
-				break
-			}
-			up++
-		}
-		downIn := (down > 0)
-		if downIn {
-			if v.selectedIDs[v.CellIDs[down]] {
-				nearIndex = down
-				break
-			}
-			down--
-		}
-		if !upIn && !downIn {
-			break
-		}
-	}
-	return nearIndex
-}
-
 func (v *GridListView) setPressed(index int) {
+	// zlog.Info("setPressed", index, v.selectingFromIndex)
 	if !v.MultiSelectable {
-		v.pressedIDs[v.CellIDs[index]] = true
+		v.pressedIDs[v.IDAtIndex(index)] = true
 		return
 	}
 	if v.appending {
@@ -178,7 +191,7 @@ func (v *GridListView) setPressed(index int) {
 		v.pressedIDs = map[string]bool{}
 		min, max := zint.MinMax(index, v.selectingFromIndex)
 		for i := min; i <= max; i++ {
-			v.pressedIDs[v.CellIDs[i]] = true
+			v.pressedIDs[v.IDAtIndex(i)] = true
 		}
 	}
 }
@@ -187,48 +200,52 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	if !v.Selectable && !v.MultiSelectable {
 		return
 	}
-	id := v.FindCellForPos((pos))
-	if id == "" {
-		return
+	var index int
+	id, inside := v.FindCellForPos((pos))
+	if id != "" {
+		index = v.IndexOfID(id)
+		if index == -1 {
+			zlog.Info("No index for id:", id)
+			return
+		}
 	}
-	index := zstr.IndexOf(id, v.CellIDs)
-	if index == -1 {
-		zlog.Info("No index for id:", id)
-		return
-	}
+	// zlog.Info("updown:", id, index, pos)
 	switch down {
 	case zbool.True:
-		if id != "" {
-			if zkeyboard.ModifiersAtPress&zkeyboard.ModifierCommand != 0 {
-				v.ignoreMouseEvent = true
-				if v.selectedIDs[id] {
-					delete(v.selectedIDs, id)
-				} else {
-					v.selectedIDs[id] = true
-				}
-				break
-			}
-			v.pressedIDs[id] = true
+		if !inside || id == "" {
+			return
 		}
+		if zkeyboard.ModifiersAtPress&zkeyboard.ModifierCommand != 0 {
+			v.ignoreMouseEvent = true
+			if v.selectedIDs[id] {
+				delete(v.selectedIDs, id)
+			} else {
+				v.selectedIDs[id] = true
+			}
+			break
+		}
+		v.pressedIDs[id] = true
 		v.appending = (v.MultiSelectable && (zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0))
 		if !v.appending || v.selectingFromIndex == -1 {
 			v.selectingFromIndex = index
 		}
 		v.setPressed(index)
 	case zbool.Unknown:
+		if id == "" {
+			return
+		}
 		if !v.ignoreMouseEvent && id != "" && v.MultiSelectable {
 			// zlog.Info("Move", id)
 			v.setPressed(index)
 			// v.dragged = true
 		}
 	case zbool.False:
-		// zlog.Info("UP:", v.ignoreMouseEvent, v.selectedIDs, v.pressedIDs)
 		if v.ignoreMouseEvent {
 			v.ignoreMouseEvent = false
 			break
 		}
 		if len(v.selectedIDs) > 0 && len(v.pressedIDs) == 1 {
-			pid := zdict.GetAnyStringKeyFromMap(v.pressedIDs)
+			pid := zmap.GetAnyKeyAsString(v.pressedIDs)
 			if v.selectedIDs[pid] {
 				v.selectedIDs = map[string]bool{}
 			} else {
@@ -237,10 +254,14 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		} else {
 			v.selectedIDs = v.pressedIDs
 		}
+		v.selectingFromIndex = -1
 		v.pressedIDs = map[string]bool{}
 	}
 	v.updateCellBackgrounds()
 	v.ExposeIn(0.0001)
+	if v.HandleSelectionChanged != nil {
+		v.HandleSelectionChanged()
+	}
 }
 
 func (v *GridListView) CellRects(cellID string) (fouter, finner zgeo.Rect) {
@@ -266,20 +287,27 @@ func (v *GridListView) FindCellForColRow(col, row int) (id string) {
 	return
 }
 
-func (v *GridListView) FindCellForPos(pos zgeo.Pos) (id string) {
+func (v *GridListView) FindCellForPos(pos zgeo.Pos) (id string, inside bool) {
+	var before bool
 	v.ForEachCell(func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
+		if pos.Y < outer.Pos.Y {
+			before = true
+		}
 		if outer.Contains(pos) {
 			// zlog.Info("box:", cellID, outer, pos)
 			id = cellID
+			inside = true
 			return false
 		}
 		return true
 	})
+	if id == "" && v.CellCount() > 0 {
+		if before {
+			return v.IDAtIndex(0), false
+		}
+		return v.IDAtIndex(v.CellCount() - 1), false
+	}
 	return
-}
-
-func (v *GridListView) AddCellID(id string) {
-	v.CellIDs = append(v.CellIDs, id)
 }
 
 func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (nx, ny int) {
@@ -288,13 +316,13 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 		zint.Minimize(&nx, v.MaxColumns)
 	}
 	zint.Maximize(&nx, v.MinColumns)
-	ny = (len(v.CellIDs) + nx - 1) / nx
+	ny = (v.CellCount() + nx - 1) / nx
 	return
 }
 
 func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
-	if len(v.CellIDs) == 0 {
+	if v.CellCount() == 0 {
 		return v.MinSize()
 	}
 	childSize := v.getAChildSize(total)
@@ -306,7 +334,7 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
-	if len(v.CellIDs) == 0 {
+	if v.CellCount() == 0 {
 		return v.MinSize()
 	}
 	childSize := v.getAChildSize(total)
@@ -321,7 +349,6 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *GridListView) RemoveCell(id string) bool {
-	v.CellIDs = zstr.RemovedFromSlice(v.CellIDs, id)
 	child := v.children[id]
 	if child != nil {
 		v.grid.RemoveChild(child)
@@ -332,8 +359,8 @@ func (v *GridListView) RemoveCell(id string) bool {
 }
 
 func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
-	cid := v.CellIDs[0]
-	child := v.CreateChild(cid)
+	cid := v.IDAtIndex(0)
+	child := v.CreateCell(cid)
 	s := child.CalculatedSize(total)
 	return s
 }
@@ -356,21 +383,27 @@ func (v *GridListView) makeOrGetChild(id string) zui.View {
 	if child != nil {
 		return child
 	}
-	child = v.CreateChild(id)
+	child = v.CreateCell(id)
 	v.children[id] = child
 	v.grid.AddChild(child, -1)
+	zui.PresentViewCallReady(child, false)
+	if v.UpdateCell != nil {
+		// zlog.Info("UpdateNewCell", id, len(v.children))
+		v.UpdateCell(id)
+	}
+	child.(zui.ExposableType).Expose()
 	return child
 }
 
 func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool) {
-	if len(v.CellIDs) == 0 {
+	if v.CellCount() == 0 {
 		return
 	}
 	rect := v.LocalRect()
 	pos := rect.Pos
 	childSize := rect.Size
 
-	if v.RowHeight == nil {
+	if v.CellHeight == nil {
 		childSize = v.getAChildSize(rect.Size)
 	} else {
 		zlog.Assert(v.MaxColumns <= 1)
@@ -378,9 +411,10 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	// zlog.Info("4Each:", rect, childSize)
 	v.columns, v.rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
 	var x, y int
-	for _, cellID := range v.CellIDs {
-		if v.RowHeight != nil {
-			childSize.H = v.RowHeight(cellID)
+	for i := 0; i < v.CellCount(); i++ {
+		cellID := v.IDAtIndex(i)
+		if v.CellHeight != nil {
+			childSize.H = v.CellHeight(cellID)
 		}
 		r := zgeo.Rect{Pos: pos, Size: childSize}
 		lastx := (x == v.columns-1)
@@ -410,8 +444,12 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		r.Size.Add(marg.Size.Negative())
 		cr := r.Plus(marg)
 		visible := (r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+v.LocalRect().Size.H)
-		// zlog.Info("Vis:", marg, cellID, visible, r, v.YOffset, v.YOffset+v.LocalRect().Size.H)
-		if !got(cellID, r, cr, x, y, visible) {
+		r2 := r
+		if v.BorderColor.Valid {
+			r2.Size.Subtract(zgeo.Size{1, 1})
+		}
+		// zlog.Info(cellID, "Vis:", marg, cellID, visible, r, v.YOffset, v.YOffset+v.LocalRect().Size.H)
+		if !got(cellID, r2, cr, x, y, visible) {
 			break
 		}
 		if lastx {
@@ -427,18 +465,30 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) ArrangeChildren() {
+	// zlog.Info("glist.ArrangeChildren")
 	v.ScrollView.ArrangeChildren()
 	s := v.CalculatedGridSize(v.LocalRect().Size)
 	r := zgeo.Rect{Size: s}
 	v.grid.SetRect(r)
-	v.layoutCells(false)
+	v.LayoutCells(false)
 }
 
-func (v *GridListView) layoutCells(updateCells bool) {
+func (v *GridListView) ReplaceChild(child, with zui.View) {
+	for id, c := range v.children {
+		if c == child {
+			v.children[id] = with
+			zui.ViewGetNative(v).ReplaceChild(child, with)
+			break
+		}
+	}
+}
+
+func (v *GridListView) LayoutCells(updateCells bool) {
+	v.layoutDirty = false
 	placed := map[string]bool{}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if visible {
-			// zlog.Info("Arrange:", cid, inner, outer)
+			// zlog.Info("Arrange:", cid, updateCells)
 			child := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
 			ms, _ := child.(zui.Marginalizer)
@@ -446,7 +496,7 @@ func (v *GridListView) layoutCells(updateCells bool) {
 				marg := inner.Minus(outer)
 				ms.SetMargin(marg)
 			}
-			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, -1))
+			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
 			child.SetRect(o)
 			v.updateCellBackground(cid, x, y, child)
 			if updateCells && v.UpdateCell != nil {
@@ -471,6 +521,7 @@ func (v *GridListView) ScrollToCell(cellID string, animate bool) {
 	}
 }
 
+/*
 func (v *GridListView) SetNewCellIDs(newIDs []string) {
 	newChildren := map[string]zui.View{}
 	newSelected := map[string]bool{}
@@ -488,11 +539,12 @@ func (v *GridListView) SetNewCellIDs(newIDs []string) {
 	v.children = newChildren
 	v.CellIDs = newIDs
 	v.selectedIDs = newSelected
-	v.layoutCells(true)
+	v.LayoutCells(true)
 	for _, c := range oldChildren {
 		v.grid.RemoveChild(c)
 	}
 }
+*/
 
 func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) bool {
 	var sx, sy int
@@ -521,7 +573,7 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 			if nx < 0 || nx >= v.columns || ny < 0 || ny >= v.rows {
 				return true
 			}
-			if ny*v.columns+nx >= len(v.CellIDs) {
+			if ny*v.columns+nx >= v.CellCount() {
 				if incY != 1 {
 					return true
 				}
@@ -561,7 +613,11 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 				case zkeyboard.KeyRightArrow:
 					return v.moveSelection(1, 0, mod)
 				case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
+					break // do select
 				}
+			}
+			if v.HandkeKey != nil {
+				return v.HandkeKey(key, mod)
 			}
 			return false
 		})
