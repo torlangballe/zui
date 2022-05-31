@@ -98,6 +98,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 			str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
 		}
 		// We use HTML here to add all at once, or slow.
+		// zlog.Info(v.ObjectName(), "menu updateitems:", str)
 		v.JSSet("innerHTML", str)
 	}
 	if len(values) != 0 {

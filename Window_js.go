@@ -258,7 +258,7 @@ func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeybo
 	}
 	win.keyHandlers[v] = handler
 	win.setOnKeyUp()
-	zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))
+	// zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))
 	doc := win.element.Get("document")
 	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		win.setOnKeyUp()
