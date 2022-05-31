@@ -808,6 +808,19 @@ func (v *NativeView) setStateOnDownPress(event js.Value) {
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd)) {
 	const minDiff = 10.0
 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		win := v.GetWindow()
+		if win == nil {
+			return nil
+		}
+		win.element.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			movingPos = nil
+			v.GetWindow().element.Set("onmousemove", nil)
+			v.GetWindow().element.Set("onmouseup", nil)
+			pos := getMousePos(args[0]).Minus(v.AbsoluteRect().Pos)
+			handler(pos, zbool.False)
+			return nil
+		}))
 		e := args[0]
 		v.setStateOnDownPress(e)
 		pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
@@ -821,18 +834,6 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			}
 			return nil
 		}))
-		return nil
-	}))
-	win := v.GetWindow()
-	if win == nil {
-		return
-	}
-	win.element.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("MOUSEUP")
-		movingPos = nil
-		v.GetWindow().element.Set("onmousemove", nil)
-		pos := getMousePos(args[0]).Minus(v.AbsoluteRect().Pos)
-		handler(pos, zbool.False)
 		return nil
 	}))
 }
@@ -922,9 +923,9 @@ func (v *NativeView) hasElement(e js.Value) (got *NativeView) {
 	return
 }
 
-func AddTextNode(e *NativeView, text string) {
+func AddTextNode(v *NativeView, text string) {
 	textNode := zdom.DocumentJS.Call("createTextNode", text)
-	e.JSCall("appendChild", textNode)
+	v.JSCall("appendChild", textNode)
 	//	js.Value(*e).Call("appendChild", textNode)
 }
 
