@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/ztextinfo"
+	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -32,14 +33,14 @@ import (
 
 type FieldView struct {
 	zui.StackView
-	parent      *FieldView
-	fields      []Field
-	parentField *Field
-	structure   interface{} // structure of ALL, not just a row
-	changed     bool
-	//	oldStructure  interface{}
-	id           string
-	handleUpdate func(edited bool)
+	parent          *FieldView
+	fields          []Field
+	parentField     *Field
+	structure       interface{} // structure of ALL, not just a row
+	changed         bool
+	ForceZeroOption bool // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures
+	id              string
+	handleUpdate    func(edited bool)
 	FieldViewParameters
 	//	getSubStruct  func(structID string, direct bool) interface{}
 }
@@ -296,6 +297,25 @@ func (v *FieldView) Update(dontOverwriteEdited bool) {
 				zlog.Assert(ei != nil, f.Name, f.LocalEnum)
 				enum = ei.Interface.(zdict.ItemsGetter).GetItems()
 			}
+			if v.ForceZeroOption {
+				var rtype reflect.Type
+				var hasZero bool
+				for _, item := range enum {
+					rval := reflect.ValueOf(item.Value)
+					if item.Value != nil {
+						rtype = rval.Type()
+						if rval.IsZero() {
+							hasZero = true
+							break
+						}
+					}
+				}
+				if !hasZero && rtype.Kind() != reflect.Invalid {
+					item := zdict.Item{Name: "", Value: reflect.Zero(rtype)}
+					enum = append(zdict.Items{item}, enum...)
+				}
+			}
+
 			// zlog.Assert(enum != nil, f.Name, f.LocalEnum, f.Enum)
 			// zlog.Info("Update FV: Menu2:", f.Name, enum, item.Interface)
 			menuType.UpdateItems(enum, []interface{}{item.Interface})
@@ -371,7 +391,7 @@ func (v *FieldView) Update(dontOverwriteEdited bool) {
 			}
 
 		case zreflect.KindInt, zreflect.KindFloat:
-			_, got := item.Interface.(zbool.BitsetItemsOwner)
+			_, got := item.Interface.(zbits.BitsetItemsOwner)
 			if got {
 				updateFlagStack(item, f, fview)
 			}
@@ -610,7 +630,6 @@ func (fv *FieldView) makeButton(item zreflect.Item, f *Field) *zui.ImageButtonVi
 
 func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zui.View {
 	var view zui.View
-
 	if f.IsStatic() || item.IsSlice {
 		multi := item.IsSlice
 		// zlog.Info("FV Menu Make static:", f.ID, f.Format, f.Name)
@@ -943,7 +962,7 @@ func getColumnsForTime(f *Field) int {
 func updateFlagStack(flags zreflect.Item, f *Field, view zui.View) {
 	stack := view.(*zui.StackView)
 	// zlog.Info("zfields.updateFlagStack", Name(f))
-	bso := flags.Interface.(zbool.BitsetItemsOwner)
+	bso := flags.Interface.(zbits.BitsetItemsOwner)
 	bitset := bso.GetBitsetItems()
 	n := flags.Value.Int()
 	for _, bs := range bitset {
@@ -1095,7 +1114,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				exp = zgeo.HorShrink
 				view = v.makeCheckbox(f, zbool.BoolInd(item.Value.Int()))
 			} else {
-				_, got := item.Interface.(zbool.BitsetItemsOwner)
+				_, got := item.Interface.(zbits.BitsetItemsOwner)
 				if got {
 					view = makeFlagStack(item, f)
 					break
@@ -1305,10 +1324,12 @@ func (v *FieldView) fieldToDataItem(f *Field, view zui.View, showError bool) (va
 			panic("Should be checkbox")
 		}
 		b, _ := item.Address.(*bool)
+		pre := *b
 		if b != nil {
 			*b = bv.Value().Bool()
 			// zlog.Info("SetCheck:", bv.Value(), *b, value)
 		}
+		fmt.Println("FV fieldToDataItem bool:", f.Name, b, *b, pre)
 		bi, _ := item.Address.(*zbool.BoolInd)
 		if bi != nil {
 			*bi = bv.Value()
@@ -1317,7 +1338,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zui.View, showError bool) (va
 	case zreflect.KindInt:
 		if item.TypeName == "BoolInd" {
 			bv, _ := view.(*zui.CheckBox)
-			*item.Address.(*bool) = bv.Value().Bool()
+			*item.Address.(*zbool.BoolInd) = bv.Value()
 		} else {
 			tv, _ := view.(*zui.TextView)
 			str := tv.Text()
@@ -1417,6 +1438,71 @@ func PresentOKCancelStruct(structPtr interface{}, params FieldViewParameters, ti
 			if err != nil {
 				return false
 			}
+		}
+		return done(ok)
+	})
+}
+
+func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zui.PresentViewAttributes, done func(ok bool) bool) {
+	sliceVal := reflect.ValueOf(structSlicePtr).Elem()
+	first := sliceVal.Index(0)
+	editStruct := reflect.New(first.Type())
+	// zlog.Info("editStruct:", editStruct.Type(), editStruct.Kind(), editStruct)
+	editStruct.Elem().Set(first)
+	len := len(*structSlicePtr)
+	unknownBoolViewIDs := map[string]bool{}
+	zreflect.ForEachField(editStruct.Interface(), func(index int, val reflect.Value, sf reflect.StructField) {
+		if sf.Tag.Get("zui") == "-" {
+			return
+		}
+		var notEqual bool
+		for i := 0; i < len; i++ {
+			sliceField := sliceVal.Index(i).Field(index)
+			if !reflect.DeepEqual(sliceField.Interface(), val.Interface()) {
+				// zlog.Info(i, index, "not-equal", sliceField.Interface(), val.Interface())
+				notEqual = true
+				val.Set(reflect.Zero(val.Type()))
+				break
+			}
+		}
+		if notEqual && val.Kind() == reflect.Bool {
+			zlog.Info("isUndefBool:", sf.Name)
+			unknownBoolViewIDs[fieldNameToID(sf.Name)] = true
+		}
+	})
+	fview := FieldViewNew("OkCancel", editStruct.Interface(), params)
+	update := true
+	fview.Build(update, !params.HideStatic)
+	for bid := range unknownBoolViewIDs {
+		view, _ := fview.findNamedViewOrInLabelized(bid)
+		check := view.(*zui.CheckBox)
+		check.SetValue(zbool.Unknown)
+	}
+	zui.PresentOKCanceledView(fview, title, att, func(ok bool) bool {
+		if ok {
+			err := fview.ToData(true)
+			if err != nil {
+				return false
+			}
+			zreflect.ForEachField(editStruct.Interface(), func(index int, val reflect.Value, sf reflect.StructField) {
+				if sf.Tag.Get("zui") == "-" {
+					return // skip to next
+				}
+				bid := fieldNameToID(sf.Name)
+				view, _ := fview.findNamedViewOrInLabelized(bid)
+				check, _ := view.(*zui.CheckBox)
+				isCheck := (check != nil)
+				if isCheck && check.Value().IsUnknown() {
+					return // skip to next
+				}
+				for i := 0; i < len; i++ {
+					sliceField := sliceVal.Index(i).Field(index)
+					// zlog.Info("SetSliceVal?:", isCheck, unknownBoolViewIDs, i, sf.Name, val.Interface(), sliceField.Addr())
+					if !val.IsZero() || isCheck {
+						sliceField.Set(val)
+					}
+				}
+			})
 		}
 		return done(ok)
 	})
