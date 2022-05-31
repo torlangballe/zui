@@ -11,14 +11,6 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	return &MenuView{}
 }
 
-// func (v *MenuView) IDAndValue() (id string, value interface{}) {
-// 	return "", nil
-// }
-
-// func (v *MenuView) SetWithID(id string) *MenuView {
-// 	return v
-// }
-
 func (v *MenuView) SetSelectedHandler(handler func())                       {}
 func (v *MenuView) Empty()                                                  {}
 func (v *MenuView) AddSeparator()                                           {}
