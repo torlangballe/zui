@@ -138,7 +138,6 @@ func (v *GridListView) updateCellBackgrounds() {
 			return true
 		}
 		child := v.children[cid]
-		// zlog.Assert(child != nil, x, y, cid)
 		if child != nil {
 			v.updateCellBackground(cid, x, y, child)
 		}
@@ -177,7 +176,6 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zui.View
 }
 
 func (v *GridListView) setPressed(index int) {
-	// zlog.Info("setPressed", index, v.selectingFromIndex)
 	if !v.MultiSelectable {
 		v.pressedIDs[v.IDAtIndex(index)] = true
 		return
@@ -209,7 +207,6 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			return
 		}
 	}
-	// zlog.Info("updown:", id, index, pos)
 	switch down {
 	case zbool.True:
 		if !inside || id == "" {
@@ -386,11 +383,10 @@ func (v *GridListView) makeOrGetChild(id string) zui.View {
 	child = v.CreateCell(id)
 	v.children[id] = child
 	v.grid.AddChild(child, -1)
-	zui.PresentViewCallReady(child, false)
 	if v.UpdateCell != nil {
-		// zlog.Info("UpdateNewCell", id, len(v.children))
 		v.UpdateCell(v, id)
 	}
+	zui.PresentViewCallReady(child, false)
 	child.(zui.ExposableType).Expose()
 	return child
 }
