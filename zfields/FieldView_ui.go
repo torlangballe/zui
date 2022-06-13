@@ -1037,7 +1037,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 	if f.Enum != "" {
 		// fmt.Println("make enum:", f.Name)
 		enum, _ := fieldEnums[f.Enum]
-		zlog.Assert(enum != nil, f.Enum)
+		zlog.Assert(enum != nil, f.Enum, f.FieldName)
 		view = v.makeMenu(item, f, enum)
 		// exp = zgeo.AlignmentNone
 		return view
@@ -1355,9 +1355,11 @@ func (v *FieldView) fieldToDataItem(f *Field, view zui.View, showError bool) (va
 				return
 			}
 			var i64 int64
-			i64, err = strconv.ParseInt(str, 10, 64)
-			if err != nil {
-				break
+			if str != "" {
+				i64, err = strconv.ParseInt(str, 10, 64)
+				if err != nil {
+					break
+				}
 			}
 			zint.SetAny(item.Address, i64)
 		}
