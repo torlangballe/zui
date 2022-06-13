@@ -3,11 +3,12 @@
 package zgridlist
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
 )
@@ -19,7 +20,7 @@ type SliceGridView[S GridStructType] struct {
 	Grid         *GridListView
 	Bar          *zui.StackView
 	slice        *[]S
-	hoverLabel   *zui.Label
+	HoverLabel   *zui.Label
 	editButton   *zui.Button
 	deleteButton *zui.Button
 	StructName   string
@@ -29,7 +30,7 @@ type SliceGridView[S GridStructType] struct {
 	NameOfXItemsFunc           func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc       func(ids []string) string
 	UpdateViewFunc             func()
-	SortFunc                   func()
+	SortFunc                   func(s []S)
 	StoreChangedItemsFunc      func(items *[]S)
 	DeleteItemsFunc            func(ids []string)
 }
@@ -65,9 +66,9 @@ func NewSliceGridView[S GridStructType](slice *[]S) (sv *SliceGridView[S]) {
 	sv.deleteButton.SetMinWidth(135)
 	sv.Bar.Add(sv.deleteButton, zgeo.CenterLeft)
 
-	sv.hoverLabel = zui.LabelNew("")
-	sv.hoverLabel.SetMinWidth(200)
-	sv.Bar.Add(sv.hoverLabel, zgeo.CenterLeft|zgeo.HorExpand)
+	sv.HoverLabel = zui.LabelNew("")
+	sv.HoverLabel.SetMinWidth(200)
+	sv.Bar.Add(sv.HoverLabel, zgeo.CenterLeft|zgeo.HorExpand)
 
 	sv.Grid = New("zgrid")
 	// grid.CellCount = func() int {
@@ -121,7 +122,6 @@ func (sv *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
 		return
 	}
-	zlog.Info("SGV Ready")
 	sv.Grid.HandleSelectionChanged = sv.HandleSelectionChangedFunc
 	sv.Grid.HandkeKey = sv.HandleKeyFunc
 	sv.editButton.SetPressedHandler(sv.HandleEditButtonPressed)
@@ -131,47 +131,53 @@ func (sv *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	// sv.Grid.UpdateCell = sv.UpdateCell
 }
 
+func (sv *SliceGridView[S]) UpdateSlice(s []S) {
+	update := (len(s) != len(*sv.slice) || zstr.HashAnyToInt64(s) != zstr.HashAnyToInt64(*sv.slice))
+	if update {
+		if sv.SortFunc != nil {
+			sv.SortFunc(s)
+		}
+		*sv.slice = s
+		if sv.UpdateViewFunc != nil {
+			sv.UpdateViewFunc()
+		}
+	}
+}
+
 func (sv *SliceGridView[S]) HandleEditButtonPressed() {
+	ids := sv.getSelectedItemsIDs()
+	sv.EditItems(ids)
+}
+
+func (sv *SliceGridView[S]) EditItems(ids []string) {
+	title := "Edit "
 	var items []S
 
 	for i := 0; i < len(*sv.slice); i++ {
 		sid := (*sv.slice)[i].GetStrID()
-		if sv.Grid.selectedIDs[sid] {
+		if zstr.StringsContain(ids, sid) {
 			items = append(items, (*sv.slice)[i])
 		}
 	}
-	sv.EditItems(&items)
-}
-
-func (sv *SliceGridView[S]) EditItems(items *[]S) {
-	title := "Edit "
-	ids := sv.getSelectedItemsIDs()
 	title += sv.NameOfXItemsFunc(ids, true)
 	params := zfields.FieldViewParametersDefault()
 	params.LabelizeWidth = 120
-	zfields.PresentOKCancelStructSlice(items, params, title, zui.PresentViewAttributesNew(), func(ok bool) bool {
+	zfields.PresentOKCancelStructSlice(&items, params, title, zui.PresentViewAttributesNew(), func(ok bool) bool {
 		if !ok {
 			return true
 		}
-		for _, item := range *items {
-			// zlog.Info("edited:", s.Name, s.On, s.Type, s.AuthenticationID)
+		for _, item := range items {
 			for i, s := range *sv.slice {
 				if s.GetStrID() == item.GetStrID() {
-					(*sv.slice)[i] = s
+					(*sv.slice)[i] = item
+					fmt.Printf("edited: %+v %d\n", (*sv.slice)[i], i)
 				}
 			}
 		}
 		sv.UpdateViewFunc()
 		if sv.StoreChangedItemsFunc != nil {
-			go sv.StoreChangedItemsFunc(items)
+			go sv.StoreChangedItemsFunc(&items)
 		}
-		// go sv.Store
-		// func() {
-		// 	err := zrpc.ToServerClient.CallRemote("StreamsCalls.UpdateStreams", streams, nil)
-		// 	if err != nil {
-		// 		zui.AlertShowError(err)
-		// 	}
-		// }()
 		return true
 	})
 }
