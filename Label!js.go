@@ -17,16 +17,16 @@ func (l *Label) SetTextAlignment(a zgeo.Alignment) View {
 	return l
 }
 
-func (v *Label) SetWrap(wrap ztextinfo.WrapType) {}
-
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-}
-
-func (v *Label) SetPressedHandler(handler func()) {
 }
 
 func (v *Label) SetMaxLines(max int) View {
 	v.maxLines = max
 	return v
 }
+
+func (v *Label) SetWrap(wrap ztextinfo.WrapType)      {}
+func (v *Label) SetPressedHandler(handler func())     {}
+func (v *Label) SetLongPressedHandler(handler func()) {}
+
