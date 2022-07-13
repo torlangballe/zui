@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zheader"
+	"github.com/torlangballe/zui/ztext"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -33,12 +35,12 @@ type UIStringer interface {
 }
 
 type Widgeter interface {
-	Create(f *Field) zui.View
-	SetValue(view zui.View, val interface{})
+	Create(f *Field) zview.View
+	SetValue(view zview.View, val interface{})
 }
 
 type ReadWidgeter interface {
-	GetValue(view zui.View) interface{}
+	GetValue(view zview.View) interface{}
 }
 
 type SetupWidgeter interface {
@@ -58,31 +60,32 @@ const (
 )
 
 const (
-	flagIsStatic = 1 << iota
-	flagHasSeconds
-	flagHasMinutes
-	flagHasHours
-	flagHasDays
-	flagHasMonths
-	flagHasYears
-	flagIsImage
-	flagIsFixed
-	flagIsButton
-	flagHasHeaderImage
-	flagNoTitle
-	flagToClipboard
-	flagIsNamedSelection
-	flagIsStringer
-	flagIsPassword
-	flagExpandFromMinSize
-	flagIsDuration
-	flagIsOpaque
-	flagIsActions
+	FlagIsStatic = 1 << iota
+	FlagHasSeconds
+	FlagHasMinutes
+	FlagHasHours
+	FlagHasDays
+	FlagHasMonths
+	FlagHasYears
+	FlagIsImage
+	FlagIsFixed
+	FlagIsButton
+	FlagHasHeaderImage
+	FlagNoTitle
+	FlagToClipboard
+	FlagIsNamedSelection
+	FlagIsStringer
+	FlagIsPassword
+	FlagExpandFromMinSize
+	FlagIsDuration
+	FlagIsOpaque
+	FlagIsActions
+	FlagIsNonSelectable
 )
 
 const (
-	flagTimeFlags = flagHasSeconds | flagHasMinutes | flagHasHours
-	flagDateFlags = flagHasDays | flagHasMonths | flagHasYears
+	flagTimeFlags = FlagHasSeconds | FlagHasMinutes | FlagHasHours
+	flagDateFlags = FlagHasDays | FlagHasMonths | FlagHasYears
 )
 
 type Field struct {
@@ -136,11 +139,11 @@ type Field struct {
 }
 
 type ActionHandler interface {
-	HandleAction(f *Field, action ActionType, view *zui.View) bool
+	HandleAction(f *Field, action ActionType, view *zview.View) bool
 }
 
 type ActionFieldHandler interface {
-	HandleFieldAction(f *Field, action ActionType, view *zui.View) bool
+	HandleFieldAction(f *Field, action ActionType, view *zview.View) bool
 }
 
 var widgeters = map[string]Widgeter{}
@@ -150,11 +153,11 @@ func RegisterWigeter(name string, w Widgeter) {
 }
 
 func (f Field) IsStatic() bool {
-	return f.Flags&flagIsStatic != 0
+	return f.Flags&FlagIsStatic != 0
 }
 
-func (f *Field) SetFont(view zui.View, from *zgeo.Font) {
-	to := view.(zui.TextLayoutOwner)
+func (f *Field) SetFont(view zview.View, from *zgeo.Font) {
+	to := view.(ztext.LayoutOwner)
 	size := f.FontSize
 	if size == 0 {
 		if from != nil {
@@ -202,7 +205,7 @@ func fieldNameToID(name string) string {
 	return zstr.FirstToLowerWithAcronyms(name)
 }
 
-func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, index int, immediateEdit bool) bool {
+func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, index int, immediateEdit bool) bool {
 	f.Index = index
 	f.ID = fieldNameToID(item.FieldName)
 	// zlog.Info("FIELD:", f.ID, item.FieldName)
@@ -231,7 +234,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 		flag := zbool.FromString(val, false)
 		switch key {
 		case "password":
-			f.Flags |= flagIsPassword
+			f.Flags |= FlagIsPassword
 		case "setedited":
 			f.SetEdited = flag
 		case "format":
@@ -244,7 +247,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.Alignment = zgeo.AlignmentFromString(val)
 			// zlog.Info("ALIGN:", f.Name, val, a)
 		case "nosize":
-			f.Flags |= flagExpandFromMinSize
+			f.Flags |= FlagExpandFromMinSize
 		// case "cannil"
 		// f.Flags |= flagAllowNil
 		case "justify":
@@ -285,7 +288,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.SortSmallFirst = zbool.False
 			f.SortPriority = int(n)
 		case "actions":
-			f.Flags |= flagIsActions
+			f.Flags |= FlagIsActions
 		case "size":
 			f.Size.FromString(val)
 			if f.Size.IsNull() {
@@ -303,18 +306,18 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.ValueStoreKey = val
 		case "static":
 			if flag || val == "" {
-				f.Flags |= flagIsStatic
+				f.Flags |= FlagIsStatic
 			}
 		case "fracts":
 			f.FractionDecimals = int(n)
 		case "secs":
-			f.Flags |= flagHasSeconds
+			f.Flags |= FlagHasSeconds
 		case "oldsecs":
 			f.OldSecs = int(n)
 		case "mins":
-			f.Flags |= flagHasMinutes
+			f.Flags |= FlagHasMinutes
 		case "hours":
-			f.Flags |= flagHasHours
+			f.Flags |= FlagHasHours
 		case "maxwidth":
 			if floatErr == nil {
 				f.MaxWidth = n
@@ -322,9 +325,9 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 		case "group":
 			f.IsGroup = true
 		case "fixed":
-			f.Flags |= flagIsFixed
+			f.Flags |= FlagIsFixed
 		case "opaque":
-			f.Flags |= flagIsOpaque
+			f.Flags |= FlagIsOpaque
 		case "shadow":
 			for _, part := range strings.Split(val, "|") {
 				got := false
@@ -393,11 +396,11 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 				path = "images/" + path
 			}
 			if key == "image" {
-				f.Flags |= flagIsImage
+				f.Flags |= FlagIsImage
 				f.Size.FromString(ssize)
 				f.ImageFixedPath = path
 			} else {
-				f.Flags |= flagHasHeaderImage
+				f.Flags |= FlagHasHeaderImage
 				f.HeaderSize.FromString(ssize)
 				f.HeaderImageFixedPath = path
 			}
@@ -410,7 +413,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 				f.Enum = val
 			}
 		case "notitle":
-			f.Flags |= flagNoTitle
+			f.Flags |= FlagNoTitle
 		case "tip":
 			f.Tooltip = val
 		case "immediate":
@@ -420,18 +423,20 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 				f.UpdateSecs = n
 			}
 		case "2clip":
-			f.Flags |= flagToClipboard
+			f.Flags |= FlagToClipboard
 		case "named-selection":
-			f.Flags |= flagIsNamedSelection
+			f.Flags |= FlagIsNamedSelection
 		case "labelize":
 			f.LabelizeWidth = n
 			if n == 0 {
 				f.LabelizeWidth = 200
 			}
 		case "button":
-			f.Flags |= flagIsButton
+			f.Flags |= FlagIsButton
 		case "enable":
 			f.LocalEnable = val
+		case "unselectable":
+			f.Flags |= FlagIsNonSelectable
 		case "disable":
 			if val != "" {
 				f.LocalDisable = val
@@ -457,7 +462,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 				f.Placeholder = "$HAS$"
 			}
 		case "since":
-			f.Flags |= flagIsStatic | flagIsDuration
+			f.Flags |= FlagIsStatic | FlagIsDuration
 		}
 	}
 	if immediateEdit {
@@ -466,10 +471,10 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 	if f.HeaderSize.IsNull() {
 		f.HeaderSize = f.Size
 	}
-	if f.HeaderImageFixedPath == "" && f.Flags&flagHasHeaderImage != 0 {
+	if f.HeaderImageFixedPath == "" && f.Flags&FlagHasHeaderImage != 0 {
 		f.HeaderImageFixedPath = f.ImageFixedPath
 	}
-	if f.Flags&flagToClipboard != 0 && f.Tooltip == "" {
+	if f.Flags&FlagToClipboard != 0 && f.Tooltip == "" {
 		f.Tooltip = "press to copy to Clipboard"
 	}
 	// zfloat.Maximize(&f.MaxWidth, f.MinWidth)
@@ -518,11 +523,11 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.MinWidth = 20
 		}
 	case zreflect.KindString:
-		if f.Flags&(flagHasHeaderImage|flagIsImage) != 0 {
+		if f.Flags&(FlagHasHeaderImage|FlagIsImage) != 0 {
 			zfloat.Maximize(&f.MinWidth, f.HeaderSize.W)
 			zfloat.Maximize(&f.MaxWidth, f.HeaderSize.W)
 		}
-		if f.MinWidth == 0 && f.Flags&flagIsButton == 0 && f.Enum == "" && f.LocalEnum == "" {
+		if f.MinWidth == 0 && f.Flags&FlagIsButton == 0 && f.Enum == "" && f.LocalEnum == "" {
 			f.MinWidth = 20
 		}
 	case zreflect.KindTime:
@@ -532,7 +537,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 		if f.Flags&(flagTimeFlags|flagDateFlags) == 0 {
 			f.Flags |= flagTimeFlags | flagDateFlags
 		}
-		if f.Flags&flagIsDuration != 0 {
+		if f.Flags&FlagIsDuration != 0 {
 			setDurationColumns(f)
 		}
 		if f.Format != "" {
@@ -543,22 +548,22 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 			break
 		}
 		if f.MinWidth == 0 {
-			if f.Flags&flagHasDays != 0 {
+			if f.Flags&FlagHasDays != 0 {
 				f.Columns += 3
 			}
-			if f.Flags&flagHasMonths != 0 {
+			if f.Flags&FlagHasMonths != 0 {
 				f.Columns += 3
 			}
-			if f.Flags&flagHasYears != 0 {
+			if f.Flags&FlagHasYears != 0 {
 				f.Columns += 3
 			}
-			if f.Flags&flagHasHours != 0 {
+			if f.Flags&FlagHasHours != 0 {
 				f.Columns += 3
 			}
-			if f.Flags&flagHasMinutes != 0 {
+			if f.Flags&FlagHasMinutes != 0 {
 				f.Columns += 3
 			}
-			if f.Flags&flagHasSeconds != 0 {
+			if f.Flags&FlagHasSeconds != 0 {
 				f.Columns += 3
 			}
 			if f.MinWidth == 0 && f.Columns == 0 {
@@ -568,7 +573,7 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 
 	case zreflect.KindFunc:
 		if f.MinWidth == 0 {
-			if f.Flags&flagIsImage != 0 {
+			if f.Flags&FlagIsImage != 0 {
 				min := f.Size.W // * zscreen.GetMain().Scale
 				//				min += ImageViewDefaultMargin.W * 2
 				zfloat.Maximize(&f.MinWidth, min)
@@ -591,16 +596,16 @@ func (f *Field) makeFromReflectItem(structure interface{}, item zreflect.Item, i
 }
 
 func setDurationColumns(f *Field) {
-	if f.Flags&flagHasMinutes != 0 {
+	if f.Flags&FlagHasMinutes != 0 {
 		f.Columns += 3
 	}
-	if f.Flags&flagHasSeconds != 0 {
+	if f.Flags&FlagHasSeconds != 0 {
 		f.Columns += 3
 	}
-	if f.Flags&flagHasHours != 0 {
+	if f.Flags&FlagHasHours != 0 {
 		f.Columns += 3
 	}
-	if f.Flags&flagHasDays != 0 {
+	if f.Flags&FlagHasDays != 0 {
 		f.Columns += 3
 	}
 }
@@ -656,7 +661,7 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice interface{}
 
 type mapValueToName map[interface{}]string
 
-func getSortCache(slice interface{}, fields []Field, sortOrder []zui.SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
+func getSortCache(slice interface{}, fields []Field, sortOrder []zheader.SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
 	fieldMap = map[string]*Field{}
 	enumTitles = map[string]mapValueToName{}
 
@@ -685,7 +690,7 @@ func getSortCache(slice interface{}, fields []Field, sortOrder []zui.SortInfo) (
 	return
 }
 
-func SortSliceWithFields(slice interface{}, fields []Field, sortOrder []zui.SortInfo) {
+func SortSliceWithFields(slice interface{}, fields []Field, sortOrder []zheader.SortInfo) {
 	// start := time.Now()
 	fieldMap, enumTitles := getSortCache(slice, fields, sortOrder)
 	// fmt.Printf("FieldMap: %+v %+v\n", fieldMap, sortOrder)

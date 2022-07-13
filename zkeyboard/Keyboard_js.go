@@ -2,6 +2,7 @@ package zkeyboard
 
 import (
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zutil/zlog"
 	"syscall/js"
 )
 
@@ -28,7 +29,7 @@ func GetKeyAndModsFromEvent(event js.Value) (key Key, mods Modifier) {
 func SetKeyHandler(e js.Value, handler func(key Key, mods Modifier) bool) {
 	//!!	v.keyPressed = handler
 	e.Set("onkeyup", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
-		// zlog.Info("KeyUp")
+		zlog.Info("KeyUp")
 		if handler != nil {
 			event := args[0]
 			key, mods := GetKeyAndModsFromEvent(event)

@@ -1,5 +1,4 @@
 //go:build !js && !windows && catalyst
-// +build !js,!windows,catalyst
 
 package app
 

@@ -7,7 +7,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zshape"
+	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -16,44 +22,44 @@ import (
 	"github.com/torlangballe/zutil/zslice"
 )
 
-func makeCircledButton() *zui.ShapeView {
-	v := zui.ShapeViewNew(zui.ShapeViewTypeCircle, zgeo.Size{30, 30})
-	v.SetColor(zui.StyleGray(0.8, 0.2))
+func makeCircledButton() *zshape.ShapeView {
+	v := zshape.NewView(zshape.TypeCircle, zgeo.Size{30, 30})
+	v.SetColor(zstyle.Gray(0.8, 0.2))
 	return v
 }
 
-func makeCircledTextButton(text string, f *Field) *zui.ShapeView {
+func makeCircledTextButton(text string, f *Field) *zshape.ShapeView {
 	v := makeCircledButton()
 	w := zgeo.FontDefaultSize + 6
 	font := zgeo.FontNice(w, zgeo.FontStyleNormal)
 	f.SetFont(v, font)
 	v.SetText(text)
-	v.SetTextColor(zui.StyleGray(0.2, 0.8))
+	v.SetTextColor(zstyle.Gray(0.2, 0.8))
 	v.SetTextAlignment(zgeo.Center)
 	return v
 }
 
-func makeCircledImageButton(iname string) *zui.ShapeView {
+func makeCircledImageButton(iname string) *zshape.ShapeView {
 	v := makeCircledButton()
 	v.ImageMaxSize = zgeo.Size{20, 20}
 	v.SetImage(nil, "images/"+iname+".png", nil)
 	return v
 }
 
-func makeCircledTrashButton() *zui.ShapeView {
+func makeCircledTrashButton() *zshape.ShapeView {
 	trash := makeCircledImageButton("trash")
-	trash.SetColor(zui.StyleCol(zgeo.ColorNew(0.5, 0.8, 1, 1), zgeo.ColorNew(0.4, 0.1, 0.1, 1)))
+	trash.SetColor(zstyle.Col(zgeo.ColorNew(0.5, 0.8, 1, 1), zgeo.ColorNew(0.4, 0.1, 0.1, 1)))
 	return trash
 }
 
-func (v *FieldView) updateSliceValue(structure interface{}, stack *zui.StackView, vertical, showStatic bool, f *Field, sendEdited bool) zui.View {
-	ct := stack.Parent().View.(zui.ContainerType)
+func (v *FieldView) updateSliceValue(structure interface{}, stack *zcontainer.StackView, vertical, showStatic bool, f *Field, sendEdited bool) zview.View {
+	ct := stack.Parent().View.(zcontainer.ContainerType)
 	newStack := v.buildStackFromSlice(structure, vertical, showStatic, f)
 	ct.ReplaceChild(stack, newStack)
-	ns := zui.ViewGetNative(newStack)
-	ctp := ns.Parent().Parent().View.(zui.ContainerType)
+	ns := newStack.Native()
+	ctp := ns.Parent().Parent().View.(zcontainer.ContainerType)
 	ctp.ArrangeChildren()
-	zui.PresentViewCallReady(newStack, false)
+	zpresent.CallReady(newStack, false)
 	if sendEdited {
 		fh, _ := structure.(ActionHandler)
 		// zlog.Info("updateSliceValue:", fh != nil, f.Name, fh)
@@ -74,17 +80,17 @@ func (v *FieldView) changeNamedSelectionIndex(i int, f *Field) {
 	zkeyvalue.DefaultStore.SetInt(i, key, true)
 }
 
-func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showStatic bool, f *Field) zui.View {
+func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showStatic bool, f *Field) zview.View {
 	sliceVal, _ := zreflect.FindFieldWithNameInStruct(f.FieldName, structure, true)
 	// zlog.Info("buildStackFromSlice:", v.ObjectName(), sliceVal.Len())
-	var bar *zui.StackView
-	stack := zui.StackViewNew(vertical, f.ID)
+	var bar *zcontainer.StackView
+	stack := zcontainer.StackViewNew(vertical, f.ID)
 	if f != nil && f.Spacing != 0 {
 		stack.SetSpacing(f.Spacing)
 	}
 	key := v.makeNamedSelectionKey(f)
 	var selectedIndex int
-	single := (f.Flags&flagIsNamedSelection != 0)
+	single := (f.Flags&FlagIsNamedSelection != 0)
 	// zlog.Info("buildStackFromSlice:", f.FieldName, vertical, single)
 	var fieldView *FieldView
 	// zlog.Info("buildStackFromSlice:", vertical, f.ID, val.Len())
@@ -94,9 +100,9 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 		zint.Minimize(&selectedIndex, sliceVal.Len()-1)
 		zint.Maximize(&selectedIndex, 0)
 		stack.SetMargin(zgeo.RectFromXY2(8, 6, -8, -10))
-		stack.SetCorner(zui.GroupingStrokeCorner)
-		stack.SetStroke(zui.GroupingStrokeWidth, zui.GroupingStrokeColor)
-		label := zui.LabelNew(f.Name)
+		stack.SetCorner(zcontainer.GroupingStrokeCorner)
+		stack.SetStroke(zcontainer.GroupingStrokeWidth, zcontainer.GroupingStrokeColor)
+		label := zlabel.New(f.Name)
 		label.SetColor(zgeo.ColorNewGray(0, 1))
 		font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBoldItalic)
 		f.SetFont(label, font)
@@ -105,7 +111,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 	// zlog.Info("buildStackFromSlice:", f.ID, sliceVal.Len())
 
 	for n := 0; n < sliceVal.Len(); n++ {
-		var view zui.View
+		var view zview.View
 		a := zgeo.Center
 		if vertical {
 			a = zgeo.TopLeft
@@ -145,7 +151,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 			} else {
 				a |= zgeo.VertCenter
 			}
-			fieldView.buildStack(f.ID, a, showStatic, zgeo.Size{}, true, 5)
+			fieldView.BuildStack(f.ID, a, showStatic, zgeo.Size{}, true, 5)
 			if !f.IsStatic() && !single {
 				trash := makeCircledTrashButton()
 				fieldView.Add(trash, zgeo.CenterLeft)
@@ -169,7 +175,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 	}
 	if single {
 		zlog.Assert(!f.IsStatic())
-		bar = zui.StackViewHor(f.ID + ".bar")
+		bar = zcontainer.StackViewHor(f.ID + ".bar")
 		stack.Add(bar, zgeo.TopLeft|zgeo.HorExpand)
 	}
 	if !f.IsStatic() {
@@ -204,7 +210,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 		shape := makeCircledTrashButton()
 		bar.Add(shape, zgeo.CenterRight)
 		shape.SetPressedHandler(func() {
-			zui.AlertAsk("Delete this entry?", func(ok bool) {
+			zalert.Ask("Delete this entry?", func(ok bool) {
 				if ok {
 					val, _ := zreflect.FindFieldWithNameInStruct(f.FieldName, structure, true)
 					zslice.RemoveAt(val.Addr().Interface(), selectedIndex)
@@ -228,7 +234,7 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 		if sliceVal.Len() > 0 {
 			str = fmt.Sprintf("%d of %d", selectedIndex+1, sliceVal.Len())
 		}
-		label := zui.LabelNew(str)
+		label := zlabel.New(str)
 		label.SetColor(zgeo.ColorNewGray(0, 1))
 		f.SetFont(label, nil)
 		bar.Add(label, zgeo.CenterLeft)
@@ -244,12 +250,12 @@ func (v *FieldView) buildStackFromSlice(structure interface{}, vertical, showSta
 	return stack
 }
 
-func updateSliceFieldView(view zui.View, selectedIndex int, item zreflect.Item, f *Field, dontOverwriteEdited bool) {
+func updateSliceFieldView(view zview.View, selectedIndex int, item zreflect.Item, f *Field, dontOverwriteEdited bool) {
 	// zlog.Info("updateSliceFieldView:", view.ObjectName(), item.FieldName, f.Name)
-	children := (view.(zui.ContainerType)).GetChildren(false)
+	children := (view.(zcontainer.ContainerType)).GetChildren(false)
 	n := 0
 	subViewCount := len(children)
-	single := (f.Flags&flagIsNamedSelection != 0)
+	single := (f.Flags&FlagIsNamedSelection != 0)
 	if single {
 		subViewCount -= 2
 	}

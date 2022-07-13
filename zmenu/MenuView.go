@@ -3,7 +3,7 @@
 package zmenu
 
 import (
-	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -20,7 +20,7 @@ type MenuType interface {
 }
 
 type MenuView struct {
-	zui.NativeView
+	zview.NativeView
 	maxWidth        float64
 	selectedHandler func()
 	items           zdict.Items

@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zwidget"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
@@ -44,7 +45,7 @@ func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string
 		args[k] = v[0]
 	}
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
-	zui.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
+	zwidget.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
 	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 	port, _ := strconv.Atoi(args["zrpcport"])
