@@ -59,7 +59,7 @@ type Owner interface {
 }
 
 type TextSetter interface {
-	SetText(etxt string)
+	SetText(text string)
 }
 
 func New() *Info {
@@ -120,6 +120,7 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := zcanvas.GetTextSize(str, ti.Font)
+		// zlog.Info("TI GetBounds:", str, ti.Font, s)
 		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W

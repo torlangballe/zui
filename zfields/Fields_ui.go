@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zheader"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -35,17 +37,20 @@ type UIStringer interface {
 }
 
 type Widgeter interface {
+	IsStatic() bool
 	Create(f *Field) zview.View
-	SetValue(view zview.View, val interface{})
+	SetValue(view zview.View, val any)
 }
 
 type ReadWidgeter interface {
-	GetValue(view zview.View) interface{}
+	GetValue(view zview.View) any
 }
 
 type SetupWidgeter interface {
 	SetupField(f *Field)
 }
+
+type FlagType int64
 
 const (
 	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
@@ -60,7 +65,7 @@ const (
 )
 
 const (
-	FlagIsStatic = 1 << iota
+	FlagIsStatic FlagType = 1 << iota
 	FlagHasSeconds
 	FlagHasMinutes
 	FlagHasHours
@@ -81,6 +86,11 @@ const (
 	FlagIsOpaque
 	FlagIsActions
 	FlagIsNonSelectable
+	FlagFrameIsTitled
+	FlagFrameTitledOnFrame
+	FlagIsGroup
+	FlagHasFrame
+	FlagSkipIndicator
 )
 
 const (
@@ -91,7 +101,7 @@ const (
 type Field struct {
 	Index                int
 	ID                   string
-	ActionValue          interface{} // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
+	ActionValue          any // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
 	Name                 string
 	FieldName            string
 	Title                string // name of item in row, and header if no title
@@ -110,7 +120,7 @@ type Field struct {
 	LocalEnum            string
 	Size                 zgeo.Size
 	HeaderSize           zgeo.Size
-	Flags                int
+	Flags                FlagType
 	Tooltip              string
 	UpdateSecs           float64
 	LabelizeWidth        float64
@@ -118,24 +128,28 @@ type Field struct {
 	LocalDisable         string
 	LocalShow            string
 	LocalHide            string
-	FontSize             float64
-	FontName             string
-	FontStyle            zgeo.FontStyle
-	Spacing              float64
-	Placeholder          string
-	Columns              int
-	Rows                 int
-	Shadow               zgeo.DropShadow
-	SortSmallFirst       zbool.BoolInd
-	SortPriority         int
-	IsGroup              bool
-	FractionDecimals     int
-	OldSecs              int
-	ValueStoreKey        string
-	Visible              bool
-	Disabled             bool
-	SetEdited            bool
-	WidgetName           string
+	// Font                 zgeo.Font
+	// Spacing              float64
+	Placeholder string
+	Columns     int
+	Rows        int
+	// Shadow               zstyle.DropShadow
+	SortSmallFirst   zbool.BoolInd
+	SortPriority     int
+	FractionDecimals int
+	OldSecs          int
+	ValueStoreKey    string
+	Visible          bool
+	Disabled         bool
+	SetEdited        bool
+	WidgetName       string
+	BrancherType     string
+	SkipFieldNames   []string
+	Styling          zstyle.Styling
+}
+
+var EmptyField = Field{
+	Styling: zstyle.EmptyStyling,
 }
 
 type ActionHandler interface {
@@ -148,6 +162,37 @@ type ActionFieldHandler interface {
 
 var widgeters = map[string]Widgeter{}
 
+var flagsList = []zbits.BitsetItem{
+	zbits.BSItem("HasSeconds", int64(FlagHasSeconds)),
+	zbits.BSItem("HasMinutes", int64(FlagHasMinutes)),
+	zbits.BSItem("HasHours", int64(FlagHasHours)),
+	zbits.BSItem("HasDays", int64(FlagHasDays)),
+	zbits.BSItem("HasMonths", int64(FlagHasMonths)),
+	zbits.BSItem("HasYears", int64(FlagHasYears)),
+	zbits.BSItem("IsImage", int64(FlagIsImage)),
+	zbits.BSItem("IsFixed", int64(FlagIsFixed)),
+	zbits.BSItem("IsButton", int64(FlagIsButton)),
+	zbits.BSItem("HasHeaderImage", int64(FlagHasHeaderImage)),
+	zbits.BSItem("NoTitle", int64(FlagNoTitle)),
+	zbits.BSItem("ToClipboard", int64(FlagToClipboard)),
+	zbits.BSItem("IsNamedSelection", int64(FlagIsNamedSelection)),
+	zbits.BSItem("IsStringer", int64(FlagIsStringer)),
+	zbits.BSItem("IsPassword", int64(FlagIsPassword)),
+	zbits.BSItem("ExpandFromMinSize", int64(FlagExpandFromMinSize)),
+	zbits.BSItem("IsDuration", int64(FlagIsDuration)),
+	zbits.BSItem("IsOpaque", int64(FlagIsOpaque)),
+	zbits.BSItem("IsActions", int64(FlagIsActions)),
+	zbits.BSItem("IsNonSelectable", int64(FlagIsNonSelectable)),
+	zbits.BSItem("FrameIsTitled", int64(FlagFrameIsTitled)),
+	zbits.BSItem("IsGroup", int64(FlagIsGroup)),
+	zbits.BSItem("HasFrame", int64(FlagHasFrame)),
+	zbits.BSItem("SkipIndicator", int64(FlagSkipIndicator)),
+}
+
+func (f FlagType) String() string {
+	return zbits.Int64ToStringFromList(int64(f), flagsList)
+}
+
 func RegisterWigeter(name string, w Widgeter) {
 	widgeters[name] = w
 }
@@ -158,27 +203,31 @@ func (f Field) IsStatic() bool {
 
 func (f *Field) SetFont(view zview.View, from *zgeo.Font) {
 	to := view.(ztext.LayoutOwner)
-	size := f.FontSize
-	if size == 0 {
+	size := f.Styling.Font.Size
+	if size <= 0 {
 		if from != nil {
 			size = from.Size
 		} else {
 			size = zgeo.FontDefaultSize
 		}
 	}
-	style := f.FontStyle
+	style := f.Styling.Font.Style
 	if from != nil {
 		style = from.Style
 	}
+	if style == zgeo.FontStyleUndef {
+		style = zgeo.FontStyleNormal
+	}
 	var font *zgeo.Font
-	if f.FontName != "" {
-		font = zgeo.FontNew(f.FontName, size, style)
+	if f.Styling.Font.Name != "" {
+		font = zgeo.FontNew(f.Styling.Font.Name, size, style)
 	} else if from != nil {
 		font = new(zgeo.Font)
 		*font = *from
 	} else {
 		font = zgeo.FontNice(size, style)
 	}
+	// zlog.Info("Field SetFont:", view.Native().Hierarchy(), *font)
 	to.SetFont(font)
 }
 
@@ -205,7 +254,7 @@ func fieldNameToID(name string) string {
 	return zstr.FirstToLowerWithAcronyms(name)
 }
 
-func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, index int, immediateEdit bool) bool {
+func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int, immediateEdit bool) bool {
 	f.Index = index
 	f.ID = fieldNameToID(item.FieldName)
 	// zlog.Info("FIELD:", f.ID, item.FieldName)
@@ -250,6 +299,8 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.Flags |= FlagExpandFromMinSize
 		// case "cannil"
 		// f.Flags |= flagAllowNil
+		case "brancher":
+			f.BrancherType = val
 		case "justify":
 			if val == "" {
 				f.Justify = f.Alignment
@@ -262,6 +313,9 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 			f.Title = origVal
 		case "color":
 			f.Colors = strings.Split(val, "|")
+			if len(f.Colors) > 0 {
+				f.Styling.FGColor.SetFromString(f.Colors[0])
+			}
 		case "height":
 			if floatErr == nil {
 				f.Height = n
@@ -300,7 +354,7 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 			}
 		case "spacing":
 			if floatErr == nil {
-				f.Spacing = n
+				f.Styling.Spacing = n
 			}
 		case "storekey":
 			f.ValueStoreKey = val
@@ -323,7 +377,28 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 				f.MaxWidth = n
 			}
 		case "group":
-			f.IsGroup = true
+			for _, part := range strings.Split(val, "|") {
+				switch part {
+				case "titled":
+					f.Flags |= FlagFrameIsTitled
+				case "skipindicator":
+					f.Flags |= FlagSkipIndicator
+				case "onframe":
+					f.Flags |= FlagFrameTitledOnFrame
+				}
+			}
+			f.Flags |= FlagIsGroup | FlagHasFrame
+		case "frame":
+			// zlog.Info("Frame:", f.Name, f.FieldName)
+			f.Flags |= FlagHasFrame
+			for _, part := range strings.Split(val, "|") {
+				switch part {
+				case "titled":
+					f.Flags |= FlagFrameIsTitled
+				case "onframe":
+					f.Flags |= FlagFrameTitledOnFrame
+				}
+			}
 		case "fixed":
 			f.Flags |= FlagIsFixed
 		case "opaque":
@@ -331,37 +406,28 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 		case "shadow":
 			for _, part := range strings.Split(val, "|") {
 				got := false
-				if f.Shadow.Delta.IsNull() {
-					err := f.Shadow.Delta.FromString(part)
+				if f.Styling.DropShadow.Delta.IsNull() {
+					err := f.Styling.DropShadow.Delta.FromString(part)
 					if err == nil {
 						got = true
 					} else {
 						num, err := strconv.ParseFloat(part, 32)
 						if err != nil {
-							f.Shadow.Delta = zgeo.SizeBoth(num)
+							f.Styling.DropShadow.Delta = zgeo.SizeBoth(num)
 							got = true
 						}
 					}
 				}
-				if !got && f.Shadow.Blur == 0 {
+				if !got && f.Styling.DropShadow.Blur == 0 {
 					num, err := strconv.ParseFloat(part, 32)
 					if err != nil {
-						f.Shadow.Blur = float32(num)
+						f.Styling.DropShadow.Blur = float32(num)
 						got = true
 					}
 				}
-				if !got && !f.Shadow.Color.Valid {
-					f.Shadow.Color = zgeo.ColorFromString(part)
+				if !got && !f.Styling.DropShadow.Color.Valid {
+					f.Styling.DropShadow.Color.SetFromString(part)
 				}
-			}
-			if f.Shadow.Delta.IsNull() {
-				f.Shadow.Delta = zgeo.SizeBoth(3)
-			}
-			if f.Shadow.Blur == 0 {
-				f.Shadow.Blur = float32(f.Shadow.Delta.Min())
-			}
-			if !f.Shadow.Color.Valid {
-				f.Shadow.Color = zgeo.ColorBlack
 			}
 
 		case "font":
@@ -376,14 +442,14 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 				n, _ := strconv.Atoi(part)
 				if n != 0 {
 					if sign != 0 {
-						f.FontSize = float64(n*sign) + zgeo.FontDefaultSize
+						f.Styling.Font.Size = float64(n*sign) + zgeo.FontDefaultSize
 					} else {
-						f.FontSize = float64(n)
+						f.Styling.Font.Size = float64(n)
 					}
 				} else {
-					f.FontStyle = zgeo.FontStyleFromStr(part)
-					if f.FontStyle == zgeo.FontStyleNormal {
-						f.FontName = part
+					f.Styling.Font.Style = zgeo.FontStyleFromStr(part)
+					if f.Styling.Font.Style == zgeo.FontStyleUndef {
+						f.Styling.Font.Name = part
 					}
 				}
 			}
@@ -590,9 +656,35 @@ func (f *Field) MakeFromReflectItem(structure interface{}, item zreflect.Item, i
 		}
 	}
 
-	callActionHandlerFunc(structure, f, SetupFieldAction, item.Address, nil) // need to use v.structure here, since i == -1
+	var fv FieldView
+	fv.data = structure
+	callActionHandlerFunc(&fv, f, SetupFieldAction, item.Address, nil) // need to use v.structure here, since i == -1
 	// zlog.Info("Field:", f.ID, f.MinWidth, f.Size, f.MaxWidth)
 	return true
+}
+
+// MergeInField copies in values from the Field *n* to *f*, overwriting except where *n* has undefined value
+func (f *Field) MergeInField(n *Field) {
+	oldStylng := f.Styling
+	*f = *n
+	f.Styling = oldStylng.MergeWith(n.Styling)
+}
+
+// func (f *Field) Styling() zstyle.Styling {
+// 	s := zstyle.EmptyStyling
+// 	if len(f.Colors) > 0 {
+// 		s.FGColor = zgeo.ColorFromString(f.Colors[0])
+// 	}
+// 	s.DropShadow = f.Shadow
+// 	s.Font = f.Font
+// 	return s
+// }
+
+func (f *Field) TitleOrName() string {
+	if f.Title != "" {
+		return f.Title
+	}
+	return f.Name
 }
 
 func setDurationColumns(f *Field) {
@@ -616,7 +708,7 @@ func SetEnum(name string, enum zdict.Items) {
 	fieldEnums[name] = enum
 }
 
-func SetEnumItems(name string, nameValPairs ...interface{}) {
+func SetEnumItems(name string, nameValPairs ...any) {
 	var dis zdict.Items
 
 	for i := 0; i < len(nameValPairs); i += 2 {
@@ -628,7 +720,7 @@ func SetEnumItems(name string, nameValPairs ...interface{}) {
 	fieldEnums[name] = dis
 }
 
-func AddStringBasedEnum(name string, vals ...interface{}) {
+func AddStringBasedEnum(name string, vals ...any) {
 	var items zdict.Items
 	for _, v := range vals {
 		n := fmt.Sprintf("%v", v)
@@ -638,7 +730,7 @@ func AddStringBasedEnum(name string, vals ...interface{}) {
 	fieldEnums[name] = items
 }
 
-func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice interface{}, f Field) {
+func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice any, f Field) {
 	enum := fieldEnums[f.Enum]
 	val := reflect.ValueOf(slice)
 	slen := val.Len()
@@ -659,9 +751,9 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice interface{}
 	}
 }
 
-type mapValueToName map[interface{}]string
+type mapValueToName map[any]string
 
-func getSortCache(slice interface{}, fields []Field, sortOrder []zheader.SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
+func getSortCache(slice any, fields []Field, sortOrder []zheader.SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
 	fieldMap = map[string]*Field{}
 	enumTitles = map[string]mapValueToName{}
 
@@ -690,7 +782,7 @@ func getSortCache(slice interface{}, fields []Field, sortOrder []zheader.SortInf
 	return
 }
 
-func SortSliceWithFields(slice interface{}, fields []Field, sortOrder []zheader.SortInfo) {
+func SortSliceWithFields(slice any, fields []Field, sortOrder []zheader.SortInfo) {
 	// start := time.Now()
 	fieldMap, enumTitles := getSortCache(slice, fields, sortOrder)
 	// fmt.Printf("FieldMap: %+v %+v\n", fieldMap, sortOrder)

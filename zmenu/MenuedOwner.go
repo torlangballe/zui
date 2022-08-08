@@ -319,7 +319,7 @@ func (o *MenuedOwner) popup() {
 	}
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
-	list := zgridlist.New("menu-list")
+	list := zgridlist.NewView("menu-list")
 	stack.SetBGColor(o.BGColor)
 	list.MultiSelectable = o.IsMultiple
 	list.Selectable = !o.IsMultiple
@@ -394,7 +394,7 @@ func (o *MenuedOwner) popup() {
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
-	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1))
+	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1), false)
 	pos := o.PopPos
 	if o.View != nil {
 		nv := o.View.Native()

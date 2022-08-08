@@ -4,8 +4,8 @@
 package zfields
 
 import (
-	"github.com/torlangballe/zui/zwidget"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidget"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -34,7 +34,7 @@ func (a AmountBarWidgeter) Create(f *Field) zview.View {
 	return progress
 }
 
-func (a AmountBarWidgeter) SetValue(view zview.View, val interface{}) {
+func (a AmountBarWidgeter) SetValue(view zview.View, val any) {
 	av := view.(*zwidget.AmountView)
 	n, err := zfloat.GetAny(val)
 	zlog.Info("AmountSet:", av.Hierarchy(), n, err)
@@ -43,7 +43,11 @@ func (a AmountBarWidgeter) SetValue(view zview.View, val interface{}) {
 	}
 }
 
-func (a AmountBarWidgeter) GetValue(view zview.View) interface{} {
+func (a AmountBarWidgeter) IsStatic() bool {
+	return true
+}
+
+func (a AmountBarWidgeter) GetValue(view zview.View) any {
 	progress := view.(*zwidget.AmountView)
 	return progress.Value()
 }
@@ -65,7 +69,7 @@ func (a AmountCircleWidgeter) Create(f *Field) zview.View {
 	return view
 }
 
-func (a AmountCircleWidgeter) SetValue(view zview.View, val interface{}) {
+func (a AmountCircleWidgeter) SetValue(view zview.View, val any) {
 	circle := view.(*zwidget.AmountView)
 	n, err := zfloat.GetAny(val)
 	if !zlog.OnError(err) {
@@ -73,7 +77,11 @@ func (a AmountCircleWidgeter) SetValue(view zview.View, val interface{}) {
 	}
 }
 
-func (a AmountCircleWidgeter) GetValue(view zview.View) interface{} {
+func (a AmountCircleWidgeter) IsStatic() bool {
+	return true
+}
+
+func (a AmountCircleWidgeter) GetValue(view zview.View) any {
 	circle := view.(*zwidget.AmountView)
 	return circle.Value()
 }
@@ -90,7 +98,7 @@ func (a ActivityWidgeter) Create(f *Field) zview.View {
 	return av
 }
 
-func (a ActivityWidgeter) SetValue(view zview.View, val interface{}) {
+func (a ActivityWidgeter) SetValue(view zview.View, val any) {
 	on := val.(bool)
 	activity := view.(*zwidget.ActivityView)
 	if on {
@@ -100,7 +108,11 @@ func (a ActivityWidgeter) SetValue(view zview.View, val interface{}) {
 	}
 }
 
-func (a ActivityWidgeter) GetValue(view zview.View) interface{} {
+func (a ActivityWidgeter) IsStatic() bool {
+	return true
+}
+
+func (a ActivityWidgeter) GetValue(view zview.View) any {
 	activity := view.(*zwidget.ActivityView)
 	return activity.IsStopped()
 }

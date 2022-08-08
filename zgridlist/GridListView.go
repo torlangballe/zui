@@ -1,9 +1,21 @@
+// The zgridlist package defines GridListView, a view for displaying cells in multiple rows and columns.
+// It knows nothing about the content of it's cells.
+// If CellHeightFunc is set each cell's hight is based on that, otherwise based on first view created.
+// It also contains SliceGridView and TableView which use a GridListView.
+// GridListView is based on functions for getting a count of cells, getting and id for an index and creating a cell's view for a given id.
+// Cells can be hovered over, pressed and selected. Multiple selections are possible.
+// If HierarchyLevelFunc is set, it will insert a branch toggle (BrangeToggleView) widgets if level returned > 1 and leaf is false,
+// but only calls LayoutCells when this toggles are changed.
+// Hierarchy toggle states in OpenBranches are stored in zkeyvalue.DefaultStore based on the grids storeName.
+// TODO: Append by shift clicking or shift-arrowing.
+
 //go:build zui
 
 package zgridlist
 
 import (
 	"math"
+	"strings"
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
@@ -13,11 +25,13 @@ import (
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidget"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
 )
@@ -37,6 +51,8 @@ type GridListView struct {
 	PressedColor      zgeo.Color
 	SelectColor       zgeo.Color
 	HoverColor        zgeo.Color
+	BranchToggleType  zwidget.BranchToggleType
+	OpenBranches      map[string]bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -47,18 +63,20 @@ type GridListView struct {
 	HandleSelectionChangedFunc func()
 	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
 	HandleKeyFunc              func(key zkeyboard.Key, mod zkeyboard.Modifier) bool
-	children                   map[string]zview.View
-	selectedIDs                map[string]bool
-	pressedIDs                 map[string]bool
-	selectingFromIndex         int
-	appending                  bool
-	ignoreMouseEvent           bool
-	grid                       *zcustom.CustomView
-	margin                     zgeo.Rect
-	columns                    int
-	rows                       int
-	layoutDirty                bool
-	currentHoverID             string
+	HierarchyLevelFunc         func(id string) (level int, leaf bool)
+
+	children           map[string]zview.View
+	selectedIDs        map[string]bool
+	pressedIDs         map[string]bool
+	selectingFromIndex int
+	appending          bool
+	ignoreMouseEvent   bool
+	cellsView          *zcustom.CustomView
+	margin             zgeo.Rect
+	columns            int
+	rows               int
+	layoutDirty        bool
+	currentHoverID     string
 }
 
 var (
@@ -69,30 +87,32 @@ var (
 	DefaultHoverColor   = DefaultPressedColor
 )
 
-func New(name string) *GridListView {
+func NewView(storeName string) *GridListView {
 	v := &GridListView{}
-	v.Init(v, name)
+	v.Init(v, storeName)
 	return v
 }
 
-func (v *GridListView) Init(view zview.View, name string) {
-	v.ScrollView.Init(view, name)
+func (v *GridListView) Init(view zview.View, storeName string) {
+	v.ScrollView.Init(view, storeName)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.MinColumns = 1
 	v.children = map[string]zview.View{}
 	v.selectedIDs = map[string]bool{}
 	v.pressedIDs = map[string]bool{}
-	v.SetObjectName("GridListView (Scroller)")
-	v.grid = zcustom.NewView("GridListView.grid")
-	v.AddChild(v.grid, -1)
-	v.grid.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
-	v.grid.SetPointerEnterHandler(true, v.handleHover)
+	v.SetObjectName(storeName)
+	v.cellsView = zcustom.NewView("GridListView.grid")
+	v.AddChild(v.cellsView, -1)
+	v.cellsView.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
+	v.cellsView.SetPointerEnterHandler(true, v.handleHover)
 	v.CellColor = DefaultCellColor
 	v.BorderColor = DefaultBorderColor
 	v.SelectColor = DefaultSelectColor
 	v.PressedColor = DefaultPressedColor
 	v.HoverColor = DefaultHoverColor
-
+	v.OpenBranches = map[string]bool{}
+	v.BranchToggleType = zwidget.BranchToggleTriangle
+	v.loadOpenBranches()
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("Scroll:", pos)
 		v.LayoutCells(false)
@@ -117,6 +137,27 @@ func (v *GridListView) IsSelected(id string) bool {
 
 func (v *GridListView) IsHoverCell(id string) bool {
 	return id == v.currentHoverID
+}
+
+func (v *GridListView) makeOpenBranchesKey() string {
+	return "ZGridListView.branches." + v.ObjectName()
+}
+
+func (v *GridListView) loadOpenBranches() {
+	str, _ := zkeyvalue.DefaultStore.GetString(v.makeOpenBranchesKey())
+	v.OpenBranches = map[string]bool{}
+	if str == "" {
+		return
+	}
+	for _, id := range strings.Split(str, ",") {
+		v.OpenBranches[id] = true
+	}
+}
+
+func (v *GridListView) saveOpenBranches() {
+	ids := zmap.GetKeysAsStrings(v.OpenBranches)
+	str := strings.Join(ids, ",")
+	zkeyvalue.DefaultStore.SetString(str, v.makeOpenBranchesKey(), true)
 }
 
 func (v *GridListView) SelectedIDs() []string {
@@ -204,7 +245,7 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	if v.BorderColor.Valid {
-		child.Native().SetStroke(1, v.BorderColor)
+		child.Native().SetStroke(1, v.BorderColor, false)
 	}
 	if v.UpdateSelectionFunc != nil {
 		v.UpdateSelectionFunc(v, cid)
@@ -451,7 +492,7 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 func (v *GridListView) RemoveCell(id string) bool {
 	child := v.children[id]
 	if child != nil {
-		v.grid.RemoveChild(child)
+		v.cellsView.RemoveChild(child)
 		delete(v.children, id)
 		return true
 	}
@@ -459,6 +500,7 @@ func (v *GridListView) RemoveCell(id string) bool {
 }
 
 func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
+	// zlog.Info("getAChild", v.Parent().ObjectName(), v.CreateCellFunc != nil)
 	cid := v.IDAtIndexFunc(0)
 	child := v.CreateCellFunc(v, cid)
 	s := child.CalculatedSize(total)
@@ -477,9 +519,29 @@ func (v *GridListView) GetChildren(collapsed bool) (children []zview.View) {
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
 	v.ScrollView.SetRect(rect)
-	// zlog.Info("GL: SetRect:", rect, v.Rect(), v.grid.Rect())
-	at := v.View.(zcontainer.ArrangChildrenType) // in case we are a stack or something inheriting from GridListView
+	// zlog.Info("GL: SetRect:", rect, v.Rect(), v.cellsView.Rect())
+	at := v.View.(zcontainer.Arranger) // in case we are a stack or something inheriting from GridListView
 	at.ArrangeChildren()
+}
+
+func (v *GridListView) insertBranchToggle(id string, child zview.View) {
+	level, leaf := v.HierarchyLevelFunc(id)
+	co, _ := child.(zcontainer.CellsOwner)
+	aa, _ := child.(zcontainer.AdvancedAdder)
+	if level > 0 {
+		w := float64(level-1) * 14
+		if v.BranchToggleType != zwidget.BranchToggleNone {
+			if !leaf {
+				bt := zwidget.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
+				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.Size{4 + w, 0}, zgeo.Size{}, -1, true)
+			}
+			w += 24
+		}
+		cells := co.GetCells()
+		(*cells)[0].Margin.W += w
+		(*cells)[0].MinSize.W -= w
+		(*cells)[0].MaxSize.W -= w
+	}
 }
 
 func (v *GridListView) makeOrGetChild(id string) zview.View {
@@ -488,8 +550,11 @@ func (v *GridListView) makeOrGetChild(id string) zview.View {
 		return child
 	}
 	child = v.CreateCellFunc(v, id)
+	if v.HierarchyLevelFunc != nil {
+		v.insertBranchToggle(id, child)
+	}
 	v.children[id] = child
-	v.grid.AddChild(child, -1)
+	v.cellsView.AddChild(child, -1)
 	if v.UpdateCellFunc != nil {
 		v.UpdateCellFunc(v, id)
 	}
@@ -511,7 +576,6 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	} else {
 		zlog.Assert(v.MaxColumns <= 1)
 	}
-	// zlog.Info("4Each:", rect, childSize)
 	v.columns, v.rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
 	var x, y int
 	for i := 0; i < v.CellCountFunc(); i++ {
@@ -529,7 +593,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			minx = v.Spacing.W / 2
 		}
 		if lastx {
-			maxx = -(rect.Max().X - r.Max().X)
+			maxx = -(rect.Max().X - r.Max().X) + 1
 		} else {
 			maxx -= v.Spacing.W / 2
 		}
@@ -571,7 +635,7 @@ func (v *GridListView) ArrangeChildren() {
 	v.ScrollView.ArrangeChildren()
 	s := v.CalculatedGridSize(v.LocalRect().Size)
 	r := zgeo.Rect{Size: s}
-	v.grid.SetRect(r)
+	v.cellsView.SetRect(r)
 	v.LayoutCells(false)
 }
 
@@ -610,7 +674,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	})
 	for cid, view := range v.children {
 		if !placed[cid] {
-			v.grid.RemoveChild(view)
+			v.cellsView.RemoveChild(view)
 			delete(v.children, cid)
 		}
 	}
@@ -673,8 +737,28 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 	return true
 }
 
+func (v *GridListView) toggleBranch(open bool) {
+	if len(v.selectedIDs) == 0 {
+		return
+	}
+	id := v.SelectedIDs()[0]
+	cellView := v.CellView(id)
+	zcontainer.ViewRangeChildren(cellView, false, false, func(view zview.View) bool {
+		bt, _ := view.(*zwidget.BranchToggleView)
+		if bt != nil {
+			tellParents := true
+			if open != bt.IsOpen() {
+				bt.SetOpen(open, tellParents)
+			}
+			return false
+		}
+		return true
+	})
+}
+
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
-	// zlog.Info("List ReadyToShow:", beforeWindow)
+	// zlog.Info("List ReadyToShow:", v.ObjectName(), v.CreateCellFunc != nil)
+
 	if !beforeWindow && (v.Selectable || v.MultiSelectable) {
 		zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
@@ -686,8 +770,16 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 				case zkeyboard.KeyDownArrow:
 					return v.moveSelection(0, 1, mod)
 				case zkeyboard.KeyLeftArrow:
+					if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
+						v.toggleBranch(false)
+						return true
+					}
 					return v.moveSelection(-1, 0, mod)
 				case zkeyboard.KeyRightArrow:
+					if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
+						v.toggleBranch(true)
+						return true
+					}
 					return v.moveSelection(1, 0, mod)
 				case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
 					break // do select
@@ -709,4 +801,14 @@ func (v *GridListView) SetMargin(m zgeo.Rect) {
 
 func (v *GridListView) Margin() zgeo.Rect {
 	return v.margin
+}
+
+func (v *GridListView) HandleBranchToggleChanged(id string, open bool) {
+	if open {
+		v.OpenBranches[id] = true
+	} else {
+		delete(v.OpenBranches, id)
+	}
+	v.LayoutCells(false)
+	v.saveOpenBranches()
 }

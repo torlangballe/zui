@@ -3,8 +3,8 @@
 package zmenu
 
 import (
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/ztextinfo"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"

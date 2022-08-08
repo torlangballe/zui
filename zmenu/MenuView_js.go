@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 )
 
 func NewView(name string, items zdict.Items, value interface{}) *MenuView {
@@ -21,12 +22,13 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v.View = v
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	v.SetObjectName(name)
-	v.UpdateAndSelect(items, value)
-
+	if len(items) > 0 {
+		v.UpdateAndSelect(items, value)
+	}
 	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
 		index := v.JSGet("selectedIndex").Int()
-		zlog.Assert(index < len(v.items))
+		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
 		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
 		if v.selectedHandler != nil {
@@ -69,18 +71,42 @@ func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
 	}
 }
 
-func (v *MenuView) menuViewAddItem(name string, value interface{}) {
+func (v *MenuView) AddItem(name string, value interface{}) {
 	option := zdom.DocumentJS.Call("createElement", "option")
 	if name == MenuSeparatorID {
 		option.Set("disabled", true)
 		option.Set("class", "separator")
 	} else {
-		id := fmt.Sprint(value)
-		option.Set("value", id)
-		option.Set("text", id)
+		option.Set("value", fmt.Sprint(value))
+		option.Set("text", name)
 		// option.Set("innerHTML", name)
 	}
+	var item zdict.Item
+	item.Name = name
+	item.Value = value
+	v.items = append(v.items, item)
 	v.JSCall("appendChild", option)
+}
+
+func (v *MenuView) RemoveItemByValue(value interface{}) {
+	sval := fmt.Sprint(value)
+	options := v.JSGet("options")
+	for i, item := range v.items {
+		if fmt.Sprint(item.Value) == sval {
+			zslice.RemoveAt(&v.items, i)
+			break
+		}
+	}
+	for i := 0; i < options.Length(); i++ {
+		v := options.Index(i).Get("value")
+		if v.String() == sval {
+			options.Call("remove", i)
+			break
+		}
+	}
+	if fmt.Sprint(v.currentValue) == sval {
+		v.currentValue = nil
+	}
 }
 
 func (v *MenuView) UpdateAndSelect(items zdict.Items, value interface{}) {
@@ -108,7 +134,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 }
 
 func (v *MenuView) SelectWithValue(value interface{}) {
-	if zlog.ErrorIf(value == nil, v.ObjectName()) {
+	if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.GetCallingStackString()) {
 		return
 	}
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)

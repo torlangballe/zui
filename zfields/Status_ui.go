@@ -35,7 +35,7 @@ func (s StatusWidgeter) SetupField(f *Field) {
 	f.Title = "⚠"
 }
 
-func (s StatusWidgeter) SetValue(view zview.View, val interface{}) {
+func (s StatusWidgeter) SetValue(view zview.View, val any) {
 	serr := val.(string)
 	view.SetObjectName(serr)
 	// zlog.Info("Status.SetVal", serr, zlog.GetCallingStackString())
@@ -45,6 +45,10 @@ func (s StatusWidgeter) SetValue(view zview.View, val interface{}) {
 	iv.Show(serr != "")
 }
 
-func (s StatusWidgeter) GetValue(view zview.View) interface{} {
+func (a StatusWidgeter) IsStatic() bool {
+	return true
+}
+
+func (s StatusWidgeter) GetValue(view zview.View) any {
 	return view.ObjectName()
 }
