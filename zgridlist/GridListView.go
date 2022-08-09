@@ -38,21 +38,23 @@ import (
 
 type GridListView struct {
 	zscrollview.ScrollView
-	Spacing           zgeo.Size
-	Selectable        bool
-	MultiSelectable   bool
-	MakeFullSize      bool
-	MaxColumns        int
-	MinColumns        int
-	BorderColor       zgeo.Color
-	CellColor         zgeo.Color
-	CellColorFunc     func(id string) zgeo.Color
-	MultiplyAlternate float32
-	PressedColor      zgeo.Color
-	SelectColor       zgeo.Color
-	HoverColor        zgeo.Color
-	BranchToggleType  zwidget.BranchToggleType
-	OpenBranches      map[string]bool
+	Spacing            zgeo.Size
+	Selectable         bool
+	MultiSelectable    bool
+	MakeFullSize       bool
+	MaxColumns         int
+	MinColumns         int
+	MinRowsForFullSize int
+	MaxRowsForFullSize int
+	BorderColor        zgeo.Color
+	CellColor          zgeo.Color
+	CellColorFunc      func(id string) zgeo.Color
+	MultiplyAlternate  float32
+	PressedColor       zgeo.Color
+	SelectColor        zgeo.Color
+	HoverColor         zgeo.Color
+	BranchToggleType   zwidget.BranchToggleType
+	OpenBranches       map[string]bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -76,7 +78,7 @@ type GridListView struct {
 	columns            int
 	rows               int
 	layoutDirty        bool
-	currentHoverID     string
+	CurrentHoverID     string
 }
 
 var (
@@ -136,7 +138,7 @@ func (v *GridListView) IsSelected(id string) bool {
 }
 
 func (v *GridListView) IsHoverCell(id string) bool {
-	return id == v.currentHoverID
+	return id == v.CurrentHoverID
 }
 
 func (v *GridListView) makeOpenBranchesKey() string {
@@ -228,7 +230,7 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	col := v.CellColor
-	if v.currentHoverID == cid && v.HoverColor.Valid {
+	if v.CurrentHoverID == cid && v.HoverColor.Valid {
 		col = v.HoverColor
 	} else if v.pressedIDs[cid] && v.PressedColor.Valid {
 		col = v.PressedColor
@@ -310,15 +312,15 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 	if inside.IsFalse() || !insideCell {
 		id = ""
 	}
-	if id == v.currentHoverID {
+	if id == v.CurrentHoverID {
 		return
 	}
-	if v.currentHoverID != "" && v.UpdateCellFunc != nil {
-		v.UpdateCellFunc(v, v.currentHoverID)
+	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil {
+		v.UpdateCellFunc(v, v.CurrentHoverID)
 	}
-	v.currentHoverID = id
-	if v.currentHoverID != "" && v.UpdateCellFunc != nil {
-		v.UpdateCellFunc(v, v.currentHoverID)
+	v.CurrentHoverID = id
+	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil {
+		v.UpdateCellFunc(v, v.CurrentHoverID)
 	}
 	if v.HoverColor.Valid {
 		v.updateCellBackgrounds()
@@ -329,7 +331,7 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 }
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
-	v.currentHoverID = ""
+	v.CurrentHoverID = ""
 	if !v.Selectable && !v.MultiSelectable {
 		return false
 	}
@@ -480,6 +482,10 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	}
 	childSize := v.getAChildSize(total)
 	nx, ny := v.CalculateColumnsAndRows(childSize.W, total.W)
+	zint.Maximize(&ny, v.MinRowsForFullSize)
+	if v.MaxRowsForFullSize != 0 {
+		zint.Minimize(&ny, v.MaxRowsForFullSize)
+	}
 	s := v.margin.Size.Negative()
 	x := float64(nx)
 	y := float64(ny)
@@ -569,7 +575,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	}
 	rect := v.LocalRect()
 	pos := rect.Pos
-	childSize := rect.Size
+	childSize := rect.Size.Plus(v.margin.Size)
 
 	if v.CellHeightFunc == nil {
 		childSize = v.getAChildSize(rect.Size)
@@ -614,7 +620,6 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		if v.BorderColor.Valid {
 			r2.Size.Subtract(zgeo.Size{1, 1})
 		}
-		// zlog.Info(cellID, "Vis:", v.margin, marg, cellID, visible, r, v.YOffset, v.YOffset+v.LocalRect().Size.H)
 		if !got(cellID, r2, cr, x, y, visible) {
 			break
 		}
@@ -660,6 +665,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			ms, _ := child.(zview.Marginalizer)
 			if ms != nil {
 				marg := inner.Minus(outer)
+				// zlog.Info("Grid SetMarg on child", cid, marg, v.margin)
 				ms.SetMargin(marg)
 			}
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
@@ -787,6 +793,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 					v.UnselectAll()
 				}
 			}
+			// zlog.Info("List keypress2", v.HandleKeyFunc != nil)
 			if v.HandleKeyFunc != nil {
 				return v.HandleKeyFunc(key, mod)
 			}
@@ -797,6 +804,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 
 func (v *GridListView) SetMargin(m zgeo.Rect) {
 	v.margin = m
+	// zlog.Info("GL SetMarg:", v.Hierarchy(), m)
 }
 
 func (v *GridListView) Margin() zgeo.Rect {
