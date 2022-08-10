@@ -51,9 +51,7 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 }
 
 func (v *CustomView) SetLongPressedHandler(handler func()) {
-	// zlog.Info("SetLongPressedHandler:", v.Hierarchy(), zlog.GetCallingStackString())
 	v.longPressed = handler
-	v.JSSet("className", "widget")
 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		v.SetStateOnDownPress(args[0])
 		(&v.LongPresser).HandleOnMouseDown(v)
