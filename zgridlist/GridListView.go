@@ -372,7 +372,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		}
 		v.pressedIDs[id] = true
 		v.appending = (v.MultiSelectable && (zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0))
-		if !v.appending && v.selectingFromIndex == -1 {
+		if !v.appending {
 			v.selectingFromIndex = index
 		}
 		if v.appending && v.selectingFromIndex == -1 && len(v.SelectedIDs()) > 0 {
