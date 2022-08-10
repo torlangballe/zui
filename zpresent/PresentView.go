@@ -87,7 +87,6 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 	if attributes.Modal || firstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
-	// zlog.Info("presentLoaded", firstPresented, size, rect, fullRect)
 	nv := v.Native()
 	if attributes.Modal {
 		if nv != nil {
@@ -96,7 +95,6 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 				if attributes.Alignment == zgeo.AlignmentNone {
 					r.Pos = *attributes.Pos
 				} else {
-					// zlog.Info("ALIGN1:", *attributes.Pos, size, attributes.Alignment)
 					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}).Pos
 					// zlog.Info("ALIGN2:", r.Pos)
 				}
@@ -120,7 +118,7 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 		if !firstPresented {
 			win.AddView(v)
 		} else {
-			size.H += zwindow.BarHeight
+			size.H += zwindow.BarHeight()
 			//			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
 			o := attributes.Options
 			o.Pos = &rect.Pos
@@ -132,6 +130,7 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 			}
 			if closed != nil {
 				win.HandleClosed = func() {
+					CloseOverride(v, false, Attributes{}, func(dismissed bool) {})
 					closed(true)
 					presentCloseFunc = nil
 				}
@@ -159,7 +158,6 @@ func Close(view zview.View, dismissed bool, done func(dismissed bool)) {
 func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
 	// zlog.Info("CloseOverride", dismissed, view.ObjectName(), reflect.ValueOf(view).Type())
-
 	if done != nil {
 		presentCloseFunc = nil
 	}
@@ -176,7 +174,7 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	plen := len(presentedViewStack)
 	win := zwindow.GetFromNativeView(nv)
 	presentedViewStack = presentedViewStack[:plen-1]
-	// zlog.Info("CloseOverride:", plen, view.ObjectName())
+	// zlog.Info("CloseOverride:", plen, view != nil, win != nil)
 	if plen > 1 {
 		win.ProgrammaticView = presentedViewStack[plen-2] // stack has been tructated by 1 since plen calculated
 	} else {
@@ -210,6 +208,7 @@ func CurrentIsParent(v zview.View) bool {
 		return true
 	}
 	for _, n := range nv.AllParents() {
+		// fmt.Printf("CIP: %p %p\n", v, n.View)
 		if n.View == p {
 			return true
 		}

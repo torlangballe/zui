@@ -38,10 +38,15 @@ type Options struct {
 }
 
 var (
-	BarHeight                        = 21.0 // BarHeight is height of a normal window's title bar, can be different for each os
 	windows                          = map[*Window]bool{}
 	PresentedViewCurrentIsParentFunc func(v zview.View) bool
+	barHeight                        = 28.0
 )
+
+// BarHeight is height of a normal window's title bar, can be different for each os
+func BarHeight() float64 {
+	return barHeight
+}
 
 func New() *Window {
 	w := &Window{}

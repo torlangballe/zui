@@ -16,7 +16,10 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-var winMain *Window
+var (
+	winMain       *Window
+	barCalculated bool
+)
 
 type windowNative struct {
 	hasResized      bool
@@ -36,6 +39,7 @@ func init() {
 	winMain = New()
 	winMain.Element = zdom.WindowJS
 	windows[winMain] = true
+
 	zview.RemoveKeyPressHandlerViewsFunc = func(v zview.View) {
 		win := GetFromNativeView(v.Native())
 		win.removeKeyPressHandlerViews(v)
@@ -70,11 +74,10 @@ func (w *Window) ContentRect() zgeo.Rect {
 // It can set the *o.Size* if non-zero, and *o.Pos* if non-null.
 // Use *loaded* callback before setting title etc, as this is otherwise set during load
 func Open(o Options) *Window {
-	win := &Window{}
+	win := New()
 	var specs []string
 	if !o.Size.IsNull() {
 	}
-
 	rect, gotPos, gotSize := getRectFromOptions(o)
 	if gotPos {
 		specs = append(specs, fmt.Sprintf("left=%d,top=%d", int(rect.Pos.X), int(rect.Pos.Y)))
@@ -85,25 +88,42 @@ func Open(o Options) *Window {
 	if o.URL != "" && !zhttp.StringStartsWithHTTPX(o.URL) {
 		o.URL = GetMain().GetURLWithNewPathAndArgs(o.URL, nil)
 	}
-	// zlog.Info("OPEN WIN:", o.URL, zlog.GetCallingStackString())
+	// zlog.Info("OPEN WIN:", o.URL, specs)
 	win.Element = zdom.WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.Element.IsNull() {
 		zlog.Error(nil, "open window failed", o.URL)
 		return nil
 	}
+	ztimer.StartIn(0.2, func() { // This is a hack as we don't know browser title bar height. It waits until window is placed, then calculates what title bar height should be, stores and changes for this window.
+		if !barCalculated {
+			barCalculated = true
+			oh := win.Element.Get("outerHeight").Float()
+			ih := win.Element.Get("innerHeight").Float()
+			// zlog.Info("doc:", oh, ih, originalIH)
+			newBar := oh - ih
+			if newBar != barHeight {
+				ow := win.Element.Get("outerWidth").Float()
+				diff := newBar - barHeight
+				barHeight = newBar
+				win.Element.Call("resizeTo", ow, oh+diff)
+			}
+		}
+	})
 	win.ID = o.ID
 	windows[win] = true
+
 	// zlog.Info("OPENEDWIN:", o.URL, specs, win.Element, len(windows))
 	win.Element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
+		// zlog.Info("Other window closed or refreshed?")
 		if win.ProgrammaticView != nil {
 			pnv := win.ProgrammaticView.Native()
 			pnv.PerformAddRemoveFuncs(true)
 		}
 		// zlog.Info("Window Closed!", win.ID, win.AnimationFrames)
-		delete(windows, win)
 		if win.HandleClosed != nil {
 			win.HandleClosed()
 		}
+		delete(windows, win) // do this after HandleClosed
 		return nil
 	}))
 	return win
@@ -111,7 +131,7 @@ func Open(o Options) *Window {
 
 func (win *Window) SetOnResizeHandling() {
 	win.Element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// fmt.Println("On Resize1", win.ProgrammaticView.ObjectName())
+		// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName(), win.ResizeHandlingView != nil)
 		// if !win.hasResized { // removing this so we can get first resize... what was it for?
 		// 	win.hasResized = true
 		// 	return nil
@@ -209,6 +229,7 @@ func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {
 
 func findForElement(e js.Value) *Window {
 	for w, _ := range windows {
+		// zlog.Info("win findForElement:", e, w.Element)
 		if w.Element.Equal(e) {
 			return w
 		}
@@ -227,10 +248,11 @@ func (win *Window) setOnKeyDown() {
 	doc := win.Element.Get("document")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
-		// zlog.Info("win key:", key)
+		// zlog.Info("win key:", key, len(win.keyHandlers))
 		if len(win.keyHandlers) != 0 {
 			var used bool
 			for view, h := range win.keyHandlers {
+				// zlog.Info("Key?", view.ObjectName(), PresentedViewCurrentIsParentFunc(view))
 				if PresentedViewCurrentIsParentFunc(view) {
 					if h(key, mods) {
 						used = true
@@ -271,12 +293,13 @@ func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, 
 	doc := win.Element.Get("document")
 	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 		win.setOnKeyDown()
-		zlog.Info("WIN activate!")
+		// zlog.Info("WIN activate!")
 		return nil
 	}))
 }
 
 func GetFromNativeView(v *zview.NativeView) *Window {
 	we := v.GetWindowElement()
-	return findForElement(we)
+	win := findForElement(we)
+	return win
 }
