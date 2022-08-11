@@ -1,3 +1,7 @@
+// The View interface is used to refer to any view. It is used by NativeViews to store the actual inherited type of NativeView they are.
+// It has some minimum methods to perform on views, including *ObjectName*; a non-unique id used to identify it.
+// The Native() method returns its *NativeView, which has a lot more methods.
+
 //go:build zui
 
 package zview
@@ -14,21 +18,24 @@ type View interface {
 	Usable() bool
 	SetColor(color zgeo.Color)   // Color is the main color of a view. If it is stroked and filled, it is fill color
 	SetBGColor(color zgeo.Color) // BGColor is all color in background of view, not just fill color
-	SetStroke(width float64, color zgeo.Color, inset bool)
 	SetRect(rect zgeo.Rect)
 	Rect() zgeo.Rect
 	Show(show bool)
 	Native() *NativeView
 }
 
+// ExposableType is an interface for exposing views.
 type ExposableType interface {
 	Expose()
 }
 
+// A Marginalizer allows setting a margin Rect. Although all views that inherit from NativeView get a
+// SetMargin method, they might have their own method, so always convert a View to Marginalizer to set margins.
 type Marginalizer interface {
 	SetMargin(m zgeo.Rect)
 }
 
+// A MarginOwner has a margin Rect.
 type MarginOwner interface {
 	Margin() zgeo.Rect
 }
