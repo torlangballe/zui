@@ -1314,13 +1314,15 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				ph()
 			}
 		})
-		// // lph := pt.LongPressedHandler()
-		// pt.SetLongPressedHandler(func() {
-		// 	// zlog.Info("Field.LPH:", f.ID)
-		// 	if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface, &view) && lph != nil {
-		// 		lph()
-		// 	}
-		// })
+		if f.Flags&FlagLongPress != 0 {
+			lph := pt.LongPressedHandler()
+			pt.SetLongPressedHandler(func() {
+				zlog.Info("Field.LPH:", f.ID)
+				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface, &view) && lph != nil {
+					lph()
+				}
+			})
+		}
 	}
 	// zlog.Info("BuildItem:", item.FieldName, view != nil, zlog.GetCallingStackString())
 	updateItemLocalToolTip(f, children, view)
@@ -1545,7 +1547,6 @@ func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, titl
 	//	zlog.Info("PresentOKCancelStruct", structType)
 	PresentOKCancelStructSlice(&slice, params, title, att, func(ok bool) bool {
 		if ok {
-			zlog.Info("OK:", slice[0])
 			*structPtr = slice[0]
 		}
 		return done(ok)

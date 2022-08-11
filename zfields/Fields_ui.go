@@ -91,6 +91,7 @@ const (
 	FlagIsGroup
 	FlagHasFrame
 	FlagSkipIndicator
+	FlagLongPress
 )
 
 const (
@@ -376,6 +377,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			if floatErr == nil {
 				f.MaxWidth = n
 			}
+		case "longpress":
+			f.Flags |= FlagLongPress
 		case "group":
 			for _, part := range strings.Split(val, "|") {
 				switch part {
@@ -720,7 +723,7 @@ func SetEnumItems(name string, nameValPairs ...any) {
 	fieldEnums[name] = dis
 }
 
-func AddStringBasedEnum(name string, vals ...any) {
+func AddStringBasedEnum[S any](name string, vals ...S) {
 	var items zdict.Items
 	for _, v := range vals {
 		n := fmt.Sprintf("%v", v)
