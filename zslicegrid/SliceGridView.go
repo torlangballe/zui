@@ -4,7 +4,7 @@
 //
 // Editing will actually open multiple cells in a dialog with zfields.PresentOKCancelStructSlice then call StoreChangedItemsFunc.
 // Deleting will remove cells from the slice, then call DeleteItemsFunc.
-// It sets up its GridListView's HandleKeyFunc to edit and delete with return/backspace.
+// It sets up its GridListViews HandleKeyFunc to edit and delete with return/backspace.
 // If its struct type confirms to ChildrenOwner (has GetChildren()), it will show child-slices
 // in a hierarchy, setting the GridListViews hierarchy HierarchyLevelFunc, and calculating cell-count,
 // id-at-index etc based on open branch toggles.
@@ -216,6 +216,9 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 			v.DeleteItemsAsk(v.Grid.SelectedIDs())
 		})
 	}
+	if v.SortFunc != nil {
+		v.SortFunc(*v.slice)
+	}
 	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
 
 	// v.Grid.UpdateCell = v.UpdateCell
@@ -249,6 +252,9 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 		if zstr.StringsContain(ids, sid) {
 			items = append(items, (*v.slice)[i])
 		}
+	}
+	if len(items) == 0 {
+		zlog.Fatal(nil, "SGV EditItems: no items. ids:", len(ids))
 	}
 	title += v.NameOfXItemsFunc(ids, true)
 	params := zfields.FieldViewParametersDefault()
