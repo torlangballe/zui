@@ -1,13 +1,13 @@
 // The zgridlist package defines GridListView, a view for displaying cells in multiple rows and columns.
 // It knows nothing about the content of it's cells.
-// If CellHeightFunc is set each cell's hight is based on that, otherwise based on first view created.
-// It also contains SliceGridView and TableView which use a GridListView.
+// If CellHeightFunc is set, each cells hight is based on that, otherwise based on first view created.
+// zgridlist also contains SliceGridView which creates a grid from any slice.
+// Also TableView, which use a GridListView and zfield package to create rows based on a struct.
 // GridListView is based on functions for getting a count of cells, getting and id for an index and creating a cell's view for a given id.
 // Cells can be hovered over, pressed and selected. Multiple selections are possible.
 // If HierarchyLevelFunc is set, it will insert a branch toggle (BrangeToggleView) widgets if level returned > 1 and leaf is false,
 // but only calls LayoutCells when this toggles are changed.
 // Hierarchy toggle states in OpenBranches are stored in zkeyvalue.DefaultStore based on the grids storeName.
-// TODO: Append by shift clicking or shift-arrowing.
 
 //go:build zui
 
@@ -321,7 +321,7 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 	if id == v.CurrentHoverID {
 		return
 	}
-	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil {
+	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil && v.children[v.CurrentHoverID] != nil {
 		v.UpdateCellFunc(v, v.CurrentHoverID)
 	}
 	v.CurrentHoverID = id
