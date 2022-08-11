@@ -1,3 +1,6 @@
+// Created by Tor Langballe originally on /9/11/15.
+// The zanimation package defines transition types, and methods to animate views.
+
 //go:build zui
 
 package zanimation
@@ -6,8 +9,6 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
-
-//  Created by Tor Langballe on /9/11/15.
 
 type Transition int
 
