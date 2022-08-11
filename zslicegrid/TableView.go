@@ -1,6 +1,6 @@
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
 // See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
-// if AddHeader option set, it adds header on top using zheader.HeaderView.
+// if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 //
 package zslicegrid
 
@@ -21,14 +21,14 @@ const AddHeader OptionType = 16
 
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
-	Header                *zheader.HeaderView
-	ColumnMargin          float64
-	RowInset              float64
-	DefaultHeight         float64
+	Header       *zheader.HeaderView // Optional header based on S struct
+	ColumnMargin float64             // Margin between columns
+	RowInset     float64             // inset on far left and right
+	// DefaultHeight         float64
 	HeaderHeight          float64
-	HeaderPressedFunc     func(fieldID string)
-	HeaderLongPressedFunc func(fieldID string)
-	fields                []zfields.Field
+	HeaderPressedFunc     func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
+	HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
+	fields                []zfields.Field      // the fields in an S struct used to generate columns for the table
 }
 
 func TableViewNew[S zstr.StrIDer](s *[]S, name string, addFlags OptionType) *TableView[S] {
@@ -45,7 +45,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.ColumnMargin = 5
 	v.RowInset = 7
 	v.HeaderHeight = 28
-	v.DefaultHeight = 30
+	// v.DefaultHeight = 30
 	options := zreflect.Options{UnnestAnonymous: true, MakeSliceElementIfNone: true}
 	froot, err := zreflect.ItterateStruct(s, options)
 	if err != nil {
