@@ -129,24 +129,21 @@ type Field struct {
 	LocalDisable         string
 	LocalShow            string
 	LocalHide            string
-	// Font                 zgeo.Font
-	// Spacing              float64
-	Placeholder string
-	Columns     int
-	Rows        int
-	// Shadow               zstyle.DropShadow
-	SortSmallFirst   zbool.BoolInd
-	SortPriority     int
-	FractionDecimals int
-	OldSecs          int
-	ValueStoreKey    string
-	Visible          bool
-	Disabled         bool
-	SetEdited        bool
-	WidgetName       string
-	BrancherType     string
-	SkipFieldNames   []string
-	Styling          zstyle.Styling
+	Placeholder          string
+	Columns              int
+	Rows                 int
+	SortSmallFirst       zbool.BoolInd
+	SortPriority         int
+	FractionDecimals     int
+	OldSecs              int
+	ValueStoreKey        string
+	Visible              bool
+	Disabled             bool
+	SetEdited            bool
+	WidgetName           string
+	BrancherType         string
+	SkipFieldNames       []string
+	Styling              zstyle.Styling
 }
 
 var EmptyField = Field{
