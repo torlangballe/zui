@@ -206,6 +206,9 @@ func (v *SliceGridView[S]) StructForID(id string) *S {
 
 func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
+		if v.SortFunc != nil {
+			v.SortFunc(*v.slice) // Do this beforeWindow shown, as the sorted cells get placed correctly then
+		}
 		return
 	}
 	if v.editButton != nil {
@@ -215,9 +218,6 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 		v.deleteButton.SetPressedHandler(func() {
 			v.DeleteItemsAsk(v.Grid.SelectedIDs())
 		})
-	}
-	if v.SortFunc != nil {
-		v.SortFunc(*v.slice)
 	}
 	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
 
