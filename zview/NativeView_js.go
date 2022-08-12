@@ -38,6 +38,7 @@ var (
 	mouseStartTime  time.Time
 	lastUploadClick time.Time
 	movingPos       *zgeo.Pos
+	// moverListeners  = map[*NativeView]js.Value{}
 
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
@@ -841,17 +842,33 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 	v.JSSet("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		handler(getMousePosRelative(v, args[0]), zbool.True)
 		if moves {
-			v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			// we := v.GetWindowElement()
+			v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				handler(getMousePosRelative(v, args[0]), zbool.Unknown)
 				return nil
 			}))
+			// listener := we.Call("addEventListener", "mousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			// 	handler(getMousePosRelative(v, args[0]), zbool.Unknown)
+			// 	return nil
+			// }))
+			// moverListeners[v] = listener
+			// v.AddOnRemoveFunc(func() {
+			// 	delete(moverListeners, v)
+			// })
 		}
 		return nil
 	}))
 	v.JSSet("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		handler(getMousePosRelative(v, args[0]), zbool.False)
 		if moves {
-			v.GetWindowElement().Set("onmousemove", nil)
+			v.JSSet("onmousemove", nil)
+			// 	listener, got := moverListeners[v]
+			// 	zlog.Info("Remove mover:", got, v.Hierarchy())
+			// 	if got {
+			// 		we := v.GetWindowElement()
+			// 		we.Call("removeEventListener", "mousemove", listener)
+			// 		delete(moverListeners, v)
+			// 	}
 		}
 		return nil
 	}))
