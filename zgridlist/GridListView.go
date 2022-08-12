@@ -325,7 +325,7 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 		v.UpdateCellFunc(v, v.CurrentHoverID)
 	}
 	v.CurrentHoverID = id
-	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil {
+	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil && v.children[v.CurrentHoverID] != nil {
 		v.UpdateCellFunc(v, v.CurrentHoverID)
 	}
 	if v.HoverColor.Valid {
