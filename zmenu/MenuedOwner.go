@@ -148,7 +148,7 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 
 func (o *MenuedOwner) Stop() {
 	if o.View == nil {
-		zlog.Info("Stopping MenuOwner view==nil:", zlog.GetCallingStackString())
+		zlog.Info("Stopping MenuOwner view==nil:", zlog.CallingStackString())
 	}
 	// zlog.Info("Stopping MenuOwner:", o.View != nil)
 	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())

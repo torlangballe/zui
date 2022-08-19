@@ -25,8 +25,8 @@ func (a AmountBarWidgeter) Create(f *Field) zview.View {
 		min = 100
 	}
 	progress := zwidget.AmountViewBarNew(min)
-	if len(f.Colors) != 0 {
-		col := zgeo.ColorFromString(f.Colors[0])
+	if f.Styling.FGColor.Valid {
+		col := f.Styling.FGColor
 		if col.Valid {
 			progress.SetColor(col)
 		}
@@ -62,8 +62,12 @@ func (a AmountCircleWidgeter) Create(f *Field) zview.View {
 	view.SetMinSize(f.Size)
 	view.SetColor(zgeo.ColorNew(0, 0.8, 0, 1))
 	for i, n := range []float64{0, 70, 90} {
-		if i < len(f.Colors) {
-			view.ColorsFromValue[n] = zgeo.ColorFromString(f.Colors[i])
+		if len(f.Colors) > 1 {
+			if i < len(f.Colors) {
+				view.ColorsFromValue[n] = zgeo.ColorFromString(f.Colors[i])
+			}
+		} else if f.Styling.FGColor.Valid {
+			view.ColorsFromValue[0] = f.Styling.FGColor
 		}
 	}
 	return view

@@ -22,7 +22,7 @@ import (
 type baseVideoView struct {
 }
 
-func (v *VideoView) Init(view zui.View, maxSize zgeo.Size) {
+func (v *VideoView) Init(view zview.View, maxSize zgeo.Size) {
 	v.MakeJSElement(v, "video")
 	v.SetObjectName("video-input")
 	v.maxSize = maxSize

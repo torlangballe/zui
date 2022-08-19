@@ -30,7 +30,7 @@ func LabelCVNew(text string) *LabelCV {
 	v.SetMaxLines(1)
 	v.alignment = zgeo.CenterLeft
 	v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
-	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
+	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 		ti := v.GetTextInfo()
 		ti.Rect = v.LocalRect()
 		ti.Draw(canvas)
@@ -110,7 +110,7 @@ func (v *LabelCV) SetMaxWidth(max float64) {
 	v.maxWidth = max
 }
 
-func LabelizeCV(view zui.View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *LabelCV, stack *zcontainer.StackView, viewCell *zcontainer.Cell) {
+func LabelizeCV(view zview.View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *LabelCV, stack *zcontainer.StackView, viewCell *zcontainer.Cell) {
 	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
 	to, _ := view.(ztextinfo.Owner)
 	if to != nil {

@@ -1,7 +1,6 @@
-// +build !js
-// +build zui
+//go:build !js && zui
 
-package zui
+package zalert
 
-func (a *Alert) showNative(handle func(result AlertResult)) {
+func (a *Alert) showNative(handle func(result Result)) {
 }

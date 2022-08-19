@@ -3,6 +3,7 @@
 package zview
 
 import (
+	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbool"
@@ -14,6 +15,7 @@ type baseNativeView struct {
 
 type LongPresser struct{}
 
+// func NativeViewAddToRoot(v View)                                                                  {}
 func (v *NativeView) GetView() *NativeView                                                        { return v }
 func (v *NativeView) Child(path string) View                                                      { return nil }
 func (v *NativeView) Rect() zgeo.Rect                                                             { return zgeo.Rect{} }
@@ -39,7 +41,7 @@ func (v *NativeView) DumpTree()                                                 
 func (v *NativeView) SetFont(font *zgeo.Font)                                                     {}
 func (v *NativeView) Color() zgeo.Color                                                           { return zgeo.Color{} }
 func (v *NativeView) BGColor() zgeo.Color                                                         { return zgeo.Color{} }
-func (v *NativeView) SetCursor(cursor CursorType)                                                 {}
+func (v *NativeView) SetCursor(cursor zcursor.Type)                                               {}
 func (v *NativeView) Alpha() float32                                                              { return 1 }
 func (v *NativeView) GetScale() float64                                                           { return 1 }
 func (v *NativeView) Show(show bool)                                                              {}
@@ -59,7 +61,6 @@ func (v *NativeView) RemoveChild(child View)                                    
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                                      {}
 func (v *NativeView) SetToolTip(str string)                                                       {}
 func (v *NativeView) SetAboveParent(above bool)                                                   {}
-func NativeViewAddToRoot(v View)                                                                  {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))                                 {}
 func (v *NativeView) JSSet(property string, value interface{})                                    {}
 func (v *NativeView) SetDraggable(getData func() (data string, mime string))                      {}
@@ -67,20 +68,20 @@ func (v *NativeView) SetUploader(got func(data []byte, name string))            
 func (v *NativeView) SetOnInputHandler(handler func())                                            {}
 func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                      {}
-func (v *NativeView) WrapInLink(surl, name string) *zcontainer.StackView                          { return nil }
 func (v *NativeView) ReplaceChild(child, with View) error                                         { return nil }
 func (v *NativeView) AllParents() (all []*NativeView)                                             { return }
 func (v *NativeView) SetZIndex(index int)                                                         {}
 func (v *NativeView) GetFocusedView() *NativeView                                                 { return nil }
-func (v *NativeView) GetWindow() *Window                                                          { return nil }
-func (v *NativeView) AbsoluteRect() zgeo.Rect                                                     { return zgeo.Rect{} }
-func (v *NativeView) SetStyle(key, value string)                                                  {}
-func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                             {}
-func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                                {}
-func (v *NativeView) SetHandleExposed(handle func(intersects bool))                               {}
-func (v *NativeView) MakeLink(surl, name string)                                                  {}
-func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment)                 {}
-func (v *NativeView) HasSize() bool                                                               { return false }
+
+// func (v *NativeView) GetWindow() *zwindow.Window                                                  { return nil }
+func (v *NativeView) AbsoluteRect() zgeo.Rect                                     { return zgeo.Rect{} }
+func (v *NativeView) SetStyle(key, value string)                                  {}
+func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))             {}
+func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                {}
+func (v *NativeView) SetHandleExposed(handle func(intersects bool))               {}
+func (v *NativeView) MakeLink(surl, name string)                                  {}
+func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment) {}
+func (v *NativeView) HasSize() bool                                               { return false }
 
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }

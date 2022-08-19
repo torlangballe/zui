@@ -2,7 +2,7 @@
 // serve a wasm app to a browser.
 // It is invoked with ServeZUIWasm (below), which uses a FilesRedirector (below) instance to handle serving the wasm, html and assets.
 
-//go:build !js && !catalyst
+//go:build !js && !catalyst && server
 
 package zapp
 
@@ -70,9 +70,11 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
+	zrest.AddSubHandler(router, "", f)
+
 	// zlog.Info("HandleApp:", zrest.AppURLPrefix)
-	route := router.PathPrefix(zrest.AppURLPrefix)
-	route.Handler(f)
+	//	route := router.PathPrefix(zrest.AppURLPrefix)
+	//	route.Handler(f)
 	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "www/favicon.ico")
 	})

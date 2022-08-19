@@ -1,14 +1,14 @@
 //go:build !js && zui
-// +build !js,zui
 
-package zui
+package ztext
 
 import (
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-func (tv *TextView) Init(view zui.View, text string, style TextViewStyle, rows, cols int) {
+func (tv *TextView) Init(view zview.View, text string, style Style, rows, cols int) {
 	tv.View = view
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	tv.SetFont(f)

@@ -165,9 +165,11 @@ func (v *GroupBase) SetGroupItem(id string, done func()) {
 		}
 		ct := v.View.(zcontainer.ContainerType)
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
-			if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-				v.ArrangeChildren()
-			}
+			// if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+			// v.ArrangeChildren()
+			// zlog.Info("setGroupItem loaded")
+			zcontainer.ArrangeChildrenAtRootContainer(v)
+			// }
 			if done != nil {
 				done()
 			}
@@ -360,4 +362,3 @@ func GetAncestorGroupBase(child zview.View) *GroupBase {
 	}
 	return nil
 }
-

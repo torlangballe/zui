@@ -309,11 +309,15 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			f.Name = origVal
 		case "title":
 			f.Title = origVal
+		case "skip":
+			f.SkipFieldNames = strings.Split(val, "|")
 		case "color":
 			f.Colors = strings.Split(val, "|")
-			if len(f.Colors) > 0 {
+			if len(f.Colors) == 1 {
 				f.Styling.FGColor.SetFromString(f.Colors[0])
 			}
+		case "bgcolor":
+			f.Styling.BGColor.SetFromString(val)
 		case "height":
 			if floatErr == nil {
 				f.Height = n

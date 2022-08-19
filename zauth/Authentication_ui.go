@@ -28,9 +28,9 @@ func AuthenticationOpenDialog(canCancel bool, got func(auth zusers.Authenticatio
 	v1.SetMarginS(zgeo.Size{10, 10})
 	v1.SetBGColor(zgeo.ColorNewGray(0.9, 1))
 	email, _ := zkeyvalue.DefaultStore.GetString(emailKey)
-	style := TextViewStyle{KeyboardType: zkeyboard.TypeEmailAddress}
+	style := Style{KeyboardType: zkeyboard.TypeEmailAddress}
 	emailField := TextViewNew(email, style, 20, 1)
-	style = TextViewStyle{KeyboardType: zkeyboard.TypePassword}
+	style = Style{KeyboardType: zkeyboard.TypePassword}
 	passwordField := TextViewNew("", style, 20, 1)
 	register := ButtonNew(zwords.Register())
 	register.SetMinWidth(90)

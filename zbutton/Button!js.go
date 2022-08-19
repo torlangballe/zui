@@ -6,7 +6,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-func ButtonNew(text string) *Button {
+func New(text string) *Button {
 	return nil
 }
 
@@ -22,3 +22,5 @@ func (v *Button) SetLongPressedHandler(handler func()) {
 func (v *Button) SetMargin(m zgeo.Rect) {
 	v.margin = m
 }
+
+func (v *Button) MakeEscapeCanceler() {}

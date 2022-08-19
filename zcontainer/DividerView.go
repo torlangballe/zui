@@ -9,7 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zstyle"
-	zui "github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -18,7 +18,7 @@ import (
 
 type DividerView struct {
 	zcustom.CustomView
-	valueChanged   func(view zui.View)
+	valueChanged   func(view zview.View)
 	Vertical       bool
 	startDelta     float64
 	Delta          float64
@@ -92,7 +92,7 @@ func DividerViewNewHor(storeKey string) *DividerView {
 	return v
 }
 
-func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View) {
+func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 	canvas.SetColor(zstyle.DefaultFGColor())
 	path := zgeo.PathNew()
 	path.Circle(rect.Center(), zgeo.SizeBoth(4))

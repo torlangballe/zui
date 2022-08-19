@@ -54,11 +54,12 @@ type FieldView struct {
 
 type FieldViewParameters struct {
 	Field
-	HideStatic            bool
-	ImmediateEdit         bool
-	ForceZeroOption       bool // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
-	AllTextStatic         bool // AllTextStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	EditWithoutCallsbacks bool
+	HideStatic              bool
+	ImmediateEdit           bool
+	ForceZeroOption         bool // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
+	AllTextStatic           bool // AllTextStatic makes even not "static" tagged fields static. Good for showing in tables etc.
+	EditWithoutCallsbacks   bool
+	TipsAsDescriptionLabels bool // used for labelizing fields, todo.
 }
 
 func FieldViewParametersDefault() (f FieldViewParameters) {
@@ -496,6 +497,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 			} else {
 				if f.IsStatic() || v.params.AllTextStatic {
 					label, _ := fview.(*zlabel.Label)
+					// zlog.Info("UpdateText:", item.FieldName, item.Interface, label != nil)
 					if label != nil {
 						if f.Flags&FlagIsFixed != 0 {
 							valStr = f.Name
@@ -719,7 +721,7 @@ func (fv *FieldView) makeButton(item zreflect.Item, f *Field) *zshape.ImageButto
 		format = "%v"
 	}
 	color := "gray"
-	if len(f.Colors) != 0 {
+	if len(f.Colors) > 0 {
 		color = f.Colors[0]
 	}
 	name := f.Name
@@ -968,16 +970,16 @@ func (v *FieldView) makeImage(item zreflect.Item, f *Field) zview.View {
 	iv.SetMinSize(f.Size)
 	iv.SetObjectName(f.ID)
 	iv.OpaqueDraw = (f.Flags&FlagIsOpaque != 0)
-	if len(f.Colors) > 0 {
-		iv.EmptyColor = zgeo.ColorFromString(f.Colors[0])
+	if f.Styling.FGColor.Valid {
+		iv.EmptyColor = f.Styling.FGColor
 	}
 	return iv
 }
 
 func setColorFromField(view zview.View, f *Field) {
 	col := zstyle.DefaultFGColor()
-	if len(f.Colors) != 0 {
-		col = zgeo.ColorFromString(f.Colors[0])
+	if f.Styling.FGColor.Valid {
+		col = f.Styling.FGColor
 	}
 	view.SetColor(col)
 }
@@ -1146,7 +1148,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data)
-	// fmt.Println("buildStack1", name, defaultAlign, useMinWidth)
+	// fmt.Println("buildStack1", name, defaultAlign, v.params.SkipFieldNames)
 	children := v.getStructItems()
 	for j, item := range children {
 		if zstr.IndexOf(item.FieldName, v.params.SkipFieldNames) != -1 {
@@ -1265,8 +1267,8 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			view = fv
 			var add zview.View
 			if f.Flags&FlagIsGroup == 0 {
+				// zlog.Info("BUILD static slice:", f.Name, v.Hierarchy(), v.Spacing(), fv.Spacing(), fv.params.Styling.Spacing)
 				add = fv.buildRepeatedStackFromSlice(item.Address, vert, f)
-				// zlog.Info("BUILD static slice:", f.Name, v.Hierarchy(), v.data != nil)
 			} else {
 				// zlog.Info("NewMenuGroup:", f.FieldName, f.TitleOrName(), f.Styling.StrokeWidth, params.Styling.StrokeWidth)
 				mg := buildMenuGroup(item.Address, f.TitleOrName(), params)
@@ -1331,8 +1333,11 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 		nv.SetDropShadow(f.Styling.DropShadow)
 	}
 	view.SetObjectName(f.ID)
-	if len(f.Colors) != 0 {
-		view.SetColor(zgeo.ColorFromString(f.Colors[0]))
+	if f.Styling.FGColor.Valid {
+		view.SetColor(f.Styling.FGColor)
+	}
+	if f.Styling.BGColor.Valid {
+		view.SetBGColor(f.Styling.BGColor)
 	}
 	callActionHandlerFunc(v, f, CreatedViewAction, item.Address, &view)
 	cell := &zcontainer.Cell{}
@@ -1552,25 +1557,3 @@ func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, titl
 		return done(ok)
 	})
 }
-
-/*
-func PresentOKCancelStruct_Old(structPtr interface{}, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) bool) {
-	// var structCopy any
-	// err := zreflect.DeepCopy(&structCopy, reflect.ValueOf(structPtr).Elem())
-	// zlog.AssertNotError(err, "copy")
-	// zlog.Info("Copy:", structCopy)
-	fview := FieldViewNew("OkCancel", structPtr, params)
-	update := true
-	fview.Build(update)
-	params.EditWithoutCallsbacks = true
-	zalert.PresentOKCanceledView(fview, title, att, func(ok bool) bool {
-		if ok {
-			err := fview.ToData(true)
-			if err != nil {
-				return false
-			}
-		}
-		return done(ok)
-	})
-}
-*/

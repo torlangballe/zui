@@ -56,7 +56,6 @@ func (v *Button) MakeEscapeCanceler() {
 			return false
 		})
 	})
-
 }
 
 func (v *Button) SetPressedHandler(handler func()) {

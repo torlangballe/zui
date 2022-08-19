@@ -2,6 +2,8 @@
 
 package zview
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type NativeView struct {
 	baseNativeView
 	View      View
@@ -25,6 +27,7 @@ const (
 var (
 	ChildOfViewFunc             func(v View, path string) View
 	RangeAllVisibleChildrenFunc func(root View, got func(View) bool)
+	LastPressedPos              zgeo.Pos
 )
 
 func (v *NativeView) AddOnRemoveFunc(f func()) {

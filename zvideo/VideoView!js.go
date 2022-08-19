@@ -9,5 +9,5 @@ import "github.com/torlangballe/zutil/zgeo"
 type baseVideoView struct {
 }
 
-func (v *VideoView) Init(view zui.View, minSize zgeo.Size) {}
-func (v *VideoView) CreateStream(withAudio bool)           {}
+func (v *VideoView) Init(view zview.View, minSize zgeo.Size) {}
+func (v *VideoView) CreateStream(withAudio bool)             {}

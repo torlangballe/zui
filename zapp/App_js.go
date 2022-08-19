@@ -2,7 +2,6 @@ package zapp
 
 import (
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/torlangballe/zui"
@@ -37,7 +36,7 @@ func MainArgs() (path string, args map[string]string) {
 }
 
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
-func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string]string) {
+func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]string) {
 	url, _ := url.Parse(URL())
 	host, _ := znet.GetHostAndPort(url)
 	args = map[string]string{}
@@ -46,14 +45,9 @@ func SetUIDefaults(useTokenAuth bool, rpcPort int) (path string, args map[string
 	}
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
 	zwidget.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
-	zrpc.ToServerClient = zrpc.NewClient(useTokenAuth, 0)
-	zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
-	port, _ := strconv.Atoi(args["zrpcport"])
-	if port != 0 {
-		rpcPort = port
-	}
-	if rpcPort != 0 {
-		zrpc.ToServerClient.Port = rpcPort
+	if useRPC {
+		zrpc.ToServerClient = zrpc.NewClient(useTokenAuth)
+		zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 	}
 	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
 	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)

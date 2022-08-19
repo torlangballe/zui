@@ -134,7 +134,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
 }
 
 func (v *MenuView) SelectWithValue(value interface{}) {
-	if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.GetCallingStackString()) {
+	if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.CallingStackString()) {
 		return
 	}
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)

@@ -7,6 +7,7 @@ package zslicegrid
 import (
 	"strings"
 
+	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zheader"
@@ -17,7 +18,10 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-const AddHeader OptionType = 16
+const (
+	AddHeader      OptionType = 128
+	AddBarInHeader OptionType = 256
+)
 
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
@@ -28,7 +32,9 @@ type TableView[S zstr.StrIDer] struct {
 	HeaderHeight          float64
 	HeaderPressedFunc     func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
 	HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
-	fields                []zfields.Field      // the fields in an S struct used to generate columns for the table
+	FieldParameters       zfields.FieldViewParameters
+	fields                []zfields.Field // the fields in an S struct used to generate columns for the table
+	addFlags              OptionType
 }
 
 func TableViewNew[S zstr.StrIDer](s *[]S, name string, addFlags OptionType) *TableView[S] {
@@ -38,6 +44,11 @@ func TableViewNew[S zstr.StrIDer](s *[]S, name string, addFlags OptionType) *Tab
 }
 
 func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags OptionType) {
+	if addFlags&AddBarInHeader != 0 {
+		zlog.Assert(addFlags&AddHeader != 0)
+		v.Bar = zcontainer.StackViewHor("bar")
+		v.Bar.SetSpacing(4)
+	}
 	v.SliceGridView.Init(view, s, storeName, addFlags)
 	v.Grid.MaxColumns = 1
 	v.Grid.SetMargin(zgeo.Rect{})
@@ -45,49 +56,26 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.ColumnMargin = 5
 	v.RowInset = 7
 	v.HeaderHeight = 28
+	v.FieldParameters = zfields.FieldViewParametersDefault()
+	v.addFlags = addFlags
 	// v.DefaultHeight = 30
-	options := zreflect.Options{UnnestAnonymous: true, MakeSliceElementIfNone: true}
-	froot, err := zreflect.ItterateStruct(s, options)
-	if err != nil {
-		panic(err)
-	}
-	for i, item := range froot.Children {
-		f := zfields.EmptyField
-		immediateEdit := false
-		if f.SetFromReflectItem(s, item, i, immediateEdit) {
-			v.fields = append(v.fields, f)
-		}
-	}
-	if addFlags&AddHeader != 0 {
-		v.Header = zheader.NewView(storeName + ".header")
-		index := 1
-		if addFlags&(AddBar|AddButtons) == 0 {
-			index = 0
-		}
-		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, index, false)
-		v.SortFunc = func(s []S) {
-			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)
-		}
-		v.Header.SortingPressedFunc = func() {
-			v.SortFunc(*v.slice)
-			v.UpdateViewFunc()
-			// for i, s := range *v.slice {
-			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
-			// }
-		}
-		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-			// zlog.Info("UpdateCell:", id)
-			fv := grid.CellView(id).(*zfields.FieldView)
-			zlog.Assert(fv != nil)
-			fv.Update(v.StructForID(id), true)
-		}
-	}
-
 	cell, _ := v.FindCellWithView(v.Grid)
 	cell.Margin.H = -1
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
+	}
+	if v.addFlags&AddHeader != 0 {
+		v.Header = zheader.NewView(v.ObjectName() + ".header")
+		index := 0
+		if v.addFlags&AddBar != 0 {
+			index = 1
+		}
+		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, index, false)
+		if v.Bar != nil && addFlags&AddBarInHeader != 0 {
+			v.Header.Add(v.Bar, zgeo.CenterRight).Free = true
+			v.Bar.SetZIndex(200)
+		}
 	}
 	// zlog.Info("TableInit", v.ObjectName(), v.SliceGridView.Grid.CreateCellFunc != nil)
 }
@@ -103,10 +91,11 @@ func (v *TableView[S]) ArrangeChildren() {
 	if v.Header != nil {
 		// zlog.Info("TV: ArrangeChildren", v.Header != nil, v.Grid.CellCount())
 		if v.Grid.CellCountFunc() > 0 {
-			view := v.Grid.CellView(v.Grid.IDAtIndexFunc(0))
-			zlog.Assert(view != nil)
-			fv := view.(*zfields.FieldView)
-			v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
+			view := v.Grid.AnyChildView()
+			if view != nil {
+				fv := view.(*zfields.FieldView)
+				v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
+			}
 		} else { // no rows, make an empty one to fit header with
 			var sss S
 			view := v.createRowFromStruct(&sss, zstr.GenerateRandomHexBytes(10))
@@ -120,7 +109,44 @@ func (v *TableView[S]) ArrangeChildren() {
 
 func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	v.SliceGridView.ReadyToShow(beforeWindow)
-	if beforeWindow && v.Header != nil {
+	if !beforeWindow {
+		// for i, c := range v.Cells {
+		// 	zlog.Info("Table", i, c.View.ObjectName(), c.Alignment, c.Margin)
+		// }
+		return
+	}
+	options := zreflect.Options{UnnestAnonymous: true, MakeSliceElementIfNone: true}
+	froot, err := zreflect.ItterateStruct(v.slicePtr, options)
+	if err != nil {
+		panic(err)
+	}
+	for i, item := range froot.Children {
+		f := zfields.EmptyField
+		immediateEdit := false
+		if f.SetFromReflectItem(v.slicePtr, item, i, immediateEdit) {
+			if zstr.IndexOf(f.ID, v.FieldParameters.SkipFieldNames) != -1 {
+				continue
+			}
+			v.fields = append(v.fields, f)
+		}
+	}
+	if v.addFlags&AddHeader != 0 {
+		v.SortFunc = func(s []S) {
+			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)
+		}
+		v.Header.SortingPressedFunc = func() {
+			v.SortFunc(*v.slicePtr)
+			v.UpdateViewFunc()
+			// for i, s := range *v.slice {
+			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
+			// }
+		}
+		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
+			// zlog.Info("UpdateCell:", id)
+			fv := grid.CellView(id).(*zfields.FieldView)
+			zlog.Assert(fv != nil)
+			fv.Update(v.StructForID(id), true)
+		}
 		headers := makeHeaderFields(v.fields, v.HeaderHeight)
 		v.Header.Populate(headers)
 		v.Header.HeaderPressedFunc = v.HeaderPressedFunc
@@ -135,7 +161,7 @@ func (v *TableView[S]) createRow(id string) zview.View {
 
 func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	name := "row " + id
-	params := zfields.FieldViewParametersDefault()
+	params := v.FieldParameters
 	params.ImmediateEdit = false
 	params.Styling.Spacing = 0
 	params.AllTextStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)

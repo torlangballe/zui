@@ -6,6 +6,7 @@ package zwindow
 
 import (
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -39,7 +40,7 @@ func (win *Window) setOnResize() {}
 // func (win *Window) SetAddressBarPathAndArgs(path string, args zdict.Dict) {}
 func (w *Window) Close()                         {}
 func (w *Window) Activate()                      {}
-func (w *Window) AddView(v zview.View)             {}
+func (w *Window) AddView(v zview.View)           {}
 func (w *Window) SetTitle(title string)          {}
 func (w *Window) SetHandleClosed(closed func())  {}
 func (win *Window) SetAddressBarURL(surl string) {}

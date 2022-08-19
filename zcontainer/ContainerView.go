@@ -108,7 +108,7 @@ func (v *ContainerView) Add(elements ...interface{}) (first *Cell) {
 	var gotIndex = -1
 
 	if len(v.Cells) == 1200 {
-		zlog.Info("CV ADD1:", v.ObjectName(), zlog.GetCallingStackString())
+		zlog.Info("CV ADD1:", v.ObjectName(), zlog.CallingStackString())
 	}
 	for _, e := range elements {
 		if cell, got := e.(Cell); got {
@@ -193,6 +193,7 @@ func (v *ContainerView) SetSingleOrientation(single bool) {
 }
 
 func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
+	// zlog.Info("AddCell:", v.ObjectName(), index)
 	if index < 0 || index >= len(v.Cells) {
 		v.Cells = append(v.Cells, cell)
 		v.AddChild(cell.View, -1)

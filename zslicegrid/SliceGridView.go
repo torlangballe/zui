@@ -14,11 +14,14 @@
 package zslicegrid
 
 import (
+	"strconv"
+
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zbutton"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
+	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
@@ -37,6 +40,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	zcontainer.StackView
 	Grid                  *zgridlist.GridListView
 	Bar                   *zcontainer.StackView
+	EditParameters        zfields.FieldViewParameters
 	StructName            string
 	NameOfXItemsFunc      func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc  func(ids []string) string
@@ -45,70 +49,88 @@ type SliceGridView[S zstr.StrIDer] struct {
 	StoreChangedItemsFunc func(items []S)
 	DeleteItemsFunc       func(ids []string)
 
-	slice        *[]S
+	slicePtr     *[]S
 	editButton   *zbutton.Button
 	deleteButton *zbutton.Button
+	addButton    *zimageview.ImageView
 }
 
 type OptionType int
 
 const (
-	AddNone    OptionType = 0
-	AddBar     OptionType = 1
-	AddEdit    OptionType = 2
-	AddDelete  OptionType = 4
-	AddButtons OptionType = AddEdit | AddDelete
+	AddNone        OptionType = 0
+	AddBar         OptionType = 1
+	AddEdit        OptionType = 2
+	AddDelete      OptionType = 4
+	AddDarkPlus    OptionType = 8
+	AddLightPlus   OptionType = 16
+	AddEditDelete             = AddEdit | AddDelete
+	AddButtonsMask OptionType = AddEdit | AddDelete | AddDarkPlus | AddLightPlus
 )
 
-func NewView[S zstr.StrIDer](slice *[]S, storeName string, option OptionType) (sv *SliceGridView[S]) {
+func NewView[S zstr.StrIDer](slicePtr *[]S, storeName string, option OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
-	v.Init(v, slice, storeName, option)
+	v.Init(v, slicePtr, storeName, option)
 	return v
 }
 
-func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, option OptionType) {
+func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string, options OptionType) {
 	v.StackView.Init(view, true, "slice-grid-view")
 	v.SetObjectName(storeName)
 	v.SetSpacing(0)
 	v.StructName = "item"
-	v.slice = slice
+	v.slicePtr = slicePtr
+
+	v.EditParameters = zfields.FieldViewParametersDefault()
+	v.EditParameters.LabelizeWidth = 120
+	v.EditParameters.HideStatic = true
 
 	var s S
 	var a any = s
 	_, hasHierarchy := a.(ChildrenOwner)
 
-	if option&(AddBar|AddButtons) != 0 {
+	if options&(AddBar) != 0 {
+		// zlog.Info("AddBar!!!")
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.SetSpacing(4)
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
 		v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	}
-	if option&AddEdit != 0 {
+	if options&AddEdit != 0 {
 		v.editButton = zbutton.New("")
 		v.editButton.SetObjectName("edit")
 		v.editButton.SetMinWidth(130)
 		v.Bar.Add(v.editButton, zgeo.CenterLeft)
 	}
-	if option&AddDelete != 0 {
+	if options&AddDelete != 0 {
 		v.deleteButton = zbutton.New("")
 		v.deleteButton.SetObjectName("delete")
 		v.deleteButton.SetMinWidth(135)
 		v.Bar.Add(v.deleteButton, zgeo.CenterLeft)
 	}
-	v.Grid = zgridlist.NewView(storeName + "-GridListView")
+	if options&(AddDarkPlus|AddLightPlus) != 0 {
+		str := "white"
+		if options&AddDarkPlus != 0 {
+			str = "dark"
+		}
+		v.addButton = zimageview.New(nil, "images/plus-circled-"+str+".png", zgeo.Size{16, 16})
+		v.Bar.Add(v.addButton, zgeo.CenterLeft)
+		v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
+	}
 
+	v.Grid = zgridlist.NewView(storeName + "-GridListView")
 	v.Grid.CellCountFunc = func() int {
 		if !hasHierarchy {
-			return len(*v.slice)
+			return len(*v.slicePtr)
 		}
-		return v.countHierarcy(v.slice)
+		return v.countHierarcy(v.slicePtr)
 	}
 	v.Grid.IDAtIndexFunc = func(i int) string {
 		if !hasHierarchy {
-			return (*slice)[i].GetStrID()
+			return (*slicePtr)[i].GetStrID()
 		}
 		var count int
-		return v.getIDForIndex(v.slice, i, &count)
+		return v.getIDForIndex(v.slicePtr, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 		if key == zkeyboard.KeyBackspace {
@@ -144,8 +166,26 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	return
 }
 
-func (v *SliceGridView[S]) getIDForIndex(slice *[]S, index int, count *int) string {
-	for i, s := range *slice {
+func (v *SliceGridView[S]) handlePlusButtonPressed() {
+	var s S
+	*v.slicePtr = append(*v.slicePtr, s)
+	index := len(*v.slicePtr) - 1
+	var a any = &(*v.slicePtr)[index]
+	id := strconv.Itoa(index)
+	st, _ := a.(zstr.StrIDer)
+	ct, _ := a.(zstr.CreateStrIDer)
+	if st != nil && (ct != nil) { // it has GetStrID and CreateStrID...
+		ct.CreateStrID()
+		id = st.GetStrID()
+		// zlog.Info("CREATE:", id, s)
+	}
+	v.UpdateViewFunc()
+	v.Grid.SelectCell(id, false)
+	v.HandleEditButtonPressed()
+}
+
+func (v *SliceGridView[S]) getIDForIndex(slicePtr *[]S, index int, count *int) string {
+	for i, s := range *slicePtr {
 		// if index != -1 {
 		// 	zlog.Info("getIDForIndex", index, i, s)
 		// }
@@ -155,7 +195,7 @@ func (v *SliceGridView[S]) getIDForIndex(slice *[]S, index int, count *int) stri
 		}
 		(*count)++
 		if v.Grid.OpenBranches[id] {
-			children := v.getChildren(slice, i)
+			children := v.getChildren(slicePtr, i)
 			// if co .GetChildren()
 			// if a != nil {
 			// 	children := a.(*[]S)
@@ -168,29 +208,29 @@ func (v *SliceGridView[S]) getIDForIndex(slice *[]S, index int, count *int) stri
 	return ""
 }
 
-func (v *SliceGridView[S]) getChildren(slice *[]S, i int) *[]S {
-	var a any = (*slice)[i]
+func (v *SliceGridView[S]) getChildren(slicePtr *[]S, i int) *[]S {
+	var a any = (*slicePtr)[i]
 	return a.(ChildrenOwner).GetChildren().(*[]S)
 }
 
-func (v *SliceGridView[S]) countHierarcy(slice *[]S) int {
+func (v *SliceGridView[S]) countHierarcy(slicePtr *[]S) int {
 	var count int
-	v.getIDForIndex(slice, -1, &count)
+	v.getIDForIndex(slicePtr, -1, &count)
 	// zlog.Info("Count:", v.ObjectName(), count, v.openBranches)
 	return count
 }
 
-func (v *SliceGridView[S]) structForID(slice *[]S, id string) *S {
-	for i, s := range *slice {
+func (v *SliceGridView[S]) structForID(slicePtr *[]S, id string) *S {
+	for i, s := range *slicePtr {
 		sid := s.GetStrID()
 		if id == sid {
-			return &(*slice)[i]
+			return &(*slicePtr)[i]
 		}
 		if v.Grid.HierarchyLevelFunc != nil {
 			if !v.Grid.OpenBranches[sid] {
 				continue
 			}
-			children := v.getChildren(slice, i)
+			children := v.getChildren(slicePtr, i)
 			cs := v.structForID(children, id)
 			if cs != nil {
 				return cs
@@ -201,13 +241,14 @@ func (v *SliceGridView[S]) structForID(slice *[]S, id string) *S {
 }
 
 func (v *SliceGridView[S]) StructForID(id string) *S {
-	return v.structForID(v.slice, id)
+	return v.structForID(v.slicePtr, id)
 }
 
 func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
 		if v.SortFunc != nil {
-			v.SortFunc(*v.slice) // Do this beforeWindow shown, as the sorted cells get placed correctly then
+			v.SortFunc(*v.slicePtr) // Do this beforeWindow shown, as the sorted cells get placed correctly then
+			// v.UpdateViewFunc()
 		}
 		return
 	}
@@ -225,21 +266,26 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 }
 
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
-	update := (len(s) != len(*v.slice) || zstr.HashAnyToInt64(s) != zstr.HashAnyToInt64(*v.slice))
+	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s) != zstr.HashAnyToInt64(*v.slicePtr))
 	// zlog.Info("UpdateSlice!", update)
 	if update {
 		if v.SortFunc != nil {
 			v.SortFunc(s)
 		}
-		*v.slice = s
-		if v.UpdateViewFunc != nil {
-			v.UpdateViewFunc()
-		}
+		*v.slicePtr = s
+		v.UpdateViewFunc()
 	}
+}
+
+func (v *SliceGridView[S]) UpdateSliceWithSelf() {
+	v.UpdateSlice(*v.slicePtr)
 }
 
 func (v *SliceGridView[S]) HandleEditButtonPressed() {
 	ids := v.Grid.SelectedIDs()
+	if len(ids) == 0 && v.Grid.CurrentHoverID != "" {
+		ids = []string{v.Grid.CurrentHoverID}
+	}
 	v.EditItems(ids)
 }
 
@@ -247,28 +293,25 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	title := "Edit "
 	var items []S
 
-	for i := 0; i < len(*v.slice); i++ {
-		sid := (*v.slice)[i].GetStrID()
+	for i := 0; i < len(*v.slicePtr); i++ {
+		sid := (*v.slicePtr)[i].GetStrID()
 		if zstr.StringsContain(ids, sid) {
-			items = append(items, (*v.slice)[i])
+			items = append(items, (*v.slicePtr)[i])
 		}
 	}
 	if len(items) == 0 {
 		zlog.Fatal(nil, "SGV EditItems: no items. ids:", len(ids))
 	}
 	title += v.NameOfXItemsFunc(ids, true)
-	params := zfields.FieldViewParametersDefault()
-	params.LabelizeWidth = 120
-	params.HideStatic = true
-	zfields.PresentOKCancelStructSlice(&items, params, title, zpresent.AttributesNew(), func(ok bool) bool {
-		zlog.Info("Edited items:", ok)
+	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
+		// zlog.Info("Edited items:", ok)
 		if !ok {
 			return true
 		}
 		for _, item := range items {
-			for i, s := range *v.slice {
+			for i, s := range *v.slicePtr {
 				if s.GetStrID() == item.GetStrID() {
-					(*v.slice)[i] = item
+					(*v.slicePtr)[i] = item
 					// fmt.Printf("edited: %+v %d\n", (*v.slice)[i], i)
 				}
 			}
@@ -337,8 +380,8 @@ func (v *SliceGridView[S]) DeleteItemsAsk(ids []string) {
 }
 
 func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hlevel int, leaf, got bool) {
-	for i, s := range *slice {
-		children := v.getChildren(slice, i)
+	for i, s := range *v.slicePtr {
+		children := v.getChildren(v.slicePtr, i)
 		sid := s.GetStrID()
 		kids := (v.Grid.OpenBranches[sid] && len(*children) > 0)
 		if id == sid {
@@ -359,6 +402,6 @@ func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hleve
 }
 
 func (v *SliceGridView[S]) calculateHierarchy(id string) (level int, leaf bool) {
-	level, leaf, _ = v.getHierarchy(v.slice, 1, id)
+	level, leaf, _ = v.getHierarchy(v.slicePtr, 1, id)
 	return
 }

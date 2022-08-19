@@ -2,12 +2,12 @@
 
 package zcustom
 
-import "github.com/torlangballe/zui"
+import "github.com/torlangballe/zui/zview"
 
 func (v *CustomView) drawSelf() {
 }
 
-func (c *CustomView) Init(view zui.View, name string) {
+func (c *CustomView) Init(view zview.View, name string) {
 	c.SetObjectName(name)
 }
 
@@ -22,5 +22,9 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 	v.longPressed = handler
 }
 
+func (v *CustomView) ExposeIn(secs float64) {
+}
+
 func (v *CustomView) Expose() {
+	v.ExposeIn(0.1)
 }

@@ -8,7 +8,7 @@ func (c *CheckBox) Value() zbool.BoolInd {
 	return zbool.False
 }
 
-func CheckBoxNew(on zbool.BoolInd) *CheckBox {
+func New(on zbool.BoolInd) *CheckBox {
 	c := &CheckBox{}
 	return c
 }

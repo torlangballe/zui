@@ -32,7 +32,6 @@ type AddHandler interface {
 
 var (
 	dragEnterView   *NativeView
-	LastPressedPos  zgeo.Pos
 	idCount         int
 	mouseStartPos   zgeo.Pos
 	mouseStartTime  time.Time
@@ -147,7 +146,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else if v.Presented {
-		zlog.Error(nil, "parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.GetCallingStackString())
+		zlog.Error(nil, "parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.CallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)

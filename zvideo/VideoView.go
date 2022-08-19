@@ -21,7 +21,7 @@ type VideoView struct {
 	StreamingStarted func()
 	Overlay          View
 
-	draw func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zui.View)
+	draw func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 }
 
 func New(maxSize zgeo.Size) *VideoView {

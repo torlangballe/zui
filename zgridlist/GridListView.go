@@ -889,3 +889,12 @@ func (v *GridListView) HandleBranchToggleChanged(id string, open bool) {
 	v.LayoutCells(false)
 	v.saveOpenBranches()
 }
+
+func (v *GridListView) AnyChildView() zview.View {
+	if len(v.children) == 0 {
+		return nil
+	}
+	var view zview.View
+	zmap.GetAnyValue(&view, v.children)
+	return view
+}

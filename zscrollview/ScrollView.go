@@ -24,7 +24,7 @@ type ScrollView struct {
 	ScrolledAt     time.Time
 }
 
-func ScrollViewNew() *ScrollView {
+func New() *ScrollView {
 	v := &ScrollView{}
 	v.Init(v, "scrollview")
 	return v
