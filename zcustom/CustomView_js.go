@@ -78,13 +78,19 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
 		return
 	}
-	v.SetHandleExposed(func(intersectsViewport bool) {
-		if intersectsViewport && v.exposed {
-			go v.drawSelf()
-		}
-		v.visible = intersectsViewport
-	})
-
+	// zlog.Info("SetHandleExposed:", v.Hierarchy())
+	if v.draw != nil {
+		v.SetHandleExposed(func(intersectsViewport bool) {
+			// zlog.Info("Exposed:", v.Hierarchy(), intersectsViewport)
+			if intersectsViewport && v.exposed {
+				v.visible = true
+				if v.draw != nil {
+					v.drawSelf()
+				}
+			}
+			v.visible = intersectsViewport
+		})
+	}
 }
 func (v *CustomView) SetRect(rect zgeo.Rect) {
 	r := rect.ExpandedToInt()
@@ -115,6 +121,7 @@ func (v *CustomView) MC() {
 
 func (v *CustomView) makeCanvas() {
 	if v.canvas == nil {
+		// zlog.Info("MakeCanvas:", v.Hierarchy())
 		v.canvas = zcanvas.New()
 		v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
 		v.canvas.DownsampleImages = v.DownsampleImages
@@ -129,11 +136,12 @@ func (v *CustomView) makeCanvas() {
 		} else {
 			v.JSCall("insertBefore", v.canvas.JSElement(), firstChild)
 		}
+		// zlog.Info("MakeCanvas Done:", v.Hierarchy())
 	}
 }
 
 func (v *CustomView) drawSelf() {
-	// zlog.Info("CustV drawIfExposed", v.ObjectName(), zpresent.Presenting, v.exposed, v.draw)     //, zlog.GetCallingStackString())
+	// zlog.Info("CustV drawIfExposed", v.ObjectName(), v.exposed, v.draw)                         //, zlog.GetCallingStackString())
 	if !v.drawing && !IsPresentingFunc() && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
 		v.drawing = true
 		r := v.LocalRect()
@@ -148,12 +156,27 @@ func (v *CustomView) drawSelf() {
 		v.drawing = false
 	}
 	v.exposed = false
+	// zlog.Info("CustV drawIfExposed Done", v.ObjectName())
 }
 
+var count int
+
 func (v *CustomView) ExposeIn(secs float64) {
+	// zlog.Info("Expose", count, v.visible, v.exposeTimer.IsRunning(), v.Hierarchy())
+	if v.draw == nil {
+		return
+	}
 	if v.visible {
+		if v.exposeTimer.IsRunning() {
+			return
+		}
+		count++
+		// if count%5 == 4 {
+		// }
 		v.exposeTimer.StartIn(secs, func() {
-			go v.drawSelf()
+			// zlog.Info("Draw:", secs)
+			v.drawSelf()
+			// zlog.Info("DrawDone:", secs)
 		})
 		v.exposed = false
 	} else {

@@ -72,7 +72,7 @@ type Collapser interface {
 func init() {
 	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
 		// ct, _ := root.(ContainerType)
-		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil)
+		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
 		recursive := true
 		includeCollapsed := false
 		ViewRangeChildren(root, recursive, includeCollapsed, got)
@@ -418,6 +418,9 @@ func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach
 	}
 	children := ct.GetChildren(includeCollapsed)
 	for _, c := range children {
+		if c == nil {
+			zlog.Fatal(nil, "nil child in range", view.Native().Hierarchy())
+		}
 		cont := foreach(c)
 		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews, cont)
 		if !cont {
