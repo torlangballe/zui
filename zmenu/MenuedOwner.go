@@ -101,11 +101,13 @@ func (o *MenuedOwner) IsKeyStored() bool {
 }
 
 func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
-	if view != nil {
+	if view == nil {
+		zlog.Fatal(nil, "MO Build with view==nil")
+	} else {
 		o.View = view
-		nv := view.Native()
+		// nv := view.Native()
 		// zlog.Info("MO ADDStopper:", nv.Hierarchy(), zlog.GetCallingStackString())
-		nv.AddOnRemoveFunc(o.Stop)
+		// nv.AddOnRemoveFunc(o.Stop)
 		presser := view.(zview.DownPressable)
 		presser.SetPressedDownHandler(func() {
 			zlog.Info("PressDown in menuowner")
@@ -146,18 +148,18 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	o.UpdateMenuedItems(items)
 }
 
-func (o *MenuedOwner) Stop() {
-	if o.View == nil {
-		zlog.Info("Stopping MenuOwner view==nil:", zlog.CallingStackString())
-	}
-	// zlog.Info("Stopping MenuOwner:", o.View != nil)
-	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())
-	presser := o.View.(zview.Pressable)
-	// zlog.Info("Stopping MenuOwner for2:", presser != nil)
-	presser.SetPressedHandler(nil)
-	presser.SetLongPressedHandler(nil)
-	*o = MenuedOwner{} // this will
-}
+// func (o *MenuedOwner) Stop() {
+// 	if o.View == nil {
+// 		zlog.Info("Stopping MenuOwner view==nil:", zlog.CallingStackString())
+// 	}
+// 	// zlog.Info("Stopping MenuOwner:", o.View != nil)
+// 	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())
+// 	presser := o.View.(zview.Pressable)
+// 	// zlog.Info("Stopping MenuOwner for2:", presser != nil)
+// 	presser.SetPressedHandler(nil)
+// 	presser.SetLongPressedHandler(nil)
+// 	*o = MenuedOwner{} // this will
+// }
 
 func (o *MenuedOwner) SelectedItem() *zdict.Item {
 	sitems := o.SelectedItems()
