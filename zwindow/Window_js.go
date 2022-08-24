@@ -29,8 +29,12 @@ type windowNative struct {
 
 func init() {
 	zdom.WindowJS.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
-		// zlog.Info("Main window closed or refreshed?")
+		zlog.Info("onbeforeunload: Main window closed or refreshed?")
 		for w, _ := range windows {
+			if w.Element.Equal(zdom.WindowJS) {
+				continue
+			}
+			zlog.Info("onbeforeunload w:", w.ID)
 			w.Close()
 		}
 		windows = map[*Window]bool{} // this might not be necessary, as we're shutting down?
