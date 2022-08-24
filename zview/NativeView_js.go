@@ -529,6 +529,7 @@ func (v *NativeView) SetZIndex(index int) {
 }
 
 func (v *NativeView) RemoveChild(child View) {
+	// zlog.Info("RemoveChild:", child.Native().Hierarchy(), len(v.DoOnRemove))
 	nv := child.Native()
 	if nv == nil {
 		panic("NativeView AddChild child not native")
@@ -890,7 +891,8 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 	var pos zgeo.Pos
 	pos.X = event.Get("offsetX").Float()
 	pos.Y = event.Get("offsetY").Float()
-	LastPressedPos = pos.Minus(v.AbsoluteRect().Pos)
+	LastPressedPos = pos //.Minus(v.AbsoluteRect().Pos)
+	// zlog.Info("SetStateOnDownPress", v.Hierarchy(), pos.X, v.AbsoluteRect().Pos.X)
 	_, zkeyboard.ModifiersAtPress = zkeyboard.GetKeyAndModsFromEvent(event)
 }
 
@@ -975,12 +977,15 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 		}
 		return nil
 	})
+
 	observer := v.GetWindowElement().Get("IntersectionObserver").New(f) //, opts)
 	observer.Call("observe", v.Element)
 	v.AddOnRemoveFunc(func() {
+		// zlog.Info("remove expose observer:", v.Hierarchy())
 		observer.Call("disconnect")
 		handle(false)
 	})
+	// zlog.Info("set expose observer:", v.Hierarchy(), len(v.DoOnRemove))
 }
 
 func AddTextNode(v *NativeView, text string) {
