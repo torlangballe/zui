@@ -50,11 +50,17 @@ func (v *NativeView) PerformAddRemoveFuncs(add bool) {
 		for _, f := range v.DoOnAdd {
 			f()
 		}
-	} else {
-		for _, f := range v.DoOnRemove {
-			f()
-		}
+		return
 	}
+	// zlog.Info("PerformAddRemoveFuncs", v.Hierarchy(), reflect.TypeOf(v.View))
+	RangeAllVisibleChildrenFunc(v.View, func(child View) bool {
+		child.Native().PerformAddRemoveFuncs(false)
+		return true
+	})
+	for _, f := range v.DoOnRemove {
+		f()
+	}
+	// zlog.Info("PerformAddRemoveFuncs", v.Hierarchy(), add, reflect.TypeOf(v.View))
 }
 
 func (v *NativeView) RootParent() *NativeView {
