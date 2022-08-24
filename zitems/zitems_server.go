@@ -3,13 +3,12 @@
 package zitems
 
 import (
-	"net/http"
 	"path/filepath"
 	"reflect"
 
 	"github.com/torlangballe/zutil/zjson"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zrpc"
+	"github.com/torlangballe/zutil/zwrpc"
 )
 
 var (
@@ -17,7 +16,8 @@ var (
 )
 
 func Init() {
-	zrpc.Register(Calls)
+	// zrpc.Register(Calls)
+	zwrpc.Register(Calls)
 }
 
 /*
@@ -75,7 +75,7 @@ func SaveItem(resourceID string) error {
 // 	return nil
 // }
 
-func (ic *ZItemsCalls) GetItem(req *http.Request, id *string, item *Item) error {
+func (ic *ZItemsCalls) GetItem(id *string, item *Item) error {
 	findItem, _ := FindItem(*id)
 	if findItem == nil {
 		return zlog.Error(nil, "zitems.UpdateItem failed, no item registered with resourceId:", id)

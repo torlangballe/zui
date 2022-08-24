@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwrpc"
+	// "github.com/torlangballe/zutil/zwrpc"
 )
 
 var (
@@ -17,11 +18,11 @@ var (
 // RPCReceiver *zwrpc.Client
 )
 
-func Init(rpcAddress string, rpcPort int, rpcSSL bool) {
+func Init() {
 	var err error
 
-	id := zstr.GenerateRandomHexBytes(12)
-	zwrpc.MainSendClient, err = zwrpc.NewClient(rpcAddress, rpcPort, rpcSSL, id, 0.8)
+	// id := zstr.GenerateRandomHexBytes(12)
+	// zwrpc.MainSendClient, err = zwrpc.NewClient(rpcAddress, rpcPort, rpcSSL, id, 0.8)
 	// zlog.Info("zitems.Init:", rpcAddress, rpcPort, zwrpc.MainSendClient != nil, err)
 	if err != nil {
 		zlog.Error(err, "create rpc client/receiver")
@@ -39,7 +40,7 @@ func CallGetItem(resourceID string) {
 	item, _ := FindItem(resourceID)
 	zlog.Assert(item != nil)
 	// newDataPtr := zreflect.NewOfAny(item.DataPtr)
-	err := zwrpc.MainSendClient.Call("ZItemsCalls.GetItem", item, item.DataPtr)
+	err := zwrpc.MainHTTPClient.Call("ZItemsCalls.GetItem", item, item.DataPtr)
 	if err != nil {
 		zlog.Error(err, "call GetItem failed")
 		return
