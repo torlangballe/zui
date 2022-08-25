@@ -75,10 +75,10 @@ func SaveItem(resourceID string) error {
 // 	return nil
 // }
 
-func (ic *ZItemsCalls) GetItem(id *string, item *Item) error {
-	findItem, _ := FindItem(*id)
+func (ic *ZItemsCalls) GetItem(resourceID string, item *Item) error {
+	findItem, _ := FindItem(resourceID)
 	if findItem == nil {
-		return zlog.Error(nil, "zitems.UpdateItem failed, no item registered with resourceId:", id)
+		return zlog.Error(nil, "zitems.UpdateItem failed, no item registered with resourceId:", resourceID)
 	}
 	*item = *findItem
 	// data = reflect.ValueOf(findItem.DataPtr).Elem() // we set it from pointer again just in case changed somehow

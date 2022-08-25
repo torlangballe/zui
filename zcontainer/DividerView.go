@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -29,17 +30,16 @@ type DividerView struct {
 
 func newDiv(storeKey string) *DividerView {
 	v := &DividerView{}
-	v.CustomView.Init(v, "div")
+	v.CustomView.Init(v, "divider")
 	v.SetCursor(zcursor.RowResize)
 	v.SetDrawHandler(v.draw)
-	if storeKey != "" {
-		v.storeKey = storeKey
-		v.Delta, _ = zkeyvalue.DefaultStore.GetDouble(storeKey, 0)
-	}
+	v.storeKey = storeKey
 	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) bool {
 		switch down {
 		case zbool.False:
+			zview.SkipEnterHandler = false
 		case zbool.True:
+			zview.SkipEnterHandler = true
 			v.startDelta = v.Delta
 			since := ztime.Since(v.downAt)
 			if since > 1 {
@@ -65,6 +65,7 @@ func newDiv(storeKey string) *DividerView {
 				break
 			}
 			v.Delta = v.startDelta + pos.Vertice(v.Vertical)
+			// zlog.Info("DivDelta:", v.startDelta, pos.Vertice(v.Vertical), v.Delta)
 			v.storeDelta()
 			at, _ := v.Parent().View.(Arranger)
 			at.ArrangeChildren()
@@ -72,6 +73,21 @@ func newDiv(storeKey string) *DividerView {
 		return true
 	})
 	return v
+}
+
+func (v *DividerView) ReadyToShow(beforeWindow bool) {
+	v.CustomView.ReadyToShow(beforeWindow)
+	if !beforeWindow {
+		if v.storeKey != "" {
+			delta, got := zkeyvalue.DefaultStore.GetDouble(v.storeKey, 0)
+			if got {
+				v.Delta = delta
+				// zlog.Info("DELTA:", v.Delta)
+				ArrangeChildrenAtRootContainer(v)
+				v.Expose()
+			}
+		}
+	}
 }
 
 func (v *DividerView) storeDelta() {
@@ -97,6 +113,7 @@ func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	path := zgeo.PathNew()
 	path.Circle(rect.Center(), zgeo.SizeBoth(4))
 	canvas.FillPath(path)
+	zlog.Info("DV DRaw:", rect)
 }
 
 func (v *DividerView) CalculatedSize(total zgeo.Size) zgeo.Size {

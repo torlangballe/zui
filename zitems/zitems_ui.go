@@ -40,7 +40,7 @@ func CallGetItem(resourceID string) {
 	item, _ := FindItem(resourceID)
 	zlog.Assert(item != nil)
 	// newDataPtr := zreflect.NewOfAny(item.DataPtr)
-	err := zwrpc.MainHTTPClient.Call("ZItemsCalls.GetItem", item, item.DataPtr)
+	err := zwrpc.MainHTTPClient.Call("ZItemsCalls.GetItem", resourceID, item.DataPtr)
 	if err != nil {
 		zlog.Error(err, "call GetItem failed")
 		return
@@ -68,9 +68,9 @@ func RepeatGetItems() {
 			zrpc.ToServerClient.CallRemote("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
 		}
 		for _, item := range AllItems {
-			zlog.Info("Get1:", item.ResourceID, firstGets, resIDs)
+			// zlog.Info("Get1:", item.ResourceID, firstGets, resIDs)
 			if firstGets || zstr.IndexOf(item.ResourceID, resIDs) != -1 {
-				zlog.Info("Get:", item.ResourceID)
+				// zlog.Info("Get:", item.ResourceID)
 				go CallGetItem(item.ResourceID)
 			}
 		}

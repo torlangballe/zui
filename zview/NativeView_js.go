@@ -41,6 +41,7 @@ var (
 
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
+	SkipEnterHandler               bool
 )
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
@@ -840,6 +841,9 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 		return
 	}
 	v.JSSet("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if SkipEnterHandler {
+			return nil
+		}
 		handler(getMousePosRelative(v, args[0]), zbool.True)
 		if moves {
 			// we := v.GetWindowElement()
@@ -859,6 +863,9 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 		return nil
 	}))
 	v.JSSet("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if SkipEnterHandler {
+			return nil
+		}
 		handler(getMousePosRelative(v, args[0]), zbool.False)
 		if moves {
 			v.JSSet("onmousemove", nil)
