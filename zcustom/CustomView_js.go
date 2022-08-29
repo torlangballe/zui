@@ -78,9 +78,9 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 	if !beforeWindow {
 		return
 	}
-	// zlog.Info("SetHandleExposed:", v.Hierarchy())
 	if v.draw != nil {
 		v.SetHandleExposed(func(intersectsViewport bool) {
+			// zlog.Info("HandleExposed:", v.Hierarchy(), intersectsViewport, v.exposed)
 			if intersectsViewport && v.exposed {
 				v.visible = true
 				if v.draw != nil {

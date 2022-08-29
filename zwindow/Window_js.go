@@ -29,7 +29,7 @@ type windowNative struct {
 
 func init() {
 	zdom.WindowJS.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
-		zlog.Info("onbeforeunload: Main window closed or refreshed?")
+		// zlog.Info("Main window closed or refreshed?")
 		for w, _ := range windows {
 			if w.Element.Equal(zdom.WindowJS) {
 				continue

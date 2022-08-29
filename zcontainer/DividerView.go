@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -77,14 +76,13 @@ func newDiv(storeKey string) *DividerView {
 
 func (v *DividerView) ReadyToShow(beforeWindow bool) {
 	v.CustomView.ReadyToShow(beforeWindow)
-	if !beforeWindow {
+	if beforeWindow {
 		if v.storeKey != "" {
 			delta, got := zkeyvalue.DefaultStore.GetDouble(v.storeKey, 0)
 			if got {
 				v.Delta = delta
-				// zlog.Info("DELTA:", v.Delta)
-				ArrangeChildrenAtRootContainer(v)
-				v.Expose()
+				// ArrangeChildrenAtRootContainer(v)
+				// v.Expose()
 			}
 		}
 	}
@@ -113,7 +111,6 @@ func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	path := zgeo.PathNew()
 	path.Circle(rect.Center(), zgeo.SizeBoth(4))
 	canvas.FillPath(path)
-	zlog.Info("DV DRaw:", rect)
 }
 
 func (v *DividerView) CalculatedSize(total zgeo.Size) zgeo.Size {

@@ -5,6 +5,7 @@ type Item struct {
 	Name       string
 	DataPtr    any
 	UpdateFunc func(newData any) `json:"-"`
+	GetFunc    func()            `json:"-"`
 }
 
 type ZItemsCalls struct{}
@@ -22,3 +23,10 @@ func FindItem(resourceID string) (*Item, int) {
 	}
 	return nil, -1
 }
+
+func RegisterItem(data any, resourceID, name string) *Item {
+	item := Item{DataPtr: data, Name: name, ResourceID: resourceID}
+	AllItems = append(AllItems, item)
+	return &AllItems[len(AllItems)-1]
+}
+
