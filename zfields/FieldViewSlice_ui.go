@@ -54,6 +54,7 @@ func replaceRebuildSliceView(old zview.View, newView zview.View) {
 	ct := old.Native().Parent().View.(zcontainer.ContainerType)
 	ct.ReplaceChild(old, newView)
 	ctp := old.Native().Parent().View.(zcontainer.ContainerType)
+	zpresent.CallReady(newView, true)
 	ctp.ArrangeChildren()
 	zpresent.CallReady(newView, false)
 }
