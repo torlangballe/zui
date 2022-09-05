@@ -28,7 +28,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
-	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwords"
 )
 
@@ -308,20 +307,20 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 		if !ok {
 			return true
 		}
+		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
+			// ztimer.StartIn(0.1, func() {
+			go v.StoreChangedItemsFunc(items)
+			// })
+		}
 		for _, item := range items {
 			for i, s := range *v.slicePtr {
 				if s.GetStrID() == item.GetStrID() {
 					(*v.slicePtr)[i] = item
-					// fmt.Printf("edited: %+v %d\n", (*v.slice)[i], i)
+					// fmt.Printf("edited: %+v %d\n", (*v.slicePtr)[i], i)
 				}
 			}
 		}
 		v.UpdateViewFunc()
-		if v.StoreChangedItemsFunc != nil {
-			ztimer.StartIn(0.1, func() {
-				go v.StoreChangedItemsFunc(items)
-			})
-		}
 		return true
 	})
 }
