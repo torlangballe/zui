@@ -176,7 +176,10 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 		// zlog.Info("updateShowEnableFromZeroer:", f.FieldName, isZero, isShow, toID, local)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
 			_, fview := v.findNamedViewOrInLabelized(f.ID)
-			zlog.Assert(fview != nil)
+			if fview == nil {
+				continue
+			}
+			// zlog.Assert(fview != nil, v.Hierarchy(), f.ID)
 			if neg {
 				isShow = !isShow
 			}
@@ -279,7 +282,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	}
 	// zlog.Info("fv.Update:", v.ObjectName(), dontOverwriteEdited, IsFieldViewEditedRecently(v))
 	if dontOverwriteEdited && IsFieldViewEditedRecently(v) {
-		zlog.Info("FV No Update, edited", v.Hierarchy())
+		// zlog.Info("FV No Update, edited", v.Hierarchy())
 		return
 	}
 	children := v.getStructItems()
