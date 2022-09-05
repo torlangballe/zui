@@ -408,7 +408,7 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 }
 
 func (v *NativeView) RemoveFromParent() {
-	zlog.Assert(v.parent != nil)
+	zlog.Assert(v.parent != nil, v.Hierarchy())
 	v.parent.RemoveChild(v.View)
 	v.parent = nil
 }

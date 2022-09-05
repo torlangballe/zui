@@ -3,10 +3,10 @@
 package zwidget
 
 import (
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zdraw"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
