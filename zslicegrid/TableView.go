@@ -57,6 +57,10 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.RowInset = 7
 	v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
+	if addFlags&AddEditDelete != 0 {
+		v.Grid.MultiSelectable = true
+	}
+	v.FieldParameters.AllTextStatic = true
 	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)
