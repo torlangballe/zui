@@ -256,7 +256,6 @@ func AttributesNew() Attributes {
 
 func CallReady(v zview.View, beforeWindow bool) {
 	nv := v.Native()
-	// zlog.Info(beforeWindow, "PresentViewCallReady:", nv.Hierarchy(), nv.Presented)
 	if nv == nil {
 		return
 	}
