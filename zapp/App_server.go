@@ -9,6 +9,7 @@ package zapp
 import (
 	"io"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -32,17 +33,20 @@ type FilesRedirector struct {
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const filePathPrefix = "www/"
-	// zlog.Info("FilesRedir1:", req.URL.Path)
-	path := req.URL.Path
-	zstr.HasPrefix(path, zrest.AppURLPrefix, &path)
-	filepath := filePathPrefix + path
+	spath := req.URL.Path
+	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
+		spath += "/"
+	}
+	// zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
+	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
+	filepath := path.Join(filePathPrefix, spath)
 	if r.Override != nil {
 		if r.Override(w, req, filepath) {
 			return
 		}
 	}
 	// zlog.Info("FilesRedir:", req.URL.Path, filepath, zfile.Exists(filepath))
-	if path != "" {
+	if spath != "" {
 		if strings.Contains(filepath, "*") {
 			files, _ := zfile.GetFilesFromPath(filepath, false)
 			if len(files) > 0 {
