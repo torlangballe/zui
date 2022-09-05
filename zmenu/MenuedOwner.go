@@ -386,6 +386,7 @@ func (o *MenuedOwner) popup() {
 		}
 		// zlog.Info("list selected", i, selected, o.items[i].IsAction)
 		if !o.IsMultiple { // && fromPressed {
+			zlog.Info("MenuPopup close")
 			zpresent.Close(stack, false, nil)
 		}
 	}
