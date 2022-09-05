@@ -10,10 +10,9 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
-	// "github.com/torlangballe/zutil/znet"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
-	"github.com/torlangballe/zutil/zwrpc"
+	"github.com/torlangballe/zutil/zrpc2"
 )
 
 type nativeApp struct {
@@ -51,7 +50,9 @@ func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]stri
 	if useRPC {
 		zrpc.ToServerClient = zrpc.NewClient(useTokenAuth)
 		zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
-		zwrpc.MainHTTPClient = zwrpc.NewHTTPClient(url.String(), "")
+		url.RawQuery = ""
+		url.Path = ""
+		zrpc2.MainClient = zrpc2.NewClient(url.String(), "")
 	}
 	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
 	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)
