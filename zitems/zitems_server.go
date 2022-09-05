@@ -8,7 +8,7 @@ import (
 
 	"github.com/torlangballe/zutil/zjson"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zwrpc"
+	"github.com/torlangballe/zutil/zrpc2"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 )
 
 func Init() {
-	zwrpc.Register(Calls)
+	zrpc2.Register(Calls)
 }
 
 func RegisterItemForServer(dataPtr any, resourceID, name string) *Item {
