@@ -2,6 +2,7 @@ package zimage
 
 import (
 	"image"
+	"path"
 	"strings"
 	"syscall/js"
 	"time"
@@ -31,11 +32,11 @@ func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	for i := 0; i < len(imagePaths); i++ {
 		imgPtr := imagePaths[i].(**Image)
 		i++
-		path := imagePaths[i].(string)
-		FromPath(path, func(image *Image) {
+		spath := imagePaths[i].(string)
+		FromPath(spath, func(image *Image) {
 			*imgPtr = image
 			added <- struct{}{}
-			// zlog.Info("GetSynchronous got", path, image != nil)
+			// zlog.Info("GetSynchronous got", spath, image != nil)
 		})
 	}
 	var count int
@@ -55,38 +56,38 @@ func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	return false
 }
 
-func FromPath(path string, got func(*Image)) {
-	// if !strings.HasSuffix(path, ".png") {
-	// zlog.Info("FromPath:", path, zlog.GetCallingStackString())
+func FromPath(spath string, got func(*Image)) {
+	// if !strings.HasSuffix(spath, ".png") {
+	// zlog.Info("FromPath:", spath, zlog.GetCallingStackString())
 	// }
-	if path == "" {
+	if spath == "" {
 		if got != nil {
 			got(nil)
 		}
 		return
 	}
-	// zlog.Info("FromPath:", GlobalURLPrefix, "#", path)
-	if !strings.HasPrefix(path, "data:") && !zhttp.StringStartsWithHTTPX(path) {
-		path = GlobalURLPrefix + path
+	// zlog.Info("FromPath:", GlobalURLPrefix, "#", spath)
+	if !strings.HasPrefix(spath, "data:") && !zhttp.StringStartsWithHTTPX(spath) {
+		spath = path.Join(GlobalURLPrefix, spath)
 	}
 	cache := remoteCache
-	if strings.HasPrefix(path, "images/") {
+	if strings.HasPrefix(spath, "images/") {
 		cache = localCache
 	}
 	i := &Image{}
-	if cache.Get(&i, path) {
+	if cache.Get(&i, spath) {
 		if got != nil {
 			got(i)
 		}
 		return
 	}
-	// zlog.Info("FromPath before load:", path)
-	i.load(path, func(success bool) {
-		// zlog.Info("FromPath loaded:", success, got != nil, path)
+	// zlog.Info("FromPath before load:", spath)
+	i.load(spath, func(success bool) {
+		// zlog.Info("FromPath loaded:", success, got != nil, spath)
 		if !success {
 			i = nil
 		}
-		cache.Put(path, i)
+		cache.Put(spath, i)
 		if got != nil {
 			got(i)
 		}
@@ -105,18 +106,18 @@ func (i *Image) RGBAImage() *Image {
 	return nil
 }
 
-func (i *Image) load(path string, done func(success bool)) {
-	// if !strings.HasPrefix(path, "http:") && !strings.HasPrefix(path, "https:") {
-	// 	if !strings.HasPrefix(path, "images/") {
-	// 		path = "images/" + path
+func (i *Image) load(spath string, done func(success bool)) {
+	// if !strings.HasPrefix(spath, "http:") && !strings.HasPrefix(spath, "https:") {
+	// 	if !strings.HasPrefix(spath, "images/") {
+	// 		spath = "images/" + spath
 	// 	}
 	// }
-	// zlog.Info("Image Load:", path)
+	// zlog.Info("Image Load:", spath)
 
-	i.Path = path
+	i.Path = spath
 	i.Loading = true
-	i.Loading = strings.HasPrefix(path, "images/")
-	i.Scale = imageGetScaleFromPath(path)
+	i.Loading = strings.HasPrefix(spath, "images/")
+	i.Scale = imageGetScaleFromPath(spath)
 
 	imageF := js.Global().Get("Image")
 	i.ImageJS = imageF.New()
@@ -137,13 +138,13 @@ func (i *Image) load(path string, done func(success bool)) {
 		i.Loading = false
 		i.size.W = 5
 		i.size.H = 5
-		zlog.Info("Image Load fail:", path)
+		zlog.Info("Image Load fail:", spath)
 		if done != nil {
 			done(false)
 		}
 		return nil
 	}))
-	i.ImageJS.Set("src", path)
+	i.ImageJS.Set("src", spath)
 }
 
 func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
