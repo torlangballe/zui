@@ -219,7 +219,11 @@ func (v *TextView) updateEnterHandlers() {
 	if v.changed != nil || v.editDone != nil {
 		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			event := vs[0]
-			key := event.Get("which").Int()
+			w := event.Get("which")
+			if w.IsUndefined() {
+				return nil
+			}
+			key := w.Int()
 			if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
 				if v.editDone != nil {
 					v.editDone(false)
