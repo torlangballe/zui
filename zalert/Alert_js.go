@@ -32,9 +32,9 @@ func (a *Alert) showNative(handle func(result Result)) {
 	}()
 }
 
-func PromptForText(title string, got func(str string)) {
+func PromptForText(title, defaultText string, got func(str string)) {
 	prompt := js.Global().Get("prompt")
-	e := prompt.Invoke(title)
+	e := prompt.Invoke(title, defaultText)
 	if !e.IsNull() {
 		go got(e.String())
 	}
