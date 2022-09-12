@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/ztime"
@@ -34,12 +35,13 @@ func newDiv(storeKey string) *DividerView {
 	v.SetDrawHandler(v.draw)
 	v.storeKey = storeKey
 	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) bool {
+		abs := v.AbsoluteRect().Pos.Vertice(v.Vertical) + pos.Vertice(v.Vertical)
 		switch down {
 		case zbool.False:
 			zview.SkipEnterHandler = false
 		case zbool.True:
 			zview.SkipEnterHandler = true
-			v.startDelta = v.Delta
+			v.startDelta = v.Delta - abs
 			since := ztime.Since(v.downAt)
 			if since > 1 {
 				v.downAt = time.Time{}
@@ -63,7 +65,8 @@ func newDiv(storeKey string) *DividerView {
 			if v.doubleClicking {
 				break
 			}
-			v.Delta = v.startDelta + pos.Vertice(v.Vertical)
+			zfloat.Maximize(&abs, v.Parent().AbsoluteRect().Pos.Vertice(v.Vertical))
+			v.Delta = v.startDelta + abs
 			// zlog.Info("DivDelta:", v.startDelta, pos.Vertice(v.Vertical), v.Delta)
 			v.storeDelta()
 			at, _ := v.Parent().View.(Arranger)
