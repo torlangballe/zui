@@ -4,10 +4,12 @@ package zmenu
 
 import (
 	"fmt"
+	"math/rand"
 	"path"
 	"reflect"
 	"strconv"
 
+	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zgridlist"
@@ -59,6 +61,7 @@ type MenuedOItem struct {
 	IsDisabled  bool
 	IsAction    bool
 	IsSeparator bool
+	Function    func()
 }
 
 var (
@@ -83,6 +86,15 @@ func MenuedAction(name string, val interface{}) MenuedOItem {
 	item.Name = name
 	item.Value = val
 	item.IsAction = true
+	return item
+}
+
+func MenuedFuncAction(name string, f func()) MenuedOItem {
+	var item MenuedOItem
+	item.Name = name
+	item.Value = rand.Int31()
+	item.IsAction = true
+	item.Function = f
 	return item
 }
 
@@ -329,13 +341,22 @@ func (o *MenuedOwner) popup() {
 	list.BorderColor.Valid = false
 	list.CellColor = o.BGColor
 	list.MakeFullSize = true
+	list.MaxColumns = 1
+	list.MultiplyColorAlternate = 1
+	// list.CellColorFunc = func(id string) zgeo.Color {
+	// 	i := list.IndexOfID(id)
+	// 	if o.items[i].IsSeparator {
+	// 		return zgeo.ColorLightGray
+	// 	}
+	// 	return o.BGColor
+	// }
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 
-	lineHeight := o.Font.LineHeight() + 6
+	lineHeight := o.Font.LineHeight() + 8
 	list.CellHeightFunc = func(id string) float64 {
 		i, _ := strconv.Atoi(id)
 		if o.items[i].IsSeparator {
-			return lineHeight * 0.5
+			return 1
 		}
 		return lineHeight
 	}
@@ -378,7 +399,17 @@ func (o *MenuedOwner) popup() {
 			o.items[i].Selected = true
 			o.updateTitleAndImage()
 			if o.items[i].IsAction {
-				// zpresent.Close(stack, false, nil)
+				o.items[i].Selected = false
+				if o.items[i].Function != nil {
+					o.items[i].Function()
+					o.getItems()
+					o.updateTitleAndImage()
+				} else if o.ActionHandler != nil {
+					id := o.items[i].Value.(string)
+					o.ActionHandler(id)
+					o.getItems()
+					o.updateTitleAndImage()
+				}
 				return
 			}
 		} else {
@@ -388,6 +419,9 @@ func (o *MenuedOwner) popup() {
 		if !o.IsMultiple { // && fromPressed {
 			zlog.Info("MenuPopup close")
 			zpresent.Close(stack, false, nil)
+		}
+		if o.SelectedHandler != nil {
+			o.SelectedHandler()
 		}
 	}
 	att := zpresent.AttributesNew()
@@ -411,22 +445,6 @@ func (o *MenuedOwner) popup() {
 	}, func(dismissed bool) {
 		// zlog.Info("menued closed", dismissed, o.IsMultiple)
 		if !dismissed || o.IsMultiple { // if multiple, we handle any select/deselect done
-			for i, item := range o.items {
-				if item.IsAction && item.Selected {
-					o.items[i].Selected = false
-					if o.ActionHandler != nil {
-						id := o.items[i].Value.(string)
-						o.ActionHandler(id)
-						o.getItems()
-						o.updateTitleAndImage()
-					}
-					return
-				}
-			}
-			if o.SelectedHandler != nil {
-				o.SelectedHandler()
-			}
-			o.saveToStore()
 			if o.IsStatic {
 				for i := range o.items {
 					o.items[i].Selected = false
