@@ -492,7 +492,6 @@ func (v *NativeView) AddChild(child View, index int) {
 	// }
 	// zlog.Info("ADDCHILD:", v.ObjectName(), child.ObjectName(), v.Rect())
 	if v.Presented {
-		// zlog.Info("Set Presented For New Add:", n.Hierarchy(), len(n.DoOnReady))
 		SetPresentReadyFunc(child, true)
 		SetPresentReadyFunc(child, false)
 	}
@@ -986,15 +985,17 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 		}
 		return nil
 	})
-
-	observer := v.GetWindowElement().Get("IntersectionObserver").New(f) //, opts)
+	e := v.GetWindowElement()
+	// opts := map[string]interface{}{
+	// 	"root": all[0].Element,
+	// }
+	observer := e.Get("IntersectionObserver").New(f) //, js.ValueOf(opts))
 	observer.Call("observe", v.Element)
 	v.AddOnRemoveFunc(func() {
 		// zlog.Info("remove expose observer:", v.Hierarchy())
 		observer.Call("disconnect")
 		handle(false)
 	})
-	// zlog.Info("set expose observer:", v.Hierarchy(), len(v.DoOnRemove))
 }
 
 func AddTextNode(v *NativeView, text string) {
