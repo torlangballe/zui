@@ -46,6 +46,7 @@ func (v *CustomView) SetExposed(exp bool) {
 }
 
 func (v *CustomView) Canvas() *zcanvas.Canvas {
+	v.makeCanvas()
 	return v.canvas
 }
 

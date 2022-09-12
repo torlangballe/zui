@@ -75,12 +75,12 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 }
 
 func (v *CustomView) ReadyToShow(beforeWindow bool) {
-	if !beforeWindow {
+	if beforeWindow {
 		return
 	}
 	if v.draw != nil {
+		// doing SetHandleExpose AFTER window is created important for observer to be on the new window.
 		v.SetHandleExposed(func(intersectsViewport bool) {
-			// zlog.Info("HandleExposed:", v.Hierarchy(), intersectsViewport, v.exposed)
 			if intersectsViewport && v.exposed {
 				v.visible = true
 				if v.draw != nil {
@@ -92,6 +92,7 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 		})
 	}
 }
+
 func (v *CustomView) SetRect(rect zgeo.Rect) {
 	r := rect.ExpandedToInt()
 	s := zgeo.Size{}
@@ -172,11 +173,11 @@ func (v *CustomView) ExposeIn(secs float64) {
 		count++
 		// if count%5 == 4 {
 		// }
-		v.exposeTimer.StartIn(secs, func() {
-			// zlog.Info("Draw:", secs)
-			v.drawSelf()
-			// zlog.Info("DrawDone:", secs)
-		})
+		// v.exposeTimer.StartIn(secs, func() {
+		// zlog.Info("Draw:", secs)
+		v.drawSelf()
+		// zlog.Info("DrawDone:", secs)
+		// })
 		v.exposed = false
 	} else {
 		v.exposed = true

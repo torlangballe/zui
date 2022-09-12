@@ -73,7 +73,6 @@ func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opac
 	size := image.Size()
 	insetMid := size.Minus(inset.Size.Negative())
 	diff := dest.Size.Minus(size).Plus(insetMid)
-	// zlog.Info("drawInsetImage:", dest, size, insetMid, diff)
 	c.drawInsetRow(image, inset, dest, 0, inset.Pos.Y, dest.Min().Y, inset.Pos.Y, opacity)
 	c.drawInsetRow(image, inset, dest, inset.Pos.Y, insetMid.H, dest.Min().Y+inset.Pos.Y, diff.H, opacity)
 	c.drawInsetRow(image, inset, dest, size.H+inset.Max().Y, -inset.Max().Y, dest.Max().Y+inset.Max().Y, -inset.Max().Y, opacity)
