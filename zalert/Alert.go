@@ -209,16 +209,18 @@ func (a *Alert) Show(handle func(result Result)) {
 	zpresent.PresentView(stack, att, nil, nil)
 }
 
-func addButton(bar *zcontainer.StackView, view zview.View, title string, ok bool, done func(ok bool) bool) *zbutton.Button {
+func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKButton bool, done func(isOKButton bool) bool) *zbutton.Button {
 	button := zbutton.New(title)
 	button.SetMinWidth(80)
 	bar.Add(button, zgeo.TopRight)
 	button.SetPressedHandler(func() {
 		parent := view.Native().Parent()
-		close := done(ok)
-		if close {
-			zpresent.Close(parent, !ok, nil)
-		}
+		go func() {
+			close := done(isOKButton)
+			if close {
+				zpresent.Close(parent, !isOKButton, nil)
+			}
+		}()
 	})
 	return button
 }
