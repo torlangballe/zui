@@ -11,7 +11,6 @@ type NativeView struct {
 	// allChildrenPresented bool
 	DoOnRemove []func() // anything that needs to be stopped
 	DoOnAdd    []func() // anything that needs to be stopped
-	DoOnReady  []func() // anything that needs to be stopped
 }
 
 type DragType string
@@ -30,19 +29,17 @@ var (
 	LastPressedPos              zgeo.Pos
 )
 
+// AddOnRemoveFunc adds a function to call when the v is removed from it's parent.
 func (v *NativeView) AddOnRemoveFunc(f func()) {
 	// zlog.Info("AddStopper:", v.ObjectName())
 	v.DoOnRemove = append(v.DoOnRemove, f)
 }
 
+// AddOnAddFunc adds a function to call when v is added to it's parent
+// Some views don't get these functions called until visible, so always create timers etc on a view
+// with AddOnAddFunc and use timer.Stop with AddOnRemoveFunc to ensure they are added/removed correctly
 func (v *NativeView) AddOnAddFunc(f func()) {
-	// zlog.Info("AddStopper:", v.ObjectName())
 	v.DoOnAdd = append(v.DoOnAdd, f)
-}
-
-func (v *NativeView) AddOnReadyFunc(f func()) {
-	// zlog.Info("AddStopper:", v.ObjectName())
-	v.DoOnReady = append(v.DoOnReady, f)
 }
 
 func (v *NativeView) PerformAddRemoveFuncs(add bool) {
@@ -52,7 +49,6 @@ func (v *NativeView) PerformAddRemoveFuncs(add bool) {
 		}
 		return
 	}
-	// zlog.Info("PerformAddRemoveFuncs", v.Hierarchy(), reflect.TypeOf(v.View))
 	RangeAllVisibleChildrenFunc(v.View, func(child View) bool {
 		child.Native().PerformAddRemoveFuncs(false)
 		return true
@@ -60,7 +56,6 @@ func (v *NativeView) PerformAddRemoveFuncs(add bool) {
 	for _, f := range v.DoOnRemove {
 		f()
 	}
-	// zlog.Info("PerformAddRemoveFuncs", v.Hierarchy(), add, reflect.TypeOf(v.View))
 }
 
 func (v *NativeView) RootParent() *NativeView {

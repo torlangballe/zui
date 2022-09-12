@@ -261,12 +261,7 @@ func CallReady(v zview.View, beforeWindow bool) {
 	}
 	if !nv.Presented {
 		if !beforeWindow {
-			// zlog.Info("Set Presented:", nv.Hierarchy(), len(nv.doOnReady), zlog.GetCallingStackString())
 			nv.Presented = true
-			for _, f := range nv.DoOnReady {
-				f()
-			}
-			nv.DoOnReady = nv.DoOnReady[:0]
 		}
 		r, _ := v.(zview.ReadyToShowType)
 		if r != nil {
