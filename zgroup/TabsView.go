@@ -154,7 +154,6 @@ func (v *TabsView) RemoveItem(id string) {
 func (v *TabsView) setButtonOn(id string, selected bool) {
 	view, _ := v.header.FindViewWithName(id, false)
 	if view != nil {
-		// zlog.Info("setButtonOn1:", id, selected, view != nil, reflect.TypeOf(view))
 		button, _ := view.(*zshape.ImageButtonView)
 		if button != nil {
 			str := DefaultButtonName

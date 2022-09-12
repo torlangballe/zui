@@ -92,6 +92,11 @@ func (v *Label) SetMaxWidth(max float64) {
 	v.maxWidth = max
 }
 
+func (v *Label) SetWidth(w float64) {
+	v.SetMinWidth(w)
+	v.SetMaxWidth(w)
+}
+
 func Labelize(view zview.View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *Label, stack *zcontainer.StackView, viewCell *zcontainer.Cell) {
 	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
 	to, _ := view.(ztextinfo.Owner)
