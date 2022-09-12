@@ -156,9 +156,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 		v.Grid.HierarchyLevelFunc = v.calculateHierarchy
 	}
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 4, -6, -4))
-	v.Grid.Spacing = zgeo.Size{14, 4}
-	v.Grid.CellColor = zgeo.ColorNewGray(0.95, 1)
-	v.Grid.MultiplyAlternate = 0.95
 	v.Grid.MultiSelectable = true
 
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
