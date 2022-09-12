@@ -804,7 +804,7 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 			}
 		}
 		menuOwner.SelectedHandler = func() {
-			v.fieldToDataItem(f, menu, false)
+			v.fieldToDataItem(f, menu)
 			if menuOwner.IsStatic {
 				sel := menuOwner.SelectedItem()
 				if sel != nil {
@@ -826,7 +826,7 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 		view = menu
 		menu.SetSelectedHandler(func() {
 			// valInterface, _ := v.fieldToDataItem(f, menu, false)
-			v.fieldToDataItem(f, menu, false)
+			v.fieldToDataItem(f, menu)
 			callActionHandlerFunc(v, f, EditedAction, item.Interface, &view)
 		})
 	}
@@ -942,7 +942,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetChangedHandler(func() {
-		v.fieldToDataItem(f, tv, true)
+		v.fieldToDataItem(f, tv)
 		// fmt.Printf("Changed text1: %s %p %+v\n", f.FieldName, v.data, reflect.ValueOf(v.data).Elem().Interface())
 		view := zview.View(tv)
 		callActionHandlerFunc(v, f, EditedAction, tv.Text(), &view)
@@ -958,7 +958,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	cv := zcheckbox.New(b)
 	cv.SetObjectName(f.ID)
 	cv.SetValueHandler(func() {
-		val, _ := v.fieldToDataItem(f, cv, true)
+		val, _ := v.fieldToDataItem(f, cv)
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
 		v.updateShowEnableFromZeroer(val.IsZero(), false, cv.ObjectName())
 		view := zview.View(cv)
@@ -1407,18 +1407,20 @@ func (v *FieldView) ToData(showError bool) (err error) {
 			// zlog.Info("FV Update no view found:", v.id, f.ID)
 			continue
 		}
-		_, e := v.fieldToDataItem(&f, fview, showError)
+		_, e := v.fieldToDataItem(&f, fview)
 		if e != nil {
 			if err == nil {
 				err = e
 			}
-			showError = false
 		}
+	}
+	if showError && err != nil {
+		zalert.ShowError(err)
 	}
 	return
 }
 
-func (v *FieldView) fieldToDataItem(f *Field, view zview.View, showError bool) (value reflect.Value, err error) {
+func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Value, err error) {
 	if f.IsStatic() {
 		return
 	}
@@ -1478,6 +1480,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View, showError bool) (
 			if str != "" {
 				i64, err = strconv.ParseInt(str, 10, 64)
 				if err != nil {
+					err = zlog.NewError("Error parsing", f.Name)
 					break
 				}
 			}
@@ -1486,11 +1489,17 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View, showError bool) (
 
 	case zreflect.KindFloat:
 		tv, _ := view.(*ztext.TextView)
+		text := tv.Text()
 		var f64 float64
-		f64, err = strconv.ParseFloat(tv.Text(), 64)
+		//		if text != "" {
+		f64, err = strconv.ParseFloat(text, 64)
+		if err != nil {
+			err = zlog.NewError("Error parsing", f.Name)
+		}
 		if err != nil {
 			break
 		}
+		//		}
 		zfloat.SetAny(item.Address, f64)
 		// zlog.Info("fieldToDataItem float", f.FieldName, view.ObjectName(), tv.Text(), f64, err, item)
 		// fmt.Printf("fieldToDataItem struct: %+v\n", item.Value.Interface())
@@ -1518,10 +1527,6 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View, showError bool) (
 
 	default:
 		panic(fmt.Sprint("bad type: ", f.Kind))
-	}
-
-	if showError && err != nil {
-		zalert.ShowError(err)
 	}
 	value = reflect.ValueOf(item.Address).Elem() //.Interface()
 	return
