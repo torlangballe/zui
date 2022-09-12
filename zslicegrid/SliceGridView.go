@@ -306,7 +306,7 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 		}
 		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
 			// ztimer.StartIn(0.1, func() {
-			go v.StoreChangedItemsFunc(items)
+			v.StoreChangedItemsFunc(items)
 			// })
 		}
 		for _, item := range items {
