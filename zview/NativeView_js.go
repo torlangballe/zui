@@ -915,7 +915,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			return nil
 		}
 		e := args[0]
-		pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
+		pos := getMousePosRelative(v, e)
+		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		we.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			movingPos = nil
@@ -937,7 +938,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		oldMouseMove = v.GetWindowElement().Get("onmousemove")
 		v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			if movingPos != nil {
-				pos := getMousePos(args[0]).Minus(v.AbsoluteRect().Pos)
+				pos := getMousePosRelative(v, args[0])
+				// zlog.Info("MM:", pos)
 				if handler(pos, zbool.Unknown) {
 					e.Call("preventDefault")
 				}

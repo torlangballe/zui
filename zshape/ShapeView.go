@@ -232,7 +232,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	}
 	str := pathedName + s + ".png"
 
-	// zlog.Info("SetImageButtonName:", str)
+	// zlog.Info("SetImageButtonName:", v.Hierarchy(), str)
 	v.SetImage(nil, str, func(image *zimage.Image) {
 		v.image = image
 		if image != nil {
