@@ -38,23 +38,23 @@ import (
 
 type GridListView struct {
 	zscrollview.ScrollView
-	Spacing            zgeo.Size
-	Selectable         bool
-	MultiSelectable    bool
-	MakeFullSize       bool
-	MaxColumns         int
-	MinColumns         int
-	MinRowsForFullSize int
-	MaxRowsForFullSize int
-	BorderColor        zgeo.Color
-	CellColor          zgeo.Color
-	CellColorFunc      func(id string) zgeo.Color
-	MultiplyAlternate  float32
-	PressedColor       zgeo.Color
-	SelectColor        zgeo.Color
-	HoverColor         zgeo.Color
-	BranchToggleType   zwidget.BranchToggleType
-	OpenBranches       map[string]bool
+	Spacing                zgeo.Size
+	Selectable             bool
+	MultiSelectable        bool
+	MakeFullSize           bool
+	MaxColumns             int
+	MinColumns             int
+	MinRowsForFullSize     int
+	MaxRowsForFullSize     int
+	BorderColor            zgeo.Color
+	CellColor              zgeo.Color
+	CellColorFunc          func(id string) zgeo.Color // Always set
+	MultiplyColorAlternate float32
+	PressedColor           zgeo.Color
+	SelectColor            zgeo.Color
+	HoverColor             zgeo.Color
+	BranchToggleType       zwidget.BranchToggleType
+	OpenBranches           map[string]bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -115,6 +115,9 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.HoverColor = DefaultHoverColor
 	v.OpenBranches = map[string]bool{}
 	v.BranchToggleType = zwidget.BranchToggleTriangle
+	v.Spacing = zgeo.Size{14, 4}
+	v.MultiplyColorAlternate = 0.95
+
 	v.loadOpenBranches()
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("Scroll:", pos)
@@ -230,7 +233,7 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 			return
 		}
 	}
-	col := v.CellColor
+	col := v.CellColorFunc(cid)
 	if v.CurrentHoverID == cid && v.HoverColor.Valid {
 		col = v.HoverColor
 	} else if v.pressedIDs[cid] && v.PressedColor.Valid {
@@ -239,8 +242,8 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		col = v.SelectColor
 	}
 	if col.Valid {
-		if v.MultiplyAlternate != 0 && x%2 != y%2 {
-			col = col.MultipliedBrightness(v.MultiplyAlternate)
+		if v.MultiplyColorAlternate != 0 && x%2 != y%2 {
+			col = col.MultipliedBrightness(v.MultiplyColorAlternate)
 		}
 		child := v.children[cid]
 		if child != nil {
@@ -320,6 +323,12 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 	}
 	if id == v.CurrentHoverID {
 		return
+	}
+	if v.CellHeightFunc != nil && v.children[id] != nil {
+		h := v.CellHeightFunc(id)
+		if h <= 4 { // hack to avoid hovering over small separator-type cells
+			return
+		}
 	}
 	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil && v.children[v.CurrentHoverID] != nil {
 		v.UpdateCellFunc(v, v.CurrentHoverID)
@@ -513,9 +522,15 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	s := v.margin.Size.Negative()
 	x := float64(nx)
 	y := float64(ny)
+	if v.CellHeightFunc != nil {
+		for i := 0; i < ny; i++ {
+			s.H += v.CellHeightFunc(v.IDAtIndexFunc(i))
+		}
+		s.H += v.Spacing.H * (y - 1)
+	} else {
+		s.H += childSize.H*y + v.Spacing.H*(y-1)
+	}
 	s.W += childSize.W*x + v.Spacing.W*(x-1)
-	s.H += childSize.H*y + v.Spacing.H*(y-1)
-	// zlog.Info(childSize, "CalculatedGridSize:", nx, ny, s, childSize.H*x, v.Spacing.H*(y-1))
 	return s
 }
 
@@ -530,13 +545,13 @@ func (v *GridListView) RemoveCell(id string) bool {
 }
 
 func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
-	// zlog.Info("getAChild", v.Parent().ObjectName(), v.CreateCellFunc != nil)
 	cid := v.IDAtIndexFunc(0)
 	child := v.CreateCellFunc(v, cid)
 	s := child.CalculatedSize(total)
 	if v.CellHeightFunc != nil {
 		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
 	}
+	zfloat.Maximize(&s.W, v.MinSize().W)
 	return s
 }
 
@@ -837,7 +852,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 
 	if !beforeWindow && (v.Selectable || v.MultiSelectable) {
 		zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
+			zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
 			if mod == zkeyboard.ModifierNone || mod == zkeyboard.ModifierShift {
 				//					v.doRowPressed(v.highlightedIndex)
 				switch key {
