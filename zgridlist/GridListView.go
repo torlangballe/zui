@@ -583,9 +583,9 @@ func (v *GridListView) makeOrGetChild(id string) zview.View {
 	if v.HierarchyLevelFunc != nil {
 		v.insertBranchToggle(id, child)
 	}
-	zpresent.CallReady(child, true)
 	v.children[id] = child
 	v.cellsView.AddChild(child, -1)
+	zpresent.CallReady(child, true)
 	if v.UpdateCellFunc != nil {
 		v.UpdateCellFunc(v, id)
 	}
