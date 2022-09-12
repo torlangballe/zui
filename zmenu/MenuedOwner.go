@@ -464,12 +464,15 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	v := zcontainer.New("id")
 	i, _ := strconv.Atoi(id)
 	item := o.items[i]
-	marg := zgeo.Size{8, 0}
-
 	if item.IsSeparator {
-		v.SetBGColor(zgeo.ColorLightGray)
+		v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+			canvas.SetColor(zgeo.ColorDarkGray)
+			canvas.StrokeHorizontal(rect.Min().X, rect.Max().X, rect.Center().Y, 5, zgeo.PathLineButt)
+		})
 		return v
 	}
+	marg := zgeo.Size{8, 0}
+
 	if !item.IsAction {
 		status := zlabel.New(item.Name)
 		status.SetFont(o.Font)
