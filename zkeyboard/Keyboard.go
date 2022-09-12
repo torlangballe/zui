@@ -7,7 +7,7 @@ type AutoCapType string
 type ReturnKeyType string
 
 const (
-	ModifierNone           = 0
+	ModifierNone  Modifier = 0
 	ModifierShift Modifier = 1 << iota
 	ModifierControl
 	ModifierAlt
