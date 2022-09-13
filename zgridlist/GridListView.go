@@ -330,15 +330,26 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 			return
 		}
 	}
-	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil && v.children[v.CurrentHoverID] != nil {
-		v.UpdateCellFunc(v, v.CurrentHoverID)
+	v.SetHoverID(id)
+}
+
+func (v *GridListView) SetHoverID(id string) {
+	var ids []string
+	if v.CurrentHoverID != "" && v.children[v.CurrentHoverID] != nil {
+		ids = []string{v.CurrentHoverID}
+		if v.UpdateCellFunc != nil {
+			v.UpdateCellFunc(v, v.CurrentHoverID)
+		}
 	}
 	v.CurrentHoverID = id
-	if v.CurrentHoverID != "" && v.UpdateCellFunc != nil && v.children[v.CurrentHoverID] != nil {
-		v.UpdateCellFunc(v, v.CurrentHoverID)
+	if v.CurrentHoverID != "" && v.children[v.CurrentHoverID] != nil {
+		ids = append(ids, v.CurrentHoverID)
+		if v.UpdateCellFunc != nil {
+			v.UpdateCellFunc(v, v.CurrentHoverID)
+		}
 	}
 	if v.HoverColor.Valid {
-		v.updateCellBackgrounds()
+		v.updateCellBackgrounds(ids)
 	}
 	if v.HandleHoverOverFunc != nil {
 		v.HandleHoverOverFunc(id)
