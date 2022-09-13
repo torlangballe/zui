@@ -34,6 +34,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 type GridListView struct {
@@ -213,14 +214,16 @@ func (v *GridListView) CellView(id string) zview.View {
 	return v.children[id]
 }
 
-func (v *GridListView) updateCellBackgrounds() {
+func (v *GridListView) updateCellBackgrounds(ids []string) {
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if !visible {
 			return true
 		}
-		child := v.children[cid]
-		if child != nil {
-			v.updateCellBackground(cid, x, y, child)
+		if ids == nil || zstr.StringsContain(ids, cid) {
+			child := v.children[cid]
+			if child != nil {
+				v.updateCellBackground(cid, x, y, child)
+			}
 		}
 		return true
 	})
@@ -427,7 +430,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		// v.selectingFromIndex = -1
 		v.pressedIDs = map[string]bool{}
 	}
-	v.updateCellBackgrounds()
+	v.updateCellBackgrounds(nil)
 	v.ExposeIn(0.0001)
 	if v.HandleSelectionChangedFunc != nil {
 		v.HandleSelectionChangedFunc()
@@ -818,12 +821,12 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 				for i := min; i <= max; i++ {
 					v.selectedIDs[v.IDAtIndexFunc(i)] = true
 				}
-				v.updateCellBackgrounds()
+				v.updateCellBackgrounds(nil)
 				v.ScrollToCell(nid, false)
 				v.selectingFromIndex = endIndex
 			} else {
 				v.selectedIDs = map[string]bool{}
-				v.updateCellBackgrounds()
+				v.updateCellBackgrounds(nil)
 				// zlog.Info("MoveTo:", nid, len(v.children))
 				if nid != "" {
 					v.selectedIDs[nid] = true
