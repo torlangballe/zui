@@ -128,7 +128,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		f := zfields.EmptyField
 		immediateEdit := false
 		if f.SetFromReflectItem(v.slicePtr, item, i, immediateEdit) {
-			if zstr.IndexOf(f.ID, v.FieldParameters.SkipFieldNames) != -1 {
+			if zstr.IndexOf(f.FieldName, v.FieldParameters.SkipFieldNames) != -1 {
 				continue
 			}
 			v.fields = append(v.fields, f)
