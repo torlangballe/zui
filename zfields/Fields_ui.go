@@ -154,9 +154,9 @@ type ActionHandler interface {
 	HandleAction(f *Field, action ActionType, view *zview.View) bool
 }
 
-type ActionFieldHandler interface {
-	HandleFieldAction(f *Field, action ActionType, view *zview.View) bool
-}
+// type ActionFieldHandler interface {
+// 	HandleFieldAction(f *Field, action ActionType, view *zview.View) bool
+// }
 
 var widgeters = map[string]Widgeter{}
 

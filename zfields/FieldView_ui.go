@@ -684,7 +684,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 				zlog.Fatal(nil, "Not CHANGED!", f.Name)
 			}
 		}
-		aih, _ := fieldValue.(ActionFieldHandler)
+		aih, _ := fieldValue.(ActionHandler)
 		// vvv := reflect.ValueOf(fieldValue)
 		// if aih == nil {
 		// 	rval := reflect.ValueOf(fieldValue)
@@ -695,11 +695,11 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 		// 	}
 		// }
 		if aih == nil && fieldAddress != nil {
-			aih, _ = fieldAddress.(ActionFieldHandler)
+			aih, _ = fieldAddress.(ActionHandler)
 		}
 		// zlog.Info("callActionHandlerFunc bottom:", f.Name, action, aih != nil, reflect.ValueOf(fieldValue).Type(), reflect.ValueOf(fieldValue).Kind())
 		if aih != nil {
-			result = aih.HandleFieldAction(f, action, view)
+			result = aih.HandleAction(f, action, view)
 			// zlog.Info("callActionHandlerFunc bottom:", f.Name, action, result, view, aih)
 		}
 	}

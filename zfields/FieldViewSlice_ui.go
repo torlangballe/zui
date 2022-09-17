@@ -69,56 +69,6 @@ func (v *FieldView) changeNamedSelectionIndex(i int, f *Field) {
 	zkeyvalue.DefaultStore.SetInt(i, key, true)
 }
 
-/*
-func updateSliceFieldView(view zview.View, selectedIndex int, item zreflect.Item, f *Field, dontOverwriteEdited bool) {
-	// zlog.Info("updateSliceFieldView:", view.ObjectName(), item.FieldName, f.Name)
-	children := (view.(zcontainer.ContainerType)).GetChildren(false)
-	n := 0
-	subViewCount := len(children)
-	single := (f.Flags&FlagIsNamedSelection != 0)
-	if single {
-		subViewCount -= 2
-	}
-	// if subViewCount != item.Value.Len() {
-	// 	zlog.Info("SLICE VIEW: length changed!!!", subViewCount, item.Value.Len())
-	// }
-	for _, c := range children {
-		// zlog.Info("Update Sub", c.ObjectName())
-		if n >= item.Value.Len() {
-			break
-		}
-		if single && n != selectedIndex {
-			continue
-		}
-		val := item.Value.Index(n)
-		w := widgeters[f.WidgetName]
-		if w != nil {
-			w.SetValue(c, val.Interface())
-			n++
-			continue
-		}
-		fv, _ := c.(*FieldView)
-		if fv == nil {
-			ah, _ := val.Interface().(ActionFieldHandler)
-			// zlog.Info("Update Sub Slice field fv == nil:", n, ah != nil)
-			if ah != nil {
-				cview := c
-				ah.HandleFieldAction(f, DataChangedAction, &cview)
-			}
-		} else {
-			fv.data = val.Addr().Interface()
-			fv.Update(dontOverwriteEdited)
-		}
-		n++
-		// }
-		// zlog.Info("struct make field view:", f.Name, f.Kind, exp)
-	}
-	// if updateStackFromActionFieldHandlerSlice(view, &item, f) {
-	// 	continue
-	// }
-}
-*/
-
 func createGroupSliceViewFunc(slicePtr any, params FieldViewParameters, id string, delete bool) zview.View {
 	if delete {
 		return nil
@@ -234,9 +184,9 @@ func (v *FieldView) buildRepeatedStackFromSlice(slicePtr any, vertical bool, f *
 				w.SetValue(view, nval.Interface())
 			}
 		}
-		h, _ := nval.Interface().(ActionFieldHandler)
+		h, _ := nval.Interface().(ActionHandler)
 		if view == nil && h != nil {
-			if h.HandleFieldAction(f, CreateFieldViewAction, &view) {
+			if h.HandleAction(f, CreateFieldViewAction, &view) {
 				stack.Add(view, a)
 				// fmt.Println("buildStackFromSlice element:", f.FieldName)
 			}
