@@ -15,6 +15,7 @@ package zslicegrid
 
 import (
 	"strconv"
+	"sync"
 
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zbutton"
@@ -27,6 +28,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
 )
@@ -45,8 +47,10 @@ type SliceGridView[S zstr.StrIDer] struct {
 	DeleteAskSubTextFunc  func(ids []string) string
 	UpdateViewFunc        func()
 	SortFunc              func(s []S)
-	StoreChangedItemsFunc func(items []S)
-	DeleteItemsFunc       func(ids []string)
+	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice.
+	StoreChangedItemFunc  func(item S, showErr *bool, last bool) error  // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
+	DeleteItemFunc        func(item *S, showErr *bool, last bool) error // DeleteItemFunc is called from default DeleteItemsFunc, with index and struct in slicePtr of each item to delete. The items are then removed from the slicePtr. last is true if it's the last one in items.
 
 	slicePtr     *[]S
 	editButton   *zbutton.Button
@@ -159,7 +163,71 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	v.Grid.MultiSelectable = true
 
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
+
+	v.StoreChangedItemsFunc = func(items []S) {
+		if v.StoreChangedItemFunc == nil {
+			return
+		}
+		showErr := true
+		var storeItems []S
+		var wg sync.WaitGroup
+		for i, item := range items {
+			if zstr.HashAnyToInt64(item) != zstr.HashAnyToInt64((*v.slicePtr)[i]) {
+				wg.Add(1)
+				go func(i int, item S, showErr *bool) {
+					err := v.StoreChangedItemFunc(item, showErr, i == len(items)-1)
+					if err == nil {
+						storeItems = append(storeItems, item)
+					}
+					wg.Done()
+				}(i, item, &showErr)
+			}
+		}
+		wg.Wait()
+		v.SetItemsInSlice(storeItems)
+		v.UpdateViewFunc()
+	}
+	v.DeleteItemsFunc = func(ids []string) {
+		if v.DeleteItemFunc == nil {
+			return
+		}
+		showErr := true
+		var deleteIDs []string
+		var wg sync.WaitGroup
+		for i, id := range ids {
+			wg.Add(1)
+			go func(id string, showErr *bool, i int) {
+				s := v.StructForID(id)
+				err := v.DeleteItemFunc(s, showErr, i == len(ids)-1)
+				if err == nil {
+					deleteIDs = append(deleteIDs, id)
+				}
+				wg.Done()
+			}(id, &showErr, i)
+		}
+		wg.Wait()
+		v.RemoveItemsFromSlice(deleteIDs)
+		v.UpdateViewFunc()
+	}
 	return
+}
+
+func (v *SliceGridView[S]) SetItemsInSlice(items []S) {
+	for _, item := range items {
+		for i, s := range *v.slicePtr {
+			if s.GetStrID() == item.GetStrID() {
+				// fmt.Printf("edited: %+v %v %d\n", (*v.slicePtr)[i], item, i)
+				(*v.slicePtr)[i] = item
+			}
+		}
+	}
+}
+
+func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
+	for _, id := range ids {
+		i := v.Grid.IndexOfID(id)
+		zslice.RemoveAt(v.slicePtr, i)
+	}
 }
 
 func (v *SliceGridView[S]) handlePlusButtonPressed() {
@@ -308,14 +376,6 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 			// ztimer.StartIn(0.1, func() {
 			v.StoreChangedItemsFunc(items)
 			// })
-		}
-		for _, item := range items {
-			for i, s := range *v.slicePtr {
-				if s.GetStrID() == item.GetStrID() {
-					(*v.slicePtr)[i] = item
-					// fmt.Printf("edited: %+v %d\n", (*v.slicePtr)[i], i)
-				}
-			}
 		}
 		v.UpdateViewFunc()
 		return true
