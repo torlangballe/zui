@@ -1,5 +1,10 @@
+// The zfields package is functionality to create GUI from data structures.
+// With reflection, the fields of structures are used to create stacks of GUI elements.
+// The 'zui' tag on struct fields is used to stylize how the gui elements are created.
+// This file is mostly about how these tags are parsed into a Field, and FieldView.go
+// is where the building and updating of gui from the structure and Field info is done.
+
 //go:build zui
-// +build zui
 
 package zfields
 
@@ -29,28 +34,33 @@ import (
 
 // type fieldType int
 
-type ActionType string
-
-// UIStringer defines a special string return function used to show a complex type as a string in fields/tables etc, instead of the complex type. String() would kick in too often
+// UIStringer defines a ZUIString() method, which if present, shows a complex type as a string in FieldViews.
+// We can't just use the fmt.Stringer interface as that would be too common.
 type UIStringer interface {
 	ZUIString() string
 }
 
+// Widgeter is an interface to make a type create it's own view when build with zfields package.
+// It is registered with the RegisterWigeter function, and specified with the zui:"widget:xxx" tag.
 type Widgeter interface {
 	IsStatic() bool
 	Create(f *Field) zview.View
 	SetValue(view zview.View, val any)
 }
 
+// ReadWidgeter is a Widgeter that also can return it's value
 type ReadWidgeter interface {
 	GetValue(view zview.View) any
 }
 
+// SetupWidgeter is a Widgeter that also can setup it's field before creation
 type SetupWidgeter interface {
 	SetupField(f *Field)
 }
 
-type FlagType int64
+// ActionType are the types of actions any type can handle an HandleAction method with type of.
+// This allows a type to handle it's  Field setup, it's creation, editing, data changed and more.
+type ActionType string
 
 const (
 	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
@@ -64,34 +74,34 @@ const (
 	CreatedViewAction     ActionType = "createdview" // called after view created, view is pointer to newly created view.
 )
 
+// The FlagType are a number of flags a field can have set, based on the struct field/tag it is created from.
+type FlagType int64
+
 const (
-	FlagIsStatic FlagType = 1 << iota
-	FlagHasSeconds
-	FlagHasMinutes
-	FlagHasHours
-	FlagHasDays
-	FlagHasMonths
-	FlagHasYears
-	FlagIsImage
-	FlagIsFixed
-	FlagIsButton
-	FlagHasHeaderImage
-	FlagNoTitle
-	FlagToClipboard
-	FlagIsNamedSelection
-	FlagIsStringer
-	FlagIsPassword
-	FlagExpandFromMinSize
-	FlagIsDuration
-	FlagIsOpaque
-	FlagIsActions
-	FlagIsNonSelectable
-	FlagFrameIsTitled
-	FlagFrameTitledOnFrame
-	FlagIsGroup
-	FlagHasFrame
-	FlagSkipIndicator
-	FlagLongPress
+	FlagIsStatic           FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
+	FlagHasSeconds                              // FlagHasSeconds means it's a time/duration where seconds should be shown/used
+	FlagHasMinutes                              // FlagHasMinutes is the same but for minutes
+	FlagHasHours                                // FlagHasMinutes is the same but for hours
+	FlagHasDays                                 // FlagHasMinutes is the same but for days of the month
+	FlagHasMonths                               // FlagHasMinutes is the same but for months
+	FlagHasYears                                // FlagHasMinutes is the same but for years
+	FlagIsImage                                 // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
+	FlagIsFixed                                 // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value
+	FlagIsButton                                // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
+	FlagHasHeaderImage                          // FlagHasHeaderImage is true true if it has a an image for showing in header
+	FlagNoTitle                                 // FlagNoTitle i set when we don't use FieldName as a title, show nothing
+	FlagToClipboard                             // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
+	FlagIsPassword                              // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
+	FlagIsDuration                              // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
+	FlagIsOpaque                                // FlagIsOpaque means entire view will be covered when drawn
+	FlagIsActions                               // FlagIsActions means a menu created from an enum is actions and not a value to set
+	FlagHasFrame                                // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
+	FlagIsGroup                                 // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
+	FlagFrameIsTitled                           // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
+	FlagFrameTitledOnFrame                      // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
+	FlagSkipIndicator                           // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
+	FlagLongPress                               // If FlagLongPress is set this button/image etc handles long-press
+	FlagDisableAutofill                         // FlagDisableAutofill if set makes a text field not autofill
 )
 
 const (
@@ -100,11 +110,11 @@ const (
 )
 
 type Field struct {
-	Index                int
-	ID                   string
-	ActionValue          any // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
-	Name                 string
-	FieldName            string
+	Index                int    // Index is the position in the total amount of fields (inc anonymous) in struct
+	ID                   string // ID is string from field's name using fieldNameToID(). TODO: Use this less, use FieldName more, as we are 100% sure what that is
+	ActionValue          any    // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
+	Name                 string // Name is 
+	FieldName            string //
 	Title                string // name of item in row, and header if no title
 	MaxWidth             float64
 	MinWidth             float64
@@ -173,18 +183,17 @@ var flagsList = []zbits.BitsetItem{
 	zbits.BSItem("HasHeaderImage", int64(FlagHasHeaderImage)),
 	zbits.BSItem("NoTitle", int64(FlagNoTitle)),
 	zbits.BSItem("ToClipboard", int64(FlagToClipboard)),
-	zbits.BSItem("IsNamedSelection", int64(FlagIsNamedSelection)),
-	zbits.BSItem("IsStringer", int64(FlagIsStringer)),
+	// zbits.BSItem("IsNamedSelection", int64(FlagIsNamedSelection)),
 	zbits.BSItem("IsPassword", int64(FlagIsPassword)),
-	zbits.BSItem("ExpandFromMinSize", int64(FlagExpandFromMinSize)),
 	zbits.BSItem("IsDuration", int64(FlagIsDuration)),
 	zbits.BSItem("IsOpaque", int64(FlagIsOpaque)),
 	zbits.BSItem("IsActions", int64(FlagIsActions)),
-	zbits.BSItem("IsNonSelectable", int64(FlagIsNonSelectable)),
 	zbits.BSItem("FrameIsTitled", int64(FlagFrameIsTitled)),
 	zbits.BSItem("IsGroup", int64(FlagIsGroup)),
 	zbits.BSItem("HasFrame", int64(FlagHasFrame)),
 	zbits.BSItem("SkipIndicator", int64(FlagSkipIndicator)),
+	zbits.BSItem("LongPress", int64(FlagLongPress)),
+	zbits.BSItem("DisableAutofill", int64(FlagDisableAutofill)),
 }
 
 func (f FlagType) String() string {
@@ -293,8 +302,6 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		case "align":
 			f.Alignment = zgeo.AlignmentFromString(val)
 			// zlog.Info("ALIGN:", f.Name, val, a)
-		case "nosize":
-			f.Flags |= FlagExpandFromMinSize
 		// case "cannil"
 		// f.Flags |= flagAllowNil
 		case "brancher":
@@ -345,6 +352,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			f.SortPriority = int(n)
 		case "actions":
 			f.Flags |= FlagIsActions
+		case "noautofill":
+			f.Flags |= FlagDisableAutofill
 		case "size":
 			f.Size.FromString(val)
 			if f.Size.IsNull() {
@@ -494,8 +503,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			}
 		case "2clip":
 			f.Flags |= FlagToClipboard
-		case "named-selection":
-			f.Flags |= FlagIsNamedSelection
+		// case "named-selection":
+		// 	f.Flags |= FlagIsNamedSelection
 		case "labelize":
 			f.LabelizeWidth = n
 			if n == 0 {
@@ -505,8 +514,6 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			f.Flags |= FlagIsButton
 		case "enable":
 			f.LocalEnable = val
-		case "unselectable":
-			f.Flags |= FlagIsNonSelectable
 		case "disable":
 			if val != "" {
 				f.LocalDisable = val
@@ -636,8 +643,10 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			if f.Flags&FlagHasSeconds != 0 {
 				f.Columns += 3
 			}
-			if f.MinWidth == 0 && f.Columns == 0 {
-				f.MinWidth = 80
+			if f.Columns == 0 {
+				f.MinWidth = 90
+			} else {
+				f.Columns += 2 // just add a bit of padding
 			}
 		}
 
