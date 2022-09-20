@@ -84,9 +84,6 @@ func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// if rect.Pos.Y > 3000 || rect.Size.H > 3000 {
 	// 	zlog.Error(nil, "strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
 	// }
-	// if v.ObjectName() == "v2" {
-	// zlog.Info("NV Rect", v.ObjectName(), rect, zlog.GetCallingStackString())
-	// }
 	rect = rect.ExpandedToInt()
 	SetElementRect(v.Element, rect)
 }
@@ -456,7 +453,7 @@ func (v *NativeView) Font() *zgeo.Font {
 }
 
 func (v *NativeView) SetText(text string) {
-	//		zlog.Info("NV SETTEXT", v.ObjectName(), zlog.GetCallingStackString())
+	// zlog.Info("NV SetText:", v.Hierarchy(), text, zlog.CallingStackString())
 	v.JSSet("innerText", text)
 }
 

@@ -3,10 +3,10 @@
 package ztext
 
 import (
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -23,11 +23,12 @@ const (
 )
 
 type Style struct {
-	Type          Type
-	KeyboardType  zkeyboard.Type
-	AutoCapType   zkeyboard.AutoCapType
-	ReturnKeyType zkeyboard.ReturnKeyType
-	IsAutoCorrect bool
+	Type                Type
+	KeyboardType        zkeyboard.Type
+	AutoCapType         zkeyboard.AutoCapType
+	ReturnKeyType       zkeyboard.ReturnKeyType
+	IsAutoCorrect       bool
+	DisableAutoComplete bool
 }
 
 type TextView struct {

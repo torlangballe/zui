@@ -55,7 +55,6 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
-	// zlog.Info("L CS:", v.ObjectName(), s, v.minWidth, v.maxWidth)
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
