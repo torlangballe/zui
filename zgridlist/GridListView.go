@@ -395,6 +395,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			return false
 		}
 	}
+	var selectionChanged bool
 	switch down {
 	case zbool.True:
 		if !inside || id == "" {
@@ -412,6 +413,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			} else {
 				v.selectedIDs[id] = true
 			}
+			selectionChanged = true
 			break
 		}
 		v.pressedIDs[id] = true
@@ -448,12 +450,15 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		} else {
 			v.selectedIDs = v.pressedIDs
 		}
+		selectionChanged = true
 		// v.selectingFromIndex = -1
 		v.pressedIDs = map[string]bool{}
 	}
 	v.updateCellBackgrounds(nil)
 	v.ExposeIn(0.0001)
-	if v.HandleSelectionChangedFunc != nil {
+	// zlog.Info("GL pressed with selection:", down, selectionChanged, v.selectedIDs)
+	if selectionChanged && v.HandleSelectionChangedFunc != nil {
+		// zlog.Info("GL pressed with selection:", down)
 		v.HandleSelectionChangedFunc()
 	}
 	return eventHandled
@@ -770,6 +775,8 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				ms.SetMargin(marg)
 			}
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
+			// zlog.Info("LAY:", cid, o)
+
 			child.SetRect(o)
 			v.updateCellBackground(cid, x, y, child)
 			if updateCells && v.UpdateCellFunc != nil {
