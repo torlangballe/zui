@@ -60,7 +60,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	if addFlags&AddEditDelete != 0 {
 		v.Grid.MultiSelectable = true
 	}
-	v.FieldParameters.AllTextStatic = true
+	v.FieldParameters.AllStatic = true
 	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)
@@ -146,7 +146,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// }
 		}
 		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-			// zlog.Info("UpdateCell:", id)
+			// zlog.Info("TV UpdateCell:", id)
 			fv := grid.CellView(id).(*zfields.FieldView)
 			zlog.Assert(fv != nil)
 			fv.Update(v.StructForID(id), true)
@@ -168,7 +168,7 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	params := v.FieldParameters
 	params.ImmediateEdit = false
 	params.Styling.Spacing = 0
-	params.AllTextStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)
+	params.AllStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)
 	fv := zfields.FieldViewNew(id, s, params)
 	fv.Vertical = false
 	fv.Fields = v.fields
