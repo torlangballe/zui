@@ -23,7 +23,7 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	v.SetObjectName(name)
 	if len(items) > 0 {
-		v.UpdateAndSelect(items, value)
+		v.UpdateItems(items, value)
 	}
 	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
@@ -109,27 +109,17 @@ func (v *MenuView) RemoveItemByValue(value interface{}) {
 	}
 }
 
-func (v *MenuView) UpdateAndSelect(items zdict.Items, value interface{}) {
-	// zlog.Info("MV SetAndSelect:", v, items)
-	v.UpdateItems(items, []interface{}{value})
-	v.SelectWithValue(value)
-}
-
-func (v *MenuView) UpdateItems(items zdict.Items, values []interface{}) {
+func (v *MenuView) UpdateItems(items zdict.Items, value any) {
 	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
-	if !items.Equal(v.items) {
-		v.items = items // must be before v.getNumberOfItemsString
-		var str string
-		for _, item := range v.items {
-			str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
-		}
-		// We use HTML here to add all at once, or slow.
-		// zlog.Info(v.ObjectName(), "menu updateitems:", str)
-		v.JSSet("innerHTML", str)
+	v.items = items // must be before v.getNumberOfItemsString
+	var str string
+	for _, item := range v.items {
+		str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
 	}
-	if len(values) != 0 {
-		v.SelectWithValue(values[0])
-	}
+	// We use HTML here to add all at once, or slow.
+	// zlog.Info(v.ObjectName(), "menu updateitems:", str)
+	v.JSSet("innerHTML", str)
+	v.SelectWithValue(value)
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
 

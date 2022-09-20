@@ -15,8 +15,7 @@ import (
 const MenuSeparatorID = "$sep"
 
 type MenuType interface {
-	UpdateItems(items zdict.Items, values []interface{})
-	SetSelectedHandler(handler func())
+	UpdateItems(items zdict.Items, valuesSlicePtr any, isAction bool)
 }
 
 type MenuView struct {
