@@ -79,7 +79,7 @@ type GridListView struct {
 	columns            int
 	rows               int
 	layoutDirty        bool
-	CurrentHoverID     string
+	cachedChildSize    zgeo.Size
 }
 
 var (
@@ -509,6 +509,7 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 }
 
 func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	// v.cachedChildSize = zgeo.Size{}
 	s := v.MinSize()
 	if v.CellCountFunc() == 0 {
 		return s
@@ -545,6 +546,7 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 		s.H += childSize.H*y + v.Spacing.H*(y-1)
 	}
 	s.W += childSize.W*x + v.Spacing.W*(x-1)
+	// zlog.Info("GL:CalculatedGridSize:", s)
 	return s
 }
 
@@ -558,7 +560,25 @@ func (v *GridListView) RemoveCell(id string) bool {
 	return false
 }
 
+func (v *GridListView) getAChildSize2(total zgeo.Size) zgeo.Size {
+	cid := v.IDAtIndexFunc(0)
+	child, exists := v.makeOrGetChild(cid)
+	if exists {
+		return child.Rect().Size
+	}
+	s := child.CalculatedSize(total)
+	if v.CellHeightFunc != nil {
+		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
+	}
+	zfloat.Maximize(&s.W, v.MinSize().W)
+	child.SetRect(zgeo.Rect{Size: s})
+	return s
+}
+
 func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
+	if !v.cachedChildSize.IsNull() {
+		return v.cachedChildSize
+	}
 	cid := v.IDAtIndexFunc(0)
 	child := v.CreateCellFunc(v, cid)
 	s := child.CalculatedSize(total)
@@ -566,6 +586,7 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
 	}
 	zfloat.Maximize(&s.W, v.MinSize().W)
+	v.cachedChildSize = s
 	return s
 }
 
@@ -603,10 +624,10 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 	}
 }
 
-func (v *GridListView) makeOrGetChild(id string) zview.View {
+func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	child := v.children[id]
 	if child != nil {
-		return child
+		return child, true
 	}
 	child = v.CreateCellFunc(v, id)
 	if v.HierarchyLevelFunc != nil {
@@ -620,7 +641,7 @@ func (v *GridListView) makeOrGetChild(id string) zview.View {
 	}
 	zpresent.CallReady(child, false)
 	child.(zview.ExposableType).Expose()
-	return child
+	return child, false
 }
 
 func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool) {
@@ -630,6 +651,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	rect := v.LocalRect()
 	pos := rect.Pos
 	childSize := rect.Size.Plus(v.margin.Size)
+	width := childSize.W
 
 	if v.CellHeightFunc == nil {
 		childSize = v.getAChildSize(rect.Size)
@@ -644,6 +666,10 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			childSize.H = v.CellHeightFunc(cellID)
 		}
 		r := zgeo.Rect{Pos: pos, Size: childSize}
+		endx := float64(x+1) * width / float64(v.columns)
+		if r.Max().X < endx {
+			r.SetMaxX(endx)
+		}
 		lastx := (x == v.columns-1)
 		lasty := (y == v.rows-1)
 		var minx, maxx, miny, maxy float64
@@ -653,7 +679,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			minx = v.Spacing.W / 2
 		}
 		if lastx {
-			maxx = -(rect.Max().X - r.Max().X) + 1
+			maxx = -(rect.Max().X - r.Max().X)
 		} else {
 			maxx -= v.Spacing.W / 2
 		}
@@ -714,7 +740,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if visible {
 			// zlog.Info("Arrange:", cid, updateCells)
-			child := v.makeOrGetChild(cid)
+			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
 			ms, _ := child.(zview.Marginalizer)
 			if ms != nil {
