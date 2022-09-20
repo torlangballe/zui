@@ -774,7 +774,7 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 				menuOwner.PluralableWord = format
 			}
 		}
-		mItems := zmenu.MOItemsFromSlicePtr(item.Address, items, f.Flags&FlagIsActions != 0)
+		mItems := zmenu.MOItemsFromValues(item.Address, items, f.Flags&FlagIsActions != 0)
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
 			menu.SetImage(nil, f.ImageFixedPath, nil)
