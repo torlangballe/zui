@@ -56,6 +56,7 @@ type GridListView struct {
 	HoverColor             zgeo.Color
 	BranchToggleType       zwidget.BranchToggleType
 	OpenBranches           map[string]bool
+	CurrentHoverID         string
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -187,11 +188,13 @@ func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
 		v.selectedIDs[id] = true
 	}
 	v.layoutDirty = true
-	for i := 0; i < v.CellCountFunc(); i++ {
-		sid := v.IDAtIndexFunc(i)
-		if v.selectedIDs[sid] {
-			v.ScrollToCell(sid, animateScroll)
-			break
+	if animateScroll {
+		for i := 0; i < v.CellCountFunc(); i++ {
+			sid := v.IDAtIndexFunc(i)
+			if v.selectedIDs[sid] {
+				v.ScrollToCell(sid, animateScroll)
+				break
+			}
 		}
 	}
 	if v.layoutDirty { // this is to avoid layout if scroll did it
@@ -202,8 +205,26 @@ func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
 	}
 }
 
-func (v *GridListView) UnselectAll() {
-	v.SelectCells([]string{}, false)
+func (v *GridListView) UnselectAll(callHandlers bool) {
+	if callHandlers {
+		v.SelectCells([]string{}, false)
+		return
+	}
+	v.selectedIDs = map[string]bool{}
+}
+
+func (v *GridListView) SelectAll(callHandlers bool) {
+	var all []string
+	v.selectedIDs = map[string]bool{}
+	for i := 0; i < v.CellCountFunc(); i++ {
+		id := v.IDAtIndexFunc(i)
+		v.selectedIDs[id] = true
+		all = append(all, id)
+	}
+	if callHandlers {
+		v.SelectCells(all, false)
+		return
+	}
 }
 
 func (v *GridListView) IsPressed(id string) bool {
@@ -892,7 +913,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 
 	if !beforeWindow && (v.Selectable || v.MultiSelectable) {
 		zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-			zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
+			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
 			if mod == zkeyboard.ModifierNone || mod == zkeyboard.ModifierShift {
 				//					v.doRowPressed(v.highlightedIndex)
 				switch key {
@@ -915,7 +936,9 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 				case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
 					break // do select
 				case zkeyboard.KeyEscape:
-					v.UnselectAll()
+					v.UnselectAll(true)
+				case 'A':
+					v.SelectAll(true)
 				}
 			}
 			// zlog.Info("List keypress2", v.HandleKeyFunc != nil)
