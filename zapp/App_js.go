@@ -51,7 +51,7 @@ func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]stri
 		zrpc.ToServerClient = zrpc.NewClient(useTokenAuth)
 		zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 		url.RawQuery = ""
-		url.Path = ""
+		url.Path = zrest.AppURLPrefix
 		zrpc2.MainClient = zrpc2.NewClient(url.String(), "")
 	}
 	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
