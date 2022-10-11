@@ -933,19 +933,27 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 						v.toggleBranch(false)
 						return true
 					}
-					return v.moveSelection(-1, 0, mod)
+					if v.MaxColumns != 1 {
+						return v.moveSelection(-1, 0, mod)
+					}
 				case zkeyboard.KeyRightArrow:
 					if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
 						v.toggleBranch(true)
 						return true
 					}
-					return v.moveSelection(1, 0, mod)
+					if v.MaxColumns != 1 {
+						return v.moveSelection(1, 0, mod)
+					}
 				case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
 					break // do select
 				case zkeyboard.KeyEscape:
-					v.UnselectAll(true)
+					if v.Selectable || v.MultiSelectable {
+						v.UnselectAll(true)
+					}
 				case 'A':
-					v.SelectAll(true)
+					if v.MultiSelectable {
+						v.SelectAll(true)
+					}
 				}
 			}
 			// zlog.Info("List keypress2", v.HandleKeyFunc != nil)
