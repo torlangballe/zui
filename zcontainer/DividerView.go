@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -87,6 +88,7 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 				// ArrangeChildrenAtRootContainer(v)
 				// v.Expose()
 			}
+			zlog.Info("DIV Delta:", delta)
 		}
 	}
 }
