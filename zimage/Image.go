@@ -114,7 +114,8 @@ func GoImageZSize(img image.Image) zgeo.Size {
 // GGoImageShrunkInto scales down the image to fit inside size.
 // It must be a subset of standard libarary image types, as it uses rez
 // package to downsample, which works on underlying image types.
-func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) image.Image {
+func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) (image.Image, error) {
+	// zlog.Info("GoImageShrunkInto:", goImage != nil, size)
 	var vsize = size
 	s := GoImageZSize(goImage)
 	if proportional {
@@ -129,15 +130,20 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) i
 		//		nrgba := NRGBAImage()
 		goRect := zgeo.Rect{Size: vsize}.GoRect()
 		newImage = image.NewRGBA(goRect)
-		err := rez.Convert(newImage, goImage, rez.NewBilinearFilter()) //NewBicubicFilter
+		biLin := rez.NewBilinearFilter() // NewBicubicFilter
+		err := rez.Convert(newImage, goImage, biLin)
 		if err != nil {
-			zlog.Error(err, "rez Resample")
-			return nil
+			goImage = GoImageToGoRGBA(goImage)
+			err = rez.Convert(newImage, goImage, biLin)
+		}
+		if err != nil {
+			return nil, zlog.Error(err, "rez resize")
 		}
 	} else {
 		newImage = imaging.Resize(goImage, width, height, imaging.Lanczos)
 	}
-	return newImage
+	// zlog.Info("GoImageShrunkInto2:", newImage != nil)
+	return newImage, nil
 }
 
 func GoImageFromFile(path string) (image.Image, string, error) {
@@ -255,7 +261,10 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 		zlog.Error(nil, "ToGo")
 		got(nil)
 	}
-	newGoImage := GoImageShrunkInto(goImage, size, proportional)
+	newGoImage, err := GoImageShrunkInto(goImage, size, proportional)
+	if err != nil {
+		return
+	}
 	FromGo(newGoImage, func(img *Image) {
 		if img != nil {
 			img.Path = i.Path + fmt.Sprint("|", size)
