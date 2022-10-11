@@ -136,11 +136,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 		return v.getIDForIndex(v.slicePtr, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if key == zkeyboard.KeyBackspace {
+		if options&AddDelete != 0 && key == zkeyboard.KeyBackspace {
+			zlog.Info("SLiceGrid Del", v.Hierarchy())
 			v.handleDeleteKey(mod != zkeyboard.ModifierCommand)
 			return true
 		}
-		if key == zkeyboard.KeyReturn {
+		if options&AddEdit != 0 && key == zkeyboard.KeyReturn {
 			v.HandleEditButtonPressed()
 			return true
 		}
@@ -331,7 +332,6 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s) != zstr.HashAnyToInt64(*v.slicePtr))
-	// zlog.Info("UpdateSlice!", update)
 	if update {
 		if v.SortFunc != nil {
 			v.SortFunc(s)
@@ -368,7 +368,7 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	}
 	title += v.NameOfXItemsFunc(ids, true)
 	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
-		// zlog.Info("Edited items:", ok)
+		zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
 		if !ok {
 			return true
 		}
