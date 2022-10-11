@@ -67,7 +67,10 @@ func (v *DropWell) SetIconFromBytes(data []byte, name string) error {
 	}
 	if img != nil {
 		size := v.Rect().Size
-		img = zimage.GoImageShrunkInto(img, size, true)
+		img, err = zimage.GoImageShrunkInto(img, size, true)
+		if zlog.OnError(err, "shrink") {
+			return err
+		}
 		zimage.FromGo(img, func(zi *zimage.Image) {
 			v.SetImage(zi, "", nil)
 		})
