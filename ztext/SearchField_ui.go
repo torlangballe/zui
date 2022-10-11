@@ -22,12 +22,12 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	size := t.CalculatedSize(zgeo.Size{300, 50})
 	t.SetCorner(size.H / 2)
 	t.SetObjectName("search")
-	// t.SetMargin(zgeo.RectFromXY2(24, 0, 0, 0))
+	t.SetMargin(zgeo.RectFromXY2(16, 0, 0, 0))
 	t.JSSet("inputmode", "search")
 	iv := zimageview.New(nil, "images/magnifier.png", zgeo.Size{10, 10})
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)
-	s.Add(iv, zgeo.TopLeft, zgeo.Size{5, 6}).Free = true
+	s.Add(iv, zgeo.CenterLeft, zgeo.Size{5, 0}).Free = true
 	old := t.ChangedHandler()
 	t.SetChangedHandler(func() {
 		iv.Show(t.Text() == "")

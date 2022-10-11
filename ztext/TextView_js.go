@@ -45,6 +45,7 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	css.Set("resize", "none")
 	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	css.Set("-webkitBoxShadow", "none") // doesn't work
+	css.Set("outlineOffset", "-2px")
 
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
@@ -132,10 +133,11 @@ func (v *TextView) SetMargin(m zgeo.Rect) {
 	style := v.JSStyle()
 	str := fmt.Sprintf("%dpx", int(m.Min().X))
 	style.Set("paddingLeft", str)
-	style.Set("-webkit-padding-start", str)
-	style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
-	style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
-	style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	style.Set("margin", "0px")
+	// style.Set("-webkit-padding-start", str)
+	// style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
+	// style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
+	// style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 }
 
 func (v *TextView) SetText(text string) {
@@ -196,7 +198,7 @@ func (v *TextView) SetChangedHandler(handler func()) {
 	v.changed = handler
 	if handler != nil {
 		v.updateEnterHandlers()
-		v.JSSet("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		v.JSSet("oninput", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 			// v.updated = true
 			if v.UpdateSecs < 0 {
 				return nil
@@ -208,6 +210,7 @@ func (v *TextView) SetChangedHandler(handler func()) {
 			} else {
 				v.startUpdate()
 			}
+			args[0].Call("stopPropagation")
 			return nil
 		}))
 	}

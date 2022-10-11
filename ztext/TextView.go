@@ -87,6 +87,9 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := ti.GetColumnsSize(v.Columns)
 	s.Add(v.margin.Size.Negative())
 	s = s.Ceil()
+	if v.textStyle.Type == Search {
+		s.H += 4
+	}
 	// zlog.Info("TextView size:", s, v.margin.Size, v.ObjectName()) //, zlog.GetCallingStackString())
 	return s
 }
