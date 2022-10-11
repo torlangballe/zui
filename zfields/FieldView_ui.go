@@ -363,7 +363,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 				}
 			}
 			// zlog.Info("Update FV: Menu2:", f.Name, enum, reflect.ValueOf(item.Address).Elem())
-			menuType.UpdateItems(enum, item.Address, f.Flags&FlagIsActions != 0)
+			menuType.UpdateItems(enum, item.Interface, f.Flags&FlagIsActions != 0)
 			continue
 		}
 		updateItemLocalToolTip(f, children, fview)
@@ -774,7 +774,7 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 				menuOwner.PluralableWord = format
 			}
 		}
-		mItems := zmenu.MOItemsFromValues(item.Address, items, f.Flags&FlagIsActions != 0)
+		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, item.Interface, f.Flags&FlagIsActions != 0)
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
 			menu.SetImage(nil, f.ImageFixedPath, nil)

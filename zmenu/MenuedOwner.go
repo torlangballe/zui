@@ -274,8 +274,8 @@ func (o *MenuedOwner) updateTitleAndImage() {
 // 	o.UpdateMenuedItems(mitems)
 // }
 
-// MOItemsFromValues creates MenuedOItem slice from zdict Items and a slice or single value of anything
-func MOItemsFromValues(values any, enum zdict.Items, isActions bool) []MenuedOItem {
+// MOItemsFromZDictItemsAndValues creates MenuedOItem slice from zdict Items and a slice or single value of anything
+func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool) []MenuedOItem {
 	var mItems []MenuedOItem
 	var vals []any
 	rval := reflect.ValueOf(values)
@@ -303,8 +303,8 @@ func MOItemsFromValues(values any, enum zdict.Items, isActions bool) []MenuedOIt
 	return mItems
 }
 
-func (o *MenuedOwner) UpdateItems(items zdict.Items, value any, isAction bool) {
-	mitems := MOItemsFromValues(value, items, isAction)
+func (o *MenuedOwner) UpdateItems(items zdict.Items, values any, isAction bool) {
+	mitems := MOItemsFromZDictItemsAndValues(items, values, isAction)
 	o.UpdateMenuedItems(mitems)
 }
 
