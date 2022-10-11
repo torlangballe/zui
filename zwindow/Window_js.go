@@ -251,6 +251,10 @@ func (win *Window) SetAddressBarURL(surl string) {
 func (win *Window) setOnKeyDown() {
 	doc := win.Element.Get("document")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+		// zlog.Info("KeyWIn:", win.Element.Get("outerWidth"))
+		if !win.Element.Get("document").Call("hasFocus").Bool() {
+			return nil
+		}
 		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
 		// zlog.Info("win key:", key, len(win.keyHandlers))
 		if len(win.keyHandlers) != 0 {
