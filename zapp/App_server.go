@@ -45,7 +45,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	zlog.Info("FilesRedir:", req.URL.Path, filepath, zfile.Exists(filepath))
+	// zlog.Info("FilesRedir:", req.URL.Path, filepath, zfile.Exists(filepath))
 	if spath != "" {
 		if strings.Contains(filepath, "*") {
 			files, _ := zfile.GetFilesFromPath(filepath, false)
