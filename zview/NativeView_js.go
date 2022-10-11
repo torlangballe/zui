@@ -878,9 +878,21 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 }
 
 func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-	zkeyboard.SetKeyHandler(v.Element, func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
-		return handler(key, mods)
-	})
+	v.JSSet("onkeyup", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+		if !v.GetWindowElement().Get("document").Call("hasFocus").Bool() {
+			return nil
+		}
+		// zlog.Info("KeyUp")
+		if handler != nil {
+			event := args[0]
+			key, mods := zkeyboard.GetKeyAndModsFromEvent(event)
+			if handler(key, mods) {
+				event.Call("stopPropagation")
+			}
+			// zlog.Info("KeyUp:", key, mods)
+		}
+		return nil
+	}))
 }
 
 func (v *NativeView) SetOnInputHandler(handler func()) {
