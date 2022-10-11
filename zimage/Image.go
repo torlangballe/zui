@@ -214,39 +214,6 @@ func GoImageToPNGFile(img image.Image, filepath string) error {
 	return nil
 }
 
-/*
-func (i *Image) Merge(myMaxSize zgeo.Size, with *Image, align zgeo.Alignment, marg, withMaxSize zgeo.Size, done func(img *Image)) {
-	zlog.Assert(i != nil)
-	zlog.Assert(with != nil)
-	s := i.Size()
-	if !myMaxSize.IsNull() {
-		s = s.ShrunkInto(myMaxSize)
-	}
-	ws := with.Size()
-	if !withMaxSize.IsNull() {
-		ws = ws.ShrunkInto(withMaxSize)
-	}
-	mr := zgeo.Rect{Size: s}
-	wr := mr.Align(ws, align, marg)
-	box := mr.UnionedWith(wr)
-	canvas := CanvasNew()
-	delta := zgeo.Pos{-math.Min(wr.Pos.X, mr.Pos.X), -math.Min(wr.Pos.Y, mr.Pos.Y)}
-	// zlog.Info("image.Merge1:", box, mr, wr, delta)
-	mr.AddPos(delta)
-	wr.AddPos(delta)
-	// zlog.Info("image.Merge2:", box, mr, wr)
-	canvas.SetSize(box.Size)
-	// canvas.SetColor(zgeo.ColorBlue)
-	// canvas.DrawRect(mr)
-	// canvas.SetColor(zgeo.ColorRed)
-	// canvas.DrawRect(wr)
-	downsampleCache := false
-	canvas.DrawImage(i, downsampleCache, mr, 1, zgeo.Rect{})
-	canvas.DrawImage(with, downsampleCache, wr, 1, zgeo.Rect{})
-	canvas.ZImage(false, done)
-}
-*/
-
 func GoImageToGoRGBA(i image.Image) image.Image {
 	r := i.Bounds()
 	n := image.NewRGBA(r)
