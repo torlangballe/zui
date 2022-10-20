@@ -6,10 +6,18 @@ import (
 	"syscall/js"
 )
 
+// https://talkrapp.com/speechSynthesis.html
+
 type VoiceJS js.Value
 
 var allVoices []Voice = nil
 
+func init() {
+	getSynth().Set("onvoiceschanged", js.FuncOf(func(this js.Value, args []js.Value) any {
+		zlog.Info("Voices changed")
+		return nil
+	}))
+}
 func (v VoiceJS) Name() string {
 	return js.Value(v).Get("name").String()
 }
@@ -29,6 +37,10 @@ func getSynth() js.Value {
 // if (speechSynthesis.onvoiceschanged !== undefined) {
 
 func AllVoices() (vs []Voice) {
+	if allVoices != nil {
+		return allVoices
+	}
+
 	voices := getSynth().Call("getVoices")
 	if voices.IsUndefined() {
 		return
@@ -38,15 +50,19 @@ func AllVoices() (vs []Voice) {
 	for i := 0; i < voices.Length(); i++ {
 		v := VoiceJS(voices.Index(i))
 		vs = append(vs, v)
+		zlog.Info("Voice:", v.Name(), v.Language())
 	}
+	allVoices = vs
 	return
 }
 
 func GetVoice(name string) (Voice, bool) {
 	if allVoices == nil {
-		allVoices = AllVoices()
+		AllVoices() // sets allVoices
 	}
+	zlog.Info("GetVoice:", len(allVoices))
 	for _, v := range allVoices {
+		// zlog.Info("v:", v.Name(), v.Language())
 		if v.Name() == name {
 			return v, true
 		}
