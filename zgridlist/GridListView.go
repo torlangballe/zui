@@ -508,7 +508,6 @@ func (v *GridListView) FindCellForPos(pos zgeo.Pos) (id string, inside bool) {
 			before = true
 		}
 		if outer.Contains(pos) {
-			// zlog.Info("box:", cellID, outer, pos)
 			id = cellID
 			inside = true
 			return false

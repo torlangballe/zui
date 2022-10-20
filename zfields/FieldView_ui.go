@@ -474,7 +474,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 			if got {
 				updateFlagStack(item, f, fview)
 			}
-
+			// zlog.Info("FV Update Int:", v.Hierarchy(), f.Name, item)
 			valStr = getTextFromNumberishItem(item, f)
 			if f.IsStatic() || v.params.AllStatic {
 				label, _ := fview.(*zlabel.Label)

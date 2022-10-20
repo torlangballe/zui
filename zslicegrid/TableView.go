@@ -1,7 +1,6 @@
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
 // See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
-//
 package zslicegrid
 
 import (
@@ -146,7 +145,6 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// }
 		}
 		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-			// zlog.Info("TV UpdateCell:", id)
 			fv := grid.CellView(id).(*zfields.FieldView)
 			zlog.Assert(fv != nil)
 			fv.Update(v.StructForID(id), true)

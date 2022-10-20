@@ -137,7 +137,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	}
 	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 		if options&AddDelete != 0 && key == zkeyboard.KeyBackspace {
-			zlog.Info("SLiceGrid Del", v.Hierarchy())
 			v.handleDeleteKey(mod != zkeyboard.ModifierCommand)
 			return true
 		}
@@ -166,6 +165,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
+		zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
 		if v.StoreChangedItemFunc == nil {
 			return
 		}
@@ -357,14 +357,17 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	title := "Edit "
 	var items []S
 
+	zlog.Info("Edite items:", ids)
+
 	for i := 0; i < len(*v.slicePtr); i++ {
 		sid := (*v.slicePtr)[i].GetStrID()
 		if zstr.StringsContain(ids, sid) {
+			zlog.Info("EDIT:", sid, (*v.slicePtr)[i])
 			items = append(items, (*v.slicePtr)[i])
 		}
 	}
 	if len(items) == 0 {
-		zlog.Fatal(nil, "SGV EditItems: no items. ids:", len(ids))
+		zlog.Fatal(nil, "SGV EditItems: no items. ids:", ids, v.Hierarchy())
 	}
 	title += v.NameOfXItemsFunc(ids, true)
 	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
