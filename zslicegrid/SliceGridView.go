@@ -347,7 +347,10 @@ func (v *SliceGridView[S]) UpdateSliceWithSelf() {
 
 func (v *SliceGridView[S]) HandleEditButtonPressed() {
 	ids := v.Grid.SelectedIDs()
-	if len(ids) == 0 && v.Grid.CurrentHoverID != "" {
+	if len(ids) == 0 {
+		if v.Grid.CurrentHoverID == "" {
+			return
+		}
 		ids = []string{v.Grid.CurrentHoverID}
 	}
 	v.EditItems(ids)
