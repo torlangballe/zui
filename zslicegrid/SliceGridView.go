@@ -173,7 +173,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 		var storeItems []S
 		var wg sync.WaitGroup
 		for i, item := range items {
-			if zstr.HashAnyToInt64(item) != zstr.HashAnyToInt64((*v.slicePtr)[i]) {
+			if len(*v.slicePtr) <= i || zstr.HashAnyToInt64(item) != zstr.HashAnyToInt64((*v.slicePtr)[i]) {
 				wg.Add(1)
 				go func(i int, item S, showErr *bool) {
 					err := v.StoreChangedItemFunc(item, showErr, i == len(items)-1)
