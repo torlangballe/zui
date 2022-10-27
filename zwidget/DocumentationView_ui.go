@@ -47,7 +47,7 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {
 		// }, nil)
-		go DocumentationViewPresent(path, v.Modal)
+		go DocumentationViewPresent(path+".md", v.Modal)
 	})
 	return v
 }
