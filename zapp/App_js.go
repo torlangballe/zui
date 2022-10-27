@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zrpc2"
 )
 
@@ -48,8 +47,6 @@ func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]stri
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
 	zwidget.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	if useRPC {
-		zrpc.ToServerClient = zrpc.NewClient(useTokenAuth)
-		zrpc.ToServerClient.SetAddressFromHost(url.Scheme, host)
 		url.RawQuery = ""
 		url.Path = ""
 		zrpc2.MainClient = zrpc2.NewClient(url.String(), "")
