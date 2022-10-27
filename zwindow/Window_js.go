@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	winMain       *Window
-	barCalculated bool
+	winMain                   *Window
+	barCalculated             bool
+	RemovePresentedWindowFunc func(view zview.View)
 )
 
 type windowNative struct {
@@ -118,7 +119,8 @@ func Open(o Options) *Window {
 
 	// zlog.Info("OPENEDWIN:", o.URL, specs, win.Element, len(windows))
 	win.Element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
-		// zlog.Info("Other window closed or refreshed?")
+		// zlog.Info("Other window closed or refreshed")
+		RemovePresentedWindowFunc(win.ProgrammaticView)
 		if win.ProgrammaticView != nil {
 			pnv := win.ProgrammaticView.Native()
 			pnv.PerformAddRemoveFuncs(true)
@@ -251,7 +253,7 @@ func (win *Window) SetAddressBarURL(surl string) {
 func (win *Window) setOnKeyDown() {
 	doc := win.Element.Get("document")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
-		// zlog.Info("KeyWIn:", win.Element.Get("outerWidth"))
+		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
 		if !win.Element.Get("document").Call("hasFocus").Bool() {
 			return nil
 		}

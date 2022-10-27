@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -52,10 +53,18 @@ var (
 
 func init() {
 	zwindow.PresentedViewCurrentIsParentFunc = CurrentIsParent
+	zwindow.RemovePresentedWindowFunc = func(view zview.View) {
+		for i, p := range presentedViewStack {
+			if p == view {
+				zslice.RemoveAt(&presentedViewStack, i)
+			}
+		}
+	}
 }
 
 func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
 	presentedViewStack = append(presentedViewStack, v)
+	// fmt.Printf("PresentView: %p\n", v)
 	presentCloseFunc = closed
 	Presenting = true
 
