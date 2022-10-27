@@ -34,8 +34,8 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
 	v.GroupBase.Init()
 	v.StackView.Init(v, true, name)
-	v.SetSpacing(0)
 	v.SetBGColor(zstyle.DefaultBGColor())
+	v.SetSpacing(0) // note: for vertical stack v
 	v.header = zcontainer.StackViewHor("header")
 	if buttons {
 		v.ButtonName = DefaultButtonName
@@ -44,7 +44,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 		v.MaxImageSize = zgeo.Size{60, 24}
 		v.header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
 	}
-	v.header.SetSpacing(12)
+	v.header.SetSpacing(12) // note: for header
 	v.Add(v.header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
 	v.selectedImageBGColor = DefaultSelectedImageBGColor()
 	v.SetIndicatorSelectionFunc = v.setButtonOn
