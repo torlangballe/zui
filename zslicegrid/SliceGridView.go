@@ -337,6 +337,24 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 			v.SortFunc(s)
 		}
 		*v.slicePtr = s
+
+		//remove non-selected :
+		var selected []string
+		oldSelected := v.Grid.SelectedIDs()
+		var hoverOK bool
+		for _, sl := range s {
+			sid := sl.GetStrID()
+			if v.Grid.CurrentHoverID == sid {
+				hoverOK = true
+			}
+			if zstr.StringsContain(oldSelected, sid) {
+				selected = append(selected, sid)
+			}
+		}
+		if !hoverOK {
+			v.Grid.SetHoverID("")
+		}
+		v.Grid.SelectCells(selected, false)
 		v.UpdateViewFunc()
 	}
 }
@@ -360,12 +378,12 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	title := "Edit "
 	var items []S
 
-	zlog.Info("Edite items:", ids)
+	// zlog.Info("Edite items:", ids)
 
 	for i := 0; i < len(*v.slicePtr); i++ {
 		sid := (*v.slicePtr)[i].GetStrID()
 		if zstr.StringsContain(ids, sid) {
-			zlog.Info("EDIT:", sid, (*v.slicePtr)[i])
+			// zlog.Info("EDIT:", sid, (*v.slicePtr)[i])
 			items = append(items, (*v.slicePtr)[i])
 		}
 	}
@@ -374,7 +392,7 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	}
 	title += v.NameOfXItemsFunc(ids, true)
 	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
-		zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
+		// zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
 		if !ok {
 			return true
 		}
