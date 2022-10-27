@@ -120,7 +120,7 @@ func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, setID string, parame
 	gb := grouper.GetGroupBase()
 	gb.UpdateCurrentIndicatorFunc = func(text string) {
 		gm, _ := gb.View.(*zgroup.MenuGroupView)
-		// zlog.Info("Changes Group parent:", gb.Hierarchy(), text, gb.IndicatorID, gm != nil)
+		// zlog.Info("Changes Group parent:", gb.Hierarchy(), text, gm != nil)
 		gm.UpdateCurrentItemTitle(text)
 	}
 	zgroup.CreateSliceGroup(grouper, slicePtr, setID, indicatorFieldName, func(id string, delete bool) zview.View {

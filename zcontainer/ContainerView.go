@@ -19,18 +19,6 @@ import (
 )
 
 // Original class created by Tor Langballe on 23-sept-2014.
-
-var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
-var GroupingStrokeWidth = 2.0
-var GroupingStrokeCorner = 4.0
-var GroupingMargin = 10.0
-var AlertButtonsOnRight = true
-
-// func CVCell(view zview.View, alignment zgeo.Alignment) *Cell {
-// 	cell := Cell{Alignment: alignment, View: view}
-// 	return &cell
-// }
-
 type ContainerView struct {
 	zcustom.CustomView
 	margin            zgeo.Rect
@@ -65,9 +53,17 @@ type Arranger interface {
 	ArrangeChildren()
 }
 
+
 type Collapser interface {
 	CollapseChild(view zview.View, collapse bool, arrange bool) bool
 }
+
+var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
+var GroupingStrokeWidth = 2.0
+var GroupingStrokeCorner = 4.0
+var GroupingMargin = 10.0
+var AlertButtonsOnRight = true
+
 
 func init() {
 	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {

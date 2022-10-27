@@ -238,7 +238,7 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, marg float64) {
 			hviews = append(hviews, c.View)
 		}
 	}
-	zlog.Assert(len(cells) == len(hviews))
+	zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
 	x := 0.0
 	w := stack.Rect().Size.W
 	// zlog.Info("HeaderFit", v.ObjectName(), len(v.cells), len(children))
