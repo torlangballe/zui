@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zclipboard"
@@ -551,10 +552,18 @@ func updateMenuGroupSlice(mg *zgroup.MenuGroupView, slicePtr any, dontOverwriteE
 	if id != "" {
 		fv := mg.ChildView.(*FieldView)
 		i := zgroup.IndexForIDFromSlice(slicePtr, id)
-		zlog.Assert(i != -1)
-		a := reflect.ValueOf(slicePtr).Elem().Index(i).Addr().Interface()
-		// fmt.Printf("updateMenuGroupSlice: %s %s %p\n", mg.Hierarchy(), fv.Hierarchy(), a)
-		fv.Update(a, dontOverwriteEdited)
+		if i != -1 {
+			//	zlog.Assert(i != -1, id, reflect.ValueOf(slicePtr).Elem().Len())
+			a := reflect.ValueOf(slicePtr).Elem().Index(i).Addr().Interface()
+			fv.Update(a, dontOverwriteEdited)
+		} else {
+			str := zstr.Concat(" ", "updateMenuGroupSlice unknown item id", id, reflect.ValueOf(slicePtr).Elem().Len())
+			if zui.DebugOwnerMode {
+				zlog.Fatal(nil, str)
+			} else {
+				zlog.Error(nil, str)
+			}
+		}
 	}
 }
 
@@ -1277,6 +1286,10 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			} else {
 				// zlog.Info("NewMenuGroup:", f.FieldName, f.TitleOrName(), f.Styling.StrokeWidth, params.Styling.StrokeWidth)
 				mg := buildMenuGroup(item.Address, f.TitleOrName(), params)
+				mg.SetChangedHandler(func(newID string) {
+					// zlog.Info("Update group")
+					callActionHandlerFunc(v, f, EditedAction, item.Address, &mg.View)
+				})
 				fv.grouper = mg
 				add = mg
 			}

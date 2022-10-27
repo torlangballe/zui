@@ -94,9 +94,7 @@ func (v *GroupBase) ReadyToShow(beforeWindow bool) {
 		g := v.View.(Grouper)
 		g.SelectItem(setID, nil)
 	}
-	if v.deleteButton != nil {
-		v.deleteButton.SetUsable(len(v.GroupItems) > 0)
-	}
+	v.UpdateButtons()
 }
 
 func (v *GroupBase) GetCurrentID() string {
@@ -131,6 +129,7 @@ func (v *GroupBase) SetChildAlignment(id string, a zgeo.Alignment) {
 }
 
 func (v *GroupBase) SetGroupItem(id string, done func()) {
+	// zlog.Info("GB: SetGroupItem:", id)
 	if v.CurrentID == id {
 		if done != nil {
 			done()
@@ -147,34 +146,37 @@ func (v *GroupBase) SetGroupItem(id string, done func()) {
 	if v.ChildView != nil {
 		v.RemoveChild(v.ChildView)
 	}
-	if id != "" {
-		groupItem := v.GroupItems[id]
-		v.ChildView = groupItem.Create(id, false)
-		// zlog.Info("SetGroupItem:", id, v.ChildView != nil)
-		v.Add(v.ChildView, groupItem.ChildAlignment)
-		v.CurrentID = id
-		v.SetIndicatorSelectionFunc(id, true)
-		if !v.Presented {
-			return
-		}
-		zview.ExposeView(v.View)
-		v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
-		zpresent.CallReady(v.ChildView, false)
-		if v.changedHandlerFunc != nil {
-			v.changedHandlerFunc(id)
-		}
-		ct := v.View.(zcontainer.ContainerType)
-		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
-			// if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
-			// v.ArrangeChildren()
-			// zlog.Info("setGroupItem loaded")
-			zcontainer.ArrangeChildrenAtRootContainer(v)
-			// }
-			if done != nil {
-				done()
-			}
-		})
+	if id == "" {
+		v.ChildView = nil
+		v.CurrentID = ""
+		return
 	}
+	groupItem := v.GroupItems[id]
+	v.ChildView = groupItem.Create(id, false)
+	// zlog.Info("SetGroupItem:", id, v.ChildView != nil)
+	v.Add(v.ChildView, groupItem.ChildAlignment)
+	v.CurrentID = id
+	v.SetIndicatorSelectionFunc(id, true)
+	if !v.Presented {
+		return
+	}
+	zview.ExposeView(v.View)
+	v.ArrangeChildren() // This can create table rows and do all kinds of things that load images etc.
+	zpresent.CallReady(v.ChildView, false)
+	if v.changedHandlerFunc != nil {
+		v.changedHandlerFunc(id)
+	}
+	ct := v.View.(zcontainer.ContainerType)
+	zcontainer.WhenContainerLoaded(ct, func(waited bool) {
+		// if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
+		// v.ArrangeChildren()
+		// zlog.Info("setGroupItem loaded")
+		zcontainer.ArrangeChildrenAtRootContainer(v)
+		// }
+		if done != nil {
+			done()
+		}
+	})
 }
 
 func (v *GroupBase) RemoveGroupItem(id string) {
@@ -187,9 +189,7 @@ func (v *GroupBase) RemoveGroupItem(id string) {
 	}
 	v.SetGroupItem(newID, nil)
 	delete(v.GroupItems, id)
-	if v.deleteButton != nil {
-		v.deleteButton.SetUsable(len(v.GroupItems) > 0)
-	}
+	v.UpdateButtons()
 	if v.RemoveIndicatorFunc != nil {
 		v.RemoveIndicatorFunc(id)
 	}
@@ -201,6 +201,12 @@ func (v *GroupBase) handleDeletePressed() {
 	}
 	g := v.View.(Grouper)
 	g.RemoveItem(v.CurrentID)
+}
+
+func (v *GroupBase) UpdateButtons() {
+	if v.deleteButton != nil {
+		v.deleteButton.SetUsable(len(v.GroupItems) > 0)
+	}
 }
 
 func (v *GroupBase) AddEditing() {
@@ -292,7 +298,8 @@ func CreateSliceGroup(grouper Grouper, slicePtr any, setID string, indicatorFiel
 	// zlog.Info("sliceElementType:", sliceElementType.Implements(st), reflect.PointerTo(sliceElementType).Implements(ct))
 	if sliceElementType.Implements(st) && (sliceElementType.Implements(ct) || reflect.PointerTo(sliceElementType).Implements(ct)) { // it has GetStrID and CreateStrID...
 		gb.HandleAddItemFunc = func() {
-			index := zslice.AddNewElementAtEnd(slicePtr)
+			index := zslice.AddEmptyElementAtEnd(slicePtr)
+			// fmt.Printf("AddItem: v:%p sliceptr:%p len:%d\n", gb, reflect.ValueOf(slicePtr).Interface(), reflect.ValueOf(slicePtr).Elem().Len())
 			e := reflect.ValueOf(slicePtr).Elem().Index(index)
 			if e.Kind() != reflect.Pointer {
 				e = e.Addr()
@@ -306,7 +313,7 @@ func CreateSliceGroup(grouper Grouper, slicePtr any, setID string, indicatorFiel
 		}
 	} else {
 		gb.HandleAddItemFunc = func() {
-			index := zslice.AddNewElementAtEnd(slicePtr)
+			index := zslice.AddEmptyElementAtEnd(slicePtr)
 			id := strconv.Itoa(index)
 			// zlog.Info("AddIndex:", id, index)
 			grouper.AddItem(id, "", "", true, nil, create)

@@ -67,6 +67,7 @@ func (v *MenuGroupView) AddItem(id, title, imagePath string, set bool, view zvie
 	if set {
 		v.SelectItem(id, nil)
 	}
+	v.GroupBase.UpdateButtons()
 }
 
 func (v *MenuGroupView) RemoveItem(id string) {
@@ -80,6 +81,10 @@ func (v *MenuGroupView) handleMenuSelected() {
 
 func (v *MenuGroupView) UpdateCurrentItemTitle(text string) {
 	v.Menu.ChangeNameForValue(text, v.CurrentID)
+	a, _ := v.Menu.Parent().View.(zcontainer.Arranger)
+	if a != nil {
+		a.ArrangeChildren()
+	}
 }
 
 func (v *MenuGroupView) setMenuItem(id string, selected bool) {
