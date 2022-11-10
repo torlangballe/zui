@@ -99,7 +99,7 @@ func IsFieldViewEditedRecently(fv *FieldView) bool {
 	return false
 }
 
-func makeFrameIfFlag(f *Field, child zview.View) *zcontainer.StackView {
+func makeFrameIfFlag(f *Field, child zview.View) zview.View {
 	if f.Flags&FlagHasFrame == 0 {
 		return nil
 	}
@@ -775,7 +775,13 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 		menuOwner.IsMultiple = multi
 		menuOwner.StoreKey = f.ValueStoreKey
 		for _, format := range strings.Split(f.Format, "|") {
+			if menuOwner.TitleIsAll == " " {
+				menuOwner.TitleIsAll = format
+			}
 			switch format {
+			case "all":
+				menuOwner.TitleIsAll = " "
+				// zlog.Info("MakeMenu All:", f.Name, f.Format)
 			case "%d":
 				menuOwner.GetTitleFunc = func(icount int) string { return strconv.Itoa(icount) }
 			case `%n`:
@@ -1331,8 +1337,14 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			panic(fmt.Sprintln("buildStack bad type:", f.Name, f.Kind))
 		}
 	}
+	// zlog.Info("Hierarchy1", f.FieldName, f.Kind)
+	// zlog.Info("Hierarchy:", view.Native().Hierarchy())
+	zlog.Assert(view != nil)
 	pt, _ := view.(zview.Pressable)
-	if pt != nil {
+	if view != nil && pt != nil && pt.PressedHandler != nil {
+		// fmt.Printf("Pressable1? %p %v\n", view, view == nil) // pt.PressedHandler,
+		// zlog.Info("Pressable2:", view.Native() != nil)
+		// zlog.Info("Pressable?", pt.PressedHandler(), view.Native().Hierarchy())
 		ph := pt.PressedHandler()
 		nowItem := item // store item in nowItem so closures below uses right item
 		pt.SetPressedHandler(func() {
@@ -1344,7 +1356,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 		if f.Flags&FlagLongPress != 0 {
 			lph := pt.LongPressedHandler()
 			pt.SetLongPressedHandler(func() {
-				zlog.Info("Field.LPH:", f.ID)
+				// zlog.Info("Field.LPH:", f.ID)
 				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface, &view) && lph != nil {
 					lph()
 				}
@@ -1373,7 +1385,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	}
 	cell.Margin = cellMargin
 	cell.Alignment = def | exp | f.Alignment
-	if labelizeWidth != 0 {
+	if labelizeWidth != 0 || f.LabelizeWidth < 0 {
 		var lstack *zcontainer.StackView
 		title := f.Name
 		if f.Title != "" {
@@ -1465,12 +1477,17 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	case zreflect.KindBool:
 		bv, _ := view.(*zcheckbox.CheckBox)
 		if bv == nil {
-			panic("Should be checkbox")
+			zcontainer.ViewRangeChildren(view, false, false, func(v zview.View) bool {
+				bv, _ = v.(*zcheckbox.CheckBox)
+				return bv == nil
+			})
+			if bv == nil {
+				zlog.Fatal(nil, "Should be checkbox", view, reflect.TypeOf(view))
+			}
 		}
 		b, _ := item.Address.(*bool)
 		if b != nil {
 			*b = bv.Value().Bool()
-			// zlog.Info("SetCheck:", bv.Value(), *b, value)
 		}
 		bi, _ := item.Address.(*zbool.BoolInd)
 		if bi != nil {
@@ -1542,8 +1559,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	case zreflect.KindStruct:
-		fv, _ := view.(*FieldView)
-		zlog.Info("ToData struct:", f.Name, fv != nil)
+		// zlog.Info("ToData struct:", f.Name, fv != nil)
+		break
 
 	default:
 		panic(fmt.Sprint("bad type: ", f.Kind))
