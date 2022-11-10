@@ -15,11 +15,12 @@ import (
 
 type TabsView struct {
 	GroupBase
-	separatorForIDs      []string
-	SeparatorLineInset   float64
-	ButtonName           string //
-	selectedImageBGColor zgeo.Color
-	MaxImageSize         zgeo.Size
+	separatorForIDs       []string
+	SeparatorLineInset    float64
+	ButtonName            string //
+	selectedImageBGColor  zgeo.Color
+	MaxImageSize          zgeo.Size
+	InvertSelectedTabText bool
 }
 
 const tabSeparatorID = "tab-separator"
@@ -161,6 +162,13 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 				str += "-selected"
 			}
 			button.SetImageName(str, zgeo.Size{11, 8})
+			if v.InvertSelectedTabText {
+				col := DefaultTextColor()
+				if selected {
+					col = col.ContrastingGray()
+				}
+				button.SetTextColor(col)
+			}
 		} else { // image only
 			v.header.Expose()
 		}
