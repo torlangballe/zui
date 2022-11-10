@@ -102,6 +102,7 @@ const (
 	FlagSkipIndicator                           // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
 	FlagLongPress                               // If FlagLongPress is set this button/image etc handles long-press
 	FlagDisableAutofill                         // FlagDisableAutofill if set makes a text field not autofill
+	FlagIsSearchable                            // This field can be used to search in tables etc
 )
 
 const (
@@ -113,7 +114,7 @@ type Field struct {
 	Index                int    // Index is the position in the total amount of fields (inc anonymous) in struct
 	ID                   string // ID is string from field's name using fieldNameToID(). TODO: Use this less, use FieldName more, as we are 100% sure what that is
 	ActionValue          any    // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
-	Name                 string // Name is 
+	Name                 string
 	FieldName            string //
 	Title                string // name of item in row, and header if no title
 	MaxWidth             float64
@@ -289,6 +290,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		n, floatErr := strconv.ParseFloat(val, 32)
 		flag := zbool.FromString(val, false)
 		switch key {
+		case "search":
+			f.Flags |= FlagIsSearchable
 		case "password":
 			f.Flags |= FlagIsPassword
 		case "setedited":
