@@ -733,12 +733,21 @@ func SetEnumItems(name string, nameValPairs ...any) {
 	fieldEnums[name] = dis
 }
 
-func AddStringBasedEnum[S any](name string, vals ...S) {
+func AddStringBasedEnum(name string, vals ...string) {
+	var items zdict.Items
+	for _, s := range vals {
+		item := zdict.Item{s, s}
+		items = append(items, item)
+	}
+	fieldEnums[name] = items
+}
+
+func AddAny2StringBasedEnum[S any](name string, vals ...S) {
 	var items zdict.Items
 	for _, v := range vals {
-		n := fmt.Sprintf("%v", v)
-		i := zdict.Item{n, v}
-		items = append(items, i)
+		s := fmt.Sprint(v)
+		item := zdict.Item{s, s}
+		items = append(items, item)
 	}
 	fieldEnums[name] = items
 }
