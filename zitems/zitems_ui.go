@@ -14,10 +14,10 @@ var (
 
 func RepeatGetItems() {
 	ztimer.RepeatNow(2, func() bool {
-		// zlog.Info("RepeatGetItems:", zrpc2.MainClient.UseAuth, zrpc2.MainClient.AuthToken)
-		if zrpc2.MainClient.UseAuth && zrpc2.MainClient.AuthToken == "" {
-			return true
-		}
+		// zlog.Info("RepeatGetItems:", zrpc2.MainClient.UseAuth, zrpc2.MainClient.AuthToken, len(AllItems))
+		// if zrpc2.MainClient.UseAuth && zrpc2.MainClient.AuthToken == "" {
+		// 	return true
+		// }
 		var resIDs []string
 		if !firstGets {
 			zrpc2.MainClient.Call("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
