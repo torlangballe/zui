@@ -1,3 +1,5 @@
+/// Original Created by Tor Langballe on /22/9/14.
+
 //go:build zui
 
 package zpresent
@@ -16,12 +18,9 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
-
-//  Created by Tor Langballe on /22/9/14.
 
 type Attributes struct {
 	zwindow.Options
@@ -44,26 +43,12 @@ type Attributes struct {
 }
 
 var (
-	stack              []Attributes
-	presentCloseFunc   func(dismissed bool)
-	presentedViewStack []zview.View
-	firstPresented     bool
-	Presenting         = true // true for first pre-present
+	presentCloseFunc func(dismissed bool)
+	firstPresented   bool
+	Presenting       = true // true for first pre-present
 )
 
-func init() {
-	zwindow.PresentedViewCurrentIsParentFunc = CurrentIsParent
-	zwindow.RemovePresentedWindowFunc = func(view zview.View) {
-		for i, p := range presentedViewStack {
-			if p == view {
-				zslice.RemoveAt(&presentedViewStack, i)
-			}
-		}
-	}
-}
-
 func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
-	presentedViewStack = append(presentedViewStack, v)
 	// fmt.Printf("PresentView: %p\n", v)
 	presentCloseFunc = closed
 	Presenting = true
@@ -149,6 +134,7 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 		v.SetRect(zgeo.Rect{Size: rect.Size})
 	}
 	firstPresented = true
+	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false
 	CallReady(outer, false)
@@ -180,12 +166,14 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 		// zlog.Info("CloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
-	plen := len(presentedViewStack)
 	win := zwindow.GetFromNativeView(nv)
-	presentedViewStack = presentedViewStack[:plen-1]
+	plen := len(win.ViewsStack)
+	if plen > 0 {
+		win.ViewsStack = win.ViewsStack[:plen-1]
+	}
 	// zlog.Info("CloseOverride:", plen, view != nil, win != nil)
 	if plen > 1 {
-		win.ProgrammaticView = presentedViewStack[plen-2] // stack has been tructated by 1 since plen calculated
+		win.ProgrammaticView = win.ViewsStack[plen-2] // stack has been tructated by 1 since plen calculated
 	} else {
 		win.ProgrammaticView = nil
 	}
@@ -206,12 +194,13 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 }
 
 func CurrentIsParent(v zview.View) bool {
-	l := len(presentedViewStack)
+	nv := v.Native()
+	win := zwindow.GetFromNativeView(nv)
+	l := len(win.ViewsStack)
 	if l <= 1 {
 		return true
 	}
-	nv := v.Native()
-	p := presentedViewStack[l-1]
+	p := win.ViewsStack[l-1]
 	// zlog.Info("PresentedViewCurrentIsParent", l, v.ObjectName(), p.ObjectName())
 	if p == v {
 		return true

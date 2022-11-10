@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	winMain                   *Window
-	barCalculated             bool
-	RemovePresentedWindowFunc func(view zview.View)
+	winMain       *Window
+	barCalculated bool
+	// RemovePresentedWindowFunc func(view zview.View)
 )
 
 type windowNative struct {
@@ -120,7 +120,6 @@ func Open(o Options) *Window {
 	// zlog.Info("OPENEDWIN:", o.URL, specs, win.Element, len(windows))
 	win.Element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		// zlog.Info("Other window closed or refreshed")
-		RemovePresentedWindowFunc(win.ProgrammaticView)
 		if win.ProgrammaticView != nil {
 			pnv := win.ProgrammaticView.Native()
 			pnv.PerformAddRemoveFuncs(true)
@@ -259,13 +258,15 @@ func (win *Window) setOnKeyDown() {
 		}
 		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
 		// zlog.Info("win key:", key, len(win.keyHandlers))
+
+		top := win.ViewsStack[len(win.ViewsStack)-1].Native()
 		if len(win.keyHandlers) != 0 {
 			var used bool
 			for view, h := range win.keyHandlers {
-				// zlog.Info("Key?", view.ObjectName(), PresentedViewCurrentIsParentFunc(view))
-				if PresentedViewCurrentIsParentFunc(view) {
+				if top.IsParentOf(view.Native()) {
 					if h(key, mods) {
 						used = true
+						break
 					}
 				}
 			}
