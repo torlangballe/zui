@@ -8,6 +8,7 @@ import (
 	"path"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
@@ -41,6 +42,7 @@ type MenuedOwner struct {
 	ClosedFunc          func()
 	PluralableWord      string // if set, used instead of GetTitle, and pluralized
 	TitleIsValueIfOne   bool   // if set and IsMultiple, name of value used as title if only one set
+	TitleIsAll          string // if != "", all items are listed in title, separated by TitleIsAll string
 	Font                *zgeo.Font
 	ImagePath           string
 	IsStatic            bool // if set, user can't set a different value, but can press and see them. Shows number of items
@@ -196,7 +198,7 @@ func (o *MenuedOwner) Empty() {
 }
 
 func (o *MenuedOwner) SetTitleText(text string) {
-	if o.SetTitle || o.TitleIsValueIfOne || o.PluralableWord != "" || o.GetTitleFunc != nil {
+	if o.SetTitle || o.TitleIsValueIfOne || o.TitleIsAll != "" || o.PluralableWord != "" || o.GetTitleFunc != nil {
 		zlog.Assert(o.View != nil)
 		ts, got := o.View.(ztextinfo.TextSetter)
 		if got {
@@ -208,6 +210,17 @@ func (o *MenuedOwner) SetTitleText(text string) {
 func (o *MenuedOwner) updateTitleAndImage() {
 	var nstr string
 	if o.IsMultiple {
+		if o.TitleIsAll != "" {
+			var s []string
+			for _, i := range o.items {
+				// zlog.Info("updateTitleAndImage?", i.Name, i.IsAction, i.IsSeparator, i.Selected)
+				if !i.IsAction && !i.IsSeparator && i.Selected {
+					s = append(s, i.Name)
+				}
+			}
+			o.SetTitleText(strings.Join(s, o.TitleIsAll))
+			return
+		}
 		var count, total int
 		for _, i := range o.items {
 			if !i.IsAction && !i.IsSeparator {
@@ -222,7 +235,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 		if !(o.TitleIsValueIfOne && count == 1) {
 			if o.PluralableWord != "" {
 				if count > 0 {
-					nstr = zwords.PluralizeWordAndCountWords(o.PluralableWord, float64(count), "", "", nil) //  map[int]string{0: "no", total: "all"})
+					nstr = zwords.Pluralize(o.PluralableWord, count)
 				}
 			} else if o.GetTitleFunc != nil {
 				nstr = o.GetTitleFunc(count)
@@ -246,7 +259,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 			spath = path.Join(o.ImagePath, sval+".png")
 			// zlog.Info("Menued SetValImage:", str)
 		}
-		nstr = sval
+		nstr = item.Name
 	}
 	o.SetTitleText(nstr)
 	if o.ImagePath != "" {
@@ -276,6 +289,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 
 // MOItemsFromZDictItemsAndValues creates MenuedOItem slice from zdict Items and a slice or single value of anything
 func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool) []MenuedOItem {
+	// zlog.Info("MOItemsFromZDictItemsAndValues:", values)
 	var mItems []MenuedOItem
 	var vals []any
 	rval := reflect.ValueOf(values)
@@ -288,9 +302,11 @@ func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool
 	}
 	for _, item := range enum {
 		var m MenuedOItem
+		// zlog.Info("MOItemsFromZDictItemsAndValues:", item, vals)
+		sitem := reflect.ValueOf(item.Value).String()
 		for _, v := range vals {
-			// zlog.Info("EQ:", item.Value, rval.Index(j).Interface())
-			if reflect.DeepEqual(item.Value, v) {
+			// zlog.Info("EQ:", item.Value, v, reflect.DeepEqual(item.Value, v), reflect.TypeOf(item.Value), reflect.TypeOf(v))
+			if reflect.DeepEqual(item.Value, v) || sitem == reflect.ValueOf(v).String() {
 				m.Selected = true
 				break
 			}
@@ -449,9 +465,11 @@ func (o *MenuedOwner) popup() {
 			if o.items[i].IsAction {
 				o.items[i].Selected = false
 				if o.items[i].Function != nil {
-					o.items[i].Function()
-					o.getItems()
-					o.updateTitleAndImage()
+					go func() {
+						o.items[i].Function()
+						o.getItems()
+						o.updateTitleAndImage()
+					}()
 				} else if o.ActionHandlerFunc != nil {
 					id := o.items[i].Value.(string)
 					o.ActionHandlerFunc(id)
