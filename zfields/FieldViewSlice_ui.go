@@ -280,7 +280,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			unknownBoolViewIDs[fieldNameToID(sf.Name)] = true
 		}
 	})
-	params.EditWithoutCallsbacks = true
+	params.EditWithoutCallbacks = true
 	fview := FieldViewNew("OkCancel", editStruct.Interface(), params)
 	update := true
 	fview.Build(update)

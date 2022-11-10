@@ -60,8 +60,9 @@ type FieldViewParameters struct {
 	ImmediateEdit           bool
 	ForceZeroOption         bool // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
 	AllStatic               bool // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	EditWithoutCallsbacks   bool
-	TipsAsDescriptionLabels bool // used for labelizing fields, todo.
+	EditWithoutCallbacks    bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	TipsAsDescriptionLabels bool // Used for labelizing fields, todo.
+	InColumns               bool // Means fields are shown in a row, possibly with a header. So checkboxes have no label for example.
 }
 
 func FieldViewParametersDefault() (f FieldViewParameters) {
@@ -615,7 +616,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 				gb.UpdateCurrentIndicatorFunc(fmt.Sprint(fieldValue))
 			}
 		}
-		if v.params.EditWithoutCallsbacks {
+		if v.params.EditWithoutCallbacks {
 			return true
 		}
 		// fmt.Printf("call edit ActionHandlerFunc2: %s %p\n", f.Name, v.data)
@@ -975,6 +976,10 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		view := zview.View(cv)
 		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
 	})
+	if v.params.LabelizeWidth == 0 && !v.params.InColumns {
+		_, stack := zlabel.LabelizeCheckbox(cv, f.TitleOrName())
+		return stack
+	}
 	return cv
 }
 
