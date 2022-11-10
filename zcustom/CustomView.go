@@ -64,6 +64,7 @@ func (v *CustomView) IsHighlighted() bool {
 }
 
 func (v *CustomView) PressedHandler() func() {
+	// zlog.Info("cv.PressedHandler:", v != nil)
 	return v.pressed
 }
 

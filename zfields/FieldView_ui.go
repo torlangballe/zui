@@ -282,7 +282,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	if data != nil {
 		v.data = data
 	}
-	// zlog.Info("fv.Update:", v.ObjectName(), dontOverwriteEdited, IsFieldViewEditedRecently(v))
+	// zlog.Info("fv.Update:", v.ObjectName(), dontOverwriteEdited, zlog.Full(v.data))
 	if dontOverwriteEdited && IsFieldViewEditedRecently(v) {
 		// zlog.Info("FV No Update, edited", v.Hierarchy())
 		return
@@ -363,7 +363,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 					enum = append(zdict.Items{item}, enum...)
 				}
 			}
-			// zlog.Info("Update FV: Menu2:", f.Name, enum, reflect.ValueOf(item.Address).Elem())
+			// zlog.Info("Update FV: Menu3:", f.Name, reflect.ValueOf(item.Address).Elem(), reflect.TypeOf(item.Address).Elem()) // enum
 			menuType.UpdateItems(enum, item.Interface, f.Flags&FlagIsActions != 0)
 			continue
 		}
@@ -1187,7 +1187,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	if v.params.HideStatic && f.IsStatic() {
 		return
 	}
-	// zlog.Info("   buildStack2", j, f.Name, item)
+	// zlog.Info("buildItem", f.Name)
 	// if f.FieldName == "CPU" {
 	// 	zlog.Info("   buildStack1.2", j, item.Value.Len())
 	// }
@@ -1199,8 +1199,9 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	if view == nil {
 		switch f.Kind {
 		case zreflect.KindStruct:
-			// zlog.Info("make stringer?:", f.Name, got)
 			col, got := item.Interface.(zgeo.Color)
+			// zlog.Info("makeStruct", item.FieldName, got)
+			// zlog.Info("make stringer?:", f.Name, got)
 			if got {
 				view = zcolor.NewView(col)
 			} else {
@@ -1211,15 +1212,16 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 					vert = f.Vertical.Bool()
 				}
 				// zlog.Info("struct fieldViewNew", f.ID, vert, f.Vertical)
-
 				params := v.params
 				params.Field.MergeInField(f)
 				// params.Field.Flags = 0
 				fieldView := fieldViewNew(f.ID, vert, item.Address, params, zgeo.Size{}, v)
+				// fmt.Printf("makeStruct2 %s %p\n", item.FieldName, fieldView.View)
 				view = makeFrameIfFlag(f, fieldView)
 				if view == nil {
 					view = fieldView
 				}
+				// fmt.Printf("makeStruct3 %s %p %v %p\n", item.FieldName, view, view == nil, fieldView)
 				// fieldView.parentField = f
 				fieldView.BuildStack(f.ID, zgeo.TopLeft, zgeo.Size{}, true)
 			}
@@ -1264,7 +1266,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				view = menu
 				break
 			}
-			//				zlog.Info("Make slice:", v.ObjectName(), f.FieldName, , labelizeWidth)
+			// zlog.Info("Make slice:", v.ObjectName(), f.FieldName, labelizeWidth)
 			if f.Alignment != zgeo.AlignmentNone {
 				exp = zgeo.Expand
 			} else {

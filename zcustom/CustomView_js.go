@@ -185,5 +185,8 @@ func (v *CustomView) ExposeIn(secs float64) {
 }
 
 func (v *CustomView) Expose() {
+	// if v.ObjectName() == "8081059309296180955" {
+	// 	zlog.Info("Expose", v.Hierarchy(), zlog.CallingStackString())
+	// }
 	v.ExposeIn(0.1)
 }
