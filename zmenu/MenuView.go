@@ -5,6 +5,7 @@ package zmenu
 import (
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -53,6 +54,9 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		zfloat.Minimize(&w, v.maxWidth)
 	}
 	w += 28
+	if zdevice.OS() != zdevice.MacOSType {
+		w += 5
+	}
 	s := zgeo.Size{w, menuViewHeight}
 	return s
 }
