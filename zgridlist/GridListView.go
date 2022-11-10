@@ -1,9 +1,8 @@
 // The zgridlist package defines GridListView, a view for displaying cells in multiple rows and columns.
 // It knows nothing about the content of it's cells.
-// If CellHeightFunc is set, each cells hight is based on that, otherwise based on first view created.
-// zgridlist also contains SliceGridView which creates a grid from any slice.
+// If CellHeightFunc is set, each cells hight is based on that, otherwise based on the first cell created.
+// See also the slicegridview package which expands the grid list to use slices, make tables with headers and automatic sql tables.
 // Also TableView, which use a GridListView and zfield package to create rows based on a struct.
-// GridListView is based on functions for getting a count of cells, getting and id for an index and creating a cell's view for a given id.
 // Cells can be hovered over, pressed and selected. Multiple selections are possible.
 // If HierarchyLevelFunc is set, it will insert a branch toggle (BrangeToggleView) widgets if level returned > 1 and leaf is false,
 // but only calls LayoutCells when this toggles are changed.
