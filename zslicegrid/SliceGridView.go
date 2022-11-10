@@ -114,7 +114,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	if options&(AddDarkPlus|AddLightPlus) != 0 {
 		str := "white"
 		if options&AddDarkPlus != 0 {
-			str = "dark"
+			str = "darkgray"
 		}
 		v.addButton = zimageview.New(nil, "images/plus-circled-"+str+".png", zgeo.Size{16, 16})
 		v.Bar.Add(v.addButton, zgeo.CenterLeft)

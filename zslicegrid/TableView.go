@@ -1,3 +1,5 @@
+//go:build zui
+
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
 // See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
@@ -60,6 +62,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 		v.Grid.MultiSelectable = true
 	}
 	v.FieldParameters.AllStatic = true
+	v.FieldParameters.InColumns = true
 	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)
