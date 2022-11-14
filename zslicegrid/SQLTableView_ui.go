@@ -8,7 +8,12 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zfields"
+	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zmenu"
+	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zrpc2"
@@ -23,6 +28,7 @@ type SQLTableView[S zstr.StrIDer] struct {
 	selectMethod string
 	DeleteQuery  string
 	IsSqlite     bool
+	IsQuoteIDs   bool
 	Where        string
 	skipFields   []string
 	searchFields []string
@@ -51,6 +57,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	}
 	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
 	v.StoreChangedItemsFunc = v.updateForIDs
+	v.DeleteItemsFunc = v.deleteItems
 	v.equalFields = map[string]string{}
 	v.setFields = map[string]string{}
 	zreflect.ForEachField(s, func(index int, val reflect.Value, sf reflect.StructField) {
@@ -67,8 +74,8 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 			v.equalFields[sf.Name] = column
 		}
 		for _, part := range tags["zui"] {
-			if part == "-" {
-				v.skipFields = append(v.skipFields, column)
+			if part == "-" || primary {
+				v.EditParameters.SkipFieldNames = append(v.EditParameters.SkipFieldNames, sf.Name)
 				break
 			}
 			if !primary {
@@ -79,16 +86,99 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 			}
 		}
 	})
+	v.addActionButton()
 	go v.fillPage()
 }
 
+func (v *SQLTableView[S]) addActionButton() {
+	actions := zimageview.New(nil, "images/gear-darkgray.png", zgeo.Size{18, 18})
+	actions.DownsampleImages = true
+	actionMenu := zmenu.NewMenuedOwner()
+	actionMenu.Build(actions, nil)
+	actionMenu.CreateItemsFunc = func() []zmenu.MenuedOItem {
+		dup := zmenu.MenuedFuncAction("Duplcate selected "+v.StructName, func() {
+			v.addNew(true)
+		})
+		dup.IsDisabled = (len(v.Grid.SelectedIDs()) != 1)
+		return []zmenu.MenuedOItem{
+			zmenu.MenuedFuncAction("New "+v.StructName, func() {
+				v.addNew(false)
+			}), dup,
+		}
+	}
+	v.Bar.Add(actions, zgeo.TopRight, zgeo.Size{})
+}
+
+func (v *SQLTableView[S]) addNew(duplicate bool) {
+	var s S
+	if duplicate {
+		sid := v.Grid.SelectedIDs()[0]
+		s = *v.StructForID(sid)
+		zreflect.ForEachField(&s, func(index int, val reflect.Value, sf reflect.StructField) {
+			tags := zreflect.GetTagAsMap(string(sf.Tag))
+			primary := zstr.StringsContain(tags["db"], "primary")
+			// zlog.Info("Column:", column, primary, dbTags)
+			if primary {
+				val.Set(reflect.Zero(val.Type()))
+			}
+		})
+	}
+	zfields.PresentOKCancelStruct(&s, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
+		// zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
+		if !ok {
+			return true
+		}
+		go v.insertRow(s)
+		return true
+	})
+}
+
+func (v *SQLTableView[S]) insertRow(s S) {
+	var info zsql.UpsertInfoSend
+	var id int64
+	info.Rows = []S{s}
+	info.TableName = v.tableName
+	info.SetColumns = v.setFields
+	err := zrpc2.MainClient.Call("SQLCalls.InsertRows", info, &id)
+	zlog.Info("insert", err)
+	if err != nil {
+		zalert.ShowError(err, "updating")
+		return
+	}
+	// var slice []S
+	// var q SQLQuery
+
+	// query := "SELECT "
+	// q.SkipFields = v.skipFields
+	// err := zrpc2.MainClient.Call(v.selectMethod, q, &slice)
+	// if err != nil {
+	// 	zlog.Error(err, "select", q.Query, v.limit, v.offset)
+	// 	return
+	// }
+	// v.UpdateSlice(slice)
+}
+
+func (v *SQLTableView[S]) deleteItems(ids []string) {
+	var affected int64
+	if v.IsQuoteIDs {
+		for i := range ids {
+			ids[i] = zsql.QuoteString(ids[i])
+		}
+	}
+	query := "DELETE FROM " + v.tableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
+	err := zrpc2.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
+	if err != nil {
+		zalert.ShowError(err, "updating")
+	}
+}
+
 func (v *SQLTableView[S]) updateForIDs(items []S) {
-	var info zsql.UpdateInfoSend
+	var info zsql.UpsertInfoSend
 	info.Rows = items
 	info.TableName = v.tableName
 	info.SetColumns = v.setFields
 	info.EqualColumns = v.equalFields
-	err := zrpc2.MainClient.Call("SQLCalls.UpdateStructs", info, nil)
+	err := zrpc2.MainClient.Call("SQLCalls.UpdateRows", info, nil)
 	zlog.Info("updateForIDs", len(items), err)
 	if err != nil {
 		zalert.ShowError(err, "updating")
@@ -185,19 +275,4 @@ func (v *SQLTableView[S]) fillPage() {
 		return
 	}
 	v.UpdateSlice(slice)
-}
-
-func (v *SQLTableView[S]) fillPageBad() {
-	var slice [][]any
-	var sr zsql.SelectInfo
-	var s S
-	sr.Trailer = v.createQueryTrailer()
-	sr.GetColumns = zsql.FieldNamesFromStruct(&s, v.skipFields, "")
-	sr.TableName = v.tableName
-	err := zrpc2.MainClient.Call("SQLCalls.SelectStructs", sr, &slice)
-	if err != nil {
-		zlog.Error(err, "select", sr.Trailer, v.limit, v.offset)
-		return
-	}
-	// v.UpdateSlice(slice)
 }
