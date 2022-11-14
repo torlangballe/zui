@@ -289,6 +289,7 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		val = strings.TrimSpace(val)
 		n, floatErr := strconv.ParseFloat(val, 32)
 		flag := zbool.FromString(val, false)
+		barParts := strings.Split(val, "|")
 		switch key {
 		case "search":
 			f.Flags |= FlagIsSearchable
@@ -320,9 +321,9 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		case "title":
 			f.Title = origVal
 		case "skip":
-			f.SkipFieldNames = strings.Split(val, "|")
+			f.SkipFieldNames = barParts
 		case "color":
-			f.Colors = strings.Split(val, "|")
+			f.Colors = barParts
 			if len(f.Colors) == 1 {
 				f.Styling.FGColor.SetFromString(f.Colors[0])
 			}
@@ -393,7 +394,7 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		case "longpress":
 			f.Flags |= FlagLongPress
 		case "group":
-			for _, part := range strings.Split(val, "|") {
+			for _, part := range barParts {
 				switch part {
 				case "titled":
 					f.Flags |= FlagFrameIsTitled
@@ -471,19 +472,22 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			}
 
 		case "image", "himage":
-			var ssize, path string
-			if !zstr.SplitN(val, "|", &ssize, &path) {
-				ssize = val
-			} else {
-				path = "images/" + path
+			var size zgeo.Size
+			var path string
+			for _, part := range barParts {
+				// zlog.Info("PARTS:", barParts)
+				size.FromString(part)
+				if size.IsNull() {
+					path = "images/" + part
+				}
 			}
 			if key == "image" {
+				f.Size = size
 				f.Flags |= FlagIsImage
-				f.Size.FromString(ssize)
 				f.ImageFixedPath = path
 			} else {
 				f.Flags |= FlagHasHeaderImage
-				f.HeaderSize.FromString(ssize)
+				f.HeaderSize = size
 				f.HeaderImageFixedPath = path
 			}
 		case "enum":
