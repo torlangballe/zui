@@ -6,6 +6,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -35,6 +36,10 @@ func NewView(name string) *CustomView {
 	c := &CustomView{}
 	c.Init(c, name)
 	return c
+}
+
+func (v *CustomView) DebugInfo() string {
+	return zstr.Concat(" ", v.Hierarchy(), v.exposed, v.drawing, v.exposed)
 }
 
 func (v *CustomView) SetVisible(visible bool) {
