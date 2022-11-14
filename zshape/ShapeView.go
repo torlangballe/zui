@@ -64,6 +64,13 @@ func NewView(shapeType Type, minSize zgeo.Size) *ShapeView {
 	return v
 }
 
+func (v *ShapeView) SetRect(r zgeo.Rect) {
+	// if v.textInfo.Text == "noun" {
+	// 	zlog.Info("SetRect noun", v.Hierarchy(), r.Size, zlog.CallingStackString())
+	// }
+	v.CustomView.SetRect(r)
+}
+
 func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, name string) {
 	v.CustomView.Init(view, name)
 	v.textInfo = *ztextinfo.New()
@@ -286,10 +293,10 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	if v.image != nil && !v.image.Loading {
 		if v.IsHighlighted() {
 			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ni *zimage.Image) {
-				v.drawImage(canvas, ni, path, rect, textRect)
+				v.drawImage(canvas, ni, path, rect, &textRect)
 			})
 		} else {
-			v.drawImage(canvas, v.image, path, rect, textRect)
+			v.drawImage(canvas, v.image, path, rect, &textRect)
 		}
 	}
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
@@ -298,8 +305,8 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
 		t.Rect.Pos.Y -= 1
-		//		zlog.Info("Shape draw:", v.ObjectName(), exp, v.textInfo.Text, t.Color)
 		t.Font = v.Font()
+		t.Wrap = ztextinfo.WrapNone
 		if v.IsImageFill {
 			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????
 		}
@@ -309,7 +316,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 
 		// canvas.SetColor(zgeo.ColorGreen)
 		// canvas.FillRect(t.Rect)
-		// zlog.Info("shapeViewDraw text:", view.ObjectName(), v.margin, rect, t.Rect, v.TextXMargin)
+		// zlog.Info("shapeViewDraw text:", v.Margin(), view.ObjectName(), rect, t.Rect, v.TextXMargin)
 		t.Draw(canvas)
 		if v.IsImageFill {
 			canvas.SetDropShadowOff(1)
@@ -330,7 +337,7 @@ func (v *ShapeView) SetFont(font *zgeo.Font) {
 	v.NativeView.SetFont(font)
 }
 
-func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePath *zgeo.Path, rect, textRect zgeo.Rect) {
+func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePath *zgeo.Path, rect zgeo.Rect, textRect *zgeo.Rect) {
 	useDownsampleCache := true
 	imarg := v.ImageMargin
 	o := v.ImageOpacity
@@ -358,9 +365,9 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 		}
 		if v.textInfo.Text != "" {
 			if v.ImageAlign&zgeo.Right != 0 {
-				textRect.SetMaxX(ir.Min().X - v.ImageGap)
+				(*textRect).SetMaxX(ir.Min().X - v.ImageGap)
 			} else if v.ImageAlign&zgeo.Left != 0 {
-				textRect.SetMinX(ir.Max().X + v.ImageGap)
+				(*textRect).SetMinX(ir.Max().X + v.ImageGap)
 			}
 		}
 		// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
