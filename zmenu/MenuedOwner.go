@@ -644,6 +644,7 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorGray, 0.2))
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.3)
 	v.StrokeWidth = 1
+	v.SetTextWrap(ztextinfo.WrapTailTruncate)
 	v.SetTextColor(zstyle.DefaultFGColor())
 	menu.Build(v, items)
 
