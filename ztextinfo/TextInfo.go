@@ -74,38 +74,46 @@ func New() *Info {
 	return t
 }
 
-func reduceStringByOneToWrap(str string, wrap WrapType) (reduced, withSymbol string) {
-	if str == "" {
-		return
+var count int
+var breakSet = []rune(` \t,.-_!@#$%^&**()=+<>?|:;\/`)
+
+func Trim1FromRunes(runes []rune, wrap WrapType) []rune {
+	// zlog.Info("reduceStringByOneToWrap")
+	length := len(runes)
+	if length == 0 {
+		return runes
 	}
 	switch wrap {
 	case WrapWord:
-		i := strings.IndexAny(str, " \t,.-_!@#$%^&**()=+<>?|:;")
-		if i != -1 {
-			s := str[:i]
-			return s, s
+		var white, wasBlack bool
+		var i int
+		for {
+			for i = length - 1; i >= 0; i++ {
+				if zstr.IndexOfRuneInSet(runes[i], breakSet) == -1 { // black (non-breaking text)
+					if white && wasBlack {
+						return runes[:i+1]
+					}
+					wasBlack = true
+					white = false
+				} else {
+					white = true
+				}
+			}
 		}
-		fallthrough
+		return runes[:i]
+
 	case WrapChar:
-		s := zstr.TruncatedCharsAtEnd(str, 1)
-		return s, s
+	case WrapTailTruncate:
+		return runes[:length-1]
 
 	case WrapHeadTruncate:
-		s := str[1:]
-		return s, "…" + s
-
-	case WrapTailTruncate:
-		s := zstr.TruncatedCharsAtEnd(str, 1)
-		return s, s + "…"
+		return runes[1:]
 
 	case WrapMiddleTruncate:
-		r := []rune(str)
-		m := len(r) / 2
-		left := string(r[:m])
-		right := string(r[m+1:])
-		return left + right, left + "…" + right
+		m := length / 2
+		return append(runes[:m], runes[m+1:]...)
 	}
-	return str, str
+	return nil
 }
 
 func (ti *Info) SetWidthFreeHight(w float64) {
@@ -128,7 +136,7 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 			if split > 1 {
 				rlen := utf8.RuneCountInString(str)
 				each := int(math.Ceil(float64(rlen) / split))
-				rlines := zstr.BreakIntoRuneLines(str, "", each)
+				rlines := zstr.BreakRunesIntoLines([]rune(str), "", each)
 				for _, rline := range rlines {
 					allLines = append(allLines, string(rline))
 					widths = append(widths, float64(len(rline))/float64(rlen)*s.W)
@@ -173,6 +181,29 @@ func (ti *Info) MakeAttributes() zdict.Dict {
 	return zdict.Dict{}
 }
 
+func reduceTextToFit(ti *Info) {
+	if ti.Wrap == WrapClip || ti.Wrap == WrapNone {
+		return
+	}
+	runes := []rune(ti.Text)
+	for {
+		s := zcanvas.GetTextSize(ti.Text, ti.Font)
+		// zlog.Info("REDUCE1:", ti.Wrap, ti.Text, s, ti.Rect.Size.W)
+		if s.W <= ti.Rect.Size.W {
+			return
+			// zlog.Info("REDUCED:", lines)
+		}
+		runes = Trim1FromRunes(runes, ti.Wrap)
+		ti.Text = string(runes) + "…"
+		if len(runes) == 0 {
+			return
+		}
+		// if ti.Text == "no…" {
+		// 	zlog.Info("REDUCE:", ti.Wrap, ti.Text, s, ti.Rect.Size.W, zlog.CallingStackString())
+		// }
+	}
+}
+
 // StrokeAndFill strokes the text with *strokeColor* and width, then fills with ti.Color
 // canvas' width, color and stroke style are changed
 func (ti *Info) StrokeAndFill(canvas *zcanvas.Canvas, strokeColor zgeo.Color, width float64) zgeo.Rect {
@@ -187,7 +218,8 @@ func (ti *Info) StrokeAndFill(canvas *zcanvas.Canvas, strokeColor zgeo.Color, wi
 	return t.Draw(canvas)
 }
 
-func (ti *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
+func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
+	ti := *tin
 	w := 0.0
 	if ti.Text == "" {
 		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
@@ -212,33 +244,23 @@ func (ti *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, w)
 		return zgeo.Rect{}
 	}
-	var ts zgeo.Size
-	var lines []string
-	var widths []float64
-	text := ti.Text
-	for {
-		ts, lines, widths = ti.GetBounds()
-		if ti.Wrap == WrapClip || ti.Wrap == WrapNone || len(lines) != 1 || ts.W <= ti.Rect.Size.W {
-			// zlog.Info("REDUCED:", lines)
-			break
-		}
-		text, ti.Text = reduceStringByOneToWrap(text, ti.Wrap)
-		// zlog.Info("REDUCE:", ti.Wrap, ti.Text, ts.W, ti.Rect.Size.W, lines)
-	}
+	reduceTextToFit(&ti)
+	ts, lines, widths := ti.GetBounds()
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
 	y := ra.Pos.Y + h*0.95 // 0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
-	zlog.Assert(len(lines) == len(widths), len(lines), len(widths))
+	zlog.Assert(len(lines) == len(widths) || len(widths) == 0, len(lines), len(widths))
 	for i, s := range lines {
-		// zlog.Info("DRAW:", i, len(lines), s, ti.Rect, ts, ra, "h:", h, "y:", y)
 		x := ra.Pos.X
-		if ti.Alignment&zgeo.HorCenter != 0 {
-			x += (ra.Size.W - widths[i]) / 2
-		} else if ti.Alignment&zgeo.Right != 0 {
-			x += (ra.Size.W - widths[i])
+		if len(widths) > 0 {
+			if ti.Alignment&zgeo.HorCenter != 0 {
+				x += (ra.Size.W - widths[i]) / 2
+			} else if ti.Alignment&zgeo.Right != 0 {
+				x += (ra.Size.W - widths[i])
+			}
 		}
 		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, w)
 		y += h
