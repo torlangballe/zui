@@ -87,7 +87,8 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 }
 
 func (v *TableView[S]) ArrangeChildren() {
-	// zlog.Info("TV ArrangeChildren", v.Rect())
+	// zlog.Info("TV ArrangeChildren", v.Hierarchy(), v.Rect())
+	// defer zlog.Info("TV ArrangeChildren Done", v.Hierarchy(), v.Rect())
 	v.SliceGridView.ArrangeChildren()
 	if v.Header == nil {
 		return
@@ -103,8 +104,8 @@ func (v *TableView[S]) ArrangeChildren() {
 				v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
 			}
 		} else { // no rows, make an empty one to fit header with
-			var sss S
-			view := v.createRowFromStruct(&sss, zstr.GenerateRandomHexBytes(10))
+			var s S
+			view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
 			fv := view.(*zfields.FieldView)
 			fv.SetRect(v.LocalRect())
 			fv.ArrangeChildren()
