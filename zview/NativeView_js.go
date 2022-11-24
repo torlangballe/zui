@@ -302,6 +302,9 @@ func (v *NativeView) GetScale() float64 {
 }
 
 func (v *NativeView) Show(show bool) {
+	// if strings.HasSuffix(v.Hierarchy(), "activity.png") {
+	// 	zlog.Info("Show", v.Hierarchy(), show, zlog.CallingStackString())
+	// }
 	str := "hidden"
 	if show {
 		str = "inherit" //visible"
@@ -677,25 +680,27 @@ func (v *NativeView) RotateDeg(deg float64) {
 	v.JSStyle().Set("transform", fmt.Sprintf("rotate(%fdeg)", deg))
 }
 
-func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
+func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) bool {
+	var mime string
+	var handled bool
 	dt := event.Get("dataTransfer")
-	item := dt.Get("items").Index(0)
-	mime := item.Get("type").String()
-
+	items := dt.Get("items")
 	var pos zgeo.Pos
 	pos.X = event.Get("offsetX").Float()
 	pos.Y = event.Get("offsetY").Float()
-
-	if dtype != DragDrop {
-		handler(dtype, nil, mime, pos)
-	} else {
-		item.Call("getAsString", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			val := []byte(args[0].String())
-			handler(DragDrop, val, mime, pos)
-			return nil
-		}))
+	if dtype != DragDrop || items.Length() == 0 {
+		event.Call("preventDefault")
+		return handler(dtype, nil, "", pos)
 	}
+	item := dt.Get("items").Index(0)
+	mime = item.Get("type").String()
+	item.Call("getAsString", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		val := []byte(args[0].String())
+		handled = handler(DragDrop, val, mime, pos)
+		return nil
+	}))
 	event.Call("preventDefault")
+	return handled
 }
 
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
@@ -714,7 +719,8 @@ func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 	}))
 }
 
-func jsFileToGo(file js.Value, got func(data []byte, name string)) {
+func jsFileToGo(file js.Value, got func(data []byte, name string), progress func(p float64)) {
+	// TODO progress: https://developer.mozilla.org/en-US/docs/Web/API/FileReader/progress_event
 	reader := js.Global().Get("FileReader").New()
 	reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		array := js.Global().Get("Uint8Array").New(this.Get("result"))
@@ -765,20 +771,25 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 			return nil
 		}
 		file := files.Index(0)
+		name := file.Get("name").String()
+		event.Call("preventDefault")
+		if handler(DragDropFilePreflight, nil, name, zgeo.Pos{}) {
+			return nil
+		}
+		// zlog.Info("FileProcessing")
 		jsFileToGo(file, func(data []byte, name string) {
 			var pos zgeo.Pos
 			pos.X = event.Get("offsetX").Float()
 			pos.Y = event.Get("offsetY").Float()
 			// zlog.Info("Drop offset:", pos)
-			if handler(DragDropFile, data, name, pos) {
-				event.Call("preventDefault")
-			}
-		})
+			// zlog.Info("nv.DragDropFile")
+			handler(DragDropFile, data, name, pos)
+		}, nil)
 		return nil
 	}))
 }
 
-func (v *NativeView) SetUploader(got func(data []byte, name string)) {
+func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(name string) bool, progress func(p float64)) {
 	e := zdom.DocumentJS.Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
@@ -789,7 +800,11 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 		files := e.Get("files")
 		if files.Length() > 0 {
 			file := files.Index(0)
-			jsFileToGo(file, got)
+			name := file.Get("name").String()
+			if skip != nil && skip(name) {
+				return nil
+			}
+			jsFileToGo(file, got, progress)
 		}
 		return nil
 	}))
@@ -806,7 +821,6 @@ func (v *NativeView) SetUploader(got func(data []byte, name string)) {
 		e.Call("click")
 		return nil
 	}))
-
 	v.JSCall("appendChild", e)
 }
 

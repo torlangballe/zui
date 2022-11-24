@@ -149,7 +149,7 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 			button.SetUploader(func(data []byte, filename string) {
 				a.HandleUpload(data, filename)
 				zpresent.Close(a.DialogView, false, nil)
-			})
+			}, nil, nil)
 			bar.Add(button, zgeo.CenterRight)
 		} else {
 			button := zbutton.New(text)
