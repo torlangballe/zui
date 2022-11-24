@@ -41,6 +41,7 @@ type DropShadow struct {
 var (
 	DropShadowDefault = DropShadow{Delta: zgeo.Size{3, 3}, Blur: 3, Color: zgeo.ColorBlack}
 	DropShadowUndef   = DropShadow{Delta: zgeo.SizeUndef, Blur: -1}
+	DropShadowClear   = DropShadow{}
 
 	EmptyStyling = Styling{
 		Corner:        -1,

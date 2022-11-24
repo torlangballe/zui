@@ -11,6 +11,7 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -109,7 +110,7 @@ func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {
 func (c *Canvas) Transform(matrix zgeo.Matrix) {
 }
 
-func (c *Canvas) ClipPath(path *zgeo.Path, exclude bool, eofill bool) {
+func (c *Canvas) ClipPath(path *zgeo.Path, eofill bool) {
 	c.setPath(path)
 	c.context.Clip()
 }
@@ -145,17 +146,8 @@ func (c *Canvas) Clear() {
 	c.context.Clear()
 }
 
-func (c *Canvas) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
-	// moffset := delta.GetCGSize()    //Mac    moffset.height *= -1
-	//context.setShadow(offset moffset, blur CGFloat(blur), color color.color.cgColor)
-}
-
-func (c *Canvas) SetDropShadowOff(opacity float64) {
-	//        context.setShadow(offset CGSize.zero, blur 0, color nil)
-	if opacity != 1 {
-		//            context.setAlpha(CGFloat(opacity))
-	}
-}
+func (c *Canvas) SetDropShadow(d zstyle.DropShadow) {}
+func (c *Canvas) ClearDropShadow()                  {}
 
 func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float64) {
 	c.PushState()

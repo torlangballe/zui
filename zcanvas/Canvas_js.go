@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"image"
@@ -62,8 +63,8 @@ func (c *Canvas) SetRect(rect zgeo.Rect) {
 }
 
 func (c *Canvas) setColor(color zgeo.Color, stroke bool) {
-	var vcolor = color
-	str := vcolor.Hex()
+	// var vcolor = color
+	str := color.Hex()
 	name := "fillStyle"
 	if stroke {
 		name = "strokeStyle"
@@ -113,7 +114,7 @@ func (c *Canvas) Transform(matrix zgeo.Matrix) {
 	c.currentMatrix = c.currentMatrix.Multiplied(matrix)
 }
 
-func (c *Canvas) ClipPath(path *zgeo.Path, exclude bool, eofill bool) {
+func (c *Canvas) ClipPath(path *zgeo.Path, eofill bool) {
 	c.setPath(path)
 	c.context.Call("clip")
 }
@@ -234,22 +235,21 @@ func (c *Canvas) Clear() {
 	c.context.Call("clearRect", rect.Pos.X, rect.Pos.Y, rect.Size.W, rect.Size.H)
 }
 
-func (c *Canvas) SetDropShadow(deltaSize zgeo.Size, blur float32, color zgeo.Color) {
-	// moffset := delta.GetCGSize()    //Mac    moffset.height *= -1
-	//context.setShadow(offset moffset, blur CGFloat(blur), color color.color.cgColor)
+func (c *Canvas) SetDropShadow(d zstyle.DropShadow) {
+	c.context.Set("shadowOffsetX", d.Delta.W)
+	c.context.Set("shadowOffsetY", d.Delta.H)
+	c.context.Set("shadowBlur", d.Blur)
+	c.context.Set("shadowColor", d.Color.Hex())
 }
 
-func (c *Canvas) SetDropShadowOff(opacity float64) {
-	//        context.setShadow(offset CGSize.zero, blur 0, color nil)
-	if opacity != 1 {
-		//            context.setAlpha(CGFloat(opacity))
-	}
+func (c *Canvas) ClearDropShadow() {
+	c.SetDropShadow(zstyle.DropShadowClear)
 }
 
 func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float64) {
 	// make this a color type instead?? Maybe no point, as it has fixed start/end pos for gradient
 	c.PushState()
-	c.ClipPath(path, false, false)
+	c.ClipPath(path, false)
 	gradient := c.context.Call("createLinearGradient", pos1.X, pos1.Y, pos2.X, pos2.Y)
 	if len(locations) == 0 {
 		locations = canvasCreateGradientLocations(len(colors))
@@ -265,7 +265,7 @@ func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Po
 func (c *Canvas) DrawRadialGradient(path *zgeo.Path, colors []zgeo.Color, center zgeo.Pos, radius float64, endCenter *zgeo.Pos, startRadius float64, locations []float32) {
 	c.PushState()
 	if path != nil {
-		c.ClipPath(path, false, false)
+		c.ClipPath(path, false)
 	}
 	c.PopState()
 }
