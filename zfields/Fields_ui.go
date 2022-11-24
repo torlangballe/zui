@@ -103,6 +103,7 @@ const (
 	FlagLongPress                               // If FlagLongPress is set this button/image etc handles long-press
 	FlagDisableAutofill                         // FlagDisableAutofill if set makes a text field not autofill
 	FlagIsSearchable                            // This field can be used to search in tables etc
+	FlagIsUseInValue                            // This value is set as a string to InNames before entire struct is created
 )
 
 const (
@@ -788,9 +789,9 @@ func getSortCache(slice any, fields []Field, sortOrder []zheader.SortInfo) (fiel
 
 	for _, s := range sortOrder {
 		for i, f := range fields {
-			if f.ID == s.ID {
-				fieldMap[f.ID] = &fields[i]
-				// zlog.Info("ADD2cache:", f.ID)
+			if f.FieldName == s.FieldName {
+				fieldMap[f.FieldName] = &fields[i]
+				// zlog.Info("ADD2cache:", f.FieldName)
 				if f.LocalEnum != "" {
 					// name := zstr.HeadUntil(f.LocalEnum, ".")
 					// for _, f2 := range fields {
@@ -824,20 +825,20 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []zheader.SortInfo
 		jc, jerr := zreflect.ItterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
 		zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 		for _, s := range sortOrder {
-			f := fieldMap[s.ID]
-			// zlog.Info("SORTING:", i, j, s.ID, f != nil)
+			f := fieldMap[s.FieldName]
+			// zlog.Info("SORTING:", i, j, s.FieldName, f != nil)
 			iitem := ic.Children[f.Index]
 			jitem := jc.Children[f.Index]
-			sliceEnumNames := enumTitles[f.ID]
+			sliceEnumNames := enumTitles[f.FieldName]
 			if sliceEnumNames != nil {
 				ni := sliceEnumNames[iitem.Interface]
 				nj := sliceEnumNames[jitem.Interface]
 				r := (zstr.CaselessCompare(ni, nj) < 0) == s.SmallFirst
 				if ni == nj {
-					// zlog.Info("sliceEnumNames same:", r, s.ID, i, ni, j, nj)
+					// zlog.Info("sliceEnumNames same:", r, s.FieldName, i, ni, j, nj)
 					continue
 				}
-				// zlog.Info("sliceEnumNames:", r, s.ID, i, ni, j, nj)
+				// zlog.Info("sliceEnumNames:", r, s.FieldName, i, ni, j, nj)
 				return r
 			}
 			switch iitem.Kind {

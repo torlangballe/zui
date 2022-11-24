@@ -62,7 +62,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 		v.Grid.MultiSelectable = true
 	}
 	v.FieldParameters.AllStatic = true
-	v.FieldParameters.InColumns = true
+	v.FieldParameters.UseInValues = []string{"$row"}
 	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)

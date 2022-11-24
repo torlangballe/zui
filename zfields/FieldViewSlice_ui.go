@@ -281,6 +281,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 		}
 	})
 	params.EditWithoutCallbacks = true
+	params.UseInValues = []string{"$dialog"}
 	fview := FieldViewNew("OkCancel", editStruct.Interface(), params)
 	update := true
 	fview.Build(update)
