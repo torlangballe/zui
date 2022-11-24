@@ -3,89 +3,89 @@
 package zwidget
 
 import (
-	"bytes"
-	"image"
-
 	"github.com/torlangballe/zui/zcanvas"
-	"github.com/torlangballe/zui/zimage"
-	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
-const wellBorderPath = "images/imagewell.png"
-
 type DropWell struct {
-	zimageview.ImageView
-	AcceptExtensions  []string
-	HandleDroppedFile func(data []byte, name string) bool
-	SetIconOnDrop     bool
+	zcustom.CustomView
+	placeHolder         string
+	HandleDroppedFile   func(data []byte, name string)
+	HandleDropPreflight func(name string) bool
+	Styling             zstyle.Styling
 }
 
-func DropWellNew(filePath string, size zgeo.Size) *DropWell {
+func NewDropWell(filePath string, size zgeo.Size) *DropWell {
 	v := &DropWell{}
-	imagePath := filePath
-	if !zimage.IsImageExtensionInName(imagePath) {
-		imagePath = wellBorderPath
-	}
-	v.Init(v, nil, "", size)
+	v.Init(v, "dropwell")
+	v.SetMinSize(size)
+	v.Styling.Corner = 7
+	v.Styling.BGColor = zgeo.ColorNewGray(0.95, 1)
+	v.Styling.FGColor = zgeo.ColorNewGray(0, 0.05)
+	v.Styling.StrokeWidth = 1
+	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
+	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.Size{5, 5}, Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
 	v.DownsampleImages = true
-	v.SetImageFromURL(imagePath)
 	v.SetMinSize(size)
 	v.SetCanFocus(true)
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
+		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
+			r := v.HandleDropPreflight(name)
+			// zlog.Info("HandleDropPreflight:", name, r)
+			return r
+		}
 		v.SetHighlighted(dtype == zview.DragEnter || dtype == zview.DragOver)
 		switch dtype {
 		case zview.DragDropFile:
-			if v.HandleDroppedFile(data, name) {
-				if v.SetIconOnDrop && zimage.IsImageExtensionInName(name) {
-					go v.SetIconFromBytes(data, name)
-				}
+			if v.HandleDroppedFile != nil {
+				v.HandleDroppedFile(data, name)
 			}
 		}
 		return true
 	})
-	v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-		v.Draw(rect, canvas, view)
-		if v.IsHighlighted() {
-			r := v.GetImageRect(rect)
-			r.Add(zgeo.RectFromXY2(3, 3, -2, -2))
-			path := zgeo.PathNewRect(r, zgeo.SizeBoth(2))
-			canvas.SetColor(zgeo.ColorYellow)
-			canvas.FillPath(path)
-		}
-	})
-	// v.SetBGColor(zgeo.ColorGreen)
+	v.SetDrawHandler(v.draw)
 	return v
 }
 
-func (v *DropWell) SetIconFromBytes(data []byte, name string) error {
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return zlog.Error(err, "decode dragged image", name)
+func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+	// zlog.Info("DropWell draw", rect)
+	const corner = 7
+	path := zgeo.PathNewRect(rect.ExpandedD(-1), zgeo.SizeBoth(v.Styling.Corner))
+	canvas.SetColor(v.Styling.BGColor)
+	fillCol := v.Styling.FGColor
+	if v.IsHighlighted() {
+		fillCol = zgeo.ColorYellow
 	}
-	if img != nil {
-		size := v.Rect().Size
-		img, err = zimage.GoImageShrunkInto(img, size, true)
-		if zlog.OnError(err, "shrink") {
-			return err
-		}
-		zimage.FromGo(img, func(zi *zimage.Image) {
-			v.SetImage(zi, "", nil)
-		})
+	canvas.SetColor(fillCol)
+	path = zgeo.PathNewRect(rect.ExpandedD(-1), zgeo.SizeBoth(v.Styling.Corner))
+	canvas.FillPath(path)
+	canvas.PushState()
+	canvas.ClipPath(path, false)
+	path.AddRect(rect.ExpandedD(20), zgeo.Size{}) // add an outer box, so drop-shadow is an inset
+	canvas.SetDropShadow(v.Styling.DropShadow)
+	canvas.SetColor(v.Styling.StrokeColor)
+	canvas.FillPathEO(path)
+	canvas.PopState()
+
+	canvas.SetColor(v.Styling.StrokeColor)
+	canvas.StrokePath(path, v.Styling.StrokeWidth, zgeo.PathLineRound)
+
+	if v.placeHolder != "" {
+		ti := ztextinfo.New()
+		ti.Font = zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal)
+		ti.Rect = rect
+		ti.Text = v.placeHolder
+		ti.Alignment = zgeo.Center
+		ti.Color = zgeo.ColorNewGray(0, 0.5)
+		ti.Draw(canvas)
 	}
-	return nil
 }
 
-func (v *DropWell) SetImageFromURL(surl string) {
-	v.SetImage(nil, surl, func(img *zimage.Image) {
-		if img == nil {
-			v.SetImage(nil, wellBorderPath, nil)
-		}
-	})
-}
-
-func (v *DropWell) Clear() {
-	v.SetImage(nil, wellBorderPath, nil)
+func (v *DropWell) SetPlaceholder(str string) {
+	v.placeHolder = str
+	v.Expose()
 }
