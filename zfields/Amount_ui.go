@@ -1,5 +1,4 @@
 //go:build zui
-// +build zui
 
 package zfields
 
@@ -97,7 +96,7 @@ func (a ActivityWidgeter) Create(f *Field) zview.View {
 		f.Size = zgeo.SizeBoth(20)
 	}
 	f.SetEdited = false
-	av := zwidget.ActivityViewNew(f.Size)
+	av := zwidget.NewActivityView(f.Size)
 	av.AlwaysVisible = f.Visible
 	return av
 }
