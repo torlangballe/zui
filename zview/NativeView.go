@@ -16,11 +16,12 @@ type NativeView struct {
 type DragType string
 
 const (
-	DragEnter    DragType = "enter"
-	DragLeave    DragType = "leave"
-	DragOver     DragType = "over"
-	DragDrop     DragType = "drop"
-	DragDropFile DragType = "file"
+	DragEnter         DragType = "enter"
+	DragLeave         DragType = "leave"
+	DragOver          DragType = "over"
+	DragDrop          DragType = "drop"
+	DragDropFilePreflight DragType = "filepre" // if a handle returns true to DragDropPreflight, don't process file(s)
+	DragDropFile      DragType = "file"
 )
 
 var (
