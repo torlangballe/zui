@@ -53,7 +53,6 @@ type Arranger interface {
 	ArrangeChildren()
 }
 
-
 type Collapser interface {
 	CollapseChild(view zview.View, collapse bool, arrange bool) bool
 }
@@ -63,7 +62,6 @@ var GroupingStrokeWidth = 2.0
 var GroupingStrokeCorner = 4.0
 var GroupingMargin = 10.0
 var AlertButtonsOnRight = true
-
 
 func init() {
 	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
@@ -133,7 +131,11 @@ func (v *ContainerView) Add(elements ...interface{}) (first *Cell) {
 		}
 		if a, got := e.(zgeo.Alignment); got {
 			gotAlign = a
-			zlog.Assert(a&(zgeo.VertPos|zgeo.HorPos) != 0)
+			n := ""
+			if gotView != nil {
+				n = gotView.Native().Hierarchy()
+			}
+			zlog.Assert(a&(zgeo.VertPos|zgeo.HorPos) != 0, n)
 			continue
 		}
 		if m, got := e.(zgeo.Size); got {
