@@ -308,7 +308,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		t.Font = v.Font()
 		t.Wrap = ztextinfo.WrapNone
 		if v.IsImageFill {
-			canvas.SetDropShadow(zgeo.Size{}, 2, zgeo.ColorBlack) // why do we do this????
+			canvas.SetDropShadow(zstyle.DropShadow{zgeo.Size{}, 2, zgeo.ColorBlack}) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
 		// zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
@@ -319,7 +319,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		// zlog.Info("shapeViewDraw text:", v.Margin(), view.ObjectName(), rect, t.Rect, v.TextXMargin)
 		t.Draw(canvas)
 		if v.IsImageFill {
-			canvas.SetDropShadowOff(1)
+			canvas.ClearDropShadow()
 		}
 	}
 	if v.IsFocused() {
@@ -346,7 +346,7 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 	}
 	if v.IsImageFill {
 		canvas.PushState()
-		canvas.ClipPath(shapePath, false, false)
+		canvas.ClipPath(shapePath, false)
 		canvas.DrawImage(img, useDownsampleCache, rect, o, zgeo.Rect{})
 		canvas.PopState()
 	} else {
@@ -361,7 +361,7 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 			}
 			clipPath := zgeo.PathNewRect(ir, zgeo.Size{corner, corner})
 			canvas.PushState()
-			canvas.ClipPath(clipPath, false, false)
+			canvas.ClipPath(clipPath, false)
 		}
 		if v.textInfo.Text != "" {
 			if v.ImageAlign&zgeo.Right != 0 {
