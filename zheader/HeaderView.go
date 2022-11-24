@@ -26,7 +26,7 @@ import (
 )
 
 type Header struct {
-	ID             string
+	FieldName      string
 	Title          string
 	Align          zgeo.Alignment
 	Justify        zgeo.Alignment
@@ -41,7 +41,7 @@ type Header struct {
 }
 
 type SortInfo struct {
-	ID         string
+	FieldName  string
 	SmallFirst bool
 }
 
@@ -98,7 +98,7 @@ func SetUserAdjustedSortOrder(tableName string, order []SortInfo) {
 
 func (v *HeaderView) findSortInfo(sortOrderID string) int {
 	for i := range v.SortOrder {
-		if v.SortOrder[i].ID == sortOrderID {
+		if v.SortOrder[i].FieldName == sortOrderID {
 			return i
 		}
 	}
@@ -107,7 +107,7 @@ func (v *HeaderView) findSortInfo(sortOrderID string) int {
 
 func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Header) {
 	if h.SortSmallFirst != zbool.Unknown {
-		si := v.findSortInfo(h.ID)
+		si := v.findSortInfo(h.FieldName)
 		sorting := v.SortOrder[si]
 		sorting.SmallFirst = !sorting.SmallFirst
 		zslice.RemoveAt(&v.SortOrder, si)
@@ -123,27 +123,27 @@ func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Heade
 		}
 		sort, _ := button.FindViewWithName("sort", false)
 		triangle := sort.(*zimageview.ImageView)
-		v.updateTriangle(triangle, h.ID)
+		v.updateTriangle(triangle, h.FieldName)
 		SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 		if v.SortingPressedFunc != nil {
 			v.SortingPressedFunc()
 		}
 	}
 	if v.HeaderPressedFunc != nil {
-		v.HeaderPressedFunc(h.ID)
+		v.HeaderPressedFunc(h.FieldName)
 	}
 }
 
 func (v *HeaderView) Populate(headers []Header) {
 	type newSort struct {
-		id    string
-		small bool
-		pri   int
+		fieldName string
+		small     bool
+		pri       int
 	}
 	v.SortOrder = getUserAdjustedSortOrder(v.ObjectName())
 	zslice.RemoveIf(&v.SortOrder, func(i int) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
 		for _, h := range headers {
-			if v.SortOrder[i].ID == h.ID {
+			if v.SortOrder[i].FieldName == h.FieldName {
 				return false
 			}
 		}
@@ -151,8 +151,8 @@ func (v *HeaderView) Populate(headers []Header) {
 	})
 	var newSorts []newSort
 	for _, h := range headers {
-		if h.SortSmallFirst != zbool.Unknown && v.findSortInfo(h.ID) == -1 {
-			newSorts = append(newSorts, newSort{id: h.ID, small: h.SortSmallFirst.Bool(), pri: h.SortPriority})
+		if h.SortSmallFirst != zbool.Unknown && v.findSortInfo(h.FieldName) == -1 {
+			newSorts = append(newSorts, newSort{fieldName: h.FieldName, small: h.SortSmallFirst.Bool(), pri: h.SortPriority})
 		}
 	}
 	sort.Slice(newSorts, func(i, j int) bool {
@@ -167,14 +167,14 @@ func (v *HeaderView) Populate(headers []Header) {
 		return pi.pri < pj.pri
 	})
 	for _, n := range newSorts {
-		v.SortOrder = append(v.SortOrder, SortInfo{n.id, n.small})
+		v.SortOrder = append(v.SortOrder, SortInfo{n.fieldName, n.small})
 	}
 	SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 	// for _, s := range v.SortOrder {
-	// 	zlog.Info("SO:", s.ID)
+	// 	zlog.Info("SO:", s.FieldName)
 	// }
 	for _, h := range headers {
-		// zlog.Info("POPULATE:", h.ID, h.Title)
+		// zlog.Info("POPULATE:", h.FieldName, h.Title)
 		cell := zcontainer.Cell{}
 		cell.Alignment = h.Align
 		header := h
@@ -189,11 +189,11 @@ func (v *HeaderView) Populate(headers []Header) {
 		if h.ImagePath != "" {
 			iv := zimageview.New(nil, h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
-			iv.SetObjectName(h.ID + ".image")
+			iv.SetObjectName(h.FieldName + ".image")
 			button.Add(iv, zgeo.Center, zgeo.Size{})
 		}
 		button.SetTextColor(zgeo.ColorWhite)
-		button.SetObjectName(h.ID)
+		button.SetObjectName(h.FieldName)
 		// if !h.ImageSize.IsNull() {
 		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
 		// }
@@ -215,7 +215,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
 			button.Add(triangle, zgeo.TopRight, zgeo.Size{2, 3})
-			v.updateTriangle(triangle, h.ID)
+			v.updateTriangle(triangle, h.FieldName)
 		}
 		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)
 		if h.MaxWidth != 0 {

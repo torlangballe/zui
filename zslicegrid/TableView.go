@@ -189,7 +189,7 @@ func makeHeaderFields(fields []zfields.Field, height float64) []zheader.Header {
 	for _, f := range fields {
 		var h zheader.Header
 		h.Height = f.Height
-		h.ID = f.ID
+		h.FieldName = f.FieldName
 		h.Align = zgeo.Left | zgeo.VertCenter
 		h.Justify = f.Justify
 		if f.Kind == zreflect.KindString && f.Enum == "" {
