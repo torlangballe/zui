@@ -117,6 +117,7 @@ type Field struct {
 	ActionValue          any    // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
 	Name                 string
 	FieldName            string //
+	PackageName          string // the name of the package struct the field is in is from
 	Title                string // name of item in row, and header if no title
 	MaxWidth             float64
 	MinWidth             float64
@@ -154,12 +155,14 @@ type Field struct {
 	SetEdited            bool
 	WidgetName           string
 	BrancherType         string
-	SkipFieldNames       []string
+	UseIn                []string
 	Styling              zstyle.Styling
+	CustomFields         map[string]string
 }
 
 var EmptyField = Field{
-	Styling: zstyle.EmptyStyling,
+	Styling:      zstyle.EmptyStyling,
+	CustomFields: map[string]string{},
 }
 
 type ActionHandler interface {
@@ -185,7 +188,6 @@ var flagsList = []zbits.BitsetItem{
 	zbits.BSItem("HasHeaderImage", int64(FlagHasHeaderImage)),
 	zbits.BSItem("NoTitle", int64(FlagNoTitle)),
 	zbits.BSItem("ToClipboard", int64(FlagToClipboard)),
-	// zbits.BSItem("IsNamedSelection", int64(FlagIsNamedSelection)),
 	zbits.BSItem("IsPassword", int64(FlagIsPassword)),
 	zbits.BSItem("IsDuration", int64(FlagIsDuration)),
 	zbits.BSItem("IsOpaque", int64(FlagIsOpaque)),
@@ -275,7 +277,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 	f.SortSmallFirst = zbool.Unknown
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
-
+	f.PackageName = item.Package
+	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
 	for _, part := range zreflect.GetTagAsMap(item.Tag)["zui"] {
 		if part == "-" {
@@ -321,8 +324,12 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			f.Name = origVal
 		case "title":
 			f.Title = origVal
-		case "skip":
-			f.SkipFieldNames = barParts
+		// case "skip":
+		// 	f.SkipFieldNames = barParts
+		case "usein":
+			f.UseIn = barParts
+		case "isuseinval":
+			f.Flags |= FlagIsUseInValue
 		case "color":
 			f.Colors = barParts
 			if len(f.Colors) == 1 {
@@ -511,8 +518,6 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			}
 		case "2clip":
 			f.Flags |= FlagToClipboard
-		// case "named-selection":
-		// 	f.Flags |= FlagIsNamedSelection
 		case "labelize":
 			f.LabelizeWidth = n
 			if n == 0 {
@@ -548,6 +553,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			}
 		case "since":
 			f.Flags |= FlagIsStatic | FlagIsDuration
+		default:
+			f.CustomFields[key] = val
 		}
 	}
 	if immediateEdit {
