@@ -155,9 +155,9 @@ type Field struct {
 	SetEdited            bool
 	WidgetName           string
 	BrancherType         string
-	UseIn                []string
+	UseIn                []string // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
 	Styling              zstyle.Styling
-	CustomFields         map[string]string
+	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 }
 
 var EmptyField = Field{

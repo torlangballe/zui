@@ -58,11 +58,12 @@ type FieldViewParameters struct {
 	Field
 	HideStatic              bool
 	ImmediateEdit           bool
-	ForceZeroOption         bool // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
-	AllStatic               bool // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	EditWithoutCallbacks    bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	TipsAsDescriptionLabels bool // Used for labelizing fields, todo.
-	InColumns               bool // Means fields are shown in a row, possibly with a header. So checkboxes have no label for example.
+	ForceZeroOption         bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
+	AllStatic               bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
+	EditWithoutCallbacks    bool     // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
+	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
+	SkipFieldNames          []string
 }
 
 func FieldViewParametersDefault() (f FieldViewParameters) {
@@ -389,7 +390,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 				return
 			}
 			fv.data = item.Address
-			hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem())
+			hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
 			// zlog.Info("update any SliceValue:", f.Name, hash, fv.dataHash, reflect.ValueOf(fv.data).Elem())
 			sameHash := (fv.dataHash == hash)
 			fv.dataHash = hash
@@ -647,7 +648,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 				// zlog.Info("callFieldHandler parent", action, f.Name, parent.ObjectName(), fv != nil, reflect.TypeOf(parent.View), sss)
 				if fv != nil {
 					if fv.IsSlice() {
-						fv.dataHash = zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem())
+						fv.dataHash = zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
 						// zlog.Info("Edit Set Hash", fv.Hierarchy(), fv.dataHash)
 					}
 					if !first {
@@ -982,7 +983,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		view := zview.View(cv)
 		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
 	})
-	if v.params.LabelizeWidth == 0 && !v.params.InColumns {
+	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, "$row") {
 		_, stack := zlabel.LabelizeCheckbox(cv, f.TitleOrName())
 		return stack
 	}
@@ -1176,12 +1177,22 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 	// fmt.Println("buildStack1", name, defaultAlign, v.params.SkipFieldNames)
 	children := v.getStructItems()
 	for j, item := range children {
+		f := findFieldWithIndex(&v.Fields, j)
+		if f != nil && f.Flags&FlagIsUseInValue != 0 {
+			v.params.UseInValues = append(v.params.UseInValues, fmt.Sprint(item.Value))
+		}
+	}
+	for j, item := range children {
 		if zstr.IndexOf(item.FieldName, v.params.SkipFieldNames) != -1 {
 			continue
 		}
 		f := findFieldWithIndex(&v.Fields, j)
 		if f == nil {
 			//			zlog.Error(nil, "no field for index", j)
+			continue
+		}
+		if len(f.UseIn) != 0 && !zstr.SlicesIntersect(f.UseIn, v.params.UseInValues) {
+			// zlog.Info("IFIn:", v.Hierarchy(), f.Name, f.UseIn, v.params.UseInValues)
 			continue
 		}
 		v.buildItem(f, item, j, children, defaultAlign, cellMargin, useMinWidth)
@@ -1298,7 +1309,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				add = fv.buildRepeatedStackFromSlice(item.Address, vert, f)
 			} else {
 				// zlog.Info("NewMenuGroup:", f.FieldName, f.TitleOrName(), f.Styling.StrokeWidth, params.Styling.StrokeWidth)
-				mg := buildMenuGroup(item.Address, f.TitleOrName(), params)
+				mg := buildMenuGroup(item.Address, f.ValueStoreKey, params)
 				mg.SetChangedHandler(func(newID string) {
 					// zlog.Info("Update group")
 					callActionHandlerFunc(v, f, EditedAction, item.Address, &mg.View)
