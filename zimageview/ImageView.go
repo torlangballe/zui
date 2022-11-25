@@ -221,7 +221,7 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 	if v.imageCorner != 0 {
 		canvas.PushState()
 		path := zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
-		canvas.ClipPath(path, true, true)
+		canvas.ClipPath(path, true)
 	}
 	if !canvas.DrawImage(img, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
 		//		v.Expose() // causes endless loop of drawing...
