@@ -23,20 +23,22 @@ import (
 
 type SQLTableView[S zstr.StrIDer] struct {
 	TableView[S]
-	searchString string
-	tableName    string
-	selectMethod string
-	DeleteQuery  string
-	IsSqlite     bool
-	IsQuoteIDs   bool
-	Where        string
-	skipFields   []string
-	searchFields []string
-	equalFields  map[string]string
-	setFields    map[string]string
-	slicePage    []S
-	limit        int
-	offset       int
+	searchString  string
+	tableName     string
+	selectMethod  string
+	DeleteQuery   string
+	IsSqlite      bool
+	IsQuoteIDs    bool
+	Where         string
+	skipFields    []string
+	searchFields  []string
+	showID        int64
+	equalFields   map[string]string
+	setFields     map[string]string
+	fieldIsString map[string]bool
+	slicePage     []S
+	limit         int
+	offset        int
 }
 
 func NewSQLView[S zstr.StrIDer](tableName, selectMethod string, limit int, options OptionType) (sv *SQLTableView[S]) {
@@ -60,6 +62,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	v.DeleteItemsFunc = v.deleteItems
 	v.equalFields = map[string]string{}
 	v.setFields = map[string]string{}
+	v.fieldIsString = map[string]bool{}
 	zreflect.ForEachField(s, func(index int, val reflect.Value, sf reflect.StructField) {
 		var column string
 		tags := zreflect.GetTagAsMap(string(sf.Tag))
@@ -77,6 +80,9 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 			if part == "-" || primary {
 				v.EditParameters.SkipFieldNames = append(v.EditParameters.SkipFieldNames, sf.Name)
 				break
+			}
+			if val.Kind() == reflect.String {
+				v.fieldIsString[sf.Name] = true
 			}
 			if !primary {
 				v.setFields[sf.Name] = column
@@ -134,28 +140,27 @@ func (v *SQLTableView[S]) addNew(duplicate bool) {
 }
 
 func (v *SQLTableView[S]) insertRow(s S) {
-	var info zsql.UpsertInfoSend
-	var id int64
+	var info zsql.UpsertInfo
+	var offset int64
 	info.Rows = []S{s}
 	info.TableName = v.tableName
 	info.SetColumns = v.setFields
-	err := zrpc2.MainClient.Call("SQLCalls.InsertRows", info, &id)
+	info.EqualColumns = v.equalFields
+
+	first := v.setFields[v.Header.SortOrder[0].FieldName]
+	val, _ := zreflect.FieldForName(&s, first)
+	sval := fmt.Sprint(val)
+	if v.fieldIsString[first] {
+		sval = zsql.QuoteString(sval)
+	}
+	info.OffsetQuery = fmt.Sprintf("SELECT COUNT(*) FROM ", v.tableName, " WHERE ", first, "<", sval)
+	zlog.Info("InserOffQ:", info.OffsetQuery)
+	err := zrpc2.MainClient.Call("SQLCalls.InsertRows", info, &offset)
 	zlog.Info("insert", err)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 		return
 	}
-	// var slice []S
-	// var q SQLQuery
-
-	// query := "SELECT "
-	// q.SkipFields = v.skipFields
-	// err := zrpc2.MainClient.Call(v.selectMethod, q, &slice)
-	// if err != nil {
-	// 	zlog.Error(err, "select", q.Query, v.limit, v.offset)
-	// 	return
-	// }
-	// v.UpdateSlice(slice)
 }
 
 func (v *SQLTableView[S]) deleteItems(ids []string) {
@@ -173,7 +178,7 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 }
 
 func (v *SQLTableView[S]) updateForIDs(items []S) {
-	var info zsql.UpsertInfoSend
+	var info zsql.UpsertInfo
 	info.Rows = items
 	info.TableName = v.tableName
 	info.SetColumns = v.setFields
@@ -191,7 +196,7 @@ func (v *SQLTableView[S]) createSelect() string {
 	if v.Header != nil {
 		var orders []string
 		for _, s := range v.Header.SortOrder {
-			o := s.ID + " "
+			o := v.setFields[s.FieldName] + " "
 			if s.SmallFirst {
 				o += "ASC"
 			} else {
@@ -221,42 +226,6 @@ func (v *SQLTableView[S]) createSelect() string {
 	}
 	zlog.Info("Query:", query)
 	return query
-}
-
-func (v *SQLTableView[S]) createQueryTrailer() string {
-	var order string
-	if v.Header != nil {
-		var orders []string
-		for _, s := range v.Header.SortOrder {
-			o := s.ID + " "
-			if s.SmallFirst {
-				o += "ASC"
-			} else {
-				o += "DESC"
-			}
-			orders = append(orders, o)
-		}
-		order = strings.Join(orders, ",")
-	}
-
-	where := v.Where
-	if v.Where == "" && v.searchString != "" && len(v.searchFields) > 0 {
-		var wheres []string
-		for _, s := range v.searchFields {
-			w := s + `ILIKE '%` + zsql.SanitizeString(v.searchString) + `%'`
-			wheres = append(wheres, w)
-		}
-		where = "(" + strings.Join(wheres, " OR ") + ")"
-	}
-	if where != "" {
-		where = "WHERE " + where
-	}
-	trailer := fmt.Sprintf("%s LIMIT %d OFFSET %d", v.Where, v.limit, v.offset)
-	if order != "" {
-		trailer += " ORDER BY " + order
-	}
-	zlog.Info("Trailer:", trailer)
-	return trailer
 }
 
 func (v *SQLTableView[S]) SetWhere(where string) {
