@@ -57,6 +57,7 @@ type Grouper interface {
 	GetHeader() *zcontainer.StackView // can return nil
 	GetCurrentID() string
 	GetGroupBase() *GroupBase
+	GetStoreKey() string
 	// SetChangedHandler(handler func(newID string))
 }
 
@@ -69,12 +70,16 @@ func (v *GroupBase) Init() {
 	v.HasDataChangedInIDsFunc = func() []string { return nil }
 }
 
+func (v *GroupBase) GetStoreKey() string {
+	return v.StoreKey
+}
+
 func (v *GroupBase) GetHeader() *zcontainer.StackView {
 	return v.header
 }
 
-func (v *GroupBase) makeStoreKey() string {
-	return "zgroup.GroupBase." + v.StoreKey
+func makeStoreKey(store string) string {
+	return "zgroup.GroupBase." + store
 }
 
 func (v *GroupBase) ReadyToShow(beforeWindow bool) {
@@ -82,9 +87,6 @@ func (v *GroupBase) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	var setID string
-	if v.StoreKey != "" && v.CurrentID == "" {
-		setID, _ = zkeyvalue.DefaultStore.GetString(v.makeStoreKey())
-	}
 	if setID == "" && v.CurrentID == "" && len(v.GroupItems) > 0 {
 		keys := sort.StringSlice(zmap.GetKeysAsStrings(v.GroupItems))
 		keys.Sort()
@@ -129,7 +131,6 @@ func (v *GroupBase) SetChildAlignment(id string, a zgeo.Alignment) {
 }
 
 func (v *GroupBase) SetGroupItem(id string, done func()) {
-	// zlog.Info("GB: SetGroupItem:", id)
 	if v.CurrentID == id {
 		if done != nil {
 			done()
@@ -141,7 +142,7 @@ func (v *GroupBase) SetGroupItem(id string, done func()) {
 		v.SetIndicatorSelectionFunc(v.CurrentID, false)
 	}
 	if v.StoreKey != "" {
-		zkeyvalue.DefaultStore.SetString(id, v.makeStoreKey(), true)
+		zkeyvalue.DefaultStore.SetString(id, makeStoreKey(v.StoreKey), true)
 	}
 	if v.ChildView != nil {
 		v.RemoveChild(v.ChildView)
@@ -260,6 +261,9 @@ type SliceGroupData struct {
 }
 
 func CreateSliceGroup(grouper Grouper, slicePtr any, setID string, indicatorFieldName string, create func(id string, delete bool) zview.View) {
+	if setID == "" && grouper.GetStoreKey() != "" {
+		setID, _ = zkeyvalue.DefaultStore.GetString(makeStoreKey(grouper.GetStoreKey()))
+	}
 	AddSliceItems(grouper, slicePtr, setID, indicatorFieldName, create)
 	gb := grouper.GetGroupBase()
 	data := new(SliceGroupData)
@@ -276,7 +280,7 @@ func CreateSliceGroup(grouper Grouper, slicePtr any, setID string, indicatorFiel
 		var newSums []int64
 		for i := 0; i < val.Len(); i++ {
 			a := val.Index(i).Interface()
-			cc := zstr.HashAnyToInt64(a)
+			cc := zstr.HashAnyToInt64(a, "")
 			if val.Len() != len(data.SliceElementCheckSums) || cc != data.SliceElementCheckSums[i] {
 				// zlog.Info("Changed:", i, len(data.SliceElementCheckSums))
 				id := getIDFromAnySliceItemWithIndex(a, i)
@@ -334,6 +338,7 @@ func AddSliceItems(g Grouper, slicePtr any, setID string, indicatorFieldName str
 		}
 		g.AddItem(id, title, "", id == setID, nil, create)
 	}
+	// zlog.Info("GroupBase.ReadyToShow key:", g.GetStoreKey(), setID, g.GetCurrentID())
 	if g.GetCurrentID() == "" && firstID != "" {
 		g.SelectItem(firstID, nil)
 	}

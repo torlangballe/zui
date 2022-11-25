@@ -95,7 +95,7 @@ func createGroupSliceViewFunc(slicePtr any, params FieldViewParameters, id strin
 	return nil
 }
 
-func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, setID string, parameters FieldViewParameters) {
+func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, parameters FieldViewParameters) {
 	params := parameters
 	var indicatorFieldName string
 	val := reflect.ValueOf(slicePtr).Elem()
@@ -123,7 +123,7 @@ func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, setID string, parame
 		// zlog.Info("Changes Group parent:", gb.Hierarchy(), text, gm != nil)
 		gm.UpdateCurrentItemTitle(text)
 	}
-	zgroup.CreateSliceGroup(grouper, slicePtr, setID, indicatorFieldName, func(id string, delete bool) zview.View {
+	zgroup.CreateSliceGroup(grouper, slicePtr, "", indicatorFieldName, func(id string, delete bool) zview.View {
 		return createGroupSliceViewFunc(slicePtr, parameters, id, delete)
 	})
 	if params.Flags&FlagSkipIndicator == 0 {
@@ -142,10 +142,13 @@ func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, setID string, parame
 	}
 }
 
-func buildMenuGroup(slicePtr any, setID string, params FieldViewParameters) *zgroup.MenuGroupView {
+func buildMenuGroup(slicePtr any, storeKey string, params FieldViewParameters) *zgroup.MenuGroupView {
+	// zlog.Info("FV:buildMenuGroup storeKey:", storeKey)
 	mv := zgroup.MenuGroupViewNew("menugroup", params.Field.TitleOrName(), params.Field.Styling, params.Field.Styling)
 	mv.AddEditing()
-	CreateSliceGroup(mv, slicePtr, setID, params)
+	mv.StoreKey = storeKey
+	CreateSliceGroup(mv, slicePtr, params)
+	mv.StoreKey = storeKey
 	return mv
 }
 
