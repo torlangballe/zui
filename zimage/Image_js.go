@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	remoteCache      = zcache.New(3600, false)
-	localCache       = zcache.New(0, false) // cache for with-app images, no expiry
+	remoteCache      = zcache.NewWithExpiry(3600, false)
+	localCache       = zcache.New() // cache for with-app images, no expiry
 	DrawInCanvasFunc func(size zgeo.Size, draw func(e js.Value)) image.Image
 )
 
