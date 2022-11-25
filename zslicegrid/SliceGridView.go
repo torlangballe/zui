@@ -173,7 +173,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 		var storeItems []S
 		var wg sync.WaitGroup
 		for i, item := range items {
-			if len(*v.slicePtr) <= i || zstr.HashAnyToInt64(item) != zstr.HashAnyToInt64((*v.slicePtr)[i]) {
+			if len(*v.slicePtr) <= i || zstr.HashAnyToInt64(item, "") != zstr.HashAnyToInt64((*v.slicePtr)[i], "") {
 				wg.Add(1)
 				go func(i int, item S, showErr *bool) {
 					err := v.StoreChangedItemFunc(item, showErr, i == len(items)-1)
@@ -331,7 +331,7 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 }
 
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
-	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s) != zstr.HashAnyToInt64(*v.slicePtr))
+	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s, "") != zstr.HashAnyToInt64(*v.slicePtr, ""))
 	if update {
 		if v.SortFunc != nil {
 			v.SortFunc(s)
@@ -460,10 +460,11 @@ func (v *SliceGridView[S]) DeleteItemsAsk(ids []string) {
 }
 
 func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hlevel int, leaf, got bool) {
-	for i, s := range *v.slicePtr {
+	for i, s := range *slice {
 		children := v.getChildren(v.slicePtr, i)
 		sid := s.GetStrID()
 		kids := (v.Grid.OpenBranches[sid] && len(*children) > 0)
+		zlog.Info("getHier:", id, sid, level, kids, len(*children))
 		if id == sid {
 			leaf = !kids
 			if leaf && *children != nil {
@@ -485,3 +486,45 @@ func (v *SliceGridView[S]) calculateHierarchy(id string) (level int, leaf bool) 
 	level, leaf, _ = v.getHierarchy(v.slicePtr, 1, id)
 	return
 }
+
+/* Slice hierarch example:
+type Row struct {
+	Name        string `zui:"static,width:120,indicator"`
+	IsFruit     bool   `zui:"width:50"`
+	IsVegetable bool
+	Children    []Row `zui:"-"`
+}
+
+func (r Row) GetChildren() any {
+	return &r.Children
+}
+
+func (r Row) GetStrID() string {
+	return r.Name
+}
+
+var stuff = []Row{
+	Row{"Tomato", true, false, nil},
+	Row{"Carrot", false, true, nil},
+	Row{"Steak", false, false, nil},
+	Row{"Fruit", true, false, []Row{
+		Row{"Banana", true, false, nil},
+		Row{"Apple", true, false, nil},
+	},
+	},
+	Row{"Animal", true, false, []Row{
+		Row{"Dog", true, false, []Row{
+			Row{"Poodle", true, false, nil},
+			Row{"Setter", true, false, nil},
+		},
+		},
+		Row{"Cat", true, false, nil},
+	},
+	},
+}
+
+func addHierarchy(stack *zcontainer.StackView) {
+	v := zslicegrid.TableViewNew[Row](&stuff, "hierarchy", zslicegrid.AddHeader)
+	stack.Add(v, zgeo.TopLeft|zgeo.Expand)
+}
+*/
