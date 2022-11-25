@@ -64,6 +64,7 @@ type GridListView struct {
 	UpdateSelectionFunc        func(grid *GridListView, id string)
 	CellHeightFunc             func(id string) float64 // only need to have variable-height
 	HandleSelectionChangedFunc func()
+	HandleRowPressed           func(id string) // this only gets called for non-selectable grids
 	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
 	HandleKeyFunc              func(key zkeyboard.Key, mod zkeyboard.Modifier) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
@@ -381,18 +382,21 @@ func (v *GridListView) SetHoverID(id string) {
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
 	v.CurrentHoverID = ""
-	if !v.Selectable && !v.MultiSelectable {
-		return false
-	}
 	eventHandled := true
 	var index int
 	id, inside := v.FindCellForPos(pos)
 	if id != "" {
+		if !v.Selectable && !v.MultiSelectable && v.HandleRowPressed != nil {
+			v.HandleRowPressed(id)
+		}
 		index = v.IndexOfID(id)
 		if index == -1 {
 			zlog.Info("No index for id:", id)
 			return false
 		}
+	}
+	if !v.Selectable && !v.MultiSelectable {
+		return false
 	}
 	var selectionChanged bool
 	switch down {
