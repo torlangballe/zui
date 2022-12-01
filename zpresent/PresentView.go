@@ -43,14 +43,16 @@ type Attributes struct {
 }
 
 var (
-	presentCloseFunc func(dismissed bool)
-	firstPresented   bool
-	Presenting       = true // true for first pre-present
+	presentCloseFuncs = map[zview.View]func(dismissed bool){}
+	firstPresented    bool
+	Presenting        = true // true for first pre-present
 )
 
 func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
 	// fmt.Printf("PresentView: %p\n", v)
-	presentCloseFunc = closed
+	if closed != nil {
+		presentCloseFuncs[v] = closed
+	}
 	Presenting = true
 
 	CallReady(v, true)
@@ -126,7 +128,7 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 				win.HandleClosed = func() {
 					CloseOverride(v, false, Attributes{}, func(dismissed bool) {})
 					closed(true)
-					presentCloseFunc = nil
+					delete(presentCloseFuncs, v)
 				}
 			}
 		}
@@ -151,10 +153,11 @@ func Close(view zview.View, dismissed bool, done func(dismissed bool)) {
 }
 
 func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attributes, done func(dismissed bool)) {
+	// zlog.Info("CloseOverride", dismissed, zlog.CallingStackString())
 	// TODO: Handle non-modal window too
 	// zlog.Info("CloseOverride", dismissed, view.ObjectName(), reflect.ValueOf(view).Type())
 	if done != nil {
-		presentCloseFunc = nil
+		delete(presentCloseFuncs, view)
 	}
 	nv := view.Native()
 	parent := nv.Parent()
@@ -182,12 +185,11 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	if done != nil {
 		done(dismissed)
 	}
-	if presentCloseFunc != nil {
+	cf := presentCloseFuncs[view]
+	if cf != nil {
 		ztimer.StartIn(0.1, func() {
 			// zlog.Info("Check PresentCloseFunc:", presentCloseFunc != nil)
-			if presentCloseFunc != nil { // we do a re-check in case it was nilled in 0.1 second
-				presentCloseFunc(dismissed)
-			}
+			cf(dismissed)
 		})
 		// presentCloseFunc = nil // can't do this, clears before StartIn
 	}
