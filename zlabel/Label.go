@@ -140,6 +140,9 @@ func (v *Label) LongPressedHandler() func() {
 func LabelizeCheckbox(c *zcheckbox.CheckBox, title string) (*Label, *zcontainer.StackView) {
 	label := New(title)
 	label.SetObjectName("$checkBoxLabel:[" + title + "]")
+	label.SetPressedHandler(func() {
+		c.Press()
+	})
 	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
 	stack.SetSpacing(0)
 	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.Size{0, -4})

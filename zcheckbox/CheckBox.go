@@ -11,6 +11,7 @@ import (
 type CheckBox struct {
 	zview.NativeView
 	valueChanged func()
+	storeKey     string
 }
 
 func (c *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {

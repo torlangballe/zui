@@ -15,3 +15,4 @@ func New(on zbool.BoolInd) *CheckBox {
 
 func (c *CheckBox) SetValue(b zbool.BoolInd)       {}
 func (s *CheckBox) SetValueHandler(handler func()) {}
+func (v *CheckBox) Press()                         {}

@@ -8,18 +8,30 @@ import (
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 )
 
+func NewWithStore(storeKey string, defaultVal bool) *CheckBox {
+	val, got := zkeyvalue.DefaultStore.GetBool(storeKey, false)
+	// zlog.Info("NewWithStore:", val, got, storeKey, defaultVal)
+	if !got {
+		val = defaultVal
+	}
+	v := New(zbool.FromBool(val))
+	v.storeKey = storeKey
+	return v
+}
+
 func New(on zbool.BoolInd) *CheckBox {
-	c := &CheckBox{}
-	c.Element = zdom.DocumentJS.Call("createElement", "input")
-	c.JSSet("style", "position:absolute")
-	c.JSSet("type", "checkbox")
-	c.JSStyle().Set("margin-top", "4px")
-	c.SetCanFocus(true)
-	c.View = c
-	c.SetValue(on)
-	return c
+	v := &CheckBox{}
+	v.Element = zdom.DocumentJS.Call("createElement", "input")
+	v.JSSet("style", "position:absolute")
+	v.JSSet("type", "checkbox")
+	v.JSStyle().Set("margin-top", "4px")
+	v.SetCanFocus(true)
+	v.View = v
+	v.SetValue(on)
+	return v
 }
 
 func (v *CheckBox) SetRect(rect zgeo.Rect) {
@@ -27,29 +39,37 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) {
 	v.NativeView.SetRect(rect)
 }
 
-func (c *CheckBox) SetValueHandler(handler func()) {
-	c.valueChanged = handler
-	c.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		if c.valueChanged != nil {
-			c.valueChanged()
+func (v *CheckBox) SetValueHandler(handler func()) {
+	v.valueChanged = handler
+	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		if v.storeKey != "" {
+			// zlog.Info("StoreCheck:", v.On(), v.storeKey)
+			zkeyvalue.DefaultStore.SetBool(v.On(), v.storeKey, true)
+		}
+		if v.valueChanged != nil {
+			v.valueChanged()
 		}
 		return nil
 	}))
 }
 
-func (c *CheckBox) Value() zbool.BoolInd {
-	i := c.JSGet("indeterminate").Bool()
+func (v *CheckBox) Value() zbool.BoolInd {
+	i := v.JSGet("indeterminate").Bool()
 	if i {
 		return zbool.Unknown
 	}
-	b := c.JSGet("checked").Bool()
+	b := v.JSGet("checked").Bool()
 	return zbool.ToBoolInd(b)
 }
 
-func (c *CheckBox) SetValue(b zbool.BoolInd) {
+func (v *CheckBox) SetValue(b zbool.BoolInd) {
 	if b.IsUnknown() {
-		c.JSSet("indeterminate", true)
+		v.JSSet("indeterminate", true)
 	} else {
-		c.JSSet("checked", b.Bool())
+		v.JSSet("checked", b.Bool())
 	}
+}
+
+func (v *CheckBox) Press() {
+	v.JSCall("click")
 }
