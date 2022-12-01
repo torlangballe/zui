@@ -73,7 +73,9 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	return f
 }
 
-var fieldViewEdited = map[string]time.Time{}
+var (
+	fieldViewEdited = map[string]time.Time{}
+)
 
 func (v *FieldView) Data() any {
 	return v.data
@@ -855,14 +857,20 @@ func getTimeString(item zreflect.Item, f *Field) string {
 	format := f.Format
 	secs := (f.Flags&FlagHasSeconds != 0)
 	if format == "" {
-		format = "15:04 02-Jan-06"
+		format = "15:04"
 		if secs {
-			format = "15:04:03 02-Jan-06"
+			format = "15:04:03"
 		}
+		if ztime.DefaultDisplayServerTime {
+			format += "-07"
+		}
+		format += " 02-Jan-06"
 	}
 	if format == "nice" {
 		str = ztime.GetNice(t, f.Flags&FlagHasSeconds != 0)
+		// zlog.Info("Nice:", t, f.Name, ztime.DefaultDisplayServerTime)
 	} else {
+		t = ztime.GetTimeWithServerLocation(t)
 		str = t.Format(format)
 	}
 	return str

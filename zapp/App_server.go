@@ -11,23 +11,34 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
+	"github.com/torlangballe/zutil/zrpc2"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztime"
 )
 
 // nativeApp is used in App in zapp.go, so must be defined even if empty:
 type nativeApp struct {
 }
 
+type AppCalls zrpc2.CallsBase
+
 // FilesRedirector is a type that can handle serving files
 type FilesRedirector struct {
 	Override         func(w http.ResponseWriter, req *http.Request, filepath string) bool // Override is a method to handle special cases of files, return true if handled
 	ServeDirectories bool
 	Router           *mux.Router // if ServeDirectories is true, it serves content list of directory
+}
+
+var Calls = new(AppCalls)
+
+func Init() {
+	zrpc2.Register(Calls)
 }
 
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
@@ -84,7 +95,12 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	})
 }
 
-// URL returns the url/command that invoked this app
-// func URL() string {
-// 	return strings.Join(os.Args, " ")
-// }
+func (c *AppCalls) GetTimeInfo(u zrpc2.Unused, info *LocationTimeInfo) error {
+	t := time.Now()
+	name, offset := t.Zone()
+	info.JSISOTimeString = t.Format(ztime.JavascriptISO)
+	info.ZoneName = name
+	info.ZoneOffsetSeconds = offset
+	zlog.Info("GetTimeInfo:", name, offset)
+	return nil
+}

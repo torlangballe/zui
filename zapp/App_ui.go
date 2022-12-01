@@ -1,8 +1,11 @@
+//go:build zui
+
 package zapp
 
 import (
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zdom"
@@ -12,10 +15,16 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc2"
+	"github.com/torlangballe/zutil/ztime"
 )
 
 type nativeApp struct {
 }
+
+var (
+	ServerTimezoneName string
+	ServerTimeOffset   time.Duration
+)
 
 // URL returns the url that invoked this app
 func URL() string {
@@ -61,4 +70,21 @@ func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]stri
 		zlog.IsInTests = true
 	}
 	return
+}
+
+func GetTimeInfoFromServer() error {
+	var info LocationTimeInfo
+	err := zrpc2.MainClient.Call("AppCalls.GetTimeInfo", nil, &info)
+	if err != nil {
+		return zlog.Error(err, "call")
+	}
+	// zlog.Info("GetTimeInfoFromServer:", err, info)
+	ServerTimezoneName = info.ZoneName
+	ztime.ServerTimezoneOffsetSecs = info.ZoneOffsetSeconds
+	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
+	if err != nil {
+		return zlog.Error(err, "parse")
+	}
+	ServerTimeOffset = time.Now().Sub(t)
+	return nil
 }
