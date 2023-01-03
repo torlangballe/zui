@@ -29,7 +29,7 @@ type SQLTableView[S zstr.StrIDer] struct {
 	DeleteQuery   string
 	IsSqlite      bool
 	IsQuoteIDs    bool
-	Where         string
+	Constraints   string
 	skipFields    []string
 	searchFields  []string
 	showID        int64
@@ -57,6 +57,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 			go v.fillPage()
 		}
 	}
+	v.SortFunc = nil
 	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
 	v.StoreChangedItemsFunc = v.updateForIDs
 	v.DeleteItemsFunc = v.deleteItems
@@ -190,9 +191,10 @@ func (v *SQLTableView[S]) updateForIDs(items []S) {
 	}
 }
 
-func (v *SQLTableView[S]) createSelect() string {
-	var s S
+func (v *SQLTableView[S]) createConstraints() string {
+	// var s S
 	var order string
+	zlog.Info("createConstraints", v.Header != nil, v.Header.SortOrder)
 	if v.Header != nil {
 		var orders []string
 		for _, s := range v.Header.SortOrder {
@@ -206,41 +208,37 @@ func (v *SQLTableView[S]) createSelect() string {
 		}
 		order = strings.Join(orders, ",")
 	}
-
-	where := v.Where
-	if v.Where == "" && v.searchString != "" && len(v.searchFields) > 0 {
+	cons := v.Constraints
+	if cons == "" && v.searchString != "" && len(v.searchFields) > 0 {
 		var wheres []string
 		for _, s := range v.searchFields {
 			w := s + `ILIKE '%` + zsql.SanitizeString(v.searchString) + `%'`
 			wheres = append(wheres, w)
 		}
-		where = "(" + strings.Join(wheres, " OR ") + ")"
+		cons = "WHERE (" + strings.Join(wheres, " OR ") + ")"
 	}
-	if where != "" {
-		where = "WHERE " + where
-	}
-	fields := zsql.FieldNamesStringFromStruct(&s, v.skipFields, "")
-	query := fmt.Sprintf("SELECT %s FROM %s %s LIMIT %d OFFSET %d", fields, v.tableName, v.Where, v.limit, v.offset)
 	if order != "" {
-		query += " ORDER BY " + order
+		cons += " ORDER BY " + order
 	}
-	zlog.Info("Query:", query)
-	return query
+	cons += fmt.Sprintf(" LIMIT %d OFFSET %d", v.limit, v.offset)
+	zlog.Info("createConstraints:", cons)
+	return cons
 }
 
-func (v *SQLTableView[S]) SetWhere(where string) {
-	v.Where = where
+func (v *SQLTableView[S]) SetConstraints(constraints string) {
+	v.Constraints = constraints
 }
 
 func (v *SQLTableView[S]) fillPage() {
 	var slice []S
-	var q SQLQuery
+	var q zsql.QueryBase
 
-	q.Query = v.createSelect()
+	q.Table = v.tableName
+	q.Constraints = v.createConstraints()
 	q.SkipFields = v.skipFields
 	err := zrpc2.MainClient.Call(v.selectMethod, q, &slice)
 	if err != nil {
-		zlog.Error(err, "select", q.Query, v.limit, v.offset)
+		zlog.Error(err, "select", q.Constraints, v.limit, v.offset)
 		return
 	}
 	v.UpdateSlice(slice)
