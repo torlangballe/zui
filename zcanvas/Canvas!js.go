@@ -36,6 +36,7 @@ func CanvasFromGoImage(img image.Image) *Canvas {
 	zlog.Assert(img != nil)
 	c := &Canvas{}
 	c.context = gg.NewContextForImage(img)
+	c.size = zimage.GoImageZSize(img)
 	zlog.Assert(c.context != nil)
 	return c
 }
@@ -94,14 +95,12 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 			fontMutex.Lock()
 			err = c.context.LoadFontFace(p, font.Size)
 			fontMutex.Unlock()
-			if err != nil {
-				//				zlog.Info(err, "Load font:", p)
-			} else {
+			if err == nil {
 				return nil
 			}
 		}
 	}
-	return zlog.Error(nil, "couldn't load font", font.Name)
+	return zlog.Error(nil, "couldn't load font", font.Name, paths)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {
