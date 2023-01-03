@@ -77,8 +77,9 @@ type GridListView struct {
 	ignoreMouseEvent   bool
 	cellsView          *zcustom.CustomView
 	margin             zgeo.Rect
-	columns            int
-	rows               int
+	Columns            int
+	Rows               int
+	VisibleRows        int
 	layoutDirty        bool
 	cachedChildSize    zgeo.Size
 }
@@ -106,7 +107,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.selectedIDs = map[string]bool{}
 	v.pressedIDs = map[string]bool{}
 	v.SetObjectName(storeName)
-	v.cellsView = zcustom.NewView("GridListView.grid")
+	v.cellsView = zcustom.NewView("GridListView.cells")
 	v.AddChild(v.cellsView, -1)
 	v.cellsView.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 	v.cellsView.SetPointerEnterHandler(true, v.handleHover)
@@ -686,20 +687,21 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	} else {
 		zlog.Assert(v.MaxColumns <= 1)
 	}
-	v.columns, v.rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
+	v.Columns, v.Rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
 	var x, y int
+	v.VisibleRows = 0
 	for i := 0; i < v.CellCountFunc(); i++ {
 		cellID := v.IDAtIndexFunc(i)
 		if v.CellHeightFunc != nil {
 			childSize.H = v.CellHeightFunc(cellID)
 		}
 		r := zgeo.Rect{Pos: pos, Size: childSize}
-		endx := float64(x+1) * width / float64(v.columns)
+		endx := float64(x+1) * width / float64(v.Columns)
 		if r.Max().X < endx {
 			r.SetMaxX(endx)
 		}
-		lastx := (x == v.columns-1)
-		lasty := (y == v.rows-1)
+		lastx := (x == v.Columns-1)
+		lasty := (y == v.Rows-1)
 		var minx, maxx, miny, maxy float64
 		if x == 0 {
 			minx = v.margin.Min().X
@@ -736,6 +738,9 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			x = 0
 			y++
 			pos.Y += r.Size.H
+			if visible {
+				v.VisibleRows++
+			}
 		} else {
 			pos.X += r.Size.W
 			x++
@@ -744,9 +749,9 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) ArrangeChildren() {
-	// zlog.Info("glist.ArrangeChildren")
 	v.ScrollView.ArrangeChildren()
 	s := v.CalculatedGridSize(v.LocalRect().Size)
+	// zlog.Info(v.Hierarchy(), v.CellCountFunc(), "glist.ArrangeChildren", v.LocalRect().Size, s)
 	r := zgeo.Rect{Size: s}
 	v.cellsView.SetRect(r)
 	v.LayoutCells(false)
@@ -849,17 +854,17 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 		} else {
 			nx := sx + incX
 			ny := sy + incY
-			// zlog.Info("moveSel:", v.columns, v.rows, fid, "s:", sx, sy, "n:", nx, ny, ny*v.columns+nx >= len(v.CellIDs))
+			// zlog.Info("moveSel:", v.Columns, v.rows, fid, "s:", sx, sy, "n:", nx, ny, ny*v.Columns+nx >= len(v.CellIDs))
 			if append && nx < 0 && ny > 0 {
-				nx = v.columns - 1
+				nx = v.Columns - 1
 				ny--
-			} else if append && nx >= v.columns && ny < v.rows-1 {
+			} else if append && nx >= v.Columns && ny < v.Rows-1 {
 				nx = 0
 				ny++
-			} else if nx < 0 || nx >= v.columns || ny < 0 || ny >= v.rows {
+			} else if nx < 0 || nx >= v.Columns || ny < 0 || ny >= v.Rows {
 				return true
 			}
-			if ny*v.columns+nx >= v.CellCountFunc() {
+			if ny*v.Columns+nx >= v.CellCountFunc() {
 				if incY != 1 {
 					return true
 				}
