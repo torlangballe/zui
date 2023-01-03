@@ -304,7 +304,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		t.Color = v.GetStateColor(t.Color)
 		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale, 0}
 		t.Rect = textRect.Expanded(exp)
-		t.Rect.Pos.Y -= 1
+		t.Rect.Pos.Y += 3
 		t.Font = v.Font()
 		t.Wrap = ztextinfo.WrapNone
 		if v.IsImageFill {
@@ -375,6 +375,8 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 		if v.IsRoundImage {
 			canvas.PopState()
 		}
+		// canvas.SetColor(zgeo.ColorRandom())
+		// canvas.FillRect(ir)
 	}
 }
 
