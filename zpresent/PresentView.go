@@ -57,25 +57,35 @@ func PresentView(v zview.View, attributes Attributes, presented func(win *zwindo
 
 	CallReady(v, true)
 
+	win := zwindow.GetMain()
+	w := zwindow.Current()
+	if w != nil {
+		// zlog.Info("makeEmbeddingViewAndAddToWindow sub:", w.ID, w.GetURL(), attributes.ModalNoBlock)
+		win = w
+	}
+
 	outer := v
 	if attributes.Modal {
-		outer = makeEmbeddingViewAndAddToWindow(v, attributes, closed)
+		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes, closed)
 	}
 	ct, _ := v.(zcontainer.ContainerType)
 	//zlog.Info("Present1:", ct != nil, reflect.ValueOf(outer).Type())
 	// zlog.Info("Present1:", zlog.GetCallingStackString())
+	// floaded := func() {
+	// 	presentLoaded(win, v, outer, attributes, presented, closed)
+	// }
 	if ct != nil {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("Present2", firstPresented)
-			presentLoaded(v, outer, attributes, presented, closed)
+			presentLoaded(win, v, outer, attributes, presented, closed)
+			// floaded()
 		})
 	} else {
-		presentLoaded(v, outer, attributes, presented, closed)
+		presentLoaded(win, v, outer, attributes, presented, closed)
+		// floaded()
 	}
 }
 
-func presentLoaded(v, outer zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
-	win := zwindow.GetMain()
+func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
@@ -85,6 +95,7 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 	}
 	nv := v.Native()
 	if attributes.Modal {
+		zlog.Info("Present:", len(presentCloseFuncs))
 		if nv != nil {
 			r := rect
 			if attributes.Pos != nil {
@@ -101,8 +112,8 @@ func presentLoaded(v, outer zview.View, attributes Attributes, presented func(wi
 			v.SetRect(r)
 		}
 		if attributes.ModalDismissOnEscapeKey {
-			win := zwindow.GetFromNativeView(nv)
-			win.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+			w := zwindow.GetFromNativeView(nv)
+			w.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 				if mod == zkeyboard.ModifierNone && key == zkeyboard.KeyEscape {
 					Close(v, true, nil)
 					return true
@@ -294,9 +305,8 @@ func PrintPresented(v zview.View, space string) {
 	}
 }
 
-func makeEmbeddingViewAndAddToWindow(v zview.View, attributes Attributes, closed func(dismissed bool)) (outer zview.View) {
+func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attributes Attributes, closed func(dismissed bool)) (outer zview.View) {
 	outer = v
-	win := zwindow.GetMain()
 	nv := v.Native()
 	ct, _ := v.(zcontainer.ContainerType)
 	if ct != nil && attributes.ModalCorner != 0 {
@@ -311,7 +321,7 @@ func makeEmbeddingViewAndAddToWindow(v zview.View, attributes Attributes, closed
 		outer = blocker
 		fullRect := win.ContentRect()
 		fullRect.Pos = zgeo.Pos{}
-		// zlog.Info("blocker rect:", fullRect)
+		zlog.Info("blocker rect:", fullRect)
 		blocker.SetRect(fullRect)
 		if attributes.ModalDimBackground {
 			blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
@@ -349,6 +359,7 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
+	stack.SetBGColor(zstyle.DefaultBGColor())
 
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetSpacing(2)

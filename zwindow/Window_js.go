@@ -257,12 +257,13 @@ func (win *Window) setOnKeyDown() {
 			return nil
 		}
 		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
-		// zlog.Info("win key:", key, len(win.keyHandlers))
 
 		top := win.ViewsStack[len(win.ViewsStack)-1].Native()
 		if len(win.keyHandlers) != 0 {
 			var used bool
+			// zlog.Info("win key:", key)
 			for view, h := range win.keyHandlers {
+				// zlog.Info("win key2:", view.Native().Hierarchy())
 				if top.IsParentOf(view.Native()) {
 					if h(key, mods) {
 						used = true
@@ -313,4 +314,13 @@ func GetFromNativeView(v *zview.NativeView) *Window {
 	we := v.GetWindowElement()
 	win := findForElement(we)
 	return win
+}
+
+func Current() *Window {
+	for w := range windows {
+		if w.Element.Get("document").Call("hasFocus").Bool() {
+			return w
+		}
+	}
+	return nil
 }

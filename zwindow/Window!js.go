@@ -49,3 +49,4 @@ func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, 
 }
 func (win *Window) SetOnResizeHandling()            {}
 func GetFromNativeView(v *zview.NativeView) *Window { return nil }
+func Current() *Window                              { return nil }
