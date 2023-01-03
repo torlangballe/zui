@@ -154,6 +154,8 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	}
 	v.UpdateViewFunc = func() {
 		v.Grid.LayoutCells(true)
+		a := v.View.(zcontainer.Arranger)
+		a.ArrangeChildren()
 		v.UpdateWidgets()
 	}
 	if hasHierarchy {
