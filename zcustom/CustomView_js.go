@@ -121,28 +121,31 @@ func (v *CustomView) MC() {
 }
 
 func (v *CustomView) makeCanvas() {
-	if v.canvas == nil {
-		// zlog.Info("MakeCanvas:", v.Hierarchy())
-		v.canvas = zcanvas.New()
-		v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
-		v.canvas.DownsampleImages = v.DownsampleImages
-		firstChild := v.JSGet("firstChild")
-		v.canvas.JSElement().Get("style").Set("zIndex", 1)
-		s := v.LocalRect().Size
-		scale := zscreen.MainScale
-		v.setCanvasSize(s, scale)
-
-		if firstChild.IsUndefined() {
-			v.JSCall("appendChild", v.canvas.JSElement())
-		} else {
-			v.JSCall("insertBefore", v.canvas.JSElement(), firstChild)
-		}
-		// zlog.Info("MakeCanvas Done:", v.Hierarchy())
+	if v.canvas != nil {
+		return
 	}
+	v.canvas = zcanvas.New()
+	v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
+	v.canvas.DownsampleImages = v.DownsampleImages
+	firstChild := v.JSGet("firstChild")
+	v.canvas.JSElement().Get("style").Set("zIndex", 1)
+	s := v.LocalRect().Size
+	scale := zscreen.MainScale
+	v.setCanvasSize(s, scale)
+
+	if firstChild.IsUndefined() {
+		v.JSCall("appendChild", v.canvas.JSElement())
+	} else {
+		v.JSCall("insertBefore", v.canvas.JSElement(), firstChild)
+	}
+	// zlog.Info("MakeCanvas Done:", v.Hierarchy())
+	// }
 }
 
 func (v *CustomView) drawSelf() {
-	// zlog.Info("CustV drawIfExposed", v.ObjectName(), v.exposed, v.draw)                         //, zlog.GetCallingStackString())
+	// if v.ObjectName() == "workers" {
+	// 	zlog.Info("CustV drawIfExposed", v.Hierarchy(), v.exposed, v.draw, v.drawing)
+	// }
 	if !v.drawing && !IsPresentingFunc() && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
 		v.drawing = true
 		r := v.LocalRect()
@@ -176,7 +179,7 @@ func (v *CustomView) ExposeIn(secs float64) {
 		// v.exposeTimer.StartIn(secs, func() {
 		// zlog.Info("Draw:", secs)
 		v.drawSelf()
-		// zlog.Info("DrawDone:", secs)
+		// zlog.Info("DrawDone:", v.Hierarchy())
 		// })
 		v.exposed = false
 	} else {
