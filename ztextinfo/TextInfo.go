@@ -250,7 +250,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := font.LineHeight()
-	y := ra.Pos.Y + h*0.95 // 0.71
+	y := ra.Pos.Y + h*0.73 // 0.71
 	// zlog.Info("TI.Draw:", ti.Rect, font.Size, ti.Text)
 	zlog.Assert(len(lines) == len(widths) || len(widths) == 0, len(lines), len(widths))
 	for i, s := range lines {
@@ -315,4 +315,10 @@ func (ti *Info) GetColumnsSize(cols int) zgeo.Size {
 	}
 	s, _, _ := temp.GetBounds()
 	return s
+}
+
+func (ti *Info) GetRect() zgeo.Rect {
+	zlog.Assert(!ti.Rect.IsNull())
+	box, _, _ := ti.GetBounds()
+	return ti.Rect.Align(box, ti.Alignment, ti.Margin)
 }
