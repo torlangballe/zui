@@ -9,10 +9,12 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfocus"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zrest"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -61,11 +63,15 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 	if on {
 		v.SetPressedHandler(func() {
 			if v.image != nil {
-				opts := zwindow.Options{
-					URL: v.image.Path,
+				path := v.image.Path
+				if !zhttp.StringStartsWithHTTPX(path) {
+					path = zstr.Concat("/", zrest.AppURLPrefix, path)
 				}
-				zlog.Info("Open Image View:", v.image.Path)
-				zwindow.Open(opts)
+				nv := New(v.image, v.image.Path, zgeo.Size{})
+				att := zpresent.AttributesNew()
+				att.Modal = true
+				att.ModalCloseOnOutsidePress = true
+				zpresent.PresentTitledView(nv, path, att, nil, nil, nil, nil)
 			}
 		})
 	} else {
