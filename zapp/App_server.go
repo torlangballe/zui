@@ -96,11 +96,10 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 }
 
 func (c *AppCalls) GetTimeInfo(u zrpc2.Unused, info *LocationTimeInfo) error {
-	t := time.Now()
+	t := time.Now().Local()
 	name, offset := t.Zone()
-	info.JSISOTimeString = t.Format(ztime.JavascriptISO)
+	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)
 	info.ZoneName = name
 	info.ZoneOffsetSeconds = offset
-	zlog.Info("GetTimeInfo:", name, offset)
 	return nil
 }

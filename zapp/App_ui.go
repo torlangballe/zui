@@ -22,8 +22,8 @@ type nativeApp struct {
 }
 
 var (
-	ServerTimezoneName string
-	ServerTimeOffset   time.Duration
+	ServerTimezoneName   string
+	ServerTimeDifference time.Duration
 )
 
 // URL returns the url that invoked this app
@@ -78,13 +78,13 @@ func GetTimeInfoFromServer() error {
 	if err != nil {
 		return zlog.Error(err, "call")
 	}
-	// zlog.Info("GetTimeInfoFromServer:", err, info)
 	ServerTimezoneName = info.ZoneName
 	ztime.ServerTimezoneOffsetSecs = info.ZoneOffsetSeconds
 	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
 	if err != nil {
 		return zlog.Error(err, "parse")
 	}
-	ServerTimeOffset = time.Now().Sub(t)
+	ServerTimeDifference = t.Sub(time.Now()) / 2
+	zlog.Info("Got Time:", info.JSISOTimeString, time.Now(), ServerTimeDifference)
 	return nil
 }
