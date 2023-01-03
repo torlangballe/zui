@@ -100,6 +100,7 @@ func (v *TableView[S]) ArrangeChildren() {
 		if v.Grid.CellCountFunc() > 0 {
 			view := v.Grid.AnyChildView()
 			if view != nil {
+				// zlog.Info("TV: ArrangeChildren FitHEader")
 				fv := view.(*zfields.FieldView)
 				v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
 			}

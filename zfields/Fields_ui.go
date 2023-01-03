@@ -823,8 +823,8 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []zheader.SortInfo
 	// start := time.Now()
 	fieldMap, enumTitles := getSortCache(slice, fields, sortOrder)
 	// fmt.Printf("FieldMap: %+v %+v\n", fieldMap, sortOrder)
-	// zlog.Info("SORT:", sortOrder, enumTitles)
 	val := reflect.ValueOf(slice)
+	// zlog.Info("SORT:", sortOrder, enumTitles, val.Len())
 	sort.SliceStable(slice, func(i, j int) bool {
 		ei := val.Index(i).Addr().Interface()
 		ej := val.Index(j).Addr().Interface()
