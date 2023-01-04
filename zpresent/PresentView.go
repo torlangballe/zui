@@ -95,7 +95,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	nv := v.Native()
 	if attributes.Modal {
-		zlog.Info("Present:", len(presentCloseFuncs))
+		// zlog.Info("Present:", len(presentCloseFuncs))
 		if nv != nil {
 			r := rect
 			if attributes.Pos != nil {
@@ -321,7 +321,6 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		outer = blocker
 		fullRect := win.ContentRect()
 		fullRect.Pos = zgeo.Pos{}
-		zlog.Info("blocker rect:", fullRect)
 		blocker.SetRect(fullRect)
 		if attributes.ModalDimBackground {
 			blocker.SetBGColor(zgeo.ColorNewGray(0, 0.5))
