@@ -332,7 +332,7 @@ func (v *NativeView) SetUsable(usable bool) {
 	if usable {
 		alpha = 1 - v.transparency
 	}
-	zlog.Info("SetUsable:", v.Hierarchy(), alpha, v.Element.Get("disabled"))
+	// zlog.Info("SetUsable:", v.Hierarchy(), alpha, v.Element.Get("disabled"))
 	// str := "none"
 	// if usable {
 	// 	str = "auto"
