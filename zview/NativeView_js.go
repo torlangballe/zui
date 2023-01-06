@@ -328,11 +328,11 @@ func (v *NativeView) Usable() bool {
 func (v *NativeView) SetUsable(usable bool) {
 	v.JSSet("disabled", !usable)
 	style := v.JSStyle()
-	// zlog.Info("SetUsable:", v.ObjectName(), v.Element.Get("disabled"))
 	var alpha float32 = 0.4
 	if usable {
 		alpha = 1 - v.transparency
 	}
+	zlog.Info("SetUsable:", v.Hierarchy(), alpha, v.Element.Get("disabled"))
 	// str := "none"
 	// if usable {
 	// 	str = "auto"
