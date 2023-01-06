@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"github.com/torlangballe/zui/zalert"
-	"github.com/torlangballe/zui/zbutton"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
@@ -47,15 +46,17 @@ type SliceGridView[S zstr.StrIDer] struct {
 	DeleteAskSubTextFunc  func(ids []string) string
 	UpdateViewFunc        func()
 	SortFunc              func(s []S)
+	FilterFunc            func(s S) bool
 	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice.
 	StoreChangedItemFunc  func(item S, showErr *bool, last bool) error  // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
 	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
 	DeleteItemFunc        func(item *S, showErr *bool, last bool) error // DeleteItemFunc is called from default DeleteItemsFunc, with index and struct in slicePtr of each item to delete. The items are then removed from the slicePtr. last is true if it's the last one in items.
 
-	slicePtr     *[]S
-	editButton   *zbutton.Button
-	deleteButton *zbutton.Button
-	addButton    *zimageview.ImageView
+	slicePtr      *[]S
+	filteredSlice []S
+	editButton    *zimageview.ImageView
+	deleteButton  *zimageview.ImageView
+	addButton     *zimageview.ImageView
 }
 
 type OptionType int
@@ -100,15 +101,13 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 		v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	}
 	if options&AddEdit != 0 {
-		v.editButton = zbutton.New("")
+		v.editButton = zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.Size{18, 18})
 		v.editButton.SetObjectName("edit")
-		v.editButton.SetMinWidth(130)
 		v.Bar.Add(v.editButton, zgeo.CenterLeft)
 	}
 	if options&AddDelete != 0 {
-		v.deleteButton = zbutton.New("")
+		v.deleteButton = zimageview.New(nil, "images/zcore/trash-dark-gray.png", zgeo.Size{18, 18})
 		v.deleteButton.SetObjectName("delete")
-		v.deleteButton.SetMinWidth(135)
 		v.Bar.Add(v.deleteButton, zgeo.CenterLeft)
 	}
 	if options&(AddDarkPlus|AddLightPlus) != 0 {
@@ -124,9 +123,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slicePtr *[]S, storeName string
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
 	v.Grid.CellCountFunc = func() int {
 		if !hasHierarchy {
-			return len(*v.slicePtr)
+			return len(v.filteredSlice)
 		}
-		return v.countHierarcy(v.slicePtr)
+		return v.countHierarcy(v.filteredSlice)
 	}
 	v.Grid.IDAtIndexFunc = func(i int) string {
 		if !hasHierarchy {
@@ -280,9 +279,9 @@ func (v *SliceGridView[S]) getChildren(slicePtr *[]S, i int) *[]S {
 	return a.(ChildrenOwner).GetChildren().(*[]S)
 }
 
-func (v *SliceGridView[S]) countHierarcy(slicePtr *[]S) int {
+func (v *SliceGridView[S]) countHierarcy(slice []S) int {
 	var count int
-	v.getIDForIndex(slicePtr, -1, &count)
+	v.getIDForIndex(&slice, -1, &count)
 	// zlog.Info("Count:", v.ObjectName(), count, v.openBranches)
 	return count
 }
@@ -311,12 +310,27 @@ func (v *SliceGridView[S]) StructForID(id string) *S {
 	return v.structForID(v.slicePtr, id)
 }
 
+func (v *SliceGridView[S]) doSort(slice []S) {
+	if v.FilterFunc != nil {
+		var f []S
+		for _, s := range slice {
+			if v.FilterFunc(s) {
+				f = append(f, s)
+			}
+		}
+		v.filteredSlice = f
+	} else {
+		v.filteredSlice = slice
+	}
+	if v.SortFunc != nil {
+		v.SortFunc(v.filteredSlice) // Do this beforeWindow shown, as the sorted cells get placed correctly then
+		// v.UpdateViewFunc()
+	}
+}
+
 func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
-		if v.SortFunc != nil {
-			v.SortFunc(*v.slicePtr) // Do this beforeWindow shown, as the sorted cells get placed correctly then
-			// v.UpdateViewFunc()
-		}
+		v.doSort(*v.slicePtr)
 		return
 	}
 	if v.editButton != nil {
@@ -335,11 +349,8 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s, "") != zstr.HashAnyToInt64(*v.slicePtr, ""))
 	if update {
-		if v.SortFunc != nil {
-			v.SortFunc(s)
-		}
+		v.doSort(s)
 		*v.slicePtr = s
-
 		//remove non-selected :
 		var selected []string
 		oldSelected := v.Grid.SelectedIDs()
@@ -408,23 +419,13 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	})
 }
 
-func (v *SliceGridView[S]) setButtonWithCount(ids []string, button *zbutton.Button) {
-	// zlog.Info("setButtonWithCount", button.ObjectName())
-	str := button.ObjectName() + " "
-	if len(ids) > 0 {
-		str += v.NameOfXItemsFunc(ids, false)
-	}
-	button.SetUsable(len(ids) > 0)
-	button.SetText(str)
-}
-
 func (v *SliceGridView[S]) UpdateWidgets() {
 	ids := v.Grid.SelectedIDs()
 	if v.Bar != nil {
 		for _, c := range v.Bar.GetChildren(false) {
-			b, _ := c.(*zbutton.Button)
-			if b != nil {
-				v.setButtonWithCount(ids, b)
+			_, stack := c.(*zcontainer.StackView)
+			if !stack {
+				c.SetUsable(len(ids) > 0)
 			}
 		}
 	}
@@ -463,7 +464,7 @@ func (v *SliceGridView[S]) DeleteItemsAsk(ids []string) {
 
 func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hlevel int, leaf, got bool) {
 	for i, s := range *slice {
-		children := v.getChildren(v.slicePtr, i)
+		children := v.getChildren(&v.filteredSlice, i)
 		sid := s.GetStrID()
 		kids := (v.Grid.OpenBranches[sid] && len(*children) > 0)
 		zlog.Info("getHier:", id, sid, level, kids, len(*children))
@@ -485,7 +486,7 @@ func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hleve
 }
 
 func (v *SliceGridView[S]) calculateHierarchy(id string) (level int, leaf bool) {
-	level, leaf, _ = v.getHierarchy(v.slicePtr, 1, id)
+	level, leaf, _ = v.getHierarchy(&v.filteredSlice, 1, id)
 	return
 }
 
