@@ -191,7 +191,6 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	} else {
 		win.ProgrammaticView = nil
 	}
-	// zlog.Info("CloseOverride:", nv.Hierarchy())
 	nv.RemoveFromParent()
 	if done != nil {
 		done(dismissed)

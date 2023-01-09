@@ -85,6 +85,6 @@ func GetTimeInfoFromServer() error {
 		return zlog.Error(err, "parse")
 	}
 	ServerTimeDifference = t.Sub(time.Now()) / 2
-	zlog.Info("Got Time:", info.JSISOTimeString, time.Now(), ServerTimeDifference)
+	zlog.Info("Got Time:", info.JSISOTimeString, time.Now(), "shift:", ServerTimeDifference, "offset:", ztime.ServerTimezoneOffsetSecs)
 	return nil
 }

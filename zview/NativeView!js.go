@@ -74,7 +74,6 @@ func (v *NativeView) AllParents() (all []*NativeView)                           
 func (v *NativeView) SetZIndex(index int)                                                         {}
 func (v *NativeView) GetFocusedView() *NativeView                                                 { return nil }
 
-// func (v *NativeView) GetWindow() *zwindow.Window                                                  { return nil }
 func (v *NativeView) AbsoluteRect() zgeo.Rect                                     { return zgeo.Rect{} }
 func (v *NativeView) SetStyle(key, value string)                                  {}
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))             {}
