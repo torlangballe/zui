@@ -24,6 +24,7 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	t.SetObjectName("search")
 	t.SetMargin(zgeo.RectFromXY2(16, 0, 0, 0))
 	t.JSSet("inputmode", "search")
+	t.UpdateSecs = 0.2
 	iv := zimageview.New(nil, "images/magnifier.png", zgeo.Size{10, 10})
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.TopLeft)
