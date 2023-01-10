@@ -23,6 +23,7 @@ import (
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
@@ -163,7 +164,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
 	v.UpdateViewFunc = func() {
-		v.doFilter(*v.slicePtr)
+		v.doFilterAndSort(*v.slicePtr)
 		v.Grid.LayoutCells(true)
 		a := v.View.(zcontainer.Arranger)
 		a.ArrangeChildren()
@@ -235,7 +236,7 @@ func (v *SliceGridView[S]) SetItemsInSlice(items []S) {
 			}
 		}
 	}
-	v.doFilter(*v.slicePtr)
+	v.doFilterAndSort(*v.slicePtr)
 }
 
 func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
@@ -243,7 +244,7 @@ func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
 		i := v.Grid.IndexOfID(id)
 		zslice.RemoveAt(v.slicePtr, i)
 	}
-	v.doFilter(*v.slicePtr)
+	v.doFilterAndSort(*v.slicePtr)
 }
 
 func (v *SliceGridView[S]) handlePlusButtonPressed() {
@@ -375,9 +376,10 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s, "") != zstr.HashAnyToInt64(*v.slicePtr, ""))
 	if update {
-		v.doFilterAndSort(s)
+		// v.doFilterAndSort(s)
 		*v.slicePtr = s
 		//remove non-selected :
+		v.UpdateViewFunc()
 		var selected []string
 		oldSelected := v.Grid.SelectedIDs()
 		var hoverOK bool
@@ -394,7 +396,6 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 			v.Grid.SetHoverID("")
 		}
 		v.Grid.SelectCells(selected, false)
-		v.UpdateViewFunc()
 	}
 }
 
@@ -449,6 +450,9 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 	ids := v.Grid.SelectedIDs()
 	if v.Bar != nil {
 		for _, c := range v.Bar.GetChildren(false) {
+			if c == v.SearchField {
+				continue
+			}
 			_, stack := c.(*zcontainer.StackView)
 			if !stack {
 				c.SetUsable(len(ids) > 0)
@@ -557,3 +561,28 @@ func addHierarchy(stack *zcontainer.StackView) {
 	stack.Add(v, zgeo.TopLeft|zgeo.Expand)
 }
 */
+
+func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
+	var items []zmenu.MenuedOItem
+	if v.Grid.CellCountFunc() > 0 {
+		if v.Grid.MultiSelectable {
+			all := zmenu.MenuedFuncAction("Select All", func() {
+				v.Grid.SelectAll(true)
+			})
+			items = append(items, all)
+		}
+		ids := v.Grid.SelectedIDs()
+		if len(ids) > 0 {
+			nitems := v.NameOfXItemsFunc(ids, true)
+			del := zmenu.MenuedFuncAction("Delete "+nitems+"…", func() {
+				v.handleDeleteKey(true)
+			})
+			items = append(items, del)
+			edit := zmenu.MenuedFuncAction("Edit "+nitems, func() {
+				v.EditItems(ids)
+			})
+			items = append(items, edit)
+		}
+	}
+	return items
+}
