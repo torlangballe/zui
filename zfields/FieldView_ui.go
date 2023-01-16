@@ -64,12 +64,14 @@ type FieldViewParameters struct {
 	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
 	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
 	SkipFieldNames          []string
+	TriggerHandlers         map[string]func(fv *FieldView, value any) bool
 }
 
 func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.ImmediateEdit = true
 	f.Styling = zstyle.EmptyStyling
 	f.Styling.Spacing = 8
+	f.TriggerHandlers = map[string]func(fv *FieldView, value any) bool{}
 	return f
 }
 
@@ -989,6 +991,13 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
 		v.updateShowEnableFromZeroer(val.IsZero(), false, cv.ObjectName())
 		view := zview.View(cv)
+		zlog.Assert(v.params.TriggerHandlers != nil)
+		triggerFunc := v.params.TriggerHandlers[f.FieldName]
+		if triggerFunc != nil {
+			if triggerFunc(v, cv.On()) {
+				return
+			}
+		}
 		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
 	})
 	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, "$row") {
