@@ -64,20 +64,19 @@ type FieldViewParameters struct {
 	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
 	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
 	SkipFieldNames          []string
-	TriggerHandlers         map[string]func(fv *FieldView, value any) bool
-}
-
-func FieldViewParametersDefault() (f FieldViewParameters) {
-	f.ImmediateEdit = true
-	f.Styling = zstyle.EmptyStyling
-	f.Styling.Spacing = 8
-	f.TriggerHandlers = map[string]func(fv *FieldView, value any) bool{}
-	return f
+	triggerHandlers         map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
 }
 
 var (
 	fieldViewEdited = map[string]time.Time{}
 )
+
+func FieldViewParametersDefault() (f FieldViewParameters) {
+	f.ImmediateEdit = true
+	f.Styling = zstyle.EmptyStyling
+	f.Styling.Spacing = 8
+	return f
+}
 
 func (v *FieldView) Data() any {
 	return v.data
@@ -124,7 +123,7 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	v.StackView.Init(v, vertical, id)
 	v.SetSpacing(params.Styling.Spacing)
 
-	// zlog.Info("fieldViewNew", id, params.Styling.StrokeWidth)
+	// zlog.Info("fieldViewNew", id, parent != nil, zlog.CallingStackString())
 	v.data = data
 	for i, item := range v.getStructItems() {
 		f := EmptyField
@@ -317,7 +316,17 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 		}
 		v.updateShowEnableOnView(flabelized, true, fview.ObjectName())
 		v.updateShowEnableOnView(flabelized, false, fview.ObjectName())
-		called := callActionHandlerFunc(v, f, DataChangedAction, item.Address, &fview)
+		var called bool
+		tri, _ := item.Interface.(TriggerDataChangedTriggerer)
+		if tri != nil {
+			called = tri.HandleDataChange(v, f, item.Address, &fview)
+		}
+		if !called {
+			called = v.callTriggerHandler(f, DataChangedAction, item.Address, &fview)
+		}
+		if !called {
+			called = callActionHandlerFunc(v, f, DataChangedAction, item.Address, &fview)
+		}
 		// zlog.Info("fv.Update:", v.ObjectName(), f.ID, called)
 		if called {
 			// fmt.Println("FV Update called", v.id, f.Kind, f.ID)
@@ -588,7 +597,6 @@ func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 }
 
 func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
-
 	v := fieldViewNew(id, true, data, params, zgeo.Size{10, 10}, nil)
 	// zlog.Info("FieldViewNew:", id)
 	return v
@@ -879,6 +887,10 @@ func getTimeString(item zreflect.Item, f *Field) string {
 }
 
 func getTextFromNumberishItem(item zreflect.Item, f *Field) string {
+	stringer, got := item.Interface.(UIStringer)
+	if got {
+		return stringer.ZUIString()
+	}
 	isDurTime := item.Kind == zreflect.KindTime && f.Flags&FlagIsDuration != 0
 	// zlog.Info("makeTextTime:", f.Name, isDurTime, f.Format)
 	if item.Kind == zreflect.KindTime && !isDurTime {
@@ -921,6 +933,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 	// fmt.Printf("make Text %s %s %s %p\n:", item.FieldName, f.Title, f.Name, v.data)
 	str := getTextFromNumberishItem(item, f)
 	if f.IsStatic() || v.params.AllStatic {
+		// zlog.Info("makeText:", f.FieldName, str)
 		label := zlabel.New(str)
 		label.SetMaxLines(f.Rows)
 		if f.Flags&FlagIsDuration != 0 {
@@ -991,12 +1004,8 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
 		v.updateShowEnableFromZeroer(val.IsZero(), false, cv.ObjectName())
 		view := zview.View(cv)
-		zlog.Assert(v.params.TriggerHandlers != nil)
-		triggerFunc := v.params.TriggerHandlers[f.FieldName]
-		if triggerFunc != nil {
-			if triggerFunc(v, cv.On()) {
-				return
-			}
+		if v.callTriggerHandler(f, EditedAction, cv.On(), &cv.View) {
+			return
 		}
 		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
 	})
@@ -1128,6 +1137,7 @@ func updateFlagStack(flags zreflect.Item, f *Field, view zview.View) {
 }
 
 func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []zreflect.Item) (view zview.View, skip bool) {
+	// zlog.Info("createSpecialView:", f.FieldName)
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
 			return nil, true
@@ -1146,6 +1156,9 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 			}
 			return w.Create(f), false
 		}
+	}
+	if v.callTriggerHandler(f, EditedAction, nil, &view) {
+		return
 	}
 	callActionHandlerFunc(v, f, CreateFieldViewAction, item.Address, &view) // this sees if actual ITEM is a field handler
 	if view != nil {
@@ -1231,6 +1244,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	// 	zlog.Info("   buildStack1.2", j, item.Value.Len())
 	// }
 
+	// check trigger create
 	view, skip := v.createSpecialView(item, f, children)
 	if skip {
 		return
