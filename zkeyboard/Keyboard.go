@@ -6,6 +6,11 @@ type Type string
 type AutoCapType string
 type ReturnKeyType string
 
+type Shortcut struct {
+	Key      Key
+	Modifier Modifier
+}
+
 const (
 	ModifierNone  Modifier = 0
 	ModifierShift Modifier = 1 << iota
@@ -15,6 +20,7 @@ const (
 )
 
 const (
+	KeyNone       = 0
 	KeyReturn     = 13
 	KeyEnter      = 131313 // not sure what it is elsewhere, doesn't exist in js/html
 	KeyTab        = 9
@@ -63,3 +69,24 @@ const (
 var ModifiersAtPress Modifier
 
 // Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType
+
+func SCut(k Key, m Modifier) Shortcut {
+	return Shortcut{Key: k, Modifier: m}
+}
+
+func GetModifiersString(m Modifier) string {
+	var str string
+	if m&ModifierShift != 0 {
+		str += "⇧"
+	}
+	if m&ModifierControl != 0 {
+		str += "^"
+	}
+	if m&ModifierAlt != 0 {
+		str += "⎇"
+	}
+	if m&ModifierCommand != 0 {
+		str += "⌘"
+	}
+	return str
+}
