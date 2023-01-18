@@ -69,19 +69,20 @@ type GridListView struct {
 	HandleKeyFunc              func(key zkeyboard.Key, mod zkeyboard.Modifier) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
 
-	children           map[string]zview.View
-	selectedIDs        map[string]bool
-	pressedIDs         map[string]bool
-	selectingFromIndex int
-	appending          bool
-	ignoreMouseEvent   bool
-	cellsView          *zcustom.CustomView
-	margin             zgeo.Rect
-	Columns            int
-	Rows               int
-	VisibleRows        int
-	layoutDirty        bool
-	cachedChildSize    zgeo.Size
+	children         map[string]zview.View
+	selectedIDs      map[string]bool
+	appending        bool
+	ignoreMouseEvent bool
+	cellsView        *zcustom.CustomView
+	margin           zgeo.Rect
+	Columns          int
+	Rows             int
+	VisibleRows      int
+	layoutDirty      bool
+	cachedChildSize  zgeo.Size
+	selectedIndex    int
+	pressStartIndex  int
+	pressEndIndex    int
 }
 
 var (
@@ -102,10 +103,10 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.ScrollView.Init(view, storeName)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.MinColumns = 1
-	v.selectingFromIndex = -1
 	v.children = map[string]zview.View{}
+	v.selectedIndex = -1
+	v.pressStartIndex = -1
 	v.selectedIDs = map[string]bool{}
-	v.pressedIDs = map[string]bool{}
 	v.SetObjectName(storeName)
 	v.cellsView = zcustom.NewView("GridListView.cells")
 	v.AddChild(v.cellsView, -1)
@@ -228,9 +229,9 @@ func (v *GridListView) SelectAll(callHandlers bool) {
 	}
 }
 
-func (v *GridListView) IsPressed(id string) bool {
-	return v.pressedIDs[id]
-}
+// func (v *GridListView) IsPressed(id string) bool {
+// 	return v.pressedIDs[id]
+// }
 
 func (v *GridListView) CellView(id string) zview.View {
 	return v.children[id]
@@ -259,10 +260,14 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	col := v.CellColorFunc(cid)
+	index := v.Columns*y + x
+	min, max := zint.MinMax(v.pressStartIndex, v.pressEndIndex)
+	if min != -1 && index >= min && index <= max {
+		// zlog.Info("updateCellBackground4", min, max, "xy:", x, y, "inx:", index)
+		col = v.PressedColor
+	}
 	if v.CurrentHoverID == cid && v.HoverColor.Valid {
 		col = v.HoverColor
-	} else if v.pressedIDs[cid] && v.PressedColor.Valid {
-		col = v.PressedColor
 	} else if v.selectedIDs[cid] && v.SelectColor.Valid {
 		col = v.SelectColor
 	}
@@ -284,27 +289,13 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 }
 
 func (v *GridListView) setPressed(index int) {
+	id := v.IDAtIndexFunc(index)
 	if !v.MultiSelectable {
-		v.pressedIDs[v.IDAtIndexFunc(index)] = true
+		v.selectedIDs[id] = true
+		v.SetHoverID(id)
 		return
 	}
-	if v.appending {
-		for id := range v.selectedIDs {
-			v.pressedIDs[id] = true
-		}
-	}
-	if v.selectingFromIndex != -1 {
-		if !v.appending {
-			v.pressedIDs = map[string]bool{}
-		}
-		min, max := zint.MinMax(index, v.selectingFromIndex)
-		for i := min; i <= max; i++ {
-			v.pressedIDs[v.IDAtIndexFunc(i)] = true
-		}
-		if v.appending {
-			v.selectingFromIndex = max
-		}
-	}
+	v.pressEndIndex = index
 }
 
 func (v *GridListView) isInsideInteractiveChildCell(id string, pos zgeo.Pos) (interactive bool, eventHandled bool) {
@@ -360,6 +351,8 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 
 func (v *GridListView) SetHoverID(id string) {
 	var ids []string
+	// c, r := v.FindColRowForID(id)
+	// zlog.Info("SetHoverID:", id, c, r)
 	if v.CurrentHoverID != "" && v.children[v.CurrentHoverID] != nil {
 		ids = []string{v.CurrentHoverID}
 		if v.UpdateCellFunc != nil {
@@ -382,7 +375,7 @@ func (v *GridListView) SetHoverID(id string) {
 }
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
-	v.CurrentHoverID = ""
+	// zlog.Info("handleUpDownMovedHandler")
 	eventHandled := true
 	var index int
 	id, inside := v.FindCellForPos(pos)
@@ -420,23 +413,27 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			selectionChanged = true
 			break
 		}
-		v.pressedIDs[id] = true
 		v.appending = (v.MultiSelectable && (zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0))
 		if !v.appending {
-			v.selectingFromIndex = index
+			v.selectedIndex = -1
+			v.selectedIDs = map[string]bool{}
+			v.pressStartIndex = index
+		} else {
+			v.pressStartIndex = v.selectedIndex
+			if v.pressStartIndex == -1 {
+				v.pressStartIndex = index
+			}
 		}
-		if v.appending && v.selectingFromIndex == -1 && len(v.SelectedIDs()) > 0 {
-			v.selectingFromIndex = v.IndexOfID(v.SelectedIDs()[0])
-		}
-		// zlog.Info("SELINX:", v.selectingFromIndex, v.appending, len(v.SelectedIDs()), index)
-		v.setPressed(index)
+		v.pressEndIndex = v.pressStartIndex
 	case zbool.Unknown:
+		// zlog.Info("updateCellBackground?", id, v.ignoreMouseEvent, v.MultiSelectable)
 		if id == "" {
 			return false
 		}
 		if !v.ignoreMouseEvent && id != "" && v.MultiSelectable {
 			// zlog.Info("Move", id)
-			v.setPressed(index)
+			// zlog.Info("updateCellBackground", index)
+			v.pressEndIndex = index
 			// v.dragged = true
 		}
 	case zbool.False:
@@ -444,19 +441,20 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			v.ignoreMouseEvent = false
 			break
 		}
-		if len(v.selectedIDs) > 0 && len(v.pressedIDs) == 1 {
-			pid := zmap.GetAnyKeyAsString(v.pressedIDs)
-			if v.selectedIDs[pid] {
-				v.selectedIDs = map[string]bool{}
-			} else {
-				v.selectedIDs = v.pressedIDs
-			}
-		} else {
-			v.selectedIDs = v.pressedIDs
-		}
 		selectionChanged = true
-		// v.selectingFromIndex = -1
-		v.pressedIDs = map[string]bool{}
+		v.selectedIndex = index
+		min, max := zint.MinMax(v.pressStartIndex, v.pressEndIndex)
+		if min != -1 {
+			for i := min; i <= max; i++ {
+				v.selectedIDs[v.IDAtIndexFunc(i)] = true
+			}
+		}
+		v.pressStartIndex = -1
+		v.pressEndIndex = -1
+		id := v.IDAtIndexFunc(index)
+		if id != "" {
+			v.SetHoverID(id)
+		}
 	}
 	v.updateCellBackgrounds(nil)
 	v.ExposeIn(0.0001)
@@ -674,6 +672,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 }
 
 func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool) {
+	// zlog.Info("ForEachCell", zlog.CallingStackString())
 	if v.CellCountFunc() == 0 {
 		return
 	}
@@ -768,6 +767,7 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
+	// zlog.Info("LayoutCells")
 	v.layoutDirty = false
 	placed := map[string]bool{}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
@@ -808,36 +808,36 @@ func (v *GridListView) ScrollToCell(cellID string, animate bool) {
 	}
 }
 
-func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) bool {
+func (v *GridListView) moveHover(incX, incY int, mod zkeyboard.Modifier) bool {
 	var sx, sy int
 	var fid string
 
-	if v.CurrentHoverID != "" {
-		hoverID := v.CurrentHoverID
-		v.CurrentHoverID = ""
-		v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool { // find a selected cell and x,y
-			if visible {
-				if cid == hoverID {
-					v.updateCellBackground(cid, x, y, nil)
-					return false
-				}
-			}
-			return true
-		})
-	}
+	// if v.CurrentHoverID != "" {
+	// 	hoverID := v.CurrentHoverID
+	// 	v.CurrentHoverID = ""
+	// 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool { // find a selected cell and x,y
+	// 		if visible {
+	// 			if cid == hoverID {
+	// 				v.updateCellBackground(cid, x, y, nil)
+	// 				return false
+	// 			}
+	// 		}
+	// 		return true
+	// 	})
+	// }
 	append := (mod == zkeyboard.ModifierShift)
 	// zlog.Info("moveSelection:", append)
-	if append && v.selectingFromIndex != -1 {
-		fid = v.IDAtIndexFunc(v.selectingFromIndex)
-		if fid != "" {
-			sx, sy = v.FindColRowForID(fid)
-		}
+	if fid == "" && v.CurrentHoverID != "" {
+		fid = v.CurrentHoverID
+		sx, sy = v.FindColRowForID(fid)
 	}
 	if fid == "" {
 		v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool { // find a selected cell and x,y
 			if visible {
-				if len(v.selectedIDs) == 0 || v.selectedIDs[cid] {
+				zlog.Info("Find:", x, y)
+				if append && (len(v.selectedIDs) == 0 || v.selectedIDs[cid]) || !append && fid == v.CurrentHoverID {
 					fid = cid
+					zlog.Info("Found:", x, y, fid)
 					sx = x
 					sy = y
 					return false
@@ -847,9 +847,12 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 		})
 	}
 	if fid != "" {
-		if len(v.selectedIDs) == 0 {
+		if append && len(v.selectedIDs) == 0 {
 			v.selectedIDs[fid] = true
 			v.updateCellBackground(fid, sx, sy, nil)
+			return true
+		} else if !append && v.CurrentHoverID == "" {
+			v.SetHoverID(fid)
 			return true
 		} else {
 			nx := sx + incX
@@ -872,32 +875,26 @@ func (v *GridListView) moveSelection(incX, incY int, mod zkeyboard.Modifier) boo
 			}
 			nid := v.FindCellForColRow(nx, ny)
 			if append {
-				startIndex := v.selectingFromIndex
-				if startIndex == -1 {
-					startIndex = v.IndexOfID(fid)
-				}
+				startIndex := v.IndexOfID(fid)
 				endIndex := v.IndexOfID(nid)
 				min, max := zint.MinMax(startIndex, endIndex)
-				// zlog.Info(nx, ny, "Append:", v.selectingFromIndex, min, max, fid, nid)
 				for i := min; i <= max; i++ {
 					v.selectedIDs[v.IDAtIndexFunc(i)] = true
 				}
 				v.updateCellBackgrounds(nil)
 				v.ScrollToCell(nid, false)
-				v.selectingFromIndex = endIndex
 			} else {
-				v.selectedIDs = map[string]bool{}
-				v.updateCellBackgrounds(nil)
-				// zlog.Info("MoveTo:", nid, len(v.children))
-				if nid != "" {
-					v.selectedIDs[nid] = true
-					v.ScrollToCell(nid, false)
-					v.updateCellBackground(nid, nx, ny, nil)
-				}
+				//				v.selectedIDs = map[string]bool{}
+				v.SetHoverID(nid)
+				// v.updateCellBackgrounds(nil)
+				// // zlog.Info("MoveTo:", nid, len(v.children))
+				// if nid != "" {
+				// 	//					v.selectedIDs[nid] = true
+				// 	v.CurrentHoverID = nid
+				// 	v.ScrollToCell(nid, false)
+				// 	v.updateCellBackground(nid, nx, ny, nil)
+				// }
 			}
-		}
-		if v.HandleSelectionChangedFunc != nil {
-			v.HandleSelectionChangedFunc()
 		}
 	}
 	return true
@@ -927,21 +924,21 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 
 	if !beforeWindow && (v.Selectable || v.MultiSelectable) {
 		zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-			// zlog.Info("List keypress!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
+			// zlog.Info("List keypress other!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
 			if mod == zkeyboard.ModifierNone || mod == zkeyboard.ModifierShift {
 				//					v.doRowPressed(v.highlightedIndex)
 				switch key {
 				case zkeyboard.KeyUpArrow:
-					return v.moveSelection(0, -1, mod)
+					return v.moveHover(0, -1, mod)
 				case zkeyboard.KeyDownArrow:
-					return v.moveSelection(0, 1, mod)
+					return v.moveHover(0, 1, mod)
 				case zkeyboard.KeyLeftArrow:
 					if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
 						v.toggleBranch(false)
 						return true
 					}
 					if v.MaxColumns != 1 {
-						return v.moveSelection(-1, 0, mod)
+						return v.moveHover(-1, 0, mod)
 					}
 				case zkeyboard.KeyRightArrow:
 					if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
@@ -949,7 +946,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 						return true
 					}
 					if v.MaxColumns != 1 {
-						return v.moveSelection(1, 0, mod)
+						return v.moveHover(1, 0, mod)
 					}
 				case zkeyboard.KeyReturn, zkeyboard.KeyEnter:
 					break // do select
@@ -963,8 +960,8 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 					}
 				}
 			}
-			// zlog.Info("List keypress2", v.HandleKeyFunc != nil)
 			if v.HandleKeyFunc != nil {
+				zlog.Info("List keypress2", key, mod)
 				return v.HandleKeyFunc(key, mod)
 			}
 			return false
