@@ -263,7 +263,7 @@ func (win *Window) setOnKeyDown() {
 			var used bool
 			// zlog.Info("win key:", key)
 			for view, h := range win.keyHandlers {
-				// zlog.Info("win key2:", view.Native().Hierarchy())
+				// zlog.Info("win key2:", key, view.Native().Hierarchy())
 				if top.IsParentOf(view.Native()) {
 					focused := top.Native().GetFocusedChildView()
 					if focused != nil && focused != view.Native() {

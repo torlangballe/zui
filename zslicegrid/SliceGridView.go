@@ -566,7 +566,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	if v.Grid.CellCountFunc() > 0 {
 		if v.Grid.MultiSelectable {
-			all := zmenu.MenuedFuncAction("Select All", func() {
+			all := zmenu.MenuedShortcutFuncAction("Select All", zkeyboard.SCut('A', 0), func() {
 				v.Grid.SelectAll(true)
 			})
 			items = append(items, all)

@@ -896,7 +896,6 @@ func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboar
 		if !v.GetWindowElement().Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
-		// zlog.Info("KeyUp")
 		if handler != nil {
 			event := args[0]
 			key, mods := zkeyboard.GetKeyAndModsFromEvent(event)

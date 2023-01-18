@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zshape"
@@ -55,7 +56,8 @@ type MenuedOwner struct {
 	HoverColor          zgeo.Color
 	MinWidth            float64
 
-	items []MenuedOItem
+	items       []MenuedOItem
+	hasShortcut bool
 }
 
 type MenuedOItem struct {
@@ -64,6 +66,7 @@ type MenuedOItem struct {
 	Selected    bool
 	LabelColor  zgeo.Color
 	TextColor   zgeo.Color
+	Shortcut    zkeyboard.Shortcut
 	IsDisabled  bool
 	IsAction    bool
 	IsSeparator bool
@@ -97,12 +100,22 @@ func MenuedAction(name string, val interface{}) MenuedOItem {
 }
 
 func MenuedFuncAction(name string, f func()) MenuedOItem {
+	return MenuedShortcutFuncAction(name, zkeyboard.Shortcut{}, f)
+}
+
+func MenuedShortcutFuncAction(name string, sc zkeyboard.Shortcut, f func()) MenuedOItem {
 	var item MenuedOItem
 	item.Name = name
 	item.Value = rand.Int31()
 	item.IsAction = true
 	item.Function = f
+	item.Shortcut = sc
 	return item
+}
+
+func (m *MenuedOItem) SetShortcut(key zkeyboard.Key, mods zkeyboard.Modifier) {
+	s := zkeyboard.SCut(key, mods)
+	m.Shortcut = s
 }
 
 func (o *MenuedOwner) PopInPos(pos zgeo.Pos, items []MenuedOItem) {
@@ -378,10 +391,14 @@ func (o *MenuedOwner) popup() {
 		rightMarg  = 4
 	)
 	allAction := true
+	o.hasShortcut = false
 	for _, item := range o.items {
 		// zlog.Info("popitem:", i, item.Selected, o.IsMultiple)
 		if !item.IsAction {
 			allAction = false
+		}
+		if item.Shortcut.Key != 0 {
+			o.hasShortcut = true
 		}
 	}
 	stack := zcontainer.StackViewVert("menued-pop-stack")
@@ -441,11 +458,25 @@ func (o *MenuedOwner) popup() {
 	if o.ImagePath != "" {
 		w += imageWidth + imageMarg
 	}
+	if o.hasShortcut {
+		w += 32
+	}
 	w += 18 // test
 	zfloat.Maximize(&w, o.MinWidth)
 	stack.SetMinSize(zgeo.Size{w, 0})
 
+	list.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+		if list.CurrentHoverID != "" && (key == zkeyboard.KeyReturn || key == zkeyboard.KeyEnter) {
+			list.SelectCell(list.CurrentHoverID, false)
+			return true
+		}
+		if o.handleShortcut(key, mod, list) {
+			return true
+		}
+		return false
+	}
 	list.HandleSelectionChangedFunc = func() {
+		zlog.Info("SelChanged")
 		if o.IsStatic {
 			return
 		}
@@ -530,6 +561,16 @@ func (o *MenuedOwner) popup() {
 			o.updateTitleAndImage()
 		}
 	})
+}
+
+func (o *MenuedOwner) handleShortcut(key zkeyboard.Key, mod zkeyboard.Modifier, list *zgridlist.GridListView) bool {
+	for i, item := range o.items {
+		if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
+			list.SelectCell(strconv.Itoa(i), false)
+			return true
+		}
+	}
+	return false
 }
 
 func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id string) {
@@ -618,6 +659,16 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		cv.SetObjectName("color-label")
 		v.Add(cv, zgeo.CenterRight, marg)
 	}
+	if o.hasShortcut {
+		str := zkeyboard.GetModifiersString(item.Shortcut.Modifier) + string(rune(item.Shortcut.Key))
+		keyLabel := zlabel.New(str)
+		title.SetObjectName("shortcut")
+		font := o.Font
+		font.Style = zgeo.FontStyleBold
+		keyLabel.SetFont(font)
+		v.Add(keyLabel, zgeo.CenterRight, marg)
+	}
+
 	return v
 }
 
