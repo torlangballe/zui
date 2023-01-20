@@ -415,8 +415,12 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		}
 		v.appending = (v.MultiSelectable && (zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0))
 		if !v.appending {
+			clear := (len(v.selectedIDs) == 1 && v.selectedIDs[id])
 			v.selectedIndex = -1
 			v.selectedIDs = map[string]bool{}
+			if clear {
+				return false
+			}
 			v.pressStartIndex = index
 		} else {
 			v.pressStartIndex = v.selectedIndex
@@ -961,7 +965,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 				}
 			}
 			if v.HandleKeyFunc != nil {
-				zlog.Info("List keypress2", key, mod)
+				// zlog.Info("List keypress2", key, mod)
 				return v.HandleKeyFunc(key, mod)
 			}
 			return false
