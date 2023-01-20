@@ -56,33 +56,34 @@ type SliceGridView[S zstr.StrIDer] struct {
 
 	slicePtr      *[]S
 	filteredSlice []S
+	options       OptionType
 	editButton    *zimageview.ImageView
 	deleteButton  *zimageview.ImageView
 	addButton     *zimageview.ImageView
 	SearchField   *ztext.SearchField
+	ActionMenu    *zmenu.MenuedOwner
 }
 
 type OptionType int
 
 const (
-	AddNone        OptionType = 0
-	AddBar         OptionType = 1
-	AddEdit        OptionType = 2
-	AddDelete      OptionType = 4
-	AddDarkPlus    OptionType = 8
-	AddLightPlus   OptionType = 16
-	AddSearch      OptionType = 32
-	AddEditDelete             = AddEdit | AddDelete
-	AddButtonsMask OptionType = AddEdit | AddDelete | AddDarkPlus | AddLightPlus
+	AddNone            OptionType = 0
+	AddBar             OptionType = 1
+	AddSearch          OptionType = 2
+	AddMenu            OptionType = 4
+	AllowDelete        OptionType = 8
+	AllowEdit                     = 16
+	AllowEditAndDelete            = AllowEdit | AllowDelete
 )
 
-func NewView[S zstr.StrIDer](slice *[]S, storeName string, option OptionType) (sv *SliceGridView[S]) {
+func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
-	v.Init(v, slice, storeName, option)
+	v.Init(v, slice, storeName, options)
 	return v
 }
 
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {
+	v.options = options
 	v.StackView.Init(view, true, "slice-grid-view")
 	v.SetObjectName(storeName)
 	v.SetSpacing(0)
@@ -97,23 +98,26 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	var a any = s
 	_, hasHierarchy := a.(ChildrenOwner)
 
-	if options&(AddBar) != 0 {
+	if options&(AddSearch|AddMenu) != 0 {
+		options |= AddBar
+	}
+	if options&AddBar != 0 {
 		// zlog.Info("AddBar!!!")
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.SetSpacing(8)
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
 		v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	}
-	if options&AddEdit != 0 {
-		v.editButton = zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.Size{18, 18})
-		v.editButton.SetObjectName("edit")
-		v.Bar.Add(v.editButton, zgeo.CenterLeft)
-	}
-	if options&AddDelete != 0 {
-		v.deleteButton = zimageview.New(nil, "images/zcore/trash-dark-gray.png", zgeo.Size{18, 18})
-		v.deleteButton.SetObjectName("delete")
-		v.Bar.Add(v.deleteButton, zgeo.CenterLeft)
-	}
+	// if options&AddEdit != 0 {
+	// 	v.editButton = zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.Size{18, 18})
+	// 	v.editButton.SetObjectName("edit")
+	// 	v.Bar.Add(v.editButton, zgeo.CenterLeft)
+	// }
+	// if options&AddDelete != 0 {
+	// 	v.deleteButton = zimageview.New(nil, "images/zcore/trash-dark-gray.png", zgeo.Size{18, 18})
+	// 	v.deleteButton.SetObjectName("delete")
+	// 	v.Bar.Add(v.deleteButton, zgeo.CenterLeft)
+	// }
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
 		v.SearchField.TextView.SetChangedHandler(func() {
@@ -121,14 +125,22 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		})
 		v.Bar.Add(v.SearchField, zgeo.CenterLeft)
 	}
-	if options&(AddDarkPlus|AddLightPlus) != 0 {
-		str := "white"
-		if options&AddDarkPlus != 0 {
-			str = "darkgray"
-		}
-		v.addButton = zimageview.New(nil, "images/plus-circled-"+str+".png", zgeo.Size{16, 16})
-		v.Bar.Add(v.addButton, zgeo.CenterLeft)
-		v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
+	// if options&(AddDarkPlus|AddLightPlus) != 0 {
+	// 	str := "white"
+	// 	if options&AddDarkPlus != 0 {
+	// 		str = "darkgray"
+	// 	}
+	// 	v.addButton = zimageview.New(nil, "images/plus-circled-"+str+".png", zgeo.Size{16, 16})
+	// 	v.Bar.Add(v.addButton, zgeo.CenterLeft)
+	// 	v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
+	// }
+	if options&AddMenu != 0 {
+		actions := zimageview.New(nil, "images/gear-darkgray.png", zgeo.Size{18, 18})
+		actions.SetObjectName("action-menu")
+		actions.DownsampleImages = true
+		v.ActionMenu = zmenu.NewMenuedOwner()
+		v.ActionMenu.Build(actions, nil)
+		v.Bar.Add(actions, zgeo.TopRight, zgeo.Size{})
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
@@ -147,14 +159,17 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if options&AddDelete != 0 && key == zkeyboard.KeyBackspace {
-			v.handleDeleteKey(mod != zkeyboard.ModifierCommand)
-			return true
+		if v.ActionMenu != nil {
+			return v.ActionMenu.TriggerShortcut(key, mod)
 		}
-		if options&AddEdit != 0 && key == zkeyboard.KeyReturn {
-			v.HandleEditButtonPressed()
-			return true
-		}
+		// if options&AllowDelete != 0 && key == zkeyboard.KeyBackspace {
+		// 	v.handleDeleteKey(mod != zkeyboard.ModifierCommand)
+		// 	return true
+		// }
+		// if options&AllowEdit != 0 && key == zkeyboard.KeyReturn {
+		// 	v.HandleEditButtonPressed()
+		// 	return true
+		// }
 		return false
 	}
 	v.Grid.HandleSelectionChangedFunc = func() {
@@ -247,7 +262,7 @@ func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
 	v.doFilterAndSort(*v.slicePtr)
 }
 
-func (v *SliceGridView[S]) handlePlusButtonPressed() {
+func (v *SliceGridView[S]) handleAddCell() {
 	var s S
 	*v.slicePtr = append(*v.slicePtr, s)
 	index := len(*v.slicePtr) - 1
@@ -447,24 +462,7 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
-	ids := v.Grid.SelectedIDs()
-	if v.Bar != nil {
-		for _, c := range v.Bar.GetChildren(false) {
-			if c == v.SearchField {
-				continue
-			}
-			_, stack := c.(*zcontainer.StackView)
-			if !stack {
-				c.SetUsable(len(ids) > 0)
-			}
-		}
-	}
-	// if v.editButton != nil {
-	// 	v.setButtonWithCount("edit", ids, v.editButton)
-	// }
-	// if v.deleteButton != nil {
-	// 	v.setButtonWithCount("delete", ids, v.deleteButton)
-	// }
+	// ids := v.Grid.SelectedIDs()
 }
 
 func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
@@ -566,7 +564,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	if v.Grid.CellCountFunc() > 0 {
 		if v.Grid.MultiSelectable {
-			all := zmenu.MenuedShortcutFuncAction("Select All", zkeyboard.SCut('A', 0), func() {
+			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
 				v.Grid.SelectAll(true)
 			})
 			items = append(items, all)
@@ -574,14 +572,18 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 		ids := v.Grid.SelectedIDs()
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			del := zmenu.MenuedFuncAction("Delete "+nitems+"…", func() {
-				v.handleDeleteKey(true)
-			})
-			items = append(items, del)
-			edit := zmenu.MenuedFuncAction("Edit "+nitems, func() {
-				v.EditItems(ids)
-			})
-			items = append(items, edit)
+			if v.options&AllowDelete != 0 {
+				del := zmenu.MenuedSCFuncAction("Delete "+nitems+"…", zkeyboard.KeyBackspace, 0, func() {
+					v.handleDeleteKey(true)
+				})
+				items = append(items, del)
+			}
+			if v.options&AllowEdit != 0 {
+				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
+					v.EditItems(ids)
+				})
+				items = append(items, edit)
+			}
 		}
 	}
 	return items
