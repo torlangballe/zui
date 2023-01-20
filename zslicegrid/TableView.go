@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	AddHeader      OptionType = 128
-	AddBarInHeader OptionType = 256
+	AddHeader      OptionType = 512
+	AddBarInHeader OptionType = 1024
 )
 
 type TableView[S zstr.StrIDer] struct {
@@ -58,9 +58,6 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.RowInset = 7
 	v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
-	if addFlags&AddEditDelete != 0 {
-		v.Grid.MultiSelectable = true
-	}
 	v.FieldParameters.AllStatic = true
 	v.FieldParameters.UseInValues = []string{"$row"}
 	v.addFlags = addFlags
