@@ -1157,7 +1157,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 			return w.Create(f), false
 		}
 	}
-	if v.callTriggerHandler(f, EditedAction, nil, &view) {
+	if v.callTriggerHandler(f, CreateFieldViewAction, nil, &view) {
 		return
 	}
 	callActionHandlerFunc(v, f, CreateFieldViewAction, item.Address, &view) // this sees if actual ITEM is a field handler
