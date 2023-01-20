@@ -25,6 +25,7 @@ const (
 	KeyEnter      = 131313 // not sure what it is elsewhere, doesn't exist in js/html
 	KeyTab        = 9
 	KeyBackspace  = 8
+	KeyDelete     = 127
 	KeyEscape     = 27
 	KeyLeftArrow  = 37
 	KeyRightArrow = 39
@@ -89,4 +90,28 @@ func GetModifiersString(m Modifier) string {
 		str += "⌘"
 	}
 	return str
+}
+
+func GetStringForKey(key Key) string {
+	switch key {
+	case KeyReturn, KeyEnter:
+		return "⏎"
+	case KeyEscape:
+		return "␛"
+	case KeyDelete:
+		return "␐"
+	case KeyBackspace:
+		return "⌫"
+	case KeyLeftArrow:
+		return "←"
+	case KeyRightArrow:
+		return "→"
+	case KeyUpArrow:
+		return "↑"
+	case KeyDownArrow:
+		return "↓"
+	case KeyTab:
+		return "⇥"
+	}
+	return string(rune(key))
 }
