@@ -100,16 +100,16 @@ func MenuedAction(name string, val interface{}) MenuedOItem {
 }
 
 func MenuedFuncAction(name string, f func()) MenuedOItem {
-	return MenuedShortcutFuncAction(name, zkeyboard.Shortcut{}, f)
+	return MenuedSCFuncAction(name, zkeyboard.KeyNone, zkeyboard.ModifierNone, f)
 }
 
-func MenuedShortcutFuncAction(name string, sc zkeyboard.Shortcut, f func()) MenuedOItem {
+func MenuedSCFuncAction(name string, scKey zkeyboard.Key, mod zkeyboard.Modifier, f func()) MenuedOItem {
 	var item MenuedOItem
 	item.Name = name
 	item.Value = rand.Int31()
 	item.IsAction = true
 	item.Function = f
-	item.Shortcut = sc
+	item.Shortcut = zkeyboard.SCut(scKey, mod)
 	return item
 }
 
@@ -563,6 +563,22 @@ func (o *MenuedOwner) popup() {
 	})
 }
 
+func (o *MenuedOwner) TriggerShortcut(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+	for _, item := range o.items {
+		if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
+			if item.Function != nil {
+				item.Function()
+				return true
+			}
+			zlog.Assert(o.ActionHandlerFunc != nil)
+			id := item.Value.(string)
+			o.ActionHandlerFunc(id)
+			return true
+		}
+	}
+	return false
+}
+
 func (o *MenuedOwner) handleShortcut(key zkeyboard.Key, mod zkeyboard.Modifier, list *zgridlist.GridListView) bool {
 	for i, item := range o.items {
 		if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
@@ -660,7 +676,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		v.Add(cv, zgeo.CenterRight, marg)
 	}
 	if o.hasShortcut {
-		str := zkeyboard.GetModifiersString(item.Shortcut.Modifier) + string(rune(item.Shortcut.Key))
+		str := zkeyboard.GetModifiersString(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
 		keyLabel := zlabel.New(str)
 		title.SetObjectName("shortcut")
 		font := o.Font
