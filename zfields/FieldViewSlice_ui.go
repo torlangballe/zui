@@ -279,7 +279,6 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			}
 		}
 		if notEqual && val.Kind() == reflect.Bool {
-			zlog.Info("isUndefBool:", sf.Name)
 			unknownBoolViewIDs[fieldNameToID(sf.Name)] = true
 		}
 	})
