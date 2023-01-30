@@ -149,6 +149,7 @@ func (win *Window) SetOnResizeHandling() {
 			r.Pos = zgeo.Pos{}
 			if win.ResizeHandlingView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
+				// zlog.Info("On Resize", win.ResizeHandlingView.Native().Hierarchy(), r)
 				win.ResizeHandlingView.SetRect(r)
 				// SetElementRect(win.Element, r)
 				if win.HandleAfterResized != nil {
@@ -263,11 +264,22 @@ func (win *Window) setOnKeyDown() {
 			var used bool
 			// zlog.Info("win key:", key)
 			for view, h := range win.keyHandlers {
-				// zlog.Info("win key2:", key, view.Native().Hierarchy())
+				// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
 				if top.IsParentOf(view.Native()) {
 					focused := top.Native().GetFocusedChildView()
+					// if focused != nil {
+					// 	zlog.Info("win key1: foc:", focused.Native().Hierarchy())
+					// }
+					// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
 					if focused != nil && focused != view.Native() {
-						continue
+						kc, _ := focused.View.(zkeyboard.KeyConsumer)
+						if kc == nil {
+							if key != zkeyboard.KeyEscape && key != zkeyboard.KeyReturn && key != zkeyboard.KeyEnter {
+								continue
+							}
+						} else if kc.ConsumesKey(zkeyboard.KMod(key, mods)) {
+							continue
+						}
 					}
 					if h(key, mods) {
 						used = true
