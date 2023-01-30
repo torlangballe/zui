@@ -47,11 +47,7 @@ func (v *StackView) Spacing() float64 {
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	lays := v.getLayoutCells(zgeo.Rect{Size: total})
 	s := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, v.Spacing(), lays)
-	s.MaximizeNonZero(v.MinSize())
 	s.Subtract(v.Margin().Size)
-	// if v.ObjectName() == "nameValues-stack" {
-	// 	zlog.Info("SV CS namevals stack:", v.Hierarchy(), s, len(v.Cells), v.Spacing())
-	// }
 	return s
 }
 
