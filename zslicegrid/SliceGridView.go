@@ -159,17 +159,21 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if v.ActionMenu != nil {
-			return v.ActionMenu.TriggerShortcut(key, mod)
+		oneID := v.Grid.CurrentHoverID
+		if oneID == "" && len(v.Grid.SelectedIDs()) == 1 {
+			oneID = v.Grid.SelectedIDs()[0]
 		}
-		// if options&AllowDelete != 0 && key == zkeyboard.KeyBackspace {
-		// 	v.handleDeleteKey(mod != zkeyboard.ModifierCommand)
-		// 	return true
-		// }
-		// if options&AllowEdit != 0 && key == zkeyboard.KeyReturn {
-		// 	v.HandleEditButtonPressed()
-		// 	return true
-		// }
+		// zlog.Info("OneID:", oneID)
+		sc := zkeyboard.KMod(key, mod)
+		if oneID != "" {
+			cell := v.Grid.CellView(oneID)
+			if zcontainer.HandleOutsideShortcutRecursively(cell, sc) {
+				return true
+			}
+		}
+		if v.ActionMenu != nil {
+			return v.ActionMenu.HandleOutsideShortcut(sc)
+		}
 		return false
 	}
 	v.Grid.HandleSelectionChangedFunc = func() {
@@ -452,9 +456,7 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 			return true
 		}
 		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
-			// ztimer.StartIn(0.1, func() {
 			v.StoreChangedItemsFunc(items)
-			// })
 		}
 		v.UpdateViewFunc()
 		return true
