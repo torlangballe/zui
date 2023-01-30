@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+</head>
+<body>
+    <script src="js/zcore/wasm_exec.js"></script>
+    <script src="js/zcore/pako.js"></script>
+    <script>
+        ;
+        (async function() {
+            const file = window.pako.ungzip(
+                await (await fetch("main.wasm.gz")).arrayBuffer()
+            )
+            const go = new Go()
+            WebAssembly.instantiate(file, go.importObject).then((result) => {
+                go.run(result.instance)
+            })
+        })()
+    </script>
+</body>
+</html>
