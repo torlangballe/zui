@@ -66,7 +66,7 @@ type MenuedOItem struct {
 	Selected    bool
 	LabelColor  zgeo.Color
 	TextColor   zgeo.Color
-	Shortcut    zkeyboard.Shortcut
+	Shortcut    zkeyboard.KeyMod
 	IsDisabled  bool
 	IsAction    bool
 	IsSeparator bool
@@ -109,12 +109,12 @@ func MenuedSCFuncAction(name string, scKey zkeyboard.Key, mod zkeyboard.Modifier
 	item.Value = rand.Int31()
 	item.IsAction = true
 	item.Function = f
-	item.Shortcut = zkeyboard.SCut(scKey, mod)
+	item.Shortcut = zkeyboard.KMod(scKey, mod)
 	return item
 }
 
 func (m *MenuedOItem) SetShortcut(key zkeyboard.Key, mods zkeyboard.Modifier) {
-	s := zkeyboard.SCut(key, mods)
+	s := zkeyboard.KMod(key, mods)
 	m.Shortcut = s
 }
 
@@ -463,20 +463,24 @@ func (o *MenuedOwner) popup() {
 	}
 	w += 18 // test
 	zfloat.Maximize(&w, o.MinWidth)
-	stack.SetMinSize(zgeo.Size{w, 0})
+	list.SetMinSize(zgeo.Size{w, 0})
+	list.BarSize = 0
 
 	list.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 		if list.CurrentHoverID != "" && (key == zkeyboard.KeyReturn || key == zkeyboard.KeyEnter) {
 			list.SelectCell(list.CurrentHoverID, false)
 			return true
 		}
-		if o.handleShortcut(key, mod, list) {
-			return true
+		for i, item := range o.items {
+			if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
+				list.SelectCell(strconv.Itoa(i), false)
+				return true
+			}
 		}
 		return false
 	}
 	list.HandleSelectionChangedFunc = func() {
-		zlog.Info("SelChanged")
+		// zlog.Info("SelChanged")
 		if o.IsStatic {
 			return
 		}
@@ -563,26 +567,16 @@ func (o *MenuedOwner) popup() {
 	})
 }
 
-func (o *MenuedOwner) TriggerShortcut(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-	for _, item := range o.items {
-		if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
+func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	for _, item := range o.getItems() {
+		if item.Shortcut == sc {
 			if item.Function != nil {
-				item.Function()
+				go item.Function()
 				return true
 			}
 			zlog.Assert(o.ActionHandlerFunc != nil)
 			id := item.Value.(string)
 			o.ActionHandlerFunc(id)
-			return true
-		}
-	}
-	return false
-}
-
-func (o *MenuedOwner) handleShortcut(key zkeyboard.Key, mod zkeyboard.Modifier, list *zgridlist.GridListView) bool {
-	for i, item := range o.items {
-		if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
-			list.SelectCell(strconv.Itoa(i), false)
 			return true
 		}
 	}
