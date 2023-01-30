@@ -6,9 +6,17 @@ type Type string
 type AutoCapType string
 type ReturnKeyType string
 
-type Shortcut struct {
+type KeyMod struct {
 	Key      Key
 	Modifier Modifier
+}
+
+type ShortcutHandler interface {
+	HandleOutsideShortcut(sc KeyMod) bool
+}
+
+type KeyConsumer interface {
+	ConsumesKey(sc KeyMod) bool
 }
 
 const (
@@ -71,8 +79,8 @@ var ModifiersAtPress Modifier
 
 // Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType
 
-func SCut(k Key, m Modifier) Shortcut {
-	return Shortcut{Key: k, Modifier: m}
+func KMod(k Key, m Modifier) KeyMod {
+	return KeyMod{Key: k, Modifier: m}
 }
 
 func GetModifiersString(m Modifier) string {
