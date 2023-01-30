@@ -22,7 +22,10 @@ type ScrollView struct {
 
 	lastEdgeScroll time.Time
 	ScrolledAt     time.Time
+	BarSize        float64
 }
+
+var DefaultBarSize = 16.0
 
 func New() *ScrollView {
 	v := &ScrollView{}
@@ -80,6 +83,8 @@ func (v *ScrollView) ArrangeChildren() {
 		cs := v.child.CalculatedSize(ls)
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
+		r.Size.W -= 16
+		// zlog.Info("SV ArrangeChildren:", v.Hierarchy(), r)
 		v.child.SetRect(r) // this will call arrange children on child if container
 		// ct, got := v.child.(ContainerType)
 		// if got {
@@ -93,8 +98,8 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.child != nil {
 		cs := v.child.CalculatedSize(total)
 		s.W = cs.W
+		s.W += 16
 	}
-	// zlog.Info("SV CalculatedSize:", v.ObjectName(), s, v.child != nil)
 	return s
 }
 
@@ -104,8 +109,9 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 		ls := rect.Size
 		ls.H = 20000
 		cs := v.child.CalculatedSize(ls)
-		cs.W = ls.W
+		cs.W = ls.W - 16
 		r := zgeo.Rect{Size: cs}
+		// zlog.Info("SV SetRect:", v.Hierarchy(), v.LocalRect(), r)
 		v.child.SetRect(r)
 	}
 }

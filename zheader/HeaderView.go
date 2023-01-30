@@ -179,7 +179,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell.Alignment = h.Align
 		header := h
 		s := zgeo.Size{h.MinWidth, 26}
-		button := zshape.ImageButtonViewNew(h.Title, "grayHeader", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 		// zlog.Info("HEADER:", h.Title, h.Justify)
 		j := h.Justify
 		if j == zgeo.AlignmentNone {
@@ -225,7 +225,7 @@ func (v *HeaderView) Populate(headers []Header) {
 	}
 }
 
-func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, marg float64) {
+func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rightStackMargin float64) {
 	var cells []zcontainer.Cell
 	for _, c := range stack.Cells {
 		if !c.Collapsed && !c.Free {
@@ -241,14 +241,14 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, marg float64) {
 	zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
 	x := 0.0
 	w := stack.Rect().Size.W
-	// zlog.Info("HeaderFit", v.ObjectName(), len(v.cells), len(children))
+	// zlog.Info("HeaderFit", v.ObjectName())
 	for i := range cells {
 		var e float64
 		if i < len(cells)-1 {
 			e = cells[i+1].View.Rect().Pos.X
-			e -= marg
+			e -= gap
 		} else {
-			e = w + 2
+			e = w + 2 + rightStackMargin
 		}
 		hv := hviews[i]
 		hr := hv.Rect()

@@ -94,20 +94,22 @@ func (v *TableView[S]) ArrangeChildren() {
 	v.Header.ArrangeAdvanced(freeOnly)
 	if v.Header != nil {
 		// zlog.Info("TV: ArrangeChildren", v.Header != nil, v.Grid.CellCount())
+		var fv *zfields.FieldView
 		if v.Grid.CellCountFunc() > 0 {
 			view := v.Grid.AnyChildView()
 			if view != nil {
 				// zlog.Info("TV: ArrangeChildren FitHEader")
-				fv := view.(*zfields.FieldView)
-				v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
+				fv = view.(*zfields.FieldView)
 			}
 		} else { // no rows, make an empty one to fit header with
 			var s S
 			view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
-			fv := view.(*zfields.FieldView)
+			fv = view.(*zfields.FieldView)
 			fv.SetRect(v.LocalRect())
 			fv.ArrangeChildren()
-			v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin)
+		}
+		if fv != nil {
+			v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin, v.Grid.BarSize)
 		}
 	}
 }
