@@ -93,3 +93,4 @@ func (v *NativeView) SetPressedDownHandler(handler func()) {}
 func (v *NativeView) HasPressedDownHandler() bool          { return false }
 func (v *NativeView) Native() *NativeView                  { return v }
 func (v *NativeView) SetStyling(style zstyle.Styling)      {}
+func (v *NativeView) SetSelectable(on bool)                {}

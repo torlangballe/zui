@@ -225,7 +225,7 @@ func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
 }
 
 func (v *NativeView) SetSelectable(on bool) {
-	val := "none"
+	val := "none" // https://stackoverflow.com/questions/3779534/how-do-i-disable-text-selection-with-css-or-javascript
 	if on {
 		val = "all"
 	}
@@ -858,7 +858,11 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 		if moves {
 			// we := v.GetWindowElement()
 			v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-				handler(getMousePosRelative(v, args[0]), zbool.Unknown)
+				e := args[0]
+				if e.Get("movementX").Float() == 0 && e.Get("movementY").Float() == 0 { // if we don't do this, we get weird move events when modifier key is pressed. Maybe we want that one day, so follow this space.
+					return nil
+				}
+				handler(getMousePosRelative(v, e), zbool.Unknown)
 				return nil
 			}))
 			// listener := we.Call("addEventListener", "mousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -873,6 +877,7 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 		return nil
 	}))
 	v.JSSet("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// zlog.Info("Mouse Leave")
 		if SkipEnterHandler {
 			return nil
 		}
