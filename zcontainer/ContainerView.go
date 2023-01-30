@@ -10,10 +10,10 @@ import (
 
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -244,15 +244,15 @@ func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.MinSize()
 }
 
-func (v *ContainerView) SetAsFullView(useableArea bool) {
-	sm := zscreen.GetMain()
-	r := sm.Rect
-	if useableArea {
-		r = sm.UsableRect
-	}
-	v.SetRect(r)
-	v.SetMinSize(r.Size)
-}
+// func (v *ContainerView) SetAsFullView(useableArea bool) {
+// 	sm := zscreen.GetMain()
+// 	r := sm.Rect
+// 	if useableArea {
+// 		r = sm.UsableRect
+// 	}
+// 	v.SetRect(r)
+// 	v.SetMinSize(r.Size)
+// }
 
 func (v *ContainerView) ArrangeChildrenAnimated() {
 	//        ZAnimation.Do(duration 0.6, animations  { [weak self] () in
@@ -298,8 +298,7 @@ func ContainerIsLoading(ct ContainerType) bool {
 // done received waited=true if it had to wait
 func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
 	// start := time.Now()
-	ztimer.RepeatNow(0.1, func() bool {
-		// zlog.Info("WhenContainerLoaded", ct.(View).ObjectName())
+	ztimer.RepeatAtMostEvery(0.1, func() bool {
 		if ContainerIsLoading(ct) {
 			// zlog.Info("Wait:", ct.(View).ObjectName())
 			return true
@@ -594,4 +593,23 @@ func ArrangeChildrenAtRootContainer(view zview.View) {
 			return
 		}
 	}
+}
+
+func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool {
+	var handled bool
+	sh, _ := view.(zkeyboard.ShortcutHandler)
+	if sh != nil && sh.HandleOutsideShortcut(sc) {
+		return true
+	}
+	ViewRangeChildren(view, true, false, func(v zview.View) bool {
+		sh, _ := v.(zkeyboard.ShortcutHandler)
+		if sh != nil {
+			if sh.HandleOutsideShortcut(sc) {
+				handled = true
+				return false
+			}
+		}
+		return true
+	})
+	return handled
 }
