@@ -7,8 +7,10 @@
 package zapp
 
 import (
+	"embed"
 	"io"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -35,20 +37,26 @@ type FilesRedirector struct {
 	Router           *mux.Router // if ServeDirectories is true, it serves content list of directory
 }
 
+//go:embed www
+var wwwFS embed.FS
+
 var Calls = new(AppCalls)
 
 func Init() {
 	zrpc2.Register(Calls)
+	if zfile.NotExist(zrest.StaticFolder) {
+		os.Mkdir(zrest.StaticFolder, os.ModeDir|0755)
+	}
 }
 
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	const filePathPrefix = "www/"
+	const filePathPrefix = zrest.StaticFolder + "/"
 	spath := req.URL.Path
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
 		spath += "/"
 	}
-	// zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
+	zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
 	filepath := path.Join(filePathPrefix, spath)
 	if r.Override != nil {
@@ -56,7 +64,6 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	// zlog.Info("FilesRedir:", req.URL.Path, filepath, zfile.Exists(filepath))
 	if spath != "" {
 		if strings.Contains(filepath, "*") {
 			files, _ := zfile.GetFilesFromPath(filepath, false)
@@ -76,8 +83,27 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	if filepath == zrest.StaticFolder {
+		filepath = zrest.StaticFolder + "/index.html"
+	}
+	if zfile.Exists(filepath) {
+		zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
+		http.ServeFile(w, req, filepath)
+		return
+	}
+	if spath == "" {
+		spath = "index.html"
+	}
+	data, err := wwwFS.ReadFile(zrest.StaticFolder + "/" + spath)
+	zlog.Info("FSREAD:", spath, err, len(data))
+	if err == nil {
+		_, err := w.Write(data)
+		if err != nil {
+			zlog.Error(err, "write to ResponseWriter from embedded")
+		}
+		return
+	}
 	// zlog.Info("Serve app:", path, filepath)
-	http.ServeFile(w, req, filepath)
 }
 
 func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
@@ -91,7 +117,7 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	//	route := router.PathPrefix(zrest.AppURLPrefix)
 	//	route.Handler(f)
 	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "www/favicon.ico")
+		http.ServeFile(w, r, zrest.StaticFolder+"/favicon.ico")
 	})
 }
 
