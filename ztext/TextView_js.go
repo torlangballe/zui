@@ -258,3 +258,16 @@ func (v *TextView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.
 func (v *TextView) ScrollToBottom() {
 	v.JSSet("scrollTop", v.JSGet("scrollHeight"))
 }
+
+func (v *TextView) ConsumesKey(sc zkeyboard.KeyMod) bool {
+	if sc.Modifier != zkeyboard.ModifierNone {
+		return false
+	}
+	switch sc.Key {
+	case zkeyboard.KeyEscape:
+		return false
+	case zkeyboard.KeyReturn, zkeyboard.KeyEnter, zkeyboard.KeyUpArrow, zkeyboard.KeyDownArrow:
+		return v.Element.Get("type").String() == "textarea"
+	}
+	return true
+}
