@@ -128,6 +128,7 @@ type Field struct {
 	Format               string
 	Colors               []string
 	ImageFixedPath       string
+	OffImagePath         string
 	HeaderImageFixedPath string
 	Height               float64
 	Enum                 string
@@ -254,7 +255,7 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 func findLocalFieldWithID(children *[]zreflect.Item, name string) *zreflect.Item {
 	name = zstr.HeadUntil(name, ".")
 	for i, c := range *children {
-		if fieldNameToID(c.FieldName) == name {
+		if c.FieldName == name {
 			return &(*children)[i]
 		}
 	}
@@ -479,13 +480,17 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 				}
 			}
 
+		case "off":
+			f.OffImagePath = "images/" + val
 		case "image", "himage":
 			var size zgeo.Size
 			var path string
 			for _, part := range barParts {
-				// zlog.Info("PARTS:", barParts)
-				size.FromString(part)
-				if size.IsNull() {
+				var s zgeo.Size
+				if s.FromString(part) == nil {
+					size = s
+					// zlog.Info("Got size:", part, size)
+				} else {
 					path = "images/" + part
 				}
 			}
@@ -499,7 +504,7 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 				f.HeaderImageFixedPath = path
 			}
 		case "enum":
-			if zstr.HasPrefix(val, ".", &f.LocalEnum) {
+			if zstr.HasPrefix(val, "./", &f.LocalEnum) {
 			} else {
 				if fieldEnums[val] == nil {
 					zlog.Error(nil, "no such enum:", val, fieldEnums)

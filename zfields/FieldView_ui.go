@@ -25,6 +25,7 @@ import (
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
@@ -76,6 +77,10 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.Styling = zstyle.EmptyStyling
 	f.Styling.Spacing = 8
 	return f
+}
+
+func (v *FieldView) ID() string {
+	return v.id
 }
 
 func (v *FieldView) Data() any {
@@ -159,7 +164,6 @@ func (v *FieldView) Build(update bool) {
 func (v *FieldView) findNamedViewOrInLabelized(name string) (view, maybeLabel zview.View) {
 	for _, c := range (v.View.(zcontainer.ContainerType)).GetChildren(false) {
 		n := c.ObjectName()
-		// zlog.Info("findNamedViewOrInLabelized:", v.ObjectName(), name, n)
 		if n == name {
 			return c, c
 		}
@@ -176,17 +180,38 @@ func (v *FieldView) findNamedViewOrInLabelized(name string) (view, maybeLabel zv
 	return nil, nil
 }
 
+// func (v *FieldView) findNamedViewOrInLabelized2(name string) (view, maybeLabel zview.View) {
+// 	for _, c := range (v.View.(zcontainer.ContainerType)).GetChildren(false) {
+// 		n := c.ObjectName()
+// 		if n == name {
+// 			return c, c
+// 		}
+// 		if strings.HasPrefix(n, "$labelize.") {
+// 			s, _ := c.(*zcontainer.StackView)
+// 			if s != nil {
+// 				for _, c := range s.GetChildren(true) {
+// 				}
+// 				v2, _ := s.FindViewWithName(name, true)
+// 				if v2 != nil {
+// 					return v2, c
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return nil, nil
+// }
+
 func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string) {
 	for _, f := range v.Fields {
 		var id string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		// zlog.Info("updateShowEnableFromZeroer:", f.FieldName, isZero, isShow, toID, local)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
-			_, fview := v.findNamedViewOrInLabelized(f.ID)
+			_, fview := v.findNamedViewOrInLabelized(f.FieldName)
 			if fview == nil {
 				continue
 			}
-			// zlog.Assert(fview != nil, v.Hierarchy(), f.ID)
+			// zlog.Assert(fview != nil, v.Hierarchy(), f.FieldName)
 			if neg {
 				isShow = !isShow
 			}
@@ -201,7 +226,8 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 	//TODO: handle ../ and substruct/id style
 }
 
-func doItem(item *zreflect.Item, isShow bool, view zview.View, not bool) {
+func doShowEnableItem(item *zreflect.Item, isShow bool, view zview.View, not bool) {
+	// zlog.Info("doShowEnableItem:", item.FieldName, isShow, not, view.Native().Hierarchy())
 	zero := item.Value.IsZero()
 	if not {
 		zero = !zero
@@ -215,8 +241,8 @@ func doItem(item *zreflect.Item, isShow bool, view zview.View, not bool) {
 
 func findIDInStructItems(items []zreflect.Item, id string) *zreflect.Item {
 	for i, item := range items {
-		// zlog.Info("findIDInStructItems:", fieldNameToID(item.FieldName), id)
-		if fieldNameToID(item.FieldName) == id {
+		// zlog.Info("findIDInStructItems:", item.FieldName, id)
+		if item.FieldName == id {
 			return &items[i]
 		}
 	}
@@ -242,10 +268,10 @@ func getLocalFromShowOrEnable(isShow bool, f *Field) (local string, neg bool) {
 	return
 }
 
-func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toID string) {
+func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toFieldName string) {
 	// zlog.Info("updateShowOrEnable:", isShow, toID, len(v.Fields))
 	for _, f := range v.Fields {
-		if f.ID != toID {
+		if f.FieldName != toFieldName {
 			continue
 		}
 		var prefix, id string
@@ -254,29 +280,26 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toID st
 			// zlog.Info("local:", toID, f.FieldName, id)
 			fitem := findIDInStructItems(v.getStructItems(), id)
 			if fitem != nil {
-				doItem(fitem, isShow, view, neg)
+				doShowEnableItem(fitem, isShow, view, neg)
 			}
 			continue
 		}
-		if zstr.SplitN(local, "/", &prefix, &id) && prefix == f.ID {
+		if zstr.SplitN(local, "/", &prefix, &id) && prefix == f.FieldName {
 			fv := view.(*FieldView)
 			if fv == nil {
 				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
-			// zlog.Info("sub in:", toID, prefix, id, f.ID, prefix == f.ID)
 			fitem := findIDInStructItems(fv.getStructItems(), id)
 			if fitem != nil {
-				// zlog.Info("subin:", id, fv.ObjectName(), fitem != nil)
-				doItem(fitem, isShow, view, neg)
+				doShowEnableItem(fitem, isShow, view, neg)
 			}
 			continue
 		}
 		if zstr.HasPrefix(local, "../", &id) && v.parent != nil {
 			fitem := findIDInStructItems(v.parent.getStructItems(), id)
 			if fitem != nil {
-				doItem(fitem, isShow, view, neg)
-				// zlog.Info("sub back:", toID, id)
+				doShowEnableItem(fitem, isShow, view, neg)
 			}
 			continue
 		}
@@ -308,7 +331,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 			continue
 		}
 		// fmt.Println("FV Update Item:", v.Hierarchy(), f.Name, item.Kind)
-		fview, flabelized := v.findNamedViewOrInLabelized(f.ID)
+		fview, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
 		// zlog.Info("fv.UpdateF:", v.Hierarchy(), f.ID, f.FieldName, fview != nil)
 		if fview == nil {
 			// zlog.Info("FV Update no view found:", i, v.id, f.ID)
@@ -476,6 +499,17 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 			fv.Update(item.Address, dontOverwriteEdited)
 
 		case zreflect.KindBool:
+			if f.Flags&FlagIsImage != 0 && f.OffImagePath != "" && item.Kind == zreflect.KindBool {
+				iv, _ := fview.(*zimageview.ImageView) // it might be a button or something instead
+				path := f.OffImagePath
+				val, _ := v.fieldToDataItem(f, iv)
+				on := val.Bool()
+				if on {
+					path = f.ImageFixedPath
+				}
+				iv.SetImage(nil, path, nil)
+				break
+			}
 			cv, _ := fview.(*zcheckbox.CheckBox) // it might be a button or something instead
 			if cv != nil {
 				b := zbool.ToBoolInd(item.Value.Interface().(bool))
@@ -586,7 +620,7 @@ func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 	zcontainer.ViewRangeChildren(view, true, true, func(view zview.View) bool {
 		f, _ := view.(*FieldView)
 		if f != nil {
-			if optionalID == "" || f.id == optionalID {
+			if optionalID == "" || f.ID() == optionalID {
 				fv = f
 				return false
 			}
@@ -634,9 +668,9 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 		}
 		// fmt.Printf("call edit ActionHandlerFunc2: %s %p\n", f.Name, v.data)
 	}
-	// zlog.Info("callActionHandlerFunc:", f.ID, f.Name, action)
+	// zlog.Info("callActionHandlerFunc:", f.FieldName, f.Name, action)
 	direct := (action == CreateFieldViewAction || action == SetupFieldAction)
-	// zlog.Info("callActionHandlerFunc  get sub:", f.ID, f.Name, action)
+	// zlog.Info("callActionHandlerFunc  get sub:", f.FieldName, f.Name, action)
 	// data := v.getSubStruct(structID, direct)
 	fh, _ := v.data.(ActionHandler)
 	// zlog.Info("callFieldHandler1", action, f.Name, fh != nil, reflect.TypeOf(v.data))
@@ -644,7 +678,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 	if fh != nil {
 		result = fh.HandleAction(f, action, view)
 	}
-	// zlog.Info("callActionHandlerFunc2:", f.ID, f.Name, action)
+	// zlog.Info("callActionHandlerFunc2:", f.FieldName, f.Name, action)
 
 	if view != nil && *view != nil {
 		first := true
@@ -949,6 +983,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 		// label.SetMaxLines(strings.Count(str, "\n") + 1)
 		f.SetFont(label, nil)
 		label.SetTextAlignment(j)
+		label.SetWrap(ztextinfo.WrapTailTruncate)
 		if f.Flags&FlagToClipboard != 0 {
 			label.SetPressedHandler(func() {
 				text := label.Text()
@@ -976,7 +1011,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 		style.KeyboardType = zkeyboard.TypeEmailAddress
 	}
 	tv := ztext.NewView(str, style, cols, f.Rows)
-	tv.SetObjectName(f.ID)
+	tv.SetObjectName(f.FieldName)
 	f.SetFont(tv, nil)
 	tv.UpdateSecs = f.UpdateSecs
 	if !noUpdate && tv.UpdateSecs == -1 {
@@ -998,7 +1033,7 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	cv := zcheckbox.New(b)
-	cv.SetObjectName(f.ID)
+	cv.SetObjectName(f.FieldName)
 	cv.SetValueHandler(func() {
 		val, _ := v.fieldToDataItem(f, cv)
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
@@ -1020,10 +1055,28 @@ func (v *FieldView) makeImage(item zreflect.Item, f *Field) zview.View {
 	iv := zimageview.New(nil, "", f.Size)
 	iv.DownsampleImages = true
 	iv.SetMinSize(f.Size)
-	iv.SetObjectName(f.ID)
+	iv.SetObjectName(f.FieldName)
 	iv.OpaqueDraw = (f.Flags&FlagIsOpaque != 0)
 	if f.Styling.FGColor.Valid {
 		iv.EmptyColor = f.Styling.FGColor
+	}
+	if f.OffImagePath != "" && item.Kind == zreflect.KindBool {
+		iv.SetPressedHandler(func() {
+			val, _ := v.fieldToDataItem(f, iv)
+			on := val.Bool()
+			on = !on
+			val.SetBool(on)
+			v.Update(nil, false)
+			// zlog.Info("CallBoolImageTrigger")
+			v.callTriggerHandler(f, EditedAction, on, &iv.View)
+			callActionHandlerFunc(v, f, EditedAction, val.Interface(), &iv.View)
+
+			// zlog.Info("CallBoolImageTrigger done")
+		})
+	} else {
+		iv.SetPressedHandler(func() {
+			v.callTriggerHandler(f, PressedAction, v.id, &iv.View)
+		})
 	}
 	return iv
 }
@@ -1166,7 +1219,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 	}
 	if f.LocalEnum != "" {
 		ei := findLocalFieldWithID(&children, f.LocalEnum)
-		if zlog.ErrorIf(ei == nil, f.Name, f.LocalEnum) {
+		if zlog.ErrorIf(ei == nil, v.Hierarchy(), f.Name, f.LocalEnum) {
 			return nil, true
 		}
 		getter, _ := ei.Interface.(zdict.ItemsGetter)
@@ -1268,7 +1321,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				params := v.params
 				params.Field.MergeInField(f)
 				// params.Field.Flags = 0
-				fieldView := fieldViewNew(f.ID, vert, item.Address, params, zgeo.Size{}, v)
+				fieldView := fieldViewNew(f.FieldName, vert, item.Address, params, zgeo.Size{}, v)
 				// fmt.Printf("makeStruct2 %s %p\n", item.FieldName, fieldView.View)
 				view = makeFrameIfFlag(f, fieldView)
 				if view == nil {
@@ -1276,14 +1329,17 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				}
 				// fmt.Printf("makeStruct3 %s %p %v %p\n", item.FieldName, view, view == nil, fieldView)
 				// fieldView.parentField = f
-				fieldView.BuildStack(f.ID, zgeo.TopLeft, zgeo.Size{}, true)
+				fieldView.BuildStack(f.FieldName, zgeo.TopLeft, zgeo.Size{}, true)
 			}
 
 		case zreflect.KindBool:
+			if f.Flags&FlagIsImage != 0 && f.OffImagePath != "" && item.Kind == zreflect.KindBool {
+				view = v.makeImage(item, f)
+				break
+			}
 			b := zbool.ToBoolInd(item.Value.Interface().(bool))
 			exp = zgeo.AlignmentNone
 			view = v.makeCheckbox(f, b)
-
 		case zreflect.KindInt:
 			if item.TypeName == "BoolInd" {
 				exp = zgeo.HorShrink
@@ -1332,7 +1388,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			params := v.params
 			params.Field.MergeInField(f)
 			// params.Field.Flags = 0
-			fv := fieldViewNew(f.ID, vert, item.Address, params, zgeo.Size{}, v)
+			fv := fieldViewNew(f.FieldName, vert, item.Address, params, zgeo.Size{}, v)
 			view = fv
 			var add zview.View
 			if f.Flags&FlagIsGroup == 0 {
@@ -1398,7 +1454,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 		if f.Flags&FlagLongPress != 0 {
 			lph := pt.LongPressedHandler()
 			pt.SetLongPressedHandler(func() {
-				// zlog.Info("Field.LPH:", f.ID)
+				// zlog.Info("Field.LPH:", f.FieldName)
 				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface, &view) && lph != nil {
 					lph()
 				}
@@ -1411,7 +1467,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 		nv := view.Native()
 		nv.SetDropShadow(f.Styling.DropShadow)
 	}
-	view.SetObjectName(f.ID)
+	view.SetObjectName(f.FieldName)
 	if f.Styling.FGColor.Valid {
 		view.SetColor(f.Styling.FGColor)
 	}
@@ -1452,10 +1508,10 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 func updateItemLocalToolTip(f *Field, children []zreflect.Item, view zview.View) {
 	var tipField, tip string
 	found := false
-	if zstr.HasPrefix(f.Tooltip, ".", &tipField) {
+	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
 		for _, ei := range children {
-			// zlog.Info("updateItemLocalToolTip:", fieldNameToID(ei.FieldName), tipField)
-			if fieldNameToID(ei.FieldName) == tipField {
+			// zlog.Info("updateItemLocalToolTip:", ei.FieldName, tipField)
+			if ei.FieldName == tipField {
 				tip = fmt.Sprint(ei.Interface)
 				found = true
 				break
@@ -1475,9 +1531,9 @@ func updateItemLocalToolTip(f *Field, children []zreflect.Item, view zview.View)
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
 		// fmt.Println("FV Update Item:", f.Name)
-		fview, _ := v.findNamedViewOrInLabelized(f.ID)
+		fview, _ := v.findNamedViewOrInLabelized(f.FieldName)
 		if fview == nil {
-			// zlog.Info("FV Update no view found:", v.id, f.ID)
+			// zlog.Info("FV Update no view found:", v.id, f.FieldName)
 			continue
 		}
 		_, e := v.fieldToDataItem(&f, fview)
@@ -1517,6 +1573,10 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 
 	switch f.Kind {
 	case zreflect.KindBool:
+		_, got := view.(*zimageview.ImageView)
+		if got {
+			break
+		}
 		bv, _ := view.(*zcheckbox.CheckBox)
 		if bv == nil {
 			zcontainer.ViewRangeChildren(view, false, false, func(v zview.View) bool {

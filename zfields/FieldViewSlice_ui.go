@@ -279,7 +279,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			}
 		}
 		if notEqual && val.Kind() == reflect.Bool {
-			unknownBoolViewIDs[fieldNameToID(sf.Name)] = true
+			unknownBoolViewIDs[sf.Name] = true
 		}
 	})
 	params.EditWithoutCallbacks = true
@@ -289,8 +289,10 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {
 		view, _ := fview.findNamedViewOrInLabelized(bid)
-		check := view.(*zcheckbox.CheckBox)
-		check.SetValue(zbool.Unknown)
+		check, _ := view.(*zcheckbox.CheckBox)
+		if check != nil {
+			check.SetValue(zbool.Unknown)
+		}
 	}
 	zalert.PresentOKCanceledView(fview, title, att, func(ok bool) bool {
 		if ok {
@@ -298,11 +300,13 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			if err != nil {
 				return false
 			}
+			// zlog.Info("EDITAfter2data:", zlog.Full(editStruct))
 			zreflect.ForEachField(editStruct.Interface(), func(index int, val reflect.Value, sf reflect.StructField) {
 				if sf.Tag.Get("zui") == "-" {
 					return // skip to next
 				}
-				bid := fieldNameToID(sf.Name)
+				// zlog.Info("PresentOKCanceledView foreach:", sf.Name)
+				bid := sf.Name
 				view, _ := fview.findNamedViewOrInLabelized(bid)
 				check, _ := view.(*zcheckbox.CheckBox)
 				isCheck := (check != nil)
@@ -311,7 +315,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				for i := 0; i < len; i++ {
 					sliceField := sliceVal.Index(i).Field(index)
-					// zlog.Info("SetSliceVal?:", isCheck, unknownBoolViewIDs, i, sf.Name, val.Interface(), sliceField.Addr())
+					// zlog.Info("SetSliceVal?:", bid, isCheck, unknownBoolViewIDs, i, sf.Name, val.Interface(), sliceField.Addr(), view != nil)
 					if !val.IsZero() || isCheck {
 						sliceField.Set(val)
 					}
