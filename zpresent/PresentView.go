@@ -44,12 +44,11 @@ type Attributes struct {
 
 var (
 	presentCloseFuncs = map[zview.View]func(dismissed bool){}
-	firstPresented    bool
+	FirstPresented    bool
 	Presenting        = true // true for first pre-present
 )
 
 func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
-	// fmt.Printf("PresentView: %p\n", v)
 	if closed != nil {
 		presentCloseFuncs[v] = closed
 	}
@@ -90,7 +89,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
 	size := v.CalculatedSize(rect.Size)
-	if attributes.Modal || firstPresented {
+	// zlog.Info("Present:", v.Native().Hierarchy(), size, rect, attributes.Modal, FirstPresented, zlog.CallingStackString())
+	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
 	nv := v.Native()
@@ -106,10 +106,11 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					// zlog.Info("ALIGN2:", r.Pos)
 				}
 			}
-			frect := fullRect.Expanded(zgeo.SizeBoth(-4))
+			frect := fullRect //.Expanded(zgeo.SizeBoth(-4))
 			r = r.MovedInto(frect)
 			r = r.Intersected(frect)
 			v.SetRect(r)
+			// zlog.Info("Present:", v.Native().Hierarchy(), r, win.ContentRect())
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.GetFromNativeView(nv)
@@ -122,7 +123,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			})
 		}
 	} else {
-		if !firstPresented {
+		if !FirstPresented {
 			win.AddView(v)
 		} else {
 			size.H += zwindow.BarHeight()
@@ -146,7 +147,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		win.ResizeHandlingView = v
 		v.SetRect(zgeo.Rect{Size: rect.Size})
 	}
-	firstPresented = true
+	FirstPresented = true
 	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false
