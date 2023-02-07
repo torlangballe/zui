@@ -49,7 +49,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	UpdateViewFunc        func()
 	SortFunc              func(s []S)
 	FilterFunc            func(s S) bool
-	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice.
+	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
 	StoreChangedItemFunc  func(item S, showErr *bool, last bool) error  // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
 	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
 	DeleteItemFunc        func(item *S, showErr *bool, last bool) error // DeleteItemFunc is called from default DeleteItemsFunc, with index and struct in slicePtr of each item to delete. The items are then removed from the slicePtr. last is true if it's the last one in items.
@@ -163,7 +163,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if oneID == "" && len(v.Grid.SelectedIDs()) == 1 {
 			oneID = v.Grid.SelectedIDs()[0]
 		}
-		// zlog.Info("OneID:", oneID)
 		sc := zkeyboard.KMod(key, mod)
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
@@ -451,14 +450,13 @@ func (v *SliceGridView[S]) EditItems(ids []string) {
 	}
 	title += v.NameOfXItemsFunc(ids, true)
 	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
-		// zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
 		if !ok {
 			return true
 		}
 		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
 			v.StoreChangedItemsFunc(items)
 		}
-		v.UpdateViewFunc()
+		// zlog.Info("Edited items:", zlog.Full(v.filteredSlice))
 		return true
 	})
 }
@@ -564,6 +562,7 @@ func addHierarchy(stack *zcontainer.StackView) {
 
 func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
+	// zlog.Info("CreateDefaultMenuItems", v.Grid.CellCountFunc())
 	if v.Grid.CellCountFunc() > 0 {
 		if v.Grid.MultiSelectable {
 			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
@@ -572,6 +571,8 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			items = append(items, all)
 		}
 		ids := v.Grid.SelectedIDs()
+		// zlog.Info("Edit items1:", ids)
+
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
 			if v.options&AllowDelete != 0 {
@@ -582,11 +583,34 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			}
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
+					// zlog.Info("Edit items:", ids)
 					v.EditItems(ids)
 				})
 				items = append(items, edit)
 			}
 		}
+	}
+	return items
+}
+
+func (v *SliceGridView[S]) CreateDefaultMenuItemsForCell(id string) []zmenu.MenuedOItem {
+	var items []zmenu.MenuedOItem
+	// zlog.Info("CreateDefaultMenuItems for cell", id)
+	ids := []string{id}
+	name := v.NameOfXItemsFunc(ids, true)
+	if v.options&AllowDelete != 0 {
+		del := zmenu.MenuedSCFuncAction("Delete "+name+"…", zkeyboard.KeyBackspace, 0, func() {
+			// zlog.Info("Delete item:", id)
+			v.DeleteItemsAsk(ids)
+		})
+		items = append(items, del)
+	}
+	if v.options&AllowEdit != 0 {
+		edit := zmenu.MenuedSCFuncAction("Edit "+name, 'E', 0, func() {
+			// zlog.Info("Edit item:", id)
+			v.EditItems(ids)
+		})
+		items = append(items, edit)
 	}
 	return items
 }
