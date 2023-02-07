@@ -568,16 +568,21 @@ func (o *MenuedOwner) popup() {
 }
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-	for _, item := range o.getItems() {
+	for i, item := range o.getItems() {
 		if item.Shortcut == sc {
-			if item.Function != nil {
-				go item.Function()
+			if o.CreateItemsFunc != nil {
+				o.items = o.CreateItemsFunc() // we need to re-generate menu items
+				item = o.items[i]
+				if item.Function != nil {
+					// zlog.Info("MO HandleOutsideShortcut:", item.Name)
+					go item.Function()
+					return true
+				}
+				zlog.Assert(o.ActionHandlerFunc != nil)
+				id := item.Value.(string)
+				o.ActionHandlerFunc(id)
 				return true
 			}
-			zlog.Assert(o.ActionHandlerFunc != nil)
-			id := item.Value.(string)
-			o.ActionHandlerFunc(id)
-			return true
 		}
 	}
 	return false
