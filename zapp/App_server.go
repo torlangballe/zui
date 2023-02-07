@@ -8,7 +8,6 @@ package zapp
 
 import (
 	"embed"
-	"io"
 	"net/http"
 	"os"
 	"path"
@@ -53,10 +52,12 @@ func Init() {
 func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const filePathPrefix = zrest.StaticFolder + "/"
 	spath := req.URL.Path
+	var redirectToDir bool
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
+		redirectToDir = true
 		spath += "/"
 	}
-	zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
+	// zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
 	filepath := path.Join(filePathPrefix, spath)
 	if r.Override != nil {
@@ -64,25 +65,25 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if spath != "" {
-		if strings.Contains(filepath, "*") {
-			files, _ := zfile.GetFilesFromPath(filepath, false)
-			if len(files) > 0 {
-				filepath = files[0]
-			}
-		}
-		if zfile.IsFolder(filepath) && r.ServeDirectories {
-			files, err := zfile.GetFilesFromPath(filepath, true)
-			if err != nil {
-				zlog.Error(err)
-				return
-			}
-			str := strings.Join(files, "\n")
-			zrest.AddCORSHeaders(w, req)
-			io.WriteString(w, str)
-			return
-		}
-	}
+	// if spath != "" {
+	// 	if strings.Contains(filepath, "*") {
+	// 		files, _ := zfile.GetFilesFromPath(filepath, false)
+	// 		if len(files) > 0 {
+	// 			filepath = files[0]
+	// 		}
+	// 	}
+	// 	if zfile.IsFolder(filepath) && r.ServeDirectories {
+	// 		files, err := zfile.GetFilesFromPath(filepath, true)
+	// 		if err != nil {
+	// 			zlog.Error(err)
+	// 			return
+	// 		}
+	// 		str := strings.Join(files, "\n")
+	// 		zrest.AddCORSHeaders(w, req)
+	// 		io.WriteString(w, str)
+	// 		return
+	// 	}
+	// }
 	if filepath == zrest.StaticFolder {
 		filepath = zrest.StaticFolder + "/index.html"
 	}
@@ -91,11 +92,17 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, filepath)
 		return
 	}
-	if spath == "" {
+	if redirectToDir {
+		zlog.Info("Serve embed:", spath)
+		localRedirect(w, req, zrest.AppURLPrefix)
+		return
+	}
+
+	if spath == "" { // hack to replicate how http.ServeFile serves index.html if serving empty folder at root level
 		spath = "index.html"
 	}
 	data, err := wwwFS.ReadFile(zrest.StaticFolder + "/" + spath)
-	zlog.Info("FSREAD:", spath, err, len(data))
+	zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
 	if err == nil {
 		_, err := w.Write(data)
 		if err != nil {
@@ -104,6 +111,14 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// zlog.Info("Serve app:", path, filepath)
+}
+
+func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
+	if q := r.URL.RawQuery; q != "" {
+		newPath += "?" + q
+	}
+	w.Header().Set("Location", newPath)
+	w.WriteHeader(http.StatusMovedPermanently)
 }
 
 func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
