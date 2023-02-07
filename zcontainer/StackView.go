@@ -68,7 +68,7 @@ func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 }
 
 func (v *StackView) ArrangeChildren() {
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
+	// 	zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
 	// zlog.PushProfile(v.ObjectName())
 	layouter, _ := v.View.(zview.Layouter)
 	if layouter != nil {
@@ -83,7 +83,7 @@ func (v *StackView) ArrangeChildren() {
 	// }
 	for i, c := range v.Cells {
 		r := rects[i]
-		// zlog.Info("Stack.ArrangeChild:", c.View.ObjectName(), r.IsNull())
+		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
 			c.View.SetRect(r)
 		}
