@@ -28,6 +28,14 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 			stype = "password"
 		case zkeyboard.TypeEmailAddress:
 			stype = "email"
+		case zkeyboard.TypeFloat:
+			v.JSSet("pattern", `[0-9]*`)
+			stype = "number"
+			v.JSSet("inputmode", "numeric")
+			v.JSSet("digitOnly", "true")
+		case zkeyboard.TypeInteger:
+			stype = "number"
+			v.JSSet("pattern", `[0-9]*`)
 		}
 		if textStyle.Type == Search {
 			stype = "search"
@@ -35,13 +43,13 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 		if textStyle.Type == Date {
 			stype = "date"
 		}
+		// zlog.Info("TextView:", v.Hierarchy(), stype)
 		v.JSSet("type", stype)
 	}
-
 	v.SetObjectName("textview")
 	v.Columns = cols
-	v.JSSet("style", "position:absolute")
 	css := v.JSStyle()
+	css.Set("position", "absolute")
 	css.Set("resize", "none")
 	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	css.Set("-webkitBoxShadow", "none") // doesn't work
@@ -54,7 +62,7 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	v.SetMargin(DefaultMargin)
 	// }
 	v.JSSet("value", text)
-	v.JSSet("className", "texter")
+	// v.JSSet("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
