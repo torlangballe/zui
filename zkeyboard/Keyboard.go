@@ -50,7 +50,8 @@ const (
 	TypePhonePad              Type = "phonepad"
 	TypeNamePhonePad          Type = "namephonepad"
 	TypeEmailAddress          Type = "email"
-	TypeDecimalPad            Type = "decimal"
+	TypeInteger               Type = "integer"
+	TypeFloat                 Type = "float"
 	TypeWebSearch             Type = "websearch"
 	TypeASCIICapableNumberPad Type = "ascinumber"
 	TypePassword              Type = "password" // set textfield.isSecureTextEntry on ios
