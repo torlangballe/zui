@@ -225,7 +225,7 @@ func (s *StructCommander) outputFields(c *zcommands.CommandInfo, path string, st
 			i = s.outputSlice(c, pre, fpath, sliceVal, f, i, indent, edits)
 			return
 		}
-		if !f.IsStatic() && !inStatic && !readOnlyStruct {
+		if !f.IsStatic() && !inStatic && !readOnlyStruct && s.UpdateFunc != nil {
 			pre = fmt.Sprintf("%d) ", i+1)
 			*edits = append(*edits, editField{value: val, field: f})
 			i++
