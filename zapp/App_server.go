@@ -88,12 +88,12 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		filepath = zrest.StaticFolder + "/index.html"
 	}
 	if zfile.Exists(filepath) {
-		zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
+		// zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
 		http.ServeFile(w, req, filepath)
 		return
 	}
 	if redirectToDir {
-		zlog.Info("Serve embed:", spath)
+		// zlog.Info("Serve embed:", spath)
 		localRedirect(w, req, zrest.AppURLPrefix)
 		return
 	}
@@ -102,7 +102,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		spath = "index.html"
 	}
 	data, err := wwwFS.ReadFile(zrest.StaticFolder + "/" + spath)
-	zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
+	// zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
 	if err == nil {
 		_, err := w.Write(data)
 		if err != nil {
