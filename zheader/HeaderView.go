@@ -14,6 +14,7 @@ import (
 	"sort"
 
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zview"
@@ -40,14 +41,9 @@ type Header struct {
 	SortPriority   int
 }
 
-type SortInfo struct {
-	FieldName  string
-	SmallFirst bool
-}
-
 type HeaderView struct {
 	zcontainer.StackView
-	SortOrder             []SortInfo
+	SortOrder             []zfields.SortInfo
 	HeaderPressedFunc     func(id string)
 	HeaderLongPressedFunc func(id string)
 	SortingPressedFunc    func()
@@ -85,13 +81,13 @@ func makeKey(name string) string {
 	return "HeaderView/SortOrder/" + name
 }
 
-func getUserAdjustedSortOrder(tableName string) (order []SortInfo) {
+func getUserAdjustedSortOrder(tableName string) (order []zfields.SortInfo) {
 	key := makeKey(tableName)
 	zkeyvalue.DefaultStore.GetObject(key, &order)
 	return
 }
 
-func SetUserAdjustedSortOrder(tableName string, order []SortInfo) {
+func SetUserAdjustedSortOrder(tableName string, order []zfields.SortInfo) {
 	key := makeKey(tableName)
 	zkeyvalue.DefaultStore.SetObject(order, key, true)
 }
@@ -111,7 +107,7 @@ func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Heade
 		sorting := v.SortOrder[si]
 		sorting.SmallFirst = !sorting.SmallFirst
 		zslice.RemoveAt(&v.SortOrder, si)
-		v.SortOrder = append([]SortInfo{sorting}, v.SortOrder...)
+		v.SortOrder = append([]zfields.SortInfo{sorting}, v.SortOrder...)
 		for _, c := range v.GetChildren(false) {
 			ib, _ := c.(*zshape.ImageButtonView)
 			if ib != nil {
@@ -167,7 +163,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		return pi.pri < pj.pri
 	})
 	for _, n := range newSorts {
-		v.SortOrder = append(v.SortOrder, SortInfo{n.fieldName, n.small})
+		v.SortOrder = append(v.SortOrder, zfields.SortInfo{n.fieldName, n.small})
 	}
 	SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 	// for _, s := range v.SortOrder {
