@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
@@ -234,19 +235,11 @@ func (v *GroupBase) AddEditing() {
 	})
 }
 
-func getIDFromAnySliceItemWithIndex(a any, index int) string {
-	getter, _ := a.(zstr.StrIDer)
-	if getter != nil {
-		return getter.GetStrID()
-	}
-	return strconv.Itoa(index)
-}
-
 func IndexForIDFromSlice(slicePtr any, id string) int {
 	val := reflect.ValueOf(slicePtr).Elem()
 	for i := 0; i < val.Len(); i++ {
 		a := val.Index(i).Interface()
-		indexID := getIDFromAnySliceItemWithIndex(a, i)
+		indexID := zstr.GetIDFromAnySliceItemWithIndex(a, i)
 		if indexID == id {
 			return i
 		}
@@ -283,7 +276,7 @@ func CreateSliceGroup(grouper Grouper, slicePtr any, setID string, indicatorFiel
 			cc := zstr.HashAnyToInt64(a, "")
 			if val.Len() != len(data.SliceElementCheckSums) || cc != data.SliceElementCheckSums[i] {
 				// zlog.Info("Changed:", i, len(data.SliceElementCheckSums))
-				id := getIDFromAnySliceItemWithIndex(a, i)
+				id := zstr.GetIDFromAnySliceItemWithIndex(a, i)
 				changed = append(changed, id)
 			}
 			newSums = append(newSums, cc)
@@ -330,9 +323,10 @@ func AddSliceItems(g Grouper, slicePtr any, setID string, indicatorFieldName str
 	var firstID string
 	for i := 0; i < val.Len(); i++ {
 		a := val.Index(i).Interface()
-		fval, _ := zreflect.FieldForName(a, indicatorFieldName)
+		fval, _, got := zreflect.FieldForName(a, true, indicatorFieldName)
+		zlog.Assert(got, i, indicatorFieldName)
 		title := fmt.Sprint(fval)
-		id := getIDFromAnySliceItemWithIndex(a, i)
+		id := zstr.GetIDFromAnySliceItemWithIndex(a, i)
 		if firstID == "" {
 			firstID = id
 		}
