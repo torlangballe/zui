@@ -197,7 +197,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
-		zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
+		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
 		if v.StoreChangedItemFunc == nil {
 			return
 		}
