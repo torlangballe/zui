@@ -1196,10 +1196,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		return v.makeButton(rval, f), false
 	}
-	// if f.WidgetName != "" {
-	// 	zlog.Info("createSpecialView?:", f.WidgetName)
-	// }
-	if f.Kind != zreflect.KindSlice && f.WidgetName != "" {
+	if f.WidgetName != "" { // f.Kind != zreflect.KindSlice &&
 		// zlog.Info("createSpecialView:", f.WidgetName)
 		w := widgeters[f.WidgetName]
 		if w != nil {
@@ -1246,6 +1243,13 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		view = v.makeMenu(rval, f, enum)
 		// exp = zgeo.AlignmentNone
 		return view, false
+	}
+	kind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
+	if kind == zreflect.KindInt && rval.Type().Name() != "BoolInd" {
+		_, got := rval.Interface().(zbits.BitsetItemsOwner)
+		if got {
+			return makeFlagStack(rval, f), false
+		}
 	}
 	_, got := rval.Interface().(UIStringer)
 	if got && (f.IsStatic() || v.params.AllStatic) {
