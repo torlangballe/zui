@@ -302,7 +302,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 
 // MOItemsFromZDictItemsAndValues creates MenuedOItem slice from zdict Items and a slice or single value of anything
 func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool) []MenuedOItem {
-	// zlog.Info("MOItemsFromZDictItemsAndValues:", values)
+	// zlog.Info("FV.MOItemsFromZDictItemsAndValues:", zlog.Full(values), "enum:", zlog.Full(enum))
 	var mItems []MenuedOItem
 	var vals []any
 	rval := reflect.ValueOf(values)

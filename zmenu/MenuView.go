@@ -9,7 +9,6 @@ import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zwords"
 )
 
@@ -31,11 +30,6 @@ var menuViewHeight = 21.0
 
 func (v *MenuView) CurrentValue() interface{} {
 	return v.currentValue
-}
-
-func (v *MenuView) Dump() {
-	zlog.Info("DumpMenu:", v.ObjectName())
-	zdict.DumpNamedValues(v.items)
 }
 
 func (v *MenuView) getNumberOfItemsString() string {

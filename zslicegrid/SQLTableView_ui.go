@@ -64,12 +64,12 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	v.equalFields = map[string]string{}
 	v.setFields = map[string]string{}
 	v.fieldIsString = map[string]bool{}
-	zreflect.ForEachField(s, func(index int, val reflect.Value, sf reflect.StructField) {
+	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		var column string
 		tags := zreflect.GetTagAsMap(string(sf.Tag))
 		dbTags := tags["db"]
 		if len(dbTags) == 0 {
-			return // next ForEachField
+			return true // next ForEachField
 		}
 		column = dbTags[0]
 		primary := zstr.StringsContain(dbTags, "primary")
@@ -92,6 +92,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 				v.searchFields = append(v.searchFields, column)
 			}
 		}
+		return true
 	})
 	v.addActionButton()
 	go v.fillPage()
@@ -121,13 +122,14 @@ func (v *SQLTableView[S]) addNew(duplicate bool) {
 	if duplicate {
 		sid := v.Grid.SelectedIDs()[0]
 		s = *v.StructForID(sid)
-		zreflect.ForEachField(&s, func(index int, val reflect.Value, sf reflect.StructField) {
+		zreflect.ForEachField(&s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 			tags := zreflect.GetTagAsMap(string(sf.Tag))
 			primary := zstr.StringsContain(tags["db"], "primary")
 			// zlog.Info("Column:", column, primary, dbTags)
 			if primary {
 				val.Set(reflect.Zero(val.Type()))
 			}
+			return true
 		})
 	}
 	zfields.PresentOKCancelStruct(&s, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
@@ -149,7 +151,10 @@ func (v *SQLTableView[S]) insertRow(s S) {
 	info.EqualColumns = v.equalFields
 
 	first := v.setFields[v.Header.SortOrder[0].FieldName]
-	val, _ := zreflect.FieldForName(&s, first)
+	val, _, got := zreflect.FieldForName(&s, true, first)
+	if zlog.ErrorIf(!got, first) {
+		return
+	}
 	sval := fmt.Sprint(val)
 	if v.fieldIsString[first] {
 		sval = zsql.QuoteString(sval)

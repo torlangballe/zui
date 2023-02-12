@@ -1,5 +1,4 @@
 //go:build zui
-// +build zui
 
 package zfields
 
@@ -97,25 +96,10 @@ func createGroupSliceViewFunc(slicePtr any, params FieldViewParameters, id strin
 
 func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, parameters FieldViewParameters) {
 	params := parameters
-	var indicatorFieldName string
-	val := reflect.ValueOf(slicePtr).Elem()
-	s := reflect.New(reflect.TypeOf(val.Interface()).Elem()).Interface()
-	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
-	zreflect.ForEachField(s, func(index int, val reflect.Value, sf reflect.StructField) {
-		for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
-			if part == "-" {
-				return
-			}
-			if part == "indicator" {
-				indicatorFieldName = sf.Name
-				if params.Flags&FlagSkipIndicator != 0 {
-					zstr.AddToSet(&params.SkipFieldNames, indicatorFieldName)
-				}
-				return
-			}
-		}
-	})
-	// fmt.Printf("CreateSliceGroupOwner2 %s\n", indicatorFieldName)
+	indicatorFieldName := FindIndicatorOfSlice(slicePtr)
+	if indicatorFieldName != "" && params.Flags&FlagSkipIndicator != 0 {
+		zstr.AddToSet(&params.SkipFieldNames, indicatorFieldName)
+	}
 	zlog.Assert(indicatorFieldName != "")
 	gb := grouper.GetGroupBase()
 	gb.UpdateCurrentIndicatorFunc = func(text string) {
@@ -132,6 +116,7 @@ func CreateSliceGroup(grouper zgroup.Grouper, slicePtr any, parameters FieldView
 	}
 	old := gb.HandleDeleteItemFunc
 	gb.HandleDeleteItemFunc = func(id string) {
+		s := zslice.MakeAnElementOfSliceType(slicePtr)
 		fh, _ := s.(ActionHandler)
 		// zlog.Info("Edit Action on delete:", fh != nil, parameters.Field.Name)
 		if fh != nil {
@@ -264,13 +249,17 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 	editStruct.Elem().Set(first)
 	len := len(*structSlicePtr)
 	unknownBoolViewIDs := map[string]bool{}
-	zreflect.ForEachField(editStruct.Interface(), func(index int, val reflect.Value, sf reflect.StructField) {
+	zreflect.ForEachField(editStruct.Interface(), true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		if sf.Tag.Get("zui") == "-" {
-			return
+			return true
 		}
 		var notEqual bool
 		for i := 0; i < len; i++ {
 			sliceField := sliceVal.Index(i).Field(index)
+			if !sliceField.CanInterface() || !val.CanInterface() {
+				continue
+			}
+			// zlog.Info(i, index, "not-equal", sliceField.CanInterface(), val.CanInterface())
 			if !reflect.DeepEqual(sliceField.Interface(), val.Interface()) {
 				// zlog.Info(i, index, "not-equal", sliceField.Interface(), val.Interface())
 				notEqual = true
@@ -281,6 +270,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 		if notEqual && val.Kind() == reflect.Bool {
 			unknownBoolViewIDs[sf.Name] = true
 		}
+		return true
 	})
 	params.EditWithoutCallbacks = true
 	params.UseInValues = []string{"$dialog"}
@@ -301,9 +291,9 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				return false
 			}
 			// zlog.Info("EDITAfter2data:", zlog.Full(editStruct))
-			zreflect.ForEachField(editStruct.Interface(), func(index int, val reflect.Value, sf reflect.StructField) {
+			zreflect.ForEachField(editStruct.Interface(), true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 				if sf.Tag.Get("zui") == "-" {
-					return // skip to next
+					return true // skip to next
 				}
 				// zlog.Info("PresentOKCanceledView foreach:", sf.Name)
 				bid := sf.Name
@@ -311,7 +301,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				check, _ := view.(*zcheckbox.CheckBox)
 				isCheck := (check != nil)
 				if isCheck && check.Value().IsUnknown() {
-					return // skip to next
+					return true // skip to next
 				}
 				for i := 0; i < len; i++ {
 					sliceField := sliceVal.Index(i).Field(index)
@@ -320,6 +310,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 						sliceField.Set(val)
 					}
 				}
+				return true
 			})
 		}
 		return done(ok)

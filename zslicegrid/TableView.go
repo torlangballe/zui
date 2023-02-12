@@ -6,6 +6,7 @@
 package zslicegrid
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/torlangballe/zui/zcontainer"
@@ -16,6 +17,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -122,21 +124,18 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		// }
 		return
 	}
-	options := zreflect.Options{UnnestAnonymous: true, MakeSliceElementIfNone: true}
-	froot, err := zreflect.ItterateStruct(v.slicePtr, options)
-	if err != nil {
-		panic(err)
-	}
-	for i, item := range froot.Children {
+	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
+	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := zfields.EmptyField
-		immediateEdit := false
-		if f.SetFromReflectItem(v.slicePtr, item, i, immediateEdit) {
-			if zstr.IndexOf(f.FieldName, v.FieldParameters.SkipFieldNames) != -1 {
-				continue
-			}
-			v.fields = append(v.fields, f)
+		if !f.SetFromReflectValue(val, sf, index, false) {
+			return true
 		}
-	}
+		if zstr.StringsContain(v.FieldParameters.SkipFieldNames, f.FieldName) {
+			return true
+		}
+		v.fields = append(v.fields, f)
+		return true
+	})
 	if v.addFlags&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)

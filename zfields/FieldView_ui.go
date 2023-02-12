@@ -57,20 +57,17 @@ type FieldView struct {
 
 type FieldViewParameters struct {
 	Field
-	HideStatic              bool
-	ImmediateEdit           bool
-	ForceZeroOption         bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
-	AllStatic               bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	EditWithoutCallbacks    bool     // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
-	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
-	SkipFieldNames          []string
-	triggerHandlers         map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
+	FieldParameters
+	ImmediateEdit        bool
+	EditWithoutCallbacks bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	triggerHandlers      map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
 }
 
-var (
-	fieldViewEdited = map[string]time.Time{}
-)
+type ActionHandler interface {
+	HandleAction(f *Field, action ActionType, view *zview.View) bool
+}
+
+var fieldViewEdited = map[string]time.Time{}
 
 func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.ImmediateEdit = true
@@ -130,13 +127,16 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 
 	// zlog.Info("fieldViewNew", id, parent != nil, zlog.CallingStackString())
 	v.data = data
-	for i, item := range v.getStructItems() {
+	zreflect.ForEachField(v.data, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := EmptyField
-		if f.SetFromReflectItem(data, item, i, params.ImmediateEdit) {
-			// zlog.Info("fieldViewNew f:", f.Name, f.UpdateSecs)
-			v.Fields = append(v.Fields, f)
+		if !f.SetFromReflectValue(val, sf, index, params.ImmediateEdit) {
+			return true
 		}
-	}
+		// zlog.Info("fieldViewNew f:", f.Name, f.UpdateSecs)
+		callActionHandlerFunc(v, &f, SetupFieldAction, val.Addr().Interface(), nil)
+		v.Fields = append(v.Fields, f)
+		return true
+	})
 	if params.Field.Flags&FlagHasFrame == 0 {
 		v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	}
@@ -207,18 +207,18 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		// zlog.Info("updateShowEnableFromZeroer:", f.FieldName, isZero, isShow, toID, local)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
-			_, fview := v.findNamedViewOrInLabelized(f.FieldName)
-			if fview == nil {
+			_, foundView := v.findNamedViewOrInLabelized(f.FieldName)
+			if foundView == nil {
 				continue
 			}
-			// zlog.Assert(fview != nil, v.Hierarchy(), f.FieldName)
+			// zlog.Assert(foundView != nil, v.Hierarchy(), f.FieldName)
 			if neg {
 				isShow = !isShow
 			}
 			if isShow {
-				fview.Show(!isZero)
+				foundView.Show(!isZero)
 			} else {
-				fview.SetUsable(!isZero)
+				foundView.SetUsable(!isZero)
 			}
 			continue
 		}
@@ -226,9 +226,9 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 	//TODO: handle ../ and substruct/id style
 }
 
-func doShowEnableItem(item *zreflect.Item, isShow bool, view zview.View, not bool) {
+func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool) {
 	// zlog.Info("doShowEnableItem:", item.FieldName, isShow, not, view.Native().Hierarchy())
-	zero := item.Value.IsZero()
+	zero := rval.IsZero()
 	if not {
 		zero = !zero
 	}
@@ -237,16 +237,6 @@ func doShowEnableItem(item *zreflect.Item, isShow bool, view zview.View, not boo
 	} else {
 		view.SetUsable(!zero)
 	}
-}
-
-func findIDInStructItems(items []zreflect.Item, id string) *zreflect.Item {
-	for i, item := range items {
-		// zlog.Info("findIDInStructItems:", item.FieldName, id)
-		if item.FieldName == id {
-			return &items[i]
-		}
-	}
-	return nil
 }
 
 func getLocalFromShowOrEnable(isShow bool, f *Field) (local string, neg bool) {
@@ -274,32 +264,32 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 		if f.FieldName != toFieldName {
 			continue
 		}
-		var prefix, id string
+		var prefix, fname string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
-		if zstr.HasPrefix(local, "./", &id) {
+		if zstr.HasPrefix(local, "./", &fname) {
 			// zlog.Info("local:", toID, f.FieldName, id)
-			fitem := findIDInStructItems(v.getStructItems(), id)
-			if fitem != nil {
-				doShowEnableItem(fitem, isShow, view, neg)
+			rval, _, got := zreflect.FieldForName(v.data, true, fname)
+			if got {
+				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
 		}
-		if zstr.SplitN(local, "/", &prefix, &id) && prefix == f.FieldName {
+		if zstr.SplitN(local, "/", &prefix, &fname) && prefix == f.FieldName {
 			fv := view.(*FieldView)
 			if fv == nil {
 				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
-			fitem := findIDInStructItems(fv.getStructItems(), id)
-			if fitem != nil {
-				doShowEnableItem(fitem, isShow, view, neg)
+			rval, _, got := zreflect.FieldForName(v.data, true, fname)
+			if got {
+				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
 		}
-		if zstr.HasPrefix(local, "../", &id) && v.parent != nil {
-			fitem := findIDInStructItems(v.parent.getStructItems(), id)
-			if fitem != nil {
-				doShowEnableItem(fitem, isShow, view, neg)
+		if zstr.HasPrefix(local, "../", &fname) && v.parent != nil {
+			rval, _, got := zreflect.FieldForName(v.parent.Data(), true, fname)
+			if got {
+				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
 		}
@@ -315,7 +305,6 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 		// zlog.Info("FV No Update, edited", v.Hierarchy())
 		return
 	}
-	children := v.getStructItems()
 	fh, _ := v.data.(ActionHandler)
 	sview := v.View
 	if fh != nil {
@@ -323,277 +312,280 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	}
 	// fmt.Println("FV Update", v.id, len(children))
 	// fmt.Printf("FV Update: %s %d %+v\n", v.id, len(children), v.data)
-	for i, item := range children {
-		var valStr string
-		f := findFieldWithIndex(&v.Fields, i)
-		if f == nil {
-			// zlog.Info("FV Update no index found:", i, v.id)
-			continue
-		}
-		// fmt.Println("FV Update Item:", v.Hierarchy(), f.Name, item.Kind)
-		fview, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
-		// zlog.Info("fv.UpdateF:", v.Hierarchy(), f.ID, f.FieldName, fview != nil)
-		if fview == nil {
-			// zlog.Info("FV Update no view found:", i, v.id, f.ID)
-			continue
-		}
-		v.updateShowEnableOnView(flabelized, true, fview.ObjectName())
-		v.updateShowEnableOnView(flabelized, false, fview.ObjectName())
-		var called bool
-		tri, _ := item.Interface.(TriggerDataChangedTriggerer)
-		if tri != nil {
-			called = tri.HandleDataChange(v, f, item.Address, &fview)
-		}
-		if !called {
-			called = v.callTriggerHandler(f, DataChangedAction, item.Address, &fview)
-		}
-		if !called {
-			called = callActionHandlerFunc(v, f, DataChangedAction, item.Address, &fview)
-		}
-		// zlog.Info("fv.Update:", v.ObjectName(), f.ID, called)
-		if called {
-			// fmt.Println("FV Update called", v.id, f.Kind, f.ID)
-			continue
-		}
-		if f.Kind != zreflect.KindSlice {
-			// zlog.Info("fv update !slice:", f.Name, reflect.ValueOf(fview).Type())
-			w := widgeters[f.WidgetName]
-			if w != nil {
-				w.SetValue(fview, item.Interface)
-				continue
-			}
-		}
-		menuType, _ := fview.(zmenu.MenuType)
-		if menuType == nil {
-			o := zmenu.OwnerForView(fview)
-			if o != nil {
-				menuType = o
-			}
-		}
-		// zlog.Info("fv.Update2 menu?:", v.ObjectName(), menuType != nil)
-		if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
-			var enum zdict.Items
-			// zlog.Info("Update FV: Menu:", f.Name, f.Enum, f.LocalEnum)
-			if f.Enum != "" {
-				enum, _ = fieldEnums[f.Enum]
-				// zlog.Info("UpdateStack Enum:", f.Name)
-				// zdict.DumpNamedValues(enum)
-			} else {
-				ei := findLocalFieldWithID(&children, f.LocalEnum)
-				zlog.Assert(ei != nil, f.Name, f.LocalEnum)
-				enum = ei.Interface.(zdict.ItemsGetter).GetItems()
-			}
-			if v.params.ForceZeroOption {
-				var rtype reflect.Type
-				var hasZero bool
-				for _, item := range enum {
-					rval := reflect.ValueOf(item.Value)
-					if item.Value != nil {
-						rtype = rval.Type()
-						if rval.IsZero() {
-							hasZero = true
-							break
-						}
-					}
-				}
-				if !hasZero && rtype.Kind() != reflect.Invalid {
-					item := zdict.Item{Name: "", Value: reflect.Zero(rtype)}
-					enum = append(zdict.Items{item}, enum...)
-				}
-			}
-			// zlog.Info("Update FV: Menu3:", f.Name, reflect.ValueOf(item.Address).Elem(), reflect.TypeOf(item.Address).Elem()) // enum
-			menuType.UpdateItems(enum, item.Interface, f.Flags&FlagIsActions != 0)
-			continue
-		}
-		updateItemLocalToolTip(f, children, fview)
-		if f.IsStatic() || v.params.AllStatic {
-			zuistringer, _ := item.Interface.(UIStringer)
-			if zuistringer != nil {
-				label, _ := fview.(*zlabel.Label)
-				if label != nil {
-					label.SetText(zuistringer.ZUIString())
-					continue
-				}
-			}
-		}
-		switch f.Kind {
-		case zreflect.KindSlice:
-			// zlog.Info("updateSliceFieldView:", v.Hierarchy())
-			// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
-			// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, fview)
-			fv, _ := fview.(*FieldView)
-			if fv == nil {
-				return
-			}
-			fv.data = item.Address
-			hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
-			// zlog.Info("update any SliceValue:", f.Name, hash, fv.dataHash, reflect.ValueOf(fv.data).Elem())
-			sameHash := (fv.dataHash == hash)
-			fv.dataHash = hash
-			// getter, _ := item.Interface.(zdict.ItemsGetter)
-			// zlog.Info("fv update slice:", f.Name, reflect.ValueOf(fview).Type(), getter != nil)
-			// if !sameHash && getter != nil {
-			// 	items := getter.GetItems()
-			// 	mt := fview.(zmenu.MenuType)
-			// 	// zlog.Info("fv update slice:", f.Name, len(items), mt != nil, reflect.ValueOf(fview).Type())
-			// 	if mt != nil {
-			// 		// assert menu is static...
-			// 		mt.UpdateItems(items, nil)
-			// 	}
-			// }
-			if f.Flags&FlagIsGroup == 0 {
-				stack := fv.GetChildren(true)[0].(*zcontainer.StackView)
-				if sameHash {
-					fv.updateSliceElementData(item.Address, stack)
-					break
-				}
-				if menuType != nil {
-					break
-				}
-				vert := v.Vertical
-				if v.params.LabelizeWidth != 0 {
-					vert = false
-				}
-				fv.updateSliceValue(item.Address, stack, vert, f, false)
-			} else {
-				// zlog.Info("UpdateGSlice:", fv.Hierarchy(), item.Interface)
-				mg := fv.grouper.(*zgroup.MenuGroupView) // we have to convert it to a MenuGroupView for replace to work, for comparison
-				if !sameHash {
-					changedIDs := mg.HasDataChangedInIDsFunc()
-					if len(changedIDs) != 0 && !(len(changedIDs) == 1 && changedIDs[0] == mg.GetCurrentID()) { // if it's not the id of current slice element, we di a full rebuild
-						// zlog.Info("UpdateSliceChanged in other item:", changedIDs)
-						repopulateMenuGroup(mg, item.Address, fv.params)
-						break
-					}
-				}
-				updateMenuGroupSlice(mg, item.Address, dontOverwriteEdited)
-			}
-		case zreflect.KindTime:
-			tv, _ := fview.(*ztext.TextView)
-			if tv != nil && tv.IsEditing() {
-				break
-			}
-			if f.Flags&FlagIsDuration != 0 {
-				// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
-				// if found {
-				// t := val.Interface().(time.Time)
-				// fmt.Println("FV Update Time Dur", v.id, time.Since(t))
-				// }
-				v.updateSinceTime(fview.(*zlabel.Label), f)
-				break
-			}
-			valStr = getTimeString(item, f)
-			to := fview.(ztext.LayoutOwner)
-			to.SetText(valStr)
-
-		case zreflect.KindStruct:
-			// zlog.Info("Update Struct:", item.FieldName)
-			fv, _ := fview.(*FieldView)
-			if fv == nil {
-				fv = findSubFieldView(fview, "")
-			}
-			if fv == nil {
-				break
-			}
-			// zlog.Info("Update Struct2:", item.FieldName, fv.Hierarchy())
-			fv.Update(item.Address, dontOverwriteEdited)
-
-		case zreflect.KindBool:
-			if f.Flags&FlagIsImage != 0 && f.OffImagePath != "" && item.Kind == zreflect.KindBool {
-				iv, _ := fview.(*zimageview.ImageView) // it might be a button or something instead
-				path := f.OffImagePath
-				val, _ := v.fieldToDataItem(f, iv)
-				on := val.Bool()
-				if on {
-					path = f.ImageFixedPath
-				}
-				iv.SetImage(nil, path, nil)
-				break
-			}
-			cv, _ := fview.(*zcheckbox.CheckBox) // it might be a button or something instead
-			if cv != nil {
-				b := zbool.ToBoolInd(item.Value.Interface().(bool))
-				v := cv.Value()
-				if v != b {
-					cv.SetValue(b)
-				}
-			}
-
-		case zreflect.KindInt, zreflect.KindFloat:
-			_, got := item.Interface.(zbits.BitsetItemsOwner)
-			if got {
-				updateFlagStack(item, f, fview)
-			}
-			// zlog.Info("FV Update Int:", v.Hierarchy(), f.Name, item)
-			valStr = getTextFromNumberishItem(item, f)
-			if f.IsStatic() || v.params.AllStatic {
-				label, _ := fview.(*zlabel.Label)
-				if label != nil {
-					label.SetText(valStr)
-				}
-				break
-			}
-			tv, _ := fview.(*ztext.TextView)
-			if tv != nil {
-				if tv.IsEditing() {
-					break
-				}
-				tv.SetText(valStr)
-			}
-
-		case zreflect.KindString, zreflect.KindFunc:
-			valStr = item.Value.String()
-			if f.Flags&FlagIsImage != 0 {
-				// zlog.Info("FVUpdate SETIMAGE:", f.Name, str)
-				path := ""
-				if f.Kind == zreflect.KindString {
-					path = valStr
-				}
-				if path != "" && strings.Contains(f.ImageFixedPath, "*") {
-					path = strings.Replace(f.ImageFixedPath, "*", path, 1)
-				} else if path == "" || f.Flags&FlagIsFixed != 0 {
-					path = f.ImageFixedPath
-				}
-				io := fview.(zimage.Owner)
-				io.SetImage(nil, path, nil)
-			} else {
-				if f.IsStatic() || v.params.AllStatic {
-					label, _ := fview.(*zlabel.Label)
-					// zlog.Info("UpdateText:", item.FieldName, item.Interface, label != nil)
-					if label != nil {
-						if f.Flags&FlagIsFixed != 0 {
-							valStr = f.Name
-						}
-						label.SetText(valStr)
-					}
-				} else {
-					tv, _ := fview.(*ztext.TextView)
-					if tv != nil {
-						if tv.IsEditing() {
-							break
-						}
-						tv.SetText(valStr)
-					}
-				}
-			}
-		}
-		gb := zgroup.GetAncestorGroupBase(fview)
-		if gb != nil {
-			// zlog.Info("UpdateIndicator:", fview.Native().Hierarchy(), gb.Hierarchy())
-			data := gb.Data.(*zgroup.SliceGroupData)
-			if data.IndicatorID == f.FieldName {
-				if gb.UpdateCurrentIndicatorFunc != nil {
-					gb.UpdateCurrentIndicatorFunc(fmt.Sprint(valStr))
-				}
-			}
-		}
-	}
+	zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
+		v.updateField(index, rval, sf, dontOverwriteEdited)
+		return true
+	})
 	// call general one with no id. Needs to be after above loop, so values set
 	if fh != nil {
 		fh.HandleAction(nil, DataChangedAction, &sview)
 	}
 }
 
+func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited bool) bool {
+	var valStr string
+	f := findFieldWithIndex(&v.Fields, index)
+	if f == nil {
+		// zlog.Info("FV Update no index found:", i, v.id)
+		return true
+	}
+	// fmt.Println("FV Update Item:", v.Hierarchy(), f.Name, item.Kind)
+	foundView, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
+	// zlog.Info("fv.UpdateF:", v.Hierarchy(), f.ID, f.FieldName, foundView != nil)
+	if foundView == nil {
+		// zlog.Info("FV Update no view found:", i, v.id, f.ID)
+		return true
+	}
+	v.updateShowEnableOnView(flabelized, true, foundView.ObjectName())
+	v.updateShowEnableOnView(flabelized, false, foundView.ObjectName())
+	var called bool
+	tri, _ := rval.Interface().(TriggerDataChangedTriggerer)
+	if tri != nil {
+		called = tri.HandleDataChange(v, f, rval.Addr().Interface(), &foundView)
+	}
+	if !called {
+		called = v.callTriggerHandler(f, DataChangedAction, rval.Addr().Interface(), &foundView)
+	}
+	if !called {
+		called = callActionHandlerFunc(v, f, DataChangedAction, rval.Addr().Interface(), &foundView)
+	}
+	// zlog.Info("fv.Update:", v.ObjectName(), f.ID, called)
+	if called {
+		// fmt.Println("FV Update called", v.id, f.Kind, f.ID)
+		return true
+	}
+	if f.Kind != zreflect.KindSlice {
+		// zlog.Info("fv update !slice:", f.Name, reflect.ValueOf(foundView).Type())
+		w := widgeters[f.WidgetName]
+		if w != nil {
+			w.SetValue(foundView, rval.Interface())
+			return true
+		}
+	}
+	menuType, _ := foundView.(zmenu.MenuType)
+	if menuType == nil {
+		o := zmenu.OwnerForView(foundView)
+		if o != nil {
+			menuType = o
+		}
+	}
+	// zlog.Info("fv.Update2 menu?:", v.ObjectName(), menuType != nil)
+	if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
+		var enum zdict.Items
+		// zlog.Info("Update FV: Menu:", f.Name, f.Enum, f.LocalEnum)
+		if f.Enum != "" {
+			enum, _ = fieldEnums[f.Enum]
+		} else {
+			ei, got := FindLocalFieldWithID(v.data, f.LocalEnum)
+			zlog.Assert(got, f.Name, f.LocalEnum)
+			enum = ei.Interface().(zdict.ItemsGetter).GetItems()
+		}
+		if v.params.ForceZeroOption {
+			var rtype reflect.Type
+			var hasZero bool
+			for _, item := range enum {
+				if item.Value != nil {
+					rval := reflect.ValueOf(item)
+					rtype = rval.Type()
+					if rval.IsZero() {
+						hasZero = true
+						break
+					}
+				}
+			}
+			if !hasZero && rtype.Kind() != reflect.Invalid {
+				item := zdict.Item{Name: "", Value: reflect.Zero(rtype)}
+				enum = append(zdict.Items{item}, enum...)
+			}
+		}
+		// zlog.Info("Update FV: Menu3:", f.Name, reflect.ValueOf(rval.Addr().Interface()).Elem(), reflect.TypeOf(rval.Addr().Interface()).Elem()) // enum
+		menuType.UpdateItems(enum, rval.Interface(), f.Flags&FlagIsActions != 0)
+		return true
+	}
+	updateItemLocalToolTip(f, v.data, foundView)
+	if f.IsStatic() || v.params.AllStatic {
+		zuistringer, _ := rval.Interface().(UIStringer)
+		if zuistringer != nil {
+			label, _ := foundView.(*zlabel.Label)
+			if label != nil {
+				label.SetText(zuistringer.ZUIString())
+				return true
+			}
+		}
+	}
+	switch f.Kind {
+	case zreflect.KindSlice:
+		// zlog.Info("updateSliceFieldView:", v.Hierarchy())
+		// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
+		// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, foundView)
+		fv, _ := foundView.(*FieldView)
+		if fv == nil {
+			return false
+		}
+		fv.data = rval.Addr().Interface()
+		hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
+		// zlog.Info("update any SliceValue:", f.Name, hash, fv.dataHash, reflect.ValueOf(fv.data).Elem())
+		sameHash := (fv.dataHash == hash)
+		fv.dataHash = hash
+		// getter, _ := item.Interface.(zdict.ItemsGetter)
+		// zlog.Info("fv update slice:", f.Name, reflect.ValueOf(foundView).Type(), getter != nil)
+		// if !sameHash && getter != nil {
+		// 	items := getter.GetItems()
+		// 	mt := foundView.(zmenu.MenuType)
+		// 	// zlog.Info("fv update slice:", f.Name, len(items), mt != nil, reflect.ValueOf(foundView).Type())
+		// 	if mt != nil {
+		// 		// assert menu is static...
+		// 		mt.UpdateItems(items, nil)
+		// 	}
+		// }
+		if f.Flags&FlagIsGroup == 0 {
+			stack := fv.GetChildren(true)[0].(*zcontainer.StackView)
+			if sameHash {
+				fv.updateSliceElementData(rval.Addr().Interface(), stack)
+				break
+			}
+			if menuType != nil {
+				break
+			}
+			vert := v.Vertical
+			if v.params.LabelizeWidth != 0 {
+				vert = false
+			}
+			fv.updateSliceValue(rval.Addr().Interface(), stack, vert, f, false)
+		} else {
+			// zlog.Info("UpdateGSlice:", fv.Hierarchy(), item.Interface)
+			mg := fv.grouper.(*zgroup.MenuGroupView) // we have to convert it to a MenuGroupView for replace to work, for comparison
+			if !sameHash {
+				changedIDs := mg.HasDataChangedInIDsFunc()
+				if len(changedIDs) != 0 && !(len(changedIDs) == 1 && changedIDs[0] == mg.GetCurrentID()) { // if it's not the id of current slice element, we di a full rebuild
+					// zlog.Info("UpdateSliceChanged in other item:", changedIDs)
+					repopulateMenuGroup(mg, rval.Addr().Interface(), fv.params)
+					break
+				}
+			}
+			updateMenuGroupSlice(mg, rval.Addr().Interface(), dontOverwriteEdited)
+		}
+	case zreflect.KindTime:
+		tv, _ := foundView.(*ztext.TextView)
+		if tv != nil && tv.IsEditing() {
+			break
+		}
+		if f.Flags&FlagIsDuration != 0 {
+			// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
+			// if found {
+			// t := val.Interface().(time.Time)
+			// fmt.Println("FV Update Time Dur", v.id, time.Since(t))
+			// }
+			v.updateSinceTime(foundView.(*zlabel.Label), f)
+			break
+		}
+		valStr = getTimeString(rval, f)
+		to := foundView.(ztext.LayoutOwner)
+		to.SetText(valStr)
+
+	case zreflect.KindStruct:
+		// zlog.Info("Update Struct:", item.FieldName)
+		fv, _ := foundView.(*FieldView)
+		if fv == nil {
+			fv = findSubFieldView(foundView, "")
+		}
+		if fv == nil {
+			break
+		}
+		// zlog.Info("Update Struct2:", item.FieldName, fv.Hierarchy())
+		fv.Update(rval.Addr().Interface(), dontOverwriteEdited)
+
+	case zreflect.KindBool:
+		if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
+			iv, _ := foundView.(*zimageview.ImageView) // it might be a button or something instead
+			path := f.OffImagePath
+			val, _ := v.fieldToDataItem(f, iv)
+			on := val.Bool()
+			if on {
+				path = f.ImageFixedPath
+			}
+			iv.SetImage(nil, path, nil)
+			break
+		}
+		cv, _ := foundView.(*zcheckbox.CheckBox) // it might be a button or something instead
+		if cv != nil {
+			b := zbool.ToBoolInd(rval.Interface().(bool))
+			v := cv.Value()
+			if v != b {
+				cv.SetValue(b)
+			}
+		}
+
+	case zreflect.KindInt, zreflect.KindFloat:
+		_, got := rval.Interface().(zbits.BitsetItemsOwner)
+		if got {
+			updateFlagStack(rval, f, foundView)
+		}
+		// zlog.Info("FV Update Int:", v.Hierarchy(), f.Name, item)
+		valStr = getTextFromNumberishItem(rval, f)
+		if f.IsStatic() || v.params.AllStatic {
+			label, _ := foundView.(*zlabel.Label)
+			if label != nil {
+				label.SetText(valStr)
+			}
+			break
+		}
+		tv, _ := foundView.(*ztext.TextView)
+		if tv != nil {
+			if tv.IsEditing() {
+				break
+			}
+			tv.SetText(valStr)
+		}
+
+	case zreflect.KindString, zreflect.KindFunc:
+		valStr = rval.String()
+		if f.Flags&FlagIsImage != 0 {
+			// zlog.Info("FVUpdate SETIMAGE:", f.Name, str)
+			path := ""
+			if f.Kind == zreflect.KindString {
+				path = valStr
+			}
+			if path != "" && strings.Contains(f.ImageFixedPath, "*") {
+				path = strings.Replace(f.ImageFixedPath, "*", path, 1)
+			} else if path == "" || f.Flags&FlagIsFixed != 0 {
+				path = f.ImageFixedPath
+			}
+			io := foundView.(zimage.Owner)
+			io.SetImage(nil, path, nil)
+		} else {
+			if f.IsStatic() || v.params.AllStatic {
+				label, _ := foundView.(*zlabel.Label)
+				// zlog.Info("UpdateText:", item.FieldName, item.Interface, label != nil)
+				if label != nil {
+					if f.Flags&FlagIsFixed != 0 {
+						valStr = f.Name
+					}
+					label.SetText(valStr)
+				}
+			} else {
+				tv, _ := foundView.(*ztext.TextView)
+				if tv != nil {
+					if tv.IsEditing() {
+						break
+					}
+					tv.SetText(valStr)
+				}
+			}
+		}
+	}
+	gb := zgroup.GetAncestorGroupBase(foundView)
+	if gb != nil {
+		// zlog.Info("UpdateIndicator:", foundView.Native().Hierarchy(), gb.Hierarchy())
+		data := gb.Data.(*zgroup.SliceGroupData)
+		if data.IndicatorID == f.FieldName {
+			if gb.UpdateCurrentIndicatorFunc != nil {
+				gb.UpdateCurrentIndicatorFunc(fmt.Sprint(valStr))
+			}
+		}
+	}
+	return true
+}
 func updateMenuGroupSlice(mg *zgroup.MenuGroupView, slicePtr any, dontOverwriteEdited bool) {
 	data := mg.Data.(*zgroup.SliceGroupData)
 	data.SlicePtr = slicePtr
@@ -782,7 +774,7 @@ func (v *FieldView) findFieldWithID(id string) *Field {
 	return nil
 }
 
-func (fv *FieldView) makeButton(item zreflect.Item, f *Field) *zshape.ImageButtonView {
+func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButtonView {
 	// zlog.Info("makeButton:", f.Name, f.Height)
 	format := f.Format
 	if format == "" {
@@ -806,12 +798,13 @@ func (fv *FieldView) makeButton(item zreflect.Item, f *Field) *zshape.ImageButto
 	return button
 }
 
-func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zview.View {
+func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
 	var view zview.View
 	static := f.IsStatic() || v.params.AllStatic
-	if static || item.IsSlice {
-		multi := item.IsSlice
-		// zlog.Info("FV Menu Make static:", f.ID, f.Format, f.Name)
+	isSlice := rval.Kind() == reflect.Slice
+	if static || isSlice {
+		multi := isSlice
+		zlog.Info("FV Menu Make static:", f.ID, f.Format, f.Name)
 		isImage := (f.ImageFixedPath != "")
 		shape := zshape.TypeRoundRect
 		if isImage {
@@ -837,7 +830,7 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 				menuOwner.PluralableWord = format
 			}
 		}
-		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, item.Interface, f.Flags&FlagIsActions != 0)
+		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, nil, f.Flags&FlagIsActions != 0)
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
 			menu.SetImage(nil, f.ImageFixedPath, nil)
@@ -862,39 +855,39 @@ func (v *FieldView) makeMenu(item zreflect.Item, f *Field, items zdict.Items) zv
 					if kind != reflect.Ptr && kind != reflect.Struct {
 						nf := *f
 						nf.ActionValue = sel.Value
-						callActionHandlerFunc(v, &nf, PressedAction, item.Interface, &view)
+						callActionHandlerFunc(v, &nf, PressedAction, rval.Interface(), &view)
 					}
 				}
 			}
-			callActionHandlerFunc(v, f, EditedAction, item.Interface, &view)
+			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
 		}
 		menuOwner.ClosedFunc = func() {
 			if menuOwner.IsMultiple {
-				zlog.Assert(item.IsSlice)
-				zslice.Empty(item.Address)
+				zlog.Assert(isSlice)
+				zslice.Empty(rval.Addr().Interface())
 				// zlog.Info("CopyBack menu1:", reflect.TypeOf(item.Interface))
 				for _, mi := range menuOwner.SelectedItems() {
 					// zlog.Info("CopyBack menu:", mi.Name, mi.Value)
-					zslice.AddAtEnd(item.Address, mi.Value)
+					zslice.AddAtEnd(rval.Addr().Interface(), mi.Value)
 				}
 			}
 		}
 	} else {
-		menu := zmenu.NewView(f.Name+"Menu", items, item.Interface)
+		menu := zmenu.NewView(f.Name+"Menu", items, rval.Interface())
 		menu.SetMaxWidth(f.MaxWidth)
 		view = menu
 		menu.SetSelectedHandler(func() {
 			// valInterface, _ := v.fieldToDataItem(f, menu, false)
 			v.fieldToDataItem(f, menu)
-			callActionHandlerFunc(v, f, EditedAction, item.Interface, &view)
+			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
 		})
 	}
 	return view
 }
 
-func getTimeString(item zreflect.Item, f *Field) string {
+func getTimeString(rval reflect.Value, f *Field) string {
 	var str string
-	t := item.Interface.(time.Time)
+	t := rval.Interface().(time.Time)
 	if t.IsZero() {
 		return ""
 	}
@@ -920,22 +913,23 @@ func getTimeString(item zreflect.Item, f *Field) string {
 	return str
 }
 
-func getTextFromNumberishItem(item zreflect.Item, f *Field) string {
-	stringer, got := item.Interface.(UIStringer)
+func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
+	stringer, got := rval.Interface().(UIStringer)
 	if got {
 		return stringer.ZUIString()
 	}
-	isDurTime := item.Kind == zreflect.KindTime && f.Flags&FlagIsDuration != 0
+	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
+	isDurTime := zkind == zreflect.KindTime && f.Flags&FlagIsDuration != 0
 	// zlog.Info("makeTextTime:", f.Name, isDurTime, f.Format)
-	if item.Kind == zreflect.KindTime && !isDurTime {
-		return getTimeString(item, f)
+	if zkind == zreflect.KindTime && !isDurTime {
+		return getTimeString(rval, f)
 	}
-	if isDurTime || item.Package == "time" && item.TypeName == "Duration" {
+	if isDurTime || f.PackageName == "time" && rval.Type().Name() == "Duration" {
 		var t float64
 		if isDurTime {
-			t = ztime.Since(item.Interface.(time.Time))
+			t = ztime.Since(rval.Interface().(time.Time))
 		} else {
-			t = ztime.DurSeconds(time.Duration(item.Value.Int()))
+			t = ztime.DurSeconds(time.Duration(rval.Int()))
 		}
 		return ztime.GetSecsAsHMSString(t, f.Flags&FlagHasSeconds != 0, 0)
 		// zlog.Info("makeTextTime:", str, f.Name)
@@ -943,29 +937,29 @@ func getTextFromNumberishItem(item zreflect.Item, f *Field) string {
 	format := f.Format
 	switch format {
 	case "memory":
-		b, err := zint.GetAny(item.Value.Interface())
+		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			return zwords.GetMemoryString(b, "", 1)
 		}
 	case "storage":
-		b, err := zint.GetAny(item.Value.Interface())
+		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			return zwords.GetStorageSizeString(b, "", 1)
 		}
 	case "bps":
-		b, err := zint.GetAny(item.Value.Interface())
+		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			return zwords.GetBandwidthString(b, "", 1)
 		}
 	case "":
 		format = "%v"
 	}
-	return fmt.Sprintf(format, item.Value.Interface())
+	return fmt.Sprintf(format, rval.Interface())
 }
 
-func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.View {
+func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
 	// fmt.Printf("make Text %s %s %s %p\n:", item.FieldName, f.Title, f.Name, v.data)
-	str := getTextFromNumberishItem(item, f)
+	str := getTextFromNumberishItem(rval, f)
 	if f.IsStatic() || v.params.AllStatic {
 		// zlog.Info("makeText:", f.FieldName, str)
 		label := zlabel.New(str)
@@ -1001,8 +995,13 @@ func (v *FieldView) makeText(item zreflect.Item, f *Field, noUpdate bool) zview.
 	if cols == 0 {
 		cols = 20
 	}
+	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	if f.Flags&FlagIsPassword != 0 {
 		style.KeyboardType = zkeyboard.TypePassword
+	} else if zkind == zreflect.KindInt {
+		style.KeyboardType = zkeyboard.TypeInteger
+	} else if zkind == zreflect.KindFloat {
+		style.KeyboardType = zkeyboard.TypeFloat
 	}
 	if f.Flags&FlagDisableAutofill != 0 {
 		style.DisableAutoComplete = true
@@ -1051,7 +1050,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	return cv
 }
 
-func (v *FieldView) makeImage(item zreflect.Item, f *Field) zview.View {
+func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 	iv := zimageview.New(nil, "", f.Size)
 	iv.DownsampleImages = true
 	iv.SetMinSize(f.Size)
@@ -1060,7 +1059,7 @@ func (v *FieldView) makeImage(item zreflect.Item, f *Field) zview.View {
 	if f.Styling.FGColor.Valid {
 		iv.EmptyColor = f.Styling.FGColor
 	}
-	if f.OffImagePath != "" && item.Kind == zreflect.KindBool {
+	if f.IsImageToggle() && rval.Kind() == reflect.Bool {
 		iv.SetPressedHandler(func() {
 			val, _ := v.fieldToDataItem(f, iv)
 			on := val.Bool()
@@ -1139,7 +1138,7 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 	}
 }
 
-func makeFlagStack(flags zreflect.Item, f *Field) zview.View {
+func makeFlagStack(flags reflect.Value, f *Field) zview.View {
 	stack := zcontainer.StackViewHor("flags")
 	stack.SetMinSize(zgeo.Size{20, 20})
 	stack.SetSpacing(2)
@@ -1156,12 +1155,12 @@ func getColumnsForTime(f *Field) int {
 	return c - 1
 }
 
-func updateFlagStack(flags zreflect.Item, f *Field, view zview.View) {
+func updateFlagStack(flags reflect.Value, f *Field, view zview.View) {
 	stack := view.(*zcontainer.StackView)
 	// zlog.Info("zfields.updateFlagStack", Name(f))
-	bso := flags.Interface.(zbits.BitsetItemsOwner)
+	bso := flags.Interface().(zbits.BitsetItemsOwner)
 	bitset := bso.GetBitsetItems()
-	n := flags.Value.Int()
+	n := flags.Int()
 	for _, bs := range bitset {
 		name := bs.Name
 		vf, _ := stack.FindViewWithName(name, false)
@@ -1189,13 +1188,13 @@ func updateFlagStack(flags zreflect.Item, f *Field, view zview.View) {
 	}
 }
 
-func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []zreflect.Item) (view zview.View, skip bool) {
+func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
 	// zlog.Info("createSpecialView:", f.FieldName)
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
 			return nil, true
 		}
-		return v.makeButton(item, f), false
+		return v.makeButton(rval, f), false
 	}
 	// if f.WidgetName != "" {
 	// 	zlog.Info("createSpecialView?:", f.WidgetName)
@@ -1213,16 +1212,16 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 	if v.callTriggerHandler(f, CreateFieldViewAction, nil, &view) {
 		return
 	}
-	callActionHandlerFunc(v, f, CreateFieldViewAction, item.Address, &view) // this sees if actual ITEM is a field handler
+	callActionHandlerFunc(v, f, CreateFieldViewAction, rval.Addr().Interface(), &view) // this sees if actual ITEM is a field handler
 	if view != nil {
 		return
 	}
 	if f.LocalEnum != "" {
-		ei := findLocalFieldWithID(&children, f.LocalEnum)
-		if zlog.ErrorIf(ei == nil, v.Hierarchy(), f.Name, f.LocalEnum) {
+		ei, got := FindLocalFieldWithID(v.data, f.LocalEnum)
+		if zlog.ErrorIf(!got, v.Hierarchy(), f.Name, f.LocalEnum) {
 			return nil, true
 		}
-		getter, _ := ei.Interface.(zdict.ItemsGetter)
+		getter, _ := ei.Interface().(zdict.ItemsGetter)
 		if zlog.ErrorIf(getter == nil, "field isn't enum, not ItemGetter type", f.Name, f.LocalEnum) {
 			return nil, true
 		}
@@ -1231,7 +1230,7 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 		// 	continue
 		// }
 		//					zlog.Info("make local enum:", f.Name, f.LocalEnum)
-		menu := v.makeMenu(item, f, enum)
+		menu := v.makeMenu(rval, f, enum)
 		if menu == nil {
 			zlog.Error(nil, "no local enum for", f.LocalEnum)
 			return nil, true
@@ -1244,13 +1243,13 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 		// fmt.Println("make enum:", f.Name, item.Interface)
 		enum, _ := fieldEnums[f.Enum]
 		zlog.Assert(enum != nil, f.Enum, f.FieldName)
-		view = v.makeMenu(item, f, enum)
+		view = v.makeMenu(rval, f, enum)
 		// exp = zgeo.AlignmentNone
 		return view, false
 	}
-	_, got := item.Interface.(UIStringer)
+	_, got := rval.Interface().(UIStringer)
 	if got && (f.IsStatic() || v.params.AllStatic) {
-		return v.makeText(item, f, false), false
+		return v.makeText(rval, f, false), false
 	}
 	return nil, false
 }
@@ -1258,31 +1257,12 @@ func (v *FieldView) createSpecialView(item zreflect.Item, f *Field, children []z
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data)
 	// fmt.Println("buildStack1", name, defaultAlign, v.params.SkipFieldNames)
-	children := v.getStructItems()
-	for j, item := range children {
-		f := findFieldWithIndex(&v.Fields, j)
-		if f != nil && f.Flags&FlagIsUseInValue != 0 {
-			v.params.UseInValues = append(v.params.UseInValues, fmt.Sprint(item.Value))
-		}
-	}
-	for j, item := range children {
-		if zstr.IndexOf(item.FieldName, v.params.SkipFieldNames) != -1 {
-			continue
-		}
-		f := findFieldWithIndex(&v.Fields, j)
-		if f == nil {
-			//			zlog.Error(nil, "no field for index", j)
-			continue
-		}
-		if len(f.UseIn) != 0 && !zstr.SlicesIntersect(f.UseIn, v.params.UseInValues) {
-			// zlog.Info("IFIn:", v.Hierarchy(), f.Name, f.UseIn, v.params.UseInValues)
-			continue
-		}
-		v.buildItem(f, item, j, children, defaultAlign, cellMargin, useMinWidth)
-	}
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+		v.buildItem(f, val, sf, index, defaultAlign, cellMargin, useMinWidth)
+	})
 }
 
-func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children []zreflect.Item, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructField, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	labelizeWidth := v.params.LabelizeWidth
 	parentFV := ParentFieldView(v)
 	if parentFV != nil && v.params.LabelizeWidth == 0 {
@@ -1294,18 +1274,18 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	}
 	// zlog.Info("buildItem", f.Name)
 	// if f.FieldName == "CPU" {
-	// 	zlog.Info("   buildStack1.2", j, item.Value.Len())
+	// 	zlog.Info("   buildStack1.2", j, rval.Len())
 	// }
 
 	// check trigger create
-	view, skip := v.createSpecialView(item, f, children)
+	view, skip := v.createSpecialView(rval, f)
 	if skip {
 		return
 	}
 	if view == nil {
 		switch f.Kind {
 		case zreflect.KindStruct:
-			col, got := item.Interface.(zgeo.Color)
+			col, got := rval.Interface().(zgeo.Color)
 			// zlog.Info("makeStruct", item.FieldName, got)
 			// zlog.Info("make stringer?:", f.Name, got)
 			if got {
@@ -1321,7 +1301,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				params := v.params
 				params.Field.MergeInField(f)
 				// params.Field.Flags = 0
-				fieldView := fieldViewNew(f.FieldName, vert, item.Address, params, zgeo.Size{}, v)
+				fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
 				// fmt.Printf("makeStruct2 %s %p\n", item.FieldName, fieldView.View)
 				view = makeFrameIfFlag(f, fieldView)
 				if view == nil {
@@ -1333,45 +1313,45 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			}
 
 		case zreflect.KindBool:
-			if f.Flags&FlagIsImage != 0 && f.OffImagePath != "" && item.Kind == zreflect.KindBool {
-				view = v.makeImage(item, f)
+			if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
+				view = v.makeImage(rval, f)
 				break
 			}
-			b := zbool.ToBoolInd(item.Value.Interface().(bool))
+			b := zbool.ToBoolInd(rval.Interface().(bool))
 			exp = zgeo.AlignmentNone
 			view = v.makeCheckbox(f, b)
 		case zreflect.KindInt:
-			if item.TypeName == "BoolInd" {
+			if rval.Type().Name() == "BoolInd" {
 				exp = zgeo.HorShrink
-				view = v.makeCheckbox(f, zbool.BoolInd(item.Value.Int()))
+				view = v.makeCheckbox(f, zbool.BoolInd(rval.Int()))
 			} else {
-				_, got := item.Interface.(zbits.BitsetItemsOwner)
+				_, got := rval.Interface().(zbits.BitsetItemsOwner)
 				if got {
-					view = makeFlagStack(item, f)
+					view = makeFlagStack(rval, f)
 					break
 				}
 				noUpdate := true
-				view = v.makeText(item, f, noUpdate)
+				view = v.makeText(rval, f, noUpdate)
 			}
 
 		case zreflect.KindFloat:
 			noUpdate := true
-			view = v.makeText(item, f, noUpdate)
+			view = v.makeText(rval, f, noUpdate)
 
 		case zreflect.KindString:
 			if f.Flags&FlagIsImage != 0 {
-				view = v.makeImage(item, f)
+				view = v.makeImage(rval, f)
 			} else {
 				if (f.MaxWidth != f.MinWidth || f.MaxWidth != 0) && f.Flags&FlagIsButton == 0 {
 					exp = zgeo.HorExpand
 				}
-				view = v.makeText(item, f, false)
+				view = v.makeText(rval, f, false)
 			}
 
 		case zreflect.KindSlice:
-			getter, _ := item.Interface.(zdict.ItemsGetter)
+			getter, _ := rval.Interface().(zdict.ItemsGetter)
 			if getter != nil {
-				menu := v.makeMenu(item, f, getter.GetItems())
+				menu := v.makeMenu(rval, f, getter.GetItems())
 				view = menu
 				break
 			}
@@ -1388,18 +1368,18 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			params := v.params
 			params.Field.MergeInField(f)
 			// params.Field.Flags = 0
-			fv := fieldViewNew(f.FieldName, vert, item.Address, params, zgeo.Size{}, v)
+			fv := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
 			view = fv
 			var add zview.View
 			if f.Flags&FlagIsGroup == 0 {
 				// zlog.Info("BUILD static slice:", f.Name, v.Hierarchy(), v.Spacing(), fv.Spacing(), fv.params.Styling.Spacing)
-				add = fv.buildRepeatedStackFromSlice(item.Address, vert, f)
+				add = fv.buildRepeatedStackFromSlice(rval.Addr().Interface(), vert, f)
 			} else {
 				// zlog.Info("NewMenuGroup:", f.FieldName, f.TitleOrName(), f.Styling.StrokeWidth, params.Styling.StrokeWidth)
-				mg := buildMenuGroup(item.Address, f.ValueStoreKey, params)
+				mg := buildMenuGroup(rval.Addr().Interface(), f.ValueStoreKey, params)
 				mg.SetChangedHandler(func(newID string) {
 					// zlog.Info("Update group")
-					callActionHandlerFunc(v, f, EditedAction, item.Address, &mg.View)
+					callActionHandlerFunc(v, f, EditedAction, rval.Addr().Interface(), &mg.View)
 				})
 				fv.grouper = mg
 				add = mg
@@ -1412,7 +1392,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 				columns = getColumnsForTime(f)
 			}
 			noUpdate := true
-			view = v.makeText(item, f, noUpdate)
+			view = v.makeText(rval, f, noUpdate)
 			if f.IsStatic() || v.params.AllStatic {
 				label := view.(*zlabel.Label)
 				label.Columns = columns
@@ -1444,10 +1424,10 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 		// zlog.Info("Pressable2:", view.Native() != nil)
 		// zlog.Info("Pressable?", pt.PressedHandler(), view.Native().Hierarchy())
 		ph := pt.PressedHandler()
-		nowItem := item // store item in nowItem so closures below uses right item
+		nowItem := rval // store item in nowItem so closures below uses right item
 		pt.SetPressedHandler(func() {
 			// zlog.Info("FV Pressed")
-			if !callActionHandlerFunc(v, f, PressedAction, nowItem.Interface, &view) && ph != nil {
+			if !callActionHandlerFunc(v, f, PressedAction, nowItem.Interface(), &view) && ph != nil {
 				ph()
 			}
 		})
@@ -1455,14 +1435,14 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 			lph := pt.LongPressedHandler()
 			pt.SetLongPressedHandler(func() {
 				// zlog.Info("Field.LPH:", f.FieldName)
-				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface, &view) && lph != nil {
+				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface(), &view) && lph != nil {
 					lph()
 				}
 			})
 		}
 	}
 	// zlog.Info("BuildItem:", item.FieldName, view != nil, zlog.GetCallingStackString())
-	updateItemLocalToolTip(f, children, view)
+	updateItemLocalToolTip(f, v.data, view)
 	if !f.Styling.DropShadow.Delta.IsNull() {
 		nv := view.Native()
 		nv.SetDropShadow(f.Styling.DropShadow)
@@ -1474,7 +1454,7 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	if f.Styling.BGColor.Valid {
 		view.SetBGColor(f.Styling.BGColor)
 	}
-	callActionHandlerFunc(v, f, CreatedViewAction, item.Address, &view)
+	callActionHandlerFunc(v, f, CreatedViewAction, rval.Addr().Interface(), &view)
 	cell := &zcontainer.Cell{}
 	def := defaultAlign
 	all := zgeo.Left | zgeo.HorCenter | zgeo.Right
@@ -1505,19 +1485,13 @@ func (v *FieldView) buildItem(f *Field, item zreflect.Item, index int, children 
 	}
 }
 
-func updateItemLocalToolTip(f *Field, children []zreflect.Item, view zview.View) {
+func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 	var tipField, tip string
-	found := false
 	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
-		for _, ei := range children {
-			// zlog.Info("updateItemLocalToolTip:", ei.FieldName, tipField)
-			if ei.FieldName == tipField {
-				tip = fmt.Sprint(ei.Interface)
-				found = true
-				break
-			}
-		}
-		if !found { // can't use tip == "" to check, since field might just be empty
+		ei, _, got := zreflect.FieldForName(structure, true, tipField)
+		if got {
+			tip = fmt.Sprint(ei.Interface())
+		} else { // can't use tip == "" to check, since field might just be empty
 			zlog.Error(nil, "updateItemLocalToolTip: no local field for tip", f.Name, tipField)
 		}
 	} else if f.Tooltip != "" {
@@ -1531,12 +1505,12 @@ func updateItemLocalToolTip(f *Field, children []zreflect.Item, view zview.View)
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
 		// fmt.Println("FV Update Item:", f.Name)
-		fview, _ := v.findNamedViewOrInLabelized(f.FieldName)
-		if fview == nil {
+		foundView, _ := v.findNamedViewOrInLabelized(f.FieldName)
+		if foundView == nil {
 			// zlog.Info("FV Update no view found:", v.id, f.FieldName)
 			continue
 		}
-		_, e := v.fieldToDataItem(&f, fview)
+		_, e := v.fieldToDataItem(&f, foundView)
 		if e != nil {
 			if err == nil {
 				err = e
@@ -1554,8 +1528,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	if f.IsStatic() {
 		return
 	}
-	children := v.getStructItems()
-	item := children[f.Index]
+	rval, _ := zreflect.FieldForIndex(v.data, true, f.Index)
+
 	// zlog.Info("fieldViewToDataItem before:", f.IsStatic(), f.Name, f.Index, len(children), "s:")
 	if f.Enum != "" || f.LocalEnum != "" {
 		mv, _ := view.(*zmenu.MenuView)
@@ -1564,9 +1538,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			vo := reflect.ValueOf(iface)
 			// zlog.Debug(iface, f.Name, iface == nil)
 			if iface == nil {
-				vo = reflect.Zero(item.Value.Type())
+				vo = reflect.Zero(rval.Type())
 			}
-			item.Value.Set(vo)
+			rval.Set(vo)
 		}
 		return
 	}
@@ -1587,29 +1561,29 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				zlog.Fatal(nil, "Should be checkbox", view, reflect.TypeOf(view))
 			}
 		}
-		b, _ := item.Address.(*bool)
+		b, _ := rval.Addr().Interface().(*bool)
 		if b != nil {
 			*b = bv.Value().Bool()
 		}
-		bi, _ := item.Address.(*zbool.BoolInd)
+		bi, _ := rval.Addr().Interface().(*zbool.BoolInd)
 		if bi != nil {
 			*bi = bv.Value()
 		}
 
 	case zreflect.KindInt:
-		if item.TypeName == "BoolInd" {
+		if rval.Type().Name() == "BoolInd" {
 			bv, _ := view.(*zcheckbox.CheckBox)
-			*item.Address.(*zbool.BoolInd) = bv.Value()
+			*rval.Addr().Interface().(*zbool.BoolInd) = bv.Value()
 		} else {
 			tv, _ := view.(*ztext.TextView)
 			str := tv.Text()
-			if item.Package == "time" && item.TypeName == "Duration" {
+			if f.PackageName == "time" && rval.Type().Name() == "Duration" {
 				var secs float64
 				secs, err = ztime.GetSecsFromHMSString(str, f.Flags&FlagHasHours != 0, f.Flags&FlagHasMinutes != 0, f.Flags&FlagHasSeconds != 0)
 				if err != nil {
 					break
 				}
-				d := item.Address.(*time.Duration)
+				d := rval.Addr().Interface().(*time.Duration)
 				if d != nil {
 					*d = ztime.SecondsDur(secs)
 				}
@@ -1623,7 +1597,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 					break
 				}
 			}
-			zint.SetAny(item.Address, i64)
+			zint.SetAny(rval.Addr().Interface(), i64)
 		}
 
 	case zreflect.KindFloat:
@@ -1639,9 +1613,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			break
 		}
 		//		}
-		zfloat.SetAny(item.Address, f64)
+		zfloat.SetAny(rval.Addr().Interface(), f64)
 		// zlog.Info("fieldToDataItem float", f.FieldName, view.ObjectName(), tv.Text(), f64, err, item)
-		// fmt.Printf("fieldToDataItem struct: %+v\n", item.Value.Interface())
+		// fmt.Printf("fieldToDataItem struct: %+v\n", rval.Interface())
 
 	case zreflect.KindTime:
 		break
@@ -1653,7 +1627,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				zlog.Fatal(nil, "Copy Back string not TV:", f.Name)
 			}
 			text := tv.Text()
-			str := item.Address.(*string)
+			str := rval.Addr().Interface().(*string)
 			*str = text
 		}
 
@@ -1667,7 +1641,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	default:
 		panic(fmt.Sprint("bad type: ", f.Kind))
 	}
-	value = reflect.ValueOf(item.Address).Elem() //.Interface()
+	value = reflect.ValueOf(rval.Addr().Interface()).Elem() //.Interface()
 	return
 }
 
@@ -1679,19 +1653,6 @@ func ParentFieldView(view zview.View) *FieldView {
 		}
 	}
 	return nil
-}
-
-func (fv *FieldView) getStructItems() []zreflect.Item {
-	k := reflect.ValueOf(fv.data).Kind()
-	// zlog.Info("getStructItems", direct, k, sub)
-	zlog.Assert(k == reflect.Ptr, "not pointer", k)
-	options := zreflect.Options{UnnestAnonymous: true, Recursive: false}
-	rootItems, err := zreflect.ItterateStruct(fv.data, options)
-	if err != nil {
-		panic(err)
-	}
-	// zlog.Info("Get Struct Items sub:", len(rootItems.Children))
-	return rootItems.Children
 }
 
 func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) bool) {

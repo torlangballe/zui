@@ -1,10 +1,8 @@
-// The zfields package is functionality to create GUI from data structures.
+// The zfields package is functionality to create UI from data structures.
 // With reflection, the fields of structures are used to create stacks of GUI elements.
 // The 'zui' tag on struct fields is used to stylize how the gui elements are created.
 // This file is mostly about how these tags are parsed into a Field, and FieldView.go
 // is where the building and updating of gui from the structure and Field info is done.
-
-//go:build zui
 
 package zfields
 
@@ -16,10 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/torlangballe/zui/zheader"
 	"github.com/torlangballe/zui/zstyle"
-	"github.com/torlangballe/zui/ztext"
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
@@ -28,6 +23,7 @@ import (
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -40,27 +36,28 @@ type UIStringer interface {
 	ZUIString() string
 }
 
-// Widgeter is an interface to make a type create it's own view when build with zfields package.
-// It is registered with the RegisterWigeter function, and specified with the zui:"widget:xxx" tag.
-type Widgeter interface {
-	IsStatic() bool
-	Create(f *Field) zview.View
-	SetValue(view zview.View, val any)
-}
-
-// ReadWidgeter is a Widgeter that also can return it's value
-type ReadWidgeter interface {
-	GetValue(view zview.View) any
-}
-
-// SetupWidgeter is a Widgeter that also can setup it's field before creation
-type SetupWidgeter interface {
-	SetupField(f *Field)
+type UISetStringer interface {
+	ZUISetFromString(str string)
 }
 
 // ActionType are the types of actions any type can handle an HandleAction method with type of.
 // This allows a type to handle it's  Field setup, it's creation, editing, data changed and more.
 type ActionType string
+
+// SortInfo is information about how to sort fields/columns
+type SortInfo struct {
+	FieldName  string
+	SmallFirst bool
+}
+
+type FieldParameters struct {
+	HideStatic              bool
+	ForceZeroOption         bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
+	AllStatic               bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
+	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
+	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
+	SkipFieldNames          []string
+}
 
 const (
 	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
@@ -166,16 +163,6 @@ var EmptyField = Field{
 	CustomFields: map[string]string{},
 }
 
-type ActionHandler interface {
-	HandleAction(f *Field, action ActionType, view *zview.View) bool
-}
-
-// type ActionFieldHandler interface {
-// 	HandleFieldAction(f *Field, action ActionType, view *zview.View) bool
-// }
-
-var widgeters = map[string]Widgeter{}
-
 var flagsList = []zbits.BitsetItem{
 	zbits.BSItem("HasSeconds", int64(FlagHasSeconds)),
 	zbits.BSItem("HasMinutes", int64(FlagHasMinutes)),
@@ -201,46 +188,16 @@ var flagsList = []zbits.BitsetItem{
 	zbits.BSItem("DisableAutofill", int64(FlagDisableAutofill)),
 }
 
+// callSetupWidgeter is called to set gui widgets registered for use in zui tags.
+// It is dependent on a gui, so injected with this func variable.
+var callSetupWidgeter func(f *Field)
+
 func (f FlagType) String() string {
 	return zbits.Int64ToStringFromList(int64(f), flagsList)
 }
 
-func RegisterWigeter(name string, w Widgeter) {
-	widgeters[name] = w
-}
-
 func (f Field) IsStatic() bool {
 	return f.Flags&FlagIsStatic != 0
-}
-
-func (f *Field) SetFont(view zview.View, from *zgeo.Font) {
-	to := view.(ztext.LayoutOwner)
-	size := f.Styling.Font.Size
-	if size <= 0 {
-		if from != nil {
-			size = from.Size
-		} else {
-			size = zgeo.FontDefaultSize
-		}
-	}
-	style := f.Styling.Font.Style
-	if from != nil {
-		style = from.Style
-	}
-	if style == zgeo.FontStyleUndef {
-		style = zgeo.FontStyleNormal
-	}
-	var font *zgeo.Font
-	if f.Styling.Font.Name != "" {
-		font = zgeo.FontNew(f.Styling.Font.Name, size, style)
-	} else if from != nil {
-		font = new(zgeo.Font)
-		*font = *from
-	} else {
-		font = zgeo.FontNice(size, style)
-	}
-	// zlog.Info("Field SetFont:", view.Native().Hierarchy(), *font)
-	to.SetFont(font)
 }
 
 func findFieldWithIndex(fields *[]Field, index int) *Field {
@@ -252,36 +209,34 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 	return nil
 }
 
-func findLocalFieldWithID(children *[]zreflect.Item, name string) *zreflect.Item {
+func FindLocalFieldWithID(structure any, name string) (reflect.Value, bool) {
+
 	name = zstr.HeadUntil(name, ".")
-	for i, c := range *children {
-		if c.FieldName == name {
-			return &(*children)[i]
-		}
-	}
-	return nil
+	fval, _, found := zreflect.FieldForName(structure, true, name)
+	return fval, found
 }
 
 func fieldNameToID(name string) string {
 	return zstr.FirstToLowerWithAcronyms(name)
 }
 
-func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int, immediateEdit bool) bool {
+func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, immediateEdit bool) bool {
 	f.Index = index
-	f.ID = fieldNameToID(item.FieldName)
+	f.ID = fieldNameToID(sf.Name)
 	// zlog.Info("FIELD:", f.ID, item.FieldName)
-	f.Kind = item.Kind
-	f.FieldName = item.FieldName
+	fTypeName := rval.Type().Name()
+	f.Kind = zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
+	f.FieldName = sf.Name
 	f.Alignment = zgeo.AlignmentNone
 	f.UpdateSecs = -1
 	f.Rows = 1
 	f.SortSmallFirst = zbool.Unknown
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
-	f.PackageName = item.Package
+	f.PackageName = rval.Type().PkgPath()
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
-	for _, part := range zreflect.GetTagAsMap(item.Tag)["zui"] {
+	for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
 		if part == "-" {
 			return false
 		}
@@ -579,7 +534,7 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		zfloat.Minimize(&f.MinWidth, f.MaxWidth)
 	}
 	if f.Name == "" {
-		str := zstr.PadCamelCase(item.FieldName, " ")
+		str := zstr.PadCamelCase(sf.Name, " ")
 		str = zstr.FirstToTitleCase(str)
 		f.Name = str
 	}
@@ -587,7 +542,7 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 		f.Placeholder = f.Name
 	}
 
-	switch item.Kind {
+	switch f.Kind {
 	case zreflect.KindFloat:
 		if f.MinWidth == 0 {
 			f.MinWidth = 64
@@ -596,8 +551,8 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			f.MaxWidth = 64
 		}
 	case zreflect.KindInt:
-		if item.TypeName != "BoolInd" {
-			if item.Package == "time" && item.TypeName == "Duration" {
+		if fTypeName != "BoolInd" {
+			if sf.PkgPath == "time" && fTypeName == "Duration" {
 				if f.Flags&flagTimeFlags == 0 { // if no flags set, set default h,m,s
 					f.Flags |= flagTimeFlags
 				}
@@ -679,21 +634,11 @@ func (f *Field) SetFromReflectItem(structure any, item zreflect.Item, index int,
 			}
 		}
 	}
-	if f.WidgetName != "" {
-		w := widgeters[f.WidgetName]
-		if w != nil {
-			sw, _ := w.(SetupWidgeter)
-			if sw != nil {
-				sw.SetupField(f)
-			}
-		}
+	if f.WidgetName != "" && callSetupWidgeter != nil {
+		callSetupWidgeter(f)
 	}
-
-	var fv FieldView
-	fv.data = structure
-	callActionHandlerFunc(&fv, f, SetupFieldAction, item.Address, nil) // need to use v.structure here, since i == -1
-	// zlog.Info("Field:", f.ID, f.MinWidth, f.Size, f.MaxWidth)
 	return true
+	// zlog.Info("Field:", f.ID, f.MinWidth, f.Size, f.MaxWidth)
 }
 
 // MergeInField copies in values from the Field *n* to *f*, overwriting except where *n* has undefined value
@@ -739,6 +684,10 @@ var fieldEnums = map[string]zdict.Items{}
 
 func SetEnum(name string, enum zdict.Items) {
 	fieldEnums[name] = enum
+}
+
+func GetEnum(name string) zdict.Items {
+	return fieldEnums[name]
 }
 
 func SetEnumItems(name string, nameValPairs ...any) {
@@ -795,7 +744,7 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice any, f Fiel
 
 type mapValueToName map[any]string
 
-func getSortCache(slice any, fields []Field, sortOrder []zheader.SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
+func getSortCache(slice any, fields []Field, sortOrder []SortInfo) (fieldMap map[string]*Field, enumTitles map[string]mapValueToName) {
 	fieldMap = map[string]*Field{}
 	enumTitles = map[string]mapValueToName{}
 
@@ -824,7 +773,7 @@ func getSortCache(slice any, fields []Field, sortOrder []zheader.SortInfo) (fiel
 	return
 }
 
-func SortSliceWithFields(slice any, fields []Field, sortOrder []zheader.SortInfo) {
+func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 	// start := time.Now()
 	fieldMap, enumTitles := getSortCache(slice, fields, sortOrder)
 	// fmt.Printf("FieldMap: %+v %+v\n", fieldMap, sortOrder)
@@ -921,4 +870,67 @@ func Name(f *Field) string {
 		return f.Name
 	}
 	return ""
+}
+
+func ForEachField(structure any, params FieldParameters, fields []Field, got func(index int, f *Field, val reflect.Value, sf reflect.StructField)) {
+	if len(fields) == 0 {
+		zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+			f := EmptyField
+			if !f.SetFromReflectValue(val, sf, index, false) {
+				return true
+			}
+			// zlog.Info("fieldViewNew f:", f.Name, f.UpdateSecs)
+			fields = append(fields, f)
+			return true
+		})
+	}
+	zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		f := findFieldWithIndex(&fields, index)
+		if f != nil && f.Flags&FlagIsUseInValue != 0 {
+			zstr.AddToSet(&params.UseInValues, fmt.Sprint(val.Interface()))
+		}
+		return true
+	})
+	zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		if zstr.IndexOf(sf.Name, params.SkipFieldNames) != -1 {
+			return true
+		}
+		f := findFieldWithIndex(&fields, index)
+		if f == nil {
+			return true
+		}
+		if len(f.UseIn) != 0 && !zstr.SlicesIntersect(f.UseIn, params.UseInValues) {
+			// zlog.Info("IFIn:", v.Hierarchy(), f.Name, f.UseIn, v.params.UseInValues)
+			return true
+		}
+		got(index, f, val, sf)
+		return true
+	})
+}
+
+func FindIndicatorOfSlice(slicePtr any) string {
+	s := zslice.MakeAnElementOfSliceType(slicePtr)
+	_, f, got := FindIndicatorRValOfStruct(s)
+	if got {
+		return f.Name
+	}
+	return ""
+}
+
+func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field, got bool) {
+	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
+	ForEachField(structPtr, FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+		for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
+			if part == "indicator" {
+				rval = val
+				field = f
+				got = true
+			}
+		}
+	})
+	return
+}
+
+func (f *Field) IsImageToggle() bool {
+	return f.Flags&FlagIsImage != 0 && f.OffImagePath != ""
 }
