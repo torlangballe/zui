@@ -17,6 +17,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zmarkdown"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc2"
 	"github.com/torlangballe/zutil/zstr"
@@ -87,6 +88,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if filepath == zrest.StaticFolder {
 		filepath = zrest.StaticFolder + "/index.html"
 	}
+
 	if zfile.Exists(filepath) {
 		// zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
 		http.ServeFile(w, req, filepath)
@@ -97,6 +99,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		localRedirect(w, req, zrest.AppURLPrefix)
 		return
 	}
+	// zlog.Info("FilesRedir2:", req.URL.Path, spath)
 
 	if spath == "" { // hack to replicate how http.ServeFile serves index.html if serving empty folder at root level
 		spath = "index.html"
@@ -143,4 +146,37 @@ func (c *AppCalls) GetTimeInfo(u zrpc2.Unused, info *LocationTimeInfo) error {
 	info.ZoneName = name
 	info.ZoneOffsetSeconds = offset
 	return nil
+}
+
+func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC bool, parts []string) {
+	defer req.Body.Close()
+	values := req.URL.Query()
+	raw := values.Get("raw")
+	md := (raw == "md")
+	html := (raw == "html")
+	prefix := zrest.StaticFolder + "/doc/"
+	fullmd, err := zmarkdown.FlattenMarkdown(prefix, parts, tableOC)
+	// zlog.Info("MD:\n", fullmd)
+	if err != nil {
+		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, err, "building pdf", name)
+		return
+	}
+	if md {
+		w.Write([]byte(fullmd))
+		return
+	}
+	if html {
+		html, err := zmarkdown.ConvertToHTML(fullmd, name, "", GetDocumentationValues())
+		if err != nil {
+			zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, err, "converting")
+			return
+		}
+		w.Write([]byte(html))
+	}
+	spdf, err := zmarkdown.ConvertToPDF(fullmd, "Bridgetech QTT", zrest.StaticFolder+"/doc/", GetDocumentationValues())
+	if err != nil {
+		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, "error converting manual to pdf")
+		return
+	}
+	w.Write([]byte(spdf))
 }

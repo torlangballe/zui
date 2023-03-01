@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -29,8 +30,10 @@ type LocationTimeInfo struct {
 }
 
 var (
-	AppMain            *App   // AppMain is the main instance of app. Likely the ONLY one
-	DownloadPathPrefix string // DownloadPathPrefix is the prefix to create a url to download something from the app
+	AppMain                    *App   // AppMain is the main instance of app. Likely the ONLY one
+	DownloadPathPrefix         string // DownloadPathPrefix is the prefix to create a url to download something from the app
+	documentationValues        zdict.Dict
+	AddDocumentationValuesFunc func(zdict.Dict)
 )
 
 // SetHandler sets the handler for the app (see handler) above
@@ -69,4 +72,12 @@ func New() *App {
 // GetProcessID returns the process id of the app. Not implemented yet.
 func GetProcessID() int64 {
 	return 0
+}
+
+func GetDocumentationValues() zdict.Dict {
+	documentationValues = zdict.Dict{}
+	if AddDocumentationValuesFunc != nil {
+		AddDocumentationValuesFunc(documentationValues)
+	}
+	return documentationValues
 }
