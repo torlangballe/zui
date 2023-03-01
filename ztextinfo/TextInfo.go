@@ -132,7 +132,6 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
-			// zlog.Info("TI split:", split, str)
 			if split > 1 {
 				rlen := utf8.RuneCountInString(str)
 				each := int(math.Ceil(float64(rlen) / split))

@@ -370,7 +370,6 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 				(*textRect).SetMinX(ir.Max().X + v.ImageGap)
 			}
 		}
-		// zlog.Info("SV DrawImage:", v.ObjectName(), drawImage.Path, ir, o)
 		canvas.DrawImage(img, useDownsampleCache, ir, o, zgeo.Rect{})
 		if v.IsRoundImage {
 			canvas.PopState()

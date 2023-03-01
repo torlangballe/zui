@@ -199,7 +199,7 @@ func (v *SQLTableView[S]) updateForIDs(items []S) {
 func (v *SQLTableView[S]) createConstraints() string {
 	// var s S
 	var order string
-	zlog.Info("createConstraints", v.Header != nil, v.Header.SortOrder)
+	// zlog.Info("createConstraints", v.Header != nil, v.Header.SortOrder)
 	if v.Header != nil {
 		var orders []string
 		for _, s := range v.Header.SortOrder {
@@ -226,7 +226,7 @@ func (v *SQLTableView[S]) createConstraints() string {
 		cons += " ORDER BY " + order
 	}
 	cons += fmt.Sprintf(" LIMIT %d OFFSET %d", v.limit, v.offset)
-	zlog.Info("createConstraints:", cons)
+	// zlog.Info("createConstraints:", cons)
 	return cons
 }
 
