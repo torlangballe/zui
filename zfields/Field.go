@@ -600,6 +600,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			break
 		}
 		if f.MinWidth == 0 {
+			f.Columns += 3 // in case we show offset
 			if f.Flags&FlagHasDays != 0 {
 				f.Columns += 3
 			}
