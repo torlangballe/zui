@@ -362,7 +362,7 @@ func (o *MenuedOwner) SetSelectedValue(val interface{}) {
 }
 
 func (o *MenuedOwner) getItems() []MenuedOItem {
-	if o.CreateItemsFunc != nil && len(o.items) == 0 {
+	if o.CreateItemsFunc != nil {
 		o.items = o.CreateItemsFunc()
 	}
 	return o.items
