@@ -804,7 +804,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 	isSlice := rval.Kind() == reflect.Slice
 	if static || isSlice {
 		multi := isSlice
-		zlog.Info("FV Menu Make static:", f.ID, f.Format, f.Name)
+		// zlog.Info("FV Menu Make static:", f.ID, f.Format, f.Name)
 		isImage := (f.ImageFixedPath != "")
 		shape := zshape.TypeRoundRect
 		if isImage {
