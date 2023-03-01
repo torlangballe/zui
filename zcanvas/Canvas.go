@@ -9,7 +9,8 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-//  Created by Tor Langballe on /21/10/15.
+//	Created by Tor Langballe on /21/10/15.
+//
 // Check out: https://github.com/tdewolff/canvas
 type Canvas struct {
 	size zgeo.Size
@@ -34,6 +35,7 @@ func (c *Canvas) DrawImageAt(image *zimage.Image, pos zgeo.Pos, useDownsampleCac
 }
 
 func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
+	// zlog.Info("Canvas.DrawImage:", image.Path)
 	if image == nil {
 		return true
 	}
@@ -62,6 +64,7 @@ func (c *Canvas) drawInsetRow(image *zimage.Image, inset, dest zgeo.Rect, sy, sh
 
 	useDownsampleCache := false
 	insetMid := size.Minus(inset.Size.Negative())
+	// zlog.Info("drawInsetRow:", image.Path, useDownsampleCache)
 	c.drawPlainImage(image, useDownsampleCache, zgeo.RectFromXYWH(0, dy, inset.Pos.X, dh), opacity, zgeo.RectFromXYWH(0, sy, inset.Pos.X, sh))
 	midMaxX := math.Floor(dest.Max().X + inset.Max().X) // inset.Max is negative
 	// zlog.Info("drawInsetRow:", size)
@@ -70,6 +73,7 @@ func (c *Canvas) drawInsetRow(image *zimage.Image, inset, dest zgeo.Rect, sy, sh
 }
 
 func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opacity float32) {
+	// if v.ObjectName() == "workers" {
 	size := image.Size()
 	insetMid := size.Minus(inset.Size.Negative())
 	diff := dest.Size.Minus(size).Plus(insetMid)

@@ -193,7 +193,6 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 	ds := destRect.Size
 	drawnNow := true
 	// if true || strings.Contains(image.Path, "auth") {
-	// zlog.Info("drawPlain:", image.Size(), image.Path, ss, ds, ss.Area() < 1000000, ss == image.size, sourceRect.Pos.IsNull())
 	// }
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
 		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
@@ -202,6 +201,7 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 		}
 		// if it returns false, it wasn't in cache, so we draw unscaled below
 	}
+	// zlog.Info("drawPlain:", image.Path, destRect, sourceRect, opacity)
 	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 	return drawnNow
 }

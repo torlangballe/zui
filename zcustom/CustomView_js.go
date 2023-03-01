@@ -144,8 +144,10 @@ func (v *CustomView) makeCanvas() {
 
 func (v *CustomView) drawSelf() {
 	// if v.ObjectName() == "workers" {
-	// 	zlog.Info("CustV drawIfExposed", v.Hierarchy(), v.exposed, v.draw, v.drawing)
+	// 	zlog.Info("CustV drawIfExposed", v.Hierarchy(), v.exposed, v.draw != nil, v.drawing)
 	// }
+	// v.canvas.SetColor(zgeo.ColorRandom())
+	// v.canvas.FillRect(v.LocalRect())
 	if !v.drawing && !IsPresentingFunc() && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
 		v.drawing = true
 		r := v.LocalRect()
@@ -155,6 +157,11 @@ func (v *CustomView) drawSelf() {
 			if !v.OpaqueDraw {
 				v.canvas.Clear()
 			}
+			// v.canvas.SetColor(zgeo.ColorRandom())
+			// v.canvas.FillRect(v.LocalRect())
+			// if v.ObjectName() == "words" {
+			// 	zlog.Info("CV draw", v.LocalRect(), v.Hierarchy())
+			// }
 			v.draw(r, v.canvas, v.View)
 		}
 		v.drawing = false
@@ -166,6 +173,9 @@ func (v *CustomView) drawSelf() {
 var count int
 
 func (v *CustomView) ExposeIn(secs float64) {
+	// if v.ObjectName() == "workers" {
+	// 	zlog.Info("expose draw:", v.Hierarchy(), v.draw != nil, v.visible)
+	// }
 	if v.draw == nil {
 		return
 	}
