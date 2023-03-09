@@ -31,6 +31,10 @@ type Cell struct {
 	View zview.View
 }
 
+type CellsCounter interface {
+	CountChildren() int
+}
+
 type CellsOwner interface {
 	GetCells() *[]Cell
 }
@@ -73,6 +77,15 @@ func init() {
 	}
 	zview.ChildOfViewFunc = ChildView
 }
+
+func CountChildren(v zview.View) int {
+	ct, _ := v.(CellsCounter)
+	if ct == nil {
+		return 0
+	}
+	return ct.CountChildren()
+}
+
 func (v *ContainerView) GetChildren(includeCollapsed bool) (children []zview.View) {
 	for _, c := range v.Cells {
 		if includeCollapsed || !c.Collapsed {
