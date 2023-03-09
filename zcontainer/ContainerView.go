@@ -61,21 +61,23 @@ type Collapser interface {
 	CollapseChild(view zview.View, collapse bool, arrange bool) bool
 }
 
-var GroupingStrokeColor = zgeo.ColorNewGray(0.7, 1)
-var GroupingStrokeWidth = 2.0
-var GroupingStrokeCorner = 4.0
-var GroupingMargin = 10.0
-var AlertButtonsOnRight = true
+var (
+	GroupingStrokeColor  = zgeo.ColorNewGray(0.7, 1)
+	GroupingStrokeWidth  = 2.0
+	GroupingStrokeCorner = 4.0
+	GroupingMargin       = 10.0
+	AlertButtonsOnRight  = true
+)
 
-func init() {
-	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
-		// ct, _ := root.(ContainerType)
-		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
-		recursive := true
-		includeCollapsed := false
-		ViewRangeChildren(root, recursive, includeCollapsed, got)
-	}
-	zview.ChildOfViewFunc = ChildView
+func New(name string) *ContainerView {
+	v := &ContainerView{}
+	v.Init(v, name)
+	return v
+}
+
+func (v *ContainerView) Init(view zview.View, name string) {
+	v.CustomView.Init(view, name)
+	v.SetAboveParent(true)
 }
 
 func CountChildren(v zview.View) int {
@@ -174,16 +176,6 @@ func (v *ContainerView) AddAlertButton(button zview.View) {
 		a |= zgeo.Left
 	}
 	v.Add(button, a)
-}
-
-func New(name string) *ContainerView {
-	v := &ContainerView{}
-	v.Init(v, name)
-	return v
-}
-
-func (v *ContainerView) Init(view zview.View, name string) {
-	v.CustomView.Init(view, name)
 }
 
 func (v *ContainerView) SetMargin(margin zgeo.Rect) {
@@ -625,4 +617,15 @@ func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool
 		return true
 	})
 	return handled
+}
+
+func init() {
+	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
+		// ct, _ := root.(ContainerType)
+		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
+		recursive := true
+		includeCollapsed := false
+		ViewRangeChildren(root, recursive, includeCollapsed, got)
+	}
+	zview.ChildOfViewFunc = ChildView
 }
