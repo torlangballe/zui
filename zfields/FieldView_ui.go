@@ -329,7 +329,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// zlog.Info("FV Update no index found:", i, v.id)
 		return true
 	}
-	// fmt.Println("FV Update Item:", v.Hierarchy(), f.Name, item.Kind)
 	foundView, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
 	// zlog.Info("fv.UpdateF:", v.Hierarchy(), f.ID, f.FieldName, foundView != nil)
 	if foundView == nil {
@@ -354,9 +353,9 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// fmt.Println("FV Update called", v.id, f.Kind, f.ID)
 		return true
 	}
-	if f.Kind != zreflect.KindSlice {
-		// zlog.Info("fv update !slice:", f.Name, reflect.ValueOf(foundView).Type())
+	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
+		// zlog.Info("fv update !slice:", f.Name, reflect.ValueOf(foundView).Type(), w != nil, rval.Interface())
 		if w != nil {
 			w.SetValue(foundView, rval.Interface())
 			return true
@@ -418,11 +417,29 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// zlog.Info("updateSliceFieldView:", v.Hierarchy())
 		// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
 		// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, foundView)
+		// if f.WidgetName != "" && rval.Type().Kind() != reflect.Struct {
+		// 	w := widgeters[f.WidgetName]
+		// 	if w != nil {
+		// 		i := 0
+		// 		stack := foundView.Native().Parent()
+		// 		zlog.Info("fv update widget slice:", f.Name, rval.Len(), reflect.TypeOf(stack), foundView.Native().Hierarchy(), stack.Hierarchy(), zcontainer.CountChildren(stack))
+		// 		zcontainer.ViewRangeChildren(stack, false, false, func(view zview.View) bool {
+		// 			if i >= rval.Len() {
+		// 				return false
+		// 			}
+		// 			w.SetValue(view, rval.Index(i).Interface())
+		// 			i++
+		// 			return true
+		// 		})
+		// 		return true
+		// 	}
+		// }
 		fv, _ := foundView.(*FieldView)
 		if fv == nil {
 			return false
 		}
 		fv.data = rval.Addr().Interface()
+
 		hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
 		// zlog.Info("update any SliceValue:", f.Name, hash, fv.dataHash, reflect.ValueOf(fv.data).Elem())
 		sameHash := (fv.dataHash == hash)
@@ -1196,8 +1213,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		return v.makeButton(rval, f), false
 	}
-	if f.WidgetName != "" { // f.Kind != zreflect.KindSlice &&
-		// zlog.Info("createSpecialView:", f.WidgetName)
+	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
 			if w.IsStatic() && v.params.HideStatic {
@@ -1276,12 +1292,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 	if v.params.HideStatic && f.IsStatic() {
 		return
 	}
-	// zlog.Info("buildItem", f.Name)
-	// if f.FieldName == "CPU" {
-	// 	zlog.Info("   buildStack1.2", j, rval.Len())
-	// }
-
-	// check trigger create
 	view, skip := v.createSpecialView(rval, f)
 	if skip {
 		return
@@ -1359,7 +1369,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 				view = menu
 				break
 			}
-			// zlog.Info("Make slice:", v.ObjectName(), f.FieldName, labelizeWidth)
+			zlog.Info("Make slice:", v.ObjectName(), f.FieldName, labelizeWidth)
 			if f.Alignment != zgeo.AlignmentNone {
 				exp = zgeo.Expand
 			} else {
