@@ -21,6 +21,7 @@ func (v *CustomView) Init(view zview.View, name string) {
 	// zlog.Info("CUSTOMVIEW:", stype)
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
+	v.SetJSStyle("overflow", "hidden")
 	//!!!! v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
