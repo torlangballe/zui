@@ -1,7 +1,6 @@
 package zlabel
 
 import (
-	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
@@ -114,10 +113,5 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	style := v.JSStyle()
-	// zlog.Info("Label SetMarg:", v.ObjectName(), m)
-	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
-	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
-	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
-	style.Set("padding-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
+	v.NativeView.SetMargin(m)
 }
