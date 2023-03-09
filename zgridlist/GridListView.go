@@ -773,7 +773,8 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 func (v *GridListView) ArrangeChildren() {
 	v.ScrollView.ArrangeChildren()
 	s := v.CalculatedGridSize(v.LocalRect().Size)
-	r := zgeo.Rect{Size: s}
+	// zlog.Info("glist.ArrangeChildren0", v.Hierarchy(), s, v.LocalRect().Size, v.cellsView.LocalRect().Size)
+	r := zgeo.Rect{Size: zgeo.Size{v.LocalRect().Size.W, s.H}}
 	v.cellsView.SetRect(r)
 	// zlog.Info("glist.ArrangeChildren1", v.Hierarchy(), v.LocalRect().Size, v.cellsView.LocalRect().Size)
 	v.LayoutCells(false)
