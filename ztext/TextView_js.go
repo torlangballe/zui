@@ -1,7 +1,6 @@
 package ztext
 
 import (
-	"fmt"
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
@@ -10,8 +9,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
-
-const jsTextMargin = 2
 
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
@@ -51,15 +48,19 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	css := v.JSStyle()
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
-	css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	// css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	css.Set("-webkitBoxShadow", "none") // doesn't work
-	css.Set("outlineOffset", "-2px")
+	// css.Set("outlineOffset", "-2px")
+	css.Set("overflow", "visible")
+	css.Set("margin-top", "1px")
 
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
 	}
 	// if rows <= 1 {
-	v.SetMargin(DefaultMargin)
+	// style := v.JSStyle()
+	// style.Set("margin", "4px")
+	// v.SetMargin(DefaultMargin)
 	// }
 	v.JSSet("value", text)
 	// v.JSSet("className", "texter")
@@ -138,14 +139,8 @@ func (v *TextView) SetRect(rect zgeo.Rect) {
 
 func (v *TextView) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	style := v.JSStyle()
-	str := fmt.Sprintf("%dpx", int(m.Min().X))
-	style.Set("paddingLeft", str)
-	style.Set("margin", "0px")
-	// style.Set("-webkit-padding-start", str)
-	// style.Set("paddingRight", fmt.Sprintf("%dpx", int(m.Max().X)))
-	// style.Set("paddingTop", fmt.Sprintf("%dpx", -int(m.Min().Y)))
-	// style.Set("paddingBottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	// str := fmt.Sprintf("%dpx", int(m.Min().X))
+	v.NativeView.SetMargin(m)
 }
 
 func (v *TextView) SetText(text string) {
