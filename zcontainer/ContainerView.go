@@ -77,7 +77,7 @@ func New(name string) *ContainerView {
 
 func (v *ContainerView) Init(view zview.View, name string) {
 	v.CustomView.Init(view, name)
-	v.SetAboveParent(true)
+	// v.SetAboveParent(true)
 }
 
 func CountChildren(v zview.View) int {
@@ -143,6 +143,7 @@ func (v *ContainerView) Add(elements ...interface{}) (first *Cell) {
 		}
 		if n, got := e.(int); got {
 			gotIndex = n
+			continue
 		}
 		if a, got := e.(zgeo.Alignment); got {
 			gotAlign = a
@@ -157,6 +158,7 @@ func (v *ContainerView) Add(elements ...interface{}) (first *Cell) {
 			gotMargin = m
 			continue
 		}
+		zlog.Error(nil, "adding unknown type:", reflect.TypeOf(e))
 	}
 	if gotView != nil {
 		// zlog.Info("CV ADD got end:", gotView.ObjectName())
