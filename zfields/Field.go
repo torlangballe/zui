@@ -156,6 +156,7 @@ type Field struct {
 	UseIn                []string // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
 	Styling              zstyle.Styling
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
+	Download             string
 }
 
 var EmptyField = Field{
@@ -293,6 +294,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "bgcolor":
 			f.Styling.BGColor.SetFromString(val)
+		case "download":
+			f.Download = val
 		case "height":
 			if floatErr == nil {
 				f.Height = n
@@ -323,7 +326,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "noautofill":
 			f.Flags |= FlagDisableAutofill
 		case "size":
-			f.Size.FromString(val)
+			f.Size, _ = zgeo.SizeFromString(val)
 			if f.Size.IsNull() {
 				f.Size = zgeo.SizeBoth(n)
 			}
@@ -388,7 +391,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			for _, part := range strings.Split(val, "|") {
 				got := false
 				if f.Styling.DropShadow.Delta.IsNull() {
-					err := f.Styling.DropShadow.Delta.FromString(part)
+					var err error
+					f.Styling.DropShadow.Delta, err = zgeo.SizeFromString(part)
 					if err == nil {
 						got = true
 					} else {
@@ -442,7 +446,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			var path string
 			for _, part := range barParts {
 				var s zgeo.Size
-				if s.FromString(part) == nil {
+				s, err := zgeo.SizeFromString(part)
+				if err == nil {
 					size = s
 					// zlog.Info("Got size:", part, size)
 				} else {
