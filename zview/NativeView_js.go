@@ -648,7 +648,7 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 }
 
 func (v *NativeView) SetAboveParent(above bool) {
-	zlog.Info("SetAboveParent:", v.ObjectName(), above)
+	// zlog.Info("SetAboveParent:", v.ObjectName(), above)
 	str := "hidden"
 	if above {
 		str = "visible"
@@ -848,7 +848,7 @@ func getMousePosRelative(v *NativeView, e js.Value) zgeo.Pos {
 	return pos.Minus(v.AbsoluteRect().Pos)
 }
 
-func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
+func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
 	if zlog.IsInTests {
 		return
 	}
@@ -857,7 +857,7 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 			return nil
 		}
 		handler(getMousePosRelative(v, args[0]), zbool.True)
-		if moves {
+		if handleMoves {
 			// we := v.GetWindowElement()
 			v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 				e := args[0]
@@ -884,7 +884,7 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 			return nil
 		}
 		handler(getMousePosRelative(v, args[0]), zbool.False)
-		if moves {
+		if handleMoves {
 			v.JSSet("onmousemove", nil)
 			// 	listener, got := moverListeners[v]
 			// 	zlog.Info("Remove mover:", got, v.Hierarchy())
@@ -1080,23 +1080,25 @@ func (v *NativeView) SetStyling(style zstyle.Styling) {
 	}
 }
 
-func (root *NativeView) GetFocusedChildView() (found *NativeView) {
+func (root *NativeView) GetFocusedChildView() *NativeView {
+	var found *NativeView
 	e := zdom.DocumentJS.Get("activeElement")
-	// zlog.Info("GetFocusedView:", e, e.IsUndefined())
 	if e.IsUndefined() {
 		return nil
 	}
 	foundID := e.Get("id").String()
+	zlog.Info("GetFocusedView:", foundID)
 	RangeAllVisibleChildrenFunc(root.View, func(view View) bool {
 		n := view.Native()
 		id := n.JSGet("id").String()
+		// zlog.Info("IsFoc:", id, foundID)
 		if id == foundID {
 			found = n
 			return false
 		}
 		return true
 	})
-	return
+	return found
 }
 
 func (nv *NativeView) SetPadding(m zgeo.Rect) {
