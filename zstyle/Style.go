@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	Dark           bool
-	DefaultFGColor = GrayF(0.2, 0.8)
-	DefaultBGColor = GrayF(0.8, 0.2)
+	Dark              bool
+	DefaultFGColor    = GrayF(0.2, 0.8)
+	DefaultBGColor    = GrayF(0.8, 0.2)
+	DefaultHoverColor = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
+	DefaultFocusColor = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
 )
 
 type Styling struct {
@@ -54,13 +56,19 @@ var (
 	}
 )
 
+func useInvertedIfInvalid(c, alt zgeo.Color) zgeo.Color {
+	if c.Valid {
+		return c
+	}
+	return alt.OpacityInverted()
+}
+
 func Col(l, d zgeo.Color) zgeo.Color {
 	if Dark {
-		// zlog.Error(nil, zlog.StackAdjust(1), "ColDark:", d)
-		return d
+		return useInvertedIfInvalid(d, l)
 	}
 	// zlog.Error(nil, zlog.StackAdjust(1), "ColLight:", l)
-	return l
+	return useInvertedIfInvalid(l, d)
 }
 
 func ColF(l, d zgeo.Color) func() zgeo.Color {
