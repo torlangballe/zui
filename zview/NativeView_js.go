@@ -1098,11 +1098,19 @@ func (root *NativeView) GetFocusedChildView() (found *NativeView) {
 	})
 	return
 }
-func (nv *NativeView) SetMargin(m zgeo.Rect) {
+
+func (nv *NativeView) SetPadding(m zgeo.Rect) {
 	style := nv.JSStyle()
-	// zlog.Info("Label SetMarg:", v.ObjectName(), m)
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
 	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 	style.Set("padding-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
+}
+
+func (nv *NativeView) SetMargin(m zgeo.Rect) {
+	style := nv.JSStyle()
+	style.Set("margin-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
+	style.Set("margin-left", fmt.Sprintf("%dpx", int(m.Min().X)))
+	style.Set("margin-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	style.Set("margin-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
 }
