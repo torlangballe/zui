@@ -1,5 +1,7 @@
 package zkeyboard
 
+import "github.com/torlangballe/zutil/zgeo"
+
 type Key int
 type Modifier int
 type Type string
@@ -123,4 +125,18 @@ func GetStringForKey(key Key) string {
 		return "⇥"
 	}
 	return string(rune(key))
+}
+
+func ArrowKeyToDirection(key Key) zgeo.Alignment {
+	switch key {
+	case KeyLeftArrow:
+		return zgeo.Left
+	case KeyRightArrow:
+		return zgeo.Right
+	case KeyUpArrow:
+		return zgeo.Top
+	case KeyDownArrow:
+		return zgeo.Bottom
+	}
+	return zgeo.AlignmentNone
 }
