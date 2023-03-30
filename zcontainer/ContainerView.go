@@ -28,7 +28,8 @@ type ContainerView struct {
 
 type Cell struct {
 	zgeo.LayoutCell
-	View zview.View
+	View    zview.View
+	AnyInfo any
 }
 
 type CellsCounter interface {
