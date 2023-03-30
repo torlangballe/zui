@@ -88,7 +88,7 @@ func (v *DocumentationView) startEdit() {
 	zlog.Info("Edit")
 	editor := zcode.NewEditorView("", 50, 50)
 	hstack := v.NativeView.Child("hstack").(*zcontainer.StackView)
-	hstack.Add(editor, zgeo.TopLeft|zgeo.Expand, 0)
+	hstack.AddAdvanced(editor, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, 0, false)
 	v.ArrangeChildren()
 }
 
