@@ -121,7 +121,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
 		v.SearchField.TextView.SetChangedHandler(func() {
-			v.UpdateViewFunc()
+			v.updateView()
 		})
 		v.Bar.Add(v.SearchField, zgeo.CenterLeft)
 	}
@@ -191,7 +191,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if hasHierarchy {
 		v.Grid.HierarchyLevelFunc = v.calculateHierarchy
 	}
-	v.Grid.SetMargin(zgeo.RectFromXY2(6, 4, -6, -4))
+	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
@@ -218,7 +218,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
-		v.UpdateViewFunc()
+		v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
 	}
 	v.DeleteItemsFunc = func(ids []string) {
 		if v.DeleteItemFunc == nil {
@@ -240,9 +240,14 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.RemoveItemsFromSlice(deleteIDs)
-		v.UpdateViewFunc()
+		v.updateView()
 	}
 	return
+}
+
+func (v *SliceGridView[S]) updateView() {
+	v.doFilterAndSort(*v.slicePtr)
+	v.UpdateViewFunc()
 }
 
 func (v *SliceGridView[S]) SetItemsInSlice(items []S) {
@@ -397,7 +402,7 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 		// v.doFilterAndSort(s)
 		*v.slicePtr = s
 		//remove non-selected :
-		v.UpdateViewFunc()
+		v.updateView()
 		var selected []string
 		oldSelected := v.Grid.SelectedIDs()
 		var hoverOK bool
