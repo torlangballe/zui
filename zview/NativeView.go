@@ -8,20 +8,21 @@ type NativeView struct {
 	baseNativeView
 	View      View
 	Presented bool
-	// allChildrenPresented bool
-	DoOnRemove []func() // anything that needs to be stopped
+	DoOnRemove []func() // anything that needs to be stopped // these could be in a global map if added/removed properly?
 	DoOnAdd    []func() // anything that needs to be stopped
 }
 
 type DragType string
 
 const (
-	DragEnter         DragType = "enter"
-	DragLeave         DragType = "leave"
-	DragOver          DragType = "over"
-	DragDrop          DragType = "drop"
+	DragEnter             DragType = "enter"
+	DragLeave             DragType = "leave"
+	DragOver              DragType = "over"
+	DragDrop              DragType = "drop"
 	DragDropFilePreflight DragType = "filepre" // if a handle returns true to DragDropPreflight, don't process file(s)
-	DragDropFile      DragType = "file"
+	DragDropFile          DragType = "file"
+
+	BaseZIndex = 100
 )
 
 var (
