@@ -67,7 +67,7 @@ func PresentView(v zview.View, attributes Attributes, presented func(win *zwindo
 	if attributes.Modal {
 		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes, closed)
 	}
-	ct, _ := v.(zcontainer.ContainerType)
+	ct, _ := v.(zcontainer.ChildrenOwner)
 	//zlog.Info("Present1:", ct != nil, reflect.ValueOf(outer).Type())
 	// zlog.Info("Present1:", zlog.GetCallingStackString())
 	// floaded := func() {
@@ -282,7 +282,7 @@ func CallReady(v zview.View, beforeWindow bool) {
 	// if nv.allChildrenPresented {
 	// 	return
 	// }
-	ct, _ := v.(zcontainer.ContainerType)
+	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		// zlog.Info("CallReady1:", nv.Hierarchy(), nv.Presented, len(ct.GetChildren(false)))
 		for _, c := range ct.GetChildren(false) {
@@ -297,7 +297,7 @@ func CallReady(v zview.View, beforeWindow bool) {
 func PrintPresented(v zview.View, space string) {
 	nv := v.Native()
 	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.Presented)
-	ct, _ := v.(zcontainer.ContainerType)
+	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		for _, c := range ct.GetChildren(false) {
 			PrintPresented(c, space+"  ")
@@ -308,7 +308,7 @@ func PrintPresented(v zview.View, space string) {
 func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attributes Attributes, closed func(dismissed bool)) (outer zview.View) {
 	outer = v
 	nv := v.Native()
-	ct, _ := v.(zcontainer.ContainerType)
+	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil && attributes.ModalCorner != 0 {
 		nv.SetCorner(attributes.ModalCorner)
 	}
@@ -384,10 +384,10 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 			a |= zgeo.Vertical
 		}
 		// zlog.Info("Bar add:", v.ObjectName())
-		bar.Add(v, 0, a, zgeo.Size{xmargin, 0})
+		bar.AddAdvanced(v, a, zgeo.Size{xmargin, 0}, zgeo.Size{}, 0, false)
 		xmargin = 0
 	}
-	stack.Add(bar, 0, zgeo.TopCenter|zgeo.HorExpand)
+	stack.AddAdvanced(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, 0, false)
 	if ready != nil {
 		ready(stack, bar, titleLabel)
 	}

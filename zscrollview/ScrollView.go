@@ -52,7 +52,7 @@ func (v *ScrollView) Update() {
 		// zlog.Info("SV Update1:", v.ObjectName(), v.Presented, cust.exposed)
 		cust.SetExposed(false)
 	}
-	ct, _ := v.child.(zcontainer.ContainerType)
+	ct, _ := v.child.(zcontainer.ChildrenOwner)
 	var keepOffsetY *float64
 	if ct != nil {
 		for _, c := range ct.GetChildren(false) {

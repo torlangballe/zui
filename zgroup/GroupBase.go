@@ -168,7 +168,7 @@ func (v *GroupBase) SetGroupItem(id string, done func()) {
 	if v.changedHandlerFunc != nil {
 		v.changedHandlerFunc(id)
 	}
-	ct := v.View.(zcontainer.ContainerType)
+	ct := v.View.(zcontainer.ChildrenOwner)
 	zcontainer.WhenContainerLoaded(ct, func(waited bool) {
 		// if waited { // if we waited for some loading, caused by above arranging, lets re-arrange
 		// v.ArrangeChildren()

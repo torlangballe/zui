@@ -40,18 +40,16 @@ type CellsOwner interface {
 	GetCells() *[]Cell
 }
 
-type Adder interface {
-	Add(elements ...interface{}) (first *Cell)
+type CellAdder interface {
+	AddCell(cell Cell, index int) *Cell
 }
 
 type AdvancedAdder interface {
 	AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell
 }
 
-type ContainerType interface {
+type ChildrenOwner interface {
 	GetChildren(includeCollapsed bool) []zview.View
-	ArrangeChildren()
-	ReplaceChild(child, with zview.View)
 }
 
 type Arranger interface {
@@ -91,7 +89,7 @@ func CountChildren(v zview.View) int {
 
 func (v *ContainerView) GetChildren(includeCollapsed bool) (children []zview.View) {
 	for _, c := range v.Cells {
-		if includeCollapsed || !c.Collapsed {
+		if (includeCollapsed || !c.Collapsed) && c.View != nil {
 			children = append(children, c.View)
 		}
 	}
@@ -111,64 +109,20 @@ func (v *ContainerView) CountChildren() int {
 	return len(v.Cells)
 }
 
-func (v *ContainerView) Add(elements ...interface{}) (first *Cell) {
-	var gotView zview.View
-	var gotAlign zgeo.Alignment
-	var gotMargin zgeo.Size
-	var gotIndex = -1
+func (v *ContainerView) addCellWithAdder(cell Cell, index int) *Cell {
+	a, _ := v.View.(CellAdder)
+	return a.AddCell(cell, index)
+}
 
-	if len(v.Cells) == 1200 {
-		zlog.Info("CV ADD1:", v.ObjectName(), zlog.CallingStackString())
+func (v *ContainerView) Add(view zview.View, align zgeo.Alignment, sizes ...zgeo.Size) (first *Cell) {
+	var marg, maxSize zgeo.Size
+	if len(sizes) > 0 {
+		marg = sizes[0]
 	}
-	for _, e := range elements {
-		if cell, got := e.(Cell); got {
-			cell := v.AddCell(cell, -1)
-			if first == nil {
-				first = cell
-			}
-			continue
-		}
-		if view, got := e.(zview.View); got {
-			if gotView != nil {
-				// zlog.Info("CV ADD got:", gotView.ObjectName())
-				cell := v.AddAdvanced(gotView, gotAlign, gotMargin, zgeo.Size{}, gotIndex, false)
-				if first == nil {
-					first = cell
-				}
-				gotAlign = zgeo.AlignmentNone
-				gotMargin = zgeo.Size{}
-				gotIndex = -1
-			}
-			gotView = view
-			continue
-		}
-		if n, got := e.(int); got {
-			gotIndex = n
-			continue
-		}
-		if a, got := e.(zgeo.Alignment); got {
-			gotAlign = a
-			n := ""
-			if gotView != nil {
-				n = gotView.Native().Hierarchy()
-			}
-			zlog.Assert(a&(zgeo.VertPos|zgeo.HorPos) != 0, n)
-			continue
-		}
-		if m, got := e.(zgeo.Size); got {
-			gotMargin = m
-			continue
-		}
-		zlog.Error(nil, "adding unknown type:", reflect.TypeOf(e))
+	if len(sizes) > 1 {
+		maxSize = sizes[1]
 	}
-	if gotView != nil {
-		// zlog.Info("CV ADD got end:", gotView.ObjectName())
-		cell := v.AddAdvanced(gotView, gotAlign, gotMargin, zgeo.Size{}, gotIndex, false)
-		if first == nil {
-			first = cell
-		}
-	}
-	return
+	return v.AddAdvanced(view, align, marg, maxSize, -1, false)
 }
 
 func (v *ContainerView) AddAlertButton(button zview.View) {
@@ -202,7 +156,9 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 	// zlog.Info("AddCell:", v.ObjectName(), index)
 	if index < 0 || index >= len(v.Cells) {
 		v.Cells = append(v.Cells, cell)
-		v.AddChild(cell.View, -1)
+		if cell.View != nil {
+			v.AddChild(cell.View, -1)
+		}
 		return &v.Cells[len(v.Cells)-1]
 	}
 	n := append(append([]Cell{}, v.Cells[:index]...), cell) // convoluted way of doing it due to append altering first argument
@@ -210,20 +166,25 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 	// for i, c := range v.Cells {
 	// 	zlog.Info("AddCell insert:", v.ObjectName(), i, c.View.ObjectName())
 	// }
-	v.AddChild(cell.View, -1)
-
+	if cell.View != nil {
+		v.AddChild(cell.View, -1)
+	}
 	return &v.Cells[index]
 }
 
-func (v *ContainerView) AddView(view zview.View, align zgeo.Alignment) *Cell {
-	return v.AddAdvanced(view, align, zgeo.Size{}, zgeo.Size{}, -1, false)
-}
+// func (v *ContainerView) AddView(view zview.View, align zgeo.Alignment) *Cell {
+// 	return v.AddAdvanced(view, align, zgeo.Size{}, zgeo.Size{}, -1, false)
+// }
 
 func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell {
 	collapsed := false
 	// zlog.Info("CV AddAdvancedView:", v.ObjectName(), view.ObjectName())
-	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.Size{}, collapsed, free, zgeo.Size{}, 0.0, view.ObjectName()}
-	return v.AddCell(Cell{LayoutCell: lc, View: view}, index)
+	name := "nil"
+	if view != nil {
+		name = view.ObjectName()
+	}
+	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.Size{}, collapsed, free, zgeo.Size{}, 0.0, name}
+	return v.addCellWithAdder(Cell{LayoutCell: lc, View: view}, index)
 }
 
 func (v *ContainerView) Contains(view zview.View) bool {
@@ -277,7 +238,7 @@ func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 	}
 }
 
-func ContainerIsLoading(ct ContainerType) bool {
+func ContainerIsLoading(ct ChildrenOwner) bool {
 	// zlog.Info("ContainerIsLoading1", ct.(View).ObjectName(), len(ct.GetChildren(false)))
 	for _, v := range ct.GetChildren(false) {
 		iloader, got := v.(zimage.Loader)
@@ -288,7 +249,7 @@ func ContainerIsLoading(ct ContainerType) bool {
 				return true
 			}
 		} else {
-			ct, _ := v.(ContainerType)
+			ct, _ := v.(ChildrenOwner)
 			// zlog.Info("CV Sub IsLoading:", v.ObjectName(), v.ObjectName(), ct != nil)
 			if ct != nil {
 				if ContainerIsLoading(ct) {
@@ -304,7 +265,7 @@ func ContainerIsLoading(ct ContainerType) bool {
 
 // WhenContainerLoaded waits for all sub-parts images etc to be loaded before calling done.
 // done received waited=true if it had to wait
-func WhenContainerLoaded(ct ContainerType, done func(waited bool)) {
+func WhenContainerLoaded(ct ChildrenOwner, done func(waited bool)) {
 	// start := time.Now()
 	ztimer.RepeatAtMostEvery(0.1, func() bool {
 		if ContainerIsLoading(ct) {
@@ -417,7 +378,7 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 // ViewRangeChildren loops through *view's* children (if it's a container) calling foreach for each one.
 // If foreach returns false it stops, and returns false itself
 func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach func(view zview.View) bool) bool {
-	ct, _ := view.(ContainerType)
+	ct, _ := view.(ChildrenOwner)
 	if ct == nil {
 		return true // we return true here, as it wasn't a container
 	}
@@ -463,13 +424,13 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 }
 
 func (v *ContainerView) FindViewWithName(name string, recursive bool) (zview.View, int) {
-	return ContainerTypeFindViewWithName(v, name, recursive)
+	return ContainerOwnerFindViewWithName(v, name, recursive)
 }
 
-func ContainerTypeFindViewWithName(view zview.View, name string, recursive bool) (zview.View, int) {
+func ContainerOwnerFindViewWithName(view zview.View, name string, recursive bool) (zview.View, int) {
 	var found zview.View
 
-	ct, _ := view.(ContainerType)
+	ct, _ := view.(ChildrenOwner)
 	if ct == nil {
 		zlog.Fatal(nil, "view is not container")
 		return nil, -1
@@ -572,7 +533,7 @@ func ChildView(v zview.View, path string) zview.View {
 		}
 		return nil
 	}
-	ct, _ := v.(ContainerType)
+	ct, _ := v.(ChildrenOwner)
 	if ct == nil {
 		zlog.Error(nil, "ChildView from non-container", v.Native().Hierarchy(), reflect.TypeOf(v))
 		return nil
@@ -624,7 +585,7 @@ func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool
 
 func init() {
 	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
-		// ct, _ := root.(ContainerType)
+		// ct, _ := root.(ContainerOwner)
 		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
 		recursive := true
 		includeCollapsed := false

@@ -50,11 +50,12 @@ func (v *FieldView) updateSliceValue(slicePtr any, stack *zcontainer.StackView, 
 }
 
 func replaceRebuildSliceView(old zview.View, newView zview.View) {
-	ct := old.Native().Parent().View.(zcontainer.ContainerType)
-	ct.ReplaceChild(old, newView)
-	ctp := old.Native().Parent().View.(zcontainer.ContainerType)
+	v := old.Native().Parent().View
+	cr := v.(zview.ChildReplacer)
+	cr.ReplaceChild(old, newView)
+	ca := v.(zcontainer.Arranger)
 	zpresent.CallReady(newView, true)
-	ctp.ArrangeChildren()
+	ca.ArrangeChildren()
 	zpresent.CallReady(newView, false)
 }
 

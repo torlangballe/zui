@@ -162,7 +162,7 @@ func (v *FieldView) Build(update bool) {
 }
 
 func (v *FieldView) findNamedViewOrInLabelized(name string) (view, maybeLabel zview.View) {
-	for _, c := range (v.View.(zcontainer.ContainerType)).GetChildren(false) {
+	for _, c := range (v.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		n := c.ObjectName()
 		if n == name {
 			return c, c
@@ -179,27 +179,6 @@ func (v *FieldView) findNamedViewOrInLabelized(name string) (view, maybeLabel zv
 	}
 	return nil, nil
 }
-
-// func (v *FieldView) findNamedViewOrInLabelized2(name string) (view, maybeLabel zview.View) {
-// 	for _, c := range (v.View.(zcontainer.ContainerType)).GetChildren(false) {
-// 		n := c.ObjectName()
-// 		if n == name {
-// 			return c, c
-// 		}
-// 		if strings.HasPrefix(n, "$labelize.") {
-// 			s, _ := c.(*zcontainer.StackView)
-// 			if s != nil {
-// 				for _, c := range s.GetChildren(true) {
-// 				}
-// 				v2, _ := s.FindViewWithName(name, true)
-// 				if v2 != nil {
-// 					return v2, c
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return nil, nil
-// }
 
 func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string) {
 	for _, f := range v.Fields {
