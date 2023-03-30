@@ -12,3 +12,6 @@ func SetString(str string) {
 	zdom.DocumentJS.Call("execCommand", "copy")
 	zdom.DocumentJS.Get("body").Call("removeChild", textArea)
 }
+
+// "clipboard-read" permission.
+// https://web.dev/async-clipboard/
