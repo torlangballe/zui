@@ -3,11 +3,14 @@
 package zanimation
 
 import (
-	"math/rand"
-	"syscall/js"
-
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
+
+	"fmt"
+	"math/rand"
+	"syscall/js"
 )
 
 func addAnimationToWindow(win *zwindow.Window, frameID int, randomID int) {
@@ -60,4 +63,15 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 		*aniFrameID = win.Element.Call("requestAnimationFrame", animationFunc).Int()
 		addAnimationToWindow(win, *aniFrameID, randomID)
 	}
+}
+
+func Transform(nv *zview.NativeView, dir zgeo.Pos, secs float64, removeViewAfter bool) {
+	if removeViewAfter {
+		ztimer.StartIn(secs+0.01, func() {
+			nv.RemoveFromParent()
+		})
+	}
+	nv.SetJSStyle("transition", fmt.Sprintf("transform %fs linear", secs))
+	nv.SetJSStyle("willChange", "transform")
+	nv.SetJSStyle("transform", fmt.Sprintf("translate(%fpx,%fpx)", dir.X, dir.Y))
 }
