@@ -83,7 +83,7 @@ func (v *AmountView) drawBar(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.
 func AmountViewBarNew(width float64) *AmountView {
 	v := &AmountView{}
 	v.CustomView.Init(v, "amount")
-	v.SetBGColor(zgeo.ColorNewGray(0.9, 1))
+	v.SetBGColor(zgeo.ColorNewGray(0, 0.15))
 	v.SetColor(zgeo.ColorNew(0.4, 0.4, 0.8, 1))
 	v.SetCorner(3)
 	v.CustomView.SetMinSize(zgeo.Size{width, 10})
