@@ -74,6 +74,12 @@ type MaxSizeGettable interface {
 	GetMaxSize() zgeo.Size
 }
 
+type ChildReplacer interface {
+	ReplaceChild(child, with View)
+}
+
+// ReplaceChild(child, with zview.View)
+
 func ExposeView(v View) {
 	et, _ := v.(ExposableType)
 	if et != nil {
