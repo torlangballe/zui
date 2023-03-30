@@ -84,12 +84,18 @@ func (v *StackView) ArrangeChildren() {
 	// for i, r := range rects {
 	// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
 	// }
-	for i, c := range v.Cells {
-		r := rects[i]
+	j := 0
+	for _, c := range v.Cells {
+		if c.Free {
+			v.ArrangeChild(c, rm)
+			continue
+		}
+		r := rects[j]
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
 			c.View.SetRect(r)
 		}
+		j++
 	}
 }
 
