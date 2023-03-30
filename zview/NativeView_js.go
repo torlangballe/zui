@@ -366,6 +366,7 @@ func (v *NativeView) IsFocused() bool {
 
 func (v *NativeView) Focus(focus bool) {
 	v.JSCall("focus")
+	// v.JSSet("contenteditable", focus) ?
 }
 
 func (v *NativeView) SetCanFocus(can bool) {
@@ -373,7 +374,8 @@ func (v *NativeView) SetCanFocus(can bool) {
 	if can {
 		val = "0"
 	}
-	v.JSSet("tabindex", val)
+	v.JSSet("tabIndex", val) // Note the capital I in tabIndex !!!!!!
+	v.JSSet("className", "zfocus")
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
