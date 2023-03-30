@@ -219,7 +219,7 @@ func (w *Window) AddView(v zview.View) {
 		//		setDarkCSSStylings(doc)
 	}
 	wn.SetObjectName("window")
-	// v.Native().JSStyle().Set("overflow", "hidden")
+	v.Native().JSStyle().Set("overflow", "hidden")
 	wn.AddChild(v, -1)
 }
 
