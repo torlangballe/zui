@@ -54,6 +54,9 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 	// zlog.Info("Layout Stack getCells start", v.ObjectName())
 	for _, c := range v.Cells {
+		if c.Free {
+			continue
+		}
 		l := c.LayoutCell
 		l.OriginalSize = c.View.CalculatedSize(rect.Size)
 		// zlog.Info("StackView getLayoutCells:", v.ObjectName(), c.View.ObjectName(), l.OriginalSize)
