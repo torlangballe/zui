@@ -47,6 +47,7 @@ var (
 func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element = zdom.DocumentJS.Call("createElement", etype)
 	v.Element.Set("style", "position:absolute")
+	v.JSStyle().Set("zIndex", BaseZIndex)
 	v.View = view
 }
 
@@ -488,7 +489,6 @@ func (v *NativeView) AddChild(child View, index int) {
 	} else {
 		v.JSCall("appendChild", n.Element)
 	}
-	n.JSStyle().Set("zIndex", 100)
 	// for _, p := range n.AllParents() {
 	// 	p.allChildrenPresented = false
 	// }
