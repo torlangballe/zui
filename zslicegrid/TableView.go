@@ -55,7 +55,6 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.SliceGridView.Init(view, s, storeName, addFlags)
 	v.Grid.MaxColumns = 1
 	v.Grid.SetMargin(zgeo.Rect{})
-	v.SetSpacing(0)
 	v.ColumnMargin = 5
 	v.RowInset = 7
 	v.HeaderHeight = 28
