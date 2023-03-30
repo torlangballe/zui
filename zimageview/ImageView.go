@@ -237,7 +237,7 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 	}
 	if v.strokeWidth != 0 {
 		corner := v.imageCorner - v.strokeWidth
-		path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2)), zgeo.SizeBoth(corner))
+		path := zgeo.PathNewRect(ir.Expanded(zgeo.SizeBoth(-v.strokeWidth/2+1)), zgeo.SizeBoth(corner))
 		canvas.SetColor(v.strokeColor)
 		canvas.StrokePath(path, v.strokeWidth, zgeo.PathLineSquare)
 	}
