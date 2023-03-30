@@ -297,12 +297,18 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 }
 
 func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
-	if data != nil {
+	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
 		v.data = data
 	}
-	// zlog.Info("fv.Update:", v.ObjectName(), dontOverwriteEdited, zlog.Full(v.data))
+	// zlog.Info("fv.Update:", v.Hierarchy(), dontOverwriteEdited)
 	if dontOverwriteEdited && IsFieldViewEditedRecently(v) {
-		// zlog.Info("FV No Update, edited", v.Hierarchy())
+		zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
+			if sf.Type.Kind() == reflect.Slice {
+				v.updateField(index, rval, sf, dontOverwriteEdited) // even if edited recently, we call v.updateField on slices, to set new address of each slice in FieldView.data
+			}
+			return true
+		})
+		zlog.Info("FV No Update, edited", v.Hierarchy())
 		return
 	}
 	fh, _ := v.data.(ActionHandler)
@@ -326,11 +332,11 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	var valStr string
 	f := findFieldWithIndex(&v.Fields, index)
 	if f == nil {
-		// zlog.Info("FV Update no index found:", i, v.id)
+		// zlog.Info("FV Update no index found:", index, v.id)
 		return true
 	}
 	foundView, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
-	// zlog.Info("fv.UpdateF:", v.Hierarchy(), f.ID, f.FieldName, foundView != nil)
+	// zlog.Info("fv.UpdateF:", v.Hierarchy(), index, f.ID, f.FieldName, foundView != nil)
 	if foundView == nil {
 		// zlog.Info("FV Update no view found:", i, v.id, f.ID)
 		return true
@@ -414,7 +420,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	switch f.Kind {
 	case zreflect.KindSlice:
-		// zlog.Info("updateSliceFieldView:", v.Hierarchy())
+		zlog.Info("updateSliceFieldView:", v.Hierarchy())
 		// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
 		// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, foundView)
 		// if f.WidgetName != "" && rval.Type().Kind() != reflect.Struct {
@@ -438,6 +444,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		if fv == nil {
 			return false
 		}
+		// zlog.Info("updateSliceFieldView2:", v.Hierarchy(), zlog.Pointer(fv.data), zlog.Pointer(rval.Addr().Interface()))
 		fv.data = rval.Addr().Interface()
 
 		hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
@@ -457,6 +464,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// }
 		if f.Flags&FlagIsGroup == 0 {
 			stack := fv.GetChildren(true)[0].(*zcontainer.StackView)
+			// zlog.Info("updateSliceElementData?:", sameHash)
 			if sameHash {
 				fv.updateSliceElementData(rval.Addr().Interface(), stack)
 				break
@@ -802,7 +810,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 		color = f.Colors[0]
 	}
 	name := f.Name
-	if f.Title != "" {
+	if f.Title != "" && fv.params.LabelizeWidth == 0 {
 		name = f.Title
 	}
 	s := zgeo.Size{20, 24}
@@ -1369,7 +1377,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 				view = menu
 				break
 			}
-			zlog.Info("Make slice:", v.ObjectName(), f.FieldName, labelizeWidth)
 			if f.Alignment != zgeo.AlignmentNone {
 				exp = zgeo.Expand
 			} else {
@@ -1469,6 +1476,19 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 		view.SetBGColor(f.Styling.BGColor)
 	}
 	callActionHandlerFunc(v, f, CreatedViewAction, rval.Addr().Interface(), &view)
+	if f.Download != "" {
+		surl := zstr.ReplaceAllCapturesWithoutMatchFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, func(fieldName string, index int) string {
+			a, got := FindLocalFieldWithID(v.data, fieldName)
+			if !got {
+				zlog.Error(nil, "field download", f.Download, ":", "field not found in struct:", fieldName)
+				return ""
+			}
+			return fmt.Sprint(a.Interface())
+		})
+		link := zcontainer.MakeLinkedStack(surl, "", view)
+		view = link
+	}
+
 	cell := &zcontainer.Cell{}
 	def := defaultAlign
 	all := zgeo.Left | zgeo.HorCenter | zgeo.Right
@@ -1487,7 +1507,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 			title = ""
 		}
 		_, lstack, cell = zlabel.Labelize(view, title, labelizeWidth, cell.Alignment)
-		v.AddView(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
+		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
 	if useMinWidth {
 		cell.MinSize.W = f.MinWidth
