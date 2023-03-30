@@ -119,7 +119,7 @@ func Labelize(view zview.View, prefix string, minWidth float64, alignment zgeo.A
 	label.SetColor(zstyle.DefaultFGColor().WithOpacity(0.7))
 	stack = zcontainer.StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
-	stack.AddView(label, zgeo.CenterLeft).MinSize.W = minWidth
+	stack.Add(label, zgeo.CenterLeft).MinSize.W = minWidth
 	marg := zgeo.Size{}
 	if isCheck {
 		marg.W = -6 // in html cell has a box around it of 20 pixels

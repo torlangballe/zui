@@ -1,13 +1,12 @@
 package zlabel
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"syscall/js"
 )
 
 func New(text string) *Label {
@@ -18,7 +17,7 @@ func New(text string) *Label {
 	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
-	style.Set("verticalAlign", "middle")
+	// style.Set("verticalAlign", "middle")
 	style.Set("whiteSpace", "preWrap")
 	// style.Set("white-space", "pre-wrap")
 	//	style.Set("overflow", "hidden")
@@ -70,9 +69,8 @@ func (v *Label) SetMaxLines(max int) {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
-	//	zlog.Info("Label SetRect:", v.ObjectName(), r)
-	//	r.Pos.Y -= 6
-	// inner := r.Plus(v.margin)
+	r.Add(v.margin) // we need to inset margin, as padding (which margin is set as) is outside of this rect.
+	r.Pos.Y -= 1
 	v.NativeView.SetRect(r)
 }
 
@@ -109,6 +107,13 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 		str = "center"
 	}
 	v.JSStyle().Set("textAlign", str)
+	str = "middle"
+	if a&zgeo.Top != 0 {
+		str = "top"
+	} else if a&zgeo.Bottom != 0 {
+		str = "bottom"
+	}
+	v.JSStyle().Set("verticalAlign", str)
 }
 
 func (v *Label) SetMargin(m zgeo.Rect) {
