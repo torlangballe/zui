@@ -8,13 +8,12 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type ChildFocusNavigator struct {
 	children       []zview.View
 	CurrentFocused zview.View
-	HandleSelect   func(v zview.View)
+	HandleSelect   func(v zview.View, dir zgeo.Alignment)
 }
 
 func (n *ChildFocusNavigator) Focus() {
@@ -29,7 +28,7 @@ func (n *ChildFocusNavigator) Focus() {
 	}
 	if minView != nil {
 		n.CurrentFocused = minView
-		n.HandleSelect(minView)
+		n.HandleSelect(minView, zgeo.AlignmentNone)
 	}
 }
 
@@ -46,41 +45,44 @@ func (n *ChildFocusNavigator) HandleKey(key zkeyboard.Key, mod zkeyboard.Modifie
 	if mod != zkeyboard.ModifierNone {
 		return false
 	}
-	dir := zkeyboard.ArrowKeyToDirection(key)
-	if dir == zgeo.AlignmentNone {
+	dirAlign := zkeyboard.ArrowKeyToDirection(key)
+	dir := dirAlign.Vector()
+	if dir.IsNull() {
 		return false
 	}
 	var minView zview.View
 	if n.CurrentFocused == nil {
-		zlog.Info("focus")
+		// zlog.Info("focus")
 		n.Focus()
 		return true
 	} else {
-		rect := n.CurrentFocused.Rect()
+		rect := n.CurrentFocused.Rect().ExpandedD(-2)
 		minDist := -1.0
-		zlog.Info(dir, rect)
+		// zlog.Info(dir, rect, n.CurrentFocused.ObjectName())
+		vertical := (dir.Y == 0)
 		for _, v := range n.children {
+			if v == n.CurrentFocused {
+				continue
+			}
 			r := v.Rect()
-			if dir&zgeo.Vertical != 0 {
-			} else {
-				if r.Max().Y >= rect.Min().Y && r.Min().Y <= rect.Max().Y {
-					dist := r.Min().X - rect.Center().X
-					if dir&zgeo.Right != 0 && dist > 0 || dir&zgeo.Left != 0 && dist < 0 {
-						zlog.Info("arrow", r, dist)
-						dist = math.Abs(dist)
-						if minDist == -1 || dist < minDist { // minDist only -1 at start, otherwise absolute value
-							minDist = minDist
-							minView = v
-						}
+			if r.Max().Vertice(vertical) >= rect.Min().Vertice(vertical) && r.Min().Vertice(vertical) <= rect.Max().Vertice(vertical) {
+				dist := r.Min().Vertice(!vertical) - rect.Center().Vertice(!vertical)
+				if dir.Vertice(!vertical)*dist > 0 {
+					// zlog.Info("arrow", r.Max().Y >= rect.Min().Y && r.Min().Y <= rect.Max().Y, dist, "'"+v.ObjectName()+"'", "MM", r.Max().Y, rect.Min().Y, r.Min().Y, rect.Max().Y)
+					dist = math.Abs(dist)
+					if minDist == -1 || dist < minDist { // minDist only -1 at start, otherwise absolute value
+						minDist = dist
+						minView = v
 					}
 				}
 			}
 		}
 	}
 	if minView != nil {
-		n.HandleSelect(minView)
+		n.HandleSelect(minView, dirAlign)
 		n.CurrentFocused = minView // set this after, so we can compare to what was in HandleSelect
 		return true
 	}
+	n.HandleSelect(nil, dirAlign) // send direction even if not moved
 	return false
 }
