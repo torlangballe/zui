@@ -135,7 +135,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	// 	v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
 	// }
 	if options&AddMenu != 0 {
-		actions := zimageview.New(nil, "images/gear-darkgray.png", zgeo.Size{18, 18})
+		actions := zimageview.New(nil, "images/gear.png", zgeo.Size{18, 18})
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()

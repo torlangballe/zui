@@ -140,7 +140,7 @@ func (v *TextView) SetRect(rect zgeo.Rect) {
 func (v *TextView) SetMargin(m zgeo.Rect) {
 	v.margin = m
 	// str := fmt.Sprintf("%dpx", int(m.Min().X))
-	v.NativeView.SetMargin(m)
+	v.NativeView.SetNativeMargin(m)
 }
 
 func (v *TextView) SetText(text string) {

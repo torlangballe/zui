@@ -2,12 +2,14 @@
 
 package zview
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type NativeView struct {
 	baseNativeView
-	View      View
-	Presented bool
+	View       View
+	Presented  bool
 	DoOnRemove []func() // anything that needs to be stopped // these could be in a global map if added/removed properly?
 	DoOnAdd    []func() // anything that needs to be stopped
 }

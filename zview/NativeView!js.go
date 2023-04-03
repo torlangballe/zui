@@ -76,15 +76,17 @@ func (v *NativeView) GetFocusedChildView() *NativeView                          
 func (v *NativeView) AbsoluteRect() zgeo.Rect                                                     { return zgeo.Rect{} }
 func (v *NativeView) SetOnInputHandler(handler func())                                            {}
 func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {}
-func (v *NativeView) SetRect(rect zgeo.Rect)                                                      {}
-func (v *NativeView) SetStyle(key, value string)                                                  {}
-func (v *NativeView) SetZIndex(index int)                                                         {}
-func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                             {}
-func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                                {}
-func (v *NativeView) SetHandleExposed(handle func(intersects bool))                               {}
-func (v *NativeView) MakeLink(surl, name string)                                                  {}
-func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool)     {}
-func (v *NativeView) HasSize() bool                                                               { return false }
+func (v *NativeView) SetKeyDownHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+}
+func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}
+func (v *NativeView) SetStyle(key, value string)                                              {}
+func (v *NativeView) SetZIndex(index int)                                                     {}
+func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
+func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}
+func (v *NativeView) SetHandleExposed(handle func(intersects bool))                           {}
+func (v *NativeView) MakeLink(surl, name string)                                              {}
+func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool) {}
+func (v *NativeView) HasSize() bool                                                           { return false }
 
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 }
@@ -99,3 +101,7 @@ func (v *NativeView) SetStyling(style zstyle.Styling)                        {}
 func (v *NativeView) SetSelectable(on bool)                                  {}
 func (v *NativeView) SetJSStyle(key, value string)                           {}
 func (v *NativeView) SetOutline(width float64, c zgeo.Color, offset float64) {}
+func (nv *NativeView) SetNativePadding(m zgeo.Rect)                          {}
+func (nv *NativeView) SetNativeMargin(m zgeo.Rect)                           {}
+func (nv *NativeView) ShowBackface(visible bool)                             {}
+func (v *NativeView) SetTilePath(spath string)                               {}

@@ -49,7 +49,7 @@ type Alert struct {
 
 func New(items ...interface{}) *Alert {
 	a := &Alert{}
-	str := zstr.SprintSpaced(items...)
+	str := zstr.Spaced(items...)
 	a.OKButton = zwords.OK()
 	a.Text = str
 	return a
@@ -93,7 +93,7 @@ func Ask(title string, handle func(ok bool)) {
 }
 
 func ShowError(err error, items ...interface{}) {
-	str := zstr.SprintSpaced(items...)
+	str := zstr.Spaced(items...)
 	if err != nil {
 		str = zstr.Concat("\n", err, str)
 	}

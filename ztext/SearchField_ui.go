@@ -16,14 +16,15 @@ type SearchField struct {
 func SearchFieldNew(style Style, chars int) *SearchField {
 	s := &SearchField{}
 	s.StackView.Init(s, false, "search-stack")
-	s.SetMargin(zgeo.RectFromXY2(3, 4, 0, -2))
+	s.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
+	s.JSSet("className", "zfocus")
 	style.Type = Search
 	t := NewView("", style, chars, 1)
 	s.TextView = t
 	size := t.CalculatedSize(zgeo.Size{300, 50})
 	t.SetCorner(size.H / 2)
 	t.SetObjectName("search")
-	t.SetMargin(zgeo.RectFromXY2(16, 0, 0, 0))
+	t.SetNativePadding(zgeo.RectFromXY2(16, 0, 0, 0))
 	t.JSSet("inputmode", "search")
 	t.UpdateSecs = 0.2
 	iv := zimageview.New(nil, "images/magnifier2.png", zgeo.Size{10, 10})
