@@ -32,6 +32,7 @@ import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zguiutil"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
@@ -1048,7 +1049,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
 	})
 	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, "$row") {
-		_, stack := zlabel.LabelizeCheckbox(cv, f.TitleOrName())
+		_, stack := zcheckbox.Labelize(cv, f.TitleOrName())
 		return stack
 	}
 	return cv
@@ -1485,7 +1486,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 		if f.Flags&FlagNoTitle != 0 {
 			title = ""
 		}
-		_, lstack, cell = zlabel.Labelize(view, title, labelizeWidth, cell.Alignment)
+		_, lstack, cell = zguiutil.Labelize(view, title, labelizeWidth, cell.Alignment)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
 	if useMinWidth {
