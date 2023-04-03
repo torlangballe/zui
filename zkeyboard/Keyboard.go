@@ -41,6 +41,10 @@ const (
 	KeyRightArrow = 39
 	KeyUpArrow    = 38
 	KeyDownArrow  = 40
+	KeyShiftKey   = 16
+	KeyControl    = 17
+	KeyAlt        = 18
+	KeyCommand    = 91
 )
 
 const (
@@ -84,6 +88,10 @@ var ModifiersAtPress Modifier
 
 func KMod(k Key, m Modifier) KeyMod {
 	return KeyMod{Key: k, Modifier: m}
+}
+
+func (k KeyMod) IsNull() bool {
+	return k.Key == 0 && k.Modifier == 0
 }
 
 func GetModifiersString(m Modifier) string {
@@ -139,4 +147,8 @@ func ArrowKeyToDirection(key Key) zgeo.Alignment {
 		return zgeo.Bottom
 	}
 	return zgeo.AlignmentNone
+}
+
+func KeyIsReturnish(key Key) bool {
+	return key == KeyReturn || key == KeyEnter
 }
