@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zanimation"
+	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -29,16 +32,18 @@ var headerColor = zgeo.ColorNew(0.8, 0.4, 0.1, 1)
 
 type CalendarView struct {
 	zcontainer.StackView
-	Flags          Flag
-	SelectedTime   time.Time
-	HandleSelected func(t time.Time)
-	current        time.Time
-	daysGrid       *zcontainer.GridView
-	monthLabel     *zlabel.Label
-	days           map[zgeo.IPos]time.Time
-	lastTrans      zgeo.Pos
-	gridRect       zgeo.Rect
-	navigator      zcontainer.ChildFocusNavigator
+	Flags              Flag
+	value              time.Time
+	HandleValueChanged func()
+	currentShowing     time.Time
+	daysGrid           *zcontainer.GridView
+	monthLabel         *zlabel.Label
+	days               map[zgeo.IPos]time.Time
+	daysSlider         zanimation.Swapper
+	settingsFlipper    zanimation.Swapper
+	lastTrans          zgeo.Pos
+	gridRect           zgeo.Rect
+	navigator          zcontainer.ChildFocusNavigator
 }
 
 func New(storeName string) *CalendarView {
@@ -47,12 +52,21 @@ func New(storeName string) *CalendarView {
 	return v
 }
 
-func setFocusColorsForView(v *CalendarView, view zview.View, focused bool) {
-	box := view.(*zcontainer.ContainerView)
-	cell, _ := v.daysGrid.FindCellWithView(box)
-	zlog.Assert(cell != nil)
-	t := cell.AnyInfo.(time.Time)
-	v.setColors(box, false, focused, t)
+func (v *CalendarView) handleArrowMove(view zview.View, dir zgeo.Alignment) {
+	if view == nil {
+		if dir != zgeo.AlignmentNone {
+			pos := dir.Vector().Swapped()
+			v.Increase(int(pos.X), int(pos.Y))
+		}
+		return
+	}
+	if v.navigator.CurrentFocused != nil {
+		cur := v.navigator.CurrentFocused
+		v.navigator.CurrentFocused = nil
+		setColorsForView(v, cur)
+	}
+	v.navigator.CurrentFocused = view
+	setColorsForView(v, view)
 }
 
 func (v *CalendarView) Init(view zview.View, storeName string) {
@@ -60,57 +74,158 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.SetSpacing(0)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.SetStroke(1, zgeo.ColorDarkGray, false)
-	v.SetAboveParent(false)
 	v.SetCanFocus(true)
 	v.days = map[zgeo.IPos]time.Time{}
-	v.navigator.HandleSelect = func(view zview.View) {
-		if v.navigator.CurrentFocused != nil {
-			setFocusColorsForView(v, v.navigator.CurrentFocused, false)
-		}
-		setFocusColorsForView(v, view, true)
-		zlog.Info("Arrow2:", view.ObjectName(), v.navigator.CurrentFocused.ObjectName())
-	}
+	v.navigator.HandleSelect = v.handleArrowMove
 	header := zcontainer.StackViewHor("header")
 	header.SetZIndex(zview.BaseZIndex + 1)
 	header.SetBGColor(headerColor)
 	v.Add(header, zgeo.TopCenter|zgeo.HorExpand)
 
 	v.monthLabel = makeHeaderLabel("", zgeo.HorCenter)
+	v.monthLabel.SetObjectName("header-title")
 	header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
-
+	v.monthLabel.SetPressedHandler(func() {
+		t := time.Now()
+		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierCommand && !v.value.IsZero() {
+			t = v.value
+		}
+		v.updateShowMonth(t, zgeo.AlignmentNone)
+	})
 	monthAdd := makeHeaderLabel("▼", zgeo.Right)
+	// monthAdd.SetObjectName("month-add")
 	header.Add(monthAdd, zgeo.CenterRight, zgeo.Size{30, 0}).Free = true
+	monthAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
 	monthAdd.SetPressedHandler(func() {
 		v.Increase(1, 0)
 	})
 	yearAdd := makeHeaderLabel("⏵⏵", zgeo.Right)
+	yearAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
 	header.Add(yearAdd, zgeo.CenterRight, zgeo.Size{4, 0}).Free = true
 	yearAdd.SetPressedHandler(func() {
 		v.Increase(0, 1)
 	})
 	monthSub := makeHeaderLabel("▲", zgeo.Left)
+	monthSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
 	header.Add(monthSub, zgeo.CenterLeft, zgeo.Size{30, 0}).Free = true
 	monthSub.SetPressedHandler(func() {
 		v.Increase(-1, 0)
 	})
 	yearSub := makeHeaderLabel("⏴⏴", zgeo.Left)
+	yearSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
 	header.Add(yearSub, zgeo.CenterLeft, zgeo.Size{4, 0}).Free = true
 	yearSub.SetPressedHandler(func() {
 		v.Increase(0, -1)
 	})
-	v.SetKeyHandler(v.navigator.HandleKey)
+	settings := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
+	settings.SetZIndex(zview.BaseZIndex + 2)
+	settings.SetAlpha(0)
+	settings.SetPressedHandler(v.handleSettingsPressed)
+	v.Add(settings, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
+
+	v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+		// zlog.Info("CAlKey:", key, mod)
+		if key == zkeyboard.KeyCommand {
+			showSettings(v, settings, true)
+			return false
+		}
+		if zkeyboard.KeyIsReturnish(key) {
+			if v.navigator.CurrentFocused != nil {
+				cell, _ := v.daysGrid.FindCellWithView(v.navigator.CurrentFocused)
+				t := cell.AnyInfo.(time.Time)
+				handleSelect(v, t)
+				return true
+			}
+		}
+		if v.navigator.HandleKey(key, mod) {
+			return true
+		}
+		scut := zkeyboard.KMod(key, mod)
+		return zcontainer.HandleOutsideShortcutRecursively(v, scut)
+	})
+	v.SetKeyHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+		if key == zkeyboard.KeyCommand {
+			showSettings(v, settings, false)
+		}
+		return false
+	})
+}
+
+func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
+	alpha := 0.0
+	if show {
+		alpha = 1
+	}
+	zanimation.SetAlpha(settings, alpha, 0.4, func() {
+		//		settings.Show(show)
+	})
+	bottom := v.daysGrid.GetCell(v.daysGrid.Columns-1, v.daysGrid.RowCount()-1).View
+	bottom.Show(!show)
+}
+
+func (v *CalendarView) handleSettingsPressed() {
+	// secs := 0.6
+	zlog.Info("handleSettingsPressed")
+	s := zcontainer.StackViewVert("v1")
+	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
+	s.SetTilePath("images/tile.png")
+	s.SetZIndex(zview.BaseZIndex + 4)
+	_, _, monStack := zcheckbox.NewWithLabel(true, "Week Starts on Monday", "")
+	s.Add(monStack, zgeo.CenterLeft)
+	// ztimer.StartIn(secs/2, func() {
+	// 	v.daysGrid.SetJSStyle("filter", "blur(5px) brightness(150%)")
+	// })
+	v.settingsFlipper.FlipSwapViews(v, v.daysGrid, s, zgeo.Left, 0.6, nil)
+
+}
+
+func (v *CalendarView) Value() time.Time {
+	return v.value
 }
 
 func (v *CalendarView) SetTime(t time.Time) {
-	v.updateWithTime(t, zgeo.Pos{})
+	v.value = makeDate(t.Day(), t.Month(), t.Year(), t.Location())
+	v.updateShowMonth(v.value, zgeo.AlignmentNone)
 }
 
 func (v *CalendarView) Increase(monthInc int, yearInc int) {
-	var dir zgeo.Pos
-	t := v.current.AddDate(yearInc, monthInc, 0)
-	dir.Y = -float64(monthInc)
-	dir.X = -float64(yearInc)
-	v.updateWithTime(t, dir)
+	var dir zgeo.Alignment
+	var x, y int
+	var gotPos bool
+
+	cur := v.navigator.CurrentFocused
+	if cur != nil {
+		x, y, gotPos = v.daysGrid.GetViewXY(cur)
+		v.navigator.CurrentFocused = nil
+		setColorsForView(v, cur)
+	}
+	zlog.Info("Increase:", v.currentShowing, monthInc)
+	t := ztime.AddMonthAndYearToTime(v.currentShowing, monthInc, yearInc)
+	zlog.Info("Increase2:", t)
+	switch {
+	case monthInc == 1:
+		dir = zgeo.Top
+		y = 1
+	case monthInc == -1:
+		dir = zgeo.Bottom
+		y = v.daysGrid.RowCount() - 1
+	case yearInc == 1:
+		dir = zgeo.Left
+		x = 0
+		if v.Flags&WeekNumbers != 0 {
+			x += 2
+		}
+	case yearInc == -1:
+		dir = zgeo.Right
+		x = v.daysGrid.Columns - 1
+	}
+	v.updateShowMonth(t, dir)
+	if gotPos {
+		cell := v.daysGrid.GetCell(x, y)
+		zlog.Assert(cell != nil)
+		v.navigator.CurrentFocused = cell.View
+		setColorsForView(v, v.navigator.CurrentFocused)
+	}
 }
 
 func makeHeaderLabel(str string, a zgeo.Alignment) *zlabel.Label {
@@ -121,81 +236,110 @@ func makeHeaderLabel(str string, a zgeo.Alignment) *zlabel.Label {
 	return label
 }
 
-func (v *CalendarView) setColors(box *zcontainer.ContainerView, hovering, focused bool, t time.Time) {
-	day := t.Day()
-	month := t.Month()
-	today := time.Now().In(t.Location())
-	isNowMonth := (month == today.Month() && t.Year() == today.Year())
-	isToday := (isNowMonth && day == today.Day())
-	isSelectedDay := (day == v.SelectedTime.Day())
-	// isSelectedMonth := (!v.SelectedTime.IsZero() && v.SelectedTime.Month() == month && v.SelectedTime.Year() == year)
-	// outsideMonth := t.Month() != month
-	bg := zstyle.DefaultBGColor()
-	fg := zstyle.DefaultFGColor()
-	if focused {
-		box.Native().SetStroke(2, zstyle.DefaultFocusColor, false)
-	} else {
-		box.Native().SetStroke(0, zgeo.ColorClear, 0)
-		if hovering {
-			bg = zstyle.DefaultHoverColor
-			fg = zgeo.ColorWhite
-		} else {
-			if !isNowMonth {
-				fg.SetOpacity(0.4)
-			} else {
-				if isSelectedDay {
-					fg = zstyle.DefaultBGColor()
-					bg = zstyle.DefaultFGColor()
-				}
-				if isToday {
-					bg = headerColor
-					if isSelectedDay {
-						bg = bg.Mixed(zstyle.DefaultFGColor(), 0.5)
-					}
-					fg = bg.ContrastingGray()
-				}
-			}
-		}
-	}
-	box.SetBGColor(bg)
-	box.SetColor(fg)
+func setColorsForView(v *CalendarView, view zview.View) {
+	box := view.(*zcontainer.ContainerView)
+	cell, _ := v.daysGrid.FindCellWithView(box)
+	zlog.Assert(cell != nil && cell.View != nil)
+	zlog.Assert(cell.AnyInfo != nil, view.ObjectName())
+	t := cell.AnyInfo.(time.Time)
+	v.setColors(box, box.GetChildren(true)[0].(*zlabel.Label), t)
 }
 
-func addLabel(v *CalendarView, grid *zcontainer.GridView, a any) (box *zcontainer.ContainerView, cell *zcontainer.Cell) {
+func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.Label, t time.Time) {
+	year := t.Year()
+	month := t.Month()
+	day := t.Day()
+	showingMonth := v.currentShowing.Month()
+	today := time.Now().In(t.Location())
+	isToday := (year == today.Year() && month == today.Month() && day == today.Day())
+	isSelectedDay := (year == v.value.Year() && month == v.value.Month() && day == v.value.Day())
+	bg := zgeo.ColorClear
+	fg := zstyle.DefaultFGColor()
+	width := 0.0
+	if box == v.navigator.CurrentFocused {
+		width = 4
+	}
+	box.Native().SetStroke(width, zstyle.DefaultFocusColor, true)
+	// box.Native().SetJSStyle("boxShadow", "0px 0px 0px 4px #4AA inset")
+
+	if isSelectedDay {
+		fg = zstyle.DefaultBGColor()
+		bg = zstyle.DefaultFGColor()
+	}
+	if isToday {
+		fg = zstyle.DefaultBGColor()
+		bg = headerColor
+		if isSelectedDay {
+			bg = bg.Mixed(zstyle.DefaultFGColor(), 0.5)
+		}
+	}
+	if t.Month() != showingMonth {
+		// bg.SetOpacity(0.4)
+		fg.SetOpacity(0.4)
+	}
+	box.SetBGColor(bg)
+	label.SetColor(fg)
+}
+
+func addLabel(v *CalendarView, grid *zcontainer.GridView, a any) (label *zlabel.Label, box *zcontainer.ContainerView, cell *zcontainer.Cell) {
 	str := fmt.Sprint(a)
 	box = zcontainer.New(str)
-	box.SetMinSize(zgeo.Size{24, 22})
+	box.SetMinSize(zgeo.Size{28, 26})
+	box.SetMargin(zgeo.RectFromXY2(2, 4, -6, -2))
 	box.SetCorner(3)
 
-	label := zlabel.New(str)
+	label = zlabel.New(str)
 	label.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
+	label.SetTextAlignment(zgeo.CenterRight)
 
-	box.Add(label, zgeo.Center, zgeo.Size{4, 4})
+	box.Add(label, zgeo.CenterLeft|zgeo.Expand)
+	box.SetAboveParent(true)
 	cell = grid.Add(box, zgeo.TopLeft)
 	// label.SetMargin(zgeo.RectFromXY2(2, 2, -4, -2))
 	return
 }
 
 func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any) {
-	labelBox, cell := addLabel(v, grid, a)
-	labelBox.SetAboveParent(true)
+	label, box, cell := addLabel(v, grid, a)
 	cell.AnyInfo = t
-	v.navigator.AddChild(labelBox)
-	v.setColors(labelBox, false, false, t)
-	labelBox.SetPointerEnterHandler(false, func(pos zgeo.Pos, inside zbool.BoolInd) {
-		v.setColors(labelBox, inside.IsTrue(), false, t)
+	v.navigator.AddChild(box)
+	v.setColors(box, label, t)
+	box.SetPointerEnterHandler(false, func(pos zgeo.Pos, inside zbool.BoolInd) {
+		cur := v.navigator.CurrentFocused
+		if inside.IsTrue() {
+			v.navigator.CurrentFocused = box
+		} else {
+			v.navigator.CurrentFocused = nil
+		}
+		if cur != nil {
+			setColorsForView(v, cur)
+		}
+		v.setColors(box, label, t)
 	})
-	if v.HandleSelected != nil {
-		labelBox.SetPressedHandler(func() {
-			if v.SelectedTime.IsZero() {
-				v.HandleSelected(t)
-				return
+	box.SetPressedHandler(func() {
+		v.navigator.CurrentFocused = box
+		handleSelect(v, t)
+	})
+}
+
+func handleSelect(v *CalendarView, t time.Time) {
+	oldVal := v.value
+	v.value = t
+	if !oldVal.IsZero() {
+		// zlog.Info("FindOld:", v.value)
+		for _, cell := range v.daysGrid.Cells {
+			if cell.View != nil && cell.AnyInfo != nil {
 			}
-			v.SelectedTime = t
-			v.updateWithTime(v.current, zgeo.Pos{})
-			ztimer.StartIn(0.3, func() {
-				v.HandleSelected(t)
-			})
+			if cell.AnyInfo != nil && cell.AnyInfo.(time.Time) == oldVal {
+				setColorsForView(v, cell.View)
+				break
+			}
+		}
+	}
+	setColorsForView(v, v.navigator.CurrentFocused)
+	if v.HandleValueChanged != nil {
+		ztimer.StartIn(0.3, func() {
+			v.HandleValueChanged()
 		})
 	}
 }
@@ -204,8 +348,8 @@ func makeDate(day int, month time.Month, year int, loc *time.Location) time.Time
 	return time.Date(year, month, day, 12, 0, 0, 0, loc)
 }
 
-func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
-	v.current = t
+func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
+	v.currentShowing = t
 	loc := t.Location()
 
 	v.navigator.Clear()
@@ -215,8 +359,9 @@ func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
 		cols += 2
 	}
 	grid := zcontainer.GridViewNew("days", cols)
-	grid.SetAboveParent(false)
-	grid.SetSpacing(zgeo.Size{0, 0})
+	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
+	// grid.SetAboveParent(false)
+	grid.Spacing = zgeo.Size{0, 0}
 
 	month := t.Month()
 	year := t.Year()
@@ -228,7 +373,7 @@ func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
 	timeOnFirst := makeDate(1, month, year, loc)
 	weekDayOnFirst := timeOnFirst.Weekday()
 	if v.Flags&WeekNumbers != 0 {
-		weeks, _ := addLabel(v, grid, "# ")
+		_, weeks, _ := addLabel(v, grid, "# ")
 		weeks.SetColor(zgeo.ColorGray)
 		grid.Add(zlabel.New("   "), zgeo.TopLeft)
 	}
@@ -246,7 +391,7 @@ func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
 		if !started {
 			skips++
 		}
-		label, _ := addLabel(v, grid, d.String()[:1])
+		label, _, _ := addLabel(v, grid, d.String()[:1])
 		label.SetFont(label.Font().NewWithStyle(zgeo.FontStyleBold))
 	}
 	day := -skips + 1
@@ -254,8 +399,9 @@ func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
 		t := makeDate(day, month, year, loc)
 		if v.Flags&WeekNumbers != 0 {
 			_, weekNo := t.ISOWeek()
-			wlabel, _ := addLabel(v, grid, weekNo)
-			wlabel.SetColor(zgeo.ColorNew(0.5, 0.3, 0, 0.8))
+			wlabel, _, _ := addLabel(v, grid, weekNo)
+			wlabel.SetColor(zgeo.ColorNew(0, 0, 0.5, 0.4))
+			wlabel.SetFont(wlabel.Font().NewWithSize(-2))
 			grid.Add(nil, zgeo.TopLeft)
 		}
 		for d := 0; d < 7; d++ {
@@ -265,32 +411,22 @@ func (v *CalendarView) updateWithTime(t time.Time, dir zgeo.Pos) {
 		}
 	}
 	if v.daysGrid == nil {
-		v.Add(grid, zgeo.Center, zgeo.Size{4, 4})
+		v.Add(grid, zgeo.Center, zgeo.Size{2, 2})
 	} else {
-		tranformGrid(v, grid, dir)
+		old := v.daysGrid
+		v.daysSlider.TranslateSwapViews(v, v.daysGrid, grid, dir, 0.4, func() {
+			v.RemoveChild(old)
+		})
+		//		tranformGrid(v, grid, dir)
 	}
 	v.daysGrid = grid
-}
-
-func tranformGrid(v *CalendarView, grid *zcontainer.GridView, dir zgeo.Pos) {
-	grid.SetAlpha(0.1)
-	r := v.gridRect
-	v.AddChild(grid, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
-	move := dir.Times(r.Size.Pos())
-	grid.SetRect(r.Translated(move))
-	r.Pos.Subtract(move)
-	// zlog.Info("SetGrid1:", dir, r, move)
-	grid.SetRect(r)
-	grid.SetAlpha(1)
-	zanimation.Transform(&grid.NativeView, move, 0.4, false)
-	ddd := move.Plus(v.lastTrans)
-	zanimation.Transform(&v.daysGrid.NativeView, ddd, 0.4, true)
-	v.lastTrans = move
 }
 
 func (v *CalendarView) ArrangeChildren() {
 	v.StackView.ArrangeChildren()
 	if v.daysGrid != nil {
-		v.gridRect = v.daysGrid.Rect()
+		v.daysSlider.OriginalRect = v.daysGrid.Rect().ExpandedD(-2)
+		v.settingsFlipper.OriginalRect = v.daysGrid.Rect().ExpandedD(-2)
+		//		v.gridRect = v.daysGrid.Rect()
 	}
 }
