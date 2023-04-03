@@ -156,6 +156,9 @@ func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
 }
 
 func (v *NativeView) ObjectName() string {
+	if v == nil {
+		return "<nil>"
+	}
 	return v.JSGet("oname").String()
 }
 
@@ -243,17 +246,22 @@ func (v *NativeView) SetCorner(radius float64) {
 }
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
-	str := "none"
-	if width != 0 {
-		str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
-	}
-	style := v.JSStyle()
-	style.Set("border", str)
-	str = "content-box"
+	// str := "none"
+	// if width != 0 {
+	// 	str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
+	// }
+	// style := v.JSStyle()
+	// style.Set("border", str)
+	// str = "content-box"
+	// if inset {
+	// 	str = "border-box"
+	// }
+	// style.Set("boxSizing", str)
+	str := fmt.Sprintf("0px 0px 0px %dpx %s", int(width), c.Hex())
 	if inset {
-		str = "border-box"
+		str += " inset"
 	}
-	style.Set("boxSizing", str)
+	v.SetJSStyle("boxShadow", str)
 }
 
 func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool) {
@@ -898,8 +906,8 @@ func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos z
 	}))
 }
 
-func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-	v.JSSet("onkeyup", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+func setKeyHandler(event string, v *NativeView, handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+	v.JSSet(event, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		if !v.GetWindowElement().Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
@@ -913,6 +921,14 @@ func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboar
 		}
 		return nil
 	}))
+}
+
+func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+	setKeyHandler("onkeyup", v, handler)
+}
+
+func (v *NativeView) SetKeyDownHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+	setKeyHandler("onkeydown", v, handler)
 }
 
 func (v *NativeView) SetOnInputHandler(handler func()) {
@@ -1101,7 +1117,7 @@ func (root *NativeView) GetFocusedChildView() *NativeView {
 	return found
 }
 
-func (nv *NativeView) SetPadding(m zgeo.Rect) {
+func (nv *NativeView) SetNativePadding(m zgeo.Rect) {
 	style := nv.JSStyle()
 	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
@@ -1109,10 +1125,18 @@ func (nv *NativeView) SetPadding(m zgeo.Rect) {
 	style.Set("padding-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
 }
 
-func (nv *NativeView) SetMargin(m zgeo.Rect) {
+func (nv *NativeView) SetNativeMargin(m zgeo.Rect) {
 	style := nv.JSStyle()
 	style.Set("margin-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
 	style.Set("margin-left", fmt.Sprintf("%dpx", int(m.Min().X)))
 	style.Set("margin-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
 	style.Set("margin-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
+}
+
+func (nv *NativeView) ShowBackface(visible bool) {
+	str := "hidden"
+	if visible {
+		str = "visible"
+	}
+	nv.SetJSStyle("backfaceVisibility", str)
 }
