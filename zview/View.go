@@ -86,3 +86,10 @@ func ExposeView(v View) {
 		et.Expose()
 	}
 }
+
+func ObjectName(v View) string {
+	if v == nil {
+		return "<nil>"
+	}
+	return v.ObjectName()
+}
