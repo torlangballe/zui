@@ -3,6 +3,8 @@
 package zcheckbox
 
 import (
+	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
@@ -24,4 +26,24 @@ func (c *CheckBox) On() bool {
 
 func (c *CheckBox) SetOn(on bool) {
 	c.SetValue(zbool.ToBoolInd(on))
+}
+
+func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) {
+	label := zlabel.New(title)
+	label.SetObjectName("$checkBoxLabel:[" + title + "]")
+	label.SetPressedHandler(func() {
+		c.Press()
+	})
+	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
+	stack.SetSpacing(0)
+	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.Size{0, -4})
+	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.Size{6, 0})
+
+	return label, stack
+}
+
+func NewWithLabel(def bool, storeKey, title string) (check *CheckBox, label *zlabel.Label, stack *zcontainer.StackView) {
+	check = NewWithStore(storeKey, def)
+	label, stack = Labelize(check, title)
+	return
 }

@@ -23,6 +23,6 @@ func (v *Label) SetMaxLines(max int) {
 	v.maxLines = max
 }
 
-func (v *Label) SetWrap(wrap ztextinfo.WrapType)      {}
-func (v *Label) SetPressedHandler(handler func())     {}
-func (v *Label) SetLongPressedHandler(handler func()) {}
+func (v *Label) SetWrap(wrap ztextinfo.WrapType)              {}
+func (v *Label) SetPressedHandler(handler func())             {}
+func (v *Label) SetLongPressedHandler(handler func())         {}

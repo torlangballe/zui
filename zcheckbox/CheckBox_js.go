@@ -12,10 +12,13 @@ import (
 )
 
 func NewWithStore(storeKey string, defaultVal bool) *CheckBox {
-	val, got := zkeyvalue.DefaultStore.GetBool(storeKey, false)
-	// zlog.Info("NewWithStore:", val, got, storeKey, defaultVal)
-	if !got {
-		val = defaultVal
+	val := defaultVal
+	if storeKey != "" {
+		v, got := zkeyvalue.DefaultStore.GetBool(storeKey, false)
+		// zlog.Info("NewWithStore:", val, got, storeKey, defaultVal)
+		if got {
+			val = v
+		}
 	}
 	v := New(zbool.FromBool(val))
 	v.storeKey = storeKey

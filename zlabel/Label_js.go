@@ -118,5 +118,5 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	v.NativeView.SetMargin(m)
+	v.NativeView.SetNativeMargin(m)
 }

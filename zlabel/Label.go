@@ -3,9 +3,7 @@
 package zlabel
 
 import (
-	"github.com/torlangballe/zui/zcheckbox"
-	"github.com/torlangballe/zui/zcontainer"
-	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
@@ -27,7 +25,8 @@ type Label struct {
 	pressed     func()
 	longPressed func()
 
-	Columns int
+	Columns          int
+	KeyboardShortcut zkeyboard.KeyMod
 }
 
 func (v *Label) GetTextInfo() ztextinfo.Info {
@@ -96,39 +95,6 @@ func (v *Label) SetWidth(w float64) {
 	v.SetMaxWidth(w)
 }
 
-func Labelize(view zview.View, prefix string, minWidth float64, alignment zgeo.Alignment) (label *Label, stack *zcontainer.StackView, viewCell *zcontainer.Cell) {
-	font := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold)
-	to, _ := view.(ztextinfo.Owner)
-	if to != nil {
-		ti := to.GetTextInfo()
-		font = ti.Font
-		font.Style = zgeo.FontStyleBold
-	}
-	title := prefix
-	checkBox, isCheck := view.(*zcheckbox.CheckBox)
-	if checkBox != nil && alignment&zgeo.Right != 0 {
-		title = ""
-		_, cstack := LabelizeCheckbox(checkBox, prefix)
-		view = cstack
-		alignment = alignment.FlippedHorizontal()
-	}
-	label = New(title)
-	label.SetObjectName("$labelize.label " + prefix)
-	label.SetTextAlignment(zgeo.Right)
-	label.SetFont(font)
-	label.SetColor(zstyle.DefaultFGColor().WithOpacity(0.7))
-	stack = zcontainer.StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
-
-	stack.Add(label, zgeo.CenterLeft).MinSize.W = minWidth
-	marg := zgeo.Size{}
-	if isCheck {
-		marg.W = -6 // in html cell has a box around it of 20 pixels
-	}
-	// zlog.Info("Labelize view:", view.ObjectName(), alignment, marg)
-	viewCell = stack.Add(view, alignment, marg)
-	return
-}
-
 func (v *Label) PressedHandler() func() {
 	return v.pressed
 }
@@ -137,16 +103,10 @@ func (v *Label) LongPressedHandler() func() {
 	return v.longPressed
 }
 
-func LabelizeCheckbox(c *zcheckbox.CheckBox, title string) (*Label, *zcontainer.StackView) {
-	label := New(title)
-	label.SetObjectName("$checkBoxLabel:[" + title + "]")
-	label.SetPressedHandler(func() {
-		c.Press()
-	})
-	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
-	stack.SetSpacing(0)
-	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.Size{0, -4})
-	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.Size{6, 0})
-
-	return label, stack
+func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	if !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut && v.PressedHandler() != nil {
+		v.PressedHandler()()
+		return true
+	}
+	return false
 }
