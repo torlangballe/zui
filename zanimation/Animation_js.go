@@ -6,6 +6,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 
 	"fmt"
@@ -65,13 +66,68 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 	}
 }
 
-func Transform(nv *zview.NativeView, dir zgeo.Pos, secs float64, removeViewAfter bool) {
-	if removeViewAfter {
+func doDone(done func(), nv *zview.NativeView, secs float64) {
+	if done != nil {
 		ztimer.StartIn(secs+0.01, func() {
-			nv.RemoveFromParent()
+			done()
 		})
 	}
-	nv.SetJSStyle("transition", fmt.Sprintf("transform %fs linear", secs))
-	nv.SetJSStyle("willChange", "transform")
-	nv.SetJSStyle("transform", fmt.Sprintf("translate(%fpx,%fpx)", dir.X, dir.Y))
+}
+
+func transform(v zview.View, secs float64, css string, done func()) {
+	doDone(done, v.Native(), secs)
+	v.Native().SetJSStyle("transition", fmt.Sprintf("transform %fs linear", secs))
+	v.Native().SetJSStyle("transform", css)
+}
+
+func Translate(v zview.View, dir zgeo.Pos, secs float64, done func()) {
+	transform(v, secs, fmt.Sprintf("translate(%fpx,%fpx)", dir.X, dir.Y), done)
+}
+
+func SetAlpha(v zview.View, alpha, secs float64, done func()) {
+	v.Native().SetJSStyle("transition", fmt.Sprintf("opacity, %fs ease-in-out", secs))
+	v.Native().SetJSStyle("opacity", fmt.Sprint(alpha))
+}
+
+func FlipHorizontal(v zview.View, secs float64, done func()) {
+	doDone(done, v.Native(), secs)
+	v.Native().SetJSStyle("transition", fmt.Sprintf("transform %fs linear", secs)) // remove linear
+	// v.Native().SetJSStyle("transformStyle", "preserve3d")
+	v.Native().SetJSStyle("transform", "rotateY(360deg)")
+}
+
+type Swapper struct {
+	OriginalRect  zgeo.Rect
+	LastTransform zgeo.Pos
+}
+
+func (s *Swapper) TranslateSwapViews(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
+	newView.Native().SetAlpha(0.1)
+	r := s.OriginalRect
+	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	dirPos := dir.Vector()
+	move := dirPos.Times(r.Size.Pos())
+	newView.SetRect(r.Translated(move))
+	r.Pos.Subtract(move)
+	newView.SetRect(r)
+	newView.Native().SetAlpha(1)
+	Translate(newView, move, secs, nil)
+	delta := move.Plus(s.LastTransform)
+	Translate(oldView, delta, secs, done)
+	s.LastTransform = move
+}
+
+func (s *Swapper) FlipSwapViews(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
+	zlog.Info("FlipViews!")
+	// newView.Native().SetAlpha(0)
+	secs = 2
+	r := s.OriginalRect
+	newView.Native().SetJSStyle("transform", "rotateY(180deg)")
+	newView.Native().ShowBackface(false)
+	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	newView.SetRect(r)
+	// newView.Native().SetAlpha(1)
+	// oldView.Native().ShowBackface(false)
+	// FlipHorizontal(oldView, secs, nil)
+	FlipHorizontal(newView, secs, done)
 }
