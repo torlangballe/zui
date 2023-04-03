@@ -717,11 +717,11 @@ func AddStringBasedEnum(name string, vals ...string) {
 	fieldEnums[name] = items
 }
 
-func AddAny2StringBasedEnum[S any](name string, vals ...S) {
+func AddAnyToEnum[S any](name string, vals ...S) {
 	var items zdict.Items
 	for _, v := range vals {
 		s := fmt.Sprint(v)
-		item := zdict.Item{s, s}
+		item := zdict.Item{s, v}
 		items = append(items, item)
 	}
 	fieldEnums[name] = items

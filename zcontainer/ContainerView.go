@@ -379,6 +379,7 @@ func (v *ContainerView) CollapseChildWithName(name string, collapse bool, arrang
 // If foreach returns false it stops, and returns false itself
 func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach func(view zview.View) bool) bool {
 	ct, _ := view.(ChildrenOwner)
+	// zlog.Info("ContainerViewRangeChildren1:", view.Native().Hierarchy(), ct != nil)
 	if ct == nil {
 		return true // we return true here, as it wasn't a container
 	}
