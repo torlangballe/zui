@@ -14,7 +14,7 @@ import (
 
 type GridView struct {
 	ContainerView
-	spacing     zgeo.Size
+	Spacing     zgeo.Size
 	Columns     int
 	addToColumn int
 	table       map[zgeo.IPos]zview.View
@@ -31,7 +31,7 @@ func (v *GridView) Init(view zview.View, name string, cols int) {
 	// zlog.Info("GridView Init")
 	v.ContainerView.Init(view, name)
 	v.Columns = cols
-	v.spacing = zgeo.Size{6, 4}
+	v.Spacing = zgeo.Size{6, 4}
 	v.addToColumn = -1
 	v.table = map[zgeo.IPos]zview.View{}
 }
@@ -48,15 +48,6 @@ func (v *GridView) SetAddColumn(c int) {
 	}
 }
 
-func (v *GridView) SetSpacing(spacing zgeo.Size) *GridView {
-	v.spacing = spacing
-	return v
-}
-
-func (v *GridView) Spacing() zgeo.Size {
-	return v.spacing
-}
-
 func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
 	rows := v.getLayoutRows(zgeo.Rect{Size: total})
@@ -64,15 +55,15 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		return v.Margin().Size.Negative()
 	}
 	for j := 0; j < len(rows); j++ {
-		rowSize := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.spacing.W, rows[j])
+		rowSize := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, rows[j])
 		zfloat.Maximize(&s.W, rowSize.W)
 		s.H += rowSize.H
 		if j != 0 {
-			s.H += v.spacing.H
+			s.H += v.Spacing.H
 		}
 	}
 	s.Subtract(v.Margin().Size)
-	// zlog.Info("GridView size:", s)
+	// zlog.Info("GridView size:", s, v.Spacing)
 	return s
 }
 
@@ -86,6 +77,15 @@ func (v *GridView) GetCell(x, y int) *Cell {
 		return nil
 	}
 	return &v.Cells[i]
+}
+
+func (v *GridView) GetViewXY(view zview.View) (x, y int, got bool) {
+	for p, v := range v.table {
+		if view == v {
+			return p.X, p.Y, true
+		}
+	}
+	return 0, 0, false
 }
 
 func (v *GridView) RowCount() int {
@@ -176,8 +176,8 @@ func (v *GridView) ArrangeChildren() {
 	// }
 	for j, row := range rows {
 		r := rect
-		r.Size.H = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.spacing.W, row).H
-		rects := zgeo.LayoutCellsInStack(v.ObjectName(), r, false, v.spacing.W, row)
+		r.Size.H = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, row).H
+		rects := zgeo.LayoutCellsInStack(v.ObjectName(), r, false, v.Spacing.W, row)
 		y := rect.Min().Y
 		// zlog.Info("Layout1:", r)
 		for i := range row {
@@ -191,7 +191,7 @@ func (v *GridView) ArrangeChildren() {
 			// zlog.Info("Layout:", cell.Alignment, row[i].OriginalSize, j, i, row[i].Name, rects[i], ar)
 			cell.View.SetRect(ar)
 		}
-		rect.SetMinY(r.Max().Y + v.spacing.H)
+		rect.SetMinY(r.Max().Y + v.Spacing.H)
 	}
 }
 
