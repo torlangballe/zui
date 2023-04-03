@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfocus"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
@@ -32,6 +33,7 @@ type ImageView struct {
 	UseDownsampleCache bool
 	CapInsetCorner     zgeo.Size
 	EmptyColor         zgeo.Color
+	KeyboardShortcut   zkeyboard.KeyMod
 }
 
 func New(image *zimage.Image, imagePath string, fitSize zgeo.Size) *ImageView {
@@ -244,4 +246,12 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 	if v.IsFocused() {
 		zfocus.Draw(canvas, rect, 15, 0, 1)
 	}
+}
+
+func (v *ImageView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	if sc == v.KeyboardShortcut && v.PressedHandler() != nil {
+		v.PressedHandler()()
+		return true
+	}
+	return false
 }
