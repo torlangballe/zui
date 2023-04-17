@@ -102,6 +102,8 @@ func (v *StackView) ArrangeChildren() {
 
 func MakeLinkedStack(surl, name string, add zview.View) *StackView {
 	v := StackViewHor("#type:a") // #type is hack that sets html-type of stack element
+	v.SetAboveParent(true)
+	v.SetMargin(zgeo.RectFromXY2(3, 0, -3, 0))
 	v.MakeLink(surl, name)
 	v.Add(add, zgeo.TopLeft, zgeo.Size{})
 	return v
