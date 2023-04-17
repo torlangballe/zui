@@ -323,8 +323,8 @@ func AddSliceItems(g Grouper, slicePtr any, setID string, indicatorFieldName str
 	var firstID string
 	for i := 0; i < val.Len(); i++ {
 		a := val.Index(i).Interface()
-		fval, _, got := zreflect.FieldForName(a, true, indicatorFieldName)
-		zlog.Assert(got, i, indicatorFieldName)
+		fval, _, findex := zreflect.FieldForName(a, true, indicatorFieldName)
+		zlog.Assert(findex != -1, i, indicatorFieldName)
 		title := fmt.Sprint(fval)
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, i)
 		if firstID == "" {

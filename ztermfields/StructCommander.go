@@ -132,8 +132,8 @@ func (s *StructCommander) editEnumIndicator(c *zcommands.CommandInfo, edit editF
 
 func (s *StructCommander) editLocalEnumIndicator(c *zcommands.CommandInfo, edit editField) {
 	zlog.Info("editLocalEnumIndicator:", edit.value.Interface(), zlog.Full(*edit.field))
-	ei, got := zfields.FindLocalFieldWithID(s.StructurePointer, edit.field.LocalEnum)
-	zlog.Assert(got, edit.field.Name, edit.field.LocalEnum)
+	ei, findex := zfields.FindLocalFieldWithID(s.StructurePointer, edit.field.LocalEnum)
+	zlog.Assert(findex != -1, edit.field.Name, edit.field.LocalEnum)
 	enum := ei.Interface().(zdict.ItemsGetter).GetItems()
 	for i, e := range enum {
 		c.Session.TermSession.Write(i+1, ") ", e.Name)
@@ -164,9 +164,9 @@ func (s *StructCommander) editSliceIndicator(c *zcommands.CommandInfo, edit edit
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
-		fval, _, got := zreflect.FieldForName(a, true, indicatorName)
+		fval, _, findex := zreflect.FieldForName(a, true, indicatorName)
 		var title string
-		if !got {
+		if findex == -1 {
 			title = fmt.Sprint(j + 1)
 		} else {
 			title = fmt.Sprint(fval.Interface())
@@ -253,11 +253,11 @@ func (s *StructCommander) outputSlice(c *zcommands.CommandInfo, pre, path string
 	lastUsedID, _ := zkeyvalue.DefaultStore.GetString(key)
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
-		fval, _, gotIndicator := zreflect.FieldForName(a, true, indicatorName)
+		fval, _, indicatorIndex := zreflect.FieldForName(a, true, indicatorName)
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
 		if lastUsedID == id || lastUsedID == "" || j == length-1 {
 			title := fmt.Sprint(fval)
-			if !gotIndicator || lastUsedID == "" {
+			if indicatorIndex == -1 || lastUsedID == "" {
 				title = fmt.Sprint(j + 1)
 			}
 			c.Session.TermSession.Write(sindent, zstr.EscCyan, pre, f.Name, zstr.EscNoColor, " [", title, "/", length, "]\n")
