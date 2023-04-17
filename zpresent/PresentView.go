@@ -6,6 +6,7 @@ package zpresent
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/torlangballe/zui/zanimation"
 	"github.com/torlangballe/zui/zcanvas"
@@ -40,14 +41,19 @@ type Attributes struct {
 	ModalNoBlock             bool
 	ModalDropShadow          zstyle.DropShadow
 	ModalDismissOnEscapeKey  bool
+	NoMessageOnOpenFail      bool
 }
 
 var (
 	presentCloseFuncs = map[zview.View]func(dismissed bool){}
 	FirstPresented    bool
 	Presenting        = true // true for first pre-present
+	ShowErrorFunc     func(title, subTitle string)
 )
 
+// PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
+// If opening fails (on browsers it can fail for non-modal if popups are blocked), presented, and closed (if != nil) are called.
+// closed (if != nil) is called when the window is closed programatically or by user interaction.
 func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
 	if closed != nil {
 		presentCloseFuncs[v] = closed
@@ -59,7 +65,6 @@ func PresentView(v zview.View, attributes Attributes, presented func(win *zwindo
 	win := zwindow.GetMain()
 	w := zwindow.Current()
 	if w != nil {
-		// zlog.Info("makeEmbeddingViewAndAddToWindow sub:", w.ID, w.GetURL(), attributes.ModalNoBlock)
 		win = w
 	}
 
@@ -68,19 +73,12 @@ func PresentView(v zview.View, attributes Attributes, presented func(win *zwindo
 		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes, closed)
 	}
 	ct, _ := v.(zcontainer.ChildrenOwner)
-	//zlog.Info("Present1:", ct != nil, reflect.ValueOf(outer).Type())
-	// zlog.Info("Present1:", zlog.GetCallingStackString())
-	// floaded := func() {
-	// 	presentLoaded(win, v, outer, attributes, presented, closed)
-	// }
 	if ct != nil {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
 			presentLoaded(win, v, outer, attributes, presented, closed)
-			// floaded()
 		})
 	} else {
 		presentLoaded(win, v, outer, attributes, presented, closed)
-		// floaded()
 	}
 }
 
@@ -132,6 +130,22 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			o.Pos = &rect.Pos
 			o.Size = size
 			win = zwindow.Open(o)
+			if win == nil {
+				if !attributes.NoMessageOnOpenFail && ShowErrorFunc != nil {
+					sub := o.URL
+					if runtime.GOOS == "js" {
+						sub = zstr.Concat("\n", sub, "This might be because popup windows are blocked in browser settings.")
+					}
+					ShowErrorFunc("Error opening window.", sub)
+				}
+				if presented != nil {
+					presented(nil)
+				}
+				if closed != nil {
+					closed(false)
+				}
+				return
+			}
 			win.AddView(v)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)

@@ -47,6 +47,14 @@ type Alert struct {
 	DialogView        zview.View
 }
 
+func init() {
+	zpresent.ShowErrorFunc = func(title, subTitle string) {
+		a := New(title)
+		a.SubText = subTitle
+		a.Show(nil)
+	}
+}
+
 func New(items ...interface{}) *Alert {
 	a := &Alert{}
 	str := zstr.Spaced(items...)
@@ -68,17 +76,17 @@ func (a *Alert) SetCancel(text string) {
 	a.CancelButton = text
 }
 
-func (a *Alert) SetOther(text string) {
-	a.OtherButton = text
-}
+// func (a *Alert) SetOther(text string) {
+// 	a.OtherButton = text
+// }
 
-func (a *Alert) SetDestructive(text string) {
-	a.DestructiveButton = text
-}
+// func (a *Alert) SetDestructive(text string) {
+// 	a.DestructiveButton = text
+// }
 
-func (a *Alert) SetSub(text string) {
-	a.SubText = text
-}
+// func (a *Alert) SetSub(text string) {
+// 	a.SubText = text
+// }
 
 func Show(items ...interface{}) {
 	a := New(items...)
@@ -170,6 +178,7 @@ func (a *Alert) Show(handle func(result Result)) {
 	if a.UploadButton != "" || a.OKButton != zwords.OK() {
 		a.BuildGUI = true
 	}
+	zlog.Info("SHOW:", a.BuildGUI)
 	if !a.BuildGUI {
 		a.showNative(handle)
 		return
@@ -232,6 +241,7 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	bar := zcontainer.StackViewHor("bar")
+	bar.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
 	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 10})
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
@@ -241,6 +251,9 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 
 	att.Modal = true
 	focusFunc := func(win *zwindow.Window) {
+		if win == nil {
+			return
+		}
 		zcontainer.ViewRangeChildren(stack, true, false, func(view zview.View) bool {
 			tv, _ := view.(*ztext.TextView)
 			if tv != nil {
