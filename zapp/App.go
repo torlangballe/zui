@@ -10,6 +10,7 @@ package zapp
 
 import (
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/torlangballe/zutil/zdict"
@@ -69,9 +70,9 @@ func New() *App {
 	return a
 }
 
-// GetProcessID returns the process id of the app. Not implemented yet.
-func GetProcessID() int64 {
-	return 0
+// GetProcessID returns the process id of the app.
+func GetProcessID() int {
+	return os.Getpid()
 }
 
 func GetDocumentationValues() zdict.Dict {
@@ -80,4 +81,12 @@ func GetDocumentationValues() zdict.Dict {
 		AddDocumentationValuesFunc(documentationValues)
 	}
 	return documentationValues
+}
+
+// MemoryUsed returns the RSS
+func MemoryUsed() int64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	rss := m.HeapSys - m.HeapReleased
+	return int64(rss)
 }
