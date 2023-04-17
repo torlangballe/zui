@@ -25,7 +25,7 @@ type ScrollView struct {
 	BarSize        float64
 }
 
-var DefaultBarSize = 16.0
+var DefaultBarSize = 22.0
 
 func New() *ScrollView {
 	v := &ScrollView{}
@@ -83,8 +83,7 @@ func (v *ScrollView) ArrangeChildren() {
 		cs := v.child.CalculatedSize(ls)
 		cs.W = ls.W
 		r := zgeo.Rect{Size: cs}
-		r.Size.W -= 16
-		// zlog.Info("SV ArrangeChildren:", v.Hierarchy(), r)
+		r.Size.W -= v.BarSize
 		v.child.SetRect(r) // this will call arrange children on child if container
 		// ct, got := v.child.(ContainerType)
 		// if got {
