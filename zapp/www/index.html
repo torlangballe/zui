@@ -4,9 +4,32 @@
 <style>
     .zfocus:focus { 
         outline: solid 4px rgb(147,180,248); 
-        outline-offset: -2px;
-        overflow: visible;
+        /* outline-offset: -4px;  */
+        /* overflow: visible; */
     }
+    .znofocus:focus { 
+        outline: none; 
+    }
+    input.rounded {
+        border: 1px solid #ccc;
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        -moz-box-shadow: 2px 2px 3px #666;
+        -webkit-box-shadow: 2px 2px 3px #666;
+        box-shadow: 2px 2px 3px #666;
+        box-sizing: content-box;
+/* padding: 4px 7px; */
+        outline: 0;
+        -webkit-appearance: none;
+    }
+    input.rounded:focus {
+         border: 2px solid rgb(147,180,248);
+/*
+        border-color: rgb(147,180,248);
+        border-width: 4px; */
+    }
+
 </style>
 </head>
 <body>
