@@ -25,7 +25,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidget"
-	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -121,7 +120,9 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.BranchToggleType = zwidget.BranchToggleTriangle
 	v.Spacing = zgeo.Size{14, 6}
 	v.MultiplyColorAlternate = 0.95
-
+	v.SetCanFocus(zview.FocusAllowTab)
+	v.SetKeyDownHandler(v.handleKeyPressed)
+	v.SetStroke(1, zgeo.ColorBlack, false)
 	v.loadOpenBranches()
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("Scroll:", pos)
@@ -430,7 +431,6 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			v.selectedIndex = -1
 			v.selectedIDs = map[string]bool{}
 			if clear {
-				zlog.Info("Clear")
 				v.SetHoverID("")
 				return false
 			}
@@ -686,6 +686,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	}
 	v.children[id] = child
 	v.cellsView.AddChild(child, -1)
+	child.Native().SetJSStyle("userSelect", "none")
 	zpresent.CallReady(child, true)
 	if v.UpdateCellFunc != nil {
 		v.UpdateCellFunc(v, id)
@@ -775,8 +776,10 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 func (v *GridListView) ArrangeChildren() {
 	v.ScrollView.ArrangeChildren()
 	s := v.CalculatedGridSize(v.LocalRect().Size)
-	// zlog.Info("glist.ArrangeChildren0", v.Hierarchy(), s, v.LocalRect().Size, v.cellsView.LocalRect().Size)
 	r := zgeo.Rect{Size: zgeo.Size{v.LocalRect().Size.W, s.H + 1}}
+	// r.Pos.X--
+	r.Pos.Y--
+	// zlog.Info("glist.ArrangeChildren0", v.Hierarchy(), r.Size.W)
 	v.cellsView.SetRect(r)
 	// zlog.Info("glist.ArrangeChildren1", v.Hierarchy(), v.LocalRect().Size, v.cellsView.LocalRect().Size)
 	v.LayoutCells(false)
@@ -998,9 +1001,9 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	if beforeWindow && v.BorderColor.Valid {
 		v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
 	}
-	if !beforeWindow && (v.Selectable || v.MultiSelectable) {
-		zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
-	}
+	// if !beforeWindow && (v.Selectable || v.MultiSelectable) {
+	// 	zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
+	// }
 }
 
 func (v *GridListView) SetMargin(m zgeo.Rect) {
