@@ -101,6 +101,7 @@ const (
 	FlagDisableAutofill                         // FlagDisableAutofill if set makes a text field not autofill
 	FlagIsSearchable                            // This field can be used to search in tables etc
 	FlagIsUseInValue                            // This value is set as a string to InNames before entire struct is created
+	FlagZeroIsEmpty                             // This shows the empty value as nothing. So int 0 would be shown as "" in text
 )
 
 const (
@@ -191,7 +192,10 @@ var flagsList = []zbits.BitsetItem{
 
 // callSetupWidgeter is called to set gui widgets registered for use in zui tags.
 // It is dependent on a gui, so injected with this func variable.
-var callSetupWidgeter func(f *Field)
+var (
+	callSetupWidgeter func(f *Field)
+	fieldEnums        = map[string]zdict.Items{}
+)
 
 func (f FlagType) String() string {
 	return zbits.Int64ToStringFromList(int64(f), flagsList)
@@ -210,11 +214,10 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 	return nil
 }
 
-func FindLocalFieldWithID(structure any, name string) (reflect.Value, bool) {
-
+func FindLocalFieldWithID(structure any, name string) (reflect.Value, int) {
 	name = zstr.HeadUntil(name, ".")
-	fval, _, found := zreflect.FieldForName(structure, true, name)
-	return fval, found
+	fval, _, i := zreflect.FieldForName(structure, true, name)
+	return fval, i
 }
 
 func fieldNameToID(name string) string {
@@ -340,6 +343,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "storekey":
 			f.ValueStoreKey = val
+		case "nozero":
+			f.Flags |= FlagZeroIsEmpty
 		case "static":
 			if flag || val == "" {
 				f.Flags |= FlagIsStatic
@@ -685,8 +690,6 @@ func setDurationColumns(f *Field) {
 		f.Columns += 3
 	}
 }
-
-var fieldEnums = map[string]zdict.Items{}
 
 func SetEnum(name string, enum zdict.Items) {
 	fieldEnums[name] = enum
