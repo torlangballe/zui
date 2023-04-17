@@ -39,6 +39,11 @@ func New(text string) *Label {
 	return v
 }
 
+func (v *Label) SetFont(font *zgeo.Font) {
+	v.NativeView.SetFont(font)
+	v.SetNativePadding(zgeo.RectFromXY2(0, font.Size/8, 0, 0))
+}
+
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
 	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
 	style := v.JSStyle()
@@ -118,5 +123,5 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	v.NativeView.SetNativeMargin(m)
+	// v.NativeView.SetNativeMargin(m)
 }
