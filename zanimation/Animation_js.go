@@ -101,8 +101,16 @@ type Swapper struct {
 	LastTransform zgeo.Pos
 }
 
-func (s *Swapper) TranslateSwapViews(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
-	newView.Native().SetAlpha(0.1)
+func (s *Swapper) SlideViewInOverOld(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
+	translateViews(s, false, parent, oldView, newView, dir, secs, done)
+}
+
+func (s *Swapper) SlideViewInOldOut(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
+	translateViews(s, true, parent, oldView, newView, dir, secs, done)
+}
+
+func translateViews(s *Swapper, moveOld bool, parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
+	// newView.Native().SetAlpha(0.1)
 	r := s.OriginalRect
 	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	dirPos := dir.Vector()
@@ -112,8 +120,10 @@ func (s *Swapper) TranslateSwapViews(parent, oldView, newView zview.View, dir zg
 	newView.SetRect(r)
 	newView.Native().SetAlpha(1)
 	Translate(newView, move, secs, nil)
-	delta := move.Plus(s.LastTransform)
-	Translate(oldView, delta, secs, done)
+	if moveOld {
+		delta := move.Plus(s.LastTransform)
+		Translate(oldView, delta, secs, done)
+	}
 	s.LastTransform = move
 }
 
