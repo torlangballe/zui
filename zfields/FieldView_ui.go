@@ -59,9 +59,10 @@ type FieldView struct {
 type FieldViewParameters struct {
 	Field
 	FieldParameters
-	ImmediateEdit        bool
-	EditWithoutCallbacks bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	triggerHandlers      map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
+	ImmediateEdit            bool
+	MultiSliceEditInProgress bool
+	EditWithoutCallbacks     bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
 }
 
 type ActionHandler interface {
@@ -73,7 +74,7 @@ var fieldViewEdited = map[string]time.Time{}
 func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.ImmediateEdit = true
 	f.Styling = zstyle.EmptyStyling
-	f.Styling.Spacing = 8
+	f.Styling.Spacing = 4
 	return f
 }
 
@@ -248,8 +249,8 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(local, "./", &fname) {
 			// zlog.Info("local:", toID, f.FieldName, id)
-			rval, _, got := zreflect.FieldForName(v.data, true, fname)
-			if got {
+			rval, _, findex := zreflect.FieldForName(v.data, true, fname)
+			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
@@ -260,15 +261,15 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
-			rval, _, got := zreflect.FieldForName(v.data, true, fname)
-			if got {
+			rval, _, findex := zreflect.FieldForName(v.data, true, fname)
+			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
 		}
 		if zstr.HasPrefix(local, "../", &fname) && v.parent != nil {
-			rval, _, got := zreflect.FieldForName(v.parent.Data(), true, fname)
-			if got {
+			rval, _, findex := zreflect.FieldForName(v.parent.Data(), true, fname)
+			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
@@ -361,8 +362,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
 		} else {
-			ei, got := FindLocalFieldWithID(v.data, f.LocalEnum)
-			zlog.Assert(got, f.Name, f.LocalEnum)
+			ei, findex := FindLocalFieldWithID(v.data, f.LocalEnum)
+			zlog.Assert(findex != -1, f.Name, f.LocalEnum)
 			enum = ei.Interface().(zdict.ItemsGetter).GetItems()
 		}
 		if v.params.ForceZeroOption {
@@ -400,7 +401,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	switch f.Kind {
 	case zreflect.KindSlice:
-		zlog.Info("updateSliceFieldView:", v.Hierarchy())
+		// zlog.Info("updateSliceFieldView:", v.Hierarchy())
 		// val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
 		// fmt.Printf("updateSliceFieldView: %s %p %p %v %p\n", v.id, item.Interface, val.Interface(), found, foundView)
 		// if f.WidgetName != "" && rval.Type().Kind() != reflect.Struct {
@@ -919,6 +920,12 @@ func getTimeString(rval reflect.Value, f *Field) string {
 }
 
 func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
+	// zlog.Info("getTextFromNumberishItem", f.Name, f.Flags&FlagZeroIsEmpty != 0, rval.IsZero())
+	if f.Flags&FlagZeroIsEmpty != 0 {
+		if rval.IsZero() {
+			return ""
+		}
+	}
 	stringer, got := rval.Interface().(UIStringer)
 	if got {
 		return stringer.ZUIString()
@@ -1146,7 +1153,7 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 func makeFlagStack(flags reflect.Value, f *Field) zview.View {
 	stack := zcontainer.StackViewHor("flags")
 	stack.SetMinSize(zgeo.Size{20, 20})
-	stack.SetSpacing(2)
+	stack.SetSpacing(0)
 	return stack
 }
 
@@ -1218,8 +1225,8 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return
 	}
 	if f.LocalEnum != "" {
-		ei, got := FindLocalFieldWithID(v.data, f.LocalEnum)
-		if zlog.ErrorIf(!got, v.Hierarchy(), f.Name, f.LocalEnum) {
+		ei, findex := FindLocalFieldWithID(v.data, f.LocalEnum)
+		if zlog.ErrorIf(findex == -1, v.Hierarchy(), f.Name, f.LocalEnum) {
 			return nil, true
 		}
 		getter, _ := ei.Interface().(zdict.ItemsGetter)
@@ -1231,6 +1238,15 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		// 	continue
 		// }
 		//					zlog.Info("make local enum:", f.Name, f.LocalEnum)
+		for i := range enum {
+			if f.Flags&FlagZeroIsEmpty != 0 {
+				if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
+					// zlog.Info("Clear zero name")
+					enum[i].Name = ""
+				}
+			}
+		}
+
 		menu := v.makeMenu(rval, f, enum)
 		if menu == nil {
 			zlog.Error(nil, "no local enum for", f.LocalEnum)
@@ -1244,6 +1260,25 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		// fmt.Println("make enum:", f.Name, item.Interface)
 		enum, _ := fieldEnums[f.Enum]
 		zlog.Assert(enum != nil, f.Enum, f.FieldName)
+		if rval.IsZero() {
+			if !v.params.MultiSliceEditInProgress {
+				if len(enum) > 0 {
+					rval.Set(reflect.ValueOf(enum[0].Value))
+				}
+			} else {
+				var zero bool
+				for i := range enum {
+					if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
+						zero = true
+						break
+					}
+				}
+				if !zero {
+					fmt.Println("Add zero enum:", f.Name)
+					enum = append(enum, zdict.Item{"", rval.Interface()})
+				}
+			}
+		}
 		view = v.makeMenu(rval, f, enum)
 		// exp = zgeo.AlignmentNone
 		return view, false
@@ -1458,8 +1493,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 	callActionHandlerFunc(v, f, CreatedViewAction, rval.Addr().Interface(), &view)
 	if f.Download != "" {
 		surl := zstr.ReplaceAllCapturesWithoutMatchFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, func(fieldName string, index int) string {
-			a, got := FindLocalFieldWithID(v.data, fieldName)
-			if !got {
+			a, findex := FindLocalFieldWithID(v.data, fieldName)
+			if findex == -1 {
 				zlog.Error(nil, "field download", f.Download, ":", "field not found in struct:", fieldName)
 				return ""
 			}
@@ -1502,8 +1537,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 	var tipField, tip string
 	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
-		ei, _, got := zreflect.FieldForName(structure, true, tipField)
-		if got {
+		ei, _, findex := zreflect.FieldForName(structure, true, tipField)
+		if findex != -1 {
 			tip = fmt.Sprint(ei.Interface())
 		} else { // can't use tip == "" to check, since field might just be empty
 			zlog.Error(nil, "updateItemLocalToolTip: no local field for tip", f.Name, tipField)
@@ -1590,6 +1625,12 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			*rval.Addr().Interface().(*zbool.BoolInd) = bv.Value()
 		} else {
 			tv, _ := view.(*ztext.TextView)
+			if f.Flags&FlagZeroIsEmpty != 0 {
+				if tv.Text() == "" {
+					rval.SetZero()
+					break
+				}
+			}
 			str := tv.Text()
 			if f.PackageName == "time" && rval.Type().Name() == "Duration" {
 				var secs float64
@@ -1601,6 +1642,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				if d != nil {
 					*d = ztime.SecondsDur(secs)
 				}
+				value = rval
 				return
 			}
 			var i64 int64

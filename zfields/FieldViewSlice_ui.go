@@ -242,40 +242,186 @@ func (v *FieldView) buildRepeatedStackFromSlice(slicePtr any, vertical bool, f *
 	return stack
 }
 
+func removeNotUsedEverywhereSliceItems() {
+	// if val.Kind() == reflect.Slice {
+	// 	for i := 0; i < val.Len(); i++ {
+	// 		for j := 0; j < sliceVal.Len(); j++ {
+	// 			var has bool
+	// 			sliceField := sliceVal.Index(j).Field(index)
+	// 			for k := 0; k < sliceField.Len(); k++ {
+	// 				if reflect.DeepEqual(val.Interface(), sliceField.Index(k).Interface()) {
+	// 					has = true
+	// 					break
+	// 				}
+	// 			}
+	// 			if has {
+	// 				i++
+	// 			} else {
+	// 				zslice.RemoveAt(sliceVal.Addr().Interface(), j)
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// zslice.AddEmptyElementAtEnd(sliceVal.Addr().Interface())
+}
+
+func accumilateSlice(accSlice, fromSlice reflect.Value) {
+	for i := 0; i < fromSlice.Len(); i++ {
+		var has bool
+		av := fromSlice.Index(i).Interface()
+		for j := 0; j < accSlice.Len(); j++ {
+			if reflect.DeepEqual(av, accSlice.Index(j).Interface()) {
+				has = true
+				break
+			}
+		}
+		if !has {
+			zslice.AddAtEnd(accSlice.Addr().Interface(), av)
+		}
+	}
+}
+
+func reduceLocalEnumField[S any](editStruct *S, enumField reflect.Value, index int, fromStruct reflect.Value, f *Field) {
+	ei, findex := FindLocalFieldWithID(editStruct, f.LocalEnum)
+	if zlog.ErrorIf(findex == -1, f.Name, f.LocalEnum) {
+		return
+	}
+	zlog.Assert(ei.Kind() == reflect.Slice)
+	fromVal, _ := zreflect.FieldForIndex(fromStruct.Interface(), true, findex)
+	// zlog.Info("reduceLocalEnumField", f.Name, findex, ei.Len(), ei.Type(), fromStruct.Type(), fromStruct.Kind())
+	var reduce, hasZero bool
+	for i := 0; i < ei.Len(); {
+		eval := ei.Index(i)
+		if eval.IsZero() {
+			hasZero = true
+		}
+		var has bool
+		for j := 0; j < fromVal.Len(); j++ {
+			if reflect.DeepEqual(eval.Interface(), fromVal.Index(j).Interface()) {
+				has = true
+				break
+			}
+		}
+		if has {
+			i++
+		} else {
+			zslice.RemoveAt(ei.Addr().Interface(), i)
+			reduce = true
+		}
+	}
+	if ei.Len() == 0 && fromVal.Len() > 0 {
+		reduce = true
+	}
+	// zlog.Info("REDUCE?", f.Name, reduce, hasZero)
+	if reduce && !hasZero {
+		zslice.AddEmptyElementAtEnd(ei.Addr().Interface())
+		// enumField.Set(reflect.Zero(enumField.Type()))
+	}
+}
+
+// var tempFieldEnums = map[string]zdict.Items{}
+
+// func reduceEnumField(editVal, indexVal reflect.Value, enumName string) {
+// 	tempEnum, _ := tempFieldEnums[enumName]
+// 	if tempEnum == nil {
+// 		tempEnum = zdict.Items{}
+// 		tempEnum = fieldEnums[enumName]
+// 		tempFieldEnums[enumName] = tempEnum
+// 	}
+// 	zlog.Info("reduceEnumField", editVal, indexVal, enumName)
+// 	var reduced bool
+// 	var isZero bool
+// 	for i := 0; i < len(tempEnum); i++ {
+// 		ival := tempEnum[i].Value
+// 		if ival != nil && reflect.ValueOf(ival).IsZero() {
+// 			isZero = true
+// 		}
+// 		if !reflect.DeepEqual(ival, indexVal.Interface()) {
+// 			reduced = true
+// 			zslice.RemoveAt(&tempEnum, i)
+// 			i--
+// 		}
+// 	}
+// 	if reduced && !isZero {
+// 		zslice.AddEmptyElementAtEnd(&tempEnum)
+// 		editVal.Set(reflect.Zero(editVal.Type()))
+// 	}
+// }
+
+func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
+	var reduced bool
+	for i := 0; i < reduceSlice.Len(); {
+		rval := reduceSlice.Index(i).Interface()
+		var has bool
+		for j := 0; i < fromSlice.Len(); j++ {
+			fval := fromSlice.Index(j).Interface()
+			if reflect.DeepEqual(rval, fval) {
+				has = true
+				break
+			}
+		}
+		if has {
+			i++
+		} else {
+			zslice.RemoveAt(reduceSlice.Addr().Interface(), i)
+			reduced = true
+		}
+	}
+	if reduced {
+		zslice.AddEmptyElementAtEnd(reduceSlice.Addr().Interface())
+	}
+}
+
 func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) bool) {
 	sliceVal := reflect.ValueOf(structSlicePtr).Elem()
-	first := sliceVal.Index(0)
-	editStruct := reflect.New(first.Type())
-	// zlog.Info("editStruct:", editStruct.Type(), editStruct.Kind(), editStruct)
-	editStruct.Elem().Set(first)
-	len := len(*structSlicePtr)
+	first := (*structSlicePtr)[0] // we want a copy, so do in two stages
+	editStruct := &first
+	length := len(*structSlicePtr)
 	unknownBoolViewIDs := map[string]bool{}
-	zreflect.ForEachField(editStruct.Interface(), true, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		if sf.Tag.Get("zui") == "-" {
-			return true
-		}
+
+	ForEachField(editStruct, params.FieldParameters, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
 		var notEqual bool
-		for i := 0; i < len; i++ {
+		for i := 0; i < length; i++ {
 			sliceField := sliceVal.Index(i).Field(index)
 			if !sliceField.CanInterface() || !val.CanInterface() {
 				continue
 			}
-			// zlog.Info(i, index, "not-equal", sliceField.CanInterface(), val.CanInterface())
+			zlog.Info(f.Name, val.Interface())
 			if !reflect.DeepEqual(sliceField.Interface(), val.Interface()) {
-				// zlog.Info(i, index, "not-equal", sliceField.Interface(), val.Interface())
+				// zlog.Info(f.Name, i, index, "not-equal", sliceField.Interface(), val.Interface())
+				if f.IsStatic() {
+					if val.Kind() == reflect.Slice {
+						accumilateSlice(val, sliceField)
+					}
+				} else {
+					// if f.Enum != "" {
+					// 	reduceEnumField(val, sliceField, f.Enum)
+					// } else
+					if f.LocalEnum != "" {
+						reduceLocalEnumField(editStruct, val, index, sliceVal.Index(i), f)
+					} else if val.Kind() == reflect.Slice {
+						reduceSliceField(val, sliceField)
+					} else {
+						val.Set(reflect.Zero(val.Type()))
+					}
+				}
 				notEqual = true
-				val.Set(reflect.Zero(val.Type()))
 				break
 			}
 		}
-		if notEqual && val.Kind() == reflect.Bool {
-			unknownBoolViewIDs[sf.Name] = true
+		// zlog.Info("ForEach:", f.Name, val.Type(), val.Interface(), notEqual, f.Enum)
+		if notEqual {
+			if val.Kind() == reflect.Bool {
+				unknownBoolViewIDs[sf.Name] = true
+				// zslice.AddEmptyElementAtEnd(val.Addr().Interface())
+			}
 		}
-		return true
+		return
 	})
 	params.EditWithoutCallbacks = true
+	params.MultiSliceEditInProgress = (len(*structSlicePtr) > 1)
 	params.UseInValues = []string{"$dialog"}
-	fview := FieldViewNew("OkCancel", editStruct.Interface(), params)
+	fview := FieldViewNew("OkCancel", editStruct, params)
 	update := true
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {
@@ -292,7 +438,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				return false
 			}
 			// zlog.Info("EDITAfter2data:", zlog.Full(editStruct))
-			zreflect.ForEachField(editStruct.Interface(), true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+			zreflect.ForEachField(editStruct, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 				if sf.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}
@@ -304,10 +450,10 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if isCheck && check.Value().IsUnknown() {
 					return true // skip to next
 				}
-				for i := 0; i < len; i++ {
+				for i := 0; i < length; i++ {
 					sliceField := sliceVal.Index(i).Field(index)
-					// zlog.Info("SetSliceVal?:", bid, isCheck, unknownBoolViewIDs, i, sf.Name, val.Interface(), sliceField.Addr(), view != nil)
-					if !val.IsZero() || isCheck {
+					// zlog.Info("SetSliceVal?:", i, sf.Name, val.Interface(), sliceField.Interface(), val.IsZero())
+					if !val.IsZero() || length == 1 || isCheck {
 						sliceField.Set(val)
 					}
 				}
