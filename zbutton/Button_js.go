@@ -15,6 +15,7 @@ func New(text string) *Button {
 	v.SetText(text)
 	v.SetObjectName(text)
 	v.SetMargin(zgeo.RectFromXY2(12, 4, -12, -4))
+	v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
 	// style := v.JSStyle()
 	// style.Set("textAlign", "left")
 	// style.Set("display", "block")
@@ -22,27 +23,38 @@ func New(text string) *Button {
 	// style.Set("whiteSpace", "preWrap")
 	f := zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal)
 	v.SetFont(f)
-
+	// v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+	// 	if key.IsReturnish() && mod == zkeyboard.ModifierNone {
+	// 		zlog.Info("ButKey:", key, mod)
+	// 		if v.PressedHandler != nil {
+	// 			zlog.Info("ButKey2:", key, mod)
+	// 			v.PressedHandler()
+	// 			return true
+	// 		}
+	// 	}
+	// 	return false
+	// })
 	return v
 }
 
 func (v *Button) MakeEnterDefault() {
-	v.SetStroke(2, zgeo.ColorNew(0.4, 0.4, 1, 1), false)
+	v.SetStroke(2, zgeo.ColorNew(0.4, 0.4, 1, 1), true)
 	v.SetCorner(6)
-	style := v.JSStyle()
-	style.Set("boxSizing", "border-box")
+	v.SetJSStyle("border", "none")
+	// style := v.JSStyle()
+	// style.Set("boxSizing", "border-box")
 
 	//	v.margin.Size.H += 4
-	ztimer.StartIn(0.01, func() {
-		win := zwindow.GetFromNativeView(&v.NativeView)
-		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-			if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
-				v.Element.Call("click")
-				return true
-			}
-			return false
-		})
-	})
+	// ztimer.StartIn(0.01, func() {
+	// 	win := zwindow.GetFromNativeView(&v.NativeView)
+	// 	win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+	// 		if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
+	// 			v.Element.Call("click")
+	// 			return true
+	// 		}
+	// 		return false
+	// 	})
+	// })
 }
 
 func (v *Button) MakeEscapeCanceler() {
