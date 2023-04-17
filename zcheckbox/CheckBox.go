@@ -42,8 +42,8 @@ func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) 
 	return label, stack
 }
 
-func NewWithLabel(def bool, storeKey, title string) (check *CheckBox, label *zlabel.Label, stack *zcontainer.StackView) {
-	check = NewWithStore(storeKey, def)
+func NewWithLabel(def bool, title, storeKey string) (check *CheckBox, label *zlabel.Label, stack *zcontainer.StackView) {
+	check = NewWithStore(def, storeKey)
 	label, stack = Labelize(check, title)
 	return
 }

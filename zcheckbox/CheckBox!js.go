@@ -16,4 +16,4 @@ func New(on zbool.BoolInd) *CheckBox {
 func (c *CheckBox) SetValue(b zbool.BoolInd)                  {}
 func (s *CheckBox) SetValueHandler(handler func())            {}
 func (v *CheckBox) Press()                                    {}
-func NewWithStore(storeKey string, defaultVal bool) *CheckBox { return nil }
+func NewWithStore(defaultVal bool, storeKey string) *CheckBox { return nil }

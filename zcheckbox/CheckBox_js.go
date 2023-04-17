@@ -11,7 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 )
 
-func NewWithStore(storeKey string, defaultVal bool) *CheckBox {
+func NewWithStore(defaultVal bool, storeKey string) *CheckBox {
 	val := defaultVal
 	if storeKey != "" {
 		v, got := zkeyvalue.DefaultStore.GetBool(storeKey, false)
@@ -31,7 +31,7 @@ func New(on zbool.BoolInd) *CheckBox {
 	v.JSSet("style", "position:absolute")
 	v.JSSet("type", "checkbox")
 	v.JSStyle().Set("margin-top", "4px")
-	v.SetCanFocus(true)
+	// v.SetCanFocus(true)
 	v.View = v
 	v.SetValue(on)
 	return v
