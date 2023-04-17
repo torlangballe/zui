@@ -149,6 +149,6 @@ func ArrowKeyToDirection(key Key) zgeo.Alignment {
 	return zgeo.AlignmentNone
 }
 
-func KeyIsReturnish(key Key) bool {
-	return key == KeyReturn || key == KeyEnter
+func (k Key) IsReturnish() bool {
+	return k == KeyReturn || k == KeyEnter
 }
