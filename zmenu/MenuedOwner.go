@@ -30,6 +30,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwords"
 )
 
@@ -211,6 +212,7 @@ func (o *MenuedOwner) Empty() {
 }
 
 func (o *MenuedOwner) SetTitleText(text string) {
+	// zlog.Info("MO.SetTitleText:", text, len(o.items), zlog.CallingStackString())
 	if o.SetTitle || o.TitleIsValueIfOne || o.TitleIsAll != "" || o.PluralableWord != "" || o.GetTitleFunc != nil {
 		zlog.Assert(o.View != nil)
 		ts, got := o.View.(ztextinfo.TextSetter)
@@ -222,7 +224,7 @@ func (o *MenuedOwner) SetTitleText(text string) {
 
 func (o *MenuedOwner) updateTitleAndImage() {
 	var nstr string
-	if o.IsMultiple {
+	if o.IsMultiple && !o.IsStatic {
 		if o.TitleIsAll != "" {
 			var s []string
 			for _, i := range o.items {
@@ -260,7 +262,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 		}
 	}
 	if o.GetTitleFunc != nil {
-		nstr = o.GetTitleFunc(1)
+		nstr = o.GetTitleFunc(len(o.items))
 		o.SetTitleText(nstr)
 		return
 	}
@@ -404,8 +406,10 @@ func (o *MenuedOwner) popup() {
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := zgridlist.NewView("menu-list")
+	list.JSSet("className", "znofocus")
 	stack.SetBGColor(o.BGColor)
 	list.MultiSelectable = o.IsMultiple
+	list.SetStroke(0, zgeo.ColorClear, false)
 	list.Selectable = !o.IsMultiple
 	list.HoverColor = o.HoverColor
 	list.BorderColor.Valid = false
@@ -415,6 +419,7 @@ func (o *MenuedOwner) popup() {
 	list.MakeFullSize = true
 	list.MaxColumns = 1
 	list.MultiplyColorAlternate = 1
+	list.CurrentHoverID = "0"
 	// list.CellColorFunc = func(id string) zgeo.Color {
 	// 	i := list.IndexOfID(id)
 	// 	if o.items[i].IsSeparator {
@@ -464,7 +469,9 @@ func (o *MenuedOwner) popup() {
 	w += 18 // test
 	zfloat.Maximize(&w, o.MinWidth)
 	list.SetMinSize(zgeo.Size{w, 0})
-	list.BarSize = 0
+	if len(o.items) < 20 {
+		list.BarSize = 0
+	}
 
 	list.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 		if list.CurrentHoverID != "" && (key == zkeyboard.KeyReturn || key == zkeyboard.KeyEnter) {
@@ -548,7 +555,13 @@ func (o *MenuedOwner) popup() {
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)
-	zpresent.PresentView(stack, att, func(*zwindow.Window) {
+	zpresent.PresentView(stack, att, func(win *zwindow.Window) {
+		if win == nil {
+			return
+		}
+		ztimer.StartIn(0.1, func() {
+			list.Focus(true)
+		})
 		//		pop.Element.Set("selectedIndex", 0)
 	}, func(dismissed bool) {
 		// zlog.Info("menued closed", dismissed, o.IsMultiple)
@@ -681,6 +694,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		font := o.Font
 		font.Style = zgeo.FontStyleBold
 		keyLabel.SetFont(font)
+		marg.W += 4
 		v.Add(keyLabel, zgeo.CenterRight, marg)
 	}
 
