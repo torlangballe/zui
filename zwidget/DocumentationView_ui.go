@@ -128,6 +128,9 @@ func DocumentationViewPresent(path string, modal bool) error {
 	}
 	zpresent.PresentView(v, attr, func(win *zwindow.Window) {
 		// zlog.Info("SetDocPath:", path, modal)
+		if win == nil {
+			return
+		}
 		v.WebView.SetURL(path)
 		// go func() {
 		// 	setCSSFile(win, cssURL)
