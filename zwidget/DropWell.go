@@ -31,7 +31,7 @@ func NewDropWell(filePath string, size zgeo.Size) *DropWell {
 	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.Size{5, 5}, Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
 	v.DownsampleImages = true
 	v.SetMinSize(size)
-	v.SetCanFocus(true)
+	v.SetCanFocus(zview.FocusAllowTab)
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
 		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
 			r := v.HandleDropPreflight(name)

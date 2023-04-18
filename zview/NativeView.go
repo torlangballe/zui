@@ -6,6 +6,8 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
+type FocusType int
+
 type NativeView struct {
 	baseNativeView
 	View       View
@@ -25,6 +27,10 @@ const (
 	DragDropFile          DragType = "file"
 
 	BaseZIndex = 100
+
+	FocusNonTab FocusType = iota + 1
+	FocusAllowTab
+	FocusNone
 )
 
 var (

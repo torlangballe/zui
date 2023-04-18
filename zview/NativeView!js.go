@@ -37,7 +37,7 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool)      {}
 func (v *NativeView) Scale(scale float64)                                    {}
 func (v *NativeView) Rotate(deg float64)                                     {}
 func (v *NativeView) Focus(focus bool)                                       {}
-func (v *NativeView) SetCanFocus(can bool)                                   {}
+func (v *NativeView) SetCanFocus(f FocusType)                                   {}
 func (v *NativeView) SetOpaque(opaque bool)                                  {}
 func (v *NativeView) DumpTree()                                              {}
 func (v *NativeView) SetFont(font *zgeo.Font)                                {}

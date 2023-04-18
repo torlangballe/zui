@@ -2,7 +2,6 @@ package zview
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -378,13 +377,28 @@ func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
 }
 
-func (v *NativeView) SetCanFocus(can bool) {
-	val := "-1"
-	if can {
-		val = "0"
+func (v *NativeView) CanFocus() FocusType {
+	val := v.JSGet("tabIndex")
+	if val.IsUndefined() || val.String() == "" {
+		return FocusNone
 	}
-	v.JSSet("tabIndex", val) // Note the capital I in tabIndex !!!!!!
-	v.JSSet("className", "zfocus")
+	if val.Int() < 0 {
+		return FocusNonTab
+	}
+	return FocusAllowTab
+}
+
+func (v *NativeView) SetCanFocus(f FocusType) {
+	switch f {
+	case FocusAllowTab:
+		v.JSSet("tabIndex", "0") // Note the capital I in tabIndex !!!!!!
+		v.JSSet("className", "zfocus")
+	case FocusNonTab:
+		v.JSSet("tabIndex", "-1")
+		v.JSSet("className", "zfocus")
+	case FocusNone:
+		v.JSSet("tabIndex", "")
+	}
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
@@ -915,9 +929,9 @@ func setKeyHandler(event string, v *NativeView, handler func(key zkeyboard.Key, 
 			event := args[0]
 			key, mods := zkeyboard.GetKeyAndModsFromEvent(event)
 			if handler(key, mods) {
+				event.Call("preventDefault")
 				event.Call("stopPropagation")
 			}
-			// zlog.Info("KeyUp:", key, mods)
 		}
 		return nil
 	}))
@@ -969,8 +983,12 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			oldMouseMove = js.Null()
 			v.GetWindowElement().Set("onmouseup", nil)
 			if handler(upPos, zbool.False) {
+				if v.CanFocus() != FocusNone {
+					// focusParent(v)
+				}
+				// e.Call("stopPropagation")
 				e.Call("preventDefault")
-
+				// }
 			}
 			return nil
 		}))
@@ -978,7 +996,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		if handler(*movingPos, zbool.True) {
-			e.Call("preventDefault")
+			// e.Call("preventDefault")
 		}
 		oldMouseMove = v.GetWindowElement().Get("onmousemove")
 		v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -995,13 +1013,13 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	}))
 }
 
-func (v *NativeView) SetDownloader(surl, name string) {
-	if name == "" {
-		_, name = path.Split(surl)
-	}
-	// v.JSSet("download", name)
-	v.JSSet("href", surl)
-}
+// func (v *NativeView) SetDownloader(surl, name string) {
+// 	if name == "" {
+// 		_, name = path.Split(surl)
+// 	}
+// 	// v.JSSet("download", name)
+// 	v.JSSet("href", surl)
+// }
 
 func (v *NativeView) MakeLink(surl, name string) {
 	stype := strings.ToLower(v.Element.Get("nodeName").String())
@@ -1103,11 +1121,9 @@ func (root *NativeView) GetFocusedChildView() *NativeView {
 		return nil
 	}
 	foundID := e.Get("id").String()
-	zlog.Info("GetFocusedView:", foundID)
 	RangeAllVisibleChildrenFunc(root.View, func(view View) bool {
 		n := view.Native()
 		id := n.JSGet("id").String()
-		// zlog.Info("IsFoc:", id, foundID)
 		if id == foundID {
 			found = n
 			return false
