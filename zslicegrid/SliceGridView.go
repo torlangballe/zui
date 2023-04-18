@@ -135,7 +135,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	// 	v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
 	// }
 	if options&AddMenu != 0 {
-		actions := zimageview.New(nil, "images/gear.png", zgeo.Size{18, 18})
+		actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
@@ -194,7 +194,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
-	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}) //.Margin = zgeo.Size{4, 0}
+	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
@@ -488,7 +488,7 @@ func (v *SliceGridView[S]) DeleteItemsAsk(ids []string) {
 	alert := zalert.NewWithCancel(title + "?")
 	if v.DeleteAskSubTextFunc != nil {
 		sub := v.DeleteAskSubTextFunc(ids)
-		alert.SetSub(sub)
+		alert.SubText = sub
 	}
 	alert.ShowOK(func() {
 		go v.DeleteItemsFunc(ids)
