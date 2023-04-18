@@ -43,7 +43,9 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 		// zlog.Info("TextView:", v.Hierarchy(), stype)
 		v.JSSet("type", stype)
 	}
+	v.SetMargin(zgeo.RectFromXY2(0, 3, -10, -12))
 	v.SetObjectName("textview")
+	v.SetAboveParent(true)
 	v.Columns = cols
 	css := v.JSStyle()
 	css.Set("position", "absolute")
@@ -52,7 +54,7 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	css.Set("-webkitBoxShadow", "none") // doesn't work
 	// css.Set("outlineOffset", "-2px")
 	css.Set("overflow", "visible")
-	css.Set("margin-top", "1px")
+	// css.Set("margin-top", "1px")
 
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
@@ -132,14 +134,15 @@ func (v *TextView) SetPlaceholder(str string) {
 }
 
 func (v *TextView) SetRect(rect zgeo.Rect) {
-	rect.Pos.Y -= 1
+	rect.Add(v.margin)
+	// rect.Pos.Y -= 1
 	// zlog.Info("TV SetRect", v.ObjectName(), rect, v.Text())
+	// rect = rect.Plus(zgeo.RectFromXY2(2, 4, -10, -10))
 	v.NativeView.SetRect(rect)
 }
 
 func (v *TextView) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	// str := fmt.Sprintf("%dpx", int(m.Min().X))
 	v.NativeView.SetNativeMargin(m)
 }
 
