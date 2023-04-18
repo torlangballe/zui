@@ -3,6 +3,8 @@
 package zshape
 
 import (
+	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -30,8 +32,9 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 		insets = zgeo.Size{6, 10}
 	}
 	v.MaxSize.H = minSize.H
-	v.SetCanFocus(true)
+	v.SetCanFocus(zview.FocusNone)
 	v.ImageAlign = zgeo.Expand | zgeo.Center
+	v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
 	v.SetColor(zgeo.Color{})
 	v.SetImageName(imageName, insets)
 	v.textInfo.Text = title
@@ -40,6 +43,15 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
 	v.ImageMargin = zgeo.Size{}
+	v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+		if key.IsReturnish() && mod == zkeyboard.ModifierNone {
+			if v.PressedHandler() != nil {
+				v.PressedHandler()()
+				return true
+			}
+		}
+		return false
+	})
 }
 
 func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -52,5 +64,5 @@ func (v *ImageButtonView) SetImageName(name string, insets zgeo.Size) {
 	if name == "" {
 		name = ImageButtonViewDefaultName
 	}
-	v.SetNamedCapImage("images/buttons/"+name, insets)
+	v.SetNamedCapImage("images/zbuttons/"+name, insets)
 }
