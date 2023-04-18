@@ -99,7 +99,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 }
 
 func (v *SQLTableView[S]) addActionButton() {
-	actions := zimageview.New(nil, "images/gear.png", zgeo.Size{18, 18})
+	actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
 	actions.DownsampleImages = true
 	actionMenu := zmenu.NewMenuedOwner()
 	actionMenu.Build(actions, nil)
@@ -151,8 +151,8 @@ func (v *SQLTableView[S]) insertRow(s S) {
 	info.EqualColumns = v.equalFields
 
 	first := v.setFields[v.Header.SortOrder[0].FieldName]
-	val, _, got := zreflect.FieldForName(&s, true, first)
-	if zlog.ErrorIf(!got, first) {
+	val, _, findex := zreflect.FieldForName(&s, true, first)
+	if zlog.ErrorIf(findex == -1, first) {
 		return
 	}
 	sval := fmt.Sprint(val)
