@@ -12,10 +12,12 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -40,9 +42,8 @@ type CalendarView struct {
 	monthLabel         *zlabel.Label
 	days               map[zgeo.IPos]time.Time
 	daysSlider         zanimation.Swapper
-	settingsFlipper    zanimation.Swapper
+	settingsSlider     zanimation.Swapper
 	lastTrans          zgeo.Pos
-	gridRect           zgeo.Rect
 	navigator          zcontainer.ChildFocusNavigator
 }
 
@@ -163,20 +164,39 @@ func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	bottom.Show(!show)
 }
 
+func addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool]) *zcheckbox.CheckBox {
+	check, _, stack := zcheckbox.NewWithLabel(false, title, "")
+	s.Add(stack, zgeo.CenterLeft)
+	if option != nil {
+		check.SetOn(option.Get())
+		check.SetValueHandler(func() {
+			option.Set(check.On())
+		})
+	}
+	return check
+}
+
 func (v *CalendarView) handleSettingsPressed() {
 	// secs := 0.6
 	zlog.Info("handleSettingsPressed")
 	s := zcontainer.StackViewVert("v1")
 	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
-	s.SetTilePath("images/tile.png")
-	s.SetZIndex(zview.BaseZIndex + 4)
-	_, _, monStack := zcheckbox.NewWithLabel(true, "Week Starts on Monday", "")
-	s.Add(monStack, zgeo.CenterLeft)
+	// s.SetTilePath("images/tile.png")
+	s.SetBGColor(zgeo.ColorNewGray(0.85, 0.9))
+	v.daysGrid.SetJSStyle("filter", "blur(5px)")
+
+	//!!!	backdrop-filter: url(filters.svg#filter) blur(4px) saturate(150%);
+	// https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter
+
+	addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek)
+	addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekdaysInCalendars)
+	addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock)
+	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
+	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
 	// ztimer.StartIn(secs/2, func() {
 	// 	v.daysGrid.SetJSStyle("filter", "blur(5px) brightness(150%)")
 	// })
-	v.settingsFlipper.FlipSwapViews(v, v.daysGrid, s, zgeo.Left, 0.6, nil)
-
+	v.settingsSlider.SlideViewInOverOld(v, v.daysGrid, s, zgeo.Bottom, 0.5, nil)
 }
 
 func (v *CalendarView) Value() time.Time {
@@ -411,10 +431,10 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 		}
 	}
 	if v.daysGrid == nil {
-		v.Add(grid, zgeo.Center, zgeo.Size{2, 2})
+		v.Add(grid, zgeo.Center)
 	} else {
 		old := v.daysGrid
-		v.daysSlider.TranslateSwapViews(v, v.daysGrid, grid, dir, 0.4, func() {
+		v.daysSlider.SlideViewInOldOut(v, v.daysGrid, grid, dir, 0.4, func() {
 			v.RemoveChild(old)
 		})
 		//		tranformGrid(v, grid, dir)
@@ -425,8 +445,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 func (v *CalendarView) ArrangeChildren() {
 	v.StackView.ArrangeChildren()
 	if v.daysGrid != nil {
-		v.daysSlider.OriginalRect = v.daysGrid.Rect().ExpandedD(-2)
-		v.settingsFlipper.OriginalRect = v.daysGrid.Rect().ExpandedD(-2)
-		//		v.gridRect = v.daysGrid.Rect()
+		v.daysSlider.OriginalRect = v.daysGrid.Rect()
+		v.settingsSlider.OriginalRect = v.daysGrid.Rect()
 	}
 }
