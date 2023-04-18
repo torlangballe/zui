@@ -404,6 +404,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	var selectionChanged bool
 	switch down {
 	case zbool.True:
+		v.Focus(true)
 		// zlog.Info("handleUpDownMovedHandler down", inside, id)
 		if !inside || id == "" {
 			return false
