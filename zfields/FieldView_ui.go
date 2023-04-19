@@ -947,21 +947,22 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
 		// zlog.Info("makeTextTime:", str, f.Name)
 	}
 	format := f.Format
+	significant := f.Columns
 	switch format {
 	case "memory":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
-			return zwords.GetMemoryString(b, "", 1)
+			return zwords.GetMemoryString(b, "", significant)
 		}
 	case "storage":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
-			return zwords.GetStorageSizeString(b, "", 1)
+			return zwords.GetStorageSizeString(b, "", significant)
 		}
 	case "bps":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
-			return zwords.GetBandwidthString(b, "", 1)
+			return zwords.GetBandwidthString(b, "", significant)
 		}
 	case "":
 		format = "%v"
