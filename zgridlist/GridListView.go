@@ -1000,7 +1000,7 @@ func (v *GridListView) handleKeyPressed(key zkeyboard.Key, mod zkeyboard.Modifie
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("List ReadyToShow:", v.ObjectName(), v.CreateCellFunc != nil)
 	if beforeWindow && v.BorderColor.Valid {
-		v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
+		// v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
 	}
 	// if !beforeWindow && (v.Selectable || v.MultiSelectable) {
 	// 	zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
