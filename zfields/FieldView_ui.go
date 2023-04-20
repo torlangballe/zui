@@ -34,6 +34,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zguiutil"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
@@ -904,7 +905,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		if secs {
 			format = "15:04:03"
 		}
-		if ztime.DefaultDisplayServerTime {
+		if zlocale.DisplayServerTime.Get() {
 			format += "-07"
 		}
 		format += " 02-Jan-06"
