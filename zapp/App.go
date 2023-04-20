@@ -87,6 +87,5 @@ func GetDocumentationValues() zdict.Dict {
 func MemoryUsed() int64 {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	rss := m.HeapSys - m.HeapReleased
-	return int64(rss)
+	return int64(m.Sys)
 }
