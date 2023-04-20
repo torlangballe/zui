@@ -63,6 +63,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	filepath := path.Join(filePathPrefix, spath)
 	if r.Override != nil {
 		if r.Override(w, req, filepath) {
+			req.Body.Close()
 			return
 		}
 	}
@@ -97,6 +98,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if redirectToDir {
 		// zlog.Info("Serve embed:", spath)
 		localRedirect(w, req, zrest.AppURLPrefix)
+		req.Body.Close()
 		return
 	}
 	// zlog.Info("FilesRedir2:", req.URL.Path, spath)
@@ -106,6 +108,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	data, err := wwwFS.ReadFile(zrest.StaticFolder + "/" + spath)
 	// zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
+	req.Body.Close()
 	if err == nil {
 		_, err := w.Write(data)
 		if err != nil {
@@ -149,7 +152,6 @@ func (c *AppCalls) GetTimeInfo(u zrpc2.Unused, info *LocationTimeInfo) error {
 }
 
 func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC bool, parts []string) {
-	defer req.Body.Close()
 	values := req.URL.Query()
 	raw := values.Get("raw")
 	md := (raw == "md")
