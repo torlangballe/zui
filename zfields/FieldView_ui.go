@@ -1445,6 +1445,15 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 					})
 					v.AddOnRemoveFunc(timer.Stop)
 					view.Native().AddOnRemoveFunc(timer.Stop)
+				} else {
+					if f.Format == "nice" {
+						timer := ztimer.StartAt(ztime.OnTheNextHour(time.Now()), func() {
+							nlabel := view.(*zlabel.Label)
+							str := getTextFromNumberishItem(rval, f)
+							nlabel.SetText(str)
+						})
+						v.AddOnRemoveFunc(timer.Stop)
+					}
 				}
 			}
 
