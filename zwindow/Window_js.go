@@ -223,6 +223,11 @@ func (w *Window) AddView(v zview.View) {
 	wn.AddChild(v, -1)
 }
 
+func (w *Window) Reload() {
+	loc := w.Element.Get("location")
+	loc.Call("reload")
+}
+
 func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {
 	w.Element.Set("scroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if handler != nil {
