@@ -11,10 +11,9 @@ import (
 
 func New(text string) *Label {
 	v := &Label{}
-	v.Element = zdom.DocumentJS.Call("createElement", "label")
+	v.MakeJSElement(v, "label")
 	// zlog.Info("Label New:", v.textInfo.SplitItems, text)
 	style := v.JSStyle()
-	style.Set("position", "absolute")
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	// style.Set("verticalAlign", "middle")
