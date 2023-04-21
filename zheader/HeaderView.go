@@ -56,10 +56,6 @@ func NewView(storeName string) *HeaderView {
 	return v
 }
 
-func (v *HeaderView) ArrangeChildren() {
-	v.StackView.ArrangeChildren()
-}
-
 func (v *HeaderView) updateTriangle(triangle *zimageview.ImageView, id string) {
 	i := v.findSortInfo(id)
 	sorting := v.SortOrder[i]
@@ -73,7 +69,7 @@ func (v *HeaderView) updateTriangle(triangle *zimageview.ImageView, id string) {
 		str = "up"
 	}
 
-	str = fmt.Sprintf("images/sort-triangle-%s.png", str)
+	str = fmt.Sprintf("images/zcore/sort-triangle-%s.png", str)
 	triangle.SetImage(nil, str, nil)
 }
 
