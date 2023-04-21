@@ -55,6 +55,7 @@ type GridListView struct {
 	BranchToggleType       zwidget.BranchToggleType
 	OpenBranches           map[string]bool
 	CurrentHoverID         string
+	FocusWidth             float64
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -102,6 +103,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.ScrollView.Init(view, storeName)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.MinColumns = 1
+	v.FocusWidth = 3
 	v.children = map[string]zview.View{}
 	v.selectedIndex = -1
 	v.pressStartIndex = -1
@@ -555,21 +557,21 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 }
 
 func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	marg := zgeo.Size{6, 6}
 	// v.cachedChildSize = zgeo.Size{}
 	s := v.MinSize()
 	if v.CellCountFunc() == 0 {
-		return s
+		return s.Plus(marg)
 	}
 	if v.MakeFullSize {
-		return v.CalculatedGridSize(total)
+		return v.CalculatedGridSize(total).Plus(marg)
 	}
 	childSize := v.getAChildSize(total)
 	mx := math.Max(1, float64(v.MinColumns))
 	w := childSize.W*mx + v.Spacing.W*(mx-1) - v.margin.Size.W
 	zfloat.Maximize(&s.W, w)
-	s.Add(zgeo.Size{3, 3}) // focus
 	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), s, v.MinSize())
-	return s
+	return s.Plus(marg)
 }
 
 func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
@@ -649,7 +651,7 @@ func (v *GridListView) GetChildren(collapsed bool) (children []zview.View) {
 }
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
-	v.ScrollView.SetRect(rect.ExpandedD(-3))
+	v.ScrollView.SetRect(rect.ExpandedD(-v.FocusWidth))
 	// zlog.Info("GL: SetRect:", rect, v.Rect(), v.cellsView.Rect())
 	at := v.View.(zcontainer.Arranger) // in case we are a stack or something inheriting from GridListView
 	// zlog.Info("GL: SetRect:", v.View.Native().Hierarchy(), rect)
@@ -699,7 +701,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 }
 
 func (v *GridListView) innerRect() zgeo.Rect {
-	return v.LocalRect().ExpandedD(-3)
+	return v.LocalRect().ExpandedD(-v.FocusWidth)
 }
 
 func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool) {
@@ -707,7 +709,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	if v.CellCountFunc() == 0 {
 		return
 	}
-	rect := v.innerRect().ExpandedToInt()
+	rect := v.LocalRect().ExpandedToInt()
 	rect.Size.W -= v.BarSize
 	// zlog.Info("ForEachCell", rect)
 	pos := rect.Pos.Floor()
@@ -780,6 +782,11 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) ArrangeChildren() {
+	w := zscrollview.DefaultBarSize
+	if v.CellCountFunc() < 20 {
+		w = 0
+	}
+	v.ScrollView.BarSize = w
 	v.ScrollView.ArrangeChildren()
 	locSize := v.innerRect().Size
 	s := v.CalculatedGridSize(locSize)
