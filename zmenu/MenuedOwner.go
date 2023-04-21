@@ -406,6 +406,7 @@ func (o *MenuedOwner) popup() {
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := zgridlist.NewView("menu-list")
+	list.FocusWidth = 0
 	list.JSSet("className", "znofocus")
 	stack.SetBGColor(o.BGColor)
 	list.MultiSelectable = o.IsMultiple
