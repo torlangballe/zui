@@ -64,13 +64,6 @@ func NewView(shapeType Type, minSize zgeo.Size) *ShapeView {
 	return v
 }
 
-func (v *ShapeView) SetRect(r zgeo.Rect) {
-	// if v.textInfo.Text == "noun" {
-	// 	zlog.Info("SetRect noun", v.Hierarchy(), r.Size, zlog.CallingStackString())
-	// }
-	v.CustomView.SetRect(r)
-}
-
 func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, name string) {
 	v.CustomView.Init(view, name)
 	v.textInfo = *ztextinfo.New()
