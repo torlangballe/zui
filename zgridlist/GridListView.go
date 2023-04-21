@@ -567,6 +567,7 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	mx := math.Max(1, float64(v.MinColumns))
 	w := childSize.W*mx + v.Spacing.W*(mx-1) - v.margin.Size.W
 	zfloat.Maximize(&s.W, w)
+	s.Add(zgeo.Size{3, 3}) // focus
 	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), s, v.MinSize())
 	return s
 }
@@ -648,7 +649,7 @@ func (v *GridListView) GetChildren(collapsed bool) (children []zview.View) {
 }
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
-	v.ScrollView.SetRect(rect)
+	v.ScrollView.SetRect(rect.ExpandedD(-3))
 	// zlog.Info("GL: SetRect:", rect, v.Rect(), v.cellsView.Rect())
 	at := v.View.(zcontainer.Arranger) // in case we are a stack or something inheriting from GridListView
 	// zlog.Info("GL: SetRect:", v.View.Native().Hierarchy(), rect)
@@ -697,12 +698,16 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	return child, false
 }
 
+func (v *GridListView) innerRect() zgeo.Rect {
+	return v.LocalRect().ExpandedD(-3)
+}
+
 func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rect, x, y int, visible bool) bool) {
 	// zlog.Info("ForEachCell", v.margin)
 	if v.CellCountFunc() == 0 {
 		return
 	}
-	rect := v.LocalRect().ExpandedToInt()
+	rect := v.innerRect().ExpandedToInt()
 	rect.Size.W -= v.BarSize
 	// zlog.Info("ForEachCell", rect)
 	pos := rect.Pos.Floor()
@@ -751,7 +756,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		marg := zgeo.RectFromXY2(minx, miny, maxx, maxy).ExpandedToInt()
 		r.Size.Add(marg.Size.Negative())
 		cr := r.Plus(marg)
-		visible := (r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+v.LocalRect().Size.H)
+		visible := (r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+v.innerRect().Size.H)
 		r2 := r
 		if v.BorderColor.Valid {
 			r2.Size.W -= 1
@@ -776,8 +781,9 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 
 func (v *GridListView) ArrangeChildren() {
 	v.ScrollView.ArrangeChildren()
-	s := v.CalculatedGridSize(v.LocalRect().Size)
-	r := zgeo.Rect{Size: zgeo.Size{v.LocalRect().Size.W, s.H + 1}}
+	locSize := v.innerRect().Size
+	s := v.CalculatedGridSize(locSize)
+	r := zgeo.Rect{Size: zgeo.Size{locSize.W, s.H + 1}}
 	// r.Pos.X--
 	r.Pos.Y--
 	// zlog.Info("glist.ArrangeChildren0", v.Hierarchy(), r.Size.W)

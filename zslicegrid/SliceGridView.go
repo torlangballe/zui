@@ -194,7 +194,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
-	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
+	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand) //, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
