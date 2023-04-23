@@ -57,7 +57,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 
 func (v *WebView) setTitle() {
 	str := v.url
-	win := zwindow.GetFromNativeView(&v.NativeView)
+	win := zwindow.FromNativeView(&v.NativeView)
 	if win != nil {
 		// zlog.Info("SetWebViewURLTitle:", str)
 		win.SetTitle(str)

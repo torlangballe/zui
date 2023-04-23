@@ -48,5 +48,5 @@ func (win *Window) SetLocation(surl string)      {}
 func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, zkeyboard.Modifier) bool) {
 }
 func (win *Window) SetOnResizeHandling()            {}
-func GetFromNativeView(v *zview.NativeView) *Window { return nil }
+func FromNativeView(v *zview.NativeView) *Window { return nil }
 func Current() *Window                              { return nil }

@@ -111,7 +111,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			// zlog.Info("Present:", v.Native().Hierarchy(), r, win.ContentRect())
 		}
 		if attributes.ModalDismissOnEscapeKey {
-			w := zwindow.GetFromNativeView(nv)
+			w := zwindow.FromNativeView(nv)
 			w.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 				if mod == zkeyboard.ModifierNone && key == zkeyboard.KeyEscape {
 					Close(v, true, nil)
@@ -195,7 +195,7 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 		// zlog.Info("CloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
-	win := zwindow.GetFromNativeView(nv)
+	win := zwindow.FromNativeView(nv)
 	plen := len(win.ViewsStack)
 	if plen > 0 {
 		win.ViewsStack = win.ViewsStack[:plen-1]
@@ -222,7 +222,7 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 
 func CurrentIsParent(v zview.View) bool {
 	nv := v.Native()
-	win := zwindow.GetFromNativeView(nv)
+	win := zwindow.FromNativeView(nv)
 	l := len(win.ViewsStack)
 	if l <= 1 {
 		return true

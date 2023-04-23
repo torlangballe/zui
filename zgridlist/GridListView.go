@@ -1016,7 +1016,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 		// v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
 	}
 	// if !beforeWindow && (v.Selectable || v.MultiSelectable) {
-	// 	zwindow.GetFromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
+	// 	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
 	// }
 }
 

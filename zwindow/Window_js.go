@@ -46,7 +46,7 @@ func init() {
 	windows[winMain] = true
 
 	zview.RemoveKeyPressHandlerViewsFunc = func(v zview.View) {
-		win := GetFromNativeView(v.Native())
+		win := FromNativeView(v.Native())
 		win.removeKeyPressHandlerViews(v)
 	}
 }
@@ -331,7 +331,7 @@ func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, 
 	}))
 }
 
-func GetFromNativeView(v *zview.NativeView) *Window {
+func FromNativeView(v *zview.NativeView) *Window {
 	we := v.GetWindowElement()
 	win := findForElement(we)
 	return win

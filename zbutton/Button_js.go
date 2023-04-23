@@ -46,7 +46,7 @@ func (v *Button) MakeEnterDefault() {
 
 	//	v.margin.Size.H += 4
 	// ztimer.StartIn(0.01, func() {
-	// 	win := zwindow.GetFromNativeView(&v.NativeView)
+	// 	win := zwindow.FromNativeView(&v.NativeView)
 	// 	win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 	// 		if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
 	// 			v.Element.Call("click")
@@ -59,7 +59,7 @@ func (v *Button) MakeEnterDefault() {
 
 func (v *Button) MakeEscapeCanceler() {
 	ztimer.StartIn(0.01, func() {
-		win := zwindow.GetFromNativeView(&v.NativeView)
+		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 			if key == zkeyboard.KeyEscape && mod == zkeyboard.ModifierNone {
 				v.Element.Call("click")
