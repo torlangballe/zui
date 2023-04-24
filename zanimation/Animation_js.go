@@ -34,7 +34,7 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 	var startJS js.Value
 
 	randomID := int(rand.Int31())
-	win := zwindow.GetFromNativeView(view.Native())
+	win := zwindow.FromNativeView(view.Native())
 	animationFunc = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("Ani")
 		posJS := args[0]

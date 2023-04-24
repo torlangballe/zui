@@ -252,9 +252,6 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.Element.Get("history").Call("pushState", "", "", surl)
 }
 
-// func setKeyHandler(doc js.Value, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
-// }
-
 func (win *Window) setOnKeyDown() {
 	doc := win.Element.Get("document")
 	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
