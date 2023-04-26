@@ -100,9 +100,27 @@ func (v *ContainerView) GetCells() *[]Cell {
 	return &v.Cells
 }
 
-func ArrangeParentContainer(view zview.View) {
-	parent := view.Native().Parent().View.(Arranger)
-	parent.ArrangeChildren()
+func ArrangeAncestorContainer(view zview.View) {
+	a := FindAncestorArranger(view)
+	if a == nil {
+		zlog.Error(nil, "no parent arranger", view.Native().Hierarchy())
+		return
+	}
+	a.ArrangeChildren()
+}
+
+func FindAncestorArranger(view zview.View) Arranger {
+	nv := view.Native()
+	for {
+		if nv.Parent() == nil {
+			return nil
+		}
+		a, _ := nv.View.(Arranger)
+		if a != nil {
+			return a
+		}
+		nv = nv.Parent()
+	}
 }
 
 func (v *ContainerView) CountChildren() int {
@@ -350,6 +368,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 	}
 	if arrange && v.Presented {
 		at := v.View.(Arranger) // we might be "inherited" by StackView or something
+		zlog.Info("Arrange on collapse", v.Hierarchy())
 		at.ArrangeChildren()
 	}
 	if !collapse {
