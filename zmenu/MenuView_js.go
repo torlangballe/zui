@@ -163,5 +163,9 @@ func (v *MenuView) SetFont(font *zgeo.Font) {
 }
 
 func (v *MenuView) SetRect(r zgeo.Rect) {
-	v.NativeView.SetRect(r.PlusPos(zgeo.Pos{0, 2}))
+	plus := zgeo.Pos{}
+	if zdevice.WasmBrowser() == "safari" {
+		plus = zgeo.Pos{2, 2}
+	}
+	v.NativeView.SetRect(r.PlusPos(plus))
 }
