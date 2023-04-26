@@ -4,6 +4,7 @@ package zcalendar
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/torlangballe/zui/zanimation"
@@ -12,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zwindow"
 
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -23,34 +25,39 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-type Flag int
-
-const (
-	WeekNumbers Flag = 1 << iota
-	SundayFirst
-)
-
 var headerColor = zgeo.ColorNew(0.8, 0.4, 0.1, 1)
 
 type CalendarView struct {
 	zcontainer.StackView
-	Flags              Flag
-	value              time.Time
-	HandleValueChanged func()
-	currentShowing     time.Time
-	daysGrid           *zcontainer.GridView
-	monthLabel         *zlabel.Label
-	days               map[zgeo.IPos]time.Time
-	daysSlider         zanimation.Swapper
-	settingsSlider     zanimation.Swapper
-	lastTrans          zgeo.Pos
-	navigator          zcontainer.ChildFocusNavigator
+	value               time.Time
+	HandleValueChanged  func()
+	currentShowing      time.Time
+	daysGrid            *zcontainer.GridView
+	monthLabel          *zlabel.Label
+	days                map[zgeo.IPos]time.Time
+	daysSlider          zanimation.Swapper
+	settingsSlider      zanimation.Swapper
+	lastTrans           zgeo.Pos
+	navigator           zcontainer.ChildFocusNavigator
+	header              *zcontainer.StackView
+	settings            *zimageview.ImageView
+	updateAfterSettings bool
 }
 
 func New(storeName string) *CalendarView {
 	v := &CalendarView{}
 	v.Init(v, storeName)
 	return v
+}
+
+func (v *CalendarView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	marg := zgeo.Size{6, 6}
+	s := v.StackView.CalculatedSize(total)
+	return s.Plus(marg)
+}
+
+func (v *CalendarView) SetRect(r zgeo.Rect) {
+	v.StackView.SetRect(r.ExpandedD(-3))
 }
 
 func (v *CalendarView) handleArrowMove(view zview.View, dir zgeo.Alignment) {
@@ -75,17 +82,17 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.SetSpacing(0)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.SetStroke(1, zgeo.ColorDarkGray, false)
-	v.SetCanFocus(true)
+	v.SetCanFocus(zview.FocusAllowTab)
 	v.days = map[zgeo.IPos]time.Time{}
 	v.navigator.HandleSelect = v.handleArrowMove
-	header := zcontainer.StackViewHor("header")
-	header.SetZIndex(zview.BaseZIndex + 1)
-	header.SetBGColor(headerColor)
-	v.Add(header, zgeo.TopCenter|zgeo.HorExpand)
+	v.header = zcontainer.StackViewHor("header")
+	v.header.SetZIndex(zview.BaseZIndex + 1)
+	v.header.SetBGColor(headerColor)
+	v.Add(v.header, zgeo.TopCenter|zgeo.HorExpand)
 
 	v.monthLabel = makeHeaderLabel("", zgeo.HorCenter)
 	v.monthLabel.SetObjectName("header-title")
-	header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
+	v.header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
 	v.monthLabel.SetPressedHandler(func() {
 		t := time.Now()
 		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierCommand && !v.value.IsZero() {
@@ -95,42 +102,41 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	})
 	monthAdd := makeHeaderLabel("▼", zgeo.Right)
 	// monthAdd.SetObjectName("month-add")
-	header.Add(monthAdd, zgeo.CenterRight, zgeo.Size{30, 0}).Free = true
+	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.Size{30, 0}).Free = true
 	monthAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
 	monthAdd.SetPressedHandler(func() {
 		v.Increase(1, 0)
 	})
 	yearAdd := makeHeaderLabel("⏵⏵", zgeo.Right)
 	yearAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
-	header.Add(yearAdd, zgeo.CenterRight, zgeo.Size{4, 0}).Free = true
+	v.header.Add(yearAdd, zgeo.CenterRight, zgeo.Size{4, 0}).Free = true
 	yearAdd.SetPressedHandler(func() {
 		v.Increase(0, 1)
 	})
 	monthSub := makeHeaderLabel("▲", zgeo.Left)
 	monthSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
-	header.Add(monthSub, zgeo.CenterLeft, zgeo.Size{30, 0}).Free = true
+	v.header.Add(monthSub, zgeo.CenterLeft, zgeo.Size{30, 0}).Free = true
 	monthSub.SetPressedHandler(func() {
 		v.Increase(-1, 0)
 	})
 	yearSub := makeHeaderLabel("⏴⏴", zgeo.Left)
 	yearSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
-	header.Add(yearSub, zgeo.CenterLeft, zgeo.Size{4, 0}).Free = true
+	v.header.Add(yearSub, zgeo.CenterLeft, zgeo.Size{4, 0}).Free = true
 	yearSub.SetPressedHandler(func() {
 		v.Increase(0, -1)
 	})
-	settings := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
-	settings.SetZIndex(zview.BaseZIndex + 2)
-	settings.SetAlpha(0)
-	settings.SetPressedHandler(v.handleSettingsPressed)
-	v.Add(settings, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
+	v.settings = zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
+	v.settings.SetZIndex(zview.BaseZIndex + 2)
+	v.settings.SetAlpha(0)
+	v.settings.SetPressedHandler(v.handleSettingsPressed)
+	v.Add(v.settings, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
 
-	v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		// zlog.Info("CAlKey:", key, mod)
+	v.SetKeyHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
 		if key == zkeyboard.KeyCommand {
-			showSettings(v, settings, true)
+			showSettings(v, v.settings, true)
 			return false
 		}
-		if zkeyboard.KeyIsReturnish(key) {
+		if key.IsReturnish() {
 			if v.navigator.CurrentFocused != nil {
 				cell, _ := v.daysGrid.FindCellWithView(v.navigator.CurrentFocused)
 				t := cell.AnyInfo.(time.Time)
@@ -144,9 +150,10 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 		scut := zkeyboard.KMod(key, mod)
 		return zcontainer.HandleOutsideShortcutRecursively(v, scut)
 	})
-	v.SetKeyHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+		zlog.Info("CAlKey:", key, mod)
 		if key == zkeyboard.KeyCommand {
-			showSettings(v, settings, false)
+			showSettings(v, v.settings, false)
 		}
 		return false
 	})
@@ -164,12 +171,13 @@ func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	bottom.Show(!show)
 }
 
-func addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool]) *zcheckbox.CheckBox {
+func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool]) *zcheckbox.CheckBox {
 	check, _, stack := zcheckbox.NewWithLabel(false, title, "")
 	s.Add(stack, zgeo.CenterLeft)
 	if option != nil {
 		check.SetOn(option.Get())
 		check.SetValueHandler(func() {
+			v.updateAfterSettings = true
 			option.Set(check.On())
 		})
 	}
@@ -178,21 +186,34 @@ func addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Opt
 
 func (v *CalendarView) handleSettingsPressed() {
 	// secs := 0.6
+	v.settings.SetUsable(false)
 	zlog.Info("handleSettingsPressed")
 	s := zcontainer.StackViewVert("v1")
 	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
 	// s.SetTilePath("images/tile.png")
 	s.SetBGColor(zgeo.ColorNewGray(0.85, 0.9))
 	v.daysGrid.SetJSStyle("filter", "blur(5px)")
-
+	v.header.SetUsable(false)
 	//!!!	backdrop-filter: url(filters.svg#filter) blur(4px) saturate(150%);
 	// https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter
 
-	addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek)
-	addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekdaysInCalendars)
-	addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock)
+	v.addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek)
+	v.addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekNumbersInCalendars)
+	v.addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock)
 	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
 	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
+	close.SetPressedHandler(func() {
+		v.daysGrid.SetJSStyle("filter", "none")
+		zanimation.Translate(s, zgeo.Pos{0, -v.settingsSlider.OriginalRect.Size.H}, 0.5, func() {
+			v.settings.SetUsable(true)
+			v.RemoveChild(s)
+			v.header.SetUsable(true)
+			if v.updateAfterSettings {
+				v.updateAfterSettings = false
+				v.updateShowMonth(v.currentShowing, zgeo.AlignmentNone)
+			}
+		})
+	})
 	// ztimer.StartIn(secs/2, func() {
 	// 	v.daysGrid.SetJSStyle("filter", "blur(5px) brightness(150%)")
 	// })
@@ -231,10 +252,7 @@ func (v *CalendarView) Increase(monthInc int, yearInc int) {
 		y = v.daysGrid.RowCount() - 1
 	case yearInc == 1:
 		dir = zgeo.Left
-		x = 0
-		if v.Flags&WeekNumbers != 0 {
-			x += 2
-		}
+		x = 2
 	case yearInc == -1:
 		dir = zgeo.Right
 		x = v.daysGrid.Columns - 1
@@ -259,10 +277,13 @@ func makeHeaderLabel(str string, a zgeo.Alignment) *zlabel.Label {
 func setColorsForView(v *CalendarView, view zview.View) {
 	box := view.(*zcontainer.ContainerView)
 	cell, _ := v.daysGrid.FindCellWithView(box)
-	zlog.Assert(cell != nil && cell.View != nil)
-	zlog.Assert(cell.AnyInfo != nil, view.ObjectName())
-	t := cell.AnyInfo.(time.Time)
-	v.setColors(box, box.GetChildren(true)[0].(*zlabel.Label), t)
+	// zlog.Info("setColorsForView", view != nil, cell != nil, box != nil)
+	if cell != nil {
+		zlog.Assert(cell != nil && cell.View != nil)
+		zlog.Assert(cell.AnyInfo != nil, view.ObjectName())
+		t := cell.AnyInfo.(time.Time)
+		v.setColors(box, box.GetChildren(true)[0].(*zlabel.Label), t)
+	}
 }
 
 func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.Label, t time.Time) {
@@ -374,10 +395,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 
 	v.navigator.Clear()
 	v.navigator.Focus()
-	cols := 7
-	if v.Flags&WeekNumbers != 0 {
-		cols += 2
-	}
+	cols := 9
 	grid := zcontainer.GridViewNew("days", cols)
 	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
 	// grid.SetAboveParent(false)
@@ -392,13 +410,15 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 
 	timeOnFirst := makeDate(1, month, year, loc)
 	weekDayOnFirst := timeOnFirst.Weekday()
-	if v.Flags&WeekNumbers != 0 {
-		_, weeks, _ := addLabel(v, grid, "# ")
-		weeks.SetColor(zgeo.ColorGray)
-		grid.Add(zlabel.New("   "), zgeo.TopLeft)
+	str = ""
+	if zlocale.IsShowWeekNumbersInCalendars.Get() {
+		str = "# "
 	}
+	_, weeks, _ := addLabel(v, grid, str)
+	weeks.SetColor(zgeo.ColorGray)
+	grid.Add(zlabel.New("   "), zgeo.TopLeft)
 	wd := ztime.Weekdays
-	if v.Flags&SundayFirst != 0 {
+	if !zlocale.IsMondayFirstInWeek.Get() {
 		wd = ztime.SundayFirstWeekdays
 	}
 	var started bool
@@ -417,20 +437,22 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 	day := -skips + 1
 	for row := 0; row < 6; row++ {
 		t := makeDate(day, month, year, loc)
-		if v.Flags&WeekNumbers != 0 {
-			_, weekNo := t.ISOWeek()
-			wlabel, _, _ := addLabel(v, grid, weekNo)
-			wlabel.SetColor(zgeo.ColorNew(0, 0, 0.5, 0.4))
-			wlabel.SetFont(wlabel.Font().NewWithSize(-2))
-			grid.Add(nil, zgeo.TopLeft)
+		var weekNo string
+		if zlocale.IsShowWeekNumbersInCalendars.Get() {
+			_, wn := t.ISOWeek()
+			weekNo = strconv.Itoa(wn)
 		}
+		wlabel, _, _ := addLabel(v, grid, weekNo)
+		wlabel.SetColor(zgeo.ColorNew(0, 0, 0.5, 0.4))
+		wlabel.SetFont(wlabel.Font().NewWithSize(-2))
+		grid.Add(nil, zgeo.TopLeft)
 		for d := 0; d < 7; d++ {
 			t := makeDate(day, month, year, loc)
 			addDayLabel(v, grid, t, t.Day())
 			day++
 		}
 	}
-	if v.daysGrid == nil {
+	if v.daysGrid == nil || dir == zgeo.AlignmentNone {
 		v.Add(grid, zgeo.Center)
 	} else {
 		old := v.daysGrid
