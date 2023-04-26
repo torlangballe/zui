@@ -23,7 +23,6 @@ type baseNativeView struct {
 	Element      js.Value
 	transparency float32
 	parent       *NativeView
-	bottomStroke float64
 }
 
 type AddHandler interface {
@@ -37,7 +36,6 @@ var (
 	mouseStartTime  time.Time
 	lastUploadClick time.Time
 	movingPos       *zgeo.Pos
-	// moverListeners  = map[*NativeView]js.Value{}
 
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
@@ -86,7 +84,6 @@ func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// 	zlog.Error(nil, "strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
 	// }
 	rect = rect.ExpandedToInt()
-	rect.Size.H -= v.bottomStroke
 	SetElementRect(v.Element, rect)
 }
 
@@ -263,7 +260,6 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 		str += " inset"
 	}
 	v.SetJSStyle("boxShadow", str)
-	v.bottomStroke = width
 }
 
 func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool) {
@@ -283,9 +279,6 @@ func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment
 	}
 	if a&zgeo.Bottom != 0 {
 		style.Set("borderBottom", str)
-		v.bottomStroke = width
-	} else {
-		v.bottomStroke = 0
 	}
 	str = "content-box"
 	if inset {
