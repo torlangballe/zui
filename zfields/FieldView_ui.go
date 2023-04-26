@@ -290,7 +290,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 			}
 			return true
 		})
-		zlog.Info("FV No Update, edited", v.Hierarchy())
+		zlog.Info("FV No Update because recently edited", v.Hierarchy())
 		return
 	}
 	fh, _ := v.data.(ActionHandler)
@@ -635,6 +635,17 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 	return v
 }
 
+func (v *FieldView) Rebuild() {
+	fview := FieldViewNew(v.id, v.data, v.params)
+	fview.Build(true)
+	rep, _ := v.Parent().View.(zview.ChildReplacer)
+	zlog.Info("REP:", rep != nil, v.Parent().Hierarchy())
+	if rep != nil {
+		rep.ReplaceChild(v, fview)
+	}
+	zcontainer.ArrangeChildrenAtRootContainer(v)
+}
+
 func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValue interface{}) {
 	view, _ := v.FindViewWithName(fieldID, false)
 	if view == nil {
@@ -866,6 +877,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 					}
 				}
 			}
+			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
 			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
 		}
 		menuOwner.ClosedFunc = func() {
@@ -886,6 +898,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		menu.SetSelectedHandler(func() {
 			// valInterface, _ := v.fieldToDataItem(f, menu, false)
 			v.fieldToDataItem(f, menu)
+			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
 			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
 		})
 	}

@@ -131,6 +131,18 @@ func (v *GroupBase) SetChildAlignment(id string, a zgeo.Alignment) {
 	gi.ChildAlignment = a
 }
 
+func (v *GroupBase) ReplaceChild(child, with zview.View) {
+	for i, g := range v.GroupItems {
+		if g.View == child {
+			v.GroupItems[i].View = with
+		}
+	}
+	v.StackView.ReplaceChild(child, with)
+	if v.ChildView == child {
+		v.ChildView = with
+	}
+}
+
 func (v *GroupBase) SetGroupItem(id string, done func()) {
 	if v.CurrentID == id {
 		if done != nil {

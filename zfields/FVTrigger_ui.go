@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -29,7 +30,17 @@ func (f *FieldViewParameters) AddTrigger(id string, action ActionType, function 
 	f.triggerHandlers[t] = function
 }
 
+func (v *FieldView) reloadFieldViewIfUseInValueChanged(f *Field) {
+	if f.Flags&FlagIsUseInValue != 0 {
+		zlog.Info("reloadFieldViewIfUseInValueChanged", v.Hierarchy(), f.Name)
+		v.Rebuild()
+	}
+}
+
 func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, view *zview.View) bool {
+	if action == EditedAction {
+		defer v.reloadFieldViewIfUseInValueChanged(f)
+	}
 	if v.params.triggerHandlers != nil {
 		t := trigger{id: f.FieldName, action: action}
 		function := v.params.triggerHandlers[t]
