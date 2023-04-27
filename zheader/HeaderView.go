@@ -74,7 +74,7 @@ func (v *HeaderView) updateTriangle(triangle *zimageview.ImageView, id string) {
 }
 
 func makeKey(name string) string {
-	return "HeaderView/SortOrder/" + name
+	return "zui.HeaderView/SortOrder/" + name
 }
 
 func getUserAdjustedSortOrder(tableName string) (order []zfields.SortInfo) {

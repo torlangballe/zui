@@ -83,7 +83,7 @@ func GetDocumentationValues() zdict.Dict {
 	return documentationValues
 }
 
-// MemoryUsed returns the RSS
+// MemoryUsed returns the memstats System useage TODO: Use combination av values?
 func MemoryUsed() int64 {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
