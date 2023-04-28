@@ -368,7 +368,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 	}
 	if arrange && v.Presented {
 		at := v.View.(Arranger) // we might be "inherited" by StackView or something
-		zlog.Info("Arrange on collapse", v.Hierarchy())
+		// zlog.Info("Arrange on collapse", v.Hierarchy())
 		at.ArrangeChildren()
 	}
 	if !collapse {
