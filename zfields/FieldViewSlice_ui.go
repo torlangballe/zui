@@ -153,7 +153,7 @@ func repopulateMenuGroup(mg *zgroup.MenuGroupView, slicePtr any, params FieldVie
 
 func (v *FieldView) buildRepeatedStackFromSlice(slicePtr any, vertical bool, f *Field) *zcontainer.StackView {
 	stack := zcontainer.StackViewNew(vertical, f.ID+"-stack")
-	stack.SetSpacing(v.params.Styling.Spacing)
+	stack.SetSpacing(f.Styling.Spacing)
 	var fieldView *FieldView
 	val := reflect.ValueOf(slicePtr).Elem()
 	// zlog.Info("buildStackFromSlice:", vertical, f.ID, val.Len())
