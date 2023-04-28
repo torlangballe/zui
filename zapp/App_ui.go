@@ -44,7 +44,7 @@ func MainArgs() (path string, args map[string]string) {
 }
 
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
-func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]string) {
+func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	url, _ := url.Parse(URL())
 	// host, _ := znet.GetHostAndPort(url)
 	url.Path = ""
@@ -60,7 +60,6 @@ func SetUIDefaults(useTokenAuth, useRPC bool) (path string, args map[string]stri
 		url.Path = ""
 		zrpc2.MainClient = zrpc2.NewClient(url.String(), "")
 	}
-	// fmt.Println("app.SetUIDefaults:", url.Query, args, URL(), zrpc.ToServerClient.Port)
 	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
