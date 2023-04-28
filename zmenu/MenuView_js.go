@@ -110,7 +110,7 @@ func (v *MenuView) RemoveItemByValue(value interface{}) {
 }
 
 func (v *MenuView) UpdateItems(items zdict.Items, value any) {
-	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items))
+	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items), value)
 	v.items = items // must be before v.getNumberOfItemsString
 	var str string
 	for _, item := range v.items {
@@ -124,9 +124,16 @@ func (v *MenuView) UpdateItems(items zdict.Items, value any) {
 }
 
 func (v *MenuView) SelectWithValue(value interface{}) {
-	if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.CallingStackString()) {
+	// zlog.Info("MV SelectWithValue:", value)
+	if value == nil {
+		if len(v.items) != 0 {
+			v.SelectWithValue(v.items[0].Value)
+		}
 		return
 	}
+	// if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.CallingStackString()) {
+	// 	return
+	// }
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)
 	for i, item := range v.items {
 		if reflect.DeepEqual(item.Value, value) {
