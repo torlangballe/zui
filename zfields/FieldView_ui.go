@@ -1168,7 +1168,7 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 func makeFlagStack(flags reflect.Value, f *Field) zview.View {
 	stack := zcontainer.StackViewHor("flags")
 	stack.SetMinSize(zgeo.Size{20, 20})
-	stack.SetSpacing(0)
+	stack.SetSpacing(f.Styling.Spacing)
 	return stack
 }
 
