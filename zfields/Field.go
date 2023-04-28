@@ -704,7 +704,7 @@ func SetEnumItems(name string, nameValPairs ...any) {
 
 	for i := 0; i < len(nameValPairs); i += 2 {
 		var di zdict.Item
-		di.Name = nameValPairs[i].(string)
+		di.Name = fmt.Sprint(nameValPairs[i])
 		di.Value = nameValPairs[i+1]
 		dis = append(dis, di)
 	}
