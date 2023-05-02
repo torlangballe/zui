@@ -19,6 +19,10 @@ type NativeView struct {
 type DragType string
 
 const (
+	FocusNone FocusType = iota
+	FocusNonTab
+	FocusAllowTab
+
 	DragEnter             DragType = "enter"
 	DragLeave             DragType = "leave"
 	DragOver              DragType = "over"
@@ -27,10 +31,6 @@ const (
 	DragDropFile          DragType = "file"
 
 	BaseZIndex = 100
-
-	FocusNonTab FocusType = iota + 1
-	FocusAllowTab
-	FocusNone
 )
 
 var (

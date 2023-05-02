@@ -32,7 +32,7 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 		insets = zgeo.Size{6, 10}
 	}
 	v.MaxSize.H = minSize.H
-	v.SetCanFocus(zview.FocusNone)
+	v.SetCanFocus(zview.FocusNonTab)
 	v.ImageAlign = zgeo.Expand | zgeo.Center
 	v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
 	v.SetColor(zgeo.Color{})

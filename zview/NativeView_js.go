@@ -388,6 +388,7 @@ func (v *NativeView) CanFocus() FocusType {
 }
 
 func (v *NativeView) SetCanFocus(f FocusType) {
+	// zlog.Info("SetCanFocus:", v.Hierarchy(), f, zlog.CallingStackString())
 	switch f {
 	case FocusAllowTab:
 		v.JSSet("tabIndex", "0") // Note the capital I in tabIndex !!!!!!
@@ -396,7 +397,8 @@ func (v *NativeView) SetCanFocus(f FocusType) {
 		v.JSSet("tabIndex", "-1")
 		v.JSSet("className", "zfocus")
 	case FocusNone:
-		v.JSSet("tabIndex", "")
+		v.Element.Delete("tabIndex")
+		//		v.JSSet("tabIndex", js.Null()) // this doesn't work...
 	}
 }
 
