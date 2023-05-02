@@ -40,7 +40,7 @@ type CalendarView struct {
 	lastTrans           zgeo.Pos
 	navigator           zcontainer.ChildFocusNavigator
 	header              *zcontainer.StackView
-	settings            *zimageview.ImageView
+	settingsGear        *zimageview.ImageView
 	updateAfterSettings bool
 }
 
@@ -83,6 +83,7 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.SetStroke(1, zgeo.ColorDarkGray, false)
 	v.SetCanFocus(zview.FocusAllowTab)
+	v.SetBGColor(zgeo.ColorWhite)
 	v.days = map[zgeo.IPos]time.Time{}
 	v.navigator.HandleSelect = v.handleArrowMove
 	v.header = zcontainer.StackViewHor("header")
@@ -95,11 +96,13 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
 	v.monthLabel.SetPressedHandler(func() {
 		t := time.Now()
-		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierCommand && !v.value.IsZero() {
+		zlog.Info("pressed", zkeyboard.ModifiersAtPress, v.value)
+		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierShift && !v.value.IsZero() {
 			t = v.value
 		}
 		v.updateShowMonth(t, zgeo.AlignmentNone)
 	})
+	v.monthLabel.SetToolTip("Press to go to today. Shift press to go to selected month.")
 	monthAdd := makeHeaderLabel("▼", zgeo.Right)
 	// monthAdd.SetObjectName("month-add")
 	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.Size{30, 0}).Free = true
@@ -125,18 +128,17 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	yearSub.SetPressedHandler(func() {
 		v.Increase(0, -1)
 	})
-	v.settings = zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
-	v.settings.SetZIndex(zview.BaseZIndex + 2)
-	v.settings.SetAlpha(0)
-	v.settings.SetPressedHandler(v.handleSettingsPressed)
-	v.Add(v.settings, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
+	v.settingsGear = zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
+	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
+	v.settingsGear.SetAlpha(0)
+	v.settingsGear.SetPressedHandler(v.handleSettingsPressed)
+	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
 
-	v.SetKeyHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if key == zkeyboard.KeyCommand {
-			showSettings(v, v.settings, true)
+	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if !down {
 			return false
 		}
-		if key.IsReturnish() {
+		if km.Key.IsReturnish() {
 			if v.navigator.CurrentFocused != nil {
 				cell, _ := v.daysGrid.FindCellWithView(v.navigator.CurrentFocused)
 				t := cell.AnyInfo.(time.Time)
@@ -144,16 +146,14 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 				return true
 			}
 		}
-		if v.navigator.HandleKey(key, mod) {
+		if v.navigator.HandleKey(km, down) {
 			return true
 		}
-		scut := zkeyboard.KMod(key, mod)
-		return zcontainer.HandleOutsideShortcutRecursively(v, scut)
+		return zcontainer.HandleOutsideShortcutRecursively(v, km)
 	})
-	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		zlog.Info("CAlKey:", key, mod)
-		if key == zkeyboard.KeyCommand {
-			showSettings(v, v.settings, false)
+	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v, func(km zkeyboard.KeyMod, down bool) bool {
+		if km.Key == zkeyboard.KeyCommand {
+			showSettings(v, v.settingsGear, down)
 		}
 		return false
 	})
@@ -171,13 +171,13 @@ func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	bottom.Show(!show)
 }
 
-func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool]) *zcheckbox.CheckBox {
+func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool], updateAfter bool) *zcheckbox.CheckBox {
 	check, _, stack := zcheckbox.NewWithLabel(false, title, "")
 	s.Add(stack, zgeo.CenterLeft)
 	if option != nil {
 		check.SetOn(option.Get())
 		check.SetValueHandler(func() {
-			v.updateAfterSettings = true
+			v.updateAfterSettings = updateAfter
 			option.Set(check.On())
 		})
 	}
@@ -186,7 +186,7 @@ func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, o
 
 func (v *CalendarView) handleSettingsPressed() {
 	// secs := 0.6
-	v.settings.SetUsable(false)
+	v.settingsGear.Show(false)
 	zlog.Info("handleSettingsPressed")
 	s := zcontainer.StackViewVert("v1")
 	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
@@ -197,15 +197,15 @@ func (v *CalendarView) handleSettingsPressed() {
 	//!!!	backdrop-filter: url(filters.svg#filter) blur(4px) saturate(150%);
 	// https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter
 
-	v.addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek)
-	v.addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekNumbersInCalendars)
-	v.addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock)
+	v.addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek, true)
+	v.addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekNumbersInCalendars, true)
+	v.addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock, false)
 	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
 	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
 	close.SetPressedHandler(func() {
 		v.daysGrid.SetJSStyle("filter", "none")
 		zanimation.Translate(s, zgeo.Pos{0, -v.settingsSlider.OriginalRect.Size.H}, 0.5, func() {
-			v.settings.SetUsable(true)
+			v.settingsGear.Show(true)
 			v.RemoveChild(s)
 			v.header.SetUsable(true)
 			if v.updateAfterSettings {
@@ -240,9 +240,7 @@ func (v *CalendarView) Increase(monthInc int, yearInc int) {
 		v.navigator.CurrentFocused = nil
 		setColorsForView(v, cur)
 	}
-	zlog.Info("Increase:", v.currentShowing, monthInc)
 	t := ztime.AddMonthAndYearToTime(v.currentShowing, monthInc, yearInc)
-	zlog.Info("Increase2:", t)
 	switch {
 	case monthInc == 1:
 		dir = zgeo.Top
@@ -357,9 +355,11 @@ func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any)
 		}
 		v.setColors(box, label, t)
 	})
-	box.SetPressedHandler(func() {
+	label.SetPressedDownHandler(func() {
+		if v.CanFocus() == zview.FocusNone || v.IsFocused() {
+			handleSelect(v, t)
+		}
 		v.navigator.CurrentFocused = box
-		handleSelect(v, t)
 	})
 }
 
@@ -367,7 +367,6 @@ func handleSelect(v *CalendarView, t time.Time) {
 	oldVal := v.value
 	v.value = t
 	if !oldVal.IsZero() {
-		// zlog.Info("FindOld:", v.value)
 		for _, cell := range v.daysGrid.Cells {
 			if cell.View != nil && cell.AnyInfo != nil {
 			}
@@ -452,7 +451,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 			day++
 		}
 	}
-	if v.daysGrid == nil || dir == zgeo.AlignmentNone {
+	if v.daysGrid == nil {
 		v.Add(grid, zgeo.Center)
 	} else {
 		old := v.daysGrid

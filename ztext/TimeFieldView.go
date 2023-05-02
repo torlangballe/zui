@@ -3,183 +3,209 @@
 package ztext
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/torlangballe/zui/zcalendar"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zstr"
-	"github.com/torlangballe/zutil/ztime"
 )
 
 // https://www.npmjs.com/package/js-datepicker
 
+type TimeFieldFlags int
+
+const (
+	TimeFieldSecs TimeFieldFlags = 1 << iota
+	TimeFieldYears
+	TimeFieldDateOnly
+	TimeFieldTimeOnly
+	TimeFieldNoCalendar
+	TimeFieldFullYear
+)
+
 type TimeFieldView struct {
-}
-
-type TimeTextView struct {
 	zcontainer.StackView
-	TimeText    *TextView
-	DateText    *TextView
-	ParsedLabel *zlabel.Label
-	UseYear     bool
-	Handle      func(t time.Time)
-	onChrome    bool
+	hourText           *TextView
+	minuteText         *TextView
+	secondsText        *TextView
+	dayText            *TextView
+	monthText          *TextView
+	yearText           *TextView
+	UseYear            bool
+	UseSeconds         bool
+	HandleValueChanged func(t time.Time)
+	onChrome           bool
+	value              time.Time
+	flags              TimeFieldFlags
+	ampmLabel          **zlabel.Label
 }
 
-func TimeNew() *TimeTextView {
-	v := &TimeTextView{}
-	v.Init(v, false, "timestack")
-	v.SetSpacing(0)
+func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
+	v := &TimeFieldView{}
+	v.flags = flags
+	v.Init(v, false, name)
+	v.SetSpacing(-1)
+	v.SetMargin(zgeo.RectFromXY2(6, -2, -6, 0))
+	v.SetCorner(6)
+	v.SetStroke(1, zgeo.ColorNewGray(0.6, 1), true)
+	v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
 
 	v.onChrome = (zdevice.WasmBrowser() == "chrome")
-	style := Style{}
-	v.TimeText = NewView("", style, 7, 1)
-	v.TimeText.UpdateSecs = 0
-	v.TimeText.SetPlaceholder("mm:hh")
-	v.TimeText.SetToolTip("type minute:hour")
-	v.TimeText.SetCorners(5, zgeo.TopLeft|zgeo.Bottom)
-	v.TimeText.SetZIndex(100)
-	v.Add(v.TimeText, zgeo.TopLeft)
-
-	//	style = Style{}//Type: TextViewDate}
-	v.DateText = NewView("", style, 7, 1)
-	v.DateText.UpdateSecs = 0
-	v.DateText.SetPlaceholder("dd-mm")
-	v.DateText.SetToolTip("type date-month")
-	v.DateText.SetCorners(5, zgeo.TopRight|zgeo.Bottom)
-	v.Add(v.DateText, zgeo.CenterLeft, zgeo.Size{-1, 0})
-	// if !v.UseYear {
-	// 	year := strconv.Itoa(time.Now().Year())
-	// 	v.DateText.JSSet("min", year+"-01-01")
-	// 	v.DateText.JSSet("max", year+"-12-31")
-
-	// }
-	v.ParsedLabel = zlabel.New("")
-	v.ParsedLabel.SetMinWidth(80)
-	v.ParsedLabel.SetColor(zgeo.ColorBlue)
-	v.Add(v.ParsedLabel, zgeo.TopLeft, zgeo.Size{3, 0})
-
-	changed := func() {
-		var str string
-		t := v.Parse()
-		if !t.IsZero() {
-			str = ztime.GetNice(t, false)
+	if flags&TimeFieldDateOnly == 0 {
+		v.hourText = addText(v, 2)
+		v.minuteText = addText(v, 2)
+		if flags&TimeFieldSecs != 0 {
+			v.secondsText = addText(v, 2)
 		}
-		v.setLabel(str)
+		if flags&TimeFieldTimeOnly == 0 {
+			spacing := zcustom.NewView("spacing")
+			spacing.SetMinSize(zgeo.Size{10, 0})
+			v.Add(spacing, zgeo.CenterLeft)
+		}
 	}
-	v.TimeText.SetChangedHandler(changed)
-	v.DateText.SetChangedHandler(changed)
-	keyHandler := func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
-		// zlog.Info("key:", key)
-		if key == zkeyboard.KeyReturn {
-			if v.Handle != nil {
-				t := v.Parse()
-				v.Handle(t)
+	if flags&TimeFieldTimeOnly == 0 {
+		v.dayText = addText(v, 2)
+		v.monthText = addText(v, 2)
+		if flags&TimeFieldYears != 0 {
+			cols := 2
+			if flags&TimeFieldFullYear != 0 {
+				cols = 4
 			}
-			return true
+			v.yearText = addText(v, cols)
 		}
-		return false
+		if flags&TimeFieldNoCalendar == 0 {
+			label := zlabel.New("📅")
+			// label.SetFont(zgeo.FontNice(-3, zgeo.FontStyleNormal))
+			label.SetPressedHandler(v.popCalendar)
+			v.Add(label, zgeo.CenterLeft)
+		}
 	}
-	v.TimeText.SetKeyHandler(keyHandler)
-	v.DateText.SetKeyHandler(keyHandler)
-	v.setLabel("")
 	return v
 }
 
-func (v *TimeTextView) setLabel(str string) {
-	s := zgeo.FontDefaultSize
-	marg := 0.0
-	if str == "" {
-		str = "📅"
-		if !v.onChrome {
-			marg = 2
-		}
+func (v *TimeFieldView) popCalendar() {
+	cal := zcalendar.New("")
+	cal.SetTime(v.value)
+	cal.JSSet("className", "znofocus")
+	att := zpresent.AttributesNew()
+	att.Modal = true
+	att.ModalDimBackground = false
+	att.ModalCloseOnOutsidePress = true
+	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
+	att.ModalDropShadow.Blur = 2
+	att.ModalDismissOnEscapeKey = true
+	pos := v.AbsoluteRect().Pos
+	pos.X += v.Rect().Size.W - 20
+	att.Pos = &pos
+	cal.HandleValueChanged = func() {
+		ct := cal.Value()
+		t := time.Date(ct.Year(), ct.Month(), ct.Day(), v.value.Hour(), v.value.Minute(), v.value.Second(), 0, v.value.Location())
+		zpresent.Close(cal, true, nil)
+		v.SetValue(t)
 	}
-	c, _ := v.FindCellWithView(v.ParsedLabel)
-	c.Margin.H = marg
-	v.ParsedLabel.SetText(str)
-	v.ParsedLabel.SetFont(zgeo.FontNice(s, zgeo.FontStyleNormal))
-	v.ArrangeChildren()
+	zpresent.PresentView(cal, att, func(win *zwindow.Window) {
+		cal.Focus(true)
+	}, func(dismissed bool) {})
 }
 
-func (v *TimeTextView) Clear() {
-	v.TimeText.SetText("")
-	v.DateText.SetText("")
-	v.setLabel("")
-	if v.Handle != nil {
-		v.Handle(time.Time{})
+func addText(v *TimeFieldView, columns int) *TextView {
+	style := Style{KeyboardType: zkeyboard.TypeInteger}
+	tv := NewView("", style, columns, 1)
+	tv.UpdateSecs = 0
+	// tv.SetCorners(5, zgeo.TopLeft|zgeo.Bottom)
+	tv.SetZIndex(100)
+	tv.SetChangedHandler(v.changed)
+	tv.SetTextAlignment(zgeo.Right)
+	tv.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if km.Key.IsReturnish() && down && v.HandleValueChanged != nil {
+			v.changed()
+			v.HandleValueChanged(v.value)
+			return true
+		}
+		return false
+	})
+	tv.SetJSStyle("className", "znofocus")
+	v.Add(tv, zgeo.CenterLeft)
+	return tv
+}
+
+func clearField(v *TextView) {
+	if v != nil {
+		v.SetText("")
 	}
 }
 
-func (v *TimeTextView) Parse() time.Time {
-	var shour, smin, sday, smonth string
-	var err error
-	var min, hour int
+func (v *TimeFieldView) Clear() {
+	clearField(v.hourText)
+	clearField(v.minuteText)
+	clearField(v.secondsText)
+	clearField(v.dayText)
+	clearField(v.monthText)
+	clearField(v.yearText)
+	v.value = time.Time{}
+	if v.HandleValueChanged != nil {
+		v.HandleValueChanged(v.value)
+	}
+}
 
-	stime := v.TimeText.Text()
-	sdate := v.DateText.Text()
-	now := time.Now().Local()
-	year := now.Year()
-	month := now.Month()
-	day := now.Day()
+func getInt(v *TextView, i *int) bool {
+	if v == nil {
+		return true
+	}
+	n, err := strconv.Atoi(v.Text())
+	if err != nil {
+		return false
+	}
+	*i = n
+	return true
+}
 
-	if !zstr.SplitN(stime, ":", &shour, &smin) {
-		return time.Time{}
+func setInt(v *TextView, i int, format string) {
+	if v == nil {
+		return
 	}
-	if sdate != "" {
-		if !zstr.SplitN(sdate, "-", &sday, &smonth) {
-			sday = sdate
-		} else {
-			m, _ := strconv.Atoi(smonth)
-			if m == 0 {
-				m, got := ztime.MonthFromString(smonth)
-				if !got {
-					return time.Time{}
-				}
-				month = m
-			} else {
-				if m <= 0 || m > 12 {
-					return time.Time{}
-				}
-				month = time.Month(m)
-			}
-		}
-		day, err = strconv.Atoi(sday)
-		if err != nil {
-			return time.Time{}
-		}
+	str := fmt.Sprintf(format, i)
+	v.SetText(str)
+}
+
+func (v *TimeFieldView) changed() {
+	var hour, min, sec int
+	var day, month int
+
+	ok := true
+	loc := v.value.Location()
+	year := time.Now().In(loc).Year()
+
+	ok = ok && getInt(v.hourText, &hour)
+	ok = ok && getInt(v.minuteText, &min)
+	getInt(v.secondsText, &sec)
+
+	ok = ok && getInt(v.dayText, &day)
+	ok = ok && getInt(v.monthText, &month)
+	getInt(v.yearText, &year)
+
+	if ok {
+		t := time.Date(year, time.Month(month), day, hour, min, sec, 0, loc)
+		v.SetValue(t)
 	}
-	hour, err = strconv.Atoi(shour)
-	if err != nil {
-		return time.Time{}
-	}
-	min, err = strconv.Atoi(smin)
-	if err != nil {
-		return time.Time{}
-	}
-	t := time.Date(year, month, day, hour, min, 0, 0, time.Local)
-	if time.Since(t) > 0 {
-		return t
-	}
-	if sdate == "" {
-		t = t.Add(-ztime.Day)
-		if time.Since(t) > 0 {
-			return t
-		}
-	}
-	if smonth == "" && month != 0 {
-		month--
-		if month == 0 {
-			month = 12
-		}
-		t = time.Date(year, month, day, hour, min, 0, 0, time.Local)
-		if time.Since(t) > 0 {
-			return t
-		}
-	}
-	return time.Date(year-1, month, day, hour, min, 0, 0, time.Local)
+}
+
+func (v *TimeFieldView) SetValue(t time.Time) {
+	v.value = t
+	setInt(v.hourText, t.Hour(), "%02d")
+	setInt(v.minuteText, t.Minute(), "%02d")
+	setInt(v.secondsText, t.Second(), "%02d")
+
+	setInt(v.dayText, t.Day(), "%d")
+	setInt(v.monthText, int(t.Month()), "%d")
+	setInt(v.yearText, int(t.Year()%100), "%d")
+
 }
