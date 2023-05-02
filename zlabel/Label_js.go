@@ -83,6 +83,16 @@ func (v *Label) SetPressedHandler(handler func()) {
 	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
+	}))
+	v.JSSet("class", "widget")
+}
+
+func (v *Label) SetPressedDownHandler(handler func()) {
+	v.pressed = handler
+	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		e := args[0]
+		v.SetStateOnDownPress(e)
+		handler()
 		return nil
 	}))
 	v.JSSet("class", "widget")
