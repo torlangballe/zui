@@ -38,11 +38,11 @@ type TextView struct {
 	alignment     zgeo.Alignment
 	changed       func()
 	pushedBGColor zgeo.Color
-	keyPressed    func(key zkeyboard.Key, mods zkeyboard.Modifier) bool
-	updateTimer   *ztimer.Timer
-	Columns       int
-	rows          int
-	textStyle     Style
+	//	keyPressed    func(km zkeyboard.KeyMod, down bool) bool
+	updateTimer *ztimer.Timer
+	Columns     int
+	rows        int
+	textStyle   Style
 	//	isSearch      bool
 	//	updated       bool
 
@@ -87,6 +87,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := ti.GetColumnsSize(v.Columns)
 	s.Add(v.margin.Size.Negative())
 	s = s.Ceil()
+	s.W += 4
 	s.H += 0 // 2
 	// zlog.Info("TextView size:", s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
 	return s
