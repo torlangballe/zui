@@ -1165,10 +1165,11 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 	}
 }
 
-func makeFlagStack(flags reflect.Value, f *Field) zview.View {
+func makeFlagStack(v *FieldView, flags reflect.Value, f *Field) zview.View {
 	stack := zcontainer.StackViewHor("flags")
 	stack.SetMinSize(zgeo.Size{20, 20})
-	stack.SetSpacing(f.Styling.Spacing)
+	spacing := f.Styling.MergeWith(v.params.Styling).Spacing
+	stack.SetSpacing(spacing)
 	return stack
 }
 
@@ -1302,7 +1303,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if kind == zreflect.KindInt && rval.Type().Name() != "BoolInd" {
 		_, got := rval.Interface().(zbits.BitsetItemsOwner)
 		if got {
-			return makeFlagStack(rval, f), false
+			return makeFlagStack(v, rval, f), false
 		}
 	}
 	_, got := rval.Interface().(UIStringer)
@@ -1379,7 +1380,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 			} else {
 				_, got := rval.Interface().(zbits.BitsetItemsOwner)
 				if got {
-					view = makeFlagStack(rval, f)
+					view = makeFlagStack(v, rval, f)
 					break
 				}
 				noUpdate := true
