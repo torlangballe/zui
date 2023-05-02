@@ -162,6 +162,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		v.SetRect(zgeo.Rect{Size: rect.Size})
 	}
 	FirstPresented = true
+	win.SetOnKeyEvents()
 	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false
