@@ -367,7 +367,7 @@ func (v *NativeView) SetUsable(usable bool) {
 // }
 
 func (v *NativeView) IsFocused() bool {
-	f := zdom.DocumentJS.Call("hasFocus")
+	f := zdom.DocumentJS.Get("activeElement")
 	return f.Equal(v.Element)
 }
 
@@ -852,7 +852,6 @@ func (v *NativeView) HasPressedDownHandler() bool {
 }
 
 func (v *NativeView) SetPressedDownHandler(handler func()) {
-	// zlog.Info("NV.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
 	v.JSCall("addEventListener", "mousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		e := args[0]
@@ -919,15 +918,19 @@ func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos z
 	}))
 }
 
-func setKeyHandler(event string, v *NativeView, handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
+func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, down bool) bool) {
+	event := "onkeyup"
+	if down {
+		event = "onkeydown"
+	}
 	v.JSSet(event, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		if !v.GetWindowElement().Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
 		if handler != nil {
 			event := args[0]
-			key, mods := zkeyboard.GetKeyAndModsFromEvent(event)
-			if handler(key, mods) {
+			km := zkeyboard.GetKeyModFromEvent(event)
+			if handler(km, down) {
 				event.Call("preventDefault")
 				event.Call("stopPropagation")
 			}
@@ -936,12 +939,9 @@ func setKeyHandler(event string, v *NativeView, handler func(key zkeyboard.Key, 
 	}))
 }
 
-func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-	setKeyHandler("onkeyup", v, handler)
-}
-
-func (v *NativeView) SetKeyDownHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-	setKeyHandler("onkeydown", v, handler)
+func (v *NativeView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool) {
+	setKeyHandler(true, v, handler)
+	setKeyHandler(false, v, handler)
 }
 
 func (v *NativeView) SetOnInputHandler(handler func()) {
@@ -957,7 +957,7 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 	pos.Y = event.Get("offsetY").Float()
 	LastPressedPos = pos //.Minus(v.AbsoluteRect().Pos)
 	// zlog.Info("SetStateOnDownPress", v.Hierarchy(), pos.X, v.AbsoluteRect().Pos.X)
-	_, zkeyboard.ModifiersAtPress = zkeyboard.GetKeyAndModsFromEvent(event)
+	zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(event).Modifier
 }
 
 var oldMouseMove js.Value

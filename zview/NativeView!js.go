@@ -37,7 +37,8 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool)      {}
 func (v *NativeView) Scale(scale float64)                                    {}
 func (v *NativeView) Rotate(deg float64)                                     {}
 func (v *NativeView) Focus(focus bool)                                       {}
-func (v *NativeView) SetCanFocus(f FocusType)                                   {}
+func (v *NativeView) SetCanFocus(f FocusType)                                {}
+func (v *NativeView) CanFocus() FocusType                                    { return FocusNone }
 func (v *NativeView) SetOpaque(opaque bool)                                  {}
 func (v *NativeView) DumpTree()                                              {}
 func (v *NativeView) SetFont(font *zgeo.Font)                                {}
@@ -70,6 +71,11 @@ func (v *NativeView) JSCall(method string, args ...interface{}) js.Value     { r
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {}
 func (v *NativeView) SetUploader(got func(data []byte, name string), use func(name string) bool, progress func(p float64)) {
 }
+func (v *NativeView) ReplaceChild(child, with View) error                                     { return nil }
+func (v *NativeView) AllParents() (all []*NativeView)                                         { return }
+func (v *NativeView) GetFocusedChildView() *NativeView                                        { return nil }
+func (v *NativeView) AbsoluteRect() zgeo.Rect                                                 { return zgeo.Rect{} }
+func (v *NativeView) SetOnInputHandler(handler func())                                        {}
 func (v *NativeView) (handler func(km zkeyboard.KeyMod, down bool) bool)         {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}
 func (v *NativeView) SetStyle(kSetKeyHandlerey, value string)                                              {}
