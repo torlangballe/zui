@@ -10,7 +10,6 @@ import (
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
-	"github.com/torlangballe/zui/zfocus"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
@@ -315,9 +314,9 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 			canvas.ClearDropShadow()
 		}
 	}
-	if v.IsFocused() {
-		zfocus.Draw(canvas, rect, 15, 0, 1)
-	}
+	// if v.IsFocused() {
+	// 	zfocus.Draw(canvas, rect, 15, 0, 1)
+	// }
 }
 
 func (v *ShapeView) Font() *zgeo.Font {
