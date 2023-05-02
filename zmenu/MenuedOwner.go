@@ -474,13 +474,13 @@ func (o *MenuedOwner) popup() {
 		list.BarSize = 0
 	}
 
-	list.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if list.CurrentHoverID != "" && (key == zkeyboard.KeyReturn || key == zkeyboard.KeyEnter) {
+	list.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
+		if list.CurrentHoverID != "" && km.Key.IsReturnish() {
 			list.SelectCell(list.CurrentHoverID, false)
 			return true
 		}
 		for i, item := range o.items {
-			if item.Shortcut.Key == key && item.Shortcut.Modifier == mod {
+			if item.Shortcut.Key == km.Key && item.Shortcut.Modifier == km.Modifier {
 				list.SelectCell(strconv.Itoa(i), false)
 				return true
 			}

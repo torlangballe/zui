@@ -26,10 +26,10 @@ func (v *TextView) SetTextAlignment(a zgeo.Alignment) {
 // 	return v
 // }
 
-func (v *TextView) SetChangedHandler(handler func())                                            {}
-func (v *TextView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {}
-func (v *TextView) ScrollToBottom()                                                             {}
-func (v *TextView) SetIsStatic(s bool)                                                          {}
-func (v *TextView) Select(from, to int)                                                         {}
-func (v *TextView) SetPlaceholder(str string)                                                   {}
-func (v *TextView) SetMargin(m zgeo.Rect)                                                       {}
+func (v *TextView) SetChangedHandler(handler func())                                {}
+func (v *TextView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool) {}
+func (v *TextView) ScrollToBottom()                                                 {}
+func (v *TextView) SetIsStatic(s bool)                                              {}
+func (v *TextView) Select(from, to int)                                             {}
+func (v *TextView) SetPlaceholder(str string)                                       {}
+func (v *TextView) SetMargin(m zgeo.Rect)                                           {}

@@ -45,8 +45,9 @@ func (w *Window) SetTitle(title string)          {}
 func (w *Window) SetHandleClosed(closed func())  {}
 func (win *Window) SetAddressBarURL(surl string) {}
 func (win *Window) SetLocation(surl string)      {}
-func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, zkeyboard.Modifier) bool) {
+func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.KeyMod, down bool) bool) {
 }
-func (win *Window) SetOnResizeHandling()            {}
+func (win *Window) SetOnResizeHandling()         {}
+func (win *Window) SetOnKeyEvents()              {}
 func FromNativeView(v *zview.NativeView) *Window { return nil }
-func Current() *Window                              { return nil }
+func Current() *Window                           { return nil }

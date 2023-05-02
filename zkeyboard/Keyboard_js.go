@@ -5,22 +5,23 @@ import (
 	"syscall/js"
 )
 
-func GetKeyAndModsFromEvent(event js.Value) (key Key, mods Modifier) {
+func GetKeyModFromEvent(event js.Value) KeyMod {
+	var km KeyMod
 	gkey := event.Get("which")
 	if !gkey.IsUndefined() {
-		key = Key(gkey.Int())
+		km.Key = Key(gkey.Int())
 	}
 	if zdom.GetBoolIfDefined(event, "altKey") {
-		mods |= ModifierAlt
+		km.Modifier |= ModifierAlt
 	}
 	if zdom.GetBoolIfDefined(event, "ctrlKey") {
-		mods |= ModifierControl
+		km.Modifier |= ModifierControl
 	}
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
-		mods |= ModifierCommand
+		km.Modifier |= ModifierCommand
 	}
 	if zdom.GetBoolIfDefined(event, "shiftKey") {
-		mods |= ModifierShift
+		km.Modifier |= ModifierShift
 	}
-	return
+	return km
 }

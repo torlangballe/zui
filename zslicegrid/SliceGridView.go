@@ -158,20 +158,19 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		var count int
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
-	v.Grid.HandleKeyFunc = func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+	v.Grid.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
 		oneID := v.Grid.CurrentHoverID
 		if oneID == "" && len(v.Grid.SelectedIDs()) == 1 {
 			oneID = v.Grid.SelectedIDs()[0]
 		}
-		sc := zkeyboard.KMod(key, mod)
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
-			if zcontainer.HandleOutsideShortcutRecursively(cell, sc) {
+			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
 				return true
 			}
 		}
 		if v.ActionMenu != nil {
-			return v.ActionMenu.HandleOutsideShortcut(sc)
+			return v.ActionMenu.HandleOutsideShortcut(km)
 		}
 		return false
 	}

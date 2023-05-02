@@ -27,7 +27,7 @@ type Window struct {
 
 	ResizeHandlingView zview.View
 	dismissed          bool // this stores if window is dismissed or closed for other reasons, used by present close functions
-	keyHandlers        map[zview.View]func(zkeyboard.Key, zkeyboard.Modifier) bool
+	keyHandlers        map[zview.View]func(km zkeyboard.KeyMod, down bool) bool
 }
 
 type Options struct {
@@ -52,7 +52,7 @@ func BarHeight() float64 {
 
 func New() *Window {
 	w := &Window{}
-	w.keyHandlers = map[zview.View]func(zkeyboard.Key, zkeyboard.Modifier) bool{}
+	w.keyHandlers = map[zview.View]func(zkeyboard.KeyMod, bool) bool{}
 	return w
 }
 

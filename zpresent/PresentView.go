@@ -112,8 +112,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.FromNativeView(nv)
-			w.AddKeypressHandler(v, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-				if mod == zkeyboard.ModifierNone && key == zkeyboard.KeyEscape {
+			w.AddKeypressHandler(v, func(km zkeyboard.KeyMod, down bool) bool {
+				if km.Modifier == zkeyboard.ModifierNone && km.Key == zkeyboard.KeyEscape && down {
 					Close(v, true, nil)
 					return true
 				}

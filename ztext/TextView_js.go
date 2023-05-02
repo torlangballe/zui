@@ -256,8 +256,8 @@ func (v *TextView) updateEnterHandlers() {
 	}
 }
 
-func (v *TextView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-	v.keyPressed = handler
+func (v *TextView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool) {
+	// v.keyPressed = handler
 	v.NativeView.SetKeyHandler(handler)
 }
 

@@ -70,16 +70,9 @@ func (v *NativeView) JSCall(method string, args ...interface{}) js.Value     { r
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {}
 func (v *NativeView) SetUploader(got func(data []byte, name string), use func(name string) bool, progress func(p float64)) {
 }
-func (v *NativeView) ReplaceChild(child, with View) error                                         { return nil }
-func (v *NativeView) AllParents() (all []*NativeView)                                             { return }
-func (v *NativeView) GetFocusedChildView() *NativeView                                            { return nil }
-func (v *NativeView) AbsoluteRect() zgeo.Rect                                                     { return zgeo.Rect{} }
-func (v *NativeView) SetOnInputHandler(handler func())                                            {}
-func (v *NativeView) SetKeyHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {}
-func (v *NativeView) SetKeyDownHandler(handler func(key zkeyboard.Key, mods zkeyboard.Modifier) bool) {
-}
+func (v *NativeView) (handler func(km zkeyboard.KeyMod, down bool) bool)         {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}
-func (v *NativeView) SetStyle(key, value string)                                              {}
+func (v *NativeView) SetStyle(kSetKeyHandlerey, value string)                                              {}
 func (v *NativeView) SetZIndex(index int)                                                     {}
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}

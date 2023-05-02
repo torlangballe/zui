@@ -41,11 +41,11 @@ func (n *ChildFocusNavigator) AddChild(v zview.View) {
 	n.children = append(n.children, v)
 }
 
-func (n *ChildFocusNavigator) HandleKey(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-	if mod != zkeyboard.ModifierNone {
+func (n *ChildFocusNavigator) HandleKey(km zkeyboard.KeyMod, down bool) bool {
+	if km.Modifier != zkeyboard.ModifierNone {
 		return false
 	}
-	dirAlign := zkeyboard.ArrowKeyToDirection(key)
+	dirAlign := zkeyboard.ArrowKeyToDirection(km.Key)
 	dir := dirAlign.Vector()
 	if dir.IsNull() {
 		return false

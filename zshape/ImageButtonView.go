@@ -43,8 +43,8 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
 	v.ImageMargin = zgeo.Size{}
-	v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-		if key.IsReturnish() && mod == zkeyboard.ModifierNone {
+	v.NativeView.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if !down && km.Key.IsReturnish() && km.Modifier == zkeyboard.ModifierNone {
 			if v.PressedHandler() != nil {
 				v.PressedHandler()()
 				return true

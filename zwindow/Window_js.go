@@ -252,22 +252,31 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.Element.Get("history").Call("pushState", "", "", surl)
 }
 
-func (win *Window) setOnKeyDown() {
+func (win *Window) SetOnKeyEvents() {
+	setOnKeyEvent(win, true)
+	setOnKeyEvent(win, false)
+}
+
+func setOnKeyEvent(win *Window, down bool) {
+	eventName := "onkeyup"
+	if down {
+		eventName = "onkeydown"
+	}
 	doc := win.Element.Get("document")
-	doc.Set("onkeydown", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+	doc.Set(eventName, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
 		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
 		if !win.Element.Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
-		key, mods := zkeyboard.GetKeyAndModsFromEvent(args[0])
-
+		km := zkeyboard.GetKeyModFromEvent(args[0])
+		// zlog.Info("LEN:", len(win.ViewsStack), zlog.CallingStackString())
 		top := win.ViewsStack[len(win.ViewsStack)-1].Native()
 		if len(win.keyHandlers) != 0 {
 			var used bool
 			// zlog.Info("win key:", key)
 			for view, h := range win.keyHandlers {
-				// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
-				if top.IsParentOf(view.Native()) {
+				// zlog.Info("win key2:", km.Key, view.Native().Hierarchy(), top.Hierarchy())
+				if top == view.Native() || top.IsParentOf(view.Native()) {
 					focused := top.Native().GetFocusedChildView()
 					// if focused != nil {
 					// 	zlog.Info("win key1: foc:", focused.Native().Hierarchy())
@@ -276,14 +285,14 @@ func (win *Window) setOnKeyDown() {
 					if focused != nil && focused != view.Native() {
 						kc, _ := focused.View.(zkeyboard.KeyConsumer)
 						if kc == nil {
-							if key != zkeyboard.KeyEscape && key != zkeyboard.KeyReturn && key != zkeyboard.KeyEnter {
+							if km.Key != zkeyboard.KeyEscape && !km.Key.IsReturnish() {
 								continue
 							}
-						} else if kc.ConsumesKey(zkeyboard.KMod(key, mods)) {
+						} else if kc.ConsumesKey(km) {
 							continue
 						}
 					}
-					if h(key, mods) {
+					if h(km, down) {
 						used = true
 						break
 					}
@@ -312,18 +321,22 @@ func (win *Window) removeKeyPressHandlerViews(root zview.View) {
 	})
 }
 
-func (win *Window) AddKeypressHandler(v zview.View, handler func(zkeyboard.Key, zkeyboard.Modifier) bool) {
+func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.KeyMod, down bool) bool) {
 	if handler == nil {
 		delete(win.keyHandlers, v)
 		return
 	}
+	v.Native().AddOnRemoveFunc(func() {
+		delete(win.keyHandlers, v)
+	})
 	win.keyHandlers[v] = handler
-	win.setOnKeyDown()
+	if v.Native().Presented {
+		win.SetOnKeyEvents()
+	}
 	// zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))
 	doc := win.Element.Get("document")
 	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		win.setOnKeyDown()
-		// zlog.Info("WIN activate!")
+		win.SetOnKeyEvents()
 		return nil
 	}))
 }

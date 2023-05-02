@@ -66,7 +66,7 @@ type GridListView struct {
 	HandleSelectionChangedFunc func()
 	HandleRowPressed           func(id string) // this only gets called for non-selectable grids
 	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
-	HandleKeyFunc              func(key zkeyboard.Key, mod zkeyboard.Modifier) bool
+	HandleKeyFunc              func(km zkeyboard.KeyMod, down bool) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
 
 	children         map[string]zview.View
@@ -123,7 +123,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.Spacing = zgeo.Size{14, 6}
 	v.MultiplyColorAlternate = 0.95
 	v.SetCanFocus(zview.FocusAllowTab)
-	v.SetKeyDownHandler(v.handleKeyPressed)
+	v.SetKeyHandler(v.handleKeyPressed)
 	v.SetStroke(1, zgeo.ColorBlack, false)
 	v.loadOpenBranches()
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
@@ -944,23 +944,26 @@ func (v *GridListView) toggleBranch(open bool) {
 	})
 }
 
-func (v *GridListView) handleKeyPressed(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
+func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
+	if !down {
+		return false
+	}
 	// zlog.Info("List keypress other!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
-	if (key == zkeyboard.KeyReturn || key == zkeyboard.KeyEnter) && (v.Selectable || v.MultiSelectable) {
+	if km.Key.IsReturnish() && (v.Selectable || v.MultiSelectable) {
 		id := v.CurrentHoverID
 		if id == "" && v.selectedIndex != -1 {
 			id = v.IDAtIndexFunc(v.selectedIndex)
 		}
 		if id != "" {
 			v.selectedIndex = v.IndexOfID(id)
-			if mod&zkeyboard.ModifierCommand != 0 {
+			if km.Modifier&zkeyboard.ModifierCommand != 0 {
 				clear := v.selectedIDs[id]
 				if clear {
 					delete(v.selectedIDs, id)
 				} else {
 					v.selectedIDs[id] = true
 				}
-			} else if mod == 0 {
+			} else if km.Modifier == 0 {
 				clear := (len(v.selectedIDs) == 1 && v.selectedIDs[id])
 				v.selectedIDs = map[string]bool{}
 				if !clear {
@@ -971,19 +974,19 @@ func (v *GridListView) handleKeyPressed(key zkeyboard.Key, mod zkeyboard.Modifie
 			v.updateCellBackgrounds(nil)
 		}
 	}
-	if mod == zkeyboard.ModifierNone || mod == zkeyboard.ModifierShift {
-		switch key {
+	if km.Modifier == zkeyboard.ModifierNone || km.Modifier == zkeyboard.ModifierShift {
+		switch km.Key {
 		case zkeyboard.KeyUpArrow:
-			return v.moveHover(0, -1, mod)
+			return v.moveHover(0, -1, km.Modifier)
 		case zkeyboard.KeyDownArrow:
-			return v.moveHover(0, 1, mod)
+			return v.moveHover(0, 1, km.Modifier)
 		case zkeyboard.KeyLeftArrow:
 			if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
 				v.toggleBranch(false)
 				return true
 			}
 			if v.MaxColumns != 1 {
-				return v.moveHover(-1, 0, mod)
+				return v.moveHover(-1, 0, km.Modifier)
 			}
 		case zkeyboard.KeyRightArrow:
 			if v.HierarchyLevelFunc != nil && v.MaxColumns == 1 {
@@ -991,7 +994,7 @@ func (v *GridListView) handleKeyPressed(key zkeyboard.Key, mod zkeyboard.Modifie
 				return true
 			}
 			if v.MaxColumns != 1 {
-				return v.moveHover(1, 0, mod)
+				return v.moveHover(1, 0, km.Modifier)
 			}
 		case zkeyboard.KeyEscape:
 			if v.Selectable || v.MultiSelectable {
@@ -1004,8 +1007,8 @@ func (v *GridListView) handleKeyPressed(key zkeyboard.Key, mod zkeyboard.Modifie
 		}
 	}
 	if v.HandleKeyFunc != nil {
-		// zlog.Info("List keypress2", key, mod)
-		return v.HandleKeyFunc(key, mod)
+		// zlog.Info("List keypress2", key, km.Modifier)
+		return v.HandleKeyFunc(km, down)
 	}
 	return false
 }
