@@ -342,6 +342,7 @@ func addLabel(v *CalendarView, grid *zcontainer.GridView, a any) (label *zlabel.
 
 func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any) {
 	label, box, cell := addLabel(v, grid, a)
+	label.Native().SetInteractive(false)
 	cell.AnyInfo = t
 	v.navigator.AddChild(box)
 	v.setColors(box, label, t)
@@ -357,7 +358,7 @@ func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any)
 		}
 		v.setColors(box, label, t)
 	})
-	label.SetPressedDownHandler(func() {
+	box.SetPressedDownHandler(func() {
 		if v.CanFocus() == zview.FocusNone || v.IsFocused() {
 			handleSelect(v, t)
 		}

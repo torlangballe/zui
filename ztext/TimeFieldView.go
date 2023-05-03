@@ -3,6 +3,7 @@
 package ztext
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -13,9 +14,11 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
@@ -48,7 +51,7 @@ type TimeFieldView struct {
 	UseSeconds         bool
 	HandleValueChanged func(t time.Time)
 	onChrome           bool
-	value              time.Time
+	location           *time.Location
 	flags              TimeFieldFlags
 	ampmLabel          *zlabel.Label
 	currentUse24Clock  bool
@@ -61,7 +64,7 @@ func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	v.SetSpacing(-1)
 	v.SetMargin(zgeo.RectFromXY2(6, -2, -6, 0))
 	v.SetCorner(6)
-	v.SetStroke(1, zgeo.ColorNewGray(0.6, 1), true)
+	// v.SetStroke(1, zgeo.ColorNewGray(0.6, 1), true)
 	v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
 
 	v.onChrome = (zdevice.WasmBrowser() == "chrome")
@@ -72,6 +75,7 @@ func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.secondsText = addText(v, 2, "S")
 		}
 		v.ampmLabel = zlabel.New("AM")
+		v.ampmLabel.SetCanFocus(zview.FocusAllowTab)
 		v.ampmLabel.View.SetObjectName("ampm")
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
 		v.ampmLabel.SetColor(zgeo.ColorNewGray(0.5, 1))
@@ -80,8 +84,22 @@ func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 		zkeyvalue.SetOptionChangeHandler(v, func(key string) {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
-			v.changed()
+			hour, err := strconv.Atoi(v.hourText.Text())
+			zlog.Info("Opt changed", changed, hour, err)
+			if err == nil {
+				var pm bool
+				if v.currentUse24Clock != zlocale.IsUse24HourClock.Get() {
+					if v.currentUse24Clock {
+						hour, pm = convertFrom24Hour(v, hour)
+					} else {
+						hour, pm = get24Hour(v, hour)
+					}
+				}
+				v.hourText.SetText(strconv.Itoa(hour))
+				setPM(v, pm)
+			}
 			flipDayMonth(v, true)
+			v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 			if changed {
 				zcontainer.ArrangeChildrenAtRootContainer(v)
 			}
@@ -96,6 +114,7 @@ func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	if flags&TimeFieldTimeOnly == 0 {
 		v.dayText = addText(v, 2, "D")
 		v.monthText = addText(v, 2, "M")
+		v.monthText.SetColor(zgeo.ColorNew(0, 0, 0.8, 1))
 		if flags&TimeFieldYears != 0 {
 			cols := 2
 			if flags&TimeFieldFullYear != 0 {
@@ -114,6 +133,27 @@ func TimeNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	return v
 }
 
+func convertFrom24Hour(v *TimeFieldView, hour int) (int, bool) {
+	switch hour {
+	case 0:
+		return 12, false
+	case 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11:
+		return hour, false
+	case 12:
+		return hour, true
+	default:
+		return hour - 12, true
+	}
+}
+
+func setPM(v *TimeFieldView, pm bool) {
+	set := "AM"
+	if pm {
+		set = "PM"
+	}
+	v.ampmLabel.SetText(set)
+}
+
 func flipDayMonth(v *TimeFieldView, arrange bool) {
 	if v.flags&TimeFieldTimeOnly != 0 {
 		return
@@ -122,6 +162,8 @@ func flipDayMonth(v *TimeFieldView, arrange bool) {
 	_, mi := v.FindCellWithView(v.monthText)
 	if mi < di != zlocale.IsShowMonthBeforeDay.Get() {
 		// zlog.Info("FLIP!", di, mi, zlocale.IsShowMonthBeforeDay.Get(), arrange)
+		min, max := zint.MinMax(di, mi)
+		v.Cells[max].View.Native().InsertBefore(v.Cells[min].View.Native())
 		zslice.Swap(v.Cells, di, mi)
 		if arrange {
 			v.ArrangeChildren()
@@ -130,18 +172,17 @@ func flipDayMonth(v *TimeFieldView, arrange bool) {
 }
 
 func (v *TimeFieldView) toggleAMPM() {
-	am := v.ampmLabel.Text() == "AM"
-	set := "AM"
-	if am {
-		set = "PM"
-	}
-	v.ampmLabel.SetText(set)
-	v.changed()
+	pm := (v.ampmLabel.Text() == "PM")
+	setPM(v, !pm)
 }
 
 func (v *TimeFieldView) popCalendar() {
 	cal := zcalendar.New("")
-	cal.SetTime(v.value)
+	val, err := v.Value()
+	if err != nil {
+		return
+	}
+	cal.SetTime(val)
 	cal.JSSet("className", "znofocus")
 	att := zpresent.AttributesNew()
 	att.Modal = true
@@ -155,7 +196,7 @@ func (v *TimeFieldView) popCalendar() {
 	att.Pos = &pos
 	cal.HandleValueChanged = func() {
 		ct := cal.Value()
-		t := time.Date(ct.Year(), ct.Month(), ct.Day(), v.value.Hour(), v.value.Minute(), v.value.Second(), 0, v.value.Location())
+		t := time.Date(ct.Year(), ct.Month(), ct.Day(), val.Hour(), val.Minute(), val.Second(), 0, v.location)
 		zpresent.Close(cal, true, nil)
 		v.SetValue(t)
 	}
@@ -164,25 +205,26 @@ func (v *TimeFieldView) popCalendar() {
 	}, func(dismissed bool) {})
 }
 
+func clearColorTexts(texts ...*TextView) {
+	for _, t := range texts {
+		if t != nil {
+			t.SetBGColor(DefaultBGColor())
+		}
+	}
+}
+
 func addText(v *TimeFieldView, columns int, placeholder string) *TextView {
 	style := Style{KeyboardType: zkeyboard.TypeInteger}
 	tv := NewView("", style, columns, 1)
 	tv.UpdateSecs = 0
+	tv.SetMargin(zgeo.RectFromXY2(0, 2, -10, -9))
 	tv.SetPlaceholder(placeholder)
 	tv.SetZIndex(100)
-	tv.SetChangedHandler(v.changed)
-	tv.SetTextAlignment(zgeo.Right)
-	tv.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if !down || km.Modifier != 0 {
-			return false
-		}
-		if km.Key.IsReturnish() && v.HandleValueChanged != nil {
-			v.changed()
-			v.HandleValueChanged(v.value)
-			return true
-		}
-		return false
+	tv.SetChangedHandler(func() {
+		clearColorTexts(v.hourText, v.minuteText, v.secondsText, v.dayText, v.monthText, v.yearText)
+		v.Value() // getting value will set error color
 	})
+	tv.SetTextAlignment(zgeo.Right)
 	tv.SetJSStyle("className", "znofocus")
 	v.Add(tv, zgeo.CenterLeft)
 	return tv
@@ -201,22 +243,32 @@ func (v *TimeFieldView) Clear() {
 	clearField(v.dayText)
 	clearField(v.monthText)
 	clearField(v.yearText)
-	v.value = time.Time{}
-	if v.HandleValueChanged != nil {
-		v.HandleValueChanged(v.value)
-	}
+	v.location = nil
 }
 
-func getInt(v *TextView, i *int) bool {
+func getInt(v *TextView, i *int, min, max int, err *error) {
 	if v == nil {
-		return true
+		return
 	}
-	n, err := strconv.Atoi(v.Text())
-	if err != nil {
-		return false
+	n, cerr := strconv.Atoi(v.Text())
+	if cerr != nil {
+		*err = cerr
+		return
+	}
+	pink := zgeo.ColorNew(1, 0.7, 0.7, 1)
+	// zlog.Info("getInt:", v.ObjectName(), n, max)
+	if max != 0 && n > max {
+		// zlog.Info("MAX>", v.ObjectName(), n, max)
+		v.SetBGColor(pink)
+		*err = errors.New("big")
+		return
+	}
+	if n < min {
+		*err = errors.New("small")
+		v.SetBGColor(pink)
+		return
 	}
 	*i = n
-	return true
 }
 
 func setInt(v *TextView, i int, format string) {
@@ -227,19 +279,32 @@ func setInt(v *TextView, i int, format string) {
 	v.SetText(str)
 }
 
-func (v *TimeFieldView) changed() {
-	var hour, min, sec int
-	var day int
+func (v *TimeFieldView) SetValue(t time.Time) {
+	v.location = t.Location()
+	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
+	if v.ampmLabel != nil && !v.currentUse24Clock {
+		hour, am := ztime.GetHourAndAM(t)
+		setInt(v.hourText, hour, "%d")
+		setPM(v, !am)
+	} else {
+		setInt(v.hourText, t.Hour(), "%02d")
+	}
+	setInt(v.minuteText, t.Minute(), "%02d")
+	setInt(v.secondsText, t.Second(), "%02d")
 
-	ok := true
-	loc := v.value.Location()
-	now := time.Now().In(loc)
-	month := int(now.Month())
-	year := now.Year()
+	setInt(v.dayText, t.Day(), "%d")
+	setInt(v.monthText, int(t.Month()), "%d")
+	year := t.Year()
+	if v.flags&TimeFieldFullYear == 0 {
+		year %= 100
 
-	ok = ok && getInt(v.hourText, &hour)
+	}
+	setInt(v.yearText, year, "%d")
+}
+
+func get24Hour(v *TimeFieldView, hour int) (h int, pm bool) {
 	if v.ampmLabel != nil {
-		pm := v.ampmLabel.Text() == "PM"
+		pm = v.ampmLabel.Text() == "PM"
 		if !v.currentUse24Clock {
 			if pm {
 				if hour != 12 {
@@ -250,38 +315,35 @@ func (v *TimeFieldView) changed() {
 			}
 		}
 	}
-	ok = ok && getInt(v.minuteText, &min)
-	getInt(v.secondsText, &sec)
-	ok = ok && getInt(v.dayText, &day)
-	getInt(v.monthText, &month)
-	getInt(v.yearText, &year)
-
-	if ok {
-		t := time.Date(year, time.Month(month), day, hour, min, sec, 0, loc)
-		v.SetValue(t)
-		zlog.Info("VAL:", t)
-	}
-	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
+	return hour, pm
 }
 
-func (v *TimeFieldView) SetValue(t time.Time) {
-	v.value = t
-	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
-	if v.ampmLabel != nil && !v.currentUse24Clock {
-		hour, am := ztime.GetHourAndAM(t)
-		setInt(v.hourText, hour, "%d")
-		set := "PM"
-		if am {
-			set = "AM"
-		}
-		v.ampmLabel.SetText(set)
-	} else {
-		setInt(v.hourText, t.Hour(), "%02d")
-	}
-	setInt(v.minuteText, t.Minute(), "%02d")
-	setInt(v.secondsText, t.Second(), "%02d")
+func (v *TimeFieldView) Value() (time.Time, error) {
+	var hour, min, sec int
+	var day int
 
-	setInt(v.dayText, t.Day(), "%d")
-	setInt(v.monthText, int(t.Month()), "%d")
-	setInt(v.yearText, int(t.Year()%100), "%d")
+	var err error
+	now := time.Now().In(v.location)
+	month := int(now.Month())
+	year := now.Year()
+
+	maxHour := 12
+	minHour := 1
+	if v.currentUse24Clock {
+		maxHour = 23
+		minHour = 0
+	}
+	getInt(v.hourText, &hour, minHour, maxHour, &err)
+	hour, _ = get24Hour(v, hour)
+	getInt(v.minuteText, &min, 0, 60, &err)
+	getInt(v.secondsText, &sec, 0, 60, &err)
+	getInt(v.monthText, &month, 1, 12, &err)
+	getInt(v.yearText, &year, 0, 0, &err)
+	days := ztime.DaysInMonth(time.Month(month), year)
+	getInt(v.dayText, &day, 1, days, &err)
+	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(year, time.Month(month), day, hour, min, sec, 0, v.location), nil
 }
