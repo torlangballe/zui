@@ -123,6 +123,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	} else {
 		if !FirstPresented {
 			win.AddView(v)
+			win.AddStyle()
 		} else {
 			size.H += zwindow.BarHeight()
 			//			o := WindowOptions{URL: "about:blank", Pos: &rect.Pos, Size: size, ID: attributes.WindowID}
@@ -146,6 +147,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 				}
 				return
 			}
+			win.AddStyle()
 			win.AddView(v)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)

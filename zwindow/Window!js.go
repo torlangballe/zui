@@ -51,3 +51,4 @@ func (win *Window) SetOnResizeHandling()         {}
 func (win *Window) SetOnKeyEvents()              {}
 func FromNativeView(v *zview.NativeView) *Window { return nil }
 func Current() *Window                           { return nil }
+func (win *Window) AddStyle()                    {}
