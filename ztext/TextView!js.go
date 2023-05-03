@@ -33,3 +33,5 @@ func (v *TextView) SetIsStatic(s bool)                                          
 func (v *TextView) Select(from, to int)                                             {}
 func (v *TextView) SetPlaceholder(str string)                                       {}
 func (v *TextView) SetMargin(m zgeo.Rect)                                           {}
+
+// func (v *TextView) InsertionPos() int                                               { return 0 }

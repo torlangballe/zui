@@ -277,3 +277,18 @@ func (v *TextView) ConsumesKey(sc zkeyboard.KeyMod) bool {
 	}
 	return true
 }
+
+// func (v *TextView) InsertionPos() int {
+// 	old := v.JSGet("type")
+// 	v.JSSet("type", "text")
+// 	s := v.Element.Get("selectionStart").Int()
+// 	v.JSSet("type", old)
+// 	return s
+// 	// oSel := zdom.DocumentJS.Get("selection").Call("createRange");
+
+// 	// // Move selection start to 0 position
+// 	// oSel.Call("moveStart", "character", -oField.value.length);
+
+// 	// // The caret position is selection length
+// 	// iCaretPos = oSel.text.length;
+// }
