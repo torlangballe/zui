@@ -19,13 +19,14 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-var headerColor = zgeo.ColorNew(0.8, 0.4, 0.1, 1)
+var HeaderColor = zgeo.ColorNew(0.8, 0.4, 0.1, 1)
 
 type CalendarView struct {
 	zcontainer.StackView
@@ -88,7 +89,7 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.navigator.HandleSelect = v.handleArrowMove
 	v.header = zcontainer.StackViewHor("header")
 	v.header.SetZIndex(zview.BaseZIndex + 1)
-	v.header.SetBGColor(headerColor)
+	v.header.SetBGColor(HeaderColor)
 	v.Add(v.header, zgeo.TopCenter|zgeo.HorExpand)
 
 	v.monthLabel = makeHeaderLabel("", zgeo.HorCenter)
@@ -171,7 +172,7 @@ func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	bottom.Show(!show)
 }
 
-func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zlocale.Option[bool], updateAfter bool) *zcheckbox.CheckBox {
+func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zkeyvalue.Option[bool], updateAfter bool) *zcheckbox.CheckBox {
 	check, _, stack := zcheckbox.NewWithLabel(false, title, "")
 	s.Add(stack, zgeo.CenterLeft)
 	if option != nil {
@@ -187,7 +188,7 @@ func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, o
 func (v *CalendarView) handleSettingsPressed() {
 	// secs := 0.6
 	v.settingsGear.Show(false)
-	zlog.Info("handleSettingsPressed")
+	// zlog.Info("handleSettingsPressed")
 	s := zcontainer.StackViewVert("v1")
 	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
 	// s.SetTilePath("images/tile.png")
@@ -200,6 +201,7 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek, true)
 	v.addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekNumbersInCalendars, true)
 	v.addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock, false)
+	v.addSettingsCheck(s, "Show Month before Day", &zlocale.IsShowMonthBeforeDay, false)
 	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
 	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
 	close.SetPressedHandler(func() {
@@ -307,7 +309,7 @@ func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.La
 	}
 	if isToday {
 		fg = zstyle.DefaultBGColor()
-		bg = headerColor
+		bg = HeaderColor
 		if isSelectedDay {
 			bg = bg.Mixed(zstyle.DefaultFGColor(), 0.5)
 		}
