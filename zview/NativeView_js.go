@@ -348,14 +348,14 @@ func (v *NativeView) SetUsable(usable bool) {
 	style.Set("opacity", alpha)
 }
 
-// func (v *NativeView) SetInteractive(interactive bool) {
-// 	str := "none"
-// 	if interactive {
-// 		str = "auto"
-// 	}
-// 	// fmt.Printf("NV SetInteractive: %p %s %v %s\n", v, v.ObjectName(), interactive, str)
-// 	v.JSStyle().Set("pointer-events", str)
-// }
+func (v *NativeView) SetInteractive(interactive bool) {
+	str := "none"
+	if interactive {
+		str = "auto"
+	}
+	// fmt.Printf("NV SetInteractive: %p %s %v %s\n", v, v.ObjectName(), interactive, str)
+	v.JSStyle().Set("pointer-events", str)
+}
 
 // func (v *NativeView) Interactive() bool {
 // 	inter := v.JSStyle().Get("pointer-events")
