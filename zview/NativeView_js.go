@@ -524,7 +524,7 @@ func (v *NativeView) AddChild(child View, index int) {
 
 func (v *NativeView) ReplaceChild(child, with View) {
 	var focusedPath string
-	focused := v.GetFocusedChildView()
+	focused := v.GetFocusedChildView(false)
 	if focused != nil {
 		focusedPath = focused.HierarchyToRoot(child.Native())
 		zstr.HeadUntilWithRest(focusedPath, "/", &focusedPath) // remove first path component, which is v's
@@ -1115,11 +1115,14 @@ func (v *NativeView) SetStyling(style zstyle.Styling) {
 	}
 }
 
-func (root *NativeView) GetFocusedChildView() *NativeView {
+func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
 	var found *NativeView
 	e := zdom.DocumentJS.Get("activeElement")
 	if e.IsUndefined() {
 		return nil
+	}
+	if andSelf && root.IsFocused() {
+		return root
 	}
 	foundID := e.Get("id").String()
 	RangeAllVisibleChildrenFunc(root.View, func(view View) bool {
