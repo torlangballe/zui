@@ -27,7 +27,7 @@ type Window struct {
 
 	ResizeHandlingView zview.View
 	dismissed          bool // this stores if window is dismissed or closed for other reasons, used by present close functions
-	keyHandlers        map[zview.View]func(km zkeyboard.KeyMod, down bool) bool
+	keyHandlers        []keyHandler
 }
 
 type Options struct {
@@ -37,6 +37,11 @@ type Options struct {
 	Size         zgeo.Size
 	Alignment    zgeo.Alignment
 	FullScreenID int64 // screen id to go full screen on. -1 is use main. 0 is ignore.
+}
+
+type keyHandler struct {
+	view    zview.View
+	handler func(km zkeyboard.KeyMod, down bool) bool
 }
 
 var (
@@ -52,7 +57,6 @@ func BarHeight() float64 {
 
 func New() *Window {
 	w := &Window{}
-	w.keyHandlers = map[zview.View]func(zkeyboard.KeyMod, bool) bool{}
 	return w
 }
 

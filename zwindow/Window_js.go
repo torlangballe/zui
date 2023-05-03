@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -273,26 +274,27 @@ func setOnKeyEvent(win *Window, down bool) {
 		top := win.ViewsStack[len(win.ViewsStack)-1].Native()
 		if len(win.keyHandlers) != 0 {
 			var used bool
-			// zlog.Info("win key:", key)
-			for view, h := range win.keyHandlers {
-				// zlog.Info("win key2:", km.Key, view.Native().Hierarchy(), top.Hierarchy())
-				if top == view.Native() || top.IsParentOf(view.Native()) {
-					focused := top.Native().GetFocusedChildView()
+			// zlog.Info("win key handlers:", km.Key, len(win.keyHandlers), top.Hierarchy())
+			for _, h := range win.keyHandlers {
+				// zlog.Info("win key2:", km.Key, h.view.Native().Hierarchy(), top.Hierarchy())
+				if top == h.view.Native() || top.IsParentOf(h.view.Native()) {
+					focused := top.Native().GetFocusedChildView(true)
+					// zlog.Info("win key3:", km.Key, h.view.Native().Hierarchy(), top.Hierarchy(), focused != nil)
 					// if focused != nil {
 					// 	zlog.Info("win key1: foc:", focused.Native().Hierarchy())
 					// }
 					// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
-					if focused != nil && focused != view.Native() {
+					if focused != nil { //&& focused != view.Native() {
 						kc, _ := focused.View.(zkeyboard.KeyConsumer)
 						if kc == nil {
-							if km.Key != zkeyboard.KeyEscape && !km.Key.IsReturnish() {
-								continue
-							}
+							// if km.Key != zkeyboard.KeyEscape && !km.Key.IsReturnish() {
+							// 	continue
+							// }
 						} else if kc.ConsumesKey(km) {
 							continue
 						}
 					}
-					if h(km, down) {
+					if h.handler(km, down) {
 						used = true
 						break
 					}
@@ -307,6 +309,17 @@ func setOnKeyEvent(win *Window, down bool) {
 	}))
 }
 
+func deleteKeyHandlers(win *Window, delView zview.View) {
+	for i := 0; i < len(win.keyHandlers); {
+
+		if win.keyHandlers[i].view == delView {
+			zslice.RemoveAt(&win.keyHandlers, i)
+		} else {
+			i++
+		}
+	}
+}
+
 func (win *Window) removeKeyPressHandlerViews(root zview.View) {
 	// fmt.Printf("removeKeyPressHandlerViews1: %+v\n", root)
 	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName(), reflect.ValueOf(root).Type())
@@ -314,8 +327,7 @@ func (win *Window) removeKeyPressHandlerViews(root zview.View) {
 	zcontainer.ViewRangeChildren(root, true, includeCollapsed, func(view zview.View) bool {
 		// zlog.Info("removeKeyPressHandlerView try:", view.ObjectName(), win != nil)
 		if win != nil && win.keyHandlers != nil {
-			// zlog.Info("removeKeyPressHandlerView:", view.ObjectName())
-			delete(win.keyHandlers, view) // I guess we could just call delete without checking if it exists first, faster?
+			deleteKeyHandlers(win, view)
 		}
 		return true
 	})
@@ -323,13 +335,13 @@ func (win *Window) removeKeyPressHandlerViews(root zview.View) {
 
 func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.KeyMod, down bool) bool) {
 	if handler == nil {
-		delete(win.keyHandlers, v)
+		deleteKeyHandlers(win, v)
 		return
 	}
 	v.Native().AddOnRemoveFunc(func() {
-		delete(win.keyHandlers, v)
+		deleteKeyHandlers(win, v)
 	})
-	win.keyHandlers[v] = handler
+	win.keyHandlers = append(win.keyHandlers, keyHandler{v, handler})
 	if v.Native().Presented {
 		win.SetOnKeyEvents()
 	}
