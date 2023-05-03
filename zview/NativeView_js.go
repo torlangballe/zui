@@ -491,6 +491,10 @@ func (v *NativeView) Text() string {
 	return text
 }
 
+func (v *NativeView) InsertBefore(before View) {
+	v.Element.Get("parentNode").Call("insertBefore", v.Element, before.Native().Element)
+}
+
 func (v *NativeView) AddChild(child View, index int) {
 	n := child.Native()
 	if n == nil {

@@ -59,6 +59,7 @@ func (v *NativeView) RemoveFromParent()                                      {}
 func (v *NativeView) Font() *zgeo.Font                                       { return nil }
 func (v *NativeView) SetText(text string)                                    {}
 func (v *NativeView) Text() string                                           { return "" }
+func (v *NativeView) InsertBefore(child, before View) {}
 func (v *NativeView) AddChild(child View, index int)                         {}
 func (v *NativeView) RemoveChild(child View)                                 {}
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                 {}
