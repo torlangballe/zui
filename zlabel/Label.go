@@ -29,6 +29,12 @@ type Label struct {
 	KeyboardShortcut zkeyboard.KeyMod
 }
 
+func New(text string) *Label {
+	v := &Label{}
+	v.Init(v, text)
+	return v
+}
+
 func (v *Label) GetTextInfo() ztextinfo.Info {
 	t := ztextinfo.New()
 	t.Alignment = v.alignment

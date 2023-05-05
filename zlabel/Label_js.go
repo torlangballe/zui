@@ -4,16 +4,16 @@ import (
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"syscall/js"
 )
 
-func New(text string) *Label {
-	v := &Label{}
-	v.MakeJSElement(v, "label")
-	// zlog.Info("Label New:", v.textInfo.SplitItems, text)
-	style := v.JSStyle()
+func (label *Label) Init(view zview.View, text string) *Label {
+	label.MakeJSElement(view, "label")
+	// zlog.Info("Label New:", label.textInfo.SplitItems, text)
+	style := label.JSStyle()
 	style.Set("textAlign", "left")
 	style.Set("display", "block")
 	// style.Set("verticalAlign", "middle")
@@ -25,17 +25,16 @@ func New(text string) *Label {
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
-	v.SetColor(zstyle.DefaultFGColor())
-	v.View = v
+	label.SetColor(zstyle.DefaultFGColor())
 	// zlog.Info("LABCOL:", zstyle.DefaultFGColor)
-	//	v.SetColor(zgeo.ColorRed)
-	v.SetObjectName(text)
-	v.SetMaxLines(1)
+	//	label.SetColor(zgeo.ColorRed)
+	label.SetObjectName(text)
+	label.SetMaxLines(1)
 	textNode := zdom.DocumentJS.Call("createTextNode", text)
-	v.JSCall("appendChild", textNode)
+	label.JSCall("appendChild", textNode)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
-	v.SetFont(f)
-	return v
+	label.SetFont(f)
+	return label
 }
 
 func (v *Label) SetFont(font *zgeo.Font) {
