@@ -2,14 +2,10 @@
 <html>
 <body>
     <script src="js/zcore/wasm_exec.js"></script>
-    <script src="js/zcore/pako.js"></script>
     <script>
-        ;
         (async function() {
-            const file = window.pako.ungzip(
-                await (await fetch("main.wasm.gz")).arrayBuffer()
-            )
             const go = new Go()
+            let file = await (await fetch("main.wasm.gz")).arrayBuffer(); // main.wasm.gi has encoding gzip, type wasm set, so decoded by browser
             WebAssembly.instantiate(file, go.importObject).then((result) => {
                 go.run(result.instance)
             })
