@@ -153,7 +153,7 @@ func (v *GridListView) IsHoverCell(id string) bool {
 }
 
 func (v *GridListView) makeOpenBranchesKey() string {
-	return "ZGridListView.branches." + v.ObjectName()
+	return "zgridlist.Branches." + v.ObjectName()
 }
 
 func (v *GridListView) loadOpenBranches() {

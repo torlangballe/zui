@@ -100,7 +100,7 @@ func (v *DividerView) storeDelta() {
 }
 
 func DividerViewNewVert(storeKey string) *DividerView {
-	v := newDiv(storeKey)
+	v := newDiv("zcontainer." + storeKey)
 	v.Vertical = true
 	return v
 }
