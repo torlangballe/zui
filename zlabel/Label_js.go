@@ -2,6 +2,7 @@ package zlabel
 
 import (
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -30,6 +31,16 @@ func (label *Label) Init(view zview.View, text string) *Label {
 	//	label.SetColor(zgeo.ColorRed)
 	label.SetObjectName(text)
 	label.SetMaxLines(1)
+	label.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if down || km.Modifier != 0 || label.PressedHandler() == nil {
+			return false
+		}
+		if km.Key.IsReturnish() {
+			label.PressedHandler()()
+			return true
+		}
+		return false
+	})
 	textNode := zdom.DocumentJS.Call("createTextNode", text)
 	label.JSCall("appendChild", textNode)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
