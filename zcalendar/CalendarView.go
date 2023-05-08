@@ -62,20 +62,60 @@ func (v *CalendarView) SetRect(r zgeo.Rect) {
 }
 
 func (v *CalendarView) handleArrowMove(view zview.View, dir zgeo.Alignment) {
-	if view == nil {
-		if dir != zgeo.AlignmentNone {
-			pos := dir.Vector().Swapped()
-			v.Increase(int(pos.X), int(pos.Y))
-		}
+	if view != nil {
+		moveFocus(v, view)
 		return
 	}
+	if dir == zgeo.AlignmentNone {
+		return
+	}
+	if dir&zgeo.Horizontal == 0 {
+		pos := dir.Vector().Swapped()
+		v.Increase(int(pos.X), int(pos.Y))
+		return
+	}
+	x, y, got := v.daysGrid.GetViewXY(v.navigator.CurrentFocused)
+	if !got {
+		return
+	}
+	if dir == zgeo.Left {
+		y--
+	} else {
+		y++
+	}
+	if y < 0 || y >= v.daysGrid.RowCount() {
+		return
+	}
+	var focus zview.View
+	for x = 0; x < v.daysGrid.Columns; x++ {
+		cell := v.daysGrid.GetCell(x, y)
+		if cell == nil {
+			continue
+		}
+		if !v.navigator.HasChild(cell.View) {
+			continue
+		}
+		if dir == zgeo.Right {
+			moveFocus(v, cell.View)
+			return
+		}
+		if dir == zgeo.Left {
+			focus = cell.View
+		}
+	}
+	if focus != nil {
+		moveFocus(v, focus)
+	}
+}
+
+func moveFocus(v *CalendarView, focusView zview.View) {
 	if v.navigator.CurrentFocused != nil {
 		cur := v.navigator.CurrentFocused
 		v.navigator.CurrentFocused = nil
 		setColorsForView(v, cur)
 	}
-	v.navigator.CurrentFocused = view
-	setColorsForView(v, view)
+	v.navigator.CurrentFocused = focusView
+	setColorsForView(v, focusView)
 }
 
 func (v *CalendarView) Init(view zview.View, storeName string) {
@@ -88,6 +128,7 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	v.days = map[zgeo.IPos]time.Time{}
 	v.navigator.HandleSelect = v.handleArrowMove
 	v.header = zcontainer.StackViewHor("header")
+	v.header.SetMargin(zgeo.RectFromXY2(0, 0, 0, -1))
 	v.header.SetZIndex(zview.BaseZIndex + 1)
 	v.header.SetBGColor(HeaderColor)
 	v.Add(v.header, zgeo.TopCenter|zgeo.HorExpand)

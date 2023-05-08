@@ -41,6 +41,15 @@ func (n *ChildFocusNavigator) AddChild(v zview.View) {
 	n.children = append(n.children, v)
 }
 
+func (n *ChildFocusNavigator) HasChild(v zview.View) bool {
+	for _, c := range n.children {
+		if c == v {
+			return true
+		}
+	}
+	return false
+}
+
 func (n *ChildFocusNavigator) HandleKey(km zkeyboard.KeyMod, down bool) bool {
 	if km.Modifier != zkeyboard.ModifierNone {
 		return false
