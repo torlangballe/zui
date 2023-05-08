@@ -371,6 +371,9 @@ func Current() *Window {
 func (win *Window) AddStyle() {
 	styleStr := `
 input.rounded:focus { border: 2px solid rgb(147,180,248); }
+input:focus { border: 3px solid rgb(147,180,248); }
+input[type=number]:focus { border: 2px solid rgb(147,180,248); }
+input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 .zfocus:focus { outline: solid 4px rgb(147,180,248); }
 .znofocus:focus { outline: none; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -385,8 +388,7 @@ input.rounded {
 	box-sizing: content-box;
 	outline: 0;
 	-webkit-appearance: none;
-}
-`
+}`
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")
 
