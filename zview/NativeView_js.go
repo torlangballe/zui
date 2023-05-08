@@ -387,6 +387,17 @@ func (v *NativeView) CanFocus() FocusType {
 	return FocusAllowTab
 }
 
+func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
+	v.JSSet("onfocus", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		focused(true)
+		return nil
+	}))
+	v.JSSet("onblur", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		focused(false)
+		return nil
+	}))
+}
+
 func (v *NativeView) SetCanFocus(f FocusType) {
 	// zlog.Info("SetCanFocus:", v.Hierarchy(), f, zlog.CallingStackString())
 	switch f {
