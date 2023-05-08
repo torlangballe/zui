@@ -82,9 +82,6 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	if DefaultBGColor().Valid {
 		v.SetBGColor(DefaultBGColor())
 	}
-	if DefaultBorderColor().Valid {
-		v.SetStroke(1, DefaultBorderColor(), true)
-	}
 }
 
 func (v *TextView) Select(from, to int) {
