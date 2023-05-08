@@ -411,3 +411,21 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	att.Title = stitle
 	PresentView(stack, att, presented, closed)
 }
+
+func PopupView(view, over zview.View) {
+	view.Native().JSSet("className", "znofocus")
+	att := AttributesNew()
+	att.Modal = true
+	att.ModalDimBackground = false
+	att.ModalCloseOnOutsidePress = true
+	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
+	att.ModalDropShadow.Blur = 2
+	att.ModalDismissOnEscapeKey = true
+	pos := over.Native().AbsoluteRect().Pos
+	pos.X += over.Rect().Size.W - 20
+	att.Pos = &pos
+	PresentView(view, att, func(win *zwindow.Window) {
+		view.Native().Focus(true)
+	}, func(dismissed bool) {})
+
+}
