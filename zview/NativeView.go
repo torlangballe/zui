@@ -84,7 +84,3 @@ func (v *NativeView) IsParentOf(c *NativeView) bool {
 	}
 	return false
 }
-
-func (v *NativeView) FocusNext(forward bool) {
-	// TODO
-}
