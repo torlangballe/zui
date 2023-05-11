@@ -33,7 +33,7 @@ type LocationTimeInfo struct {
 var (
 	AppMain                    *App   // AppMain is the main instance of app. Likely the ONLY one
 	DownloadPathPrefix         string // DownloadPathPrefix is the prefix to create a url to download something from the app
-	documentationValues        zdict.Dict
+	DocumentationValues        zdict.Dict
 	AddDocumentationValuesFunc func(zdict.Dict)
 )
 
@@ -76,11 +76,14 @@ func GetProcessID() int {
 }
 
 func GetDocumentationValues() zdict.Dict {
-	documentationValues = zdict.Dict{}
-	if AddDocumentationValuesFunc != nil {
-		AddDocumentationValuesFunc(documentationValues)
+	m := zdict.Dict{}
+	for k, v := range DocumentationValues {
+		m[k] = v
 	}
-	return documentationValues
+	if AddDocumentationValuesFunc != nil {
+		AddDocumentationValuesFunc(m)
+	}
+	return m
 }
 
 // MemoryUsed returns the memstats System useage TODO: Use combination av values?
