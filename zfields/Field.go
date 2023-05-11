@@ -227,10 +227,10 @@ func fieldNameToID(name string) string {
 func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, immediateEdit bool) bool {
 	f.Index = index
 	f.ID = fieldNameToID(sf.Name)
-	// zlog.Info("FIELD:", f.ID, item.FieldName)
 	fTypeName := rval.Type().Name()
 	f.Kind = zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	f.FieldName = sf.Name
+	// zlog.Info("FIELD:", f.FieldName)
 	f.Alignment = zgeo.AlignmentNone
 	f.UpdateSecs = -1
 	f.Rows = 1
@@ -648,8 +648,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	if f.WidgetName != "" && callSetupWidgeter != nil {
 		callSetupWidgeter(f)
 	}
+	// zlog.Info("Field:", f.Name, f.Flags&FlagHasSeconds != 0)
 	return true
-	// zlog.Info("Field:", f.ID, f.MinWidth, f.Size, f.MaxWidth)
 }
 
 // MergeInField copies in values from the Field *n* to *f*, overwriting except where *n* has undefined value

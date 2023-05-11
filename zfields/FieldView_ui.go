@@ -1144,9 +1144,9 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 	if found {
 		var str string
 		t := val.Interface().(time.Time)
-		tooBig := true
+		tooBig := false
 		if !t.IsZero() {
-			// zlog.Info("DUR-FROM:", t)
+			// zlog.Info("UpdateDur:", f.Name, f.Flags&FlagHasSeconds != 0)
 			since := time.Since(t)
 			str, tooBig = ztime.GetDurationString(since, f.Flags&FlagHasSeconds != 0, f.Flags&FlagHasMinutes != 0, f.Flags&FlagHasHours != 0, f.FractionDecimals)
 		}

@@ -378,13 +378,10 @@ input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 .znofocus:focus { outline: none; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
 input.rounded {
-	border: 1px solid #ccc;
+	border: 1px solid #666;
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
-	-moz-box-shadow: 2px 2px 3px #666;
-	-webkit-box-shadow: 2px 2px 3px #666;
-	box-shadow: 2px 2px 3px #666;
 	box-sizing: content-box;
 	outline: 0;
 	-webkit-appearance: none;
