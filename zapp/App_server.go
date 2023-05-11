@@ -180,7 +180,7 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 		}
 		w.Write([]byte(html))
 	}
-	spdf, err := zmarkdown.ConvertToPDF(fullmd, "Bridgetech QTT", zrest.StaticFolder+"/doc/", GetDocumentationValues())
+	spdf, err := zmarkdown.ConvertToPDF(fullmd, name, zrest.StaticFolder+"/doc/", GetDocumentationValues())
 	if err != nil {
 		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, "error converting manual to pdf")
 		return
