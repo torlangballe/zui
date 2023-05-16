@@ -24,13 +24,14 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 	tl := &TimeLabel{}
 	tl.flags = flags
 	tl.Init(tl, name)
-	col := zgeo.ColorBlue
+	col := zstyle.DefaultFGColor()
 	if flags&TimeFieldStatic == 0 {
-		col = zstyle.DefaultFGColor()
+		col = zgeo.ColorBlue
 		tl.SetPressedHandler(func() {
 			tf := TimeFieldNew(name, flags)
-			tf.HandleValueChanged = func(t time.Time) {
+			tf.HandleValueChangedFunc = func(t time.Time) {
 				tl.SetValue(t)
+				zpresent.Close(tf, false, nil)
 			}
 			tf.SetValue(tl.value)
 			zpresent.PopupView(tf, tl)

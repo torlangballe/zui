@@ -43,7 +43,7 @@ type TimeFieldView struct {
 	zcontainer.StackView
 	UseYear                bool
 	UseSeconds             bool
-	HandleValueChanged     func(t time.Time)
+	HandleValueChangedFunc func(t time.Time)
 	PreviousYearIfLessDays int
 	hourText               *TextView
 	minuteText             *TextView
@@ -66,7 +66,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	if flags&TimeFieldNoCalendar != 0 {
 		right = 10
 	}
-	v.SetMargin(zgeo.RectFromXY2(14, -3, right, 4))
+	v.SetMargin(zgeo.RectFromXY2(14, -3, right, 3))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
 
@@ -87,17 +87,18 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		zkeyvalue.SetOptionChangeHandler(v, func(key string) {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 			hour, err := strconv.Atoi(v.hourText.Text())
-			zlog.Info("Opt changed", changed, hour, err)
+			// zlog.Info("Opt changed", changed, hour, err)
 			if err == nil {
 				var pm bool
 				if v.currentUse24Clock != zlocale.IsUse24HourClock.Get() {
 					if v.currentUse24Clock {
 						hour, pm = convertFrom24Hour(v, hour)
+						setInt(v.hourText, hour, "%02d")
 					} else {
 						hour, pm = get24Hour(v, hour)
+						setInt(v.hourText, hour, "%d")
 					}
 				}
-				v.hourText.SetText(strconv.Itoa(hour))
 				setPM(v, pm)
 			}
 			flipDayMonth(v, true)
@@ -116,15 +117,6 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	if flags&TimeFieldTimeOnly == 0 {
 		v.dayText = addText(v, 2, "D", "")
 		v.monthText = addText(v, 2, "M", "/")
-		v.monthText.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-			if km.Key.IsReturnish() && km.Modifier == 0 && down && v.HandleValueChanged != nil {
-				val, err := v.Value()
-				if err != nil {
-					v.HandleValueChanged(val)
-				}
-			}
-			return false
-		})
 		v.monthText.SetColor(zgeo.ColorNew(0, 0, 0.8, 1))
 		if flags&TimeFieldYears != 0 {
 			cols := 4
@@ -136,11 +128,24 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		if flags&TimeFieldNoCalendar == 0 {
 			cal := zimageview.New(nil, "images/zcore/calendar.png", zgeo.Size{18, 18})
 			cal.SetPressedHandler(v.popCalendar)
-			v.Add(cal, zgeo.CenterLeft, zgeo.Size{-7, 0})
+			v.Add(cal, zgeo.CenterLeft, zgeo.Size{-5, 0})
 		}
 	}
 	flipDayMonth(v, false)
 	return v
+}
+
+func (v *TimeFieldView) handleReturn(km zkeyboard.KeyMod, down bool) bool {
+	if km.Key.IsReturnish() && km.Modifier == 0 && down && v.HandleValueChangedFunc != nil {
+		val, err := v.Value()
+		// zlog.Info("HER KEY1?", km.Key, km.Key.IsReturnish(), km.Modifier, down, v.HandleValueChangedFunc, err)
+		if err == nil {
+			// zlog.Info("HER KEY2?", km.Key, km.Key.IsReturnish(), km.Modifier, down, v.HandleValueChangedFunc, err)
+			v.HandleValueChangedFunc(val)
+			return true
+		}
+	}
+	return false
 }
 
 func addText(v *TimeFieldView, columns int, placeholder string, pre string) *TextView {
@@ -164,6 +169,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 	tv.SetTextAlignment(zgeo.Right)
 	// tv.SetJSStyle("className", "znofocus")
 	v.Add(tv, zgeo.TopLeft, zgeo.Size{-2, 2})
+	tv.SetKeyHandler(v.handleReturn)
 	return tv
 }
 
@@ -218,7 +224,7 @@ func (v *TimeFieldView) popCalendar() {
 		return
 	}
 	cal.SetTime(val)
-	cal.HandleValueChanged = func() {
+	cal.HandleValueChangedFunc = func() {
 		ct := cal.Value()
 		t := time.Date(ct.Year(), ct.Month(), ct.Day(), val.Hour(), val.Minute(), val.Second(), 0, v.location)
 		zpresent.Close(cal, true, nil)

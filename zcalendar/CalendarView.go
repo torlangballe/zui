@@ -30,19 +30,19 @@ var HeaderColor = zgeo.ColorNew(0.8, 0.4, 0.1, 1)
 
 type CalendarView struct {
 	zcontainer.StackView
-	value               time.Time
-	HandleValueChanged  func()
-	currentShowing      time.Time
-	daysGrid            *zcontainer.GridView
-	monthLabel          *zlabel.Label
-	days                map[zgeo.IPos]time.Time
-	daysSlider          zanimation.Swapper
-	settingsSlider      zanimation.Swapper
-	lastTrans           zgeo.Pos
-	navigator           zcontainer.ChildFocusNavigator
-	header              *zcontainer.StackView
-	settingsGear        *zimageview.ImageView
-	updateAfterSettings bool
+	value                  time.Time
+	HandleValueChangedFunc func()
+	currentShowing         time.Time
+	daysGrid               *zcontainer.GridView
+	monthLabel             *zlabel.Label
+	days                   map[zgeo.IPos]time.Time
+	daysSlider             zanimation.Swapper
+	settingsSlider         zanimation.Swapper
+	lastTrans              zgeo.Pos
+	navigator              zcontainer.ChildFocusNavigator
+	header                 *zcontainer.StackView
+	settingsGear           *zimageview.ImageView
+	updateAfterSettings    bool
 }
 
 func New(storeName string) *CalendarView {
@@ -421,9 +421,9 @@ func handleSelect(v *CalendarView, t time.Time) {
 		}
 	}
 	setColorsForView(v, v.navigator.CurrentFocused)
-	if v.HandleValueChanged != nil {
+	if v.HandleValueChangedFunc != nil {
 		ztimer.StartIn(0.3, func() {
-			v.HandleValueChanged()
+			v.HandleValueChangedFunc()
 		})
 	}
 }
