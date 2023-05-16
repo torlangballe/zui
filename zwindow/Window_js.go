@@ -10,6 +10,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -371,9 +372,6 @@ func Current() *Window {
 func (win *Window) AddStyle() {
 	styleStr := `
 input.rounded:focus { border: 2px solid rgb(147,180,248); }
-input:focus { border: 3px solid rgb(147,180,248); }
-input[type=number]:focus { border: 2px solid rgb(147,180,248); }
-input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 .zfocus:focus { outline: solid 4px rgb(147,180,248); }
 .znofocus:focus { outline: none; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -386,6 +384,12 @@ input.rounded {
 	outline: 0;
 	-webkit-appearance: none;
 }`
+	if zdevice.WasmBrowser() == zdevice.Chrome {
+		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
+input[type=number]:focus { border: 2px solid rgb(147,180,248); }
+input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
+`
+	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")
 
