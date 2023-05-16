@@ -603,10 +603,10 @@ func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool
 	return handled
 }
 
-func (v *ContainerView) FocusNext(recursive, loop bool) {
-	foc := v.GetFocusedChildView(false)
+func FocusNext(view zview.View, recursive, loop bool) {
+	foc := view.Native().GetFocusedChildView(false)
 	var first *zview.NativeView
-	ViewRangeChildren(v, recursive, false, func(view zview.View) bool {
+	ViewRangeChildren(view, recursive, false, func(view zview.View) bool {
 		if view.Native().CanFocus() == zview.FocusNone {
 			return true
 		}

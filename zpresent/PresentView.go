@@ -425,7 +425,7 @@ func PopupView(view, over zview.View) {
 	pos.X += over.Rect().Size.W - 20
 	att.Pos = &pos
 	PresentView(view, att, func(win *zwindow.Window) {
-		view.Native().Focus(true)
+		zcontainer.FocusNext(view, true, true)
 	}, func(dismissed bool) {})
 
 }
