@@ -607,7 +607,7 @@ func FocusNext(view zview.View, recursive, loop bool) {
 	foc := view.Native().GetFocusedChildView(false)
 	var first *zview.NativeView
 	ViewRangeChildren(view, recursive, false, func(view zview.View) bool {
-		if view.Native().CanFocus() == zview.FocusNone {
+		if !view.Native().CanTabFocus() || !view.Native().IsShown() {
 			return true
 		}
 		first = view.Native()

@@ -122,7 +122,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.BranchToggleType = zwidget.BranchToggleTriangle
 	v.Spacing = zgeo.Size{14, 6}
 	v.MultiplyColorAlternate = 0.95
-	v.SetCanFocus(zview.FocusAllowTab)
+	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
 	v.SetStroke(1, zgeo.ColorBlack, false)
 	v.loadOpenBranches()

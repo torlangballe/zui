@@ -17,7 +17,7 @@ func (v *ScrollView) Init(view zview.View, name string) {
 	style := v.JSStyle()
 	style.Set("overflow-x", "hidden")
 	style.Set("overflow-y", "auto")
-	v.SetCanFocus(zview.FocusNonTab)
+	v.SetCanTabFocus(false)
 	style.Set("overscrollBehavior", "contain")
 	v.BarSize = DefaultBarSize
 	v.SetMinSize(zgeo.SizeBoth(10))

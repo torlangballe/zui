@@ -6,7 +6,6 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -32,7 +31,7 @@ func New(on zbool.BoolInd) *CheckBox {
 	v.JSSet("style", "position:absolute")
 	v.JSSet("type", "checkbox")
 	v.JSStyle().Set("margin-top", "4px")
-	v.SetCanFocus(zview.FocusNonTab)
+	v.SetCanTabFocus(false)
 	v.View = v
 	v.SetValue(on)
 	return v
