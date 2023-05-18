@@ -320,7 +320,7 @@ func (v *NativeView) Show(show bool) {
 }
 
 func (v *NativeView) IsShown() bool {
-	return v.JSStyle().Get("visibility").String() == "visible" // or inherit???
+	return v.JSStyle().Get("visibility").String() != "hidden"
 }
 
 func (v *NativeView) Usable() bool {
