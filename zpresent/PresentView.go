@@ -412,7 +412,7 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	PresentView(stack, att, presented, closed)
 }
 
-func PopupView(view, over zview.View) {
+func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
 	view.Native().JSSet("className", "znofocus")
 	att := AttributesNew()
 	att.Modal = true
@@ -421,11 +421,17 @@ func PopupView(view, over zview.View) {
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
-	pos := over.Native().AbsoluteRect().Pos
-	pos.X += over.Rect().Size.W - 20
+	var root zview.View
+	over.Native().RootParent()
+	pos := over.Native().AbsoluteRect().Align(zgeo.Size{1, 1}, align, marg).Pos
 	att.Pos = &pos
 	PresentView(view, att, func(win *zwindow.Window) {
+		root = win.ViewsStack[len(win.ViewsStack)-2] // we can only do this for sure if modal is true
+		view.Native().Focus(true)
 		zcontainer.FocusNext(view, true, true)
-	}, func(dismissed bool) {})
+		root.Native().SetInteractive(false)
+	}, func(dismissed bool) {
+		root.Native().SetInteractive(true)
+	})
 
 }
