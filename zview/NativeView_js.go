@@ -349,12 +349,17 @@ func (v *NativeView) SetUsable(usable bool) {
 }
 
 func (v *NativeView) SetInteractive(interactive bool) {
-	str := "none"
 	if interactive {
-		str = "auto"
+		v.JSSet("pointer-events", "auto")
+		v.JSSet("inert", "")
+		// v.Element.Delete("inert")
+		return
 	}
+	v.JSSet("pointer-events", "none")
+	v.JSSet("inert", "true")
 	// fmt.Printf("NV SetInteractive: %p %s %v %s\n", v, v.ObjectName(), interactive, str)
-	v.JSStyle().Set("pointer-events", str)
+	//
+	//	v.JSStyle().Set("pointer-events", str)
 }
 
 // func (v *NativeView) Interactive() bool {
@@ -376,15 +381,26 @@ func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
 }
 
-func (v *NativeView) CanFocus() FocusType {
+func (v *NativeView) CanTabFocus() bool {
 	val := v.JSGet("tabIndex")
 	if val.IsUndefined() || val.String() == "" {
-		return FocusNone
+		return false
 	}
 	if val.Int() < 0 {
-		return FocusNonTab
+		return false
 	}
-	return FocusAllowTab
+	return true
+}
+
+func (v *NativeView) SetCanTabFocus(can bool) {
+	// zlog.Info("SetCanFocus:", v.Hierarchy(), f, zlog.CallingStackString())
+	if can {
+		v.JSSet("tabIndex", "0") // Note the capital I in tabIndex !!!!!!
+		v.JSSet("className", "zfocus")
+		return
+	}
+	v.JSSet("tabIndex", "-1")
+	v.JSSet("className", "")
 }
 
 func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
@@ -396,21 +412,6 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 		focused(false)
 		return nil
 	}))
-}
-
-func (v *NativeView) SetCanFocus(f FocusType) {
-	// zlog.Info("SetCanFocus:", v.Hierarchy(), f, zlog.CallingStackString())
-	switch f {
-	case FocusAllowTab:
-		v.JSSet("tabIndex", "0") // Note the capital I in tabIndex !!!!!!
-		v.JSSet("className", "zfocus")
-	case FocusNonTab:
-		v.JSSet("tabIndex", "-1")
-		v.JSSet("className", "zfocus")
-	case FocusNone:
-		v.Element.Delete("tabIndex")
-		//		v.JSSet("tabIndex", js.Null()) // this doesn't work...
-	}
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
@@ -999,9 +1000,6 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			oldMouseMove = js.Null()
 			v.GetWindowElement().Set("onmouseup", nil)
 			if handler(upPos, zbool.False) {
-				if v.CanFocus() != FocusNone {
-					// focusParent(v)
-				}
 				// e.Call("stopPropagation")
 				e.Call("preventDefault")
 				// }
