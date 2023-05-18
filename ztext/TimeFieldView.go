@@ -17,11 +17,11 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -61,15 +61,16 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	v := &TimeFieldView{}
 	v.flags = flags
 	v.Init(v, false, name)
-	v.SetSpacing(-6)
-	right := -3.0
-	if flags&TimeFieldNoCalendar != 0 {
-		right = 10
-	}
-	v.SetMargin(zgeo.RectFromXY2(14, -3, right, 3))
+	v.SetSpacing(-2)
+	v.SetMargin(zgeo.RectFromXY2(6, -4, -8, 2))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
-
+	if zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
+		style := Style{KeyboardType: zkeyboard.TypeInteger}
+		tv := NewView("", style, 1, 1)
+		tv.Show(false)
+		v.Add(tv, zgeo.TopLeft, zgeo.Size{-15, 0})
+	}
 	if flags&TimeFieldDateOnly == 0 {
 		v.hourText = addText(v, 2, "H", "")
 		v.minuteText = addText(v, 2, "M", ":")
@@ -77,7 +78,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.secondsText = addText(v, 2, "S", ":")
 		}
 		v.ampmLabel = zlabel.New("AM")
-		v.ampmLabel.SetCanFocus(zview.FocusAllowTab)
+		v.ampmLabel.SetCanTabFocus(true)
 		v.ampmLabel.View.SetObjectName("ampm")
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
 		v.ampmLabel.SetColor(zgeo.ColorNewGray(0.5, 1))
@@ -128,7 +129,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		if flags&TimeFieldNoCalendar == 0 {
 			cal := zimageview.New(nil, "images/zcore/calendar.png", zgeo.Size{18, 18})
 			cal.SetPressedHandler(v.popCalendar)
-			v.Add(cal, zgeo.CenterLeft, zgeo.Size{-5, 0})
+			v.Add(cal, zgeo.CenterLeft, zgeo.Size{0, 0})
 		}
 	}
 	flipDayMonth(v, false)
@@ -152,7 +153,6 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 	style := Style{KeyboardType: zkeyboard.TypeInteger}
 	tv := NewView("", style, columns, 1)
 	tv.UpdateSecs = 0
-	tv.SetMargin(zgeo.RectFromXY2(-4, 2, -15, -11))
 	tv.SetPlaceholder(placeholder)
 	tv.SetZIndex(zview.BaseZIndex)
 	tv.SetFocusHandler(func(focused bool) {
@@ -167,7 +167,6 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		v.Value() // getting value will set error color
 	})
 	tv.SetTextAlignment(zgeo.Right)
-	// tv.SetJSStyle("className", "znofocus")
 	v.Add(tv, zgeo.TopLeft, zgeo.Size{-2, 2})
 	tv.SetKeyHandler(v.handleReturn)
 	return tv
@@ -212,7 +211,6 @@ func flipDayMonth(v *TimeFieldView, arrange bool) {
 }
 
 func (v *TimeFieldView) toggleAMPM() {
-	zlog.Info("toggleAMPM:")
 	pm := (v.ampmLabel.Text() == "PM")
 	setPM(v, !pm)
 }
@@ -223,7 +221,7 @@ func (v *TimeFieldView) popCalendar() {
 	if err != nil {
 		return
 	}
-	cal.SetTime(val)
+	cal.SetValue(val)
 	cal.HandleValueChangedFunc = func() {
 		ct := cal.Value()
 		t := time.Date(ct.Year(), ct.Month(), ct.Day(), val.Hour(), val.Minute(), val.Second(), 0, v.location)
@@ -232,7 +230,7 @@ func (v *TimeFieldView) popCalendar() {
 	}
 	cal.JSSet("className", "znofocus")
 
-	zpresent.PopupView(cal, v)
+	zpresent.PopupView(cal, v, zgeo.TopRight|zgeo.HorOut, zgeo.Size{-8, -4})
 }
 
 func clearColorTexts(texts ...*TextView) {

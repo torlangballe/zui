@@ -43,87 +43,22 @@ type CalendarView struct {
 	header                 *zcontainer.StackView
 	settingsGear           *zimageview.ImageView
 	updateAfterSettings    bool
+	firstShow              bool
 }
 
 func New(storeName string) *CalendarView {
 	v := &CalendarView{}
-	v.Init(v, storeName)
+	v.Init(v)
 	return v
 }
 
-func (v *CalendarView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	marg := zgeo.Size{6, 6}
-	s := v.StackView.CalculatedSize(total)
-	return s.Plus(marg)
-}
-
-func (v *CalendarView) SetRect(r zgeo.Rect) {
-	v.StackView.SetRect(r.ExpandedD(-3))
-}
-
-func (v *CalendarView) handleArrowMove(view zview.View, dir zgeo.Alignment) {
-	if view != nil {
-		moveFocus(v, view)
-		return
-	}
-	if dir == zgeo.AlignmentNone {
-		return
-	}
-	if dir&zgeo.Horizontal == 0 {
-		pos := dir.Vector().Swapped()
-		v.Increase(int(pos.X), int(pos.Y))
-		return
-	}
-	x, y, got := v.daysGrid.GetViewXY(v.navigator.CurrentFocused)
-	if !got {
-		return
-	}
-	if dir == zgeo.Left {
-		y--
-	} else {
-		y++
-	}
-	if y < 0 || y >= v.daysGrid.RowCount() {
-		return
-	}
-	var focus zview.View
-	for x = 0; x < v.daysGrid.Columns; x++ {
-		cell := v.daysGrid.GetCell(x, y)
-		if cell == nil {
-			continue
-		}
-		if !v.navigator.HasChild(cell.View) {
-			continue
-		}
-		if dir == zgeo.Right {
-			moveFocus(v, cell.View)
-			return
-		}
-		if dir == zgeo.Left {
-			focus = cell.View
-		}
-	}
-	if focus != nil {
-		moveFocus(v, focus)
-	}
-}
-
-func moveFocus(v *CalendarView, focusView zview.View) {
-	if v.navigator.CurrentFocused != nil {
-		cur := v.navigator.CurrentFocused
-		v.navigator.CurrentFocused = nil
-		setColorsForView(v, cur)
-	}
-	v.navigator.CurrentFocused = focusView
-	setColorsForView(v, focusView)
-}
-
-func (v *CalendarView) Init(view zview.View, storeName string) {
+func (v *CalendarView) Init(view zview.View) {
 	v.StackView.Init(view, true, "calendar")
+	v.firstShow = true
 	v.SetSpacing(0)
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.SetStroke(1, zgeo.ColorDarkGray, false)
-	v.SetCanFocus(zview.FocusAllowTab)
+	v.SetCanTabFocus(true)
 	v.SetBGColor(zgeo.ColorWhite)
 	v.days = map[zgeo.IPos]time.Time{}
 	v.navigator.HandleSelect = v.handleArrowMove
@@ -201,6 +136,73 @@ func (v *CalendarView) Init(view zview.View, storeName string) {
 	})
 }
 
+func (v *CalendarView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	marg := zgeo.Size{6, 6}
+	s := v.StackView.CalculatedSize(total)
+	return s.Plus(marg)
+}
+
+func (v *CalendarView) SetRect(r zgeo.Rect) {
+	v.StackView.SetRect(r.ExpandedD(-3))
+}
+
+func (v *CalendarView) handleArrowMove(view zview.View, dir zgeo.Alignment) {
+	if view != nil {
+		moveFocus(v, view)
+		return
+	}
+	if dir == zgeo.AlignmentNone {
+		return
+	}
+	if dir&zgeo.Horizontal == 0 {
+		pos := dir.Vector().Swapped()
+		v.Increase(int(pos.X), int(pos.Y))
+		return
+	}
+	x, y, got := v.daysGrid.GetViewXY(v.navigator.CurrentFocused)
+	if !got {
+		return
+	}
+	if dir == zgeo.Left {
+		y--
+	} else {
+		y++
+	}
+	if y < 0 || y >= v.daysGrid.RowCount() {
+		return
+	}
+	var focus zview.View
+	for x = 0; x < v.daysGrid.Columns; x++ {
+		cell := v.daysGrid.GetCell(x, y)
+		if cell == nil {
+			continue
+		}
+		if !v.navigator.HasChild(cell.View) {
+			continue
+		}
+		if dir == zgeo.Right {
+			moveFocus(v, cell.View)
+			return
+		}
+		if dir == zgeo.Left {
+			focus = cell.View
+		}
+	}
+	if focus != nil {
+		moveFocus(v, focus)
+	}
+}
+
+func moveFocus(v *CalendarView, focusView zview.View) {
+	if v.navigator.CurrentFocused != nil {
+		cur := v.navigator.CurrentFocused
+		v.navigator.CurrentFocused = nil
+		setColorsForView(v, cur)
+	}
+	v.navigator.CurrentFocused = focusView
+	setColorsForView(v, focusView)
+}
+
 func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	alpha := 0.0
 	if show {
@@ -267,7 +269,7 @@ func (v *CalendarView) Value() time.Time {
 	return v.value
 }
 
-func (v *CalendarView) SetTime(t time.Time) {
+func (v *CalendarView) SetValue(t time.Time) {
 	v.value = makeDate(t.Day(), t.Month(), t.Year(), t.Location())
 	v.updateShowMonth(v.value, zgeo.AlignmentNone)
 }
@@ -338,6 +340,7 @@ func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.La
 	bg := zgeo.ColorClear
 	fg := zstyle.DefaultFGColor()
 	width := 0.0
+	// zlog.Info("setColors", zlog.Pointer(v.navigator.CurrentFocused), zlog.Pointer(box), label.Text())
 	if box == v.navigator.CurrentFocused {
 		width = 4
 	}
@@ -400,7 +403,7 @@ func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any)
 		v.setColors(box, label, t)
 	})
 	box.SetPressedDownHandler(func() {
-		if v.CanFocus() == zview.FocusNone || v.IsFocused() {
+		if !v.CanTabFocus() || v.IsFocused() {
 			handleSelect(v, t)
 		}
 		v.navigator.CurrentFocused = box
@@ -437,7 +440,6 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 	loc := t.Location()
 
 	v.navigator.Clear()
-	v.navigator.Focus()
 	cols := 9
 	grid := zcontainer.GridViewNew("days", cols)
 	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
@@ -505,6 +507,11 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 		//		tranformGrid(v, grid, dir)
 	}
 	v.daysGrid = grid
+	if v.firstShow {
+		v.navigator.FocusNext()
+		setColorsForView(v, v.navigator.CurrentFocused)
+		v.firstShow = false
+	}
 }
 
 func (v *CalendarView) ArrangeChildren() {

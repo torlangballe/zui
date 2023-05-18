@@ -34,7 +34,7 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 				zpresent.Close(tf, false, nil)
 			}
 			tf.SetValue(tl.value)
-			zpresent.PopupView(tf, tl)
+			zpresent.PopupView(tf, tl, zgeo.TopLeft, zgeo.Size{})
 		})
 	}
 	tl.SetColor(col)

@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type ChildFocusNavigator struct {
@@ -16,7 +17,7 @@ type ChildFocusNavigator struct {
 	HandleSelect   func(v zview.View, dir zgeo.Alignment)
 }
 
-func (n *ChildFocusNavigator) Focus() {
+func (n *ChildFocusNavigator) FocusNext() {
 	var minView zview.View
 	var minPos zgeo.Pos
 	for i, v := range n.children {
@@ -26,6 +27,7 @@ func (n *ChildFocusNavigator) Focus() {
 			minView = v
 		}
 	}
+	zlog.Info("Nav Foc:", minView != nil)
 	if minView != nil {
 		n.CurrentFocused = minView
 		n.HandleSelect(minView, zgeo.AlignmentNone)
@@ -62,7 +64,7 @@ func (n *ChildFocusNavigator) HandleKey(km zkeyboard.KeyMod, down bool) bool {
 	var minView zview.View
 	if n.CurrentFocused == nil {
 		// zlog.Info("focus")
-		n.Focus()
+		n.FocusNext()
 		return true
 	} else {
 		rect := n.CurrentFocused.Rect().ExpandedD(-2)
