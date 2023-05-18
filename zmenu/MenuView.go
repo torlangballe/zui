@@ -52,7 +52,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		w += 5
 	}
 	s := zgeo.Size{w, menuViewHeight}
-	s.H += 1
+	s.H += 4
 	return s
 }
 

@@ -20,6 +20,7 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v.Element = sel
 	sel.Set("style", "position:absolute")
 	v.View = v
+	// v.SetNativeMargin(zgeo.RectFromXY2(0, 0, 0, -12))
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	v.SetObjectName(name)
 	if len(items) > 0 {
@@ -170,9 +171,8 @@ func (v *MenuView) SetFont(font *zgeo.Font) {
 }
 
 func (v *MenuView) SetRect(r zgeo.Rect) {
-	plus := zgeo.Pos{}
 	if zdevice.WasmBrowser() == "safari" {
-		plus = zgeo.Pos{2, 2}
+		r.Add(zgeo.RectFromXY2(0, 2, 0, -3))
 	}
-	v.NativeView.SetRect(r.PlusPos(plus))
+	v.NativeView.SetRect(r)
 }
