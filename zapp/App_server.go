@@ -92,7 +92,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if zfile.Exists(filepath) {
 		// zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
-		if zfile.Exists(filepath) && filepath == "www/main.wasm.gz" {
+		if filepath == "www/main.wasm.gz" {
 			// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
 			w.Header().Set("Content-Type", "application/wasm")
 			w.Header().Set("Content-Encoding", "gzip")
