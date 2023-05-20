@@ -14,7 +14,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zrpc2"
+	zrpc "github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -58,7 +58,7 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	if useRPC {
 		url.RawQuery = ""
 		url.Path = ""
-		zrpc2.MainClient = zrpc2.NewClient(url.String(), "")
+		zrpc.MainClient = zrpc.NewClient(url.String(), "")
 	}
 	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)
 	path, args = MainArgs()
@@ -73,7 +73,7 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 
 func GetTimeInfoFromServer() error {
 	var info LocationTimeInfo
-	err := zrpc2.MainClient.Call("AppCalls.GetTimeInfo", nil, &info)
+	err := zrpc.MainClient.Call("AppCalls.GetTimeInfo", nil, &info)
 	if err != nil {
 		return zlog.Error(err, "call")
 	}

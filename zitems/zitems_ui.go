@@ -3,7 +3,7 @@
 package zitems
 
 import (
-	"github.com/torlangballe/zutil/zrpc2"
+	zrpc "github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -14,13 +14,13 @@ var (
 
 func RepeatGetItems() {
 	ztimer.RepeatNow(2, func() bool {
-		// zlog.Info("RepeatGetItems:", zrpc2.MainClient.UseAuth, zrpc2.MainClient.AuthToken, len(AllItems))
-		// if zrpc2.MainClient.UseAuth && zrpc2.MainClient.AuthToken == "" {
+		// zlog.Info("RepeatGetItems:", zrpc.MainClient.UseAuth, zrpc.MainClient.AuthToken, len(AllItems))
+		// if zrpc.MainClient.UseAuth && zrpc.MainClient.AuthToken == "" {
 		// 	return true
 		// }
 		var resIDs []string
 		if !firstGets {
-			zrpc2.MainClient.Call("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
+			zrpc.MainClient.Call("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
 		}
 		for _, item := range AllItems {
 			// zlog.Info("Get1:", item.ResourceID, firstGets, resIDs)

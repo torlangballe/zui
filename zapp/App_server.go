@@ -19,7 +19,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zrpc2"
+	zrpc "github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -28,7 +28,7 @@ import (
 type nativeApp struct {
 }
 
-type AppCalls zrpc2.CallsBase
+type AppCalls zrpc.CallsBase
 
 // FilesRedirector is a type that can handle serving files
 type FilesRedirector struct {
@@ -43,7 +43,7 @@ var wwwFS embed.FS
 var Calls = new(AppCalls)
 
 func Init() {
-	zrpc2.Register(Calls)
+	zrpc.Register(Calls)
 	if zfile.NotExist(zrest.StaticFolder) {
 		os.Mkdir(zrest.StaticFolder, os.ModeDir|0755)
 	}
@@ -147,7 +147,7 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	})
 }
 
-func (c *AppCalls) GetTimeInfo(u zrpc2.Unused, info *LocationTimeInfo) error {
+func (c *AppCalls) GetTimeInfo(u zrpc.Unused, info *LocationTimeInfo) error {
 	t := time.Now().Local()
 	name, offset := t.Zone()
 	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)

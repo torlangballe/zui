@@ -16,7 +16,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zrpc2"
+	zrpc "github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zsql"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -161,7 +161,7 @@ func (v *SQLTableView[S]) insertRow(s S) {
 	}
 	info.OffsetQuery = fmt.Sprintf("SELECT COUNT(*) FROM ", v.tableName, " WHERE ", first, "<", sval)
 	zlog.Info("InserOffQ:", info.OffsetQuery)
-	err := zrpc2.MainClient.Call("SQLCalls.InsertRows", info, &offset)
+	err := zrpc.MainClient.Call("SQLCalls.InsertRows", info, &offset)
 	zlog.Info("insert", err)
 	if err != nil {
 		zalert.ShowError(err, "updating")
@@ -177,7 +177,7 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 		}
 	}
 	query := "DELETE FROM " + v.tableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
-	err := zrpc2.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
+	err := zrpc.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 	}
@@ -189,7 +189,7 @@ func (v *SQLTableView[S]) updateForIDs(items []S) {
 	info.TableName = v.tableName
 	info.SetColumns = v.setFields
 	info.EqualColumns = v.equalFields
-	err := zrpc2.MainClient.Call("SQLCalls.UpdateRows", info, nil)
+	err := zrpc.MainClient.Call("SQLCalls.UpdateRows", info, nil)
 	zlog.Info("updateForIDs", len(items), err)
 	if err != nil {
 		zalert.ShowError(err, "updating")
@@ -241,7 +241,7 @@ func (v *SQLTableView[S]) fillPage() {
 	q.Table = v.tableName
 	q.Constraints = v.createConstraints()
 	q.SkipFields = v.skipFields
-	err := zrpc2.MainClient.Call(v.selectMethod, q, &slice)
+	err := zrpc.MainClient.Call(v.selectMethod, q, &slice)
 	if err != nil {
 		zlog.Error(err, "select", q.Constraints, v.limit, v.offset)
 		return
