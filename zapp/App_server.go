@@ -40,10 +40,8 @@ type FilesRedirector struct {
 //go:embed www
 var wwwFS embed.FS
 
-var Calls = new(AppCalls)
-
 func Init() {
-	zrpc.Register(Calls)
+	zrpc.Register(AppCalls{})
 	if zfile.NotExist(zrest.StaticFolder) {
 		os.Mkdir(zrest.StaticFolder, os.ModeDir|0755)
 	}
@@ -147,7 +145,7 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	})
 }
 
-func (c *AppCalls) GetTimeInfo(u zrpc.Unused, info *LocationTimeInfo) error {
+func (AppCalls) GetTimeInfo(in zrpc.Unused, info *LocationTimeInfo) error {
 	t := time.Now().Local()
 	name, offset := t.Zone()
 	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)

@@ -14,10 +14,6 @@ var (
 
 func RepeatGetItems() {
 	ztimer.RepeatNow(2, func() bool {
-		// zlog.Info("RepeatGetItems:", zrpc.MainClient.UseAuth, zrpc.MainClient.AuthToken, len(AllItems))
-		// if zrpc.MainClient.UseAuth && zrpc.MainClient.AuthToken == "" {
-		// 	return true
-		// }
 		var resIDs []string
 		if !firstGets {
 			zrpc.MainClient.Call("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
