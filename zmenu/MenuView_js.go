@@ -161,7 +161,7 @@ func (v *MenuView) SetSelectedHandler(handler func()) {
 
 func (v *MenuView) SetFont(font *zgeo.Font) {
 	if font.Size != 14 {
-		zlog.Fatal("can't set menu view font size to anything except 14 in js")
+		zlog.Fatal(nil, "can't set menu view font size to anything except 14 in js")
 	}
 	f := *font
 	if zdevice.WasmBrowser() == "Safari" {
