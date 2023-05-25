@@ -26,6 +26,10 @@ var (
 	ServerTimeDifference time.Duration
 )
 
+func init() {
+	zcolor.RegisterWidget()
+}
+
 // URL returns the url that invoked this app
 func URL() string {
 	return zdom.WindowJS.Get("location").Get("href").String()
