@@ -51,17 +51,22 @@ func (v *Label) GetTextInfo() ztextinfo.Info {
 
 func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
+	var widths []float64
 	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
 	if v.Columns != 0 {
 		s = ti.GetColumnsSize(v.Columns)
 	} else {
-		s, _, _ = ti.GetBounds()
+		s, _, widths = ti.GetBounds()
 	}
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
+	}
+	if len(widths) == 1 {
+		// zlog.Info("LABELINC:", v.Text(), ti.Font.Size/5)
+		s.H += ti.Font.Size / 5
 	}
 	s = s.Ceil()
 	s.W += 1

@@ -38,7 +38,7 @@ func New(on zbool.BoolInd) *CheckBox {
 }
 
 func (v *CheckBox) SetRect(rect zgeo.Rect) {
-	rect.Pos.Y -= 4
+	rect.Pos.Y -= 3
 	v.NativeView.SetRect(rect)
 }
 
