@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
@@ -102,6 +103,7 @@ const (
 	FlagIsSearchable                            // This field can be used to search in tables etc
 	FlagIsUseInValue                            // This value is set as a string to InNames before entire struct is created
 	FlagZeroIsEmpty                             // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagIsForZDebugOnly                         // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
 )
 
 const (
@@ -299,6 +301,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Styling.BGColor.SetFromString(val)
 		case "download":
 			f.Download = val
+		case "zdebug":
+			f.Flags |= FlagIsForZDebugOnly
 		case "height":
 			if floatErr == nil {
 				f.Height = n
@@ -526,6 +530,9 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		default:
 			f.CustomFields[key] = val
 		}
+	}
+	if rval.Type() == reflect.TypeOf(zgeo.Color{}) {
+		f.WidgetName = "zcolor"
 	}
 	if immediateEdit {
 		f.UpdateSecs = 0
@@ -895,7 +902,10 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 	}
 	zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := findFieldWithIndex(&fields, index)
-		if f != nil && f.Flags&FlagIsUseInValue != 0 {
+		if f == nil {
+			return true
+		}
+		if f.Flags&FlagIsUseInValue != 0 {
 			zstr.AddToSet(&params.UseInValues, fmt.Sprint(val.Interface()))
 		}
 		return true
@@ -906,6 +916,9 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		}
 		f := findFieldWithIndex(&fields, index)
 		if f == nil {
+			return true
+		}
+		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
 		if len(f.UseIn) != 0 && !zstr.SlicesIntersect(f.UseIn, params.UseInValues) {
