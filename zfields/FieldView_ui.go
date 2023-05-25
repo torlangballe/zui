@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zclipboard"
-	"github.com/torlangballe/zui/zcolor"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zgroup"
 	"github.com/torlangballe/zui/zimage"
@@ -1227,9 +1226,6 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
-			if w.IsStatic() && v.params.HideStatic {
-				return nil, true
-			}
 			return w.Create(f), false
 		}
 	}
@@ -1338,32 +1334,31 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 	if view == nil {
 		switch f.Kind {
 		case zreflect.KindStruct:
-			col, got := rval.Interface().(zgeo.Color)
-			// zlog.Info("makeStruct", item.FieldName, got)
-			// zlog.Info("make stringer?:", f.Name, got)
-			if got {
-				view = zcolor.NewView(col)
-			} else {
-				//!!! exp = zgeo.HorExpand
-				// zlog.Info("struct make field view:", f.Name, f.Kind, exp)
-				vert := true
-				if !f.Vertical.IsUnknown() {
-					vert = f.Vertical.Bool()
-				}
-				// zlog.Info("struct fieldViewNew", f.ID, vert, f.Vertical)
-				params := v.params
-				params.Field.MergeInField(f)
-				// params.Field.Flags = 0
-				fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
-				// fmt.Printf("makeStruct2 %s %p\n", item.FieldName, fieldView.View)
-				view = makeFrameIfFlag(f, fieldView)
-				if view == nil {
-					view = fieldView
-				}
-				// fmt.Printf("makeStruct3 %s %p %v %p\n", item.FieldName, view, view == nil, fieldView)
-				// fieldView.parentField = f
-				fieldView.BuildStack(f.FieldName, zgeo.TopLeft, zgeo.Size{}, true)
+			// col, got := rval.Interface().(zgeo.Color)
+			// // zlog.Info("makeStruct", item.FieldName, got)
+			// // zlog.Info("make stringer?:", f.Name, got)
+			// if got {
+			// 	view = zcolor.NewView(col)
+			// } else {
+			//!!! exp = zgeo.HorExpand
+			// zlog.Info("struct make field view:", f.Name, f.Kind, exp)
+			vert := true
+			if !f.Vertical.IsUnknown() {
+				vert = f.Vertical.Bool()
 			}
+			// zlog.Info("struct fieldViewNew", f.ID, vert, f.Vertical)
+			params := v.params
+			params.Field.MergeInField(f)
+			// params.Field.Flags = 0
+			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
+			// fmt.Printf("makeStruct2 %s %p\n", item.FieldName, fieldView.View)
+			view = makeFrameIfFlag(f, fieldView)
+			if view == nil {
+				view = fieldView
+			}
+			// fmt.Printf("makeStruct3 %s %p %v %p\n", item.FieldName, view, view == nil, fieldView)
+			// fieldView.parentField = f
+			fieldView.BuildStack(f.FieldName, zgeo.TopLeft, zgeo.Size{}, true)
 
 		case zreflect.KindBool:
 			if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
