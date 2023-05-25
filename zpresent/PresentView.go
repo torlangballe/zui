@@ -42,6 +42,7 @@ type Attributes struct {
 	ModalDropShadow          zstyle.DropShadow
 	ModalDismissOnEscapeKey  bool
 	NoMessageOnOpenFail      bool
+	FocusView                zview.View
 }
 
 var (
@@ -141,6 +142,9 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 				}
 				if presented != nil {
 					presented(nil)
+					if attributes.FocusView != nil {
+						attributes.FocusView.Native().Focus(true)
+					}
 				}
 				if closed != nil {
 					closed(false)
@@ -174,6 +178,9 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	if presented != nil {
 		presented(win)
+		if attributes.FocusView != nil {
+			attributes.FocusView.Native().Focus(true)
+		}
 	}
 }
 
