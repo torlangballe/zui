@@ -11,9 +11,9 @@ import (
 )
 
 func init() {
-	RegisterWigeter("zamount-bar", AmountBarWidgeter{})
-	RegisterWigeter("zamount-circle", AmountCircleWidgeter{})
-	RegisterWigeter("zactivity", ActivityWidgeter{})
+	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
+	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
+	RegisterWidgeter("zactivity", ActivityWidgeter{})
 }
 
 type AmountBarWidgeter struct{} //////////////////////////////////////////////////////////////
@@ -36,14 +36,13 @@ func (a AmountBarWidgeter) Create(f *Field) zview.View {
 func (a AmountBarWidgeter) SetValue(view zview.View, val any) {
 	av := view.(*zwidget.AmountView)
 	n, err := zfloat.GetAny(val)
-	zlog.Info("AmountSet:", av.Hierarchy(), n, err)
 	if !zlog.OnError(err) {
 		av.SetValue(n)
 	}
 }
 
-func (a AmountBarWidgeter) IsStatic() bool {
-	return true
+func (a AmountBarWidgeter) SetupField(f *Field) {
+	f.Flags |= FlagIsStatic
 }
 
 func (a AmountBarWidgeter) GetValue(view zview.View) any {
@@ -80,8 +79,8 @@ func (a AmountCircleWidgeter) SetValue(view zview.View, val any) {
 	}
 }
 
-func (a AmountCircleWidgeter) IsStatic() bool {
-	return true
+func (a AmountCircleWidgeter) SetupField(f *Field) {
+	f.Flags |= FlagIsStatic
 }
 
 func (a AmountCircleWidgeter) GetValue(view zview.View) any {
@@ -111,8 +110,8 @@ func (a ActivityWidgeter) SetValue(view zview.View, val any) {
 	}
 }
 
-func (a ActivityWidgeter) IsStatic() bool {
-	return true
+func (a ActivityWidgeter) SetupField(f *Field) {
+	f.Flags |= FlagIsStatic
 }
 
 func (a ActivityWidgeter) GetValue(view zview.View) any {
