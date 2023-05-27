@@ -423,3 +423,24 @@ func GetImages(images []*ImageGetter, got func(all bool)) {
 	wg.Wait()
 	got(count == len(images))
 }
+
+type SolidImage struct {
+	Size  zgeo.Size
+	color color.Color
+}
+
+func (c SolidImage) ColorModel() color.Model {
+	return color.RGBAModel
+}
+
+func (c SolidImage) Bounds() image.Rectangle {
+	return image.Rectangle{Max: image.Point{X: int(c.Size.W), Y: int(c.Size.H)}}
+}
+
+func (c SolidImage) At(x, y int) color.Color {
+	return c.color
+}
+
+func MakeSolidImage(size zgeo.Size, col zgeo.Color) SolidImage {
+	return SolidImage{Size: size, color: col.GoColor()}
+}
