@@ -452,7 +452,6 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				for i := 0; i < length; i++ {
 					sliceField := sliceVal.Index(i).Field(index)
-					// zlog.Info("SetSliceVal?:", i, sf.Name, val.Interface(), sliceField.Interface(), val.IsZero())
 					if !val.IsZero() || length == 1 || isCheck {
 						sliceField.Set(val)
 					}

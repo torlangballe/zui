@@ -1599,6 +1599,16 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	}
 	rval, _ := zreflect.FieldForIndex(v.data, true, f.Index)
 
+	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
+		w := widgeters[f.WidgetName]
+		r, _ := w.(ReadWidgeter)
+		if r != nil {
+			val := r.GetValue(view)
+			rval.Set(reflect.ValueOf(val))
+			value = rval
+			return
+		}
+	}
 	// zlog.Info("fieldViewToDataItem before:", f.IsStatic(), f.Name, f.Index, len(children), "s:")
 	if f.Enum != "" || f.LocalEnum != "" {
 		mv, _ := view.(*zmenu.MenuView)
@@ -1669,7 +1679,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			if str != "" {
 				i64, err = strconv.ParseInt(str, 10, 64)
 				if err != nil {
-					err = zlog.NewError("Error parsing", f.Name)
+					err = zlog.NewError("Error parsing", f.Name, "in", v.ObjectName())
 					break
 				}
 			}
@@ -1681,9 +1691,16 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		text := tv.Text()
 		var f64 float64
 		//		if text != "" {
+		// zlog.Info("ParseFloat:", v.Hierarchy(), f.Name, text, f.Flags&FlagZeroIsEmpty != 0)
+		if f.Flags&FlagZeroIsEmpty != 0 {
+			if text == "" {
+				rval.SetZero()
+				break
+			}
+		}
 		f64, err = strconv.ParseFloat(text, 64)
 		if err != nil {
-			err = zlog.NewError("Error parsing", f.Name)
+			err = zlog.NewError("Error parsing", f.Name, "in", v.ObjectName())
 		}
 		if err != nil {
 			break
@@ -1711,7 +1728,19 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	case zreflect.KindStruct:
-		// zlog.Info("ToData struct:", f.Name, fv != nil)
+		zcontainer.ViewRangeChildren(v, true, true, func(view zview.View) bool {
+			if view.ObjectName() == f.FieldName {
+				fv, _ := view.(*FieldView)
+				if fv != nil {
+					cerr := fv.ToData(false)
+					if cerr != nil {
+						err = cerr
+					}
+					return false
+				}
+			}
+			return true
+		})
 		break
 
 	default:
