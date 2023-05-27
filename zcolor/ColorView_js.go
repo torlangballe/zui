@@ -1,7 +1,6 @@
 package zcolor
 
 import (
-	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zgeo"
 	"syscall/js"
 )
@@ -22,7 +21,7 @@ func New(col zgeo.Color) *ColorView {
 }
 
 func (v *ColorView) SetColor(col zgeo.Color) {
-	v.JSSet("value", zdom.MakeRGBAString(col))
+	v.JSSet("value", col.HexNoAlpha())
 	v.SetToolTip(v.Color().HexNoAlpha())
 }
 
