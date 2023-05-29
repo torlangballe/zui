@@ -186,7 +186,7 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 	for _, f := range v.Fields {
 		var id string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
-		// zlog.Info("updateShowEnableFromZeroer:", f.FieldName, isZero, isShow, toID, local)
+		// zlog.Info("updateShowEnableFromZeroer:", v.Hierarchy(), f.FieldName, isZero, isShow, id, toID, "==", local)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
 			_, foundView := v.findNamedViewOrInLabelized(f.FieldName)
 			if foundView == nil {
@@ -1658,6 +1658,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			if f.Flags&FlagZeroIsEmpty != 0 {
 				if tv.Text() == "" {
 					rval.SetZero()
+					v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
 					break
 				}
 			}
@@ -1684,6 +1685,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				}
 			}
 			zint.SetAny(rval.Addr().Interface(), i64)
+			// zlog.Info("num updateShowEnableFromZeroer?", tv.Hierarchy(), i64)
+			v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
 		}
 
 	case zreflect.KindFloat:
@@ -1695,6 +1698,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		if f.Flags&FlagZeroIsEmpty != 0 {
 			if text == "" {
 				rval.SetZero()
+				v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
 				break
 			}
 		}
@@ -1707,8 +1711,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		}
 		//		}
 		zfloat.SetAny(rval.Addr().Interface(), f64)
-		// zlog.Info("fieldToDataItem float", f.FieldName, view.ObjectName(), tv.Text(), f64, err, item)
-		// fmt.Printf("fieldToDataItem struct: %+v\n", rval.Interface())
+		v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
 
 	case zreflect.KindTime:
 		break
