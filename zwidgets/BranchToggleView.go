@@ -1,4 +1,4 @@
-package zwidget
+package zwidgets
 
 import (
 	"github.com/torlangballe/zui/zimageview"

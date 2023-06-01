@@ -78,9 +78,9 @@ func (v *NativeView) GetFocusedChildView(andSelf bool) *NativeView              
 func (v *NativeView) GetPathOfChild(child View) string { return "" }
 func (v *NativeView) AbsoluteRect() zgeo.Rect                                                 { return zgeo.Rect{} }
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}
-func (v *NativeView) (handler func(km zkeyboard.KeyMod, down bool) bool)         {}
+func (v *NativeView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool)         {}
 func (v *NativeView) SetRect(rect zgeo.Rect)                                                  {}
-func (v *NativeView) SetStyle(kSetKeyHandlerey, value string)                                              {}
+// func (v *NativeView) SetStyle(kSetKeyHandlerey, value string)                                              {}
 func (v *NativeView) SetZIndex(index int)                                                     {}
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos))                         {}
 func (v *NativeView) SetOnPointerMoved(handler func(pos zgeo.Pos))                            {}

@@ -1,6 +1,6 @@
 //go:build zui
 
-package zwidget
+package zwidgets
 
 import (
 	"github.com/torlangballe/zui/zview"

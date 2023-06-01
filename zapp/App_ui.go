@@ -11,7 +11,7 @@ import (
 	"github.com/torlangballe/zui/zcolor"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zwidget"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
@@ -65,7 +65,7 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 		args[k] = v[0]
 	}
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
-	zwidget.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
+	zwidgets.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	if useRPC {
 		url.RawQuery = ""
 		url.Path = ""

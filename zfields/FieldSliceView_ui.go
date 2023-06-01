@@ -8,11 +8,11 @@ import (
 	"strconv"
 
 	"github.com/torlangballe/zui/zcontainer"
-	"github.com/torlangballe/zui/zgroup"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
@@ -66,7 +66,7 @@ func (v *FieldSliceView) build() {
 			title = v.field.TitleOrName()
 		}
 		// zlog.Info("Build:", v.ObjectName(), v.field.Flags&FlagFrameIsTitled != 0, title)
-		header = zgroup.MakeStackATitledFrame(&v.StackView, title, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
+		header = zwidgets.MakeStackATitledFrame(&v.StackView, title, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
 	}
 	if header == nil && !v.field.IsStatic() {
 		header = zcontainer.StackViewHor("header")

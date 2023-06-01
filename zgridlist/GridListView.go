@@ -24,7 +24,7 @@ import (
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zui/zwidget"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -52,7 +52,7 @@ type GridListView struct {
 	PressedColor           zgeo.Color
 	SelectColor            zgeo.Color
 	HoverColor             zgeo.Color
-	BranchToggleType       zwidget.BranchToggleType
+	BranchToggleType       zwidgets.BranchToggleType
 	OpenBranches           map[string]bool
 	CurrentHoverID         string
 	FocusWidth             float64
@@ -119,7 +119,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.PressedColor = DefaultPressedColor
 	v.HoverColor = DefaultHoverColor
 	v.OpenBranches = map[string]bool{}
-	v.BranchToggleType = zwidget.BranchToggleTriangle
+	v.BranchToggleType = zwidgets.BranchToggleTriangle
 	v.Spacing = zgeo.Size{14, 6}
 	v.MultiplyColorAlternate = 0.95
 	v.SetCanTabFocus(true)
@@ -665,9 +665,9 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 	aa, _ := child.(zcontainer.AdvancedAdder)
 	if level > 0 {
 		w := float64(level-1) * 14
-		if v.BranchToggleType != zwidget.BranchToggleNone {
+		if v.BranchToggleType != zwidgets.BranchToggleNone {
 			if !leaf {
-				bt := zwidget.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
+				bt := zwidgets.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
 				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.Size{4 + w, 0}, zgeo.Size{}, -1, true)
 			}
 			w += 24
@@ -932,7 +932,7 @@ func (v *GridListView) toggleBranch(open bool) {
 	id := v.SelectedIDs()[0]
 	cellView := v.CellView(id)
 	zcontainer.ViewRangeChildren(cellView, false, false, func(view zview.View) bool {
-		bt, _ := view.(*zwidget.BranchToggleView)
+		bt, _ := view.(*zwidgets.BranchToggleView)
 		if bt != nil {
 			tellParents := true
 			if open != bt.IsOpen() {

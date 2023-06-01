@@ -4,7 +4,7 @@ package zfields
 
 import (
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zui/zwidget"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -25,7 +25,7 @@ func (a AmountBarWidgeter) Create(f *Field) zview.View {
 	if min == 0 {
 		min = 100
 	}
-	progress := zwidget.AmountViewBarNew(min)
+	progress := zwidgets.AmountViewBarNew(min)
 	if f.Styling.FGColor.Valid {
 		col := f.Styling.FGColor
 		if col.Valid {
@@ -43,7 +43,7 @@ func (a AmountCircleWidgeter) Create(f *Field) zview.View {
 	if f.Size.IsNull() {
 		f.Size = zgeo.SizeBoth(20)
 	}
-	view := zwidget.AmountViewCircleNew()
+	view := zwidgets.AmountViewCircleNew()
 	view.SetMinSize(f.Size)
 	view.SetColor(zgeo.ColorNew(0, 0.8, 0, 1))
 	for i, n := range []float64{0, 70, 90} {
@@ -67,7 +67,7 @@ func (a ActivityWidgeter) Create(f *Field) zview.View {
 		f.Size = zgeo.SizeBoth(20)
 	}
 	f.SetEdited = false
-	av := zwidget.NewActivityView(f.Size)
+	av := zwidgets.NewActivityView(f.Size)
 	av.AlwaysVisible = f.Visible
 	return av
 }
@@ -78,5 +78,7 @@ func (a ActivityWidgeter) SetupField(f *Field) {
 
 func (a SetImagesWidgeter) Create(f *Field) zview.View {
 	f.Flags |= FlagIsStatic
-	return zwidget.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size)
+	v := zwidgets.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
+	v.SetStyling(f.Styling)
+	return v
 }
