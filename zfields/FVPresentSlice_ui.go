@@ -169,6 +169,13 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if isCheck && check.Value().IsUnknown() {
 					return true // skip to next
 				}
+				if params.MultiSliceEditInProgress && val.Kind() == reflect.Slice {
+					f := findFieldWithIndex(&fview.Fields, index)
+					if f.Enum == "" {
+						zlog.Info("Skip non-enum slice in multi-edit:", sf.Name)
+						return true // skip to next
+					}
+				}
 				for i := 0; i < length; i++ {
 					sliceField := sliceVal.Index(i).Field(index)
 					if !val.IsZero() || length == 1 || isCheck {
