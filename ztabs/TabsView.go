@@ -1,6 +1,6 @@
 //go:build zui
 
-package zgroup
+package ztabs
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
@@ -10,17 +10,30 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 )
 
+type item struct {
+	id     string
+	view   zview.View
+	create func(id string, delete bool) zview.View
+}
+
 type TabsView struct {
-	GroupBase
+	zcontainer.StackView
 	separatorForIDs       []string
 	SeparatorLineInset    float64
 	ButtonName            string //
 	selectedImageBGColor  zgeo.Color
 	MaxImageSize          zgeo.Size
 	InvertSelectedTabText bool
+	CurrentID             string
+
+	items              []item
+	currentChild       zview.View
+	header             *zcontainer.StackView
+	ChangedHandlerFunc func(newID string)
 }
 
 const tabSeparatorID = "tab-separator"
@@ -33,7 +46,6 @@ var (
 
 func TabsViewNew(name string, buttons bool) *TabsView {
 	v := &TabsView{}
-	v.GroupBase.Init()
 	v.StackView.Init(v, true, name)
 	v.SetBGColor(zstyle.DefaultBGColor())
 	v.SetSpacing(0) // note: for vertical stack v
@@ -48,7 +60,7 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	v.header.SetSpacing(12) // note: for header
 	v.Add(v.header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
 	v.selectedImageBGColor = DefaultSelectedImageBGColor()
-	v.SetIndicatorSelectionFunc = v.setButtonOn
+	// v.SetIndicatorSelectionFunc = v.setButtonOn
 	if !buttons {
 		v.header.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 			sv, i := v.header.FindViewWithName(v.CurrentID, false)
@@ -73,8 +85,85 @@ func TabsViewNew(name string, buttons bool) *TabsView {
 	return v
 }
 
-func (v *TabsView) GetGroupBase() *GroupBase {
-	return &v.GroupBase
+// AddItem adds a new tab to the row of tabs.
+// id is unique id that identifies it.
+// title is what's written in the tab, if ButtonName != "".
+// ipath is path to image, if ButtonName != "" shown on right, otherwise centered
+// set makes it the current tab after adding
+// view/create are either the view to show for this tab, or how to make/delete it dynamically.
+// It is added/removed from view hierarchy by this method.
+// create is a function to create or delete the content child each time tab is set.
+func (v *TabsView) AddItem(id, title, imagePath string, set bool, view zview.View, create func(id string, delete bool) zview.View) {
+	// v.AddGroupItem(id, title, imagePath, set, view, create)
+	var button *zshape.ShapeView
+	minSize := zgeo.Size{20, 22}
+	if v.ButtonName != "" {
+		// zlog.Info("Add Tab button:", title, v.ButtonName)
+		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
+		button = &b.ShapeView
+		button.SetTextColor(DefaultTextColor())
+		button.SetMarginS(zgeo.Size{10, 0})
+		button.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
+		view = b
+	} else {
+		button = zshape.NewView(zshape.TypeNone, minSize)
+		button.MaxSize = v.MaxImageSize
+		button.ImageMargin = zgeo.Size{}
+		view = button
+	}
+	button.MaxSize.H = 26
+	button.SetObjectName(id)
+	if imagePath != "" {
+		button.SetImage(nil, imagePath, nil)
+	}
+	button.SetPressedHandler(func() {
+		go v.SelectItem(id, nil)
+	})
+	v.header.Add(view, zgeo.BottomLeft)
+	v.items = append(v.items, item{id: id, view: view, create: create})
+	if set {
+		v.SelectItem(id, nil)
+	}
+}
+
+func (v *TabsView) SelectItem(id string, done func()) {
+	// zlog.Info("TabsSelect:", id, zlog.GetCallingStackString())
+	if v.currentChild != nil {
+		v.RemoveChild(v.currentChild)
+	}
+	if v.CurrentID != "" {
+		v.setButtonOn(v.CurrentID, false)
+	}
+	v.CurrentID = id
+	v.setButtonOn(v.CurrentID, true)
+	item := v.items[v.findItem(id)]
+	v.currentChild = item.view
+	if item.create != nil {
+		v.currentChild = item.create(id, false)
+	}
+	v.Add(v.currentChild, zgeo.Center|zgeo.Expand)
+	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
+	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
+	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
+	if v.Presented {
+		zcontainer.ArrangeChildrenAtRootContainer(v)
+	}
+	if v.ChangedHandlerFunc != nil {
+		v.ChangedHandlerFunc(id)
+	}
+}
+
+func (v *TabsView) RemoveItem(id string) {
+	i := v.findItem(id)
+	zslice.RemoveAt(&v.items, i)
+	item := v.items[i]
+	if item.create != nil {
+		item.create(id, true)
+	}
+	if v.currentChild != nil {
+		v.RemoveChild(v.currentChild)
+		v.currentChild = nil
+	}
 }
 
 func (v *TabsView) GetHeader() *zcontainer.StackView {
@@ -108,48 +197,13 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 	v.separatorForIDs = forIDs
 }
 
-// AddItem adds a new tab to the row of tabs.
-// id is unique id that identifies it.
-// title is what's written in the tab, if ButtonName != "".
-// ipath is path to image, if ButtonName != "" shown on right, otherwise centered
-// set makes it the current tab after adding
-// align is how to align the content child view
-// create is a function to create or delete the content child each time tab is set.
-func (v *TabsView) AddItem(id, title, imagePath string, set bool, view zview.View, create func(id string, delete bool) zview.View) {
-	// v.AddGroupItem(id, title, imagePath, set, view, create)
-	var button *zshape.ShapeView
-	minSize := zgeo.Size{20, 22}
-	if v.ButtonName != "" {
-		// zlog.Info("Add Tab button:", title, v.ButtonName)
-		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
-		button = &b.ShapeView
-		button.SetTextColor(DefaultTextColor())
-		button.SetMarginS(zgeo.Size{10, 0})
-		button.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
-		view = b
-	} else {
-		button = zshape.NewView(zshape.TypeNone, minSize)
-		button.MaxSize = v.MaxImageSize
-		button.ImageMargin = zgeo.Size{}
-		view = button
+func (v *TabsView) findItem(id string) int {
+	for i := range v.items {
+		if v.items[i].id == id {
+			return i
+		}
 	}
-	button.MaxSize.H = 26
-	button.SetObjectName(id)
-	if imagePath != "" {
-		button.SetImage(nil, imagePath, nil)
-	}
-	button.SetPressedHandler(func() {
-		go v.SelectItem(id, nil)
-	})
-	v.header.Add(view, zgeo.BottomLeft)
-	v.AddGroupItem(id, view, create)
-	if set {
-		v.SelectItem(id, nil)
-	}
-}
-
-func (v *TabsView) RemoveItem(id string) {
-	v.RemoveGroupItem((id))
+	return -1
 }
 
 func (v *TabsView) setButtonOn(id string, selected bool) {
@@ -178,12 +232,4 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
 	cell, _ := v.header.FindCellWithName(id)
 	cell.Alignment = a
-}
-
-func (v *TabsView) SelectItem(id string, done func()) {
-	// zlog.Info("TabsSelect:", id, zlog.GetCallingStackString())
-	v.SetGroupItem(id, done)
-	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
-	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 }
