@@ -16,18 +16,22 @@ func init() {
 // It is registered with the RegisterWidgeter function, and specified with the zui:"widget:xxx" tag.
 type Widgeter interface {
 	Create(f *Field) zview.View
-	SetValue(view zview.View, val any)
+	// SetValue(view zview.View, val any)
 }
 
-// ReadWidgeter is a Widgeter that also can return it's value
-type ReadWidgeter interface {
-	GetValue(view zview.View) any
-}
+// // ReadWidgeter is a Widgeter that also can return it's value
+// type ReadWidgeter interface {
+// 	GetValue(view zview.View) any
+// }
 
 // SetupWidgeter is a Widgeter that also can setup it's field before creation
 type SetupWidgeter interface {
 	SetupField(f *Field)
 }
+
+// type ChangedWidgeter interface {
+// 	SetChangeHandler(func())
+// }
 
 var widgeters = map[string]Widgeter{}
 

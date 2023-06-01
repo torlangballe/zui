@@ -11,12 +11,11 @@ import (
 
 type ColorView struct {
 	zview.NativeView
-	ValueChangedHandlerFunc func()
+	valueChangedHandlerFunc func()
 }
 
 func RegisterWidget() {
 	zfields.RegisterWidgeter("zcolor", Widgeter{})
-	zlog.Info("zfields.RegisterWidgeter.zcolor")
 }
 
 func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -24,6 +23,7 @@ func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 // Set up a widgeter interface type for creating colors in zfields:
+// And get/set methods it uses
 
 type Widgeter struct{}
 
@@ -31,10 +31,11 @@ func (a Widgeter) Create(f *zfields.Field) zview.View {
 	return New(zgeo.ColorClear)
 }
 
-func (a Widgeter) SetValue(view zview.View, val any) {
-	view.(*ColorView).SetColor(val.(zgeo.Color))
+func (v *ColorView) SetValueWithAny(col any) {
+	v.SetColor(col.(zgeo.Color))
 }
 
-func (a Widgeter) GetValue(view zview.View) any {
-	return view.(*ColorView).Color()
+func (v *ColorView) ValueAsAny() any {
+	zlog.Info("ColVal GetValue", v.Color())
+	return v.Color()
 }

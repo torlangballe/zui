@@ -417,12 +417,10 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 func (v *NativeView) SetOpaque(opaque bool) {
 }
 
-func (v *NativeView) GetChild(path string) *NativeView {
-	zlog.Fatal(nil, "not implemented")
-	return nil
-}
-
 func (v *NativeView) Hierarchy() string {
+	if v == nil {
+		return "nil"
+	}
 	return v.HierarchyToRoot(nil)
 }
 
@@ -538,12 +536,22 @@ func (v *NativeView) AddChild(child View, index int) {
 	}
 }
 
+func (v *NativeView) GetPathOfChild(child View) string {
+	path := child.Native().HierarchyToRoot(v)
+	if path == "" {
+		return path
+	}
+	zstr.HeadUntilWithRest(path, "/", &path) // remove first path component, which is v's
+	return path
+}
+
 func (v *NativeView) ReplaceChild(child, with View) {
 	var focusedPath string
 	focused := v.GetFocusedChildView(false)
 	if focused != nil {
-		focusedPath = focused.HierarchyToRoot(child.Native())
-		zstr.HeadUntilWithRest(focusedPath, "/", &focusedPath) // remove first path component, which is v's
+		focusedPath = child.Native().GetPathOfChild(focused)
+		// focused.HierarchyToRoot(child.Native())
+		// zstr.HeadUntilWithRest(focusedPath, "/", &focusedPath) // remove first path component, which is v's
 	}
 	v.AddChild(with, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	with.SetRect(child.Rect())

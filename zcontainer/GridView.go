@@ -14,11 +14,11 @@ import (
 
 type GridView struct {
 	ContainerView
-	Spacing     zgeo.Size
-	Columns     int
-	addToColumn int
-	table       map[zgeo.IPos]zview.View
-	addPos      zgeo.IPos
+	Spacing        zgeo.Size
+	Columns        int
+	addingToColumn int
+	table          map[zgeo.IPos]zview.View
+	addPos         zgeo.IPos
 }
 
 func GridViewNew(name string, cols int) *GridView {
@@ -32,13 +32,13 @@ func (v *GridView) Init(view zview.View, name string, cols int) {
 	v.ContainerView.Init(view, name)
 	v.Columns = cols
 	v.Spacing = zgeo.Size{6, 4}
-	v.addToColumn = -1
+	v.addingToColumn = -1
 	v.table = map[zgeo.IPos]zview.View{}
 }
 
-func (v *GridView) SetAddColumn(c int) {
+func (v *GridView) SetColumnToAddTo(c int) {
 	// zlog.Info("SetAddColumn", c)
-	v.addToColumn = c
+	v.addingToColumn = c
 	v.addPos.X = c
 	for y := 0; ; y++ {
 		if v.table[zgeo.IPos{c, y}] == nil {
@@ -203,7 +203,7 @@ func (v *GridView) AddCell(cell Cell, index int) (cvs *Cell) {
 	// }
 	// zlog.Info("GridView.AddCell", v.addPos, name)
 	v.table[v.addPos] = cell.View
-	if v.addToColumn != -1 {
+	if v.addingToColumn != -1 {
 		v.addPos.Y++
 	} else {
 		v.addPos.X++

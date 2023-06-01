@@ -46,7 +46,7 @@ func (v *ImageView) Init(view zview.View, image *zimage.Image, imagePath string,
 	v.CustomView.Init(view, imagePath)
 	v.SetFitSize(fitSize)
 	v.UseDownsampleCache = true
-	//	v.DownsampleImages = true
+	v.DownsampleImages = true
 	name := "image"
 	if imagePath != "" {
 		_, name = path.Split(imagePath)
@@ -203,7 +203,7 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 	canvas.DownsampleImages = v.DownsampleImages
-	// zlog.Info("DrawImage:", v.Hierarchy(), v.image != nil, v.EmptyColor.Valid, v.Path())
+	// zlog.Info("DrawImage:", v.Hierarchy(), v.Path(), rect, v.UseDownsampleCache)
 	if v.image != nil {
 		if v.IsHighlighted() {
 			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ti *zimage.Image) {

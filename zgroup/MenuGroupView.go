@@ -2,6 +2,7 @@
 
 package zgroup
 
+/*
 import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zmenu"
@@ -21,7 +22,7 @@ func MenuGroupViewNew(storeName, title string, styling, titleStyling zstyle.Styl
 	v.StackView.Init(v, true, storeName)
 	v.SetSpacing(6)
 
-	MakeStackTitledFrame(&v.StackView, title, false, styling, titleStyling)
+	MakeStackATitledFrame(&v.StackView, title, false, styling, titleStyling)
 	v.SetIndicatorSelectionFunc = v.setMenuItem
 
 	h, _ := v.FindViewWithName("header", false)
@@ -106,3 +107,4 @@ func (v *MenuGroupView) Empty() {
 	v.GroupItems = map[string]*GroupItem{}
 	v.CurrentID = ""
 }
+*/

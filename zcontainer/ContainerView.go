@@ -303,6 +303,7 @@ func (v *ContainerView) ArrangeChildren() {
 }
 
 func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
+	// zlog.Info("*********** ContainerView.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
 	layouter, _ := v.View.(zview.Layouter)
 	if layouter != nil {
 		layouter.HandleBeforeLayout()
@@ -316,7 +317,6 @@ func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 		// zlog.Info("ArrangeAdvanced:", v.ObjectName(), c.View.ObjectName(), c.Free, freeOnly)
 		if c.Alignment != zgeo.AlignmentNone && (!freeOnly || c.Free) {
 			v.ArrangeChild(c, r)
-			// zlog.Info("ArrangeAdvanced inside:", v.ObjectName(), c.View.ObjectName(), c.Free, freeOnly, c.View.Rect())
 			at, _ := c.View.(Arranger) // we might be "inherited" by StackView or something
 			if at != nil {
 				at.ArrangeChildren()
@@ -341,7 +341,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 	}
 	changed = (cell.Collapsed != collapse)
 	// if cell.View.ObjectName() == "xxx" {
-	// 	zlog.Info("COLLAPSE:", collapse, changed, view.ObjectName(), cell.View.ObjectName())
+	// zlog.Info("COLLAPSE:", cell.Collapsed, collapse, changed, v.Hierarchy(), view.ObjectName(), cell.View.ObjectName())
 	// }
 	if collapse {
 		cell.View.Show(false)

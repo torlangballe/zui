@@ -71,7 +71,8 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 		url.Path = ""
 		zrpc.MainClient = zrpc.NewClient(url.String(), "")
 	}
-	zkeyvalue.DefaultStore = zkeyvalue.NewStore(true)
+	zkeyvalue.DefaultStore = zkeyvalue.NewStore(false)
+	zkeyvalue.DefaultSessionStore = zkeyvalue.NewStore(true)
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		zui.DebugMode = true

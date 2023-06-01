@@ -12,8 +12,8 @@ func New(col zgeo.Color) *ColorView {
 	v.SetColor(col)
 	v.JSSet("oninput", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		v.SetToolTip(v.Color().HexNoAlpha())
-		if v.ValueChangedHandlerFunc != nil {
-			v.ValueChangedHandlerFunc()
+		if v.valueChangedHandlerFunc != nil {
+			v.valueChangedHandlerFunc()
 		}
 		return nil
 	}))
@@ -28,4 +28,8 @@ func (v *ColorView) SetColor(col zgeo.Color) {
 func (v *ColorView) Color() zgeo.Color {
 	str := v.JSGet("value").String()
 	return zgeo.ColorFromString(str)
+}
+
+func (v *ColorView) SetChangedHandler(f func()) {
+	v.valueChangedHandlerFunc = f
 }

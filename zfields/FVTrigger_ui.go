@@ -5,8 +5,8 @@ package zfields
 import (
 	"strings"
 
+	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -32,13 +32,21 @@ func (f *FieldViewParameters) AddTrigger(id string, action ActionType, function 
 
 func (v *FieldView) reloadFieldViewIfUseInValueChanged(f *Field) {
 	if f.Flags&FlagIsUseInValue != 0 {
-		zlog.Info("reloadFieldViewIfUseInValueChanged", v.Hierarchy(), f.Name)
+		if v.parent != nil {
+			sv, _ := v.parent.View.(*FieldSliceView)
+			if sv != nil {
+				sv.UpdateSlice(nil)
+				zcontainer.ArrangeChildrenAtRootContainer(v.parent)
+				return
+			}
+		}
 		v.Rebuild()
 	}
 }
 
 func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, view *zview.View) bool {
 	if action == EditedAction {
+		// zlog.Info("callTriggerHandler edit:", f.Name)
 		defer v.reloadFieldViewIfUseInValueChanged(f)
 	}
 	if v.params.triggerHandlers != nil {

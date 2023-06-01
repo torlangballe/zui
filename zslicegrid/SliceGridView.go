@@ -14,7 +14,6 @@
 package zslicegrid
 
 import (
-	"strconv"
 	"sync"
 
 	"github.com/torlangballe/zui/zalert"
@@ -57,11 +56,8 @@ type SliceGridView[S zstr.StrIDer] struct {
 	slicePtr      *[]S
 	filteredSlice []S
 	options       OptionType
-	editButton    *zimageview.ImageView
-	deleteButton  *zimageview.ImageView
-	addButton     *zimageview.ImageView
-	SearchField   *ztext.SearchField
-	ActionMenu    *zmenu.MenuedOwner
+	SearchField *ztext.SearchField
+	ActionMenu  *zmenu.MenuedOwner
 }
 
 type OptionType int
@@ -269,24 +265,6 @@ func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
 	v.doFilterAndSort(*v.slicePtr)
 }
 
-func (v *SliceGridView[S]) handleAddCell() {
-	var s S
-	*v.slicePtr = append(*v.slicePtr, s)
-	index := len(*v.slicePtr) - 1
-	var a any = &(*v.slicePtr)[index]
-	id := strconv.Itoa(index)
-	st, _ := a.(zstr.StrIDer)
-	ct, _ := a.(zstr.CreateStrIDer)
-	if st != nil && (ct != nil) { // it has GetStrID and CreateStrID...
-		ct.CreateStrID()
-		id = st.GetStrID()
-		// zlog.Info("CREATE:", id, s)
-	}
-	v.UpdateViewFunc()
-	v.Grid.SelectCell(id, false)
-	v.HandleEditButtonPressed()
-}
-
 func (v *SliceGridView[S]) getIDForIndex(slice *[]S, index int, count *int) string {
 	for i, s := range *slice {
 		// if index != -1 {
@@ -382,14 +360,14 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 		v.doFilterAndSort(*v.slicePtr)
 		return
 	}
-	if v.editButton != nil {
-		v.editButton.SetPressedHandler(v.HandleEditButtonPressed)
-	}
-	if v.deleteButton != nil {
-		v.deleteButton.SetPressedHandler(func() {
-			v.DeleteItemsAsk(v.Grid.SelectedIDs())
-		})
-	}
+	// if v.editButton != nil {
+	// 	v.editButton.SetPressedHandler(v.HandleEditButtonPressed)
+	// }
+	// if v.deleteButton != nil {
+	// 	v.deleteButton.SetPressedHandler(func() {
+	// 		v.DeleteItemsAsk(v.Grid.SelectedIDs())
+	// 	})
+	// }
 	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
 
 	// v.Grid.UpdateCell = v.UpdateCell
@@ -425,7 +403,7 @@ func (v *SliceGridView[S]) UpdateSliceWithSelf() {
 	v.UpdateSlice(*v.slicePtr)
 }
 
-func (v *SliceGridView[S]) HandleEditButtonPressed() {
+func (v *SliceGridView[S]) HandleEditAction() {
 	ids := v.Grid.SelectedIDs()
 	if len(ids) == 0 {
 		if v.Grid.CurrentHoverID == "" {

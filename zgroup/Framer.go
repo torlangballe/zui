@@ -13,7 +13,7 @@ var DefaultFrameStyling = zstyle.Styling{
 	StrokeColor:   zstyle.DefaultFGColor().WithOpacity(0.5),
 	Corner:        5,
 	StrokeIsInset: zbool.True,
-	Margin:        zgeo.RectFromXY2(8, 9, -8, -8),
+	Margin:        zgeo.RectFromXY2(8, 13, -8, -8),
 }
 
 var DefaultFrameTitleStyling = zstyle.Styling{
@@ -21,14 +21,15 @@ var DefaultFrameTitleStyling = zstyle.Styling{
 	Font:    *zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleBold),
 }
 
-func MakeStackTitledFrame(stack *zcontainer.StackView, title string, titleOnFrame bool, styling, titleStyling zstyle.Styling) {
+func MakeStackATitledFrame(stack *zcontainer.StackView, title string, titleOnFrame bool, styling, titleStyling zstyle.Styling) (header *zcontainer.StackView) {
 	s := DefaultFrameStyling.MergeWith(styling)
 	// zlog.Info("NewTitledFrame1:", title, s.Margin, styling.Margin, styling.StrokeWidth, styling.StrokeColor)
 	fs := s
 	fs.Font = zgeo.Font{}
 	stack.SetStyling(fs)
 	if title != "" {
-		header := zcontainer.StackViewHor("header")
+		header = zcontainer.StackViewHor("header")
+		header.SetSpacing(2)
 		h := -8.0
 		if titleOnFrame {
 			h = -(s.Margin.Min().Y + zgeo.FontDefaultSize - 4)
@@ -42,4 +43,5 @@ func MakeStackTitledFrame(stack *zcontainer.StackView, title string, titleOnFram
 		label.SetStyling(ts)
 		header.Add(label, zgeo.CenterLeft, zgeo.Size{})
 	}
+	return header
 }

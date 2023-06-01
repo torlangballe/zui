@@ -7,7 +7,9 @@ import (
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zdraw"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 var AmountViewCircleDefaultDiameter = 20.0
@@ -21,15 +23,26 @@ type AmountView struct {
 	ColorsFromValue map[float64]zgeo.Color
 }
 
-func (v *AmountView) SetValue(value float64) *AmountView {
+func (v *AmountView) SetValue(value float64) {
 	v.value = value
 	// zlog.Info("AmountView SetValue:", value, v.exposed, presentViewPresenting)
 	v.Expose()
-	return v
+}
+
+func (v *AmountView) SetValueWithAny(value any) {
+	n, err := zfloat.GetAny(value)
+	if !zlog.OnError(err) {
+		v.SetValue(n)
+	}
+
 }
 
 func (v *AmountView) Value() float64 {
 	return v.value
+}
+
+func (v *AmountView) ValueAsAny() any {
+	return v.Value()
 }
 
 func (v *AmountView) CalculatedSize(total zgeo.Size) zgeo.Size {
@@ -80,6 +93,8 @@ func (v *AmountView) drawBar(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.
 	}
 }
 
+// AmountViewBar ********************************************************
+
 func AmountViewBarNew(width float64) *AmountView {
 	v := &AmountView{}
 	v.CustomView.Init(v, "amount")
@@ -91,3 +106,5 @@ func AmountViewBarNew(width float64) *AmountView {
 	v.ColorsFromValue = map[float64]zgeo.Color{}
 	return v
 }
+
+// AmountViewCircle *******************************************************************

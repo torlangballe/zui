@@ -351,7 +351,10 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		} else {
 			blocker.SetBGColor(zgeo.ColorClear)
 		}
-		blocker.Add(v, zgeo.TopLeft)
+		if attributes.Alignment == zgeo.AlignmentNone {
+			attributes.Alignment = zgeo.Center
+		}
+		blocker.Add(v, attributes.Alignment)
 		if attributes.ModalCloseOnOutsidePress {
 			// lp, _ := v.(Pressable)
 			// if lp != nil {

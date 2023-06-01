@@ -137,7 +137,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	})
 	if v.addFlags&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
-			zlog.Info("SORT TABLE:", v.Hierarchy())
+			// zlog.Info("SORT TABLE:", v.Hierarchy())
 			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)
 		}
 		v.Header.SortingPressedFunc = func() {

@@ -444,3 +444,7 @@ func (c SolidImage) At(x, y int) color.Color {
 func MakeSolidImage(size zgeo.Size, col zgeo.Color) SolidImage {
 	return SolidImage{Size: size, color: col.GoColor()}
 }
+
+func GoImageBlurred(img image.Image, sigma float64) image.Image {
+	return imaging.Blur(img, math.Abs(sigma))
+}

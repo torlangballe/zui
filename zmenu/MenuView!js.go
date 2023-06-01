@@ -21,6 +21,7 @@ func (v *MenuView) SetFont(font *zgeo.Font)                                 {}
 func (v *MenuView) AddItem(name string, value interface{})                  {}
 func (v *MenuView) RemoveItemByValue(value interface{})                     {}
 func (v *MenuView) ChangeNameForValue(name string, value interface{})       {}
+func (v *MenuView) UpdateItems(items zdict.Items, value any)                {}
 
 func menuViewGetHackedFontForSize(font *zgeo.Font) *zgeo.Font {
 	return font

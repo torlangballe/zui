@@ -74,7 +74,8 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), use func(na
 }
 func (v *NativeView) ReplaceChild(child, with View) error                                     { return nil }
 func (v *NativeView) AllParents() (all []*NativeView)                                         { return }
-func (v *NativeView) GetFocusedChildView(andSelf bool) *NativeView                                        { return nil }
+func (v *NativeView) GetFocusedChildView(andSelf bool) *NativeView                            { return nil }
+func (v *NativeView) GetPathOfChild(child View) string { return "" }
 func (v *NativeView) AbsoluteRect() zgeo.Rect                                                 { return zgeo.Rect{} }
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}
 func (v *NativeView) (handler func(km zkeyboard.KeyMod, down bool) bool)         {}

@@ -224,7 +224,7 @@ func (v *GroupBase) UpdateButtons() {
 }
 
 func (v *GroupBase) AddEditing() {
-	v.deleteButton = zimageview.New(nil, "images/minus-circled-darkgray.png", zgeo.Size{16, 16})
+	v.deleteButton = zimageview.New(nil, "images/zcore/minus-circled-darkgray.png", zgeo.Size{16, 16})
 	v.header.Add(v.deleteButton, zgeo.CenterRight, zgeo.Size{-6, 0})
 	v.deleteButton.SetPressedHandler(func() {
 		if v.GetAskToDeleteStringFunc != nil {
@@ -238,7 +238,7 @@ func (v *GroupBase) AddEditing() {
 		}
 		v.handleDeletePressed()
 	})
-	v.addButton = zimageview.New(nil, "images/plus-circled-darkgray.png", zgeo.Size{16, 16})
+	v.addButton = zimageview.New(nil, "images/zcore/plus-circled-darkgray.png", zgeo.Size{16, 16})
 	v.header.Add(v.addButton, zgeo.CenterRight)
 	v.addButton.SetPressedHandler(func() {
 		if v.HandleAddItemFunc != nil {

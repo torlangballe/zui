@@ -19,7 +19,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
 	"github.com/torlangballe/zutil/zrest"
-	zrpc "github.com/torlangballe/zutil/zrpc"
+	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 )

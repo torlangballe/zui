@@ -8,7 +8,7 @@ import (
 
 	"github.com/torlangballe/zutil/zjson"
 	"github.com/torlangballe/zutil/zlog"
-	zrpc "github.com/torlangballe/zutil/zrpc"
+	"github.com/torlangballe/zutil/zrpc"
 )
 
 var (

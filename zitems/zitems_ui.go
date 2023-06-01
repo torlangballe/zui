@@ -3,7 +3,7 @@
 package zitems
 
 import (
-	zrpc "github.com/torlangballe/zutil/zrpc"
+	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )

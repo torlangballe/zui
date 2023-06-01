@@ -5,18 +5,20 @@ package zfields
 import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidget"
-	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
+
+type AmountBarWidgeter struct{}
+type AmountCircleWidgeter struct{}
+type ActivityWidgeter struct{}
+type SetImagesWidgeter struct{}
 
 func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
 	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
+	RegisterWidgeter("set-images", SetImagesWidgeter{})
 }
-
-type AmountBarWidgeter struct{} //////////////////////////////////////////////////////////////
 
 func (a AmountBarWidgeter) Create(f *Field) zview.View {
 	min := f.MinWidth
@@ -33,24 +35,9 @@ func (a AmountBarWidgeter) Create(f *Field) zview.View {
 	return progress
 }
 
-func (a AmountBarWidgeter) SetValue(view zview.View, val any) {
-	av := view.(*zwidget.AmountView)
-	n, err := zfloat.GetAny(val)
-	if !zlog.OnError(err) {
-		av.SetValue(n)
-	}
-}
-
 func (a AmountBarWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
-
-func (a AmountBarWidgeter) GetValue(view zview.View) any {
-	progress := view.(*zwidget.AmountView)
-	return progress.Value()
-}
-
-type AmountCircleWidgeter struct{} //////////////////////////////////////////////////////////////
 
 func (a AmountCircleWidgeter) Create(f *Field) zview.View {
 	if f.Size.IsNull() {
@@ -71,24 +58,9 @@ func (a AmountCircleWidgeter) Create(f *Field) zview.View {
 	return view
 }
 
-func (a AmountCircleWidgeter) SetValue(view zview.View, val any) {
-	circle := view.(*zwidget.AmountView)
-	n, err := zfloat.GetAny(val)
-	if !zlog.OnError(err) {
-		circle.SetValue(n)
-	}
-}
-
 func (a AmountCircleWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
-
-func (a AmountCircleWidgeter) GetValue(view zview.View) any {
-	circle := view.(*zwidget.AmountView)
-	return circle.Value()
-}
-
-type ActivityWidgeter struct{} //////////////////////////////////////////////////////////////
 
 func (a ActivityWidgeter) Create(f *Field) zview.View {
 	if f.Size.IsNull() {
@@ -100,21 +72,11 @@ func (a ActivityWidgeter) Create(f *Field) zview.View {
 	return av
 }
 
-func (a ActivityWidgeter) SetValue(view zview.View, val any) {
-	on := val.(bool)
-	activity := view.(*zwidget.ActivityView)
-	if on {
-		activity.Start()
-	} else {
-		activity.Stop()
-	}
-}
-
 func (a ActivityWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a ActivityWidgeter) GetValue(view zview.View) any {
-	activity := view.(*zwidget.ActivityView)
-	return activity.IsStopped()
+func (a SetImagesWidgeter) Create(f *Field) zview.View {
+	f.Flags |= FlagIsStatic
+	return zwidget.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size)
 }

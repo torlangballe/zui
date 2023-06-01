@@ -35,13 +35,10 @@ func (c *Canvas) DrawImageAt(image *zimage.Image, pos zgeo.Pos, useDownsampleCac
 }
 
 func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
-	// zlog.Info("Canvas.DrawImage:", image.Path)
 	if image == nil {
 		return true
 	}
-	// if strings.Contains(image.Path, "auth") {
-	// zlog.Info("Canvas.DrawImage:", image.Size(), destRect, image.Path)
-	// }
+	// zlog.Info("Canvas.DrawImage:", image.Path, useDownsampleCache)
 	if sourceRect.IsNull() {
 		sourceRect = zgeo.Rect{Size: image.Size()}
 	}
@@ -49,7 +46,8 @@ func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRec
 		if sourceRect.IsNull() {
 			sourceRect = zgeo.Rect{Size: image.Size()}
 		}
-		return c.drawPlainImage(image, useDownsampleCache, destRect, opacity, sourceRect)
+		ds := destRect.ExpandedD(-1)
+		return c.drawPlainImage(image, useDownsampleCache, ds, opacity, sourceRect)
 	}
 	c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
 	return true

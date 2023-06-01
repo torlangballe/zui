@@ -72,7 +72,7 @@ func (v *StackView) getLayoutCells(rect zgeo.Rect) (lays []zgeo.LayoutCell) {
 }
 
 func (v *StackView) ArrangeChildren() {
-	// 	zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
 	// zlog.PushProfile(v.ObjectName())
 	layouter, _ := v.View.(zview.Layouter)
 	if layouter != nil {

@@ -52,3 +52,12 @@ func (v *ActivityView) Stop() {
 func (v *ActivityView) IsStopped() bool {
 	return v.repeater.IsStopped()
 }
+
+func (v *ActivityView) SetValueWithAny(val any) {
+	on := val.(bool)
+	if on {
+		v.Start()
+	} else {
+		v.Stop()
+	}
+}

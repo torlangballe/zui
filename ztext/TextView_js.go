@@ -43,7 +43,7 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 		// zlog.Info("TextView:", v.Hierarchy(), stype)
 		v.JSSet("type", stype)
 	}
-	v.SetMargin(zgeo.RectFromXY2(0, 3, -10, -12))
+	v.SetMargin(zgeo.RectFromXY2(2, 3, -10, -12))
 	v.SetObjectName("textview")
 	v.SetAboveParent(true)
 	v.Columns = cols

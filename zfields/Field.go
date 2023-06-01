@@ -29,8 +29,6 @@ import (
 	"github.com/torlangballe/zutil/ztime"
 )
 
-// type fieldType int
-
 // UIStringer defines a ZUIString() method, which if present, shows a complex type as a string in FieldViews.
 // We can't just use the fmt.Stringer interface as that would be too common.
 type UIStringer interface {
@@ -73,7 +71,7 @@ const (
 )
 
 // The FlagType are a number of flags a field can have set, based on the struct field/tag it is created from.
-type FlagType int64
+type FlagType zbits.NamedBit
 
 const (
 	FlagIsStatic           FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
@@ -95,6 +93,7 @@ const (
 	FlagIsActions                               // FlagIsActions means a menu created from an enum is actions and not a value to set
 	FlagHasFrame                                // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
 	FlagIsGroup                                 // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
+	FlagGroupSingle                             // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
 	FlagFrameIsTitled                           // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
 	FlagFrameTitledOnFrame                      // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
 	FlagSkipIndicator                           // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
@@ -167,29 +166,29 @@ var EmptyField = Field{
 	CustomFields: map[string]string{},
 }
 
-var flagsList = []zbits.BitsetItem{
-	zbits.BSItem("HasSeconds", int64(FlagHasSeconds)),
-	zbits.BSItem("HasMinutes", int64(FlagHasMinutes)),
-	zbits.BSItem("HasHours", int64(FlagHasHours)),
-	zbits.BSItem("HasDays", int64(FlagHasDays)),
-	zbits.BSItem("HasMonths", int64(FlagHasMonths)),
-	zbits.BSItem("HasYears", int64(FlagHasYears)),
-	zbits.BSItem("IsImage", int64(FlagIsImage)),
-	zbits.BSItem("IsFixed", int64(FlagIsFixed)),
-	zbits.BSItem("IsButton", int64(FlagIsButton)),
-	zbits.BSItem("HasHeaderImage", int64(FlagHasHeaderImage)),
-	zbits.BSItem("NoTitle", int64(FlagNoTitle)),
-	zbits.BSItem("ToClipboard", int64(FlagToClipboard)),
-	zbits.BSItem("IsPassword", int64(FlagIsPassword)),
-	zbits.BSItem("IsDuration", int64(FlagIsDuration)),
-	zbits.BSItem("IsOpaque", int64(FlagIsOpaque)),
-	zbits.BSItem("IsActions", int64(FlagIsActions)),
-	zbits.BSItem("FrameIsTitled", int64(FlagFrameIsTitled)),
-	zbits.BSItem("IsGroup", int64(FlagIsGroup)),
-	zbits.BSItem("HasFrame", int64(FlagHasFrame)),
-	zbits.BSItem("SkipIndicator", int64(FlagSkipIndicator)),
-	zbits.BSItem("LongPress", int64(FlagLongPress)),
-	zbits.BSItem("DisableAutofill", int64(FlagDisableAutofill)),
+var flagsNameMap = zbits.NamedBitMap{
+	"HasSeconds":      uint64(FlagHasSeconds),
+	"HasMinutes":      uint64(FlagHasMinutes),
+	"HasHours":        uint64(FlagHasHours),
+	"HasDays":         uint64(FlagHasDays),
+	"HasMonths":       uint64(FlagHasMonths),
+	"HasYears":        uint64(FlagHasYears),
+	"IsImage":         uint64(FlagIsImage),
+	"IsFixed":         uint64(FlagIsFixed),
+	"IsButton":        uint64(FlagIsButton),
+	"HasHeaderImage":  uint64(FlagHasHeaderImage),
+	"NoTitle":         uint64(FlagNoTitle),
+	"ToClipboard":     uint64(FlagToClipboard),
+	"IsPassword":      uint64(FlagIsPassword),
+	"IsDuration":      uint64(FlagIsDuration),
+	"IsOpaque":        uint64(FlagIsOpaque),
+	"IsActions":       uint64(FlagIsActions),
+	"FrameIsTitled":   uint64(FlagFrameIsTitled),
+	"IsGroup":         uint64(FlagIsGroup),
+	"HasFrame":        uint64(FlagHasFrame),
+	"SkipIndicator":   uint64(FlagSkipIndicator),
+	"LongPress":       uint64(FlagLongPress),
+	"DisableAutofill": uint64(FlagDisableAutofill),
 }
 
 // callSetupWidgeter is called to set gui widgets registered for use in zui tags.
@@ -200,7 +199,7 @@ var (
 )
 
 func (f FlagType) String() string {
-	return zbits.Int64ToStringFromList(int64(f), flagsList)
+	return zbits.NamedBit(f).ToString(flagsNameMap)
 }
 
 func (f Field) IsStatic() bool {
@@ -378,6 +377,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 					f.Flags |= FlagSkipIndicator
 				case "onframe":
 					f.Flags |= FlagFrameTitledOnFrame
+				case "single":
+					f.Flags |= FlagGroupSingle
 				}
 			}
 			f.Flags |= FlagIsGroup | FlagHasFrame

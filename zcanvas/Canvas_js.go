@@ -1,13 +1,16 @@
 package zcanvas
 
 import (
-	"fmt"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
+
+	"fmt"
 	"image"
+	"strings"
 	"syscall/js"
 )
 
@@ -164,8 +167,8 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 	if useDownsampleCache {
 		newImage, _ = scaledImageMap[si]
 	}
-	// if strings.Contains(image.Path, "gear-white") {
-	// 	zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, newImage != nil)
+	// if strings.Contains(image.Path, "plus-circled-darkgray.png") {
+	// 	zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, destRect, newImage != nil)
 	// }
 	if newImage != nil {
 		image = newImage
@@ -175,7 +178,10 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 	if len(scaledImageMap) > 500 {
 		scaledImageMap = map[scaledImage]*zimage.Image{}
 	}
+	scale := zscreen.GetMain().Scale
+	ds.MultiplyD(scale)
 	image.ShrunkInto(ds, proportional, func(shrunkImage *zimage.Image) {
+		shrunkImage.Scale = int(scale)
 		if useDownsampleCache {
 			scaledImageMap[si] = shrunkImage
 		}
@@ -192,10 +198,12 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 	ss := sourceRect.Size
 	ds := destRect.Size
 	drawnNow := true
-	// if true || strings.Contains(image.Path, "auth") {
-	// }
+	if strings.Contains(image.Path, "plus-circled-darkgray.png") {
+		// zlog.Info("drawPlainImage:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
+	}
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
 		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
+		// zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
 		if drawnNow {
 			return true
 		}
@@ -209,7 +217,7 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 func (c *Canvas) rawDrawPlainImage(image *zimage.Image, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) {
 	sr := sourceRect.TimesD(float64(image.Scale))
 
-	// zlog.Info("drawRaw:", image.Path, image.ImageJS.Get("complete").Bool(), image.ImageJS.Get("naturalHeight").Float(), sr, destRect)
+	// zlog.Info("drawRaw:", image.Path, image.Scale, sr, destRect)
 	oldAlpha := c.context.Get("globalAlpha").Float()
 	if opacity != 1 {
 		c.context.Set("globalAlpha", opacity)

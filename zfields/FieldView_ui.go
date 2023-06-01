@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zclipboard"
@@ -26,7 +25,6 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
@@ -65,8 +63,17 @@ type FieldViewParameters struct {
 	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
 }
 
+// If a structure/slice used in FieldViews has this method, it is called when edited/changed etc.
+// The field may be nil if it's for the entire structure.
 type ActionHandler interface {
 	HandleAction(f *Field, action ActionType, view *zview.View) bool
+}
+
+// If a struct implements StructInitializer, it is initialized when a element is added to a slice in FieldSliceView
+// Note: the method must be on a pointer, not value, as it changes the contents of the struct.
+// TODO: Make default Add element in SliceGridView that uses this.
+type StructInitializer interface {
+	InitZFieldStruct()
 }
 
 var fieldViewEdited = map[string]time.Time{}
@@ -116,7 +123,7 @@ func makeFrameIfFlag(f *Field, child zview.View) zview.View {
 		title = f.TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
-	zgroup.MakeStackTitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
+	zgroup.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
 	frame.Add(child, zgeo.TopLeft)
 	return frame
 }
@@ -344,7 +351,10 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		w := widgeters[f.WidgetName]
 		// zlog.Info("fv update !slice:", f.Name, reflect.ValueOf(foundView).Type(), w != nil, rval.Interface())
 		if w != nil {
-			w.SetValue(foundView, rval.Interface())
+			setter, _ := foundView.(zview.AnyValueSetter)
+			if setter != nil {
+				setter.SetValueWithAny(rval.Interface())
+			}
 			return true
 		}
 	}
@@ -421,17 +431,19 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// 		return true
 		// 	}
 		// }
-		fv, _ := foundView.(*FieldView)
-		if fv == nil {
+		sv, _ := foundView.(*FieldSliceView)
+		if sv == nil {
+			zlog.Info("UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
 			return false
 		}
-		// zlog.Info("updateSliceFieldView2:", v.Hierarchy(), zlog.Pointer(fv.data), zlog.Pointer(rval.Addr().Interface()))
-		fv.data = rval.Addr().Interface()
 
-		hash := zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
+		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.slicePtr).Elem(), "")
 		// zlog.Info("update any SliceValue:", f.Name, hash, fv.dataHash, reflect.ValueOf(fv.data).Elem())
-		sameHash := (fv.dataHash == hash)
-		fv.dataHash = hash
+		sameHash := (sv.dataHash == hash)
+		sv.dataHash = hash
+		if !sameHash {
+			sv.UpdateSlice(rval.Addr().Interface())
+		}
 		// getter, _ := item.Interface.(zdict.ItemsGetter)
 		// zlog.Info("fv update slice:", f.Name, reflect.ValueOf(foundView).Type(), getter != nil)
 		// if !sameHash && getter != nil {
@@ -443,34 +455,34 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// 		mt.UpdateItems(items, nil)
 		// 	}
 		// }
-		if f.Flags&FlagIsGroup == 0 {
-			stack := fv.GetChildren(true)[0].(*zcontainer.StackView)
-			// zlog.Info("updateSliceElementData?:", sameHash)
-			if sameHash {
-				fv.updateSliceElementData(rval.Addr().Interface(), stack)
-				break
-			}
-			if menuType != nil {
-				break
-			}
-			vert := v.Vertical
-			if v.params.LabelizeWidth != 0 {
-				vert = false
-			}
-			fv.updateSliceValue(rval.Addr().Interface(), stack, vert, f, false)
-		} else {
-			// zlog.Info("UpdateGSlice:", fv.Hierarchy(), item.Interface)
-			mg := fv.grouper.(*zgroup.MenuGroupView) // we have to convert it to a MenuGroupView for replace to work, for comparison
-			if !sameHash {
-				changedIDs := mg.HasDataChangedInIDsFunc()
-				if len(changedIDs) != 0 && !(len(changedIDs) == 1 && changedIDs[0] == mg.GetCurrentID()) { // if it's not the id of current slice element, we di a full rebuild
-					// zlog.Info("UpdateSliceChanged in other item:", changedIDs)
-					repopulateMenuGroup(mg, rval.Addr().Interface(), fv.params)
-					break
-				}
-			}
-			updateMenuGroupSlice(mg, rval.Addr().Interface(), dontOverwriteEdited)
-		}
+		// if f.Flags&FlagIsGroup == 0 {
+		// 	stack := fv.GetChildren(true)[0].(*zcontainer.StackView)
+		// 	// zlog.Info("updateSliceElementData?:", sameHash)
+		// 	if sameHash {
+		// 		fv.updateSliceElementData(rval.Addr().Interface(), stack)
+		// 		break
+		// 	}
+		// 	if menuType != nil {
+		// 		break
+		// 	}
+		// 	vert := v.Vertical
+		// 	if v.params.LabelizeWidth != 0 {
+		// 		vert = false
+		// 	}
+		// 	fv.updateSliceValue(rval.Addr().Interface(), stack, vert, f, false)
+		// } else {
+		// 	// zlog.Info("UpdateGSlice:", fv.Hierarchy(), item.Interface)
+		// 	mg := fv.grouper.(*zgroup.MenuGroupView) // we have to convert it to a MenuGroupView for replace to work, for comparison
+		// 	if !sameHash {
+		// 		changedIDs := mg.HasDataChangedInIDsFunc()
+		// 		if len(changedIDs) != 0 && !(len(changedIDs) == 1 && changedIDs[0] == mg.GetCurrentID()) { // if it's not the id of current slice element, we di a full rebuild
+		// 			// zlog.Info("UpdateSliceChanged in other item:", changedIDs)
+		// 			repopulateMenuGroup(mg, rval.Addr().Interface(), fv.params)
+		// 			break
+		// 		}
+		// 	}
+		// 	updateMenuGroupSlice(mg, rval.Addr().Interface(), dontOverwriteEdited)
+		// }
 	case zreflect.KindTime:
 		tv, _ := foundView.(*ztext.TextView)
 		if tv != nil && tv.IsEditing() {
@@ -523,11 +535,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 
 	case zreflect.KindInt, zreflect.KindFloat:
-		_, got := rval.Interface().(zbits.BitsetItemsOwner)
-		if got {
-			updateFlagStack(rval, f, foundView)
-		}
-		// zlog.Info("FV Update Int:", v.Hierarchy(), f.Name, item)
 		valStr = getTextFromNumberishItem(rval, f)
 		if f.IsStatic() || v.params.AllStatic {
 			label, _ := foundView.(*zlabel.Label)
@@ -582,8 +589,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	gb := zgroup.GetAncestorGroupBase(foundView)
 	if gb != nil {
-		// zlog.Info("UpdateIndicator:", foundView.Native().Hierarchy(), gb.Hierarchy())
 		data := gb.Data.(*zgroup.SliceGroupData)
+		// zlog.Info("UpdateIndicator:", foundView.Native().Hierarchy(), gb.Hierarchy(), data.IndicatorID, f.FieldName)
 		if data.IndicatorID == f.FieldName {
 			if gb.UpdateCurrentIndicatorFunc != nil {
 				gb.UpdateCurrentIndicatorFunc(fmt.Sprint(valStr))
@@ -592,27 +599,28 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	return true
 }
-func updateMenuGroupSlice(mg *zgroup.MenuGroupView, slicePtr any, dontOverwriteEdited bool) {
-	data := mg.Data.(*zgroup.SliceGroupData)
-	data.SlicePtr = slicePtr
-	id := mg.GetCurrentID()
-	if id != "" {
-		fv := mg.ChildView.(*FieldView)
-		i := zgroup.IndexForIDFromSlice(slicePtr, id)
-		if i != -1 {
-			//	zlog.Assert(i != -1, id, reflect.ValueOf(slicePtr).Elem().Len())
-			a := reflect.ValueOf(slicePtr).Elem().Index(i).Addr().Interface()
-			fv.Update(a, dontOverwriteEdited)
-		} else {
-			str := zstr.Concat(" ", "updateMenuGroupSlice unknown item id", id, reflect.ValueOf(slicePtr).Elem().Len())
-			if zui.DebugOwnerMode {
-				zlog.Fatal(nil, str)
-			} else {
-				zlog.Error(nil, str)
-			}
-		}
-	}
-}
+
+// func updateMenuGroupSlice(mg *zgroup.MenuGroupView, slicePtr any, dontOverwriteEdited bool) {
+// 	data := mg.Data.(*zgroup.SliceGroupData)
+// 	data.SlicePtr = slicePtr
+// 	id := mg.GetCurrentID()
+// 	if id != "" {
+// 		fv := mg.ChildView.(*FieldView)
+// 		i := zgroup.IndexForIDFromSlice(slicePtr, id)
+// 		if i != -1 {
+// 			//	zlog.Assert(i != -1, id, reflect.ValueOf(slicePtr).Elem().Len())
+// 			a := reflect.ValueOf(slicePtr).Elem().Index(i).Addr().Interface()
+// 			fv.Update(a, dontOverwriteEdited)
+// 		} else {
+// 			str := zstr.Concat(" ", "updateMenuGroupSlice unknown item id", id, reflect.ValueOf(slicePtr).Elem().Len())
+// 			if zui.DebugOwnerMode {
+// 				zlog.Fatal(nil, str)
+// 			} else {
+// 				zlog.Error(nil, str)
+// 			}
+// 		}
+// 	}
+// }
 
 func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 	zcontainer.ViewRangeChildren(view, true, true, func(view zview.View) bool {
@@ -638,7 +646,7 @@ func (v *FieldView) Rebuild() {
 	fview := FieldViewNew(v.id, v.data, v.params)
 	fview.Build(true)
 	rep, _ := v.Parent().View.(zview.ChildReplacer)
-	zlog.Info("REP:", rep != nil, v.Parent().Hierarchy())
+	// zlog.Info("REBUILD:", rep != nil, v.Parent().Hierarchy())
 	if rep != nil {
 		rep.ReplaceChild(v, fview)
 	}
@@ -668,6 +676,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 		gb := zgroup.GetAncestorGroupBase(v.View)
 		if gb != nil && gb.UpdateCurrentIndicatorFunc != nil {
 			data := gb.Data.(*zgroup.SliceGroupData)
+			// zlog.Info("call edit ActionHandlerFunc indicator:", data.IndicatorID, f.FieldName)
 			if data.IndicatorID == f.FieldName {
 				gb.UpdateCurrentIndicatorFunc(fmt.Sprint(fieldValue))
 			}
@@ -1044,16 +1053,28 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetChangedHandler(func() {
-		v.fieldToDataItem(f, tv)
-		// fmt.Printf("Changed text1: %s %p %+v\n", f.FieldName, v.data, reflect.ValueOf(v.data).Elem().Interface())
-		view := zview.View(tv)
-		callActionHandlerFunc(v, f, EditedAction, tv.Text(), &view)
+		v.fieldHandleEdited(f, tv.View)
 	})
-	// tv.SetKeyHandler(func(key zkeyboard.Key, mods zkeyboard.Modifier) bool {
-	// zlog.Info("keyup!")
+	// tv.SetChangedHandler(func() {
+	// 	v.fieldToDataItem(f, tv)
+	// 	view := zview.View(tv)
+	// 	if v.callTriggerHandler(f, EditedAction, tv.Text(), &tv.View) {
+	// 		return
+	// 	}
+	// 	callActionHandlerFunc(v, f, EditedAction, tv.Text(), &view)
 	// })
-	// zlog.Info("FV makeText:", f.FieldName, tv.MinWidth, tv.Columns)
 	return tv
+}
+
+func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
+	rval, err := v.fieldToDataItem(f, view)
+	if zlog.OnError(err) {
+		return
+	}
+	if v.callTriggerHandler(f, EditedAction, rval.Interface(), &view) {
+		return
+	}
+	callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
 }
 
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
@@ -1164,14 +1185,6 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 	}
 }
 
-func makeFlagStack(v *FieldView, flags reflect.Value, f *Field) zview.View {
-	stack := zcontainer.StackViewHor("flags")
-	stack.SetMinSize(zgeo.Size{20, 20})
-	spacing := f.Styling.MergeWith(v.params.Styling).Spacing
-	stack.SetSpacing(spacing)
-	return stack
-}
-
 func getColumnsForTime(f *Field) int {
 	var c int
 	for _, flag := range []FlagType{FlagHasSeconds, FlagHasMinutes, FlagHasHours, FlagHasDays, FlagHasMonths, FlagHasYears} {
@@ -1182,51 +1195,26 @@ func getColumnsForTime(f *Field) int {
 	return c - 1
 }
 
-func updateFlagStack(flags reflect.Value, f *Field, view zview.View) {
-	stack := view.(*zcontainer.StackView)
-	// zlog.Info("zfields.updateFlagStack", Name(f))
-	bso := flags.Interface().(zbits.BitsetItemsOwner)
-	bitset := bso.GetBitsetItems()
-	n := flags.Int()
-	for _, bs := range bitset {
-		name := bs.Name
-		vf, _ := stack.FindViewWithName(name, false)
-		if n&bs.Mask != 0 {
-			if vf == nil {
-				path := "images/" + f.ID + "/" + name + ".png"
-				iv := zimageview.New(nil, path, zgeo.Size{16, 16})
-				iv.DownsampleImages = true
-				// zlog.Info("flag image:", name, iv.DownsampleImages)
-				iv.SetObjectName(name) // very important as we above find it in stack
-				iv.SetMinSize(zgeo.Size{16, 16})
-				stack.Add(iv, zgeo.Center)
-				if stack.Presented {
-					stack.ArrangeChildren()
-				}
-				title := bs.Title
-				iv.SetToolTip(title)
-			}
-		} else {
-			if vf != nil {
-				stack.RemoveNamedChild(name, false)
-				stack.ArrangeChildren()
-			}
-		}
-	}
-}
-
 func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
-	// zlog.Info("createSpecialView:", f.FieldName)
+	// zlog.Info("createSpecialView:", f.FieldName, f.WidgetName, rval.Kind(), rval.Type(), f.Kind)
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
 			return nil, true
 		}
 		return v.makeButton(rval, f), false
 	}
-	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
+	if f.WidgetName != "" && rval.Kind() != reflect.Slice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
-			return w.Create(f), false
+			widgetView := w.Create(f)
+			changer, _ := widgetView.(zview.ChangedReporter)
+			if changer != nil {
+				changer.SetChangedHandler(func() {
+					v.fieldHandleEdited(f, widgetView)
+				})
+			}
+			return widgetView, false
+
 		}
 	}
 	if v.callTriggerHandler(f, CreateFieldViewAction, nil, &view) {
@@ -1295,13 +1283,6 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		// exp = zgeo.AlignmentNone
 		return view, false
 	}
-	kind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
-	if kind == zreflect.KindInt && rval.Type().Name() != "BoolInd" {
-		_, got := rval.Interface().(zbits.BitsetItemsOwner)
-		if got {
-			return makeFlagStack(v, rval, f), false
-		}
-	}
 	_, got := rval.Interface().(UIStringer)
 	if got && (f.IsStatic() || v.params.AllStatic) {
 		return v.makeText(rval, f, false), false
@@ -1313,11 +1294,11 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data)
 	// fmt.Println("buildStack1", name, defaultAlign, v.params.SkipFieldNames)
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
-		v.buildItem(f, val, sf, index, defaultAlign, cellMargin, useMinWidth)
+		v.buildItem(f, val, index, defaultAlign, cellMargin, useMinWidth)
 	})
 }
 
-func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructField, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	labelizeWidth := v.params.LabelizeWidth
 	parentFV := ParentFieldView(v)
 	if parentFV != nil && v.params.LabelizeWidth == 0 {
@@ -1373,11 +1354,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 				exp = zgeo.HorShrink
 				view = v.makeCheckbox(f, zbool.BoolInd(rval.Int()))
 			} else {
-				_, got := rval.Interface().(zbits.BitsetItemsOwner)
-				if got {
-					view = makeFlagStack(v, rval, f)
-					break
-				}
 				noUpdate := true
 				view = v.makeText(rval, f, noUpdate)
 			}
@@ -1408,30 +1384,13 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 			} else {
 				exp = zgeo.AlignmentNone
 			}
-			vert := v.Vertical
-			if labelizeWidth != 0 {
-				vert = false
-			}
+			// vert := v.Vertical
+			// if labelizeWidth != 0 {
+			// 	vert = false
+			// }
 			params := v.params
 			params.Field.MergeInField(f)
-			// params.Field.Flags = 0
-			fv := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
-			view = fv
-			var add zview.View
-			if f.Flags&FlagIsGroup == 0 {
-				// zlog.Info("BUILD static slice:", f.Name, v.Hierarchy(), v.Spacing(), fv.Spacing(), fv.params.Styling.Spacing)
-				add = fv.buildRepeatedStackFromSlice(rval.Addr().Interface(), vert, f)
-			} else {
-				// zlog.Info("NewMenuGroup:", f.FieldName, f.TitleOrName(), f.Styling.StrokeWidth, params.Styling.StrokeWidth)
-				mg := buildMenuGroup(rval.Addr().Interface(), f.ValueStoreKey, params)
-				mg.SetChangedHandler(func(newID string) {
-					// zlog.Info("Update group")
-					callActionHandlerFunc(v, f, EditedAction, rval.Addr().Interface(), &mg.View)
-				})
-				fv.grouper = mg
-				add = mg
-			}
-			fv.Add(add, zgeo.TopLeft)
+			view = v.NewSliceView(rval.Addr().Interface(), f)
 
 		case zreflect.KindTime:
 			columns := f.Columns
@@ -1497,13 +1456,13 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, sf reflect.StructFie
 			})
 		}
 	}
-	// zlog.Info("BuildItem:", item.FieldName, view != nil, zlog.GetCallingStackString())
 	updateItemLocalToolTip(f, v.data, view)
 	if !f.Styling.DropShadow.Delta.IsNull() {
 		nv := view.Native()
 		nv.SetDropShadow(f.Styling.DropShadow)
 	}
 	view.SetObjectName(f.FieldName)
+	// zlog.Info("SETOBJECTNAME", v.Hierarchy(), f.FieldName)
 	if f.Styling.FGColor.Valid {
 		view.SetColor(f.Styling.FGColor)
 	}
@@ -1573,7 +1532,6 @@ func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
-		// fmt.Println("FV Update Item:", f.Name)
 		foundView, _ := v.findNamedViewOrInLabelized(f.FieldName)
 		if foundView == nil {
 			// zlog.Info("FV Update no view found:", v.id, f.FieldName)
@@ -1601,15 +1559,16 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
-		r, _ := w.(ReadWidgeter)
-		if r != nil {
-			val := r.GetValue(view)
-			rval.Set(reflect.ValueOf(val))
-			value = rval
+		if w != nil {
+			getter, _ := view.(zview.AnyValueGetter)
+			if getter != nil {
+				val := getter.ValueAsAny()
+				rval.Set(reflect.ValueOf(val))
+				value = rval
+			}
 			return
 		}
 	}
-	// zlog.Info("fieldViewToDataItem before:", f.IsStatic(), f.Name, f.Index, len(children), "s:")
 	if f.Enum != "" || f.LocalEnum != "" {
 		mv, _ := view.(*zmenu.MenuView)
 		if mv != nil {
@@ -1747,7 +1706,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	default:
-		panic(fmt.Sprint("bad type: ", f.Kind))
+		zlog.Info("fieldToDataItem for slice:", f.Name)
 	}
 	value = reflect.ValueOf(rval.Addr().Interface()).Elem() //.Interface()
 	return
@@ -1772,4 +1731,12 @@ func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, titl
 		}
 		return done(ok)
 	})
+}
+
+func (v *FieldView) CreateStoreKeyForField(f *Field, name string) string {
+	h := v.ObjectName()
+	if f.ValueStoreKey != "" {
+		h = f.ValueStoreKey
+	}
+	return zstr.Concat("/", h, name)
 }

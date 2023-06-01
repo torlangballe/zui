@@ -93,3 +93,15 @@ func ObjectName(v View) string {
 	}
 	return v.ObjectName()
 }
+
+type AnyValueSetter interface {
+	SetValueWithAny(any)
+}
+
+type AnyValueGetter interface {
+	ValueAsAny() any
+}
+
+type ChangedReporter interface {
+	SetChangedHandler(func())
+}
