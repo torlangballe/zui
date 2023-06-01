@@ -61,7 +61,7 @@ func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, v
 			if t.action != action || !strings.Contains(t.id, "*") {
 				continue
 			}
-			path := v.id + "/" + f.FieldName
+			path := v.ID + "/" + f.FieldName
 			// zlog.Info("CallTrig:", t.id, path, f.FieldName, action, value)
 			if zstr.MatchWildcard(t.id, path) {
 				// zlog.Info("callTriggerHandler3", f.FieldName, t.action, t.id, path)

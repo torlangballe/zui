@@ -65,7 +65,6 @@ const (
 	SetupFieldAction      ActionType = "setup"       // called when a field is being set up from a struct, view will be nil
 	PressedAction         ActionType = "pressed"     // called when view is pressed, view is valid
 	LongPressedAction     ActionType = "longpressed" // called when view is long-pressed, view is valid
-	NewStructAction       ActionType = "newstruct"   // called when new stucture is created, for initializing. View may  be nil
 	CreateFieldViewAction ActionType = "createview"  // called to create view, view is pointer to view and is returned in it
 	CreatedViewAction     ActionType = "createdview" // called after view created, view is pointer to newly created view.
 )

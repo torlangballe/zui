@@ -43,21 +43,21 @@ import (
 
 type FieldView struct {
 	zcontainer.StackView
+	ID       string
 	parent   *FieldView
 	Fields   []Field
 	data     interface{}
 	dataHash int64
-	id       string
 	params   FieldViewParameters
 }
 
 type FieldViewParameters struct {
 	Field
 	FieldParameters
-	ImmediateEdit            bool
-	MultiSliceEditInProgress bool
-	EditWithoutCallbacks     bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool
+	ImmediateEdit            bool                                                                        // ImmediateEdit forces immediate write-to-data when editing a field.
+	MultiSliceEditInProgress bool                                                                        // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
+	EditWithoutCallbacks     bool                                                                        // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
 }
 
 // If a structure/slice used in FieldViews has this method, it is called when edited/changed etc.
@@ -82,9 +82,9 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	return f
 }
 
-func (v *FieldView) ID() string {
-	return v.id
-}
+// func (v *FieldView) ID() string {
+// 	return v.id
+// }
 
 func (v *FieldView) Data() any {
 	return v.data
@@ -142,14 +142,14 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 		v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	}
 	v.params = params
-	v.id = id
+	v.ID = id
 	v.parent = parent
 
 	return v
 }
 
 func (v *FieldView) Build(update bool) {
-	a := zgeo.Left //| zgeo.HorExpand
+	a := zgeo.Left
 	if v.Vertical {
 		a |= zgeo.Top
 	} else {
@@ -190,7 +190,6 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 			if foundView == nil {
 				continue
 			}
-			// zlog.Assert(foundView != nil, v.Hierarchy(), f.FieldName)
 			if neg {
 				isShow = !isShow
 			}
@@ -291,8 +290,6 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	if fh != nil {
 		fh.HandleAction(nil, DataChangedActionPre, &sview)
 	}
-	// fmt.Println("FV Update", v.id, len(children))
-	// fmt.Printf("FV Update: %s %d %+v\n", v.id, len(children), v.data)
 	zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
 		v.updateField(index, rval, sf, dontOverwriteEdited)
 		return true
@@ -503,7 +500,7 @@ func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 	zcontainer.ViewRangeChildren(view, true, true, func(view zview.View) bool {
 		f, _ := view.(*FieldView)
 		if f != nil {
-			if optionalID == "" || f.ID() == optionalID {
+			if optionalID == "" || f.ID == optionalID {
 				fv = f
 				return false
 			}
@@ -519,7 +516,7 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 }
 
 func (v *FieldView) Rebuild() {
-	fview := FieldViewNew(v.id, v.data, v.params)
+	fview := FieldViewNew(v.ID, v.data, v.params)
 	fview.Build(true)
 	rep, _ := v.Parent().View.(zview.ChildReplacer)
 	if rep != nil {
@@ -914,7 +911,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		})
 	} else {
 		iv.SetPressedHandler(func() {
-			v.callTriggerHandler(f, PressedAction, v.id, &iv.View)
+			v.callTriggerHandler(f, PressedAction, v.ID, &iv.View)
 		})
 	}
 	return iv
