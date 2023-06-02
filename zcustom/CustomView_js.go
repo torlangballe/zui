@@ -21,6 +21,7 @@ func (v *CustomView) Init(view zview.View, name string) {
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetJSStyle("overflow", "hidden")
+	v.SetSelectable(false)
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
 }
