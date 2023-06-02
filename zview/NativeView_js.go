@@ -12,7 +12,9 @@ import (
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
@@ -142,7 +144,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 	if sw.String() != "" {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
-	} else if v.Presented {
+	} else if v.IsPresented() {
 		zlog.Error(nil, "parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.CallingStackString())
 	}
 
@@ -194,8 +196,11 @@ func (v *NativeView) SetJSStyle(key, value string) {
 }
 
 func (v *NativeView) SetAlpha(alpha float32) {
+	a := alpha
+	if v.IsUsable() {
+		zfloat.Minimize32(&a, 0.4)
+	}
 	v.transparency = 1 - alpha
-	//	v.JSStyle().Set("alpha", alpha)
 	v.JSStyle().Set("opacity", alpha)
 }
 
@@ -333,18 +338,28 @@ func (v *NativeView) Usable() bool {
 }
 
 func (v *NativeView) SetUsable(usable bool) {
-	v.JSSet("disabled", !usable)
+	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
+	zbits.ChangeBit((*int64)(&v.Flags), ViewUsableFlag, usable)
+	v.setUsableAttributes(usable)
+	RangeAllChildrenFunc(v, false, func(view View) bool {
+		view.Native().setUsableAttributes(usable)
+		return true
+	})
+}
+
+func (v *NativeView) setUsableAttributes(usable bool) {
+	u := usable && v.IsUsable()
+	v.JSSet("disabled", !u)
 	style := v.JSStyle()
 	var alpha float32 = 0.4
-	if usable {
+	if u {
 		alpha = 1 - v.transparency
 	}
-	// zlog.Info("SetUsable:", v.Hierarchy(), alpha, v.Element.Get("disabled"))
-	// str := "none"
-	// if usable {
-	// 	str = "auto"
-	// }
-	//style.Set("pointer-events", str)
+	str := "none"
+	if usable {
+		str = "auto"
+	}
+	style.Set("pointer-events", str)
 	style.Set("opacity", alpha)
 }
 
@@ -530,7 +545,7 @@ func (v *NativeView) AddChild(child View, index int) {
 	// 	p.allChildrenPresented = false
 	// }
 	// zlog.Info("ADDCHILD:", v.ObjectName(), child.ObjectName(), v.Rect())
-	if v.Presented {
+	if v.IsPresented() {
 		SetPresentReadyFunc(child, true)
 		SetPresentReadyFunc(child, false)
 	}
@@ -1146,7 +1161,7 @@ func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
 		return root
 	}
 	foundID := e.Get("id").String()
-	RangeAllVisibleChildrenFunc(root.View, func(view View) bool {
+	RangeAllChildrenFunc(root.View, true, func(view View) bool {
 		n := view.Native()
 		id := n.JSGet("id").String()
 		if id == foundID {

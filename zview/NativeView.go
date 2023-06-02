@@ -8,10 +8,12 @@ import (
 
 type FocusType int
 
+type ViewFlags int64
+
 type NativeView struct {
 	baseNativeView
 	View       View
-	Presented  bool
+	Flags      ViewFlags
 	DoOnRemove []func() // anything that needs to be stopped // these could be in a global map if added/removed properly?
 	DoOnAdd    []func() // anything that needs to be stopped
 }
@@ -27,13 +29,24 @@ const (
 	DragDropFile          DragType = "file"
 
 	BaseZIndex = 100
+
+	ViewPresentedFlag = 1
+	ViewUsableFlag    = 2
 )
 
 var (
-	ChildOfViewFunc             func(v View, path string) View
-	RangeAllVisibleChildrenFunc func(root View, got func(View) bool)
-	LastPressedPos              zgeo.Pos
+	ChildOfViewFunc      func(v View, path string) View
+	RangeAllChildrenFunc func(root View, visibleOnly bool, got func(View) bool)
+	LastPressedPos       zgeo.Pos
 )
+
+func (v *NativeView) IsPresented() bool {
+	return v.Flags&ViewPresentedFlag != 0
+}
+
+func (v *NativeView) IsUsable() bool {
+	return v.Flags&ViewUsableFlag != 0
+}
 
 // AddOnRemoveFunc adds a function to call when the v is removed from it's parent.
 func (v *NativeView) AddOnRemoveFunc(f func()) {
@@ -55,7 +68,7 @@ func (v *NativeView) PerformAddRemoveFuncs(add bool) {
 		}
 		return
 	}
-	RangeAllVisibleChildrenFunc(v.View, func(child View) bool {
+	RangeAllChildrenFunc(v.View, false, func(child View) bool {
 		child.Native().PerformAddRemoveFuncs(false)
 		return true
 	})
