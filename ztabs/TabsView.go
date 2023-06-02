@@ -145,8 +145,9 @@ func (v *TabsView) SelectItem(id string, done func()) {
 	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
 	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
-	if v.Presented {
-		zcontainer.ArrangeChildrenAtRootContainer(v)
+	if v.IsPresented() {
+		// zcontainer.ArrangeChildrenAtRootContainer(v)
+		v.ArrangeChildren()
 	}
 	if v.ChangedHandlerFunc != nil {
 		v.ChangedHandlerFunc(id)
