@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
-	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
@@ -194,34 +193,22 @@ func (w *Window) SetTitle(title string) {
 }
 
 func setDarkCSSStylings(doc js.Value) {
-	css := `
-*::selection {
-background-color: #774433;
-color: #ddd;
-}`
-	head := doc.Call("getElementsByTagName", "head").Index(0)
-	style := doc.Call("createElement", "style")
-	style.Set("type", "text/css")
-	style.Call("appendChild", doc.Call("createTextNode", css))
-	head.Call("appendChild", style)
+	// not used yet
+	// 	css := `
+	// *::selection {
+	// background-color: #774433;
+	// color: #ddd;
+	// }`
 }
 
 func (w *Window) AddView(v zview.View) {
-	// ftrans := js.FuncOf(func(js.Value, []js.Value) interface{} {
-	// 	return nil
-	// })
-	// zlog.Info("Win:AddView", v.ObjectName(), reflect.ValueOf(v).Type())
 	w.ProgrammaticView = v
 	wn := &zview.NativeView{}
-	//	wn.Element = w.Element.Get("document").Get("documentElement")
 	doc := w.Element.Get("document")
 	wn.Element = doc.Get("body")
 	wn.View = wn
-	if zstyle.Dark {
-		//		setDarkCSSStylings(doc)
-	}
 	wn.SetObjectName("window")
-	v.Native().JSStyle().Set("overflow", "hidden")
+	// v.Native().JSStyle().Set("overflow", "hidden")
 	wn.AddChild(v, -1)
 }
 
