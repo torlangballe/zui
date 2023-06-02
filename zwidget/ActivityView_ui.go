@@ -1,6 +1,6 @@
 //go:build zui
 
-package zwidgets
+package zwidget
 
 import (
 	"time"
