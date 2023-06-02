@@ -18,20 +18,16 @@ var IsPresentingFunc func() bool
 func (v *CustomView) Init(view zview.View, name string) {
 	stype := "div"
 	zstr.HasPrefix(name, "#type:", &stype)
-	// zlog.Info("CUSTOMVIEW:", stype)
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetJSStyle("overflow", "hidden")
-	//!!!! v.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
-	// v.JSStyle().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
 // SetPressedHandler is not in NativeView, as it needs to work with LongPresser struct storing when pressed etc to generate a long pressed action
 func (v *CustomView) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	// v.JSSet("className", "widget")
 	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("Pressed:", v.Hierarchy(), v.Usable())
 		if !v.Usable() {
@@ -39,8 +35,6 @@ func (v *CustomView) SetPressedHandler(handler func()) {
 		}
 		zlog.Assert(len(args) > 0)
 		event := args[0]
-		// zlog.Info("Pressed", reflect.ValueOf(v).Type(), v.ObjectName(), event.Get("target").Get("id").String())
-		// args[0].Call("preventDefault")
 		event.Call("stopPropagation")
 		if !event.Get("target").Equal(v.Element) {
 			return nil
@@ -60,7 +54,6 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 		return nil
 	}))
 	v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("LONGMOUSEUP", v.Hierarchy(), zlog.GetCallingStackString())
 		(&v.LongPresser).HandleOnMouseUp(v)
 		args[0].Call("preventDefault")
 		return nil
@@ -69,8 +62,7 @@ func (v *CustomView) SetLongPressedHandler(handler func()) {
 
 func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	s := size.TimesD(scale)
-	v.canvas.SetSize(s) // scale?
-	// zlog.Info("setCanvasSize:", v.ObjectName(), size, scale)
+	v.canvas.SetSize(s)                              // scale?
 	v.canvas.JSContext().Call("scale", scale, scale) // this must be AFTER SetElementRectmentRect, doesn't do anything!
 	zview.SetElementRect(v.canvas.JSElement(), zgeo.Rect{Size: size})
 }
@@ -85,7 +77,6 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 			if intersectsViewport && v.exposed {
 				v.visible = true
 				if v.draw != nil {
-					// zlog.Info("drawAfterExpose:", v.Hierarchy())
 					v.drawSelf()
 				}
 			}
@@ -114,7 +105,6 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 func (v *CustomView) SetUsable(usable bool) {
 	v.NativeView.SetUsable(usable)
 	v.Expose()
-	// zlog.Info("CV SetUsable:", v.ObjectName(), usable, v.Usable())
 }
 
 func (v *CustomView) MC() {
@@ -139,14 +129,9 @@ func (v *CustomView) makeCanvas() {
 	} else {
 		v.JSCall("insertBefore", v.canvas.JSElement(), firstChild)
 	}
-	// zlog.Info("MakeCanvas Done:", v.Hierarchy())
-	// }
 }
 
 func (v *CustomView) drawSelf() {
-	// if v.ObjectName() == "workers" {
-	// 	zlog.Info("CustV drawIfExposed", v.Hierarchy(), v.exposed, v.draw != nil, v.drawing)
-	// }
 	// v.canvas.SetColor(zgeo.ColorRandom())
 	// v.canvas.FillRect(v.LocalRect())
 	if !v.drawing && !IsPresentingFunc() && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
@@ -158,25 +143,16 @@ func (v *CustomView) drawSelf() {
 			if !v.OpaqueDraw {
 				v.canvas.Clear()
 			}
-			// v.canvas.SetColor(zgeo.ColorRandom())
-			// v.canvas.FillRect(v.LocalRect())
-			// if v.ObjectName() == "words" {
-			// 	zlog.Info("CV draw", v.LocalRect(), v.Hierarchy())
-			// }
 			v.draw(r, v.canvas, v.View)
 		}
 		v.drawing = false
 	}
 	v.exposed = false
-	// zlog.Info("CustV drawIfExposed Done", v.ObjectName())
 }
 
 var count int
 
 func (v *CustomView) ExposeIn(secs float64) {
-	// if v.ObjectName() == "workers" {
-	// 	zlog.Info("expose draw:", v.Hierarchy(), v.draw != nil, v.visible)
-	// }
 	if v.draw == nil {
 		return
 	}
@@ -185,13 +161,7 @@ func (v *CustomView) ExposeIn(secs float64) {
 			return
 		}
 		count++
-		// if count%5 == 4 {
-		// }
-		// v.exposeTimer.StartIn(secs, func() {
-		// zlog.Info("Draw:", secs)
 		v.drawSelf()
-		// zlog.Info("DrawDone:", v.Hierarchy())
-		// })
 		v.exposed = false
 	} else {
 		v.exposed = true
@@ -199,8 +169,5 @@ func (v *CustomView) ExposeIn(secs float64) {
 }
 
 func (v *CustomView) Expose() {
-	// if v.ObjectName() == "8081059309296180955" {
-	// 	zlog.Info("Expose", v.Hierarchy(), zlog.CallingStackString())
-	// }
 	v.ExposeIn(0.1)
 }

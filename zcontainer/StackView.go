@@ -46,6 +46,9 @@ func (v *StackView) Spacing() float64 {
 
 func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	lays := v.getLayoutCells(zgeo.Rect{Size: total})
+	// for _, l := range lays {
+	// 	zlog.Info("LAYS:", v.Rect().Size, total, v.Hierarchy(), l.Name, l.OriginalSize)
+	// }
 	s := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, v.Spacing(), lays)
 	s.Subtract(v.Margin().Size)
 	s.MaximizeNonZero(v.MinSize())

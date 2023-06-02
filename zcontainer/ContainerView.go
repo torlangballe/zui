@@ -76,7 +76,6 @@ func New(name string) *ContainerView {
 
 func (v *ContainerView) Init(view zview.View, name string) {
 	v.CustomView.Init(view, name)
-	// v.SetAboveParent(true)
 }
 
 func CountChildren(v zview.View) int {
@@ -314,8 +313,8 @@ func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 		if clayouter != nil {
 			clayouter.HandleBeforeLayout()
 		}
-		// zlog.Info("ArrangeAdvanced:", v.ObjectName(), c.View.ObjectName(), c.Free, freeOnly)
 		if c.Alignment != zgeo.AlignmentNone && (!freeOnly || c.Free) {
+			// zlog.Info("ArrangeAdvanced:", v.ObjectName(), v.Rect(), c.View.ObjectName(), c.View.Rect().Size, c.Alignment)
 			v.ArrangeChild(c, r)
 			at, _ := c.View.(Arranger) // we might be "inherited" by StackView or something
 			if at != nil {

@@ -443,12 +443,10 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 	cols := 9
 	grid := zcontainer.GridViewNew("days", cols)
 	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
-	// grid.SetAboveParent(false)
 	grid.Spacing = zgeo.Size{0, 0}
 
 	month := t.Month()
 	year := t.Year()
-	// day := t.Day()
 
 	str := fmt.Sprintf("%s %d", month, year)
 	v.monthLabel.SetText(str)
