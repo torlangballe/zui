@@ -1217,6 +1217,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	if f.Styling.BGColor.Valid {
 		view.SetBGColor(f.Styling.BGColor)
+	} else if f.HasFlag(FlagIsForZDebugOnly) {
+		view.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
 	}
 	callActionHandlerFunc(v, f, CreatedViewAction, rval.Addr().Interface(), &view)
 	if f.Download != "" {

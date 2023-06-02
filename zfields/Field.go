@@ -202,7 +202,11 @@ func (f FlagType) String() string {
 }
 
 func (f Field) IsStatic() bool {
-	return f.Flags&FlagIsStatic != 0
+	return f.HasFlag(FlagIsStatic)
+}
+
+func (f Field) HasFlag(flag FlagType) bool {
+	return f.Flags&flag != 0
 }
 
 func findFieldWithIndex(fields *[]Field, index int) *Field {
