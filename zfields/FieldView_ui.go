@@ -78,7 +78,7 @@ var fieldViewEdited = map[string]time.Time{}
 func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.ImmediateEdit = true
 	f.Styling = zstyle.EmptyStyling
-	f.Styling.Spacing = 4
+	f.Styling.Spacing = 2
 	return f
 }
 
