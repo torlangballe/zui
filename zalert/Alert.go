@@ -32,6 +32,7 @@ const (
 	Destructive
 	Other
 	Upload
+	borderMargin = 10
 )
 
 type Alert struct {
@@ -187,7 +188,7 @@ func (a *Alert) Show(handle func(result Result)) {
 	textWidth := math.Min(640, zscreen.GetMain().Rect.Size.W/2)
 
 	stack := zcontainer.StackViewVert("alert")
-	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
+	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
 	stack.SetBGColor(zgeo.ColorWhite)
 
 	label := zlabel.New(a.Text)
@@ -237,12 +238,12 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, done func(ok bool) bool) {
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetBGColor(zstyle.DefaultBGColor())
-	stack.SetMargin(zgeo.RectFromXY2(20, 20, -20, -20))
+	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
 
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
-	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 10})
+	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 2})
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
 	okButton := addButton(bar, stack, "OK", true, done)
