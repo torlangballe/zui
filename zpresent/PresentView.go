@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zanimation"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
-	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zstyle"
@@ -87,14 +86,13 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
-	size := v.CalculatedSize(rect.Size)
-	// zlog.Info("Present:", v.Native().Hierarchy(), size, rect, attributes.Modal, FirstPresented, zlog.CallingStackString())
+	// size := v.CalculatedSize(rect.Size)
+	size := v.CalculatedSize(zgeo.Size{99999, 99999})
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
 	}
 	nv := v.Native()
 	if attributes.Modal {
-		// zlog.Info("Present:", len(presentCloseFuncs))
 		if nv != nil {
 			r := rect
 			if attributes.Pos != nil {
@@ -105,9 +103,9 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					// zlog.Info("ALIGN2:", r.Pos)
 				}
 			}
-			frect := fullRect //.Expanded(zgeo.SizeBoth(-4))
-			r = r.MovedInto(frect)
-			r = r.Intersected(frect)
+			// frect := fullRect //.Expanded(zgeo.SizeBoth(-4))
+			// r = r.MovedInto(frect)
+			// r = r.Intersected(frect)
 			v.SetRect(r)
 			// zlog.Info("Present:", v.Native().Hierarchy(), r, win.ContentRect())
 		}
@@ -354,37 +352,22 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		if attributes.Alignment == zgeo.AlignmentNone {
 			attributes.Alignment = zgeo.Center
 		}
-		blocker.Add(v, attributes.Alignment)
+		blocker.Add(v, attributes.Alignment) // |zgeo.Shrink
 		if attributes.ModalCloseOnOutsidePress {
-			// lp, _ := v.(Pressable)
-			// if lp != nil {
-			// 	lp.SetPressedHandler(func() {
-			// 		zlog.Info("LP Pressed")
-			// 	})
-			// }
 			blocker.SetPressedHandler(func() {
 				dismissed := true
 				Close(v, dismissed, closed)
 			})
 		}
+		blocker.SetJSStyle("overflow", "scroll")
 	}
 	win.AddView(outer)
 	return
 }
 
-func GetTopPushed() *zcustom.CustomView {
-	return nil
-}
-
-func RecusivelyHandleActivation(activated bool) {
-	if activated {
-	}
-}
-
 func PresentTitledView(view zview.View, stitle string, att Attributes, barViews map[zview.View]zgeo.Alignment, ready func(stack, bar *zcontainer.StackView, title *zlabel.Label), presented func(*zwindow.Window), closed func(dismissed bool)) {
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
-	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	stack.SetBGColor(zstyle.DefaultBGColor())
 
 	bar := zcontainer.StackViewHor("bar")
@@ -395,6 +378,9 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 		path := zgeo.PathNewRect(rect, zgeo.Size{})
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
+	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
+	stack.Add(view, zgeo.TopCenter|zgeo.HorExpand)
+
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
 	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
@@ -410,11 +396,10 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.Vertical
 		}
-		// zlog.Info("Bar add:", v.ObjectName())
 		bar.AddAdvanced(v, a, zgeo.Size{xmargin, 0}, zgeo.Size{}, 0, false)
 		xmargin = 0
 	}
-	stack.AddAdvanced(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, 0, false)
+	// stack.AddAdvanced(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, 0, false)
 	if ready != nil {
 		ready(stack, bar, titleLabel)
 	}
