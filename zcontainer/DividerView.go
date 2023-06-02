@@ -84,10 +84,10 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 			delta, got := zkeyvalue.DefaultStore.GetDouble(v.storeKey, 0)
 			if got {
 				v.Delta = delta
+				v.Delta = 0
 				// ArrangeChildrenAtRootContainer(v)
 				// v.Expose()
 			}
-			// zlog.Info("DIV Delta:", delta)
 		}
 	}
 }
