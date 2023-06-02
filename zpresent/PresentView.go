@@ -13,9 +13,11 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
@@ -100,14 +102,14 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					r.Pos = *attributes.Pos
 				} else {
 					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}).Pos
-					// zlog.Info("ALIGN2:", r.Pos)
 				}
 			}
-			// frect := fullRect //.Expanded(zgeo.SizeBoth(-4))
-			// r = r.MovedInto(frect)
-			// r = r.Intersected(frect)
+			full := fullRect
+			full.Size.W -= zscrollview.DefaultBarSize // scroll bare seems to be on top of everything, let's get out of the way
+			r = r.MovedInto(full)
+			zfloat.Maximize(&r.Pos.X, 0) // these are needed for overflow:scroll in blocker to work???
+			zfloat.Maximize(&r.Pos.Y, 0) // +
 			v.SetRect(r)
-			// zlog.Info("Present:", v.Native().Hierarchy(), r, win.ContentRect())
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.FromNativeView(nv)
