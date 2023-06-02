@@ -229,6 +229,7 @@ func (v *FieldSliceView) handleDeleteItem(i int) {
 	v.stack.RemoveChild(cell.View)
 	v.currentIndex = -1
 	v.selectItem(0)
+	v.callEditedAction()
 }
 
 func (v *FieldSliceView) handleMenuSelected() {
