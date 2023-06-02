@@ -138,7 +138,7 @@ func (i *Image) load(spath string, done func(success bool)) {
 		i.Loading = false
 		i.size.W = 5
 		i.size.H = 5
-		zlog.Info("Image Load fail:", spath)
+		// zlog.Info("Image Load fail:", spath)
 		if done != nil {
 			done(false)
 		}
