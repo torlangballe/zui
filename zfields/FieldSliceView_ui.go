@@ -85,7 +85,7 @@ func (v *FieldSliceView) build() {
 		header.Add(v.menu, zgeo.CenterRight)
 
 		if !v.field.IsStatic() {
-			v.globalDeleteButton = zimageview.New(nil, "images/zcore/minus-circled-darkgray.png", zgeo.Size{16, 16})
+			v.globalDeleteButton = makeButton("minus", "red")
 			header.Add(v.globalDeleteButton, zgeo.CenterRight)
 			v.globalDeleteButton.SetPressedHandler(func() {
 				v.handleDeleteItem(v.currentIndex)
@@ -97,7 +97,7 @@ func (v *FieldSliceView) build() {
 		v.menu.SelectWithValue(index)
 	}
 	if !v.field.IsStatic() {
-		v.addButton = zimageview.New(nil, "images/zcore/plus-circled-darkgray.png", zgeo.Size{16, 16})
+		v.addButton = makeButton("plus", "gray")
 		header.Add(v.addButton, zgeo.CenterRight)
 		v.addButton.SetPressedHandler(v.handleAddItem)
 	}
@@ -198,7 +198,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	zlog.Assert(add != nil)
 	itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() {
-		deleteButton := zimageview.New(nil, "images/zcore/minus-circled-darkgray.png", zgeo.Size{16, 16})
+		deleteButton := makeButton("minus", "red")
 		itemStack.Add(deleteButton, zgeo.CenterRight)
 		deleteButton.SetPressedHandler(func() {
 			findView := add
@@ -271,4 +271,9 @@ func (v *FieldSliceView) UpdateSlice(slicePtr any) {
 	if f != nil {
 		f.Native().Focus(true)
 	}
+}
+
+func makeButton(shape, col string) *zimageview.ImageView {
+	str := fmt.Sprintf("images/zcore/%s-circled-dark%s.png", shape, col)
+	return zimageview.New(nil, str, zgeo.Size{20, 20})
 }
