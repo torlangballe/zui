@@ -27,7 +27,6 @@ type FieldSliceView struct {
 	FieldView
 	addButton          *zimageview.ImageView
 	globalDeleteButton *zimageview.ImageView
-	slicePtr           any
 	field              *Field
 	menu               *zmenu.MenuView
 	indicatorFieldName string
@@ -46,7 +45,7 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 		vert = !vert
 	}
 	v.Init(v, vert, f.FieldName)
-	v.slicePtr = slicePtr
+	v.data = slicePtr
 	v.field = f
 	v.parent = fv
 	v.params = fv.params
@@ -59,13 +58,13 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 func (v *FieldSliceView) build() {
 	var header *zcontainer.StackView
 	var index int
-	sliceRval := reflect.ValueOf(v.slicePtr).Elem()
+	// zlog.Info("FieldSliceView build:", v.Hierarchy(), v.data != nil, reflect.ValueOf(v.data).Kind())
+	sliceRval := reflect.ValueOf(v.data).Elem()
 	if v.field.Flags&FlagHasFrame != 0 {
 		var title string
 		if v.field.Flags&FlagFrameIsTitled != 0 {
 			title = v.field.TitleOrName()
 		}
-		// zlog.Info("Build:", v.ObjectName(), v.field.Flags&FlagFrameIsTitled != 0, title)
 		header = zwidgets.MakeStackATitledFrame(&v.StackView, title, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
 	}
 	if header == nil && !v.field.IsStatic() {
@@ -117,7 +116,7 @@ func (v *FieldSliceView) createMenu() {
 	v.menu = zmenu.NewView("menu", nil, nil)
 	v.menu.SetSelectedHandler(v.handleMenuSelected)
 
-	v.indicatorFieldName = FindIndicatorOfSlice(v.slicePtr)
+	v.indicatorFieldName = FindIndicatorOfSlice(v.data)
 	zlog.Assert(v.indicatorFieldName != "")
 	if v.indicatorFieldName != "" && v.params.Flags&FlagSkipIndicator != 0 {
 		zstr.AddToSet(&v.params.SkipFieldNames, v.indicatorFieldName)
@@ -131,7 +130,7 @@ func (v *FieldSliceView) updateMenu() {
 		return
 	}
 	var menuItems zdict.Items
-	rval := reflect.ValueOf(v.slicePtr).Elem()
+	rval := reflect.ValueOf(v.data).Elem()
 	for i := 0; i < rval.Len(); i++ {
 		a := rval.Index(i).Interface()
 		rval, got := zreflect.FindFieldWithNameInStruct(v.indicatorFieldName, a, true)
@@ -143,8 +142,8 @@ func (v *FieldSliceView) updateMenu() {
 }
 
 func (v *FieldSliceView) handleAddItem() {
-	i := zslice.AddEmptyElementAtEnd(v.slicePtr)
-	e := reflect.ValueOf(v.slicePtr).Elem().Index(i)
+	i := zslice.AddEmptyElementAtEnd(v.data)
+	e := reflect.ValueOf(v.data).Elem().Index(i)
 	initer, _ := e.Addr().Interface().(StructInitializer)
 	if initer != nil {
 		initer.InitZFieldStruct()
@@ -215,7 +214,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 }
 
 func (v *FieldSliceView) callEditedAction() {
-	actionCaller, _ := v.slicePtr.(ActionHandler)
+	actionCaller, _ := v.data.(ActionHandler)
 	if actionCaller != nil {
 		view := v.View
 		actionCaller.HandleAction(v.field, EditedAction, &view)
@@ -224,7 +223,7 @@ func (v *FieldSliceView) callEditedAction() {
 
 func (v *FieldSliceView) handleDeleteItem(i int) {
 	zlog.Assert(i >= 0 && i < len(v.stack.Cells), i, len(v.stack.Cells))
-	zslice.RemoveAt(v.slicePtr, i)
+	zslice.RemoveAt(v.data, i)
 	cell := v.stack.Cells[i]
 	v.stack.RemoveChild(cell.View)
 	v.currentIndex = -1
@@ -263,7 +262,7 @@ func (v *FieldSliceView) UpdateSlice(slicePtr any) {
 		focusedPath = v.GetPathOfChild(focused)
 	}
 	if slicePtr != nil {
-		v.slicePtr = slicePtr
+		v.data = slicePtr
 	}
 	v.RemoveAllChildren()
 	v.build()

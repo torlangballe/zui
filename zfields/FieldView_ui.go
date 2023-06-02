@@ -391,7 +391,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			zlog.Info("UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
 			return false
 		}
-		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.slicePtr).Elem(), "")
+		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
 		sameHash := (sv.dataHash == hash)
 		sv.dataHash = hash
 		if !sameHash {
@@ -516,6 +516,7 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 }
 
 func (v *FieldView) Rebuild() {
+	zlog.Info("FV.Rebuild:", v.data != nil, reflect.ValueOf(v.data).Kind())
 	fview := FieldViewNew(v.ID, v.data, v.params)
 	fview.Build(true)
 	rep, _ := v.Parent().View.(zview.ChildReplacer)
@@ -1062,7 +1063,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
-	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data)
+	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data, reflect.ValueOf(v.data).Kind())
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
 		v.buildItem(f, val, index, defaultAlign, cellMargin, useMinWidth)
 	})
