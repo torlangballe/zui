@@ -10,19 +10,20 @@ import (
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /13/11/15.
 
 type ScrollView struct {
 	zcustom.CustomView
-	child         zview.View
-	YOffset       float64
-	ScrollHandler func(pos zgeo.Pos, infiniteDir int)
-
-	lastEdgeScroll time.Time
-	ScrolledAt     time.Time
-	BarSize        float64
+	child                  zview.View
+	YOffset                float64
+	ScrollHandler          func(pos zgeo.Pos, infiniteDir int)
+	ExpandToChildHightUpTo float64
+	lastEdgeScroll         time.Time
+	ScrolledAt             time.Time
+	BarSize                float64
 }
 
 var DefaultBarSize = 22.0
@@ -49,7 +50,6 @@ func (v *ScrollView) Update() {
 	v.SetExposed(false)
 	cust, _ := v.child.(*zcustom.CustomView)
 	if cust != nil {
-		// zlog.Info("SV Update1:", v.ObjectName(), v.Presented, cust.exposed)
 		cust.SetExposed(false)
 	}
 	ct, _ := v.child.(zcontainer.ChildrenOwner)
@@ -62,17 +62,10 @@ func (v *ScrollView) Update() {
 					y := c.Rect().Min().Y
 					keepOffsetY = &y
 				}
-				// if diff > 0 {
-				// 	zlog.Info("SV Update:", i, diff, c.ObjectName())
-				// }
 			}
 		}
 	}
 	v.ArrangeChildren()
-	// if keepOffsetY != nil {
-	// 	zlog.Info("SV Update KeepOffset:", *keepOffsetY)
-	// 	// v.SetContentOffset(*keepOffsetY, false)
-	// }
 	v.Expose()
 }
 
@@ -85,10 +78,6 @@ func (v *ScrollView) ArrangeChildren() {
 		r := zgeo.Rect{Size: cs}
 		r.Size.W -= v.BarSize
 		v.child.SetRect(r) // this will call arrange children on child if container
-		// ct, got := v.child.(ContainerType)
-		// if got {
-		// 	ct.ArrangeChildren(onlyChild)
-		// }
 	}
 }
 
@@ -96,6 +85,10 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.child != nil {
 		cs := v.child.CalculatedSize(total)
+		if v.ExpandToChildHightUpTo != 0 {
+			s.H = math.Min(total.H, math.Max(s.H, cs.H))
+			zlog.Info("ScrollView.ExpandToChildHight:", v.Hierarchy(), total.H, s.H)
+		}
 		s.W = cs.W
 		s.W += 16
 	}
