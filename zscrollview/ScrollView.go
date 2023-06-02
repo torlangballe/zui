@@ -56,7 +56,7 @@ func (v *ScrollView) Update() {
 	var keepOffsetY *float64
 	if ct != nil {
 		for _, c := range ct.GetChildren(false) {
-			if c.Native().Presented {
+			if c.Native().IsPresented() {
 				diff := c.Rect().Min().Y - v.YOffset
 				if diff >= 0 && keepOffsetY == nil {
 					y := c.Rect().Min().Y

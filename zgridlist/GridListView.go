@@ -579,7 +579,6 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 		return v.MinSize()
 	}
 	childSize := v.getAChildSize(total)
-	// zlog.Info("GLV CalculatedGridSize:", childSize)
 	nx, ny := v.CalculateColumnsAndRows(childSize.W, total.W)
 	zint.Maximize(&ny, v.MinRowsForFullSize)
 	if v.MaxRowsForFullSize != 0 {

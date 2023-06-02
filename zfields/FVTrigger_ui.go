@@ -46,7 +46,6 @@ func (v *FieldView) reloadFieldViewIfUseInValueChanged(f *Field) {
 
 func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, view *zview.View) bool {
 	if action == EditedAction {
-		// zlog.Info("callTriggerHandler edit:", f.Name)
 		defer v.reloadFieldViewIfUseInValueChanged(f)
 	}
 	if v.params.triggerHandlers != nil {

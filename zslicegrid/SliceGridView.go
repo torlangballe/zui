@@ -56,8 +56,8 @@ type SliceGridView[S zstr.StrIDer] struct {
 	slicePtr      *[]S
 	filteredSlice []S
 	options       OptionType
-	SearchField *ztext.SearchField
-	ActionMenu  *zmenu.MenuedOwner
+	SearchField   *ztext.SearchField
+	ActionMenu    *zmenu.MenuedOwner
 }
 
 type OptionType int
@@ -76,6 +76,11 @@ func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (
 	v := &SliceGridView[S]{}
 	v.Init(v, slice, storeName, options)
 	return v
+}
+
+func (v *SliceGridView[S]) SetRect(rect zgeo.Rect) {
+	zlog.Info("SliceGridView: SetRect:", v.ObjectName(), rect)
+	v.StackView.SetRect(rect)
 }
 
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {

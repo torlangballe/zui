@@ -7,8 +7,8 @@ import "github.com/torlangballe/zui/zview"
 func (v *CustomView) drawSelf() {
 }
 
-func (c *CustomView) Init(view zview.View, name string) {
-	c.SetObjectName(name)
+func (v *CustomView) Init(view zview.View, name string) {
+	v.SetObjectName(name)
 }
 
 func (v *CustomView) makeCanvas() {

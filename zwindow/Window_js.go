@@ -330,7 +330,7 @@ func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.Ke
 		deleteKeyHandlers(win, v)
 	})
 	win.keyHandlers = append(win.keyHandlers, keyHandler{v, handler})
-	if v.Native().Presented {
+	if v.Native().IsPresented() {
 		win.SetOnKeyEvents()
 	}
 	// zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))

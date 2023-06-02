@@ -85,9 +85,6 @@ func (v *StackView) ArrangeChildren() {
 	lays := v.getLayoutCells(rm)
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
 	// zlog.ProfileLog("did layout")
-	// for i, r := range rects {
-	// 	zlog.Info("R:", i, v.cells[i].View.ObjectName(), r)
-	// }
 	j := 0
 	for _, c := range v.Cells {
 		if c.Free {

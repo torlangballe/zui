@@ -365,7 +365,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 			v.AddChild(cell.View, -1)
 		}
 	}
-	if arrange && v.Presented {
+	if arrange && v.IsPresented() {
 		at := v.View.(Arranger) // we might be "inherited" by StackView or something
 		// zlog.Info("Arrange on collapse", v.Hierarchy())
 		at.ArrangeChildren()
@@ -376,7 +376,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 		// if cell.View.ObjectName() == "xxx" {
 		// 	zlog.Info("Uncollapse Disco", cv != nil)
 		// }
-		// if cv != nil && cv.Presented {
+		// if cv != nil && cv.IsPresented() {
 		// 	cv.visible = true
 		// }
 		zview.ExposeView(cell.View)
@@ -627,7 +627,7 @@ func FocusNext(view zview.View, recursive, loop bool) {
 }
 
 func init() {
-	zview.RangeAllVisibleChildrenFunc = func(root zview.View, got func(zview.View) bool) {
+	zview.RangeAllChildrenFunc = func(root zview.View, visible bool, got func(zview.View) bool) {
 		// ct, _ := root.(ContainerOwner)
 		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
 		recursive := true
