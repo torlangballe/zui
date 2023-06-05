@@ -307,7 +307,7 @@ func (ti *Info) GetColumnsSize(cols int) zgeo.Size {
 	len := len(letters)
 	for i := 0; i < cols; i++ {
 		c := string(letters[i%len])
-		if i%8 == 4 {
+		if i%8 == 4 || cols <= 4 {
 			c = strings.ToUpper(c)
 		}
 		temp.Text += c
