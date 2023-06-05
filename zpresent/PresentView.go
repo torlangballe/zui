@@ -21,7 +21,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
-	"github.com/torlangballe/zutil/ztimer"
 )
 
 type Attributes struct {
@@ -235,13 +234,13 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	} else {
 		win.ProgrammaticView = nil
 	}
-	nv.RemoveFromParent()
 	cf := presentCloseFuncs[view]
 	if cf != nil {
-		ztimer.StartIn(0.1, func() {
-			cf(dismissed)
-		})
+		// ztimer.StartIn(0.1, func() {
+		cf(dismissed)
+		// })
 	}
+	nv.RemoveFromParent()
 }
 
 func CurrentIsParent(v zview.View) bool {
