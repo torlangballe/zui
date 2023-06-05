@@ -78,10 +78,10 @@ func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (
 	return v
 }
 
-func (v *SliceGridView[S]) SetRect(rect zgeo.Rect) {
-	zlog.Info("SliceGridView: SetRect:", v.ObjectName(), rect)
-	v.StackView.SetRect(rect)
-}
+// func (v *SliceGridView[S]) SetRect(rect zgeo.Rect) {
+// 	zlog.Info("SliceGridView: SetRect:", v.ObjectName(), rect)
+// 	v.StackView.SetRect(rect)
+// }
 
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {
 	v.options = options
