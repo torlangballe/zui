@@ -29,7 +29,8 @@ import (
 type TimeFieldFlags int
 
 const (
-	TimeFieldSecs TimeFieldFlags = 1 << iota
+	TimeFieldNone TimeFieldFlags = 1 << iota
+	TimeFieldSecs
 	TimeFieldYears
 	TimeFieldDateOnly
 	TimeFieldTimeOnly
@@ -43,7 +44,7 @@ type TimeFieldView struct {
 	zcontainer.StackView
 	UseYear                bool
 	UseSeconds             bool
-	HandleValueChangedFunc func(t time.Time)
+	HandleValueChangedFunc func()
 	PreviousYearIfLessDays int
 	hourText               *TextView
 	minuteText             *TextView
@@ -60,9 +61,10 @@ type TimeFieldView struct {
 func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	v := &TimeFieldView{}
 	v.flags = flags
+	v.location = time.Local
 	v.Init(v, false, name)
-	v.SetSpacing(-2)
-	v.SetMargin(zgeo.RectFromXY2(6, -4, -8, 2))
+	v.SetSpacing(-8)
+	v.SetMargin(zgeo.RectFromXY2(6, -4, -8, 8))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.8, 1))
 	if zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
@@ -127,9 +129,9 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.yearText = addText(v, cols, "Y", "/")
 		}
 		if flags&TimeFieldNoCalendar == 0 {
-			cal := zimageview.New(nil, "images/zcore/calendar.png", zgeo.Size{18, 18})
+			cal := zimageview.New(nil, "images/zcore/calendar.png", zgeo.Size{16, 16})
 			cal.SetPressedHandler(v.popCalendar)
-			v.Add(cal, zgeo.CenterLeft, zgeo.Size{0, 0})
+			v.Add(cal, zgeo.CenterLeft, zgeo.Size{1, 0})
 		}
 	}
 	flipDayMonth(v, false)
@@ -138,13 +140,10 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 
 func (v *TimeFieldView) handleReturn(km zkeyboard.KeyMod, down bool) bool {
 	if km.Key.IsReturnish() && km.Modifier == 0 && down && v.HandleValueChangedFunc != nil {
-		val, err := v.Value()
 		// zlog.Info("HER KEY1?", km.Key, km.Key.IsReturnish(), km.Modifier, down, v.HandleValueChangedFunc, err)
-		if err == nil {
-			// zlog.Info("HER KEY2?", km.Key, km.Key.IsReturnish(), km.Modifier, down, v.HandleValueChangedFunc, err)
-			v.HandleValueChangedFunc(val)
-			return true
-		}
+		// zlog.Info("HER KEY2?", km.Key, km.Key.IsReturnish(), km.Modifier, down, v.HandleValueChangedFunc, err)
+		v.HandleValueChangedFunc()
+		return true
 	}
 	return false
 }

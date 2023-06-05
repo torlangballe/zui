@@ -29,9 +29,14 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 		col = zgeo.ColorBlue
 		tl.SetPressedHandler(func() {
 			tf := TimeFieldNew(name, flags)
-			tf.HandleValueChangedFunc = func(t time.Time) {
-				tl.SetValue(t)
-				zpresent.Close(tf, false, nil)
+			tf.HandleValueChangedFunc = func() {
+				t, err := tf.Value()
+				if err == nil {
+					tl.SetValue(t)
+					zpresent.Close(tf, false, nil)
+				} else {
+					tl.SetToolTip(err.Error())
+				}
 			}
 			tf.SetValue(tl.value)
 			zpresent.PopupView(tf, tl, zgeo.TopLeft, zgeo.Size{})
