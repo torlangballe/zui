@@ -47,10 +47,11 @@ type Attributes struct {
 }
 
 var (
-	presentCloseFuncs = map[zview.View]func(dismissed bool){}
-	FirstPresented    bool
-	Presenting        = true // true for first pre-present
-	ShowErrorFunc     func(title, subTitle string)
+	presentCloseFuncs  = map[zview.View]func(dismissed bool){}
+	previousFocusViews []zview.View
+	FirstPresented     bool
+	Presenting         = true // true for first pre-present
+	ShowErrorFunc      func(title, subTitle string)
 )
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
@@ -169,6 +170,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	FirstPresented = true
 	win.SetOnKeyEvents()
+	oldFocus := getCurrentFocus(win.ViewsStack)
+	previousFocusViews = append(previousFocusViews, oldFocus)
 	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false
@@ -184,25 +187,42 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 }
 
+func getCurrentFocus(stack []zview.View) zview.View {
+	slen := len(stack)
+	if slen == 0 {
+		return nil
+	}
+	top := stack[slen-1]
+	return top.Native().GetFocusedChildView(true)
+}
+
 func Close(view zview.View, dismissed bool, done func(dismissed bool)) {
 	CloseOverride(view, dismissed, Attributes{}, done)
 }
 
 func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attributes, done func(dismissed bool)) {
-	// zlog.Info("CloseOverride", dismissed, zlog.CallingStackString())
 	// TODO: Handle non-modal window too
-	// zlog.Info("CloseOverride", dismissed, view.ObjectName(), reflect.ValueOf(view).Type())
-	if done != nil {
-		delete(presentCloseFuncs, view)
+	old := presentCloseFuncs[view]
+	presentCloseFuncs[view] = func(dismissed bool) {
+		if done != nil {
+			done(dismissed)
+		}
+		if old != nil {
+			old(dismissed)
+		}
+		plen := len(previousFocusViews)
+		oldFoc := previousFocusViews[plen-1]
+		previousFocusViews = previousFocusViews[:plen-1]
+		if oldFoc != nil {
+			oldFoc.Native().Focus(true)
+		}
 	}
 	nv := view.Native()
 	parent := nv.Parent()
 	if parent != nil && parent.ObjectName() == "$titled" {
-		// zlog.Info("CloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
 	if parent != nil && parent.ObjectName() == "$blocker" {
-		// zlog.Info("CloseOverride remove blocker instead", view.ObjectName())
 		nv = parent
 	}
 	win := zwindow.FromNativeView(nv)
@@ -210,23 +230,17 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	if plen > 0 {
 		win.ViewsStack = win.ViewsStack[:plen-1]
 	}
-	// zlog.Info("CloseOverride:", plen, view != nil, win != nil)
 	if plen > 1 {
 		win.ProgrammaticView = win.ViewsStack[plen-2] // stack has been tructated by 1 since plen calculated
 	} else {
 		win.ProgrammaticView = nil
 	}
 	nv.RemoveFromParent()
-	if done != nil {
-		done(dismissed)
-	}
 	cf := presentCloseFuncs[view]
 	if cf != nil {
 		ztimer.StartIn(0.1, func() {
-			// zlog.Info("Check PresentCloseFunc:", presentCloseFunc != nil)
 			cf(dismissed)
 		})
-		// presentCloseFunc = nil // can't do this, clears before StartIn
 	}
 }
 
@@ -294,9 +308,9 @@ func CallReady(v zview.View, beforeWindow bool) {
 	if nv == nil {
 		return
 	}
-	if !nv.Presented {
+	if !nv.IsPresented() {
 		if !beforeWindow {
-			nv.Presented = true
+			nv.Flags |= zview.ViewPresentedFlag
 		}
 		r, _ := v.(zview.ReadyToShowType)
 		if r != nil {
@@ -308,7 +322,7 @@ func CallReady(v zview.View, beforeWindow bool) {
 	// }
 	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
-		// zlog.Info("CallReady1:", nv.Hierarchy(), nv.Presented, len(ct.GetChildren(false)))
+		// zlog.Info("CallReady1:", nv.Hierarchy(), nv.IsPresented(), len(ct.GetChildren(false)))
 		for _, c := range ct.GetChildren(false) {
 			CallReady(c, beforeWindow)
 		}
@@ -320,7 +334,7 @@ func CallReady(v zview.View, beforeWindow bool) {
 
 func PrintPresented(v zview.View, space string) {
 	nv := v.Native()
-	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.Presented)
+	fmt.Printf(space+"Presented: %s %p: %v\n", nv.Hierarchy(), nv, nv.IsPresented())
 	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		for _, c := range ct.GetChildren(false) {
