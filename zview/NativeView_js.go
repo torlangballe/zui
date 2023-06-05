@@ -429,6 +429,28 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 	}))
 }
 
+func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
+	var found *NativeView
+	e := zdom.DocumentJS.Get("activeElement")
+	if e.IsUndefined() {
+		return nil
+	}
+	if andSelf && root.IsFocused() {
+		return root
+	}
+	foundID := e.Get("id").String()
+	RangeAllChildrenFunc(root.View, true, func(view View) bool {
+		n := view.Native()
+		id := n.JSGet("id").String()
+		if id == foundID {
+			found = n
+			return false
+		}
+		return true
+	})
+	return found
+}
+
 func (v *NativeView) SetOpaque(opaque bool) {
 }
 
@@ -1149,28 +1171,6 @@ func (v *NativeView) SetStyling(style zstyle.Styling) {
 			m.SetMargin(style.Margin)
 		}
 	}
-}
-
-func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
-	var found *NativeView
-	e := zdom.DocumentJS.Get("activeElement")
-	if e.IsUndefined() {
-		return nil
-	}
-	if andSelf && root.IsFocused() {
-		return root
-	}
-	foundID := e.Get("id").String()
-	RangeAllChildrenFunc(root.View, true, func(view View) bool {
-		n := view.Native()
-		id := n.JSGet("id").String()
-		if id == foundID {
-			found = n
-			return false
-		}
-		return true
-	})
-	return found
 }
 
 func (nv *NativeView) SetNativePadding(m zgeo.Rect) {
