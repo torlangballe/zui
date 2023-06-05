@@ -92,7 +92,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	// size := v.CalculatedSize(rect.Size)
 	size := v.CalculatedSize(zgeo.Size{99999, 99999})
 	if attributes.Modal || FirstPresented {
-		rect = rect.Align(size, zgeo.Center, zgeo.Size{})
+		rect = rect.Align(size, attributes.Alignment, zgeo.Size{})
 	}
 	nv := v.Native()
 	if attributes.Modal {
@@ -395,7 +395,7 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
-	stack.Add(view, zgeo.TopCenter|zgeo.HorExpand)
+	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
