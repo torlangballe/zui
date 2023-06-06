@@ -256,11 +256,15 @@ func (v *TimeFieldView) Clear() {
 	v.location = nil
 }
 
-func getInt(v *TextView, i *int, min, max int, err *error) {
+func getInt(v *TextView, i *int, min, max int, err *error, ignoreEmpty bool) {
 	if v == nil {
 		return
 	}
-	n, cerr := strconv.Atoi(v.Text())
+	text := v.Text()
+	if ignoreEmpty && text == "" {
+		return
+	}
+	n, cerr := strconv.Atoi(text)
 	if cerr != nil {
 		*err = cerr
 		return
@@ -330,12 +334,12 @@ func get24Hour(v *TimeFieldView, hour int) (h int, pm bool) {
 
 func (v *TimeFieldView) Value() (time.Time, error) {
 	var hour, min, sec int
-	var day int
 
 	var err error
 	now := time.Now().In(v.location)
 	month := int(now.Month())
 	year := now.Year()
+	day := now.Day()
 
 	maxHour := 12
 	minHour := 1
@@ -343,19 +347,19 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 		maxHour = 23
 		minHour = 0
 	}
-	getInt(v.hourText, &hour, minHour, maxHour, &err)
+	getInt(v.hourText, &hour, minHour, maxHour, &err, false)
 	hour, _ = get24Hour(v, hour)
-	getInt(v.minuteText, &min, 0, 60, &err)
-	getInt(v.secondsText, &sec, 0, 60, &err)
-	getInt(v.monthText, &month, 1, 12, &err)
+	getInt(v.minuteText, &min, 0, 60, &err, false)
+	getInt(v.secondsText, &sec, 0, 60, &err, false)
+	getInt(v.monthText, &month, 1, 12, &err, true)
 	days := ztime.DaysInMonth(time.Month(month), year)
 	if v.flags&TimeFieldYears != 0 {
-		getInt(v.yearText, &year, 0, 0, &err)
+		getInt(v.yearText, &year, 0, 0, &err, true)
 		if year < 100 {
 			year += 2000
 		}
 	}
-	getInt(v.dayText, &day, 1, days, &err)
+	getInt(v.dayText, &day, 1, days, &err, true)
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	if err != nil {
 		return time.Time{}, err
