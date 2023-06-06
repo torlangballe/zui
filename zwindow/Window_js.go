@@ -273,7 +273,7 @@ func setOnKeyEvent(win *Window, down bool) {
 					// }
 					// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
 					if focused != nil { //&& focused != view.Native() {
-						kc, _ := focused.View.(zkeyboard.KeyConsumer)
+						kc, _ := focused.(zkeyboard.KeyConsumer)
 						if kc == nil {
 							// if km.Key != zkeyboard.KeyEscape && !km.Key.IsReturnish() {
 							// 	continue

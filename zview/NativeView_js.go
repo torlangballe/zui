@@ -429,8 +429,8 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 	}))
 }
 
-func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
-	var found *NativeView
+func (root *NativeView) GetFocusedChildView(andSelf bool) View {
+	var found View
 	e := zdom.DocumentJS.Get("activeElement")
 	if e.IsUndefined() {
 		return nil
@@ -440,8 +440,8 @@ func (root *NativeView) GetFocusedChildView(andSelf bool) *NativeView {
 	}
 	foundID := e.Get("id").String()
 	RangeAllChildrenFunc(root.View, true, func(view View) bool {
-		n := view.Native()
-		id := n.JSGet("id").String()
+		n := view
+		id := n.Native().JSGet("id").String()
 		if id == foundID {
 			found = n
 			return false

@@ -610,7 +610,7 @@ func FocusNext(view zview.View, recursive, loop bool) {
 			return true
 		}
 		first = view.Native()
-		if foc != nil && view == foc.View {
+		if foc != nil && view == foc {
 			foc = nil
 			return true
 		}
