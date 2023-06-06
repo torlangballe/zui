@@ -22,6 +22,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
@@ -556,7 +557,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	}
 	if f.Name == "" {
 		str := zstr.PadCamelCase(sf.Name, " ")
-		str = zstr.FirstToTitleCase(str)
+		str = zlocale.FirstToTitleCaseExcept(str, "")
 		f.Name = str
 	}
 	if f.Placeholder == "$HAS$" {
