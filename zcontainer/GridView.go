@@ -51,9 +51,6 @@ func (v *GridView) SetColumnToAddTo(c int) {
 func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
 	rows := v.getLayoutRows(zgeo.Rect{Size: total})
-	if len(rows) == 0 {
-		return v.Margin().Size.Negative()
-	}
 	for j := 0; j < len(rows); j++ {
 		rowSize := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, rows[j])
 		zfloat.Maximize(&s.W, rowSize.W)
@@ -62,6 +59,7 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			s.H += v.Spacing.H
 		}
 	}
+	s.MaximizeNonZero(v.MinSize())
 	s.Subtract(v.Margin().Size)
 	// zlog.Info("GridView size:", s, v.Spacing)
 	return s
