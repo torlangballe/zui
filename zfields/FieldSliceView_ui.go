@@ -9,6 +9,7 @@ import (
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -74,6 +75,14 @@ func (v *FieldSliceView) build() {
 	if v.field.IsStatic() {
 		v.stack = &v.StackView
 	} else {
+		if v.field.Description != "" {
+			label := zlabel.New("desc")
+			label.SetFont(zgeo.FontNice(-3, zgeo.FontStyleNormal))
+			label.SetColor(zgeo.ColorDarkGray.WithOpacity(0.7))
+			label.SetText(v.field.Description)
+			label.SetTextAlignment(zgeo.BottomRight)
+			v.Add(label, zgeo.BottomRight|zgeo.HorExpand)
+		}
 		v.stack = zcontainer.StackViewNew(v.Vertical, "stack")
 		v.Add(v.stack, zgeo.TopLeft|zgeo.Expand)
 	}

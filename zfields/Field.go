@@ -136,6 +136,7 @@ type Field struct {
 	HeaderSize           zgeo.Size
 	Flags                FlagType
 	Tooltip              string
+	Description          string
 	UpdateSecs           float64
 	LabelizeWidth        float64
 	LocalEnable          string
@@ -489,6 +490,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Flags |= FlagNoTitle
 		case "tip":
 			f.Tooltip = val
+		case "desc":
+			f.Description = val
 		case "immediate":
 			f.UpdateSecs = 0
 		case "upsecs":
