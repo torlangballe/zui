@@ -16,6 +16,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -447,4 +448,47 @@ func MakeSolidImage(size zgeo.Size, col zgeo.Color) SolidImage {
 
 func GoImageBlurred(img image.Image, sigma float64) image.Image {
 	return imaging.Blur(img, math.Abs(sigma))
+}
+
+func NewGoWithNoise(img image.Image, noiseCoverage float32, noiseMix float32) image.Image {
+	return GoTransformed(img, func(x, y int, c zgeo.Color) zgeo.Color {
+		if rand.Float32() >= noiseCoverage {
+			return zgeo.Color{}
+		}
+		randCol := zgeo.ColorRandom()
+		return c.Mixed(randCol, noiseMix)
+	})
+}
+
+func GoForPixels(img image.Image, got func(x, y int, color zgeo.Color)) {
+	b := img.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			c := img.At(x, y)
+			got(x, y, zgeo.ColorFromGo(c))
+		}
+	}
+}
+
+// GoAlterPixels calls set for the pixel at set's x, y, and sets it if the color returned is Valid
+func GoAlterPixels(img SetableImage, set func(x, y int, c zgeo.Color) zgeo.Color) {
+	GoForPixels(img, func(x, y int, color zgeo.Color) {
+		setCol := set(x, y, color)
+		if setCol.Valid {
+			img.Set(x, y, setCol)
+		}
+	})
+}
+
+// GoTransformed creates a new image where if set returns a valid color, it uses that, otherwise old.
+func GoTransformed(img image.Image, set func(x, y int, c zgeo.Color) zgeo.Color) image.Image {
+	out := image.NewRGBA(img.Bounds())
+	GoForPixels(img, func(x, y int, c zgeo.Color) {
+		ncol := set(x, y, c)
+		if ncol.Valid {
+			c = ncol
+		}
+		out.Set(x, y, c.GoColor())
+	})
+	return out
 }

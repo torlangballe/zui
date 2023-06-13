@@ -1452,7 +1452,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	default:
-		zlog.Info("fieldToDataItem for slice:", f.Name)
+		// zlog.Info("fieldToDataItem for slice:", f.Name)
+		break
 	}
 	value = reflect.ValueOf(rval.Addr().Interface()).Elem() //.Interface()
 	return
