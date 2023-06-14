@@ -36,6 +36,8 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+// https: //developer.apple.com/documentation/accelerate/finding_the_sharpest_image_in_a_sequence_of_captured_images
+
 type Image struct {
 	imageBase
 	Scale   int
