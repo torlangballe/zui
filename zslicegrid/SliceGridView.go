@@ -1,16 +1,8 @@
-// SliceGridView creates a GridListView for a slice of any struct.
-// The struct must confirm to zstr.StrIDer, returning a unique string id for each item.
-// It has options to add a bar on top, and add edit and delete buttons.
-//
-// Editing will actually open multiple cells in a dialog with zfields.PresentOKCancelStructSlice then call StoreChangedItemsFunc.
-// Deleting will remove cells from the slice, then call DeleteItemsFunc.
-// It sets up its GridListViews HandleKeyFunc to edit and delete with return/backspace.
-// If its struct type confirms to ChildrenOwner (has GetChildren()), it will show child-slices
-// in a hierarchy, setting the GridListViews hierarchy HierarchyLevelFunc, and calculating cell-count,
-// id-at-index etc based on open branch toggles.
-
 //go:build zui
 
+// zslicegrid is a package for making GridListViews of slices.
+//
+// It's base type is SliceGridView, which is also used by TableView and SQLTableView
 package zslicegrid
 
 import (
@@ -37,6 +29,17 @@ type ChildrenOwner interface {
 	GetChildren() any
 }
 
+// SliceGridView creates a GridListView for a slice of any struct.
+//
+// The struct must confirm to zstr.StrIDer, returning a unique string id for each item.
+// It has options to add a bar on top, and add edit and delete buttons.
+//
+// Editing will actually open multiple cells in a dialog with zfields.PresentOKCancelStructSlice then call StoreChangedItemsFunc.
+// Deleting will remove cells from the slice, then call DeleteItemsFunc.
+// It sets up its GridListViews HandleKeyFunc to edit and delete with return/backspace.
+// If its struct type confirms to ChildrenOwner (has GetChildren()), it will show child-slices
+// in a hierarchy, setting the GridListViews hierarchy HierarchyLevelFunc, and calculating cell-count,
+// id-at-index etc based on open branch toggles.
 type SliceGridView[S zstr.StrIDer] struct {
 	zcontainer.StackView
 	Grid                  *zgridlist.GridListView
@@ -46,8 +49,8 @@ type SliceGridView[S zstr.StrIDer] struct {
 	NameOfXItemsFunc      func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc  func(ids []string) string
 	UpdateViewFunc        func()
-	SortFunc              func(s []S)
-	FilterFunc            func(s S) bool
+	SortFunc              func(s []S)                                   // SortFunc is called to sort the slice after any updates.
+	FilterFunc            func(s S) bool                                // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
 	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
 	StoreChangedItemFunc  func(item S, showErr *bool, last bool) error  // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
 	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
@@ -60,29 +63,27 @@ type SliceGridView[S zstr.StrIDer] struct {
 	ActionMenu    *zmenu.MenuedOwner
 }
 
+// OptionType is a set of options for altering a SliceGridView's appearance and behavior
 type OptionType int
 
 const (
 	AddNone            OptionType = 0
-	AddBar             OptionType = 1
-	AddSearch          OptionType = 2
-	AddMenu            OptionType = 4
-	AllowDelete        OptionType = 8
-	AllowEdit                     = 16
+	AddBar             OptionType = 1  // Adds a bar stack above the grid.
+	AddSearch          OptionType = 2  // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
+	AddMenu            OptionType = 4  // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
+	AllowDelete        OptionType = 8  // It is deletable, and allows keyboard/menu delete
+	AllowEdit                     = 16 // Allows selected cell(s) to be edited with menu or return key.
 	AllowEditAndDelete            = AllowEdit | AllowDelete
 )
 
+// NewView creates a new SliceGridView using v.Init()
 func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
 	v.Init(v, slice, storeName, options)
 	return v
 }
 
-// func (v *SliceGridView[S]) SetRect(rect zgeo.Rect) {
-// 	zlog.Info("SliceGridView: SetRect:", v.ObjectName(), rect)
-// 	v.StackView.SetRect(rect)
-// }
-
+// Init sets up an allocated SliceGridView with a slice, storeName for hierarchy state, and options for setup
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {
 	v.options = options
 	v.StackView.Init(view, true, "slice-grid-view")
@@ -246,7 +247,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 }
 
 func (v *SliceGridView[S]) updateView() {
-	v.doFilterAndSort(*v.slicePtr)
+	// v.doFilterAndSort(*v.slicePtr)
 	v.UpdateViewFunc()
 }
 

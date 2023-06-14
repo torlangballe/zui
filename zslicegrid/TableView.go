@@ -1,8 +1,5 @@
 //go:build zui
 
-// TableView is a SliceGridView which creates rows from structs using the zfields package.
-// See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
-// if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 package zslicegrid
 
 import (
@@ -26,6 +23,9 @@ const (
 	AddBarInHeader OptionType = 1024
 )
 
+// TableView is a SliceGridView which creates rows from structs using the zfields package.
+// See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
+// if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
 	Header       *zheader.HeaderView // Optional header based on S struct
