@@ -92,7 +92,7 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 	}
 }
 
-func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) bool) {
+func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr).Elem()
 	first := (*structSlicePtr)[0] // we want a copy, so do in two stages
 	editStruct := &first
@@ -152,7 +152,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			check.SetValue(zbool.Unknown)
 		}
 	}
-	zalert.PresentOKCanceledView(fview, title, att, func(ok bool) bool {
+	zalert.PresentOKCanceledView(fview, title, att, func(ok bool) (close bool) {
 		if ok {
 			err := fview.ToData(true)
 			if err != nil {

@@ -1469,9 +1469,9 @@ func ParentFieldView(view zview.View) *FieldView {
 	return nil
 }
 
-func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) bool) {
+func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	slice := []S{*structPtr}
-	PresentOKCancelStructSlice(&slice, params, title, att, func(ok bool) bool {
+	PresentOKCancelStructSlice(&slice, params, title, att, func(ok bool) (close bool) {
 		if ok {
 			*structPtr = slice[0]
 		}

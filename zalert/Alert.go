@@ -219,7 +219,7 @@ func (a *Alert) Show(handle func(result Result)) {
 	zpresent.PresentView(stack, att, nil, nil)
 }
 
-func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKButton bool, done func(isOKButton bool) bool) *zbutton.Button {
+func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKButton bool, done func(isOKButton bool) (close bool)) *zbutton.Button {
 	button := zbutton.New(title)
 	button.SetMinWidth(80)
 	bar.Add(button, zgeo.TopRight)
@@ -235,7 +235,7 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 	return button
 }
 
-func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, done func(ok bool) bool) {
+func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetBGColor(zstyle.DefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
