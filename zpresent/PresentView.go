@@ -53,6 +53,13 @@ var (
 	ShowErrorFunc      func(title, subTitle string)
 )
 
+var ModalDialogAttributes = Attributes{
+	Modal:                    true,
+	ModalCloseOnOutsidePress: true,
+	ModalDimBackground:       true,
+	ModalDropShadow:          zstyle.DropShadowDefault,
+}
+
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
 // If opening fails (on browsers it can fail for non-modal if popups are blocked), presented, and closed (if != nil) are called.
 // closed (if != nil) is called when the window is closed programatically or by user interaction.
