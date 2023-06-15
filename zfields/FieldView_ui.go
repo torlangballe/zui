@@ -386,6 +386,10 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	switch f.Kind {
 	case zreflect.KindSlice:
+		if f.StringSep != "" {
+			v.updateSeparatedStringWithSlice(f, rval, foundView)
+			break
+		}
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
 			zlog.Info("UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
@@ -444,20 +448,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 
 	case zreflect.KindInt, zreflect.KindFloat:
 		valStr = getTextFromNumberishItem(rval, f)
-		if f.IsStatic() || v.params.AllStatic {
-			label, _ := foundView.(*zlabel.Label)
-			if label != nil {
-				label.SetText(valStr)
-			}
-			break
-		}
-		tv, _ := foundView.(*ztext.TextView)
-		if tv != nil {
-			if tv.IsEditing() {
-				break
-			}
-			tv.SetText(valStr)
-		}
+		v.setText(f, valStr, foundView)
 
 	case zreflect.KindString, zreflect.KindFunc:
 		valStr = rval.String()
@@ -474,26 +465,41 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			io := foundView.(zimage.Owner)
 			io.SetImage(nil, path, nil)
 		} else {
-			if f.IsStatic() || v.params.AllStatic {
-				label, _ := foundView.(*zlabel.Label)
-				if label != nil {
-					if f.Flags&FlagIsFixed != 0 {
-						valStr = f.Name
-					}
-					label.SetText(valStr)
-				}
-			} else {
-				tv, _ := foundView.(*ztext.TextView)
-				if tv != nil {
-					if tv.IsEditing() {
-						break
-					}
-					tv.SetText(valStr)
-				}
+			if f.IsStatic() || v.params.AllStatic && f.Flags&FlagIsFixed != 0 {
+				valStr = f.Name
 			}
+			v.setText(f, valStr, foundView)
 		}
 	}
 	return true
+}
+
+func (v *FieldView) updateSeparatedStringWithSlice(f *Field, rval reflect.Value, foundView zview.View) {
+	var parts []string
+
+	for i := 0; i < rval.Len(); i++ {
+		v := rval.Index(i).Interface()
+		parts = append(parts, fmt.Sprint(v))
+	}
+	str := strings.Join(parts, f.StringSep)
+	v.setText(f, str, foundView)
+}
+
+func (v *FieldView) setText(f *Field, valStr string, foundView zview.View) {
+	if f.IsStatic() || v.params.AllStatic {
+		label, _ := foundView.(*zlabel.Label)
+		if label != nil {
+			label.SetText(valStr)
+		}
+		return
+	}
+	tv, _ := foundView.(*ztext.TextView)
+	if tv != nil {
+		if tv.IsEditing() {
+			return
+		}
+		tv.SetText(valStr)
+	}
 }
 
 func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
@@ -1132,6 +1138,12 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 
 		case zreflect.KindSlice:
+			if f.StringSep != "" {
+				noUpdate := true
+				rv := reflect.ValueOf("")
+				view = v.makeText(rv, f, noUpdate)
+				break
+			}
 			getter, _ := rval.Interface().(zdict.ItemsGetter)
 			if getter != nil {
 				menu := v.makeMenu(rval, f, getter.GetItems())
@@ -1435,6 +1447,11 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	case zreflect.KindFunc:
 		break
 
+	case zreflect.KindSlice:
+		if f.StringSep != "" {
+			separatedStringToData(f.StringSep, view, rval)
+		}
+
 	case zreflect.KindStruct:
 		zcontainer.ViewRangeChildren(v, true, true, func(view zview.View) bool {
 			if view.ObjectName() == f.FieldName {
@@ -1457,6 +1474,39 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	}
 	value = reflect.ValueOf(rval.Addr().Interface()).Elem() //.Interface()
 	return
+}
+
+func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
+	tv, _ := view.(*ztext.TextView)
+	seps := sep
+	if sep != " " {
+		seps += " "
+	}
+	text := strings.Trim(tv.Text(), seps)
+	// a := rval.Interface()
+	e := reflect.New(rval.Type().Elem()).Elem()
+	zslice.Empty(rval.Addr().Interface())
+	for _, part := range strings.Split(text, sep) {
+		switch zreflect.KindFromReflectKindAndType(e.Kind(), e.Type()) {
+		case zreflect.KindString:
+			e.SetString(part)
+		case zreflect.KindInt:
+			n, err := strconv.ParseInt(part, 10, 64)
+			if zlog.OnError(err, part) {
+				break
+			}
+			e.SetInt(n)
+		case zreflect.KindFloat:
+			n, err := strconv.ParseFloat(part, 64)
+			if zlog.OnError(err, part) {
+				break
+			}
+			e.SetFloat(n)
+		default:
+			return
+		}
+		zslice.AddAtEnd(rval.Addr().Interface(), e.Interface())
+	}
 }
 
 func ParentFieldView(view zview.View) *FieldView {

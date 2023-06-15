@@ -160,6 +160,7 @@ type Field struct {
 	Styling              zstyle.Styling
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	Download             string
+	StringSep            string // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 }
 
 var EmptyField = Field{
@@ -294,6 +295,11 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		// 	f.SkipFieldNames = barParts
 		case "usein":
 			f.UseIn = barParts
+		case "sep":
+			f.StringSep = val
+			if val == "" {
+				f.StringSep = " "
+			}
 		case "isuseinval":
 			f.Flags |= FlagIsUseInValue
 		case "color":
@@ -531,7 +537,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if val != "" {
 				f.Placeholder = val
 			} else {
-				f.Placeholder = "$HAS$"
+				f.Placeholder = "$HAS$" // set to this special value to set to name once set
 			}
 		case "since":
 			f.Flags |= FlagIsStatic | FlagIsDuration
