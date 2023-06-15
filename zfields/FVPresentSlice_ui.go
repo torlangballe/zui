@@ -111,6 +111,8 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if f.IsStatic() {
 					if val.Kind() == reflect.Slice {
 						accumilateSlice(val, sliceField)
+					} else {
+						val.Set(reflect.Zero(val.Type()))
 					}
 				} else {
 					// if f.Enum != "" {
@@ -169,8 +171,11 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if isCheck && check.Value().IsUnknown() {
 					return true // skip to next
 				}
+				f := findFieldWithIndex(&fview.Fields, index)
+				if f.IsStatic() {
+					return true // continue
+				}
 				if params.MultiSliceEditInProgress && val.Kind() == reflect.Slice {
-					f := findFieldWithIndex(&fview.Fields, index)
 					if f.Enum == "" {
 						zlog.Info("Skip non-enum slice in multi-edit:", sf.Name)
 						return true // skip to next
