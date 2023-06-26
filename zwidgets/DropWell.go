@@ -4,7 +4,7 @@ package zwidgets
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
-	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -12,14 +12,15 @@ import (
 )
 
 type DropWell struct {
-	zcustom.CustomView
-	placeHolder         string
+	zcontainer.ContainerView
 	HandleDroppedFile   func(data []byte, name string)
 	HandleDropPreflight func(name string) bool
 	Styling             zstyle.Styling
+	Activity            *ActivityView
+	placeHolder         string
 }
 
-func NewDropWell(filePath string, size zgeo.Size) *DropWell {
+func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v := &DropWell{}
 	v.Init(v, "dropwell")
 	v.SetMinSize(size)
@@ -29,10 +30,14 @@ func NewDropWell(filePath string, size zgeo.Size) *DropWell {
 	v.Styling.StrokeWidth = 1
 	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
 	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.Size{5, 5}, Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
-	v.DownsampleImages = true
+	v.SetPlaceholder(placeHolder)
 	v.SetMinSize(size)
-	v.SetCanTabFocus(true)
+	// v.SetCanTabFocus(true)
+
+	v.Activity = NewActivityView(zgeo.Size{12, 12})
+	v.Add(v.Activity, zgeo.CenterRight, zgeo.Size{4, 0})
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
+		// zlog.Info("HandleDropish:", name, dtype)
 		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
 			r := v.HandleDropPreflight(name)
 			// zlog.Info("HandleDropPreflight:", name, r)
@@ -77,7 +82,7 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 	if v.placeHolder != "" {
 		ti := ztextinfo.New()
 		ti.Font = zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal)
-		ti.Rect = rect
+		ti.Rect = rect.Plus(zgeo.RectFromXY2(0, 6, 0, 0))
 		ti.Text = v.placeHolder
 		ti.Alignment = zgeo.Center
 		ti.Color = zgeo.ColorNewGray(0, 0.5)
