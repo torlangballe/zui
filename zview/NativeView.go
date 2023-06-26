@@ -25,7 +25,7 @@ const (
 	DragLeave             DragType = "leave"
 	DragOver              DragType = "over"
 	DragDrop              DragType = "drop"
-	DragDropFilePreflight DragType = "filepre" // if a handle returns true to DragDropPreflight, don't process file(s)
+	DragDropFilePreflight DragType = "filepre" // if a handle returns false to DragDropPreflight, don't process file(s)
 	DragDropFile          DragType = "file"
 
 	BaseZIndex = 100

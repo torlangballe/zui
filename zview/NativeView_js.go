@@ -859,7 +859,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		file := files.Index(0)
 		name := file.Get("name").String()
 		event.Call("preventDefault")
-		if handler(DragDropFilePreflight, nil, name, zgeo.Pos{}) {
+		if !handler(DragDropFilePreflight, nil, name, zgeo.Pos{}) {
 			return nil
 		}
 		// zlog.Info("FileProcessing")
