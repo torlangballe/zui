@@ -373,9 +373,9 @@ func (v *GridListView) SetHoverID(id string) {
 	v.CurrentHoverID = id
 	if v.CurrentHoverID != "" && v.children[v.CurrentHoverID] != nil {
 		ids = append(ids, v.CurrentHoverID)
-		if v.UpdateCellFunc != nil {
-			v.UpdateCellFunc(v, v.CurrentHoverID)
-		}
+		//!!! if v.UpdateCellFunc != nil {
+		// 	v.UpdateCellFunc(v, v.CurrentHoverID)
+		// }
 	}
 	if v.HoverColor.Valid {
 		v.updateCellBackgrounds(ids)
@@ -792,7 +792,6 @@ func (v *GridListView) ArrangeChildren() {
 	r := zgeo.Rect{Size: zgeo.Size{locSize.W, s.H + 1}}
 	// r.Pos.X--
 	r.Pos.Y--
-	// zlog.Info("glist.ArrangeChildren0", v.Hierarchy(), r.Size.W)
 	v.cellsView.SetRect(r)
 	// zlog.Info("glist.ArrangeChildren1", v.Hierarchy(), v.LocalRect().Size, v.cellsView.LocalRect().Size)
 	v.LayoutCells(false)
@@ -809,12 +808,11 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
-	// zlog.Info("LayoutCells")
+	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc()) //, zlog.CallingStackString())
 	v.layoutDirty = false
 	placed := map[string]bool{}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if visible {
-			// zlog.Info("Arrange:", cid, updateCells)
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
 			ms, _ := child.(zview.Marginalizer)
@@ -824,8 +822,6 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				ms.SetMargin(marg)
 			}
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
-			// zlog.Info("LAY:", cid, o)
-
 			child.SetRect(o)
 			v.updateCellBackground(cid, x, y, child)
 			if updateCells && v.UpdateCellFunc != nil {
