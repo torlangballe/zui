@@ -132,7 +132,7 @@ func (s *StructCommander) editEnumIndicator(c *zcommands.CommandInfo, edit editF
 
 func (s *StructCommander) editLocalEnumIndicator(c *zcommands.CommandInfo, edit editField) {
 	zlog.Info("editLocalEnumIndicator:", edit.value.Interface(), zlog.Full(*edit.field))
-	ei, findex := zfields.FindLocalFieldWithID(s.StructurePointer, edit.field.LocalEnum)
+	ei, findex := zfields.FindLocalFieldWithFieldName(s.StructurePointer, edit.field.LocalEnum)
 	zlog.Assert(findex != -1, edit.field.Name, edit.field.LocalEnum)
 	enum := ei.Interface().(zdict.ItemsGetter).GetItems()
 	for i, e := range enum {
