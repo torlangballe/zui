@@ -152,6 +152,9 @@ func (v *TabsView) SelectItem(id string, done func()) {
 	if v.ChangedHandlerFunc != nil {
 		v.ChangedHandlerFunc(id)
 	}
+	if done != nil {
+		done()
+	}
 }
 
 func (v *TabsView) RemoveItem(id string) {
