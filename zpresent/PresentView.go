@@ -42,6 +42,8 @@ type Attributes struct {
 	ModalDropShadow          zstyle.DropShadow
 	ModalDismissOnEscapeKey  bool
 	NoMessageOnOpenFail      bool
+	PlaceOverMargin          zgeo.Size
+	PlaceOverView            zview.View
 	FocusView                zview.View
 }
 
@@ -95,7 +97,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
-	// size := v.CalculatedSize(rect.Size)
 	size := v.CalculatedSize(zgeo.Size{99999, 99999})
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.Size{})
@@ -104,7 +105,13 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	if attributes.Modal {
 		if nv != nil {
 			r := rect
-			if attributes.Pos != nil {
+			if attributes.PlaceOverView != nil {
+				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone)
+				attributes.PlaceOverView.Native().RootParent()
+				r = attributes.PlaceOverView.Native().AbsoluteRect().Align(size, attributes.Alignment, attributes.PlaceOverMargin)
+
+				zlog.Info("PlaceOverView:", r, attributes.Alignment)
+			} else if attributes.Pos != nil {
 				if attributes.Alignment == zgeo.AlignmentNone {
 					r.Pos = *attributes.Pos
 				} else {
@@ -381,6 +388,7 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 				Close(v, dismissed, closed)
 			})
 		}
+		blocker.JSSet("className", "znoscrollbar")
 		blocker.SetJSStyle("overflow", "scroll")
 	}
 	win.AddView(outer)
@@ -438,10 +446,9 @@ func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
 	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
+	att.PlaceOverView = over
+	att.PlaceOverMargin = marg
 	var root zview.View
-	over.Native().RootParent()
-	pos := over.Native().AbsoluteRect().Align(zgeo.Size{1, 1}, align, marg).Pos
-	att.Pos = &pos
 	PresentView(view, att, func(win *zwindow.Window) {
 		root = win.ViewsStack[len(win.ViewsStack)-2] // we can only do this for sure if modal is true
 		view.Native().Focus(true)
