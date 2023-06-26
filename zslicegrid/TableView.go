@@ -60,7 +60,14 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 	v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
-	v.FieldParameters.UseInValues = []string{"$row"}
+	v.FieldParameters.UseInValues = []string{zfields.RowUseInSpecialName}
+	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(fv *zfields.FieldView, f *zfields.Field, value any, view *zview.View) bool {
+		if v.StoreChangedItemFunc != nil {
+			go v.StoreChangedItemFunc(*(fv.Data().(*S)), nil, true)
+		}
+		return false
+	})
+
 	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)
@@ -124,16 +131,8 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
-	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		f := zfields.EmptyField
-		if !f.SetFromReflectValue(val, sf, index, false) {
-			return true
-		}
-		if zstr.StringsContain(v.FieldParameters.SkipFieldNames, f.FieldName) {
-			return true
-		}
-		v.fields = append(v.fields, f)
-		return true
+	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) {
+		v.fields = append(v.fields, *f)
 	})
 	if v.addFlags&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
