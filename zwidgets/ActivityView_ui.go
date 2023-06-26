@@ -21,7 +21,7 @@ type ActivityView struct {
 
 func NewActivityView(size zgeo.Size) *ActivityView {
 	v := &ActivityView{}
-	v.Init(v, nil, "images/activity.png", size)
+	v.Init(v, nil, "images/zcore/activity.png", size)
 	v.rotationSecs = 1.5
 	v.repeater = ztimer.RepeaterNew()
 	v.SetAlpha(0)
@@ -29,10 +29,10 @@ func NewActivityView(size zgeo.Size) *ActivityView {
 }
 
 func (v *ActivityView) Start() {
-	if !v.IsPresented() {
+	v.SetAlpha(1)
+	if !v.start.IsZero() {
 		return
 	}
-	v.SetAlpha(1)
 	v.start = time.Now()
 	v.repeater.Set(0.1, false, func() bool {
 		t := ztime.Since(v.start)
@@ -43,6 +43,7 @@ func (v *ActivityView) Start() {
 }
 
 func (v *ActivityView) Stop() {
+	v.start = time.Time{}
 	v.repeater.Stop()
 	if !v.AlwaysVisible {
 		v.SetAlpha(0)
@@ -55,6 +56,7 @@ func (v *ActivityView) IsStopped() bool {
 
 func (v *ActivityView) SetValueWithAny(val any) {
 	on := val.(bool)
+	// zlog.Info("ActivityView.SetValueWithAny", on)
 	if on {
 		v.Start()
 	} else {
