@@ -370,7 +370,9 @@ input.rounded {
 	box-sizing: content-box;
 	outline: 0;
 	-webkit-appearance: none;
-}`
+}
+.znoscrollbar::-webkit-scrollbar { display: none; }  
+`
 	if zdevice.WasmBrowser() == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
 input[type=number]:focus { border: 2px solid rgb(147,180,248); }
