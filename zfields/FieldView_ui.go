@@ -60,10 +60,18 @@ type FieldViewParameters struct {
 	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
 }
 
+type ActionPack struct {
+	FieldView *FieldView
+	Field     *Field
+	Action    ActionType
+	RVal      reflect.Value
+	View      *zview.View
+}
+
 // If a structure/slice used in FieldViews has this method, it is called when edited/changed etc.
-// The field may be nil if it's for the entire structure.
+// ap.Field may be nil if it's for the entire structure.
 type ActionHandler interface {
-	HandleAction(f *Field, action ActionType, view *zview.View) bool
+	HandleAction(ap ActionPack) bool
 }
 
 // If a struct implements StructInitializer, it is initialized when a element is added to a slice in FieldSliceView
@@ -81,10 +89,6 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.Styling.Spacing = 2
 	return f
 }
-
-// func (v *FieldView) ID() string {
-// 	return v.id
-// }
 
 func (v *FieldView) Data() any {
 	return v.data
@@ -131,10 +135,13 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	v.data = data
 	zreflect.ForEachField(v.data, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := EmptyField
-		if !f.SetFromReflectValue(val, sf, index, params.ImmediateEdit) {
+		if !f.SetFromReflectValue(val, sf, index, params.FieldParameters) {
 			return true
 		}
-		callActionHandlerFunc(v, &f, SetupFieldAction, val.Addr().Interface(), nil)
+		if params.ImmediateEdit {
+			f.UpdateSecs = 0
+		}
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: &f, Action: SetupFieldAction, RVal: val.Addr(), View: nil})
 		v.Fields = append(v.Fields, f)
 		return true
 	})
@@ -162,7 +169,7 @@ func (v *FieldView) Build(update bool) {
 	}
 }
 
-func (v *FieldView) findNamedViewOrInLabelized(name string) (view, maybeLabel zview.View) {
+func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, maybeLabel zview.View) {
 	for _, c := range (v.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		n := c.ObjectName()
 		if n == name {
@@ -186,7 +193,7 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 		var id string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
-			_, foundView := v.findNamedViewOrInLabelized(f.FieldName)
+			_, foundView := v.FindNamedViewOrInLabelized(f.FieldName)
 			if foundView == nil {
 				continue
 			}
@@ -272,6 +279,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 }
 
 func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
+	// zlog.Info("FV.Update:", v.Hierarchy(), data)
 	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
 		v.data = data
 	}
@@ -288,7 +296,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	fh, _ := v.data.(ActionHandler)
 	sview := v.View
 	if fh != nil {
-		fh.HandleAction(nil, DataChangedActionPre, &sview)
+		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
 	}
 	zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
 		v.updateField(index, rval, sf, dontOverwriteEdited)
@@ -296,17 +304,18 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	})
 	// call general one with no id. Needs to be after above loop, so values set
 	if fh != nil {
-		fh.HandleAction(nil, DataChangedAction, &sview)
+		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedAction, View: &sview})
 	}
 }
 
 func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited bool) bool {
+	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
 	var valStr string
 	f := findFieldWithIndex(&v.Fields, index)
 	if f == nil {
 		return true
 	}
-	foundView, flabelized := v.findNamedViewOrInLabelized(f.FieldName)
+	foundView, flabelized := v.FindNamedViewOrInLabelized(f.FieldName)
 	if foundView == nil {
 		return true
 	}
@@ -321,7 +330,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		called = v.callTriggerHandler(f, DataChangedAction, rval.Addr().Interface(), &foundView)
 	}
 	if !called {
-		called = callActionHandlerFunc(v, f, DataChangedAction, rval.Addr().Interface(), &foundView)
+		called = callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: DataChangedAction, RVal: rval.Addr(), View: &foundView})
 	}
 	if called {
 		return true
@@ -344,11 +353,12 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
+
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
 		} else {
-			ei, findex := FindLocalFieldWithID(v.data, f.LocalEnum)
+			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
 			zlog.Assert(findex != -1, f.Name, f.LocalEnum)
 			enum = ei.Interface().(zdict.ItemsGetter).GetItems()
 		}
@@ -390,9 +400,10 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			v.updateSeparatedStringWithSlice(f, rval, foundView)
 			break
 		}
+		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
-			zlog.Info("UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
+			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
 			return false
 		}
 		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
@@ -465,7 +476,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			io := foundView.(zimage.Owner)
 			io.SetImage(nil, path, nil)
 		} else {
-			if f.IsStatic() || v.params.AllStatic && f.Flags&FlagIsFixed != 0 {
+			if f.IsStatic() && v.params.AllStatic && f.Flags&FlagIsFixed != 0 {
 				valStr = f.Name
 			}
 			v.setText(f, valStr, foundView)
@@ -522,7 +533,7 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 }
 
 func (v *FieldView) Rebuild() {
-	zlog.Info("FV.Rebuild:", v.data != nil, reflect.ValueOf(v.data).Kind())
+	// zlog.Info("FV.Rebuild:", v.data != nil, reflect.ValueOf(v.data).Kind())
 	fview := FieldViewNew(v.ID, v.data, v.params)
 	fview.Build(true)
 	rep, _ := v.Parent().View.(zview.ChildReplacer)
@@ -538,32 +549,32 @@ func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValu
 		zlog.Error(nil, "CallFieldAction find view", fieldID)
 		return
 	}
-	f := v.findFieldWithID(fieldID)
+	f := v.findFieldWithFieldName(fieldID)
 	if f == nil {
 		zlog.Error(nil, "CallFieldAction find field", fieldID)
 		return
 	}
-	callActionHandlerFunc(v, f, action, fieldValue, &view)
+	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: reflect.ValueOf(fieldValue), View: &view})
 }
 
-func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue interface{}, view *zview.View) bool {
-	if action == EditedAction {
-		if f.SetEdited {
-			setFieldViewEdited(v)
+func callActionHandlerFunc(ap ActionPack) bool {
+	if ap.Action == EditedAction {
+		if ap.Field.SetEdited {
+			setFieldViewEdited(ap.FieldView)
 		}
-		if v.params.EditWithoutCallbacks {
+		if ap.FieldView.params.EditWithoutCallbacks {
 			return true
 		}
 	}
-	direct := (action == CreateFieldViewAction || action == SetupFieldAction)
-	fh, _ := v.data.(ActionHandler)
+	direct := (ap.Action == CreateFieldViewAction || ap.Action == SetupFieldAction)
+	fh, _ := ap.FieldView.data.(ActionHandler)
 	var result bool
 	if fh != nil {
-		result = fh.HandleAction(f, action, view)
+		result = fh.HandleAction(ap)
 	}
-	if view != nil && *view != nil {
+	if ap.View != nil && *ap.View != nil {
 		first := true
-		n := (*view).Native()
+		n := (*ap.View).Native()
 		for n != nil {
 			parent := n.Parent()
 			if parent != nil {
@@ -575,7 +586,7 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 					if !first {
 						fh2, _ := fv.data.(ActionHandler)
 						if fh2 != nil {
-							fh2.HandleAction(nil, action, &parent.View)
+							fh2.HandleAction(ActionPack{FieldView: ap.FieldView, Action: ap.Action, RVal: ap.RVal, View: &parent.View})
 						}
 					}
 					first = false
@@ -589,37 +600,36 @@ func callActionHandlerFunc(v *FieldView, f *Field, action ActionType, fieldValue
 		var fieldAddress interface{}
 		if !direct {
 			changed := false
-			sv := reflect.ValueOf(v.data)
+			sv := reflect.ValueOf(ap.FieldView.data)
 			if sv.Kind() == reflect.Ptr || sv.CanAddr() {
 				// Here we run thru the possiblly new struct again, and find the item with same id as field
-				fieldVal, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
+				fieldVal, found := zreflect.FindFieldWithNameInStruct(ap.Field.FieldName, ap.FieldView.data, true)
 				if found {
 					changed = true
-					fieldValue = fieldVal.Interface()
 					if fieldVal.CanAddr() {
 						fieldAddress = fieldVal.Addr().Interface()
 					}
 				}
 			}
 			if !changed {
-				zlog.Info("NOOT!!!", f.Name, action, v.data != nil)
-				zlog.Fatal(nil, "Not CHANGED!", f.Name)
+				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil)
+				zlog.Fatal(nil, "Not CHANGED!", ap.Field.FN())
 			}
 		}
-		aih, _ := fieldValue.(ActionHandler)
+		aih, _ := ap.RVal.Interface().(ActionHandler)
 		if aih == nil && fieldAddress != nil {
 			aih, _ = fieldAddress.(ActionHandler)
 		}
 		if aih != nil {
-			result = aih.HandleAction(f, action, view)
+			result = aih.HandleAction(ap)
 		}
 	}
 	return result
 }
 
-func (v *FieldView) findFieldWithID(id string) *Field {
+func (v *FieldView) findFieldWithFieldName(fn string) *Field {
 	for i, f := range v.Fields {
-		if f.ID == id {
+		if f.FieldName == fn {
 			return &v.Fields[i]
 		}
 	}
@@ -664,6 +674,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		menuOwner.IsStatic = static
 		menuOwner.IsMultiple = multi
 		menuOwner.StoreKey = f.ValueStoreKey
+		menuOwner.SetTitle = true
 		for _, format := range strings.Split(f.Format, "|") {
 			if menuOwner.TitleIsAll == " " {
 				menuOwner.TitleIsAll = format
@@ -699,12 +710,13 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 					if kind != reflect.Ptr && kind != reflect.Struct {
 						nf := *f
 						nf.ActionValue = sel.Value
-						callActionHandlerFunc(v, &nf, PressedAction, rval.Interface(), &view)
+						callActionHandlerFunc(ActionPack{FieldView: v, Field: &nf, Action: PressedAction, RVal: rval, View: &view})
 					}
 				}
 			}
 			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
-			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
+			zlog.Info("MV.Call action:", f.Name, rval)
+			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 		}
 		menuOwner.ClosedFunc = func() {
 			if menuOwner.IsMultiple {
@@ -721,8 +733,9 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		view = menu
 		menu.SetSelectedHandler(func() {
 			v.fieldToDataItem(f, menu)
+			zlog.Info("Menu Edited", v.Hierarchy(), f.Name)
 			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
-			callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
+			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 		})
 	}
 	return view
@@ -806,7 +819,12 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
 func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
 	str := getTextFromNumberishItem(rval, f)
 	if f.IsStatic() || v.params.AllStatic {
-		label := zlabel.New(str)
+		var label *zlabel.Label
+		if f.HasFlag(FlagIsURL) {
+			label = zlabel.NewLink(str, str)
+		} else {
+			label = zlabel.New(str)
+		}
 		label.SetMaxLines(f.Rows)
 		if f.Flags&FlagIsDuration != 0 {
 			v.updateSinceTime(label, f) // we should really not do getTextFromNumberishItem above if we do this
@@ -861,12 +879,14 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetChangedHandler(func() {
+		// zlog.Info("Changed:", tv.Text())
 		v.fieldHandleEdited(f, tv.View)
 	})
 	return tv
 }
 
 func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
+	// zlog.Info("fieldHandleEdited:", v.Hierarchy(), f.Name, len(v.params.triggerHandlers))
 	rval, err := v.fieldToDataItem(f, view)
 	if zlog.OnError(err) {
 		return
@@ -874,7 +894,7 @@ func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
 	if v.callTriggerHandler(f, EditedAction, rval.Interface(), &view) {
 		return
 	}
-	callActionHandlerFunc(v, f, EditedAction, rval.Interface(), &view)
+	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 }
 
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
@@ -888,9 +908,9 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		if v.callTriggerHandler(f, EditedAction, cv.On(), &cv.View) {
 			return
 		}
-		callActionHandlerFunc(v, f, EditedAction, val.Interface(), &view)
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &view})
 	})
-	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, "$row") {
+	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
 		_, stack := zcheckbox.Labelize(cv, f.TitleOrName())
 		return stack
 	}
@@ -914,11 +934,11 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 			val.SetBool(on)
 			v.Update(nil, false)
 			v.callTriggerHandler(f, EditedAction, on, &iv.View)
-			callActionHandlerFunc(v, f, EditedAction, val.Interface(), &iv.View)
+			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View})
 		})
 	} else {
 		iv.SetPressedHandler(func() {
-			v.callTriggerHandler(f, PressedAction, v.ID, &iv.View)
+			v.callTriggerHandler(f, PressedAction, f.FieldName, &iv.View)
 		})
 	}
 	return iv
@@ -960,10 +980,10 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 			since := time.Since(t)
 			str, tooBig = ztime.GetDurationString(since, f.Flags&FlagHasSeconds != 0, f.Flags&FlagHasMinutes != 0, f.Flags&FlagHasHours != 0, f.FractionDecimals)
 		}
-		inter := val.Interface()
-		if val.CanAddr() {
-			inter = val.Addr()
-		}
+		// inter := val.Interface()
+		// if val.CanAddr() {
+		// 	inter = val.Addr()
+		// }
 		if tooBig {
 			label.SetText("●")
 			label.SetColor(zgeo.ColorRed)
@@ -971,7 +991,6 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 			label.SetText(str)
 			setColorFromField(label, f)
 		}
-		callActionHandlerFunc(v, f, DataChangedAction, inter, &label.View)
 	}
 }
 
@@ -1008,12 +1027,12 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if v.callTriggerHandler(f, CreateFieldViewAction, nil, &view) {
 		return
 	}
-	callActionHandlerFunc(v, f, CreateFieldViewAction, rval.Addr().Interface(), &view) // this sees if actual ITEM is a field handler
+	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreateFieldViewAction, RVal: rval.Addr(), View: &view}) // this sees if actual ITEM is a field handler
 	if view != nil {
 		return
 	}
 	if f.LocalEnum != "" {
-		ei, findex := FindLocalFieldWithID(v.data, f.LocalEnum)
+		ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
 		if zlog.ErrorIf(findex == -1, v.Hierarchy(), f.Name, f.LocalEnum) {
 			return nil, true
 		}
@@ -1038,8 +1057,8 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return menu, false
 	}
 	if f.Enum != "" {
-		enum, _ := fieldEnums[f.Enum]
-		zlog.Assert(enum != nil, f.Enum, f.FieldName)
+		enum, got := fieldEnums[f.Enum]
+		zlog.Assert(got, f.Enum, f.FieldName, enum)
 		if rval.IsZero() {
 			if !v.params.MultiSliceEditInProgress {
 				if len(enum) > 0 {
@@ -1076,6 +1095,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+	// zlog.Info("BuildItem:", f.Name)
 	labelizeWidth := v.params.LabelizeWidth
 	parentFV := ParentFieldView(v)
 	if parentFV != nil && v.params.LabelizeWidth == 0 {
@@ -1202,18 +1222,18 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	zlog.Assert(view != nil)
 	pt, _ := view.(zview.Pressable)
-	if view != nil && pt != nil && pt.PressedHandler != nil {
-		ph := pt.PressedHandler()
-		nowItem := rval // store item in nowItem so closures below uses right item
+	if pt != nil {
+		nowItem := rval           // store item in nowItem so closures below uses right item
+		ph := pt.PressedHandler() // get old handler before we set it to override
 		pt.SetPressedHandler(func() {
-			if !callActionHandlerFunc(v, f, PressedAction, nowItem.Interface(), &view) && ph != nil {
+			if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view}) && ph != nil {
 				ph()
 			}
 		})
 		if f.Flags&FlagLongPress != 0 {
-			lph := pt.LongPressedHandler()
+			lph := pt.LongPressedHandler() // get old handler before we set it to override
 			pt.SetLongPressedHandler(func() {
-				if !callActionHandlerFunc(v, f, LongPressedAction, nowItem.Interface(), &view) && lph != nil {
+				if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view}) && lph != nil {
 					lph()
 				}
 			})
@@ -1233,10 +1253,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
 		view.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
 	}
-	callActionHandlerFunc(v, f, CreatedViewAction, rval.Addr().Interface(), &view)
+	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
 	if f.Download != "" {
 		surl := zstr.ReplaceAllCapturesWithoutMatchFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, func(fieldName string, index int) string {
-			a, findex := FindLocalFieldWithID(v.data, fieldName)
+			a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
 			if findex == -1 {
 				zlog.Error(nil, "field download", f.Download, ":", "field not found in struct:", fieldName)
 				return ""
@@ -1296,7 +1316,7 @@ func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
-		foundView, _ := v.findNamedViewOrInLabelized(f.FieldName)
+		foundView, _ := v.FindNamedViewOrInLabelized(f.FieldName)
 		if foundView == nil {
 			continue
 		}
@@ -1317,6 +1337,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	if f.IsStatic() {
 		return
 	}
+	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name, zlog.Pointer(v.data))
 	rval, _ := zreflect.FieldForIndex(v.data, true, f.Index)
 
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
@@ -1522,6 +1543,7 @@ func ParentFieldView(view zview.View) *FieldView {
 func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	slice := []S{*structPtr}
 	PresentOKCancelStructSlice(&slice, params, title, att, func(ok bool) (close bool) {
+		// zlog.Info("PresentOKCancelStruct:", ok, slice[0])
 		if ok {
 			*structPtr = slice[0]
 		}

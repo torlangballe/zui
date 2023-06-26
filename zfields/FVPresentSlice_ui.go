@@ -31,7 +31,7 @@ func accumilateSlice(accSlice, fromSlice reflect.Value) {
 }
 
 func reduceLocalEnumField[S any](editStruct *S, enumField reflect.Value, index int, fromStruct reflect.Value, f *Field) {
-	ei, findex := FindLocalFieldWithID(editStruct, f.LocalEnum)
+	ei, findex := FindLocalFieldWithFieldName(editStruct, f.LocalEnum)
 	if zlog.ErrorIf(findex == -1, f.Name, f.LocalEnum) {
 		return
 	}
@@ -146,7 +146,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 	update := true
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {
-		view, _ := fview.findNamedViewOrInLabelized(bid)
+		view, _ := fview.FindNamedViewOrInLabelized(bid)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
 			check.SetValue(zbool.Unknown)
@@ -165,7 +165,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				// zlog.Info("PresentOKCanceledView foreach:", sf.Name)
 				bid := sf.Name
-				view, _ := fview.findNamedViewOrInLabelized(bid)
+				view, _ := fview.FindNamedViewOrInLabelized(bid)
 				check, _ := view.(*zcheckbox.CheckBox)
 				isCheck := (check != nil)
 				if isCheck && check.Value().IsUnknown() {

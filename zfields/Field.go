@@ -60,6 +60,7 @@ type FieldParameters struct {
 }
 
 const (
+	NoAction              ActionType = ""            // Add a trigger for this to get ALL actions
 	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
 	DataChangedAction     ActionType = "changed"     // called when value changed, typically programatically or edited. Called on fields with id, then on struct
 	EditedAction          ActionType = "edited"      // called when value edited by user, DataChangedAction will also be called
@@ -68,41 +69,45 @@ const (
 	LongPressedAction     ActionType = "longpressed" // called when view is long-pressed, view is valid
 	CreateFieldViewAction ActionType = "createview"  // called to create view, view is pointer to view and is returned in it
 	CreatedViewAction     ActionType = "createdview" // called after view created, view is pointer to newly created view.
+
+	RowUseInSpecialName = "$row"
 )
 
 // The FlagType are a number of flags a field can have set, based on the struct field/tag it is created from.
 type FlagType zbits.NamedBit
 
 const (
-	FlagIsStatic           FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
-	FlagHasSeconds                              // FlagHasSeconds means it's a time/duration where seconds should be shown/used
-	FlagHasMinutes                              // FlagHasMinutes is the same but for minutes
-	FlagHasHours                                // FlagHasMinutes is the same but for hours
-	FlagHasDays                                 // FlagHasMinutes is the same but for days of the month
-	FlagHasMonths                               // FlagHasMinutes is the same but for months
-	FlagHasYears                                // FlagHasMinutes is the same but for years
-	FlagIsImage                                 // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
-	FlagIsFixed                                 // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value
-	FlagIsButton                                // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
-	FlagHasHeaderImage                          // FlagHasHeaderImage is true true if it has a an image for showing in header
-	FlagNoTitle                                 // FlagNoTitle i set when we don't use FieldName as a title, show nothing
-	FlagToClipboard                             // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
-	FlagIsPassword                              // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
-	FlagIsDuration                              // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
-	FlagIsOpaque                                // FlagIsOpaque means entire view will be covered when drawn
-	FlagIsActions                               // FlagIsActions means a menu created from an enum is actions and not a value to set
-	FlagHasFrame                                // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
-	FlagIsGroup                                 // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
-	FlagGroupSingle                             // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
-	FlagFrameIsTitled                           // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
-	FlagFrameTitledOnFrame                      // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
-	FlagSkipIndicator                           // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
-	FlagLongPress                               // If FlagLongPress is set this button/image etc handles long-press
-	FlagDisableAutofill                         // FlagDisableAutofill if set makes a text field not autofill
-	FlagIsSearchable                            // This field can be used to search in tables etc
-	FlagIsUseInValue                            // This value is set as a string to InNames before entire struct is created
-	FlagZeroIsEmpty                             // This shows the empty value as nothing. So int 0 would be shown as "" in text
-	FlagIsForZDebugOnly                         // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
+	FlagIsStatic             FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
+	FlagHasSeconds                                // FlagHasSeconds means it's a time/duration where seconds should be shown/used
+	FlagHasMinutes                                // FlagHasMinutes is the same but for minutes
+	FlagHasHours                                  // FlagHasMinutes is the same but for hours
+	FlagHasDays                                   // FlagHasMinutes is the same but for days of the month
+	FlagHasMonths                                 // FlagHasMinutes is the same but for months
+	FlagHasYears                                  // FlagHasMinutes is the same but for years
+	FlagIsImage                                   // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
+	FlagIsFixed                                   // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from.
+	FlagIsButton                                  // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
+	FlagHasHeaderImage                            // FlagHasHeaderImage is true true if it has a an image for showing in header
+	FlagNoTitle                                   // FlagNoTitle i set when we don't use FieldName as a title, show nothing
+	FlagToClipboard                               // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
+	FlagIsPassword                                // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
+	FlagIsDuration                                // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
+	FlagIsOpaque                                  // FlagIsOpaque means entire view will be covered when drawn
+	FlagIsActions                                 // FlagIsActions means a menu created from an enum is actions and not a value to set
+	FlagHasFrame                                  // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
+	FlagIsGroup                                   // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
+	FlagGroupSingle                               // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
+	FlagFrameIsTitled                             // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
+	FlagFrameTitledOnFrame                        // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
+	FlagSkipIndicator                             // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
+	FlagLongPress                                 // If FlagLongPress is set this button/image etc handles long-press
+	FlagDisableAutofill                           // FlagDisableAutofill if set makes a text field not autofill
+	FlagIsSearchable                              // This field can be used to search in tables etc
+	FlagIsUseInValue                              // This value is set as a string to InNames before entire struct is created
+	FlagZeroIsEmpty                               // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
+	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
+	FlagIsURL                                     // Field is string, and it's a url
 )
 
 const (
@@ -111,9 +116,9 @@ const (
 )
 
 type Field struct {
-	Index                int    // Index is the position in the total amount of fields (inc anonymous) in struct
-	ID                   string // ID is string from field's name using fieldNameToID(). TODO: Use this less, use FieldName more, as we are 100% sure what that is
-	ActionValue          any    // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
+	Index int // Index is the position in the total amount of fields (inc anonymous) in struct
+	// ID                   string // ID is string from field's name using fieldNameToID(). TODO: Use this less, use FieldName more, as we are 100% sure what that is
+	ActionValue          any // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
 	Name                 string
 	FieldName            string //
 	PackageName          string // the name of the package struct the field is in is from
@@ -204,6 +209,13 @@ func (f FlagType) String() string {
 	return zbits.NamedBit(f).ToString(flagsNameMap)
 }
 
+func (f *Field) DebugName() string {
+	if f == nil {
+		return "nil"
+	}
+	return f.FieldName
+}
+
 func (f Field) IsStatic() bool {
 	return f.HasFlag(FlagIsStatic)
 }
@@ -221,19 +233,19 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 	return nil
 }
 
-func FindLocalFieldWithID(structure any, name string) (reflect.Value, int) {
+func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int) {
 	name = zstr.HeadUntil(name, ".")
 	fval, _, i := zreflect.FieldForName(structure, true, name)
 	return fval, i
 }
 
-func fieldNameToID(name string) string {
-	return zstr.FirstToLowerWithAcronyms(name)
-}
+// func fieldNameToID(name string) string {
+// 	return zstr.FirstToLowerWithAcronyms(name)
+// }
 
-func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, immediateEdit bool) bool {
+func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
 	f.Index = index
-	f.ID = fieldNameToID(sf.Name)
+	//	f.ID = fieldNameToID(sf.Name)
 	fTypeName := rval.Type().Name()
 	f.Kind = zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	f.FieldName = sf.Name
@@ -245,6 +257,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
 	f.PackageName = rval.Type().PkgPath()
+	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
 	for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
@@ -258,9 +271,15 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		key = strings.TrimSpace(key)
 		origVal := val
 		val = strings.TrimSpace(val)
+		barParts := strings.Split(val, "|")
+		if key == "IN" {
+			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
+		}
+		if skipping {
+			continue
+		}
 		n, floatErr := strconv.ParseFloat(val, 32)
 		flag := zbool.FromString(val, false)
-		barParts := strings.Split(val, "|")
 		switch key {
 		case "search":
 			f.Flags |= FlagIsSearchable
@@ -291,10 +310,12 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Name = origVal
 		case "title":
 			f.Title = origVal
-		// case "skip":
-		// 	f.SkipFieldNames = barParts
+		case "url":
+			f.Flags |= FlagIsURL
 		case "usein":
 			f.UseIn = barParts
+		case "rebuild":
+			f.Flags |= FlagIsRebuildAllOnChange
 		case "sep":
 			f.StringSep = val
 			if val == "" {
@@ -487,7 +508,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "enum":
 			if zstr.HasPrefix(val, "./", &f.LocalEnum) {
 			} else {
-				if fieldEnums[val] == nil {
+				_, got := fieldEnums[val]
+				if !got {
 					zlog.Error(nil, "no such enum:", val, fieldEnums)
 				}
 				f.Enum = val
@@ -547,9 +569,6 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	}
 	if rval.Type() == reflect.TypeOf(zgeo.Color{}) {
 		f.WidgetName = "zcolor"
-	}
-	if immediateEdit {
-		f.UpdateSecs = 0
 	}
 	if f.HeaderSize.IsNull() {
 		f.HeaderSize = f.Size
@@ -755,10 +774,10 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice any, f Fiel
 	enum := fieldEnums[f.Enum]
 	val := reflect.ValueOf(slice)
 	slen := val.Len()
-	m := enumTitles[f.ID]
+	m := enumTitles[f.FieldName]
 	if m == nil {
 		m = mapValueToName{}
-		enumTitles[f.ID] = m
+		enumTitles[f.FieldName] = m
 	}
 	for i := 0; i < slen; i++ {
 		fi := val.Index(i).Addr().Interface()
@@ -886,12 +905,12 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 	// zlog.Info("SORT TIME:", time.Since(start))
 }
 
-// ID is convenience method to get id from a field if any (used often in HandleAction methods).
-func ID(f *Field) string {
+// FN is convenience method to get FieldName from a field if any (used often in HandleAction methods).
+func (f *Field) FN() string {
 	if f != nil {
-		return f.ID
+		return f.FieldName
 	}
-	return ""
+	return "nil"
 }
 
 // Name is convenience method to get name from a field if any (used often in HandleAction methods for debugging).
@@ -906,10 +925,9 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 	if len(fields) == 0 {
 		zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 			f := EmptyField
-			if !f.SetFromReflectValue(val, sf, index, false) {
+			if !f.SetFromReflectValue(val, sf, index, params) {
 				return true
 			}
-			// zlog.Info("fieldViewNew f:", f.Name, f.UpdateSecs)
 			fields = append(fields, f)
 			return true
 		})
@@ -932,11 +950,16 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f == nil {
 			return true
 		}
+		if f.Flags&FlagIsForZDebugOnly != 0 {
+			zlog.Info("zdebug:", f.Name, zui.DebugOwnerMode)
+		}
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
-		if len(f.UseIn) != 0 && !zstr.SlicesIntersect(f.UseIn, params.UseInValues) {
-			// zlog.Info("IFIn:", v.Hierarchy(), f.Name, f.UseIn, v.params.UseInValues)
+		isInRow := zstr.StringsContain(params.UseInValues, RowUseInSpecialName)
+		wantsDialog := zstr.StringsContain(f.UseIn, "$dialog")
+		// zlog.Info("IFIn:", f.Name, wantsDialog, len(f.UseIn), isInRow, zstr.SlicesIntersect(f.UseIn, params.UseInValues))
+		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues) || (isInRow && !wantsDialog))) {
 			return true
 		}
 		got(index, f, val, sf)

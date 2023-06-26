@@ -22,15 +22,19 @@ type trigger struct {
 // if item.Interface.
 // func (s Status) HandleDataChange(fv *FieldView, f Field, value any, view *zview.View) bool {
 
-func (f *FieldViewParameters) AddTrigger(id string, action ActionType, function func(fv *FieldView, f *Field, value any, view *zview.View) bool) {
+func (f *FieldViewParameters) AddTrigger(onFVID string, action ActionType, function func(fv *FieldView, f *Field, value any, view *zview.View) bool) {
 	if f.triggerHandlers == nil {
 		f.triggerHandlers = map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool{}
 	}
-	t := trigger{id: id, action: action}
+	t := trigger{id: onFVID, action: action}
 	f.triggerHandlers[t] = function
 }
 
-func (v *FieldView) reloadFieldViewIfUseInValueChanged(f *Field) {
+func (v *FieldView) rebuildFieldViewIfUseInValueChangedOrIsRebuild(f *Field) {
+	if f.Flags&FlagIsRebuildAllOnChange != 0 {
+		v.Rebuild()
+		return
+	}
 	if f.Flags&FlagIsUseInValue != 0 {
 		if v.parent != nil {
 			sv, _ := v.parent.View.(*FieldSliceView)
@@ -46,7 +50,7 @@ func (v *FieldView) reloadFieldViewIfUseInValueChanged(f *Field) {
 
 func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, view *zview.View) bool {
 	if action == EditedAction {
-		defer v.reloadFieldViewIfUseInValueChanged(f)
+		defer v.rebuildFieldViewIfUseInValueChangedOrIsRebuild(f)
 	}
 	if v.params.triggerHandlers != nil {
 		t := trigger{id: f.FieldName, action: action}
@@ -57,7 +61,8 @@ func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, v
 			}
 		}
 		for t, function := range v.params.triggerHandlers {
-			if t.action != action || !strings.Contains(t.id, "*") {
+			// zlog.Info(v.Hierarchy(), "callTrig2?", f.Name, t.action, t.id)
+			if action != NoAction && t.action != action || !strings.Contains(t.id, "*") {
 				continue
 			}
 			path := v.ID + "/" + f.FieldName

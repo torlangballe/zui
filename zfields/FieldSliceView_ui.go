@@ -92,7 +92,7 @@ func (v *FieldSliceView) build() {
 		v.createMenu()
 		header.Add(v.menu, zgeo.CenterRight)
 
-		if !v.field.IsStatic() {
+		if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 			v.globalDeleteButton = makeButton("minus", "red")
 			header.Add(v.globalDeleteButton, zgeo.CenterRight)
 			v.globalDeleteButton.SetPressedHandler(func() {
@@ -104,7 +104,7 @@ func (v *FieldSliceView) build() {
 		zint.Minimize(&index, sliceRval.Len()-1)
 		v.menu.SelectWithValue(index)
 	}
-	if !v.field.IsStatic() {
+	if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		v.addButton = makeButton("plus", "gray")
 		header.Add(v.addButton, zgeo.CenterRight)
 		v.addButton.SetPressedHandler(v.handleAddItem)
@@ -177,6 +177,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	if v.isStructItems {
 		id := strconv.Itoa(i)
 		fv := FieldViewNew(id, rval.Addr().Interface(), v.params)
+		fv.Vertical = !v.Vertical || v.field.LabelizeWidth != 0
 		fv.SetMargin(zgeo.RectFromXY2(4, 4, -4, -4))
 		fv.parent = &v.FieldView
 		if v.field.Flags&FlagGroupSingle == 0 || v.field.IsStatic() {
@@ -185,8 +186,12 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		}
 		add = fv
 		fv.Build(true)
+		// fv.params.AddTrigger("*", EditedAction, func(fv *FieldView, f *Field, value any, view *zview.View) bool {
+		// 	zlog.Info("FVTrigger:", v.Hierarchy(), f.FieldName, zlog.Pointer(v.data))
+		// 	return false
+		// })
 		v.params.AddTrigger("*", EditedAction, func(fv *FieldView, f *Field, value any, view *zview.View) bool {
-			// zlog.Info("Trigger:", f.FieldName, v.indicatorFieldName)
+			// zlog.Info("Trigger:", fv.Hierarchy(), f.FieldName, zlog.Pointer(v.data))
 			if f.FieldName == v.indicatorFieldName {
 				v.updateMenu()
 			}
@@ -205,7 +210,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	}
 	zlog.Assert(add != nil)
 	itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
-	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() {
+	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		deleteButton := makeButton("minus", "red")
 		itemStack.Add(deleteButton, zgeo.CenterRight)
 		deleteButton.SetPressedHandler(func() {
@@ -226,7 +231,7 @@ func (v *FieldSliceView) callEditedAction() {
 	actionCaller, _ := v.data.(ActionHandler)
 	if actionCaller != nil {
 		view := v.View
-		actionCaller.HandleAction(v.field, EditedAction, &view)
+		actionCaller.HandleAction(ActionPack{FieldView: &v.FieldView, Field: v.field, Action: EditedAction, View: &view})
 	}
 }
 
