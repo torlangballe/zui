@@ -176,19 +176,6 @@ func OwnerForView(view zview.View) *MenuedOwner {
 	return menuOwnersMap[view]
 }
 
-// func (o *MenuedOwner) Stop() {
-// 	if o.View == nil {
-// 		zlog.Info("Stopping MenuOwner view==nil:", zlog.CallingStackString())
-// 	}
-// 	// zlog.Info("Stopping MenuOwner:", o.View != nil)
-// 	// zlog.Info("Stopping MenuOwner for:", o.View.ObjectName())
-// 	presser := o.View.(zview.Pressable)
-// 	// zlog.Info("Stopping MenuOwner for2:", presser != nil)
-// 	presser.SetPressedHandler(nil)
-// 	presser.SetLongPressedHandler(nil)
-// 	*o = MenuedOwner{} // this will
-// }
-
 func (o *MenuedOwner) SelectedItem() *zdict.Item {
 	sitems := o.SelectedItems()
 	if len(sitems) == 0 {
@@ -212,7 +199,7 @@ func (o *MenuedOwner) Empty() {
 }
 
 func (o *MenuedOwner) SetTitleText(text string) {
-	// zlog.Info("MO.SetTitleText:", text, len(o.items), zlog.CallingStackString())
+	// zlog.Info("MO.SetTitleText3:", text, len(o.items), o.SetTitle, o.TitleIsValueIfOne, o.TitleIsAll, o.PluralableWord, o.GetTitleFunc != nil) //, zlog.CallingStackString())
 	if o.SetTitle || o.TitleIsValueIfOne || o.TitleIsAll != "" || o.PluralableWord != "" || o.GetTitleFunc != nil {
 		zlog.Assert(o.View != nil)
 		ts, got := o.View.(ztextinfo.TextSetter)
@@ -268,6 +255,7 @@ func (o *MenuedOwner) updateTitleAndImage() {
 	}
 	var spath, sval string
 	item := o.SelectedItem()
+
 	if item != nil && item.Value != nil {
 		sval = fmt.Sprint(item.Value)
 		if o.ImagePath != "" {
@@ -389,7 +377,7 @@ func (o *MenuedOwner) popup() {
 		imageMarg  = 8
 		checkWidth = 14
 		topMarg    = 6
-		bottomMarg = 6
+		bottomMarg = 2
 		rightMarg  = 4
 	)
 	allAction := true
@@ -406,6 +394,7 @@ func (o *MenuedOwner) popup() {
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := zgridlist.NewView("menu-list")
+	list.SetMargin(zgeo.RectFromXY2(0, 0, -8, 0))
 	list.FocusWidth = 0
 	list.JSSet("className", "znofocus")
 	stack.SetBGColor(o.BGColor)
@@ -450,7 +439,6 @@ func (o *MenuedOwner) popup() {
 		rm += 24
 	}
 	list.CreateCellFunc = o.createRow
-
 	var max string
 	for _, item := range o.items {
 		if len(item.Name) > len(max) {
@@ -645,7 +633,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		})
 		return v
 	}
-	marg := zgeo.Size{8, 0}
+	marg := zgeo.Size{4, 0}
 
 	if !item.IsAction {
 		status := zlabel.New("")
@@ -717,13 +705,13 @@ func (o *MenuedOwner) saveToStore() {
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
 	v := zshape.NewView(shape, zgeo.Size{20, 20})
-	v.SetImage(nil, "images/zmenu-arrows.png", nil)
-	v.ImageMargin = zgeo.Size{4, 4}
+	v.SetImage(nil, "images/zcore/zmenu-arrows.png", nil)
+	v.ImageMargin = zgeo.Size{2, 2}
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.ImageGap = 4
-	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorGray, 0.2))
-	v.StrokeColor = zgeo.ColorNewGray(0, 0.3)
+	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorGray, 0.1))
+	v.StrokeColor = zgeo.ColorNewGray(0, 0.5)
 	v.StrokeWidth = 1
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)
 	v.SetTextColor(zstyle.DefaultFGColor())
