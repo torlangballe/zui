@@ -40,11 +40,18 @@ type FilesRedirector struct {
 //go:embed www
 var wwwFS embed.FS
 
+var wwwEmbeds []embed.FS
+
 func Init() {
 	zrpc.Register(AppCalls{})
 	if zfile.NotExist(zrest.StaticFolder) {
 		os.Mkdir(zrest.StaticFolder, os.ModeDir|0755)
 	}
+	AddWWWFileServer(wwwFS)
+}
+
+func AddWWWFileServer(f embed.FS) {
+	wwwEmbeds = append(wwwEmbeds, f)
 }
 
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
@@ -65,36 +72,18 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	// if spath != "" {
-	// 	if strings.Contains(filepath, "*") {
-	// 		files, _ := zfile.GetFilesFromPath(filepath, false)
-	// 		if len(files) > 0 {
-	// 			filepath = files[0]
-	// 		}
-	// 	}
-	// 	if zfile.IsFolder(filepath) && r.ServeDirectories {
-	// 		files, err := zfile.GetFilesFromPath(filepath, true)
-	// 		if err != nil {
-	// 			zlog.Error(err)
-	// 			return
-	// 		}
-	// 		str := strings.Join(files, "\n")
-	// 		zrest.AddCORSHeaders(w, req)
-	// 		io.WriteString(w, str)
-	// 		return
-	// 	}
-	// }
+
 	if filepath == zrest.StaticFolder {
 		filepath = zrest.StaticFolder + "/index.html"
 	}
 
+	if filepath == "www/main.wasm.gz" {
+		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
+		w.Header().Set("Content-Type", "application/wasm")
+		w.Header().Set("Content-Encoding", "gzip")
+	}
 	if zfile.Exists(filepath) {
 		// zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
-		if filepath == "www/main.wasm.gz" {
-			// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
-			w.Header().Set("Content-Type", "application/wasm")
-			w.Header().Set("Content-Encoding", "gzip")
-		}
 		http.ServeFile(w, req, filepath)
 		return
 	}
@@ -109,7 +98,15 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if spath == "" { // hack to replicate how http.ServeFile serves index.html if serving empty folder at root level
 		spath = "index.html"
 	}
-	data, err := wwwFS.ReadFile(zrest.StaticFolder + "/" + spath)
+	var data []byte
+	var err error
+	for _, w := range wwwEmbeds {
+		data, err = w.ReadFile(zrest.StaticFolder + "/" + spath)
+		// zlog.Info("EmbedRead:", zrest.StaticFolder+"/"+spath, data != nil, err)
+		if data != nil {
+			break
+		}
+	}
 	// zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
 	req.Body.Close()
 	if err == nil {
@@ -122,6 +119,7 @@ func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// zlog.Info("Serve app:", path, filepath)
 }
 
+// localRedirect redirects empty path to directory (I think)
 func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 	if q := r.URL.RawQuery; q != "" {
 		newPath += "?" + q
