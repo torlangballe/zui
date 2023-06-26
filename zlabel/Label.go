@@ -20,6 +20,7 @@ type Label struct {
 	maxWidth  float64
 	maxLines  int
 	margin    zgeo.Rect
+	padding   zgeo.Rect
 	alignment zgeo.Alignment
 
 	pressed     func()
@@ -32,6 +33,12 @@ type Label struct {
 func New(text string) *Label {
 	v := &Label{}
 	v.Init(v, text)
+	return v
+}
+
+func NewLink(name, surl string) *Label {
+	v := &Label{}
+	v.InitAsLink(v, name, surl)
 	return v
 }
 

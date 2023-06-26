@@ -11,8 +11,17 @@ import (
 	"syscall/js"
 )
 
-func (label *Label) Init(view zview.View, text string) *Label {
+func (label *Label) InitAsLink(view zview.View, title, surl string) {
+	label.MakeJSElement(view, "a")
+	label.init(view, title)
+	label.SetURL(surl)
+}
+func (label *Label) Init(view zview.View, text string) {
 	label.MakeJSElement(view, "label")
+	label.init(view, text)
+}
+
+func (label *Label) init(view zview.View, text string) {
 	// zlog.Info("Label New:", label.textInfo.SplitItems, text)
 	style := label.JSStyle()
 	style.Set("textAlign", "left")
@@ -45,12 +54,31 @@ func (label *Label) Init(view zview.View, text string) *Label {
 	label.JSCall("appendChild", textNode)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	label.SetFont(f)
-	return label
+}
+
+func (label *Label) SetURL(surl string) {
+	label.JSSet("href", surl)
+}
+
+func setPadding(v *Label) {
+	v.SetNativePadding(v.padding)
+}
+
+func (v *Label) SetBGColor(c zgeo.Color) {
+	x := 0.0
+	if c.Valid && c.Opacity() != 0 {
+		x = 4
+	}
+	v.padding.SetMinX(x)
+	v.padding.SetMaxX(-x)
+	setPadding(v)
+	v.NativeView.SetBGColor(c)
 }
 
 func (v *Label) SetFont(font *zgeo.Font) {
 	v.NativeView.SetFont(font)
-	v.SetNativePadding(zgeo.RectFromXY2(0, font.Size/8, 0, 0))
+	v.padding.SetMinY(font.Size / 8)
+	setPadding(v)
 }
 
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
@@ -90,7 +118,9 @@ func (v *Label) SetRect(r zgeo.Rect) {
 
 func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
+	// zlog.Info("label.SetPressedHandler:", v.Hierarchy())
 	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+		// zlog.Info("label.Pressed:", v.Hierarchy())
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
@@ -142,5 +172,4 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
-	// v.NativeView.SetNativeMargin(m)
 }
