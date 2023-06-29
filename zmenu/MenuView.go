@@ -20,6 +20,7 @@ type MenuType interface {
 
 type MenuView struct {
 	zview.NativeView
+	StoreKey        string
 	maxWidth        float64
 	selectedHandler func()
 	items           zdict.Items

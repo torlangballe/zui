@@ -57,6 +57,7 @@ type FieldViewParameters struct {
 	ImmediateEdit            bool                                                                        // ImmediateEdit forces immediate write-to-data when editing a field.
 	MultiSliceEditInProgress bool                                                                        // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
 	EditWithoutCallbacks     bool                                                                        // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	IsEditOnNewStruct        bool                                                                        // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
 	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
 }
 
@@ -283,6 +284,29 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
 		v.data = data
 	}
+	recentEdit := (dontOverwriteEdited && IsFieldViewEditedRecently(v))
+	fh, _ := v.data.(ActionHandler)
+	sview := v.View
+	if fh != nil {
+		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
+	}
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+		if !recentEdit || f.IsStatic() || sf.Type.Kind() == reflect.Slice {
+			v.updateField(index, val, sf, dontOverwriteEdited)
+		}
+	})
+	// call general one with no id. Needs to be after above loop, so values set
+	if fh != nil {
+		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedAction, View: &sview})
+	}
+}
+
+/*
+func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
+	// zlog.Info("FV.Update:", v.Hierarchy(), data)
+	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
+		v.data = data
+	}
 	if dontOverwriteEdited && IsFieldViewEditedRecently(v) {
 		zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
 			if sf.Type.Kind() == reflect.Slice {
@@ -307,6 +331,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedAction, View: &sview})
 	}
 }
+*/
 
 func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited bool) bool {
 	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
@@ -327,6 +352,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		called = tri.HandleDataChange(v, f, rval.Addr().Interface(), &foundView)
 	}
 	if !called {
+		// zlog.Info("Call trigger DataChangedAction:", v.Hierarchy(), f.Name, rval)
 		called = v.callTriggerHandler(f, DataChangedAction, rval.Addr().Interface(), &foundView)
 	}
 	if !called {
@@ -673,7 +699,9 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		menuOwner := zmenu.NewMenuedOwner()
 		menuOwner.IsStatic = static
 		menuOwner.IsMultiple = multi
-		menuOwner.StoreKey = f.ValueStoreKey
+		if v.params.IsEditOnNewStruct {
+			menuOwner.StoreKey = f.ValueStoreKey
+		}
 		menuOwner.SetTitle = true
 		for _, format := range strings.Split(f.Format, "|") {
 			if menuOwner.TitleIsAll == " " {
@@ -728,7 +756,11 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 			}
 		}
 	} else {
-		menu := zmenu.NewView(f.Name+"Menu", items, rval.Interface())
+		name := f.Name + "Menu"
+		if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+			name = "key:" + f.ValueStoreKey
+		}
+		menu := zmenu.NewView(name, items, rval.Interface())
 		menu.SetMaxWidth(f.MaxWidth)
 		view = menu
 		menu.SetSelectedHandler(func() {
@@ -1095,7 +1127,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
-	// zlog.Info("BuildItem:", f.Name)
+	// zlog.Info("BuildItem:", f.Name, rval.Interface())
 	labelizeWidth := v.params.LabelizeWidth
 	parentFV := ParentFieldView(v)
 	if parentFV != nil && v.params.LabelizeWidth == 0 {

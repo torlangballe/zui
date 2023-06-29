@@ -10,11 +10,14 @@ import (
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 func NewView(name string, items zdict.Items, value interface{}) *MenuView {
+	zlog.Info("NewView:", name, value, reflect.TypeOf(value))
 	v := &MenuView{}
 	sel := zdom.DocumentJS.Call("createElement", "select")
 	v.Element = sel
@@ -22,6 +25,20 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v.View = v
 	// v.SetNativeMargin(zgeo.RectFromXY2(0, 0, 0, -12))
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
+	var key string
+	item := items.FindValue(value)
+	if zstr.HasPrefix(name, "key:", &key) && key != "" && (value == nil || item == nil || item.Name == "") {
+		zlog.Info("NewMenuView:", name, value)
+		dict, _ := zkeyvalue.DefaultStore.GetDict(key)
+		for val := range dict {
+			for _, item := range items {
+				if fmt.Sprint(item.Value) == val {
+					value = item.Value
+					break
+				}
+			}
+		}
+	}
 	v.SetObjectName(name)
 	if len(items) > 0 {
 		v.UpdateItems(items, value)
@@ -32,6 +49,10 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
 		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
+		if key != "" {
+			dict := zdict.Dict{fmt.Sprint(v.currentValue): true}
+			zkeyvalue.DefaultStore.SetDict(dict, key, true)
+		}
 		if v.selectedHandler != nil {
 			v.selectedHandler()
 		}
