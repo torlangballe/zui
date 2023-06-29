@@ -477,11 +477,12 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 	// ids := v.Grid.SelectedIDs()
 }
 
-func (v *SliceGridView[S]) editSingleItem(ns S, title string) {
+func (v *SliceGridView[S]) EditSingleItem(ns S, title string, isEditOnNewStruct bool) {
 	params := v.EditParameters
 	if params.LabelizeWidth == 0 {
 		params.LabelizeWidth = 120
 	}
+	params.IsEditOnNewStruct = isEditOnNewStruct
 	zfields.PresentOKCancelStruct(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
 		if ok {
 			go func() {
@@ -504,7 +505,7 @@ func (v *SliceGridView[S]) addNewItem() {
 	if initer != nil {
 		initer.InitZFieldStruct()
 	}
-	v.editSingleItem(ns, title)
+	v.EditSingleItem(ns, title, true)
 }
 
 func (v *SliceGridView[S]) duplicateItem(name string, id string) {
@@ -517,7 +518,7 @@ func (v *SliceGridView[S]) duplicateItem(name string, id string) {
 	if initer != nil {
 		initer.InitZFieldStruct()
 	}
-	v.editSingleItem(ns, title)
+	v.EditSingleItem(ns, title, false)
 }
 
 func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
@@ -618,6 +619,11 @@ func addHierarchy(stack *zcontainer.StackView) {
 func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", v.Grid.CellCountFunc())
+	ids := v.Grid.SelectedIDs()
+	if v.options&AllowNew != 0 {
+		del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
+		items = append(items, del)
+	}
 	if v.Grid.CellCountFunc() > 0 {
 		if v.Grid.MultiSelectable {
 			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
@@ -625,13 +631,8 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			})
 			items = append(items, all)
 		}
-		ids := v.Grid.SelectedIDs()
 		// zlog.Info("Edit items1:", ids)
 
-		if v.options&AllowNew != 0 {
-			del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
-			items = append(items, del)
-		}
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
 			if v.options&AllowDuplicate != 0 && len(ids) == 1 {
