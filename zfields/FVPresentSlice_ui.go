@@ -73,7 +73,7 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 	for i := 0; i < reduceSlice.Len(); {
 		rval := reduceSlice.Index(i).Interface()
 		var has bool
-		for j := 0; i < fromSlice.Len(); j++ {
+		for j := 0; j < fromSlice.Len(); j++ {
 			fval := fromSlice.Index(j).Interface()
 			if reflect.DeepEqual(rval, fval) {
 				has = true
