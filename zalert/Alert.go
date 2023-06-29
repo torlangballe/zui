@@ -179,7 +179,6 @@ func (a *Alert) Show(handle func(result Result)) {
 	if a.UploadButton != "" || a.OKButton != zwords.OK() {
 		a.BuildGUI = true
 	}
-	zlog.Info("SHOW:", a.BuildGUI)
 	if !a.BuildGUI {
 		a.showNative(handle)
 		return
