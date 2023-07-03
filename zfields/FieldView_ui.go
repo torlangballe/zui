@@ -91,6 +91,11 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	return f
 }
 
+func GetStructInitializer(a any) StructInitializer {
+	i, _ := a.(StructInitializer)
+	return i
+}
+
 func (v *FieldView) Data() any {
 	return v.data
 }
@@ -429,7 +434,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
-			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy())
+			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
 		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
@@ -1317,6 +1322,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			title = ""
 		}
 		_, lstack, cell = zguiutil.Labelize(view, title, labelizeWidth, cell.Alignment)
+		// updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
 	if useMinWidth {
