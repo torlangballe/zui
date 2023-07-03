@@ -13,15 +13,15 @@ import (
 
 func (label *Label) InitAsLink(view zview.View, title, surl string) {
 	label.MakeJSElement(view, "a")
-	label.init(view, title)
+	label.init(title)
 	label.SetURL(surl)
 }
 func (label *Label) Init(view zview.View, text string) {
 	label.MakeJSElement(view, "label")
-	label.init(view, text)
+	label.init(text)
 }
 
-func (label *Label) init(view zview.View, text string) {
+func (label *Label) init(text string) {
 	// zlog.Info("Label New:", label.textInfo.SplitItems, text)
 	style := label.JSStyle()
 	style.Set("textAlign", "left")
@@ -133,6 +133,8 @@ func (v *Label) SetPressedDownHandler(handler func()) {
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		handler()
+		e.Call("preventDefault")
+		e.Call("stopPropagation")
 		return nil
 	}))
 	v.JSSet("class", "widget")
