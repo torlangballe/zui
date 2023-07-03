@@ -101,7 +101,7 @@ func (v *FieldSliceView) build() {
 		}
 		v.storeKey = v.CreateStoreKeyForField(v.field, "SliceIndex")
 		index, _ = zkeyvalue.DefaultSessionStore.GetInt(v.storeKey, 0)
-		zint.Minimize(&index, sliceRval.Len()-1)
+		zint.Minimize(&index, zint.Max(0, sliceRval.Len()-1))
 		v.menu.SelectWithValue(index)
 	}
 	if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
