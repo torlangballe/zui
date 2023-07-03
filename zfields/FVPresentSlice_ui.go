@@ -176,7 +176,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				tv.SetText("*x*->*y*")
 			}
 		})
-		att.Presented = func(win *zwindow.Window) {
+		att.PresentedFunc = func(win *zwindow.Window) {
 			tv := getFocusedEmptyTextView(&fview.NativeView)
 			wild.Show(tv != nil)
 		}

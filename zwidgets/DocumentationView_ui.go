@@ -126,18 +126,13 @@ func DocumentationViewPresent(path string, modal bool) error {
 		attr.ModalCloseOnOutsidePress = true
 		attr.Modal = true
 	}
-	zpresent.PresentView(v, attr, func(win *zwindow.Window) {
-		// zlog.Info("SetDocPath:", path, modal)
+	attr.PresentedFunc = func(win *zwindow.Window) {
 		if win == nil {
 			return
 		}
 		v.WebView.SetURL(path)
-		// go func() {
-		// 	setCSSFile(win, cssURL)
-		// 	v.WebView.FetchHTMLAndSet(path)
-		// 	//			setCSSFile(win, cssURL)
-		// }()
-	}, nil)
+	}
+	zpresent.PresentView(v, attr)
 	return nil
 }
 

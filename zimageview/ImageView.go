@@ -73,7 +73,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 				att := zpresent.AttributesNew()
 				att.Modal = true
 				att.ModalCloseOnOutsidePress = true
-				zpresent.PresentTitledView(nv, path, att, nil, nil, nil, nil)
+				zpresent.PresentTitledView(nv, path, att, nil, nil)
 			}
 		})
 	} else {

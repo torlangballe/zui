@@ -214,7 +214,7 @@ func (a *Alert) Show(handle func(result Result)) {
 	a.DialogView = stack
 	att := zpresent.AttributesNew()
 	att.Modal = true
-	zpresent.PresentView(stack, att, nil, nil)
+	zpresent.PresentView(stack, att)
 }
 
 func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKButton bool, done func(isOKButton bool) (close bool)) *zbutton.Button {
@@ -256,7 +256,7 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 	cancelButton.MakeEscapeCanceler()
 
 	att.Modal = true
-	focusFunc := func(win *zwindow.Window) {
+	att.PresentedFunc = func(win *zwindow.Window) {
 		if win == nil {
 			return
 		}
@@ -270,8 +270,8 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 		// })
 	}
 	if title != "" {
-		zpresent.PresentTitledView(stack, title, att, nil, nil, focusFunc, nil)
+		zpresent.PresentTitledView(stack, title, att, nil, nil)
 	} else {
-		zpresent.PresentView(stack, att, focusFunc, nil)
+		zpresent.PresentView(stack, att)
 	}
 }

@@ -544,15 +544,15 @@ func (o *MenuedOwner) popup() {
 	att.Pos = &pos
 	// zlog.Info("menu popup")
 	//	list.Focus(true)
-	zpresent.PresentView(stack, att, func(win *zwindow.Window) {
+	att.PresentedFunc = func(win *zwindow.Window) {
 		if win == nil {
 			return
 		}
 		ztimer.StartIn(0.1, func() {
 			list.Focus(true)
 		})
-		//		pop.Element.Set("selectedIndex", 0)
-	}, func(dismissed bool) {
+	}
+	att.ClosedFunc = func(dismissed bool) {
 		// zlog.Info("menued closed", dismissed, o.IsMultiple)
 		if !dismissed || o.IsMultiple { // if multiple, we handle any select/deselect done
 			o.updateTitleAndImage()
@@ -566,7 +566,8 @@ func (o *MenuedOwner) popup() {
 			}
 			o.updateTitleAndImage()
 		}
-	})
+	}
+	zpresent.PresentView(stack, att)
 }
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {

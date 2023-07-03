@@ -45,6 +45,8 @@ type Attributes struct {
 	PlaceOverMargin          zgeo.Size
 	PlaceOverView            zview.View
 	FocusView                zview.View
+	PresentedFunc            func(win *zwindow.Window)
+	ClosedFunc               func(dismissed bool)
 }
 
 var (
@@ -65,9 +67,9 @@ var ModalDialogAttributes = Attributes{
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
 // If opening fails (on browsers it can fail for non-modal if popups are blocked), presented, and closed (if != nil) are called.
 // closed (if != nil) is called when the window is closed programatically or by user interaction.
-func PresentView(v zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
-	if closed != nil {
-		presentCloseFuncs[v] = closed
+func PresentView(v zview.View, attributes Attributes) {
+	if attributes.ClosedFunc != nil {
+		presentCloseFuncs[v] = attributes.ClosedFunc
 	}
 	Presenting = true
 
@@ -81,19 +83,19 @@ func PresentView(v zview.View, attributes Attributes, presented func(win *zwindo
 
 	outer := v
 	if attributes.Modal {
-		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes, closed)
+		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes)
 	}
 	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
-			presentLoaded(win, v, outer, attributes, presented, closed)
+			presentLoaded(win, v, outer, attributes)
 		})
 	} else {
-		presentLoaded(win, v, outer, attributes, presented, closed)
+		presentLoaded(win, v, outer, attributes)
 	}
 }
 
-func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attributes, presented func(win *zwindow.Window), closed func(dismissed bool)) {
+func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attributes) {
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
@@ -109,8 +111,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone)
 				attributes.PlaceOverView.Native().RootParent()
 				r = attributes.PlaceOverView.Native().AbsoluteRect().Align(size, attributes.Alignment, attributes.PlaceOverMargin)
-
-				zlog.Info("PlaceOverView:", r, attributes.Alignment)
 			} else if attributes.Pos != nil {
 				if attributes.Alignment == zgeo.AlignmentNone {
 					r.Pos = *attributes.Pos
@@ -154,14 +154,17 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					}
 					ShowErrorFunc("Error opening window.", sub)
 				}
-				if presented != nil {
-					presented(nil)
-					if attributes.FocusView != nil {
-						attributes.FocusView.Native().Focus(true)
-					}
+				v.Native().Focus(true)
+				if attributes.FocusView != nil {
+					attributes.FocusView.Native().Focus(true)
+				} else {
+					zcontainer.FocusNext(v, true, true)
 				}
-				if closed != nil {
-					closed(false)
+				if attributes.PresentedFunc != nil {
+					attributes.PresentedFunc(nil)
+				}
+				if attributes.ClosedFunc != nil {
+					attributes.ClosedFunc(false)
 				}
 				return
 			}
@@ -170,10 +173,10 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
 			}
-			if closed != nil {
+			if attributes.ClosedFunc != nil {
 				win.HandleClosed = func() {
 					CloseOverride(v, false, Attributes{}, func(dismissed bool) {})
-					closed(true)
+					attributes.ClosedFunc(true)
 					delete(presentCloseFuncs, v)
 				}
 			}
@@ -192,11 +195,15 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	if !attributes.Modal {
 		win.SetOnResizeHandling()
 	}
-	if presented != nil {
-		presented(win)
-		if attributes.FocusView != nil {
-			attributes.FocusView.Native().Focus(true)
+	if attributes.FocusView != nil {
+		attributes.FocusView.Native().Focus(true)
+	} else {
+		if v.Native().GetFocusedChildView(false) == nil {
+			zcontainer.FocusNext(v, true, true)
 		}
+	}
+	if attributes.PresentedFunc != nil {
+		attributes.PresentedFunc(win)
 	}
 }
 
@@ -356,7 +363,7 @@ func PrintPresented(v zview.View, space string) {
 	}
 }
 
-func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attributes Attributes, closed func(dismissed bool)) (outer zview.View) {
+func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attributes Attributes) (outer zview.View) {
 	outer = v
 	nv := v.Native()
 	ct, _ := v.(zcontainer.ChildrenOwner)
@@ -385,7 +392,7 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		if attributes.ModalCloseOnOutsidePress {
 			blocker.SetPressedHandler(func() {
 				dismissed := true
-				Close(v, dismissed, closed)
+				Close(v, dismissed, attributes.ClosedFunc)
 			})
 		}
 		blocker.JSSet("className", "znoscrollbar")
@@ -395,7 +402,7 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 	return
 }
 
-func PresentTitledView(view zview.View, stitle string, att Attributes, barViews map[zview.View]zgeo.Alignment, ready func(stack, bar *zcontainer.StackView, title *zlabel.Label), presented func(*zwindow.Window), closed func(dismissed bool)) {
+func PresentTitledView(view zview.View, stitle string, att Attributes, barViews map[zview.View]zgeo.Alignment, ready func(stack, bar *zcontainer.StackView, title *zlabel.Label)) {
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.SetBGColor(zstyle.DefaultBGColor())
@@ -434,10 +441,11 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 		ready(stack, bar, titleLabel)
 	}
 	att.Title = stitle
-	PresentView(stack, att, presented, closed)
+	PresentView(stack, att)
 }
 
 func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
+	var root zview.View
 	view.Native().JSSet("className", "znofocus")
 	att := AttributesNew()
 	att.Modal = true
@@ -448,14 +456,12 @@ func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
 	att.ModalDismissOnEscapeKey = true
 	att.PlaceOverView = over
 	att.PlaceOverMargin = marg
-	var root zview.View
-	PresentView(view, att, func(win *zwindow.Window) {
+	att.PresentedFunc = func(win *zwindow.Window) {
 		root = win.ViewsStack[len(win.ViewsStack)-2] // we can only do this for sure if modal is true
-		view.Native().Focus(true)
-		zcontainer.FocusNext(view, true, true)
 		root.Native().SetInteractive(false)
-	}, func(dismissed bool) {
+	}
+	att.ClosedFunc = func(dismissed bool) {
 		root.Native().SetInteractive(true)
-	})
-
+	}
+	PresentView(view, att)
 }
