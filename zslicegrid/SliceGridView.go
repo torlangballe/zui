@@ -68,15 +68,16 @@ type SliceGridView[S zstr.StrIDer] struct {
 type OptionType int
 
 const (
-	AddNone         OptionType = 0
-	AddBar          OptionType = 1 << iota // Adds a bar stack above the grid.
-	AddSearch                              // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
-	AddMenu                                // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
-	AllowNew                               // There is a Add New item menu
-	AllowDuplicate                         // There is a Add Duplicate item menu
-	AllowDelete                            // It is deletable, and allows keyboard/menu delete
-	AllowEdit                              // Allows selected cell(s) to be edited with menu or return key.
-	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
+	AddNone            OptionType = 0
+	AddBar             OptionType = 1 << iota // Adds a bar stack above the grid.
+	AddSearch                                 // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
+	AddMenu                                   // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
+	AddToggleDirection                        // If set a button to order horizontal first or vertical first is shown
+	AllowNew                                  // There is a Add New item menu
+	AllowDuplicate                            // There is a Add Duplicate item menu
+	AllowDelete                               // It is deletable, and allows keyboard/menu delete
+	AllowEdit                                 // Allows selected cell(s) to be edited with menu or return key.
+	AllowAllEditing    = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
 
 // NewView creates a new SliceGridView using v.Init()
@@ -106,7 +107,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AllowAllEditing != 0 {
 		options |= AddMenu
 	}
-	if options&(AddSearch|AddMenu) != 0 {
+	if options&(AddSearch|AddMenu|AddToggleDirection) != 0 {
 		options |= AddBar
 	}
 	if options&AddBar != 0 {
@@ -133,15 +134,20 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		})
 		v.Bar.Add(v.SearchField, zgeo.CenterLeft)
 	}
-	// if options&(AddDarkPlus|AddLightPlus) != 0 {
-	// 	str := "white"
-	// 	if options&AddDarkPlus != 0 {
-	// 		str = "darkgray"
-	// 	}
-	// 	v.addButton = zimageview.New(nil, "images/plus-circled-"+str+".png", zgeo.Size{16, 16})
-	// 	v.Bar.Add(v.addButton, zgeo.CenterLeft)
-	// 	v.addButton.SetPressedHandler(v.handlePlusButtonPressed)
-	// }
+
+	horFirst := true
+	if options&AddToggleDirection != 0 {
+		toggle := zimageview.NewValuesView(zgeo.Size{29, 18})
+		if storeName != "" {
+			key := storeName + ".orderHorFirst"
+			horFirst, _ = zkeyvalue.DefaultStore.GetBool(key, true)
+		}
+		toggle.SetAsToggle("images/zcore/order-%s-first.png", "hor", "vert", horFirst)
+		toggle.ValueChangedHandlerFunc = func() {
+			v.handleToggle(toggle.BoolValue())
+		}
+		v.Bar.Add(toggle, zgeo.CenterLeft)
+	}
 	if options&AddMenu != 0 {
 		actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
 		actions.SetObjectName("action-menu")
@@ -152,6 +158,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
+	v.Grid.HorizontalFirst = horFirst
 	v.Grid.CellCountFunc = func() int {
 		zlog.Assert(len(v.filteredSlice) <= len(*v.slicePtr), len(v.filteredSlice), len(*v.slicePtr))
 		if !hasHierarchy {
@@ -251,6 +258,14 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.updateView()
 	}
 	return
+}
+
+func (v *SliceGridView[S]) handleToggle(newHorFirst bool) {
+	if v.Grid == nil {
+		return
+	}
+	v.Grid.HorizontalFirst = newHorFirst
+	v.Grid.LayoutCells(false)
 }
 
 func (v *SliceGridView[S]) updateView() {

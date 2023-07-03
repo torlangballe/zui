@@ -56,6 +56,7 @@ type GridListView struct {
 	OpenBranches           map[string]bool
 	CurrentHoverID         string
 	FocusWidth             float64
+	HorizontalFirst        bool // HorizontalFirst means 1 2 3 on first row, not down first
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -765,17 +766,32 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		if !got(cellID, r2, cr, x, y, visible) {
 			break
 		}
-		if lastx {
-			pos.X = rect.Pos.X
-			x = 0
-			y++
-			pos.Y += r.Size.H
+		if v.HorizontalFirst {
+			if lastx {
+				pos.X = rect.Pos.X
+				x = 0
+				y++
+				pos.Y += r.Size.H
+				if visible {
+					v.VisibleRows++
+				}
+			} else {
+				pos.X += r.Size.W - 1
+				x++
+			}
+			continue
+		}
+		if lasty {
+			pos.Y = rect.Pos.Y
+			y = 0
+			x++
+			pos.X += r.Size.W
+		} else {
 			if visible {
 				v.VisibleRows++
 			}
-		} else {
-			pos.X += r.Size.W - 1
-			x++
+			pos.Y += r.Size.H - 1
+			y++
 		}
 	}
 }
@@ -808,7 +824,7 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
-	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc()) //, zlog.CallingStackString())
+	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc(), v.HorizontalFirst) //, zlog.CallingStackString())
 	v.layoutDirty = false
 	placed := map[string]bool{}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
