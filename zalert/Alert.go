@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
-	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
@@ -234,7 +233,7 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 	return button
 }
 
-func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, footer zview.View, done func(ok bool) (close bool)) {
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetBGColor(zstyle.DefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
@@ -242,6 +241,13 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
+	if footer != nil {
+		// zlog.Info("OKCancel:", footer != nil, stack != nil)
+		if footer != nil {
+			// zlog.Info("OKCancel2:", footer.Native() != nil)
+		}
+		stack.Add(footer, zgeo.TopLeft|zgeo.HorExpand, zgeo.Size{0, 2})
+	}
 	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 2})
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
@@ -254,14 +260,14 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 		if win == nil {
 			return
 		}
-		zcontainer.ViewRangeChildren(stack, true, false, func(view zview.View) bool {
-			tv, _ := view.(*ztext.TextView)
-			if tv != nil {
-				tv.Focus(true)
-				return false
-			}
-			return true
-		})
+		// zcontainer.ViewRangeChildren(stack, true, false, func(view zview.View) bool {
+		// 	tv, _ := view.(*ztext.TextView)
+		// 	if tv != nil {
+		// 		tv.Focus(true)
+		// 		return false
+		// 	}
+		// 	return true
+		// })
 	}
 	if title != "" {
 		zpresent.PresentTitledView(stack, title, att, nil, nil, focusFunc, nil)
