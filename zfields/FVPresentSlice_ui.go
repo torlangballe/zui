@@ -4,14 +4,21 @@ package zfields
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
+	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/ztext"
+	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 func accumilateSlice(accSlice, fromSlice reflect.Value) {
@@ -152,7 +159,33 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			check.SetValue(zbool.Unknown)
 		}
 	}
-	zalert.PresentOKCanceledView(fview, title, att, func(ok bool) (close bool) {
+
+	var wildCards zview.View
+	if len(*structSlicePtr) > 1 {
+		wild := zlabel.New("Use *x*->*y* to replace x with y, replacing wildcards with their matches")
+		wildCards = wild // We need to
+		tv := getFocusedEmptyTextView(&fview.NativeView)
+		wild.Show(tv != nil)
+		wild.SetCanTabFocus(false)
+		wild.SetTextAlignment(zgeo.Center)
+		wild.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
+		wild.SetColor(zgeo.ColorGray)
+		wild.SetPressedDownHandler(func() {
+			tv := getFocusedEmptyTextView(wild.Parent())
+			if tv != nil {
+				tv.SetText("*x*->*y*")
+			}
+		})
+		att.Presented = func(win *zwindow.Window) {
+			tv := getFocusedEmptyTextView(&fview.NativeView)
+			wild.Show(tv != nil)
+		}
+		fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {
+			tv, _ := view.(*ztext.TextView)
+			wild.Show(tv != nil && tv.Text() == "")
+		})
+	}
+	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
 		if ok {
 			err := fview.ToData(true)
 			if err != nil {
@@ -181,9 +214,34 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 						return true // skip to next
 					}
 				}
-				for i := 0; i < length; i++ {
-					sliceField := sliceVal.Index(i).Field(index)
-					if !val.IsZero() || length == 1 || isCheck {
+				var wildTransformer *zstr.WildCardTransformer
+				if !val.IsZero() && length > 1 && val.Kind() == reflect.String {
+					var wildFrom, wildTo string
+					if zstr.SplitN(val.String(), "->", &wildFrom, &wildTo) && strings.Contains(wildFrom, "*") && strings.Contains(wildTo, "*") {
+						tv, _ := view.(*ztext.TextView)
+						if tv != nil {
+							wildTransformer, err = zstr.NewWildCardTransformer(wildFrom, wildTo)
+							if err != nil {
+								zalert.ShowError(err)
+							}
+						}
+					}
+				}
+				if wildTransformer != nil {
+					for i := 0; i < length; i++ {
+						sliceField := sliceVal.Index(i).Field(index)
+						replaced, err := wildTransformer.Transform(sliceField.String())
+						if err != nil {
+							zlog.Error(err)
+						} else {
+							sliceField.SetString(replaced)
+						}
+					}
+					return true
+				}
+				if !val.IsZero() || length == 1 || isCheck {
+					for i := 0; i < length; i++ {
+						sliceField := sliceVal.Index(i).Field(index)
 						sliceField.Set(val)
 					}
 				}
@@ -192,4 +250,12 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 		}
 		return done(ok)
 	})
+}
+
+func getFocusedEmptyTextView(parent *zview.NativeView) *ztext.TextView {
+	tv, _ := parent.GetFocusedChildView(false).(*ztext.TextView)
+	if tv != nil && tv.Text() == "" {
+		return tv
+	}
+	return nil
 }
