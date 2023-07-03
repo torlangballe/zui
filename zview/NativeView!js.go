@@ -74,7 +74,7 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), use func(na
 }
 func (v *NativeView) ReplaceChild(child, with View) error                                     { return nil }
 func (v *NativeView) AllParents() (all []*NativeView)                                         { return }
-func (v *NativeView) GetFocusedChildView(andSelf bool) *NativeView                            { return nil }
+func (v *NativeView) GetFocusedChildView(andSelf bool) View                                   { return nil }
 func (v *NativeView) GetPathOfChild(child View) string { return "" }
 func (v *NativeView) AbsoluteRect() zgeo.Rect                                                 { return zgeo.Rect{} }
 func (v *NativeView) SetOnInputHandler(handler func())                                        {}
@@ -107,3 +107,4 @@ func (nv *NativeView) SetNativeMargin(m zgeo.Rect)                           {}
 func (nv *NativeView) ShowBackface(visible bool)                             {}
 func (v *NativeView) SetTilePath(spath string)                               {}
 func (v *NativeView) SetFocusHandler(func focused(focus bool))  {}
+func (*NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {}

@@ -392,8 +392,9 @@ func (v *NativeView) IsFocused() bool {
 }
 
 func (v *NativeView) Focus(focus bool) {
-	v.JSCall("focus")
 	// v.JSSet("contenteditable", focus) ?
+	// zlog.Info("NV FOcus:", v.Hierarchy(), focus, zlog.CallingStackString())
+	v.JSCall("focus")
 }
 
 func (v *NativeView) CanTabFocus() bool {
@@ -429,15 +430,31 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 	}))
 }
 
-func (root *NativeView) GetFocusedChildView(andSelf bool) View {
-	var found View
-	e := zdom.DocumentJS.Get("activeElement")
-	if e.IsUndefined() {
+func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {
+	if in {
+		handleFocusInChildren(root, "focusout", true, handle)
+	}
+	if out {
+		handleFocusInChildren(root, "focusin", false, handle)
+	}
+}
+
+func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, handle func(view View, focused bool)) {
+	root.Element.Call("addEventListener", eventName, js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		e := args[0].Get("relatedTarget")
+		if e.IsNull() || e.IsUndefined() {
+			return nil
+		}
+		found := FindChildWithElement(root, e)
+		if found != nil {
+			handle(found, forFocused)
+		}
 		return nil
-	}
-	if andSelf && root.IsFocused() {
-		return root
-	}
+	}))
+}
+
+func FindChildWithElement(root *NativeView, e js.Value) View {
+	var found View
 	foundID := e.Get("id").String()
 	RangeAllChildrenFunc(root.View, true, func(view View) bool {
 		n := view
@@ -449,6 +466,17 @@ func (root *NativeView) GetFocusedChildView(andSelf bool) View {
 		return true
 	})
 	return found
+}
+
+func (root *NativeView) GetFocusedChildView(andSelf bool) View {
+	e := zdom.DocumentJS.Get("activeElement")
+	if e.IsUndefined() {
+		return nil
+	}
+	if andSelf && root.IsFocused() {
+		return root
+	}
+	return FindChildWithElement(root, e)
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
@@ -1195,4 +1223,10 @@ func (nv *NativeView) ShowBackface(visible bool) {
 		str = "visible"
 	}
 	nv.SetJSStyle("backfaceVisibility", str)
+}
+
+func (nv *NativeView) EnvokeFocusIn() {
+	fin := js.Global().Get("Event").New("focusin")
+	// var focusin = new Event("focusin");
+	nv.JSCall("dispatchEvent", fin)
 }
