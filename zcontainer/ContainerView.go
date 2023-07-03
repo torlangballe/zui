@@ -195,7 +195,7 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 
 func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell {
 	collapsed := false
-	// zlog.Info("CV AddAdvancedView:", v.ObjectName(), view.ObjectName())
+	// zlog.Info("CV AddAdvancedView:", view != nil, view.Native() != nil)
 	name := "nil"
 	if view != nil {
 		name = view.ObjectName()

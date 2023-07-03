@@ -17,7 +17,7 @@ import (
 )
 
 func NewView(name string, items zdict.Items, value interface{}) *MenuView {
-	zlog.Info("NewView:", name, value, reflect.TypeOf(value))
+	// zlog.Info("NewView:", name, value, reflect.TypeOf(value))
 	v := &MenuView{}
 	sel := zdom.DocumentJS.Call("createElement", "select")
 	v.Element = sel

@@ -48,7 +48,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&w, v.maxWidth)
 	}
-	w += 32
+	w += 36
 	if zdevice.OS() != zdevice.MacOSType {
 		w += 5
 	}
