@@ -704,9 +704,9 @@ func (o *MenuedOwner) saveToStore() {
 }
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
-	v := zshape.NewView(shape, zgeo.Size{20, 20})
+	v := zshape.NewView(shape, zgeo.Size{12, 12})
 	v.SetImage(nil, "images/zcore/zmenu-arrows.png", nil)
-	v.ImageMargin = zgeo.Size{2, 2}
+	v.ImageMargin = zgeo.Size{4, 4}
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.ImageGap = 4
