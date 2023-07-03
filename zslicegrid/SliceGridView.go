@@ -19,6 +19,7 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
@@ -452,7 +453,7 @@ func (v *SliceGridView[S]) HandleEditAction() {
 		}
 		ids = []string{v.Grid.CurrentHoverID}
 	}
-	v.EditItems(ids)
+	v.EditItemIDs(ids)
 }
 
 func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
@@ -466,45 +467,38 @@ func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	return items
 }
 
-func (v *SliceGridView[S]) EditItems(ids []string) {
-	title := "Edit "
-
-	// zlog.Info("Edite items:", ids)
-
+func (v *SliceGridView[S]) EditItemIDs(ids []string) {
 	items := v.getItemsFromIDs(ids)
 	if len(items) == 0 {
-		zlog.Fatal(nil, "SGV EditItems: no items. ids:", ids, v.Hierarchy())
+		zlog.Fatal(nil, "SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
-	title += v.NameOfXItemsFunc(ids, true)
-	zfields.PresentOKCancelStructSlice(&items, v.EditParameters, title, zpresent.AttributesNew(), func(ok bool) bool {
-		if !ok {
-			return true
-		}
-		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
-			v.StoreChangedItemsFunc(items)
-		}
-		// zlog.Info("Edited items:", zlog.Full(v.filteredSlice))
-		return true
-	})
+	title := "Edit " + v.NameOfXItemsFunc(ids, true)
+	v.EditItems(items, title, false, false)
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
 	// ids := v.Grid.SelectedIDs()
 }
 
-func (v *SliceGridView[S]) EditSingleItem(ns S, title string, isEditOnNewStruct bool) {
+func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool) {
 	params := v.EditParameters
 	if params.LabelizeWidth == 0 {
 		params.LabelizeWidth = 120
 	}
 	params.IsEditOnNewStruct = isEditOnNewStruct
-	zfields.PresentOKCancelStruct(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
-		if ok {
-			go func() {
-				if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
-					v.StoreChangedItemsFunc([]S{ns})
-				}
-			}()
+	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
+		if !ok {
+			return true
+		}
+		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
+			v.StoreChangedItemsFunc(ns)
+		}
+		if selectAfterEditing {
+			var ids []string
+			for _, n := range ns {
+				ids = append(ids, n.GetStrID())
+			}
+			v.Grid.SelectCells(ids, true)
 		}
 		return true
 	})
@@ -520,20 +514,21 @@ func (v *SliceGridView[S]) addNewItem() {
 	if initer != nil {
 		initer.InitZFieldStruct()
 	}
-	v.EditSingleItem(ns, title, true)
+	v.EditItems([]S{ns}, title, true, true)
 }
 
-func (v *SliceGridView[S]) duplicateItem(name string, id string) {
-	var a any
-	title := "Duplicate " + name + ":"
-	ns := v.getItemsFromIDs([]string{id})[0]
-	a = &ns
-	initer, _ := a.(zfields.StructInitializer)
-	zlog.Info("SGV duplicateItem:", initer != nil)
-	if initer != nil {
-		initer.InitZFieldStruct()
+func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
+	var newItems []S
+	title := "Duplicate " + nitems + ":"
+	for _, o := range v.getItemsFromIDs(ids) {
+		var n = o
+		initer := zfields.GetStructInitializer(&n)
+		if initer != nil {
+			initer.InitZFieldStruct()
+		}
+		newItems = append(newItems, n)
 	}
-	v.EditSingleItem(ns, title, false)
+	v.EditItems(newItems, title, false, true)
 }
 
 func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
@@ -650,9 +645,10 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			if v.options&AllowDuplicate != 0 && len(ids) == 1 {
+			var s S
+			if v.options&AllowDuplicate != 0 && zfields.GetStructInitializer(&s) != nil {
 				del := zmenu.MenuedSCFuncAction("Duplicate "+nitems+"…", 'D', 0, func() {
-					v.duplicateItem(nitems, ids[0])
+					v.duplicateItems(nitems, ids)
 				})
 				items = append(items, del)
 			}
@@ -665,7 +661,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
 					// zlog.Info("Edit items:", ids)
-					v.EditItems(ids)
+					v.EditItemIDs(ids)
 				})
 				items = append(items, edit)
 			}
@@ -689,7 +685,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItemsForCell(id string) []zmenu.Menu
 	if v.options&AllowEdit != 0 {
 		edit := zmenu.MenuedSCFuncAction("Edit "+name, 'E', 0, func() {
 			// zlog.Info("Edit item:", id)
-			v.EditItems(ids)
+			v.EditItemIDs(ids)
 		})
 		items = append(items, edit)
 	}
