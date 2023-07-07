@@ -10,10 +10,10 @@ package zapp
 
 import (
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zprocess"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -88,7 +88,5 @@ func GetDocumentationValues() zdict.Dict {
 
 // MemoryUsed returns the memstats System useage TODO: Use combination av values?
 func MemoryUsed() int64 {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	return int64(m.Sys)
+	return zprocess.MemoryBytesUsedByProcess(int64(os.Getpid()))
 }
