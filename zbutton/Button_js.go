@@ -4,8 +4,10 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -37,7 +39,7 @@ func New(text string) *Button {
 	return v
 }
 
-func (v *Button) MakeEnterDefault() {
+func (v *Button) MakeReturnKeyDefault() {
 	v.SetStroke(2, zgeo.ColorNew(0.4, 0.4, 1, 1), true)
 	v.SetCorner(6)
 	v.SetJSStyle("border", "none")
@@ -45,16 +47,24 @@ func (v *Button) MakeEnterDefault() {
 	// style.Set("boxSizing", "border-box")
 
 	//	v.margin.Size.H += 4
-	// ztimer.StartIn(0.01, func() {
-	// 	win := zwindow.FromNativeView(&v.NativeView)
-	// 	win.AddKeypressHandler(v.View, func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-	// 		if key == zkeyboard.KeyReturn && mod == zkeyboard.ModifierNone {
-	// 			v.Element.Call("click")
-	// 			return true
-	// 		}
-	// 		return false
-	// 	})
-	// })
+	ztimer.StartIn(0.01, func() {
+		win := zwindow.FromNativeView(&v.NativeView)
+		win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
+			foc := v.RootParent().GetFocusedChildView(false)
+			if foc != nil {
+				tv, _ := foc.(*ztext.TextView)
+				if tv != nil && tv.MaxLines() > 1 {
+					return false
+				}
+			}
+			if down && km.Key == zkeyboard.KeyReturn && km.Modifier == zkeyboard.ModifierNone {
+				zlog.Info("Default click")
+				v.Element.Call("click")
+				return true
+			}
+			return false
+		})
+	})
 }
 
 func (v *Button) MakeEscapeCanceler() {

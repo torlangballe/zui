@@ -252,7 +252,7 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
 	okButton := addButton(bar, stack, "OK", true, done)
-	okButton.MakeEnterDefault()
+	okButton.MakeReturnKeyDefault()
 	cancelButton.MakeEscapeCanceler()
 
 	att.Modal = true

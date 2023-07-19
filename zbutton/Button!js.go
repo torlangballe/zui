@@ -10,7 +10,7 @@ func New(text string) *Button {
 	return nil
 }
 
-func (v *Button) MakeEnterDefault() {
+func (v *Button) MakeReturnKeyDefault() {
 }
 
 func (v *Button) SetPressedHandler(handler func()) {
