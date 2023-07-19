@@ -950,9 +950,6 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f == nil {
 			return true
 		}
-		if f.Flags&FlagIsForZDebugOnly != 0 {
-			zlog.Info("zdebug:", f.Name, zui.DebugOwnerMode)
-		}
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
