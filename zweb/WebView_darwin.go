@@ -27,11 +27,15 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 }
 
 func (v *WebView) SetLogPath(path string) {
-	C.WebViewSetLogPath(v.webViewPtr, C.CString(path))
+	cpath := C.CString(title)
+	C.WebViewSetLogPath(v.webViewPtr, cpath)
+	C.free(unsafe.Pointer(cpath))
 }
 
 func (v *WebView) SetURL(surl string) {
+	curl := C.CString(surl)
 	C.WebViewSetURL(v.webViewPtr, C.CString(surl))
+	C.free(unsafe.Pointer(curl))
 }
 
 func WebViewClearAllCaches() {

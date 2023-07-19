@@ -71,7 +71,9 @@ func (w *Window) Activate() {
 }
 
 func (w *Window) SetTitle(title string) {
-	C.SetTitle(w.windowPtr, C.CString(title))
+	ctitle := C.CString(title)
+	C.SetTitle(w.windowPtr, ctitle)
+	C.free(unsafe.Pointer(ctitle))
 }
 
 func (w *Window) AddView(v View) {
