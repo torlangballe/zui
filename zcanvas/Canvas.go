@@ -2,11 +2,13 @@ package zcanvas
 
 import (
 	"math"
-	"sync"
+	"strconv"
 
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 //	Created by Tor Langballe on /21/10/15.
@@ -18,6 +20,14 @@ type Canvas struct {
 	currentMatrix    zgeo.Matrix // is currentTransform...
 	DownsampleImages bool
 }
+
+type measurement struct {
+	Font zgeo.Font
+	Text string
+}
+
+var measuredTexts = zcache.NewWithExpiry(60*60, false)
+var measureCanvas *Canvas
 
 func (c *Canvas) Size() zgeo.Size {
 	return c.size
@@ -100,35 +110,21 @@ func canvasCreateGradientLocations(colors int) []float64 {
 	return locations
 }
 
-// measureTextCanvases is a pool of canvases to do text measurements in. Might not actually speed things up in DOM, which maybe is single-thread
-type measurement struct {
-	Font zgeo.Font
-	Text string
-}
-
-var measuredTexts = map[measurement]zgeo.Size{}
-var measureTextMutex sync.Mutex
-var measureCanvas *Canvas
-
 func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
-	measureTextMutex.Lock()
 	m := measurement{Font: *font, Text: text}
-	s, got := measuredTexts[m]
-	measureTextMutex.Unlock()
+	hash := zstr.HashAnyToInt64(m, "")
+	key := strconv.FormatInt(hash, 16)
+	var s zgeo.Size
+	got := measuredTexts.Get(&s, key)
 	if got {
-		// zlog.Info("canvas get Text size, using cache:", text)
 		return s
 	}
-	// zlog.Info("canvas measure text")
 	if measureCanvas == nil {
 		measureCanvas = New()
 		measureCanvas.SetSize(zgeo.Size{800, 100})
 	}
 	s = measureCanvas.MeasureText(text, font)
-	measureTextMutex.Lock()
-	// fmt.Println("canvas measure lock time 2:", time.Since(start), len(measureTextCanvases))
-	measuredTexts[m] = s
-	measureTextMutex.Unlock()
+	measuredTexts.Put(key, s)
 	return s
 }
 
