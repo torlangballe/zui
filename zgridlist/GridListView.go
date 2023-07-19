@@ -72,7 +72,6 @@ type GridListView struct {
 
 	children         map[string]zview.View
 	selectedIDs      map[string]bool
-	appending        bool
 	ignoreMouseEvent bool
 	cellsView        *zcustom.CustomView
 	margin           zgeo.Rect
@@ -270,14 +269,15 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		// zlog.Info("updateCellBackground4", min, max, "xy:", x, y, "inx:", index)
 		col = v.PressedColor
 	}
-	if v.CurrentHoverID == cid && v.HoverColor.Valid {
-		col = v.HoverColor
-	} else if v.selectedIDs[cid] && v.SelectColor.Valid {
+	if v.selectedIDs[cid] && v.SelectColor.Valid {
 		col = v.SelectColor
 	}
 	if col.Valid {
 		if v.MultiplyColorAlternate != 0 && x%2 != y%2 {
 			col = col.MultipliedBrightness(v.MultiplyColorAlternate)
+		}
+		if v.CurrentHoverID == cid && v.HoverColor.Valid {
+			col = col.Mixed(v.HoverColor, 0.5)
 		}
 		child := v.children[cid]
 		if child != nil {
@@ -285,15 +285,7 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	if v.BorderColor.Valid {
-		a := zgeo.BottomRight
-		// if x == 0 {
-		// 	a |= zgeo.Left
-		// }
-		// if y == 0 {
-		// 	a |= zgeo.Top
-		// }
-		child.Native().SetStrokeSide(1, v.BorderColor, a, true) // we set if for non also, in case it moved
-		// child.Native().SetOutline(1, v.BorderColor, 0)
+		child.Native().SetStrokeSide(1, v.BorderColor, zgeo.BottomRight, true) // we set if for non also, in case it moved
 	}
 	if v.UpdateSelectionFunc != nil {
 		v.UpdateSelectionFunc(v, cid)
@@ -429,22 +421,18 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			v.SetHoverID("")
 			break
 		}
-		v.appending = (v.MultiSelectable && (zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0))
-		if !v.appending {
-			clear := (len(v.selectedIDs) == 1 && v.selectedIDs[id])
-			v.selectedIndex = -1
-			v.selectedIDs = map[string]bool{}
-			if clear {
-				v.SetHoverID("")
-				return false
-			}
-			v.pressStartIndex = index
-		} else {
-			v.pressStartIndex = v.selectedIndex
-			if v.pressStartIndex == -1 {
-				v.pressStartIndex = index
-			}
+		if zkeyboard.ModifiersAtPress&zkeyboard.ModifierShift != 0 && len(v.selectedIDs) != 0 {
+			v.shiftAppendSelection(index)
+			break
 		}
+		clear := (len(v.selectedIDs) == 1 && v.selectedIDs[id])
+		v.selectedIndex = -1
+		v.selectedIDs = map[string]bool{}
+		if clear {
+			v.SetHoverID("")
+			return false
+		}
+		v.pressStartIndex = index
 		v.pressEndIndex = v.pressStartIndex
 	case zbool.Unknown:
 		// zlog.Info("updateCellBackground?", id, v.ignoreMouseEvent, v.MultiSelectable)
@@ -486,6 +474,27 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		v.HandleSelectionChangedFunc()
 	}
 	return eventHandled
+}
+
+func (v *GridListView) shiftAppendSelection(clickIndex int) {
+	min := -1
+	max := -1
+	for id, _ := range v.selectedIDs {
+		index := v.IndexOfID(id)
+		if min == -1 || min > index {
+			min = index
+		}
+		if max == -1 || max < index {
+			max = index
+		}
+	}
+	s, e := zint.MinMax(clickIndex, min)
+	if clickIndex > min {
+		s, e = zint.MinMax(max, clickIndex)
+	}
+	for i := s; i <= e; i++ {
+		v.selectedIDs[v.IDAtIndexFunc(i)] = true
+	}
 }
 
 func (v *GridListView) CellRects(cellID string) (fouter, finner zgeo.Rect) {
