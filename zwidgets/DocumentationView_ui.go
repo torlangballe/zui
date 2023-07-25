@@ -122,6 +122,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 
 	attr := zpresent.AttributesNew()
 	attr.Options = opts
+	attr.FocusView = v.WebView.Bar
 	if modal {
 		attr.ModalCloseOnOutsidePress = true
 		attr.Modal = true

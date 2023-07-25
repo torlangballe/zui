@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
@@ -47,6 +48,20 @@ func (v *WebView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return v.minSize
 }
 
+func (v *WebView) ReadyToShow(beforeWindow bool) {
+	if beforeWindow {
+		return
+	}
+	win := zwindow.FromNativeView(&v.NativeView)
+	win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
+		if km.Key == 'R' && km.Modifier == zkeyboard.ModifierAlt|zkeyboard.ModifierControl {
+			zlog.Info("Refresh")
+			v.SetURL(v.url)
+		}
+		return true
+	})
+}
+
 func (v *WebView) MakeBar() *zcontainer.StackView {
 	v.Bar = zcontainer.StackViewHor("bar")
 	v.Bar.SetSpacing(8)
@@ -78,10 +93,9 @@ func (v *WebView) MakeBar() *zcontainer.StackView {
 	// v.Bar.Add(v.Forward, zgeo.CenterLeft)
 
 	if zui.DebugOwnerMode {
-		v.Refresh = zimageview.New(nil, "images/refresh.png", zgeo.SizeBoth(DefaultBarIconSize))
+		v.Refresh = zimageview.New(nil, "images/zcore/refresh.png", zgeo.SizeBoth(DefaultBarIconSize))
 		v.Refresh.SetPressedHandler(func() {
 			v.SetURL(v.url)
-			// zlog.Info("refresh")
 		})
 		v.Refresh.DownsampleImages = true
 		v.Bar.Add(v.Refresh, zgeo.CenterRight)
