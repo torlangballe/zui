@@ -113,8 +113,8 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			if !sliceField.CanInterface() || !val.CanInterface() {
 				continue
 			}
+			setupWidgeter(f)
 			if !reflect.DeepEqual(sliceField.Interface(), val.Interface()) {
-				// zlog.Info(f.Name, i, index, "not-equal", sliceField.Interface(), val.Interface())
 				if f.IsStatic() {
 					if val.Kind() == reflect.Slice {
 						accumilateSlice(val, sliceField)

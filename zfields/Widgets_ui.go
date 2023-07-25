@@ -76,6 +76,10 @@ func (a ActivityWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
+func (a SetImagesWidgeter) SetupField(f *Field) {
+	f.Flags |= FlagIsStatic
+}
+
 func (a SetImagesWidgeter) Create(f *Field) zview.View {
 	f.Flags |= FlagIsStatic
 	v := zwidgets.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
