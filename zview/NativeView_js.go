@@ -938,6 +938,10 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 	v.JSCall("appendChild", e)
 }
 
+func (v *NativeView) Press() {
+	v.Element.Call("click")
+}
+
 func (v *NativeView) HasPressedDownHandler() bool {
 	return v.JSGet("onmousedown").IsNull()
 }

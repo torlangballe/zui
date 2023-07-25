@@ -59,7 +59,8 @@ func (v *Button) MakeReturnKeyDefault() {
 			}
 			if down && km.Key == zkeyboard.KeyReturn && km.Modifier == zkeyboard.ModifierNone {
 				zlog.Info("Default click")
-				v.Element.Call("click")
+				// v.Element.Call("click")
+				v.Press()
 				return true
 			}
 			return false
@@ -72,7 +73,8 @@ func (v *Button) MakeEscapeCanceler() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
 			if down && km.Key == zkeyboard.KeyEscape && km.Modifier == zkeyboard.ModifierNone {
-				v.Element.Call("click")
+				// v.Element.Call("click")
+				v.Press()
 				return true
 			}
 			return false
