@@ -129,7 +129,7 @@ func (v *CalendarView) Init(view zview.View) {
 		return zcontainer.HandleOutsideShortcutRecursively(v, km)
 	})
 	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v, func(km zkeyboard.KeyMod, down bool) bool {
-		if km.Key == zkeyboard.KeyCommand {
+		if km.Key == zkeyboard.KeyCommandKey {
 			showSettings(v, v.settingsGear, down)
 		}
 		return false

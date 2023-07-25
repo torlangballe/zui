@@ -42,9 +42,9 @@ const (
 	KeyUpArrow    = 38
 	KeyDownArrow  = 40
 	KeyShiftKey   = 16
-	KeyControl    = 17
-	KeyAlt        = 18
-	KeyCommand    = 91
+	KeyControlKey = 17
+	KeyAltKey     = 18
+	KeyCommandKey = 91
 )
 
 const (
