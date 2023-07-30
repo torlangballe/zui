@@ -1322,7 +1322,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			title = ""
 		}
 		_, lstack, cell = zguiutil.Labelize(view, title, labelizeWidth, cell.Alignment)
-		// updateItemLocalToolTip(f, v.data, lstack)
+		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
 	if useMinWidth {
