@@ -1099,7 +1099,12 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		if rval.IsZero() {
 			if !v.params.MultiSliceEditInProgress {
 				if len(enum) > 0 {
-					rval.Set(reflect.ValueOf(enum[0].Value))
+					rv := reflect.ValueOf(enum[0].Value)
+					if rv.IsValid() {
+						rval.Set(rv)
+					} else {
+						rval.Set(reflect.Zero(rval.Type()))
+					}
 				}
 			} else {
 				var zero bool
