@@ -109,7 +109,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			r := rect
 			if attributes.PlaceOverView != nil {
 				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone)
-				attributes.PlaceOverView.Native().RootParent()
 				r = attributes.PlaceOverView.Native().AbsoluteRect().Align(size, attributes.Alignment, attributes.PlaceOverMargin)
 			} else if attributes.Pos != nil {
 				if attributes.Alignment == zgeo.AlignmentNone {
