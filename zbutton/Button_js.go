@@ -54,7 +54,7 @@ func (v *Button) MakeReturnKeyDefault() {
 			if !down {
 				return false
 			}
-			top := zwindow.TopView(win).Native()
+			top := v.RootParent()
 			foc := top.GetFocusedChildView(false)
 			if foc != nil {
 				tv, _ := foc.(*ztext.TextView)
