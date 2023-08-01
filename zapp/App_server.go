@@ -8,6 +8,7 @@ package zapp
 
 import (
 	"embed"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -52,6 +53,14 @@ func Init() {
 
 func AddWWWFileServer(f embed.FS) {
 	wwwEmbeds = append(wwwEmbeds, f)
+}
+
+func AllEmbeddedWebFS() []fs.FS {
+	var f []fs.FS
+	for _, e := range wwwEmbeds {
+		f = append(f, e)
+	}
+	return f
 }
 
 // FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
