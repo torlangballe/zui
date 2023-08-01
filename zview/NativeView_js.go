@@ -459,6 +459,7 @@ func FindChildWithElement(root *NativeView, e js.Value) View {
 	RangeAllChildrenFunc(root.View, true, func(view View) bool {
 		n := view
 		id := n.Native().JSGet("id").String()
+
 		if id == foundID {
 			found = n
 			return false
@@ -1233,4 +1234,19 @@ func (nv *NativeView) EnvokeFocusIn() {
 	fin := js.Global().Get("Event").New("focusin")
 	// var focusin = new Event("focusin");
 	nv.JSCall("dispatchEvent", fin)
+}
+
+func (v *NativeView) RootParent() *NativeView {
+	all := v.AllParents()
+	if len(all) == 0 {
+		return v
+	}
+	i := 0
+	if all[i].ObjectName() == "window" {
+		i++
+	}
+	if all[i].ObjectName() == "$blocker" {
+		i++
+	}
+	return all[i]
 }

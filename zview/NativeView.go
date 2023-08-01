@@ -77,14 +77,6 @@ func (v *NativeView) PerformAddRemoveFuncs(add bool) {
 	}
 }
 
-func (v *NativeView) RootParent() *NativeView {
-	all := v.AllParents()
-	if len(all) == 0 {
-		return v
-	}
-	return all[0]
-}
-
 func (v *NativeView) IsParentOf(c *NativeView) bool {
 	for _, p := range c.AllParents() {
 		if p == v {
