@@ -161,3 +161,7 @@ func (win *Window) SetAddressBarPathAndArgs(spath string, args zdict.Dict) {
 	surl := win.GetURLWithNewPathAndArgs(spath, args)
 	win.SetAddressBarURL(surl)
 }
+
+func TopView(win *Window) zview.View {
+	return win.ViewsStack[len(win.ViewsStack)-1]
+}

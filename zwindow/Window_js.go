@@ -259,12 +259,12 @@ func setOnKeyEvent(win *Window, down bool) {
 		}
 		km := zkeyboard.GetKeyModFromEvent(args[0])
 		// zlog.Info("LEN:", len(win.ViewsStack), zlog.CallingStackString())
-		top := win.ViewsStack[len(win.ViewsStack)-1].Native()
+		top := TopView(win).Native()
 		if len(win.keyHandlers) != 0 {
 			var used bool
 			// zlog.Info("win key handlers:", km.Key, len(win.keyHandlers), top.Hierarchy())
 			for _, h := range win.keyHandlers {
-				// zlog.Info("win key2:", km.Key, h.view.Native().Hierarchy(), top.Hierarchy())
+				// zlog.Info("win key2:", down, km.Key, h.view.Native().Hierarchy(), top.Hierarchy())
 				if top == h.view.Native() || top.IsParentOf(h.view.Native()) {
 					focused := top.Native().GetFocusedChildView(true)
 					// zlog.Info("win key3:", km.Key, h.view.Native().Hierarchy(), top.Hierarchy(), focused != nil)
@@ -288,6 +288,7 @@ func setOnKeyEvent(win *Window, down bool) {
 					}
 				}
 			}
+			zlog.Info("win key4:", down, used)
 			if used {
 				event := args[0]
 				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
