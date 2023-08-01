@@ -50,10 +50,19 @@ func (v *Button) MakeReturnKeyDefault() {
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
-			foc := v.RootParent().GetFocusedChildView(false)
+			// zlog.Info("KeyPress", down, v.RootParent().Hierarchy())
+			if !down {
+				return false
+			}
+			top := zwindow.TopView(win).Native()
+			foc := top.GetFocusedChildView(false)
 			if foc != nil {
 				tv, _ := foc.(*ztext.TextView)
-				if tv != nil && tv.MaxLines() > 1 {
+				if tv != nil {
+					if tv.MaxLines() > 1 {
+						return false
+					}
+				} else if foc != v.View {
 					return false
 				}
 			}
