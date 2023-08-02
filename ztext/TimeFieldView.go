@@ -24,6 +24,7 @@ import (
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztime"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type TimeFieldFlags int
@@ -44,6 +45,7 @@ type TimeFieldView struct {
 	zcontainer.StackView
 	UseYear                bool
 	UseSeconds             bool
+	CallChangedOnUnfocus   bool
 	HandleValueChangedFunc func()
 	PreviousYearIfLessDays int
 	hourText               *TextView
@@ -158,6 +160,12 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		index := zview.BaseZIndex
 		if focused {
 			index = zview.BaseZIndex + 2
+		} else if v.CallChangedOnUnfocus {
+			ztimer.StartIn(0.1, func() {
+				if v.GetFocusedChildView(false) == nil {
+					v.HandleValueChangedFunc()
+				}
+			})
 		}
 		tv.SetZIndex(index)
 	})
