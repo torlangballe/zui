@@ -386,9 +386,12 @@ func (v *NativeView) SetInteractive(interactive bool) {
 // 	return false
 // }
 
+func getActiveElement(v *NativeView) js.Value {
+	return v.Document().Get("activeElement")
+}
+
 func (v *NativeView) IsFocused() bool {
-	f := zdom.DocumentJS.Get("activeElement")
-	return f.Equal(v.Element)
+	return getActiveElement(v).Equal(v.Element)
 }
 
 func (v *NativeView) Focus(focus bool) {
@@ -459,7 +462,6 @@ func FindChildWithElement(root *NativeView, e js.Value) View {
 	RangeAllChildrenFunc(root.View, true, func(view View) bool {
 		n := view
 		id := n.Native().JSGet("id").String()
-
 		if id == foundID {
 			found = n
 			return false
@@ -470,7 +472,7 @@ func FindChildWithElement(root *NativeView, e js.Value) View {
 }
 
 func (root *NativeView) GetFocusedChildView(andSelf bool) View {
-	e := zdom.DocumentJS.Get("activeElement")
+	e := getActiveElement(root)
 	if e.IsUndefined() {
 		return nil
 	}
@@ -905,7 +907,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 }
 
 func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(name string) bool, progress func(p float64)) {
-	e := zdom.DocumentJS.Call("createElement", "input")
+	e := v.Document().Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
 	// e.Set("accept", "*/*")
@@ -1020,7 +1022,7 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 		event = "onkeydown"
 	}
 	v.JSSet(event, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
-		if !v.GetWindowElement().Get("document").Call("hasFocus").Bool() {
+		if !v.Document().Call("hasFocus").Bool() {
 			return nil
 		}
 		if handler != nil {
@@ -1155,7 +1157,7 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 }
 
 func AddTextNode(v *NativeView, text string) {
-	textNode := zdom.DocumentJS.Call("createTextNode", text)
+	textNode := v.Document().Call("createTextNode", text)
 	v.JSCall("appendChild", textNode)
 	//	js.Value(*e).Call("appendChild", textNode)
 }
@@ -1164,16 +1166,18 @@ func AddView(parent, child *NativeView) {
 	parent.JSCall("appendChild", child.Element)
 }
 
-func (v *NativeView) GetWindowElement() js.Value {
+func (v *NativeView) Document() js.Value {
 	root := v
 	all := v.AllParents()
 	if len(all) > 1 {
 		root = all[0]
 	}
-	w := root.JSGet("ownerDocument").Get("defaultView")
-	// zlog.Info("NV.GetWindow:", w, root.ObjectName())
-	//	return windowsFindForElement(w)
-	return w
+	return root.JSGet("ownerDocument")
+}
+
+func (v *NativeView) GetWindowElement() js.Value {
+	d := v.Document()
+	return d.Get("defaultView")
 }
 
 func (v *NativeView) SetStyling(style zstyle.Styling) {
