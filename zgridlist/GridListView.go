@@ -136,12 +136,22 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 }
 
 func (v *GridListView) IndexOfID(id string) int {
-	for i := 0; i < v.CellCountFunc(); i++ {
+	count := v.CellCountFunc()
+	for i := 0; i < count; i++ {
 		if v.IDAtIndexFunc(i) == id {
 			return i
 		}
 	}
 	return -1
+}
+
+func (v *GridListView) AllIDs() []string {
+	count := v.CellCountFunc()
+	ids := make([]string, count, count)
+	for i := 0; i < count; i++ {
+		ids[i] = v.IDAtIndexFunc(i)
+	}
+	return ids
 }
 
 func (v *GridListView) IsSelected(id string) bool {
