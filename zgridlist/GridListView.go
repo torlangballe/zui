@@ -825,10 +825,8 @@ func (v *GridListView) ArrangeChildren() {
 	locSize := v.innerRect().Size
 	s := v.CalculatedGridSize(locSize)
 	r := zgeo.Rect{Size: zgeo.Size{locSize.W, s.H + 1}}
-	// r.Pos.X--
 	r.Pos.Y--
 	v.cellsView.SetRect(r)
-	// zlog.Info("glist.ArrangeChildren1", v.Hierarchy(), v.LocalRect().Size, v.cellsView.LocalRect().Size)
 	v.LayoutCells(false)
 }
 

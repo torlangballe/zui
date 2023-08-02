@@ -416,7 +416,6 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	if !update {
 		update = (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s, "") != zstr.HashAnyToInt64(*v.slicePtr, ""))
 	}
-	// zlog.Info("UpdateSlice:", update, len(s))
 	if update {
 		v.ForceUpdateSlice = false
 		*v.slicePtr = s
