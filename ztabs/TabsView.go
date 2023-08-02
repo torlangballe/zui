@@ -127,9 +127,14 @@ func (v *TabsView) AddItem(id, title, imagePath string, set bool, view zview.Vie
 }
 
 func (v *TabsView) SelectItem(id string, done func()) {
-	// zlog.Info("TabsSelect:", id, zlog.GetCallingStackString())
+	i := v.findItem(v.CurrentID)
+	if i != -1 {
+		item := v.items[i]
+		item.create(v.CurrentID, true)
+	}
 	if v.currentChild != nil {
 		v.RemoveChild(v.currentChild)
+		v.currentChild = nil
 	}
 	if v.CurrentID != "" {
 		v.setButtonOn(v.CurrentID, false)
