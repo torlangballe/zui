@@ -192,3 +192,25 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 	}
 	w.Write([]byte(spdf))
 }
+
+func (AppCalls) GetTopImages(args *zrpc.Unused, reply *[]string) error {
+	zfile.Walk(zrest.StaticFolder+"/images/", "*.png", zfile.WalkOptionsNone, func(fpath string, info os.FileInfo) error {
+		zstr.HasPrefix(fpath, zrest.StaticFolder+"/", &fpath)
+		*reply = append(*reply, fpath)
+		return nil
+	})
+	for _, f := range AllEmbeddedWebFS() {
+		fs.WalkDir(f, ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() || !strings.HasSuffix(path, ".png") {
+				return nil
+			}
+			zstr.HasPrefix(path, zrest.StaticFolder+"/", &path)
+			zstr.AddToSet(reply, path)
+			return nil
+		})
+	}
+	return nil
+}
