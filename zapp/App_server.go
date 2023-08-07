@@ -178,14 +178,15 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 		return
 	}
 	if html {
-		html, err := zmarkdown.ConvertToHTML(fullmd, name, "", GetDocumentationValues())
+		html, err := zmarkdown.ConvertToHTML(fullmd, prefix, name, "", GetDocumentationValues())
 		if err != nil {
 			zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, err, "converting")
 			return
 		}
 		w.Write([]byte(html))
+		return
 	}
-	spdf, err := zmarkdown.ConvertToPDF(fullmd, name, zrest.StaticFolder+"/doc/", GetDocumentationValues())
+	spdf, err := zmarkdown.ConvertToPDF(fullmd, prefix, name, zrest.StaticFolder+"/doc/", GetDocumentationValues())
 	if err != nil {
 		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, "error converting manual to pdf")
 		return

@@ -34,7 +34,7 @@ var (
 	AppMain                    *App   // AppMain is the main instance of app. Likely the ONLY one
 	DownloadPathPrefix         string // DownloadPathPrefix is the prefix to create a url to download something from the app
 	DocumentationValues        zdict.Dict
-	AddDocumentationValuesFunc func(zdict.Dict)
+	AddDocumentationValuesFunc func() zdict.Dict
 )
 
 // SetHandler sets the handler for the app (see handler) above
@@ -81,7 +81,9 @@ func GetDocumentationValues() zdict.Dict {
 		m[k] = v
 	}
 	if AddDocumentationValuesFunc != nil {
-		AddDocumentationValuesFunc(m)
+		for k, v := range AddDocumentationValuesFunc() {
+			m[k] = v
+		}
 	}
 	return m
 }
