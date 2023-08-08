@@ -87,8 +87,9 @@ func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) strin
 	// spath = zstr.Concat("/", zrest.AppURLPrefix, spath)
 	// u.Path = spath //path.Join(zrest.AppURLPrefix, spath)
 	uAdd, err := url.Parse(spath)
-	zlog.OnError(err)
-
+	if zlog.OnError(err) {
+		return ""
+	}
 	uBase.Path = uAdd.Path
 	vals := uBase.Query()
 	setValues(vals, uAdd.Query())
