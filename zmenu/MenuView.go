@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zwords"
 )
 
@@ -25,6 +26,7 @@ type MenuView struct {
 	selectedHandler func()
 	items           zdict.Items
 	currentValue    interface{}
+	storeKey        string
 }
 
 var menuViewHeight = 21.0
@@ -63,4 +65,12 @@ func (v *MenuView) MaxWidth() float64 {
 
 func (v *MenuView) SetMaxWidth(max float64) {
 	v.maxWidth = max
+}
+
+func (v *MenuView) SetStoreKey(key string) {
+	v.storeKey = key
+	a, got := zkeyvalue.DefaultStore.GetItemAsAny(v.storeKey)
+	if got {
+		v.SelectWithValue(a)
+	}
 }

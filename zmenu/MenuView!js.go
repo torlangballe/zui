@@ -7,7 +7,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-func NewView(name string, items zdict.Items, value interface{}) *MenuView {
+func NewView(name string, items zdict.Items, value any) *MenuView {
 	return &MenuView{}
 }
 
@@ -15,12 +15,12 @@ func (v *MenuView) SetSelectedHandler(handler func()) {}
 func (v *MenuView) Empty()                            {}
 func (v *MenuView) AddSeparator()                     {}
 
-func (v *MenuView) SetAndSelect(items zdict.NamedValues, value interface{}) {}
-func (v *MenuView) SelectWithValue(value interface{}) *MenuView             { return v }
+func (v *MenuView) SetAndSelect(items zdict.NamedValues, value any)         {}
+func (v *MenuView) SelectWithValue(value any) *MenuView                     { return v }
 func (v *MenuView) SetFont(font *zgeo.Font)                                 {}
-func (v *MenuView) AddItem(name string, value interface{})                  {}
-func (v *MenuView) RemoveItemByValue(value interface{})                     {}
-func (v *MenuView) ChangeNameForValue(name string, value interface{})       {}
+func (v *MenuView) AddItem(name string, value any)                          {}
+func (v *MenuView) RemoveItemByValue(value any)                             {}
+func (v *MenuView) ChangeNameForValue(name string, value any)               {}
 func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {}
 
 func menuViewGetHackedFontForSize(font *zgeo.Font) *zgeo.Font {

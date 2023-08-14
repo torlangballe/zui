@@ -13,10 +13,9 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
-	"github.com/torlangballe/zutil/zstr"
 )
 
-func NewView(name string, items zdict.Items, value interface{}) *MenuView {
+func NewView(name string, items zdict.Items, value any) *MenuView {
 	// zlog.Info("NewView:", name, value, reflect.TypeOf(value))
 	v := &MenuView{}
 	sel := zdom.DocumentJS.Call("createElement", "select")
@@ -25,33 +24,18 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	v.View = v
 	// v.SetNativeMargin(zgeo.RectFromXY2(0, 0, 0, -12))
 	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
-	var key string
-	item := items.FindValue(value)
-	if zstr.HasPrefix(name, "key:", &key) && key != "" && (value == nil || item == nil || item.Name == "") {
-		zlog.Info("NewMenuView:", name, value)
-		dict, _ := zkeyvalue.DefaultStore.GetDict(key)
-		for val := range dict {
-			for _, item := range items {
-				if fmt.Sprint(item.Value) == val {
-					value = item.Value
-					break
-				}
-			}
-		}
-	}
 	v.SetObjectName(name)
 	if len(items) > 0 {
 		v.UpdateItems(items, value, false)
 	}
-	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) any {
 		//			zlog.Info("menuview selected", v.ObjectName())
 		index := v.JSGet("selectedIndex").Int()
 		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
 		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
-		if key != "" {
-			dict := zdict.Dict{fmt.Sprint(v.currentValue): true}
-			zkeyvalue.DefaultStore.SetDict(dict, key, true)
+		if v.storeKey != "" {
+			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}
 		if v.selectedHandler != nil {
 			v.selectedHandler()
@@ -76,7 +60,7 @@ func (v *MenuView) AddSeparator() {
 	v.items = append(v.items, item)
 }
 
-func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
+func (v *MenuView) ChangeNameForValue(name string, value any) {
 	if zlog.ErrorIf(value == nil, v.ObjectName()) {
 		return
 	}
@@ -93,7 +77,7 @@ func (v *MenuView) ChangeNameForValue(name string, value interface{}) {
 	}
 }
 
-func (v *MenuView) AddItem(name string, value interface{}) {
+func (v *MenuView) AddItem(name string, value any) {
 	option := zdom.DocumentJS.Call("createElement", "option")
 	if name == MenuSeparatorID {
 		option.Set("disabled", true)
@@ -110,7 +94,7 @@ func (v *MenuView) AddItem(name string, value interface{}) {
 	v.JSCall("appendChild", option)
 }
 
-func (v *MenuView) RemoveItemByValue(value interface{}) {
+func (v *MenuView) RemoveItemByValue(value any) {
 	sval := fmt.Sprint(value)
 	options := v.JSGet("options")
 	for i, item := range v.items {
@@ -145,7 +129,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
 
-func (v *MenuView) SelectWithValue(value interface{}) {
+func (v *MenuView) SelectWithValue(value any) {
 	// zlog.Info("MV SelectWithValue:", value)
 	if value == nil {
 		if len(v.items) != 0 {
@@ -169,7 +153,7 @@ func (v *MenuView) SelectWithValue(value interface{}) {
 	}
 }
 
-// func (v *MenuView) IDAndValue() (id string, value interface{}) {
+// func (v *MenuView) IDAndValue() (id string, value any) {
 // 	return v.oldID, v.currentValue
 // }
 
