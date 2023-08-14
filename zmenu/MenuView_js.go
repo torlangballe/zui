@@ -41,7 +41,7 @@ func NewView(name string, items zdict.Items, value interface{}) *MenuView {
 	}
 	v.SetObjectName(name)
 	if len(items) > 0 {
-		v.UpdateItems(items, value)
+		v.UpdateItems(items, value, false)
 	}
 	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		//			zlog.Info("menuview selected", v.ObjectName())
@@ -131,7 +131,7 @@ func (v *MenuView) RemoveItemByValue(value interface{}) {
 	}
 }
 
-func (v *MenuView) UpdateItems(items zdict.Items, value any) {
+func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
 	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items), value)
 	v.items = items // must be before v.getNumberOfItemsString
 	var str string

@@ -306,38 +306,6 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	}
 }
 
-/*
-func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
-	// zlog.Info("FV.Update:", v.Hierarchy(), data)
-	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
-		v.data = data
-	}
-	if dontOverwriteEdited && IsFieldViewEditedRecently(v) {
-		zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
-			if sf.Type.Kind() == reflect.Slice {
-				v.updateField(index, rval, sf, dontOverwriteEdited) // even if edited recently, we call v.updateField on slices, to set new address of each slice in FieldView.data
-			}
-			return true
-		})
-		zlog.Info("FV No Update because recently edited", v.Hierarchy())
-		return
-	}
-	fh, _ := v.data.(ActionHandler)
-	sview := v.View
-	if fh != nil {
-		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
-	}
-	zreflect.ForEachField(v.data, true, func(index int, rval reflect.Value, sf reflect.StructField) bool {
-		v.updateField(index, rval, sf, dontOverwriteEdited)
-		return true
-	})
-	// call general one with no id. Needs to be after above loop, so values set
-	if fh != nil {
-		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedAction, View: &sview})
-	}
-}
-*/
-
 func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited bool) bool {
 	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
 	var valStr string
@@ -384,7 +352,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
-
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]

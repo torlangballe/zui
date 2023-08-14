@@ -147,7 +147,7 @@ func (v *FieldSliceView) updateMenu() {
 		str := fmt.Sprint(rval.Interface())
 		menuItems.Add(str, i)
 	}
-	v.menu.UpdateItems(menuItems, v.currentIndex)
+	v.menu.UpdateItems(menuItems, v.currentIndex, false)
 }
 
 func (v *FieldSliceView) handleAddItem() {
