@@ -81,7 +81,6 @@ func FromPath(spath string, got func(*Image)) {
 		}
 		return
 	}
-	// zlog.Info("FromPath before load:", spath)
 	i.load(spath, func(success bool) {
 		// zlog.Info("FromPath loaded:", success, got != nil, spath)
 		if !success {

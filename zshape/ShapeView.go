@@ -212,10 +212,10 @@ func (v *ShapeView) SetImage(image *zimage.Image, spath string, done func(i *zim
 			v.loading = false
 			// zlog.Info("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.image = i // we must set it here, or it's not set yet in done() below
-			v.Expose()
 			if done != nil {
 				done(i)
 			}
+			v.Expose()
 		})
 	}
 }
