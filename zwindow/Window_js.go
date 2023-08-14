@@ -288,7 +288,6 @@ func setOnKeyEvent(win *Window, down bool) {
 					}
 				}
 			}
-			zlog.Info("win key4:", down, used)
 			if used {
 				event := args[0]
 				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
