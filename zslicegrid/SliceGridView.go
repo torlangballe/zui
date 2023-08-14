@@ -148,16 +148,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
 		v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	}
-	// if options&AddEdit != 0 {
-	// 	v.editButton = zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.Size{18, 18})
-	// 	v.editButton.SetObjectName("edit")
-	// 	v.Bar.Add(v.editButton, zgeo.CenterLeft)
-	// }
-	// if options&AddDelete != 0 {
-	// 	v.deleteButton = zimageview.New(nil, "images/zcore/trash-dark-gray.png", zgeo.Size{18, 18})
-	// 	v.deleteButton.SetObjectName("delete")
-	// 	v.Bar.Add(v.deleteButton, zgeo.CenterLeft)
-	// }
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
 		v.SearchField.TextView.SetChangedHandler(func() {
@@ -205,9 +195,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
-		oneID := v.Grid.CurrentHoverID
-		if oneID == "" && len(v.Grid.SelectedIDs()) == 1 {
+		var oneID string
+		if len(v.Grid.SelectedIDs()) == 1 {
 			oneID = v.Grid.SelectedIDs()[0]
+		}
+		if oneID == "" && len(v.Grid.SelectedIDs()) == 0 {
+			oneID = v.Grid.CurrentHoverID
 		}
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
@@ -428,14 +421,6 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 		v.doFilterAndSort(*v.slicePtr)
 		return
 	}
-	// if v.editButton != nil {
-	// 	v.editButton.SetPressedHandler(v.HandleEditButtonPressed)
-	// }
-	// if v.deleteButton != nil {
-	// 	v.deleteButton.SetPressedHandler(func() {
-	// 		v.DeleteItemsAsk(v.Grid.SelectedIDs())
-	// 	})
-	// }
 	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
 
 	// v.Grid.UpdateCell = v.UpdateCell
@@ -474,16 +459,18 @@ func (v *SliceGridView[S]) UpdateSliceWithSelf() {
 	v.UpdateSlice(*v.slicePtr)
 }
 
-func (v *SliceGridView[S]) HandleEditAction() {
-	ids := v.Grid.SelectedIDs()
-	if len(ids) == 0 {
-		if v.Grid.CurrentHoverID == "" {
-			return
-		}
-		ids = []string{v.Grid.CurrentHoverID}
-	}
-	v.EditItemIDs(ids)
-}
+// func (v *SliceGridView[S]) HandleEditAction() {
+// 	ids := v.Grid.SelectedIDs()
+// 	zlog.Info("HandleEditAction:", len(ids))
+// 	if len(ids) == 0 {
+// 		zlog.Info("No Selected! Using hover")
+// 		if v.Grid.CurrentHoverID == "" {
+// 			return
+// 		}
+// 		ids = []string{v.Grid.CurrentHoverID}
+// 	}
+// 	v.EditItemIDs(ids)
+// }
 
 func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	var items []S
@@ -689,7 +676,6 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			}
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
-					// zlog.Info("Edit items:", ids)
 					v.EditItemIDs(ids)
 				})
 				items = append(items, edit)
@@ -713,7 +699,6 @@ func (v *SliceGridView[S]) CreateDefaultMenuItemsForCell(id string) []zmenu.Menu
 	}
 	if v.options&AllowEdit != 0 {
 		edit := zmenu.MenuedSCFuncAction("Edit "+name, 'E', 0, func() {
-			// zlog.Info("Edit item:", id)
 			v.EditItemIDs(ids)
 		})
 		items = append(items, edit)
