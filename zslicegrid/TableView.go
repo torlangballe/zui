@@ -37,22 +37,22 @@ type TableView[S zstr.StrIDer] struct {
 	HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
 	FieldParameters       zfields.FieldViewParameters
 	fields                []zfields.Field // the fields in an S struct used to generate columns for the table
-	addFlags              OptionType
+	// addFlags              OptionType
 }
 
-func TableViewNew[S zstr.StrIDer](s *[]S, name string, addFlags OptionType) *TableView[S] {
+func TableViewNew[S zstr.StrIDer](s *[]S, name string, options OptionType) *TableView[S] {
 	v := &TableView[S]{}
-	v.Init(v, s, name, addFlags)
+	v.Init(v, s, name, options)
 	return v
 }
 
-func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags OptionType) {
-	if addFlags&AddBarInHeader != 0 {
-		zlog.Assert(addFlags&AddHeader != 0)
+func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options OptionType) {
+	if options&AddBarInHeader != 0 {
+		zlog.Assert(options&AddHeader != 0)
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.SetSpacing(4)
 	}
-	v.SliceGridView.Init(view, s, storeName, addFlags)
+	v.SliceGridView.Init(view, s, storeName, options)
 	v.Grid.MaxColumns = 1
 	v.Grid.SetMargin(zgeo.Rect{})
 	v.ColumnMargin = 5
@@ -68,7 +68,6 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 		return false
 	})
 
-	v.addFlags = addFlags
 	// v.DefaultHeight = 30
 	cell, _ := v.FindCellWithView(v.Grid)
 	cell.Margin.H = -1
@@ -76,14 +75,14 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, addFlags 
 		r := v.createRow(id)
 		return r
 	}
-	if v.addFlags&AddHeader != 0 {
+	if v.options&AddHeader != 0 {
 		v.Header = zheader.NewView(v.ObjectName() + ".header")
 		index := 0
-		if v.addFlags&AddBar != 0 {
+		if v.options&AddBar != 0 {
 			index = 1
 		}
 		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, index, false)
-		if v.Bar != nil && addFlags&AddBarInHeader != 0 {
+		if v.Bar != nil && options&AddBarInHeader != 0 {
 			v.Header.Add(v.Bar, zgeo.CenterRight).Free = true
 			v.Bar.SetZIndex(200)
 		}
@@ -134,7 +133,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) {
 		v.fields = append(v.fields, *f)
 	})
-	if v.addFlags&AddHeader != 0 {
+	if v.options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			// zlog.Info("SORT TABLE:", v.Hierarchy())
 			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)

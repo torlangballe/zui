@@ -6,6 +6,7 @@
 package zslicegrid
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/torlangballe/zui/zalert"
@@ -81,6 +82,35 @@ const (
 	AllowAllEditing    = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
 
+func (o OptionType) String() string {
+	str := ""
+	if o&AddBar != 0 {
+		str += "bar "
+	}
+	if o&AddSearch != 0 {
+		str += "search "
+	}
+	if o&AddMenu != 0 {
+		str += "menu "
+	}
+	if o&AddToggleDirection != 0 {
+		str += "toggle "
+	}
+	if o&AllowNew != 0 {
+		str += "new "
+	}
+	if o&AllowDuplicate != 0 {
+		str += "dup "
+	}
+	if o&AllowDelete != 0 {
+		str += "del "
+	}
+	if o&AllowEdit != 0 {
+		str += "edit "
+	}
+	return strings.TrimRight(str, " ")
+}
+
 // NewView creates a new SliceGridView using v.Init()
 func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
@@ -90,7 +120,6 @@ func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (
 
 // Init sets up an allocated SliceGridView with a slice, storeName for hierarchy state, and options for setup
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {
-	v.options = options
 	v.StackView.Init(view, true, "slice-grid-view")
 	v.SetObjectName(storeName)
 	v.SetSpacing(0)
@@ -111,6 +140,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&(AddSearch|AddMenu|AddToggleDirection) != 0 {
 		options |= AddBar
 	}
+	v.options = options
 	if options&AddBar != 0 {
 		// zlog.Info("AddBar!!!")
 		v.Bar = zcontainer.StackViewHor("bar")
