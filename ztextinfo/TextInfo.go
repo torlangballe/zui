@@ -145,7 +145,6 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 				allLines = append(allLines, str)
 				widths = append(widths, s.W)
 			}
-			// zlog.Info("SPLIT!", splitToLines, ti.Rect.Size, s)
 		} else {
 			allLines = append(allLines, str)
 		}

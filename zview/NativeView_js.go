@@ -398,6 +398,9 @@ func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
 	// zlog.Info("NV FOcus:", v.Hierarchy(), focus, zlog.CallingStackString())
 	v.JSCall("focus")
+	// ztimer.StartIn(2, func() {
+	// 	v.EnvokeFocusIn()
+	// })
 }
 
 func (v *NativeView) CanTabFocus() bool {
@@ -435,20 +438,23 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 
 func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {
 	if in {
-		handleFocusInChildren(root, "focusout", true, handle)
+		// zlog.Info("Set HandleFocusInChildren", root.Hierarchy())
+		handleFocusInChildren(root, "focusin", true, handle)
 	}
 	if out {
-		handleFocusInChildren(root, "focusin", false, handle)
+		handleFocusInChildren(root, "focusout", false, handle)
 	}
 }
 
 func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, handle func(view View, focused bool)) {
 	root.Element.Call("addEventListener", eventName, js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		e := args[0].Get("relatedTarget")
+		// zlog.Info("child focused", eventName)
+		e := args[0].Get("target")
 		if e.IsNull() || e.IsUndefined() {
 			return nil
 		}
 		found := FindChildWithElement(root, e)
+		// zlog.Info("child focused", root.Hierarchy(), eventName, e.Get("id").String(), found)
 		if found != nil {
 			handle(found, forFocused)
 		}
@@ -560,7 +566,6 @@ func (v *NativeView) Font() *zgeo.Font {
 }
 
 func (v *NativeView) SetText(text string) {
-	// zlog.Info("NV SetText:", v.Hierarchy(), text, zlog.CallingStackString())
 	v.JSSet("innerText", text)
 }
 
@@ -1235,8 +1240,8 @@ func (nv *NativeView) ShowBackface(visible bool) {
 }
 
 func (nv *NativeView) EnvokeFocusIn() {
+	zlog.Info("EnvokeFocusIn", nv.Hierarchy())
 	fin := js.Global().Get("Event").New("focusin")
-	// var focusin = new Event("focusin");
 	nv.JSCall("dispatchEvent", fin)
 }
 

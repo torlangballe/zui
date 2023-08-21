@@ -188,7 +188,6 @@ func (w *Window) Activate() {
 // }
 
 func (w *Window) SetTitle(title string) {
-	// zlog.Info("setttile", w.Element, title)
 	w.Element.Get("document").Set("title", title)
 }
 
