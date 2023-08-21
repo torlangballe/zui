@@ -153,14 +153,14 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					}
 					ShowErrorFunc("Error opening window.", sub)
 				}
+				if attributes.PresentedFunc != nil {
+					attributes.PresentedFunc(nil)
+				}
 				v.Native().Focus(true)
 				if attributes.FocusView != nil {
 					attributes.FocusView.Native().Focus(true)
 				} else {
 					zcontainer.FocusNext(v, true, true)
-				}
-				if attributes.PresentedFunc != nil {
-					attributes.PresentedFunc(nil)
 				}
 				if attributes.ClosedFunc != nil {
 					attributes.ClosedFunc(false)
@@ -194,15 +194,16 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	if !attributes.Modal {
 		win.SetOnResizeHandling()
 	}
+	if attributes.PresentedFunc != nil {
+		attributes.PresentedFunc(win)
+	}
 	if attributes.FocusView != nil {
 		attributes.FocusView.Native().Focus(true)
 	} else {
+		// zlog.Info("Presented, focus next")
 		if v.Native().GetFocusedChildView(false) == nil {
 			zcontainer.FocusNext(v, true, true)
 		}
-	}
-	if attributes.PresentedFunc != nil {
-		attributes.PresentedFunc(win)
 	}
 }
 
