@@ -1,6 +1,8 @@
 package zlabel
 
 import (
+	"syscall/js"
+
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
@@ -8,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"syscall/js"
 )
 
 func (label *Label) InitAsLink(view zview.View, title, surl string) {
@@ -50,14 +51,20 @@ func (label *Label) init(text string) {
 		}
 		return false
 	})
-	textNode := zdom.DocumentJS.Call("createTextNode", text)
+	textNode := zdom.DocumentJS.Call("createTextNode", "")
 	label.JSCall("appendChild", textNode)
+	label.SetText(text)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	label.SetFont(f)
 }
 
 func (label *Label) SetURL(surl string) {
 	label.JSSet("href", surl)
+}
+
+func (v *Label) SetText(text string) {
+	v.text = text
+	v.NativeView.SetText(text)
 }
 
 func setPadding(v *Label) {

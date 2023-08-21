@@ -16,13 +16,13 @@ type Label struct {
 	zview.NativeView
 	zview.LongPresser
 
-	minWidth  float64
-	maxWidth  float64
-	maxLines  int
-	margin    zgeo.Rect
-	padding   zgeo.Rect
-	alignment zgeo.Alignment
-
+	minWidth    float64
+	maxWidth    float64
+	maxLines    int
+	margin      zgeo.Rect
+	padding     zgeo.Rect
+	alignment   zgeo.Alignment
+	text        string // we need to store the text as NativeView's Text() doesn't work right away
 	pressed     func()
 	longPressed func()
 
@@ -78,6 +78,10 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s = s.Ceil()
 	s.W += 1
 	return s
+}
+
+func (v *Label) Text() string {
+	return v.text
 }
 
 func (v *Label) IsMinimumOneLineHight() bool {
