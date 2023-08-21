@@ -162,12 +162,13 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 
 	var wildCards zview.View
 	if len(*structSlicePtr) > 1 {
-		wild := zlabel.New("Use *x*->*y* to replace x with y, replacing wildcards with their matches")
+		wild := zlabel.New("Use *x*->*y* to replace x with y,\nreplacing wildcards with their matches")
+		wild.SetMaxLines(2)
 		wildCards = wild // We need to
 		tv := getFocusedEmptyTextView(&fview.NativeView)
 		wild.Show(tv != nil)
 		wild.SetCanTabFocus(false)
-		wild.SetTextAlignment(zgeo.Center)
+		wild.SetTextAlignment(zgeo.TopCenter)
 		wild.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 		wild.SetColor(zgeo.ColorGray)
 		wild.SetPressedDownHandler(func() {
@@ -177,13 +178,15 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			}
 		})
 		att.PresentedFunc = func(win *zwindow.Window) {
-			tv := getFocusedEmptyTextView(&fview.NativeView)
-			wild.Show(tv != nil)
+			// zlog.Info("Presented!")
+			fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {
+				tv, _ := view.(*ztext.TextView)
+				// zlog.Info("FOCUSED:", view.Native().Hierarchy(), tv != nil)
+				wild.Show(tv != nil && tv.Text() == "")
+			})
+			// tv := getFocusedEmptyTextView(&fview.NativeView)
+			// wild.Show(tv != nil)
 		}
-		fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {
-			tv, _ := view.(*ztext.TextView)
-			wild.Show(tv != nil && tv.Text() == "")
-		})
 	}
 	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
 		if ok {
