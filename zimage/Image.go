@@ -149,7 +149,7 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) (
 	return newImage, nil
 }
 
-func GoImageFromFile(path string) (image.Image, string, error) {
+func GoImageFromFile(path string) (img image.Image, format string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, "", err
