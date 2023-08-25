@@ -100,7 +100,7 @@ func (v *VideoView) CreateStream(withAudio, selfie bool, continuousImageHandler 
 			_, cancel := context.WithCancel(context.Background())
 			v.AddOnRemoveFunc(cancel)
 			// zlog.Info("video get image3:", s)
-			timer := ztimer.RepeatIn(0.1, func() bool {
+			timer := ztimer.Repeat(0.1, func() bool {
 				// if ctx.Err() != nil {
 				// 	return false
 				// }

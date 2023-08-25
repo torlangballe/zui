@@ -29,7 +29,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	v.SetObjectName("webview") // must be after creation
 	v.View = v
 
-	repeater := ztimer.RepeatIn(0.5, func() bool {
+	repeater := ztimer.Repeat(0.5, func() bool {
 		// zlog.Info("cddoc:", v.JSGet("contentDocument"))
 		contentDoc := v.JSGet("contentDocument")
 		// zlog.Info("CDOC:", contentDoc, zdom.DocumentJS)
