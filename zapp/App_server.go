@@ -8,6 +8,7 @@ package zapp
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -215,4 +216,22 @@ func (AppCalls) GetTopImages(args *zrpc.Unused, reply *[]string) error {
 		})
 	}
 	return nil
+}
+
+func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
+	on := zrest.GetBoolVal(req.URL.Query(), "on")
+	zlog.Info("handleSetVerbose", on, req.Method)
+	var set string
+	if on {
+		zlog.PrintPriority = zlog.VerboseLevel
+		set = "verbose"
+	} else {
+		zlog.PrintPriority = zlog.DebugLevel
+		set = "debug"
+	}
+	fmt.Fprintln(w, "zlog priority set to", set)
+}
+
+func SetVerboseLogHandler(router *mux.Router) {
+	zrest.AddHandler(router, "zlogverbose", handleSetVerbose).Methods("GET")
 }
