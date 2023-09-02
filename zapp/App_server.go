@@ -1,6 +1,6 @@
 // The server variant of App is an App (program) in it's own right, but also contains functionality to
 // serve a wasm app to a browser.
-// It is invoked with ServeZUIWasm (below), which uses a FilesRedirector (below) instance to handle serving the wasm, html and assets.
+// It is invoked with ServeZUIWasm (below), which uses a filesRedirector (below) instance to handle serving the wasm, html and assets.
 
 //go:build !js && !catalyst && server
 
@@ -9,10 +9,10 @@ package zapp
 import (
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -32,8 +32,8 @@ type nativeApp struct {
 
 type AppCalls zrpc.CallsBase
 
-// FilesRedirector is a type that can handle serving files
-type FilesRedirector struct {
+// filesRedirector is a type that can handle serving files
+type filesRedirector struct {
 	Override         func(w http.ResponseWriter, req *http.Request, filepath string) bool // Override is a method to handle special cases of files, return true if handled
 	ServeDirectories bool
 	Router           *mux.Router // if ServeDirectories is true, it serves content list of directory
@@ -42,92 +42,54 @@ type FilesRedirector struct {
 //go:embed www
 var wwwFS embed.FS
 
-var wwwEmbeds []embed.FS
+var AllWebFS zfile.MultiFS
 
 func Init() {
+	var beforeWWW string
 	zrpc.Register(AppCalls{})
-	if zfile.NotExist(zrest.StaticFolder) {
-		os.Mkdir(zrest.StaticFolder, os.ModeDir|0755)
+	stat := zrest.StaticFolderPathFunc("")
+	if zfile.NotExist(stat) {
+		os.Mkdir(stat, os.ModeDir|0755)
 	}
-	AddWWWFileServer(wwwFS)
+	zstr.HasSuffix(stat, "/www", &beforeWWW) // we remove www because os.DirFS does not include it, but //go:embed www does...
+	AllWebFS.Add(os.DirFS(beforeWWW))
+	AllWebFS.Add(wwwFS)
 }
 
-func AddWWWFileServer(f embed.FS) {
-	wwwEmbeds = append(wwwEmbeds, f)
-}
-
-func AllEmbeddedWebFS() []fs.FS {
-	var f []fs.FS
-	for _, e := range wwwEmbeds {
-		f = append(f, e)
-	}
-	return f
-}
-
-// FilesRedirector's ServeHTTP serves everything in www, handling directories, * wildcards, and auto-translating .md (markdown) files to html
-func (r FilesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	const filePathPrefix = zrest.StaticFolder + "/"
+// filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
+func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	spath := req.URL.Path
-	var redirectToDir bool
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
-		redirectToDir = true
-		spath += "/"
+		localRedirect(w, req, zrest.AppURLPrefix)
+		req.Body.Close()
+		return
 	}
 	// zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
-	filepath := path.Join(filePathPrefix, spath)
 	if r.Override != nil {
-		if r.Override(w, req, filepath) {
+		if r.Override(w, req, spath) {
 			req.Body.Close()
 			return
 		}
 	}
 
-	if filepath == zrest.StaticFolder {
-		filepath = zrest.StaticFolder + "/index.html"
-	}
-
-	if filepath == "www/main.wasm.gz" {
-		zlog.Info("Serve WASM.gz:", filepath)
-		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
-		w.Header().Set("Content-Type", "application/wasm")
-		w.Header().Set("Content-Encoding", "gzip")
-	}
-	if zfile.Exists(filepath) {
-		// zlog.Info("FilesServe:", req.URL.Path, filepath, zfile.Exists(filepath))
-		http.ServeFile(w, req, filepath)
-		return
-	}
-	if redirectToDir {
-		// zlog.Info("Serve embed:", spath)
-		localRedirect(w, req, zrest.AppURLPrefix)
-		req.Body.Close()
-		return
-	}
-	// zlog.Info("FilesRedir2:", req.URL.Path, spath)
+	// zlog.Info("FilesRedir1:", spath)
 
 	if spath == "" { // hack to replicate how http.ServeFile serves index.html if serving empty folder at root level
 		spath = "index.html"
 	}
-	var data []byte
-	var err error
-	for _, w := range wwwEmbeds {
-		data, err = w.ReadFile(zrest.StaticFolder + "/" + spath)
-		// zlog.Info("EmbedRead:", zrest.StaticFolder+"/"+spath, data != nil, err)
-		if data != nil {
-			break
-		}
+	if spath == "main.wasm.gz" {
+		zlog.Info("Serve WASM.gz:", spath)
+		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
+		w.Header().Set("Content-Type", "application/wasm")
+		w.Header().Set("Content-Encoding", "gzip")
 	}
-	// zlog.Info("FSREAD:", zrest.StaticFolder+"/"+spath, err, len(data), req.URL.String())
-	req.Body.Close()
-	if err == nil {
-		_, err := w.Write(data)
-		if err != nil {
-			zlog.Error(err, "write to ResponseWriter from embedded")
-		}
-		return
+	f, err := AllWebFS.Open("www/" + spath)
+	// f, err := AllWebFS.Open("www/" + spath)
+	if !zlog.OnError(err, spath) {
+		_, err := io.Copy(w, f)
+		zlog.OnError(err, spath)
 	}
-	// zlog.Info("Serve app:", path, filepath)
 }
 
 // localRedirect redirects empty path to directory (I think)
@@ -140,7 +102,7 @@ func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 }
 
 func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
-	f := &FilesRedirector{
+	f := &filesRedirector{
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
@@ -150,7 +112,7 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	//	route := router.PathPrefix(zrest.AppURLPrefix)
 	//	route.Handler(f)
 	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, zrest.StaticFolder+"/favicon.ico")
+		http.ServeFile(w, r, zrest.StaticFolderPathFunc("/favicon.ico"))
 	})
 }
 
@@ -168,7 +130,7 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 	raw := values.Get("raw")
 	md := (raw == "md")
 	html := (raw == "html")
-	prefix := zrest.StaticFolder + "/doc/"
+	prefix := zrest.StaticFolderPathFunc("doc/")
 	fullmd, err := zmarkdown.FlattenMarkdown(prefix, parts, tableOC)
 	// zlog.Info("MD:\n", fullmd)
 	if err != nil {
@@ -188,7 +150,7 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 		w.Write([]byte(html))
 		return
 	}
-	spdf, err := zmarkdown.ConvertToPDF(fullmd, prefix, name, zrest.StaticFolder+"/doc/", GetDocumentationValues())
+	spdf, err := zmarkdown.ConvertToPDF(fullmd, prefix, name, prefix, GetDocumentationValues())
 	if err != nil {
 		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, "error converting manual to pdf")
 		return
@@ -197,12 +159,13 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 }
 
 func (AppCalls) GetTopImages(args *zrpc.Unused, reply *[]string) error {
-	zfile.Walk(zrest.StaticFolder+"/images/", "*.png", zfile.WalkOptionsNone, func(fpath string, info os.FileInfo) error {
-		zstr.HasPrefix(fpath, zrest.StaticFolder+"/", &fpath)
+	statSlash := zrest.StaticFolderPathFunc("/")
+	zfile.Walk(zrest.StaticFolderPathFunc("images/"), "*.png", zfile.WalkOptionsNone, func(fpath string, info os.FileInfo) error {
+		zstr.HasPrefix(fpath, statSlash, &fpath)
 		*reply = append(*reply, fpath)
 		return nil
 	})
-	for _, f := range AllEmbeddedWebFS() {
+	for _, f := range AllWebFS {
 		fs.WalkDir(f, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return nil
@@ -210,7 +173,7 @@ func (AppCalls) GetTopImages(args *zrpc.Unused, reply *[]string) error {
 			if d.IsDir() || !strings.HasSuffix(path, ".png") {
 				return nil
 			}
-			zstr.HasPrefix(path, zrest.StaticFolder+"/", &path)
+			zstr.HasPrefix(path, statSlash, &path)
 			zstr.AddToSet(reply, path)
 			return nil
 		})
