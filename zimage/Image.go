@@ -160,9 +160,10 @@ func GoImageFromFile(path string) (img image.Image, format string, err error) {
 func GoImageFromURL(path string) (image.Image, error) {
 	params := zhttp.MakeParameters()
 	params.Method = http.MethodGet
-	params.Headers["Origin"] = "https://192.168.0.30:443"
+	// params.Headers["Origin"] = "https://192.168.0.30:443"
 	resp, err := zhttp.GetResponse(path, params)
 	if err != nil {
+		zlog.Error(err, path)
 		return nil, err
 	}
 	goImage, _, err := image.Decode(resp.Body)
