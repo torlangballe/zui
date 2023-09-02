@@ -45,15 +45,14 @@ var wwwFS embed.FS
 var AllWebFS zfile.MultiFS
 
 func Init() {
-	var beforeWWW string
 	zrpc.Register(AppCalls{})
-	stat := zrest.StaticFolderPathFunc("")
-	if zfile.NotExist(stat) {
-		os.Mkdir(stat, os.ModeDir|0755)
-	}
-	zstr.HasSuffix(stat, "/www", &beforeWWW) // we remove www because os.DirFS does not include it, but //go:embed www does...
-	AllWebFS.Add(os.DirFS(beforeWWW))
+	zlog.Info("add zapp fs")
 	AllWebFS.Add(wwwFS)
+
+	var beforeWWW string
+	stat := zrest.StaticFolderPathFunc("")
+	zstr.HasSuffix(stat, "/www", &beforeWWW)                           // we remove www because os.DirFS does not include it in path names, but //go:embed www does...
+	AllWebFS = append(zfile.MultiFS{os.DirFS(beforeWWW)}, AllWebFS...) // we insert the disk system first, so we can override embeded
 }
 
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
