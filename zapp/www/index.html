@@ -1,15 +1,21 @@
 <!doctype html>
 <html>
+<head>
+	<meta charset="utf-8">
+	<title>Go wasm</title>
+</head>
 <body>
-    <script src="js/zcore/wasm_exec.js"></script>
-    <script>
-        (async function() {
-            const go = new Go()
-            let file = await (await fetch("main.wasm.gz")).arrayBuffer(); // main.wasm.gi has encoding gzip, type wasm set, so decoded by browser
-            WebAssembly.instantiate(file, go.importObject).then((result) => {
-                go.run(result.instance)
-            })
-        })()
-    </script>
+	<script src="js/zcore/wasm_exec.js"></script>
+	<script>
+        console.log("start");
+		var go = new Go();
+		let mod, inst;
+		WebAssembly.instantiateStreaming(fetch("main.wasm.gz"), go.importObject).then((result) => {
+            go.run(result.instance) 
+            inst = WebAssembly.instantiate(result.module, go.importObject); // reset instance
+		}).catch((err) => {
+			console.error(err);
+		});
+	</script>
 </body>
 </html>
