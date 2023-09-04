@@ -10,7 +10,6 @@ import (
 	"embed"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"strings"
@@ -84,7 +83,6 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
 	}
 	f, err := AllWebFS.Open("www/" + spath)
-	// f, err := AllWebFS.Open("www/" + spath)
 	if !zlog.OnError(err, spath) {
 		_, err := io.Copy(w, f)
 		zlog.OnError(err, spath)
@@ -155,29 +153,6 @@ func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC 
 		return
 	}
 	w.Write([]byte(spdf))
-}
-
-func (AppCalls) GetTopImages(args *zrpc.Unused, reply *[]string) error {
-	statSlash := zrest.StaticFolderPathFunc("/")
-	zfile.Walk(zrest.StaticFolderPathFunc("images/"), "*.png", zfile.WalkOptionsNone, func(fpath string, info os.FileInfo) error {
-		zstr.HasPrefix(fpath, statSlash, &fpath)
-		*reply = append(*reply, fpath)
-		return nil
-	})
-	for _, f := range AllWebFS {
-		fs.WalkDir(f, ".", func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if d.IsDir() || !strings.HasSuffix(path, ".png") {
-				return nil
-			}
-			zstr.HasPrefix(path, statSlash, &path)
-			zstr.AddToSet(reply, path)
-			return nil
-		})
-	}
-	return nil
 }
 
 func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
