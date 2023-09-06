@@ -1,7 +1,6 @@
 package ztermfields
 
 import (
-	"capsulefm/libs/util/ustr"
 	"fmt"
 	"io"
 	"reflect"
@@ -124,7 +123,7 @@ func (s *StructCommander) editEnumIndicator(c *zcommands.CommandInfo, edit editF
 	}
 	doRepeatEditIndex(c, "setting index", "Set Index No:", len(enum), func(n int) bool {
 		edit.value.Set(reflect.ValueOf(enum[n].Value))
-		c.Session.TermSession.Writeln(ustr.EscGreen+edit.field.Name, zstr.EscNoColor+"set to", enum[n].Name)
+		c.Session.TermSession.Writeln(zstr.EscGreen+edit.field.Name, zstr.EscNoColor+"set to", enum[n].Name)
 		s.callUpdate()
 		return true
 	})
@@ -144,7 +143,7 @@ func (s *StructCommander) editLocalEnumIndicator(c *zcommands.CommandInfo, edit 
 	}
 	doRepeatEditIndex(c, "setting index", "Set Index No:", len(enum), func(n int) bool {
 		edit.value.Set(reflect.ValueOf(enum[n].Value))
-		c.Session.TermSession.Writeln(ustr.EscGreen+edit.field.Name, zstr.EscNoColor+"set to", enum[n].Name)
+		c.Session.TermSession.Writeln(zstr.EscGreen+edit.field.Name, zstr.EscNoColor+"set to", enum[n].Name)
 		s.callUpdate()
 		return true
 	})
