@@ -10,8 +10,10 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -70,19 +72,27 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-
-	// zlog.Info("FilesRedir1:", spath)
+	if strings.HasSuffix(spath, ".md") {
+		m := MakeMarkdownConverter()
+		m.ServeAsHTML(w, req, "www/"+spath)
+		return
+	}
 
 	if spath == "" { // hack to replicate how http.ServeFile serves index.html if serving empty folder at root level
 		spath = "index.html"
 	}
+	smime := mime.TypeByExtension(path.Ext(spath))
 	if spath == "main.wasm.gz" {
 		zlog.Info("Serve WASM.gz:", spath)
 		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
-		w.Header().Set("Content-Type", "application/wasm")
+		smime = "application/wasm"
 		w.Header().Set("Content-Encoding", "gzip")
 	}
+	if smime != "" {
+		w.Header().Set("Content-Type", smime)
+	}
 	f, err := AllWebFS.Open("www/" + spath)
+	// zlog.Info("FilesRedir2:", spath, err)
 	if !zlog.OnError(err, spath) {
 		_, err := io.Copy(w, f)
 		zlog.OnError(err, spath)
@@ -122,37 +132,8 @@ func (AppCalls) GetTimeInfo(in zrpc.Unused, info *LocationTimeInfo) error {
 	return nil
 }
 
-func ManualAsPDF(w http.ResponseWriter, req *http.Request, name string, tableOC bool, parts []string) {
-	values := req.URL.Query()
-	raw := values.Get("raw")
-	md := (raw == "md")
-	html := (raw == "html")
-	prefix := zrest.StaticFolderPathFunc("doc/")
-	fullmd, err := zmarkdown.FlattenMarkdown(prefix, parts, tableOC)
-	// zlog.Info("MD:\n", fullmd)
-	if err != nil {
-		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, err, "building pdf", name)
-		return
-	}
-	if md {
-		w.Write([]byte(fullmd))
-		return
-	}
-	if html {
-		html, err := zmarkdown.ConvertToHTML(fullmd, prefix, name, "", GetDocumentationValues())
-		if err != nil {
-			zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, err, "converting")
-			return
-		}
-		w.Write([]byte(html))
-		return
-	}
-	spdf, err := zmarkdown.ConvertToPDF(fullmd, prefix, name, prefix, GetDocumentationValues())
-	if err != nil {
-		zrest.ReturnAndPrintError(w, req, http.StatusInternalServerError, "error converting manual to pdf")
-		return
-	}
-	w.Write([]byte(spdf))
+func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string, output zmarkdown.OutputType) error {
+	return m.Convert(w, name, output)
 }
 
 func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
@@ -171,4 +152,16 @@ func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
 
 func SetVerboseLogHandler(router *mux.Router) {
 	zrest.AddHandler(router, "zlogverbose", handleSetVerbose).Methods("GET")
+}
+
+func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
+	var m zmarkdown.MarkdownConverter
+	m.Variables = GetDocumentationValues()
+	m.Dir = "www/doc/"
+	m.FileSystem = AllWebFS
+	// zlog.Info("makeMarkdownConverter fs:", m.FileSystem)
+	m.PartNames = []string{
+		"setup.shared.md",
+	}
+	return m
 }
