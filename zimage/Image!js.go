@@ -4,6 +4,7 @@ package zimage
 
 import (
 	"image"
+	"image/draw"
 	"image/png"
 	"os"
 
@@ -28,6 +29,16 @@ func ImageNewNRGBA(size zgeo.Size) *Image {
 	i := &Image{}
 	i.GoImage = image.NewNRGBA(zgeo.Rect{Size: size}.GoRect())
 	return i
+}
+
+func GoImageToNRGBA(img image.Image) *image.NRGBA {
+	ni, _ := img.(*image.NRGBA)
+	if ni != nil {
+		return ni
+	}
+	ni = image.NewNRGBA(img.Bounds())
+	draw.Draw(ni, img.Bounds(), img, image.Point{0, 0}, draw.Src)
+	return ni
 }
 
 func FromGo(img image.Image, got func(image *Image)) {

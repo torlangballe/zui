@@ -449,11 +449,11 @@ func MakeSolidImage(size zgeo.Size, col zgeo.Color) SolidImage {
 	return SolidImage{Size: size, color: col.GoColor()}
 }
 
-func GoImageBlurred(img image.Image, sigma float64) image.Image {
+func GoImageBlurred(img *image.NRGBA, sigma float64) *image.NRGBA {
 	return imaging.Blur(img, math.Abs(sigma))
 }
 
-func NewGoWithNoise(img image.Image, noiseCoverage float32, noiseMix float32) image.Image {
+func NewGoWithNoise(img image.Image, noiseCoverage float32, noiseMix float32) *image.NRGBA {
 	return GoTransformed(img, func(x, y int, c zgeo.Color) zgeo.Color {
 		if rand.Float32() >= noiseCoverage {
 			return zgeo.Color{}
@@ -484,8 +484,8 @@ func GoAlterPixels(img SetableImage, set func(x, y int, c zgeo.Color) zgeo.Color
 }
 
 // GoTransformed creates a new image where if set returns a valid color, it uses that, otherwise old.
-func GoTransformed(img image.Image, set func(x, y int, c zgeo.Color) zgeo.Color) image.Image {
-	out := image.NewRGBA(img.Bounds())
+func GoTransformed(img image.Image, set func(x, y int, c zgeo.Color) zgeo.Color) *image.NRGBA {
+	out := image.NewNRGBA(img.Bounds())
 	GoForPixels(img, func(x, y int, c zgeo.Color) {
 		ncol := set(x, y, c)
 		if ncol.Valid {
