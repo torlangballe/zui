@@ -449,7 +449,7 @@ func MakeSolidImage(size zgeo.Size, col zgeo.Color) SolidImage {
 	return SolidImage{Size: size, color: col.GoColor()}
 }
 
-func GoImageBlurred(img *image.NRGBA, sigma float64) *image.NRGBA {
+func GoImageBlurred(img image.Image, sigma float64) *image.NRGBA {
 	return imaging.Blur(img, math.Abs(sigma))
 }
 
