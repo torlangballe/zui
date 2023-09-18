@@ -104,7 +104,7 @@ const (
 	FlagDisableAutofill                           // FlagDisableAutofill if set makes a text field not autofill
 	FlagIsSearchable                              // This field can be used to search in tables etc
 	FlagIsUseInValue                              // This value is set as a string to InNames before entire struct is created
-	FlagZeroIsEmpty                               // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagAllowEmptyAsZero                          // This shows the empty value as nothing. So int 0 would be shown as "" in text
 	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
 	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
 	FlagIsURL                                     // Field is string, and it's a url
@@ -378,8 +378,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "storekey":
 			f.ValueStoreKey = val
-		case "nozero":
-			f.Flags |= FlagZeroIsEmpty
+		case "allowempty":
+			f.Flags |= FlagAllowEmptyAsZero
 		case "static":
 			if flag || val == "" {
 				f.Flags |= FlagIsStatic
