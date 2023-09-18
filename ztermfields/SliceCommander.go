@@ -3,19 +3,26 @@ package ztermfields
 import (
 	"fmt"
 	"reflect"
-	"text/tabwriter"
+	"strings"
 
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zutil/zcommands"
+	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
 type SliceCommander struct {
-	RowParameters  zfields.FieldParameters
-	EditParameters zfields.FieldParameters
-	SlicePointer   any
-	UpdateFunc     func(rowPtr any)
+	RowParameters    zfields.FieldParameters
+	EditParameters   zfields.FieldParameters
+	SlicePointerFunc func() any
+	UpdateFunc       func(rowPtr any)
+	diffMatch        *diffmatchpatch.DiffMatchPatch
 }
+
+const RowUseZTermSliceName = "$zterm"
 
 func (s *SliceCommander) callUpdate(rowPtr any) {
 	if s.UpdateFunc != nil {
@@ -23,47 +30,66 @@ func (s *SliceCommander) callUpdate(rowPtr any) {
 	}
 }
 
-func (s *SliceCommander) In(c *zcommands.CommandInfo, index int) string {
+func makeRowParameters() zfields.FieldParameters {
+	var p zfields.FieldParameters
+
+	p.UseInValues = []string{RowUseZTermSliceName}
+	return p
+}
+
+func (s *SliceCommander) In(c *zcommands.CommandInfo, a struct {
+	Index int `zui:"index of rows to go into"`
+}) string {
 	if c.Type == zcommands.CommandHelp {
-		return "<index>\tEnters row <index> as listed with show.\nShows hierarchy, and then allows editing, and more showing.\nType cd .. to exit."
+		return "Enters row <index> as listed with 'rows'. Shows hierarchy, and then allows editing, and more showing.\nType cd .. to exit."
 	}
 	if c.Type == zcommands.CommandExpand {
 		return ""
 	}
-	s.showSliceStruct(c, index-1, true)
+	showSliceStruct(s, c, a.Index-1, true)
 	return ""
 }
 
-func (s *SliceCommander) Show(c *zcommands.CommandInfo, index *int) string {
-	if c.Type == zcommands.CommandHelp {
-		return "[index]\tWith no arguments, shows all rows in the table, indexing each row.\nUse edit <index> command to alter a row.\nSpecify an index to show field hierarchy of a row."
-	}
-	if c.Type == zcommands.CommandExpand {
+func (s *SliceCommander) Rows(c *zcommands.CommandInfo, a struct {
+	WildCard string `zui:"desc:Use wildcard to match only text in some rows,allowempty"`
+}) string {
+	switch c.Type {
+	case zcommands.CommandExpand:
 		return ""
+	case zcommands.CommandHelp:
+		return "lists rows in the table, indexing each row. Use the show <index> command to alter one."
 	}
-	if index != nil {
-		s.showSliceStruct(c, *index-1, false)
-		return ""
-	}
-	// var edits []editRow
-	s.outputRows(c, "", s.SlicePointer) //, &edits)
-	// s.lastEdits = edits
+	lastFieldValues := map[int]string{}
+	outputRows(s, c, "", s.SlicePointerFunc(), a.WildCard, lastFieldValues) //, &edits)
 	return ""
 }
 
-func (s *SliceCommander) showSliceStruct(c *zcommands.CommandInfo, index int, goIn bool) {
-	sval := reflect.ValueOf(s.SlicePointer).Elem()
+func (s *SliceCommander) Show(c *zcommands.CommandInfo, a struct {
+	Index int `zui:"desc:Index from 'rows' to show fields of."`
+}) string {
+	switch c.Type {
+	case zcommands.CommandExpand:
+		return ""
+	case zcommands.CommandHelp:
+		return "Show fields of a row."
+	}
+	showSliceStruct(s, c, a.Index-1, false)
+	return ""
+}
+
+func showSliceStruct(s *SliceCommander, c *zcommands.CommandInfo, index int, goIn bool) {
+	sval := reflect.ValueOf(s.SlicePointerFunc()).Elem()
 	if index < 0 || index >= sval.Len() {
 		c.Session.TermSession.Writeln("Index outside of table length")
 		return
 	}
-	com := &StructCommander{}
-	com.StructurePointer = sval.Index(index).Addr().Interface()
-	com.Parameters = s.EditParameters
-	com.UpdateFunc = s.UpdateFunc
+	structCommander := &StructCommander{}
+	structCommander.StructurePointer = sval.Index(index).Addr().Interface()
+	structCommander.Parameters = s.EditParameters
+	structCommander.UpdateFunc = s.UpdateFunc
 	if goIn {
 		dir := fmt.Sprint(index + 1)
-		rval, f, got := zfields.FindIndicatorRValOfStruct(com.StructurePointer)
+		rval, f, got := zfields.FindIndicatorRValOfStruct(structCommander.StructurePointer)
 		if got {
 			dir = fmt.Sprint(rval)
 			if f.Enum != "" {
@@ -75,31 +101,95 @@ func (s *SliceCommander) showSliceStruct(c *zcommands.CommandInfo, index int, go
 				}
 			}
 		}
-		c.Session.GotoChildNode(dir, com)
+		c.Session.GotoChildNode(dir, structCommander)
 	}
-	com.Show(c)
+	structCommander.Show(c)
 }
 
-func (s *SliceCommander) outputRows(c *zcommands.CommandInfo, path string, slicePtr any) { //, edits *[]editRow) {
+func outputRows(s *SliceCommander, c *zcommands.CommandInfo, path string, slicePtr any, wildCard string, lastFieldValues map[int]string) { //, edits *[]editRow) {
+	s.RowParameters = makeRowParameters()
 	sval := reflect.ValueOf(slicePtr).Elem()
-	tabs := tabwriter.NewWriter(c.Session.TermSession.Writer(), 5, 0, 3, ' ', 0)
+	//	tabs := tabwriter.NewWriter(c.Session.TermSession.Writer(), 5, 0, 3, ' ', 0)
+	tabs := zstr.NewTabWriter(c.Session.TermSession.Writer())
+	tabs.RighAdjustedColumns[0] = true // right-justify index
+	tabs.MaxColumnWidth = 60
 	for i := 0; i < sval.Len(); i++ {
 		rval := sval.Index(i).Addr()
-		s.outputRow(c, tabs, rval, i)
-		// *edits = append(*edits, editRow{value: rval, index: i})
+		// if i == 48 || i == 49 {
+		s.outputRow(c, tabs, rval, i, wildCard, lastFieldValues)
+		// }
 	}
 	tabs.Flush()
 }
 
-func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *tabwriter.Writer, val reflect.Value, i int) {
+func MakeColoredDiff(dmp *diffmatchpatch.DiffMatchPatch, a, b string, w int) string {
+	diffs := dmp.DiffMain(a, b, false)
+	var count, whiteCount, whites int
+	for _, d := range diffs {
+		count += len(d.Text)
+		if d.Type == diffmatchpatch.DiffEqual {
+			whiteCount += len(d.Text)
+			whites++
+		}
+	}
+	if count-whiteCount > w/2 {
+		return zstr.EscMagenta + zstr.TruncatedFromEnd(b, w, "…") + zstr.EscNoColor
+	}
+	// zlog.Info("MakeColoredDiff1:", w, dmp.DiffCleanupSemantic(diffs))
+	var str string
+	var chars int
+	spaceForWhite := w - (count - whiteCount)
+	for i, d := range diffs {
+		var col, add string
+		switch d.Type {
+		case diffmatchpatch.DiffDelete:
+			col = zstr.EscRed
+			add = d.Text
+		case diffmatchpatch.DiffEqual:
+			if spaceForWhite > 0 {
+				columns := (spaceForWhite + whites - 1) / whites
+				columns = zint.Max(columns, 15)
+				col = zstr.EscWhite
+				if i == 0 {
+					add = zstr.TruncatedFromStart(d.Text, columns, "…")
+				} else if i == len(diffs)-1 {
+					add = zstr.TruncatedFromEnd(d.Text, columns, "…")
+				} else {
+					add = zstr.TruncatedMiddle(d.Text, columns, "…")
+				}
+				zlog.Info("MakeColoredDiff:", len(d.Text), spaceForWhite, whites, add)
+				spaceForWhite -= len(add)
+				whites--
+			}
+		case diffmatchpatch.DiffInsert:
+			col = zstr.EscGreen
+			add = d.Text
+		}
+		if chars+len(add) >= w {
+			str += col + zstr.TruncatedFromEnd(add, w-chars, "…")
+			break
+		}
+		str += col + add
+		chars += len(add)
+	}
+	str += zstr.EscNoColor
+	// zlog.Info("MakeColoredDiff:", str, chars, len(str))
+
+	return str
+}
+
+func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWriter, val reflect.Value, i int, wildCard string, lastFieldValues map[int]string) {
 	var line string
 	if i == 0 {
 		fmt.Fprint(tabs, "\t")
 	}
-	zfields.ForEachField(val.Interface(), s.RowParameters, []zfields.Field{}, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) {
+	var tabColumn int = 1 // we start at one, since we output index as well
+	keep := (wildCard == "")
+
+	zfields.ForEachField(val.Interface(), s.RowParameters, []zfields.Field{}, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) bool {
 		if f.Flags&zfields.FlagIsButton != 0 || f.Flags&zfields.FlagIsImage != 0 {
 			if !f.IsImageToggle() {
-				return // skip
+				return true // skip
 			}
 		}
 		if i == 0 {
@@ -109,14 +199,51 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *tabwriter.Wri
 			}
 			fmt.Fprint(tabs, zstr.EscGreen, title, "\t")
 		}
-		sval, skip := getValueString(val, f, sf, 60, true)
+		cols := 60
+		if f.Columns != 0 {
+			cols = f.Columns
+		}
+		tabs.MaxColumnWidths[tabColumn] = cols
+		sval, skip := getValueString(val, f, sf, cols, true)
 		if skip {
-			return
+			return true
+		}
+		replacer := strings.NewReplacer(
+			"\n", " • ",
+			"\t", " ",
+		)
+		sval = replacer.Replace(sval)
+		if f.Justify&zgeo.Right != 0 {
+			tabs.RighAdjustedColumns[tabColumn] = true
+		}
+		if !keep && wildCard != "" && zstr.MatchWildcard(wildCard, sval) {
+			keep = true
+		}
+		tabColumn++
+		var diffed bool
+		_, got := f.CustomFields["diff"]
+		if got && len(sval) > cols {
+			if s.diffMatch == nil {
+				s.diffMatch = diffmatchpatch.New()
+			}
+			last := lastFieldValues[index]
+			lastFieldValues[index] = sval
+			if len(last) > cols && last != sval {
+				sval = MakeColoredDiff(s.diffMatch, last, sval, cols)
+				diffed = true
+			}
+		}
+		if !diffed {
+			sval = zstr.TruncatedFromEnd(sval, cols, "…")
 		}
 		line += zstr.EscWhite + sval + "\t"
+		return true
 	})
 	if i == 0 {
 		fmt.Fprintln(tabs, zstr.EscNoColor) // end header
+	}
+	if !keep {
+		return
 	}
 	fmt.Fprint(tabs, i+1, ")\t", line, zstr.EscNoColor, "\n")
 }

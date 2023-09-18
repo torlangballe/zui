@@ -17,7 +17,7 @@ import (
 
 func sliceValueString(val reflect.Value, maxChars int) string {
 	slice, is := val.Interface().([]float64)
-	if is {
+	if is && len(slice) <= 6 {
 		var parts []string
 		for _, f := range slice {
 			parts = append(parts, zwords.NiceFloat(f, 1))
@@ -25,12 +25,6 @@ func sliceValueString(val reflect.Value, maxChars int) string {
 		return strings.Join(parts, " ")
 	}
 	slen := val.Len()
-	if slen < 8 {
-		str := fmt.Sprint(val.Interface())
-		if len(str) < maxChars {
-			return str
-		}
-	}
 	return zwords.Pluralize("item", slen)
 }
 
@@ -69,7 +63,6 @@ func getValueString(val reflect.Value, f *zfields.Field, sf reflect.StructField,
 	} else {
 		str = istr
 	}
-	str = zstr.TruncatedFromEnd(str, maxChars, "…")
 	return
 }
 
