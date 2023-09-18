@@ -84,13 +84,6 @@ type StructInitializer interface {
 
 var fieldViewEdited = map[string]time.Time{}
 
-func FieldViewParametersDefault() (f FieldViewParameters) {
-	f.ImmediateEdit = true
-	f.Styling = zstyle.EmptyStyling
-	f.Styling.Spacing = 2
-	return f
-}
-
 func GetStructInitializer(a any) StructInitializer {
 	i, _ := a.(StructInitializer)
 	return i
@@ -106,6 +99,13 @@ func (v *FieldView) IsSlice() bool {
 
 func setFieldViewEdited(fv *FieldView) {
 	fieldViewEdited[fv.Hierarchy()] = time.Now()
+}
+
+func FieldViewParametersDefault() (f FieldViewParameters) {
+	f.ImmediateEdit = true
+	f.Styling = zstyle.EmptyStyling
+	f.Styling.Spacing = 2
+	return f
 }
 
 func IsFieldViewEditedRecently(fv *FieldView) bool {
@@ -295,10 +295,11 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	if fh != nil {
 		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
 	}
-	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
 		if !recentEdit || f.IsStatic() || sf.Type.Kind() == reflect.Slice {
 			v.updateField(index, val, sf, dontOverwriteEdited)
 		}
+		return true
 	})
 	// call general one with no id. Needs to be after above loop, so values set
 	if fh != nil {
@@ -773,7 +774,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 }
 
 func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
-	if f.Flags&FlagZeroIsEmpty != 0 {
+	if f.Flags&FlagAllowEmptyAsZero != 0 {
 		if rval.IsZero() {
 			return ""
 		}
@@ -1046,7 +1047,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		enum := getter.GetItems()
 		for i := range enum {
-			if f.Flags&FlagZeroIsEmpty != 0 {
+			if f.Flags&FlagAllowEmptyAsZero != 0 {
 				if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
 					enum[i].Name = ""
 				}
@@ -1098,8 +1099,9 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data, reflect.ValueOf(v.data).Kind())
-	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
 		v.buildItem(f, val, index, defaultAlign, cellMargin, useMinWidth)
+		return true
 	})
 }
 
@@ -1264,7 +1266,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
 	if f.Download != "" {
-		surl := zstr.ReplaceAllCapturesWithoutMatchFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, func(fieldName string, index int) string {
+		surl := zstr.ReplaceAllCapturesFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, zstr.RegWithoutMatch, func(fieldName string, index int) string {
 			a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
 			if findex == -1 {
 				zlog.Error(nil, "field download", f.Download, ":", "field not found in struct:", fieldName)
@@ -1275,7 +1277,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		link := zcontainer.MakeLinkedStack(surl, "", view)
 		view = link
 	}
-
 	cell := &zcontainer.Cell{}
 	def := defaultAlign
 	all := zgeo.Left | zgeo.HorCenter | zgeo.Right
@@ -1407,7 +1408,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			*rval.Addr().Interface().(*zbool.BoolInd) = bv.Value()
 		} else {
 			tv, _ := view.(*ztext.TextView)
-			if f.Flags&FlagZeroIsEmpty != 0 {
+			if f.Flags&FlagAllowEmptyAsZero != 0 {
 				if tv.Text() == "" {
 					rval.SetZero()
 					v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
@@ -1444,7 +1445,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		tv, _ := view.(*ztext.TextView)
 		text := tv.Text()
 		var f64 float64
-		if f.Flags&FlagZeroIsEmpty != 0 {
+		if f.Flags&FlagAllowEmptyAsZero != 0 {
 			if text == "" {
 				rval.SetZero()
 				v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())

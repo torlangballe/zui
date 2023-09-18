@@ -921,7 +921,7 @@ func Name(f *Field) string {
 	return ""
 }
 
-func ForEachField(structure any, params FieldParameters, fields []Field, got func(index int, f *Field, val reflect.Value, sf reflect.StructField)) {
+func ForEachField(structure any, params FieldParameters, fields []Field, got func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool) {
 	if len(fields) == 0 {
 		zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
 			f := EmptyField
@@ -959,8 +959,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues) || (isInRow && !wantsDialog))) {
 			return true
 		}
-		got(index, f, val, sf)
-		return true
+		return got(index, f, val, sf)
 	})
 }
 
@@ -975,7 +974,7 @@ func FindIndicatorOfSlice(slicePtr any) string {
 
 func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field, got bool) {
 	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
-	ForEachField(structPtr, FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+	ForEachField(structPtr, FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
 		for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
 			if part == "indicator" {
 				rval = val
@@ -983,6 +982,7 @@ func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field,
 				got = true
 			}
 		}
+		return true
 	})
 	return
 }

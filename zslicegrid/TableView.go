@@ -130,8 +130,9 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
-	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) {
+	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) bool {
 		v.fields = append(v.fields, *f)
+		return true
 	})
 	if v.options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {

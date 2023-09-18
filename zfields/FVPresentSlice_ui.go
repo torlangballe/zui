@@ -106,7 +106,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 	length := len(*structSlicePtr)
 	unknownBoolViewIDs := map[string]bool{}
 
-	ForEachField(editStruct, params.FieldParameters, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) {
+	ForEachField(editStruct, params.FieldParameters, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
 		var notEqual bool
 		for i := 0; i < length; i++ {
 			sliceField := sliceVal.Index(i).Field(index)
@@ -144,7 +144,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				// zslice.AddEmptyElementAtEnd(val.Addr().Interface())
 			}
 		}
-		return
+		return true
 	})
 	params.EditWithoutCallbacks = true
 	params.MultiSliceEditInProgress = (len(*structSlicePtr) > 1)
