@@ -7,19 +7,9 @@
 <body>
 	<script src="js/zcore/wasm_exec.js"></script>
 	<script>
-		console.log("here");
-		// var go = new Go();
-		// WebAssembly.instantiateStreaming(fetch("main.wasm.gz"), go.importObject).then((result) => {
-        //     go.run(result.instance) 
-        //     inst = WebAssembly.instantiate(result.module, go.importObject); // reset instance
-		// }).catch((err) => {
-		// 	console.error(err);
-		// });
 		(async function() {
-			console.log("here2");
             const go = new Go()
-			console.log("here3");
-            let file = await (await fetch("main.wasm.gz")).arrayBuffer(); // main.wasm.gi has encoding gzip, type wasm set, so decoded by browser
+            let file = await (await fetch("main.wasm.gz")).arrayBuffer(); // main.wasm.gi has encoding gzip, type wasm set by server, so decoded by browser
             WebAssembly.instantiate(file, go.importObject).then((result) => {
                 go.run(result.instance)
             })

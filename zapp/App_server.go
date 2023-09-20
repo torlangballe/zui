@@ -14,10 +14,12 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/torlangballe/zutil/zbuild"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
@@ -83,15 +85,34 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	smime := mime.TypeByExtension(path.Ext(spath))
 	if spath == "main.wasm.gz" {
-		zlog.Info("Serve WASM.gz:", spath)
+		zlog.Info("Serve WASM.gz:", spath, req.Method)
 		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
 		smime = "application/wasm"
 		w.Header().Set("Content-Encoding", "gzip")
+		// w.Header().Set("Expires", time.Now().Add(time.Hour).Format(time.RFC1123))
+		// w.Header().Set("Vary", "Accept-Encoding")
+		// w.Header().Set("Accept-Ranges", "bytes")
+		// w.Header().Set("X-Frame-Options", "sameorigin")
+		// w.Header().Set("X-Content-Type-Options", "nosniff")
+		// w.Header().Set("Age", "586183")
+		// w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
+		// w.Header().Set("Cross-Origin-Embedder-Policy-Report-Only", `credentialless; report-to="geo-earth-eng-team"`)
+		// w.Header().Set("Cross-Origin-Opener-Policy-Report-Only", `same-origin; report-to="geo-earth-eng-team"`)
+		// w.Header().Set("Cross-Origin-Opener-Policy", `same-origin; report-to="geo-earth-eng-team"`)
 	}
 	if smime != "" {
 		w.Header().Set("Content-Type", smime)
 	}
-	f, err := AllWebFS.Open("www/" + spath)
+	w.Header().Set("Cache-Control", "public, max-age=604800")
+	if !zbuild.Build.At.IsZero() {
+		w.Header().Set("Last-Modified", zbuild.Build.At.Format(time.RFC1123))
+		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
+	}
+	//f, err := AllWebFS.Open("www/" + spath)
+	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, "www/"+spath)
+	if len != 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
+	}
 	// zlog.Info("FilesRedir2:", spath, err)
 	if !zlog.OnError(err, spath) {
 		_, err := io.Copy(w, f)
