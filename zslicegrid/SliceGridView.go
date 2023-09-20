@@ -501,6 +501,8 @@ func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, se
 	if params.LabelizeWidth == 0 {
 		params.LabelizeWidth = 120
 	}
+	params.Styling.Spacing = 10
+
 	params.IsEditOnNewStruct = isEditOnNewStruct
 	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
 		if !ok {
