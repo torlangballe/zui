@@ -7,9 +7,16 @@ import (
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 )
+
+func init() {
+	if zdevice.WasmBrowser() == zdevice.Chrome {
+		checkboxSize = zgeo.Size{21, 21}
+	}
+}
 
 func NewWithStore(defaultVal bool, storeKey string) *CheckBox {
 	val := defaultVal
@@ -30,7 +37,7 @@ func New(on zbool.BoolInd) *CheckBox {
 	v.Element = zdom.DocumentJS.Call("createElement", "input")
 	v.JSSet("style", "position:absolute")
 	v.JSSet("type", "checkbox")
-	v.JSStyle().Set("margin-left", "6px")
+	// v.JSStyle().Set("margin-left", "4px")
 	v.SetCanTabFocus(false)
 	v.View = v
 	v.SetValue(on)
