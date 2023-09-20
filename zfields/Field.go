@@ -953,10 +953,10 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
-		isInRow := zstr.StringsContain(params.UseInValues, RowUseInSpecialName)
-		wantsDialog := zstr.StringsContain(f.UseIn, "$dialog")
+		// isInRow := zstr.StringsContain(params.UseInValues, RowUseInSpecialName)
+		// wantsDialog := zstr.StringsContain(f.UseIn, "$dialog")
 		// zlog.Info("IFIn:", f.Name, wantsDialog, len(f.UseIn), isInRow, zstr.SlicesIntersect(f.UseIn, params.UseInValues))
-		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues) || (isInRow && !wantsDialog))) {
+		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues))) { //} || (isInRow && !wantsDialog))) {
 			return true
 		}
 		return got(index, f, val, sf)
