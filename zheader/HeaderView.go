@@ -217,7 +217,7 @@ func (v *HeaderView) Populate(headers []Header) {
 	}
 }
 
-func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rightStackMargin float64) {
+func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rightStackMargin, headerIncX float64) {
 	var cells []zcontainer.Cell
 	for _, c := range stack.Cells {
 		if !c.Collapsed && !c.Free {
@@ -241,11 +241,15 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rig
 			e -= gap
 		} else {
 			e = w + 2 + rightStackMargin
+			e = v.LocalRect().Max().X
 		}
 		hv := hviews[i]
 		hr := hv.Rect()
 		hr.Pos.X = x
-		hr.SetMaxX(e)
+		if i != 0 {
+			hr.Pos.X -= headerIncX
+		}
+		hr.SetMaxX(e - headerIncX)
 		x = e
 		hv.SetRect(hr)
 		// zlog.Info("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())

@@ -116,7 +116,8 @@ func (v *TableView[S]) ArrangeChildren() {
 			fv.ArrangeChildren()
 		}
 		if fv != nil {
-			v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin, v.Grid.BarSize)
+			headerIncX := v.Header.AbsoluteRect().Pos.X - fv.AbsoluteRect().Pos.X
+			v.Header.FitToRowStack(&fv.StackView, v.ColumnMargin, v.Grid.BarSize, headerIncX)
 		}
 	}
 }
