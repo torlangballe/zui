@@ -266,7 +266,9 @@ func (v *FieldSliceView) selectItem(i int) {
 		zcontainer.FocusNext(cell.View, true, true)
 	}
 	v.updateMenu()
-	zcontainer.ArrangeChildrenAtRootContainer(v)
+	if v.IsPresented() {
+		zcontainer.ArrangeChildrenAtRootContainer(v)
+	}
 }
 
 func (v *FieldSliceView) UpdateSlice(slicePtr any) {
