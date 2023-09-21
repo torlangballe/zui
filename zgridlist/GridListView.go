@@ -113,6 +113,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.AddChild(v.cellsView, -1)
 	v.cellsView.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 	v.cellsView.SetPointerEnterHandler(true, v.handleHover)
+	v.cellsView.SetStrokeSide(1, zgeo.ColorBlack, zgeo.TopLeft, true) // we set if for non also, in case it moved
 	v.CellColor = DefaultCellColor
 	v.BorderColor = DefaultBorderColor
 	v.SelectColor = DefaultSelectColor
@@ -124,7 +125,6 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.MultiplyColorAlternate = 0.95
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
-	v.SetStroke(1, zgeo.ColorBlack, false)
 	v.loadOpenBranches()
 	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
 		// zlog.Info("Scroll:", pos)
@@ -617,8 +617,6 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	}
 	// zlog.Info("GLV CalculatedGridSize2:", s, v.Spacing.H)
 	s.W += childSize.W*x + v.Spacing.W*(x-1)
-	s.W += v.BarSize // scroll bar
-	// zlog.Info("GL:CalculatedGridSize:", s)
 	return s
 }
 
@@ -728,20 +726,15 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	if v.CellCountFunc() == 0 {
 		return
 	}
-	rect := v.LocalRect().ExpandedToInt()
-	rect.Size.W -= v.BarSize
+	rect := v.cellsView.LocalRect().ExpandedToInt()
 	// zlog.Info("ForEachCell", rect)
 	pos := rect.Pos.Floor()
-	childSize := rect.Size.Plus(v.margin.Size)
-	width := childSize.W
-
-	if v.CellHeightFunc == nil {
-		childSize = v.getAChildSize(rect.Size).Ceil()
-	} else {
-		zlog.Assert(v.MaxColumns <= 1)
-	}
+	width := rect.Size.W + v.margin.Size.W - v.Spacing.W
+	childSize := v.getAChildSize(zgeo.Size{width, rect.Size.H}).Ceil()
+	zlog.Assert(v.MaxColumns <= 1)
 	// zlog.Info("ForEachCell", rect, childSize)
 	v.Columns, v.Rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
+	width -= (float64(v.Columns) - 1) * v.Spacing.W
 	var x, y int
 	v.VisibleRows = 0
 	for i := 0; i < v.CellCountFunc(); i++ {
@@ -749,12 +742,14 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		if v.CellHeightFunc != nil {
 			childSize.H = v.CellHeightFunc(cellID)
 		}
+		var s zgeo.Size
+		s.W = float64(x+1)*width/float64(v.Columns) - float64(x)*width/float64(v.Columns)
+		s.H = childSize.H
+		// if r.Max().X < endx {
+		// zlog.Info("HERE???", v.Columns, r.Max().X, endx, x+1, width, v.Columns)
 
-		r := zgeo.Rect{Pos: pos, Size: childSize}
-		endx := math.Ceil(float64(x+1) * width / float64(v.Columns))
-		if r.Max().X < endx {
-			r.SetMaxX(endx)
-		}
+		r := zgeo.Rect{Pos: pos, Size: s}
+		// }
 		lastx := (x == v.Columns-1)
 		lasty := (y == v.Rows-1)
 		var minx, maxx, miny, maxy float64
@@ -764,7 +759,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		}
 		maxx = -v.Spacing.W / 2
 		if lastx {
-			maxx = -(rect.Max().X - r.Max().X)
+			maxx += v.margin.Max().X
 		}
 		miny = v.Spacing.H / 2
 		if y == 0 {
@@ -772,16 +767,19 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		}
 		maxy = -v.Spacing.H / 2
 		if lasty {
-			maxy += v.margin.Max().Y
+			maxy += v.margin.Max().Y + 1
 		}
 		marg := zgeo.RectFromXY2(minx, miny, maxx, maxy).ExpandedToInt()
-		r.Size.Add(marg.Size.Negative())
+		r.Size.Add(marg.Size.Negative()) // expand r's size to include margins
+		r = r.ExpandedToInt()
 		cr := r.Plus(marg)
 		visible := (r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+v.innerRect().Size.H)
 		r2 := r
 		if v.BorderColor.Valid {
 			r2.Size.W -= 1
 		}
+		// if lastx {
+		// }
 		if !got(cellID, r2, cr, x, y, visible) {
 			break
 		}
@@ -816,16 +814,11 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) ArrangeChildren() {
-	w := zscrollview.DefaultBarSize
-	if v.CellCountFunc() < 20 {
-		w = 0
-	}
-	v.ScrollView.BarSize = w
 	v.ScrollView.ArrangeChildren()
-	locSize := v.innerRect().Size
-	s := v.CalculatedGridSize(locSize)
-	r := zgeo.Rect{Size: zgeo.Size{locSize.W, s.H + 1}}
-	r.Pos.Y--
+	cellsSize := v.innerRect().Size
+	s := v.CalculatedGridSize(cellsSize)
+	w := v.LocalRect().Size.W - v.BarSize
+	r := zgeo.Rect{Size: zgeo.Size{w, s.H}}
 	v.cellsView.SetRect(r)
 	v.LayoutCells(false)
 }

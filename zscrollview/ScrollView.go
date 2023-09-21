@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -26,7 +27,13 @@ type ScrollView struct {
 	BarSize                float64
 }
 
-var DefaultBarSize = 22.0
+var DefaultBarSize = 16.0 // 22?
+
+func init() {
+	if zdevice.WasmBrowser() == zdevice.Safari {
+		DefaultBarSize = 15
+	}
+}
 
 func New() *ScrollView {
 	v := &ScrollView{}

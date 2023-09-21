@@ -56,7 +56,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	v.Grid.MaxColumns = 1
 	v.Grid.SetMargin(zgeo.Rect{})
 	v.ColumnMargin = 5
-	v.RowInset = 7
+	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
 	v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
