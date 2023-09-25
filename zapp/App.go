@@ -33,7 +33,7 @@ type LocationTimeInfo struct {
 var (
 	AppMain                    *App   // AppMain is the main instance of app. Likely the ONLY one
 	DownloadPathPrefix         string // DownloadPathPrefix is the prefix to create a url to download something from the app
-	DocumentationValues        zdict.Dict
+	DocumentationValues        = zdict.Dict{}
 	AddDocumentationValuesFunc func() zdict.Dict
 )
 
