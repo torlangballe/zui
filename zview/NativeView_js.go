@@ -231,13 +231,17 @@ func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
 	}
 }
 
+func SetUserSelect(v *NativeView, val string) {
+	v.JSStyle().Set("user-select", val)
+	v.JSStyle().Set("-webkit-user-select", val)
+}
+
 func (v *NativeView) SetSelectable(on bool) {
 	val := "none" // https://stackoverflow.com/questions/3779534/how-do-i-disable-text-selection-with-css-or-javascript
 	if on {
 		val = "all"
 	}
-	v.JSStyle().Set("user-select", val)
-	v.JSStyle().Set("-webkit-user-select", val)
+	SetUserSelect(v, val)
 }
 
 func (v *NativeView) SetCorner(radius float64) {
@@ -315,7 +319,7 @@ func (v *NativeView) GetScale() float64 {
 
 func (v *NativeView) Show(show bool) {
 	// if strings.HasSuffix(v.Hierarchy(), "activity.png") {
-	// 	zlog.Info("Show", v.Hierarchy(), show, zlog.CallingStackString())
+	// zlog.Info("Show", v.Hierarchy(), show, zlog.CallingStackString())
 	// }
 	str := "hidden"
 	if show {
