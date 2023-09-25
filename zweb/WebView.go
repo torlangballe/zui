@@ -19,7 +19,7 @@ var DefaultBarIconSize float64 = 20
 
 type WebView struct {
 	nativeWebView
-	zcontainer.ContainerView
+	zview.NativeView
 	url               string
 	minSize           zgeo.Size
 	History           []string
@@ -44,21 +44,21 @@ func NewView(minSize zgeo.Size, isFrame, makeBar bool) (webView *WebView) {
 	return webView
 }
 
-func (v *WebView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.minSize
-}
-
 func (v *WebView) ReadyToShow(beforeWindow bool) {
 	if beforeWindow {
+		v.Parent().SetJSStyle("overflow", "auto")
 		return
 	}
+	// v.SetJSStyle("overflow", "auto")
+
 	win := zwindow.FromNativeView(&v.NativeView)
 	win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
 		if km.Key == 'R' && km.Modifier == zkeyboard.ModifierAlt|zkeyboard.ModifierControl {
 			zlog.Info("Refresh")
 			v.SetURL(v.url)
+			return true
 		}
-		return true
+		return false
 	})
 }
 
@@ -116,3 +116,15 @@ func OpenFullScreenWebViewInScreenID(screenID int64, surl string) {
 	win.Activate()
 	wv.SetURL(surl)
 }
+
+// func NewViewWithScrollAndPadding(minSize zgeo.Size, isFrame, makeBar bool) (*zcontainer.StackView, *WebView) {
+// 	web := NewView(minSize, isFrame, makeBar)
+// 	stack := zcontainer.StackViewVert("web-stack")
+// 	if web.Bar != nil {
+// 		stack.Add(web.Bar, zgeo.TopLeft|zgeo.HorExpand)
+// 	}
+// 	scroll := zscrollview.New()
+// 	stack.Add(scroll, zgeo.TopLeft|zgeo.Expand)
+// 	stack.AddChild(web, -1)
+// 	return stack, web
+// }

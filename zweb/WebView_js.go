@@ -4,6 +4,7 @@ import (
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -25,6 +26,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		v.Element.Set("allow", "encrypted-media")
 		v.Element.Set("frameBorder", "0")
 	}
+	v.Element.Set("overflow", "auto")
 	v.Element.Set("style", "position:absolute")
 	v.SetObjectName("webview") // must be after creation
 	v.View = v
@@ -52,7 +54,6 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		return true
 	})
 	v.AddOnRemoveFunc(repeater.Stop)
-	//	v.JSStyle().Set("overflow", "hidden") // this clips the canvas, otherwise it is on top of corners etc
 }
 
 func (v *WebView) setTitle() {
@@ -91,4 +92,10 @@ func (v *WebView) FetchHTMLAndSet(surl string) {
 
 func (v *WebView) SetHTMLContent(html string) {
 	v.Element.Set("innerHTML", html)
+}
+
+func (v *WebView) CalculatedSize(total zgeo.Size) zgeo.Size {
+	h := v.JSGet("scrollHeight").Float()
+	zfloat.Maximize(&h, v.minSize.H)
+	return zgeo.Size{v.minSize.W, h}
 }
