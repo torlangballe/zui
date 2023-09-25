@@ -161,7 +161,9 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 
 func (v *TableView[S]) createRow(id string) zview.View {
 	s := v.StructForID(id)
-	return v.createRowFromStruct(s, id)
+	view := v.createRowFromStruct(s, id)
+	view.Native().SetSelectable(false)
+	return view
 }
 
 func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
