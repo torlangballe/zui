@@ -64,16 +64,16 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v.SetSpacing(0)
 
 	// v.SetBGColor(zgeo.ColorWhite)
-	hstack := zcontainer.StackViewHor("hstack")
-	hstack.SetSpacing(0)
+	// hstack := zcontainer.StackViewHor("hstack")
+	// hstack.SetSpacing(0)
 	//	hstack.SetMarginS(zgeo.Size{30, 30})
 
 	isFrame := true
 	isMakeBar := true
 	v.WebView = zweb.NewView(minSize, isFrame, isMakeBar)
 	v.Add(v.WebView.Bar, zgeo.TopLeft|zgeo.HorExpand)
-	v.Add(hstack, zgeo.TopLeft|zgeo.Expand)
-	hstack.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
+	v.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
+	// hstack.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
 
 	if zui.DebugOwnerMode {
 		edit := zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.SizeBoth(zweb.DefaultBarIconSize))
