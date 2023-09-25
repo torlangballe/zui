@@ -1,6 +1,8 @@
 package zcustom
 
 import (
+	"syscall/js"
+
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
@@ -8,7 +10,6 @@ import (
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
-	"syscall/js"
 )
 
 // TODO: store pressed/logpressed js function, and release when adding new one
@@ -21,7 +22,7 @@ func (v *CustomView) Init(view zview.View, name string) {
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetJSStyle("overflow", "hidden")
-	v.SetSelectable(false)
+	zview.SetUserSelect(&v.NativeView, "auto")
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
 }
