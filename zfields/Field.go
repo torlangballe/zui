@@ -243,6 +243,27 @@ func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int
 // 	return zstr.FirstToLowerWithAcronyms(name)
 // }
 
+func GetZUITagMap(tagMap map[string][]string) (map[string]string, bool) {
+	m := map[string]string{}
+	zuiParts, got := tagMap["zui"]
+	if !got {
+		return nil, false
+	}
+	for _, part := range zuiParts {
+		if part == "-" {
+			return nil, false
+		}
+		var key, val string
+		if !zstr.SplitN(part, ":", &key, &val) {
+			key = part
+		}
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+		m[key] = val
+	}
+	return m, true
+}
+
 func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
 	f.Index = index
 	//	f.ID = fieldNameToID(sf.Name)
@@ -260,17 +281,12 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
-	for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
-		if part == "-" {
-			return false
-		}
-		var key, val string
-		if !zstr.SplitN(part, ":", &key, &val) {
-			key = part
-		}
-		key = strings.TrimSpace(key)
+	kvMap, has := GetZUITagMap(zreflect.GetTagAsMap(string(sf.Tag)))
+	if !has {
+		return false
+	}
+	for key, val := range kvMap {
 		origVal := val
-		val = strings.TrimSpace(val)
 		barParts := strings.Split(val, "|")
 		if key == "IN" {
 			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
@@ -989,4 +1005,60 @@ func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field,
 
 func (f *Field) IsImageToggle() bool {
 	return f.Flags&FlagIsImage != 0 && f.OffImagePath != ""
+}
+
+func getField(val reflect.Value, indent, desc string) string {
+	var dstr string
+	if desc != "" {
+		dstr = " // " + desc
+	}
+	kind := zreflect.KindFromReflectKindAndType(val.Kind(), val.Type())
+	switch kind {
+	case zreflect.KindInt, zreflect.KindFloat, zreflect.KindBool, zreflect.KindString:
+		return "<" + string(kind) + ">" + dstr + "\n"
+	case zreflect.KindStruct:
+		str := "{" + dstr + "\n"
+		str += OutputJsonStructDescription(val.Interface(), indent+"  ")
+		str += indent + "}\n"
+		return str
+	case zreflect.KindSlice:
+		e := zslice.MakeAnElementOfSliceRValType(val)
+		sliceKind := zreflect.KindFromReflectKindAndType(e.Kind(), e.Type())
+		if sliceKind != zreflect.KindStruct {
+			return "[ <" + string(sliceKind) + "*> ]" + dstr + "\n"
+		}
+		str := "[" + dstr + "\n"
+		str += OutputJsonStructDescription(e.Interface(), indent+"  ")
+		str += indent + "]\n"
+		return str
+	default:
+		return "[unknown]" + dstr + "\n"
+	}
+	return ""
+}
+
+func OutputJsonStructDescription(s any, indent string) string {
+	var str string
+	str += indent + "struct {\n"
+	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		tagMap := zreflect.GetTagAsMap(string(sf.Tag))
+		zuiMap, gotZUI := GetZUITagMap(tagMap)
+		fn := sf.Name
+		tj := tagMap["json"]
+		if len(tj) != 0 && tj[0] != "" {
+			if tj[0] == "-" {
+				return true
+			}
+			fn = tj[0]
+		}
+		var desc string
+		if gotZUI {
+			desc = zuiMap["desc"]
+		}
+		str += indent + `"` + fn + `": `
+		str += getField(val, indent+"  ", desc)
+		return true
+	})
+	str += indent + "}\n"
+	return str
 }
