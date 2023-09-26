@@ -49,8 +49,6 @@ func (v *WebView) ReadyToShow(beforeWindow bool) {
 		v.Parent().SetJSStyle("overflow", "auto")
 		return
 	}
-	// v.SetJSStyle("overflow", "auto")
-
 	win := zwindow.FromNativeView(&v.NativeView)
 	win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
 		if km.Key == 'R' && km.Modifier == zkeyboard.ModifierAlt|zkeyboard.ModifierControl {
