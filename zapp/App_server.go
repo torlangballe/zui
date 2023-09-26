@@ -49,7 +49,6 @@ var AllWebFS zfile.MultiFS
 
 func Init() {
 	zrpc.Register(AppCalls{})
-	zlog.Info("add zapp fs")
 	AllWebFS.Add(wwwFS)
 
 	var beforeWWW string
