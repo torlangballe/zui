@@ -31,11 +31,14 @@ type LocationTimeInfo struct {
 }
 
 var (
-	AppMain                    *App   // AppMain is the main instance of app. Likely the ONLY one
-	DownloadPathPrefix         string // DownloadPathPrefix is the prefix to create a url to download something from the app
-	DocumentationValues        = zdict.Dict{}
-	AddDocumentationValuesFunc func() zdict.Dict
+	AppMain            *App   // AppMain is the main instance of app. Likely the ONLY one
+	DownloadPathPrefix string // DownloadPathPrefix is the prefix to create a url to download something from the app
+	docValuesFuncs     []func() zdict.Dict
 )
+
+func AddDocumentationValuesFunc(f func() zdict.Dict) {
+	docValuesFuncs = append(docValuesFuncs, f)
+}
 
 // SetHandler sets the handler for the app (see handler) above
 func (a *App) SetHandler(handler AppHandler) {
@@ -77,11 +80,8 @@ func GetProcessID() int {
 
 func GetDocumentationValues() zdict.Dict {
 	m := zdict.Dict{}
-	for k, v := range DocumentationValues {
-		m[k] = v
-	}
-	if AddDocumentationValuesFunc != nil {
-		for k, v := range AddDocumentationValuesFunc() {
+	for _, dict := range docValuesFuncs {
+		for k, v := range dict() {
 			m[k] = v
 		}
 	}
