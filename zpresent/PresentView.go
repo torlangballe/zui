@@ -43,6 +43,7 @@ type Attributes struct {
 	ModalDismissOnEscapeKey  bool
 	NoMessageOnOpenFail      bool
 	PlaceOverMargin          zgeo.Size
+	TitledMargin             zgeo.Size
 	PlaceOverView            zview.View
 	FocusView                zview.View
 	PresentedFunc            func(win *zwindow.Window)
@@ -406,7 +407,9 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.SetBGColor(zstyle.DefaultBGColor())
-
+	if att.TitledMargin.H != 0 {
+		stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
+	}
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetSpacing(2)
 	bar.SetMarginS(zgeo.Size{6, 2})
@@ -416,7 +419,8 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
-	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
+	m := zgeo.Size{att.TitledMargin.W, 0}
+	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
 
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
