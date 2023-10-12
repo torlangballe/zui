@@ -797,12 +797,14 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 				x++
 			}
 			continue
+		} else {
+			pos.Y++
 		}
 		if lasty {
 			pos.Y = rect.Pos.Y
 			y = 0
 			x++
-			pos.X += r.Size.W
+			pos.X += r.Size.W - 1
 		} else {
 			if visible {
 				v.VisibleRows++

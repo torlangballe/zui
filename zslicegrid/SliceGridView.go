@@ -20,7 +20,6 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
@@ -66,20 +65,28 @@ type SliceGridView[S zstr.StrIDer] struct {
 	ActionMenu    *zmenu.MenuedOwner
 }
 
+type LayoutType string
+
+const (
+	LayoutHorizontalFirstType = "hor"
+	LayoutVerticalFirstType   = "vert"
+	LayoutSingleRowsType      = "single-rows"
+)
+
 // OptionType is a set of options for altering a SliceGridView's appearance and behavior
 type OptionType int
 
 const (
-	AddNone            OptionType = 0
-	AddBar             OptionType = 1 << iota // Adds a bar stack above the grid.
-	AddSearch                                 // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
-	AddMenu                                   // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
-	AddToggleDirection                        // If set a button to order horizontal first or vertical first is shown
-	AllowNew                                  // There is a Add New item menu
-	AllowDuplicate                            // There is a Add Duplicate item menu
-	AllowDelete                               // It is deletable, and allows keyboard/menu delete
-	AllowEdit                                 // Allows selected cell(s) to be edited with menu or return key.
-	AllowAllEditing    = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
+	AddNone         OptionType = 0
+	AddBar          OptionType = 1 << iota // Adds a bar stack above the grid.
+	AddSearch                              // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
+	AddMenu                                // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
+	AddChangeLayout                        // If set a button to order horizontal first or vertical first is shown
+	AllowNew                               // There is a Add New item menu
+	AllowDuplicate                         // There is a Add Duplicate item menu
+	AllowDelete                            // It is deletable, and allows keyboard/menu delete
+	AllowEdit                              // Allows selected cell(s) to be edited with menu or return key.
+	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
 
 func (o OptionType) String() string {
@@ -93,8 +100,8 @@ func (o OptionType) String() string {
 	if o&AddMenu != 0 {
 		str += "menu "
 	}
-	if o&AddToggleDirection != 0 {
-		str += "toggle "
+	if o&AddChangeLayout != 0 {
+		str += "chlayout "
 	}
 	if o&AllowNew != 0 {
 		str += "new "
@@ -137,7 +144,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AllowAllEditing != 0 {
 		options |= AddMenu
 	}
-	if options&(AddSearch|AddMenu|AddToggleDirection) != 0 {
+	if options&(AddSearch|AddMenu|AddChangeLayout) != 0 {
 		options |= AddBar
 	}
 	v.options = options
@@ -157,17 +164,20 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 
 	horFirst := true
-	if options&AddToggleDirection != 0 {
-		toggle := zimageview.NewValuesView(zgeo.Size{29, 18})
+	if options&AddChangeLayout != 0 {
+		var key string
 		if storeName != "" {
-			key := storeName + ".orderHorFirst"
-			horFirst, _ = zkeyvalue.DefaultStore.GetBool(key, true)
+			key = storeName + ".layout"
 		}
-		toggle.SetAsToggle("images/zcore/order-%s-first.png", "hor", "vert", horFirst)
-		toggle.ValueChangedHandlerFunc = func() {
-			v.handleToggle(toggle.BoolValue())
+		layout := zimageview.NewValuesView(zgeo.Size{31, 19}, key)
+		layout.SetObjectName("layout")
+		layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
+		layout.AddVariant(LayoutVerticalFirstType, "images/zcore/order-vert-first.png")
+		layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
+		layout.ValueChangedHandlerFunc = func() {
+			v.handleLayoutButton(layout.Value())
 		}
-		v.Bar.Add(toggle, zgeo.CenterLeft)
+		v.Bar.Add(layout, zgeo.CenterLeft)
 	}
 	if options&AddMenu != 0 {
 		actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
@@ -284,12 +294,22 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	return
 }
 
-func (v *SliceGridView[S]) handleToggle(newHorFirst bool) {
+func (v *SliceGridView[S]) handleLayoutButton(value string) {
 	if v.Grid == nil {
 		return
 	}
-	v.Grid.HorizontalFirst = newHorFirst
-	v.Grid.LayoutCells(false)
+	switch LayoutType(value) {
+	case LayoutHorizontalFirstType:
+		v.Grid.HorizontalFirst = true
+		v.Grid.MaxColumns = 0
+	case LayoutVerticalFirstType:
+		v.Grid.HorizontalFirst = false
+		v.Grid.MaxColumns = 0
+	case LayoutSingleRowsType:
+		v.Grid.HorizontalFirst = true
+		v.Grid.MaxColumns = 1
+	}
+	v.ArrangeChildren()
 }
 
 func (v *SliceGridView[S]) updateView() {
