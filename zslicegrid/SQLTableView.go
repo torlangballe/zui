@@ -64,7 +64,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	v.equalFields = map[string]string{}
 	v.setFields = map[string]string{}
 	v.fieldIsString = map[string]bool{}
-	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(s, zfields.FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		var column string
 		tags := zreflect.GetTagAsMap(string(sf.Tag))
 		dbTags := tags["db"]
@@ -122,7 +122,7 @@ func (v *SQLTableView[S]) addNew(duplicate bool) {
 	if duplicate {
 		sid := v.Grid.SelectedIDs()[0]
 		s = *v.StructForID(sid)
-		zreflect.ForEachField(&s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		zreflect.ForEachField(&s, zfields.FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 			tags := zreflect.GetTagAsMap(string(sf.Tag))
 			primary := zstr.StringsContain(tags["db"], "primary")
 			// zlog.Info("Column:", column, primary, dbTags)
@@ -151,7 +151,7 @@ func (v *SQLTableView[S]) insertRow(s S) {
 	info.EqualColumns = v.equalFields
 
 	first := v.setFields[v.Header.SortOrder[0].FieldName]
-	val, _, findex := zreflect.FieldForName(&s, true, first)
+	val, _, findex := zreflect.FieldForName(&s, zfields.FlattenIfAnonymousOrZUITag, first)
 	if zlog.ErrorIf(findex == -1, first) {
 		return
 	}

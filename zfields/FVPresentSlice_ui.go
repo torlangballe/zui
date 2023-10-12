@@ -43,7 +43,7 @@ func reduceLocalEnumField[S any](editStruct *S, enumField reflect.Value, index i
 		return
 	}
 	zlog.Assert(ei.Kind() == reflect.Slice)
-	fromVal, _ := zreflect.FieldForIndex(fromStruct.Interface(), true, findex)
+	fromVal, _ := zreflect.FieldForIndex(fromStruct.Interface(), FlattenIfAnonymousOrZUITag, findex)
 	// zlog.Info("reduceLocalEnumField", f.Name, findex, ei.Len(), ei.Type(), fromStruct.Type(), fromStruct.Kind())
 	var reduce, hasZero bool
 	for i := 0; i < ei.Len(); {
@@ -195,7 +195,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				return false
 			}
 			// zlog.Info("EDITAfter2data:", zlog.Full(editStruct))
-			zreflect.ForEachField(editStruct, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+			zreflect.ForEachField(editStruct, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 				if sf.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}
@@ -209,7 +209,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				f := findFieldWithIndex(&fview.Fields, index)
 				if f.IsStatic() {
-					return true // continue
+					return true // means continue
 				}
 				if params.MultiSliceEditInProgress && val.Kind() == reflect.Slice {
 					if f.Enum == "" {
@@ -244,6 +244,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				if !val.IsZero() || length == 1 || isCheck {
 					for i := 0; i < length; i++ {
+						// zlog.Info("SetFieldForSlice:", f.Name, i, val)
 						sliceField := sliceVal.Index(i).Field(index)
 						sliceField.Set(val)
 					}

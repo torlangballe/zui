@@ -235,7 +235,7 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 
 func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int) {
 	name = zstr.HeadUntil(name, ".")
-	fval, _, i := zreflect.FieldForName(structure, true, name)
+	fval, _, i := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, name)
 	return fval, i
 }
 
@@ -243,15 +243,15 @@ func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int
 // 	return zstr.FirstToLowerWithAcronyms(name)
 // }
 
-func GetZUITagMap(tagMap map[string][]string) (map[string]string, bool) {
-	m := map[string]string{}
+func GetZUITagMap(tagMap map[string][]string) (m map[string]string, skip bool) {
 	zuiParts, got := tagMap["zui"]
 	if !got {
 		return nil, false
 	}
+	m = map[string]string{}
 	for _, part := range zuiParts {
 		if part == "-" {
-			return nil, false
+			return nil, true
 		}
 		var key, val string
 		if !zstr.SplitN(part, ":", &key, &val) {
@@ -261,7 +261,7 @@ func GetZUITagMap(tagMap map[string][]string) (map[string]string, bool) {
 		val = strings.TrimSpace(val)
 		m[key] = val
 	}
-	return m, true
+	return m, false
 }
 
 func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
@@ -281,8 +281,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
-	kvMap, has := GetZUITagMap(zreflect.GetTagAsMap(string(sf.Tag)))
-	if !has {
+	kvMap, skip := GetZUITagMap(zreflect.GetTagAsMap(string(sf.Tag)))
+	if skip {
 		return false
 	}
 	for key, val := range kvMap {
@@ -937,9 +937,21 @@ func Name(f *Field) string {
 	return ""
 }
 
+func FlattenIfAnonymousOrZUITag(f reflect.StructField) bool {
+	if f.Anonymous {
+		return true
+	}
+	kvMap, skip := GetZUITagMap(zreflect.GetTagAsMap(string(f.Tag)))
+	if kvMap == nil || skip {
+		return false
+	}
+	_, got := kvMap["flatten"]
+	return got
+}
+
 func ForEachField(structure any, params FieldParameters, fields []Field, got func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool) {
 	if len(fields) == 0 {
-		zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 			f := EmptyField
 			if !f.SetFromReflectValue(val, sf, index, params) {
 				return true
@@ -948,7 +960,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 			return true
 		})
 	}
-	zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := findFieldWithIndex(&fields, index)
 		if f == nil {
 			return true
@@ -958,7 +970,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		}
 		return true
 	})
-	zreflect.ForEachField(structure, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		if zstr.IndexOf(sf.Name, params.SkipFieldNames) != -1 {
 			return true
 		}
@@ -1040,9 +1052,9 @@ func getField(val reflect.Value, indent, desc string) string {
 func OutputJsonStructDescription(s any, indent string) string {
 	var str string
 	str += indent + "struct {\n"
-	zreflect.ForEachField(s, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(s, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		tagMap := zreflect.GetTagAsMap(string(sf.Tag))
-		zuiMap, gotZUI := GetZUITagMap(tagMap)
+		zuiMap, _ := GetZUITagMap(tagMap)
 		fn := sf.Name
 		tj := tagMap["json"]
 		if len(tj) != 0 && tj[0] != "" {
@@ -1052,7 +1064,7 @@ func OutputJsonStructDescription(s any, indent string) string {
 			fn = tj[0]
 		}
 		var desc string
-		if gotZUI {
+		if zuiMap != nil {
 			desc = zuiMap["desc"]
 		}
 		str += indent + `"` + fn + `": `

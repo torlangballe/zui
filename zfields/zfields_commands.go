@@ -53,7 +53,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 		kind := zreflect.KindFromReflectKindAndType(val.Kind(), val.Type())
 		isPointer := (kind == zreflect.KindPointer)
 		name := strings.ToLower(f.FieldName)
-		zlog.Info("ParseCommandArgsToStructFields:", name, isPointer)
+		// zlog.Info("ParseCommandArgsToStructFields:", name, isPointer)
 		if isPointer {
 			val = reflect.New(val.Type().Elem()).Elem()
 			if len(args) == 0 {
@@ -88,7 +88,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 			return false
 		}
 		arg := zstr.ExtractFirstString(&args)
-		zlog.Info("setStr2Val", arg, kind, val.Type(), name)
+		// zlog.Info("setStr2Val", arg, kind, val.Type(), name)
 		err = setStrToRVal(arg, kind, f, val, name)
 		if err != nil {
 			return false

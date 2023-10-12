@@ -139,7 +139,7 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	v.StackView.Init(v, vertical, id)
 	v.SetSpacing(params.Styling.Spacing)
 	v.data = data
-	zreflect.ForEachField(v.data, true, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(v.data, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
 		f := EmptyField
 		if !f.SetFromReflectValue(val, sf, index, params.FieldParameters) {
 			return true
@@ -256,7 +256,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 		var prefix, fname string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(local, "./", &fname) {
-			rval, _, findex := zreflect.FieldForName(v.data, true, fname)
+			rval, _, findex := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
 			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
@@ -268,14 +268,14 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
-			rval, _, findex := zreflect.FieldForName(v.data, true, fname)
+			rval, _, findex := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
 			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
 			continue
 		}
 		if zstr.HasPrefix(local, "../", &fname) && v.parent != nil {
-			rval, _, findex := zreflect.FieldForName(v.parent.Data(), true, fname)
+			rval, _, findex := zreflect.FieldForName(v.parent.Data(), FlattenIfAnonymousOrZUITag, fname)
 			if findex != -1 {
 				doShowEnableItem(rval, isShow, view, neg)
 			}
@@ -803,16 +803,25 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) string {
 	case "memory":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
+			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+				return ""
+			}
 			return zwords.GetMemoryString(b, "", significant)
 		}
 	case "storage":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
+			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+				return ""
+			}
 			return zwords.GetStorageSizeString(b, "", significant)
 		}
 	case "bps":
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
+			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+				return ""
+			}
 			return zwords.GetBandwidthString(b, "", significant)
 		}
 	case "":
@@ -1311,7 +1320,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 	var tipField, tip string
 	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
-		ei, _, findex := zreflect.FieldForName(structure, true, tipField)
+		ei, _, findex := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, tipField)
 		if findex != -1 {
 			tip = fmt.Sprint(ei.Interface())
 		} else { // can't use tip == "" to check, since field might just be empty
@@ -1349,7 +1358,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		return
 	}
 	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name, zlog.Pointer(v.data))
-	rval, _ := zreflect.FieldForIndex(v.data, true, f.Index)
+	rval, _ := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
 
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
