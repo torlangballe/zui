@@ -84,12 +84,14 @@ func showSliceStruct(s *SliceCommander, c *zcommands.CommandInfo, index int, goI
 		return
 	}
 	structCommander := &StructCommander{}
-	structCommander.StructurePointer = sval.Index(index).Addr().Interface()
+	structCommander.StructurePointerFunc = func() any {
+		return sval.Index(index).Addr().Interface()
+	}
 	structCommander.Parameters = s.EditParameters
 	structCommander.UpdateFunc = s.UpdateFunc
 	if goIn {
 		dir := fmt.Sprint(index + 1)
-		rval, f, got := zfields.FindIndicatorRValOfStruct(structCommander.StructurePointer)
+		rval, f, got := zfields.FindIndicatorRValOfStruct(structCommander.StructurePointerFunc())
 		if got {
 			dir = fmt.Sprint(rval)
 			if f.Enum != "" {
@@ -197,6 +199,7 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWrite
 			if f.Title != "" {
 				title = f.Title
 			}
+			title = strings.Replace(title, " ", "", -1)
 			fmt.Fprint(tabs, zstr.EscGreen, title, "\t")
 		}
 		cols := 60

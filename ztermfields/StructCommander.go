@@ -17,10 +17,10 @@ import (
 )
 
 type StructCommander struct {
-	Parameters       zfields.FieldParameters
-	StructurePointer any
-	UpdateFunc       func(structPtr any)
-	lastEdits        []editField
+	Parameters           zfields.FieldParameters
+	StructurePointerFunc func() any
+	UpdateFunc           func(structPtr any)
+	lastEdits            []editField
 }
 
 type editField struct {
@@ -33,7 +33,7 @@ const checkedString = zstr.EscMagenta + " [√]" + zstr.EscNoColor
 
 func (s *StructCommander) callUpdate() {
 	if s.UpdateFunc != nil {
-		s.UpdateFunc(s.StructurePointer)
+		s.UpdateFunc(s.StructurePointerFunc())
 	}
 }
 
@@ -45,7 +45,7 @@ func (s *StructCommander) Show(c *zcommands.CommandInfo) string {
 		return ""
 	}
 	var edits []editField
-	outputFields(s, c, "", s.StructurePointer, 0, 0, false, &edits)
+	outputFields(s, c, "", s.StructurePointerFunc(), 0, 0, false, &edits)
 	s.lastEdits = edits
 	return ""
 }
@@ -135,7 +135,7 @@ func editEnumIndicator(s *StructCommander, c *zcommands.CommandInfo, edit editFi
 
 func editLocalEnumIndicator(s *StructCommander, c *zcommands.CommandInfo, edit editField) {
 	zlog.Info("editLocalEnumIndicator:", edit.value.Interface(), zlog.Full(*edit.field))
-	ei, findex := zfields.FindLocalFieldWithFieldName(s.StructurePointer, edit.field.LocalEnum)
+	ei, findex := zfields.FindLocalFieldWithFieldName(s.StructurePointerFunc(), edit.field.LocalEnum)
 	zlog.Assert(findex != -1, edit.field.Name, edit.field.LocalEnum)
 	enum := ei.Interface().(zdict.ItemsGetter).GetItems()
 	for i, e := range enum {
@@ -167,7 +167,7 @@ func editSliceIndicator(s *StructCommander, c *zcommands.CommandInfo, edit editF
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
-		fval, _, findex := zreflect.FieldForName(a, true, indicatorName)
+		fval, _, findex := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
 		var title string
 		if findex == -1 {
 			title = fmt.Sprint(j + 1)
@@ -259,7 +259,7 @@ func outputSlice(s *StructCommander, c *zcommands.CommandInfo, pre, path string,
 	lastUsedID, _ := zkeyvalue.DefaultStore.GetString(key)
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
-		fval, _, indicatorIndex := zreflect.FieldForName(a, true, indicatorName)
+		fval, _, indicatorIndex := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
 		if lastUsedID == id || lastUsedID == "" || j == length-1 {
 			title := fmt.Sprint(fval)
