@@ -7,13 +7,18 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
+// A ValuesView is a set of string-values and paths to images for each value.
+// Pressing it chooses the next value/image in variants.
 type ValuesView struct {
 	ImageView
 	ValueChangedHandlerFunc func()
 	variants                []variant
 	currentValue            string
+	storeKey                string
 }
 
 type variant struct {
@@ -21,23 +26,24 @@ type variant struct {
 	path  string
 }
 
-func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size) {
+func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size, key string) {
+	v.storeKey = key
 	v.ImageView.Init(view, nil, "", fitSize)
 	v.SetPressedHandler(v.pressed)
+	v.SetObjectName("ValuesView")
+	ztimer.StartIn(0.1, func() {
+		v.update() // a bit of a hack to use a timer, but v.ReadyToShow() seems to mess up exposing. TODO: Fix
+	})
 }
 
-func NewValuesView(fitSize zgeo.Size) *ValuesView {
+func NewValuesView(fitSize zgeo.Size, key string) *ValuesView {
 	v := &ValuesView{}
-	v.Init(v, fitSize)
+	v.Init(v, fitSize, key)
 	return v
 }
 
 func (v *ValuesView) AddVariant(value, path string) {
 	v.variants = append(v.variants, variant{value: value, path: path})
-}
-
-func (v *ValuesView) AddPathVariant(value string, imagePath string) {
-	v.AddVariant(value, imagePath)
 }
 
 func (v *ValuesView) SetValue(value string) {
@@ -47,6 +53,9 @@ func (v *ValuesView) SetValue(value string) {
 			v.SetImage(nil, a.path, nil)
 			if v.ValueChangedHandlerFunc != nil {
 				v.ValueChangedHandlerFunc()
+			}
+			if v.storeKey != "" {
+				zkeyvalue.DefaultStore.SetString(value, v.storeKey, true)
 			}
 			break
 		}
@@ -67,6 +76,9 @@ func (v *ValuesView) BoolValue() bool {
 }
 
 func (v *ValuesView) pressed() {
+	if len(v.variants) == 0 {
+		return
+	}
 	var set int
 	for i, a := range v.variants {
 		if a.value == v.currentValue {
@@ -91,7 +103,23 @@ func (v *ValuesView) SetAsToggle(path, ptrue, pfalse string, initialValue bool) 
 		ptrue = path + ptrue
 		pfalse = path + pfalse
 	}
-	v.AddPathVariant(zbool.ToString(true), ptrue)
-	v.AddPathVariant(zbool.ToString(false), pfalse)
+	v.AddVariant(zbool.ToString(true), ptrue)
+	v.AddVariant(zbool.ToString(false), pfalse)
 	v.SetBoolValue(initialValue)
+}
+
+func (v *ValuesView) update() {
+	if len(v.variants) == 0 {
+		return
+	}
+	if v.currentValue == "" {
+		var val string
+		if v.storeKey != "" {
+			val, _ = zkeyvalue.DefaultStore.GetString(v.storeKey)
+		}
+		if val == "" {
+			val = v.variants[0].value
+		}
+		v.SetValue(val)
+	}
 }

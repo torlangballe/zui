@@ -138,7 +138,6 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// }
 	s.Add(margSize.Negative())
 	s.Maximize(zgeo.Size{2, 2})
-	// zlog.Info("IV CalculatedSize:", v.alignment, v.image != nil, v.MinSize(), v.FitSize(), "got:", s)
 	return s
 }
 
