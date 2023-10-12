@@ -39,7 +39,7 @@ func (s *StructCommander) callUpdate() {
 
 func (s *StructCommander) Show(c *zcommands.CommandInfo) string {
 	if c.Type == zcommands.CommandHelp {
-		return "Show all fields in the hierarchy, indexing editable ones.\nUse edit command to alter a field."
+		return "Show all fields in the hierarchy, indexing editable ones.\rUse edit command to alter a field."
 	}
 	if c.Type == zcommands.CommandExpand {
 		return ""

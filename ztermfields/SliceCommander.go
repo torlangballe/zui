@@ -38,10 +38,10 @@ func makeRowParameters() zfields.FieldParameters {
 }
 
 func (s *SliceCommander) In(c *zcommands.CommandInfo, a struct {
-	Index int `zui:"index of rows to go into"`
+	Index int `zui:"desc:index of rows to go into."`
 }) string {
 	if c.Type == zcommands.CommandHelp {
-		return "Enters row <index> as listed with 'rows'. Shows hierarchy, and then allows editing, and more showing.\nType cd .. to exit."
+		return "Enters row <index> as listed with 'rows'.\rShows hierarchy, and then allows editing, and more showing.\rType cd .. to exit."
 	}
 	if c.Type == zcommands.CommandExpand {
 		return ""
@@ -51,13 +51,13 @@ func (s *SliceCommander) In(c *zcommands.CommandInfo, a struct {
 }
 
 func (s *SliceCommander) Rows(c *zcommands.CommandInfo, a struct {
-	WildCard string `zui:"desc:Use wildcard to match only text in some rows,allowempty"`
+	WildCard string `zui:"desc:Use wildcard to match only text in some rows.,allowempty"`
 }) string {
 	switch c.Type {
 	case zcommands.CommandExpand:
 		return ""
 	case zcommands.CommandHelp:
-		return "lists rows in the table, indexing each row. Use the show <index> command to alter one."
+		return "lists rows in the table, indexing each row.\rUse the show <index> command to alter one."
 	}
 	lastFieldValues := map[int]string{}
 	outputRows(s, c, "", s.SlicePointerFunc(), a.WildCard, lastFieldValues) //, &edits)
