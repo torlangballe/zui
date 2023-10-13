@@ -686,7 +686,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.Columns += 3
 			}
 			if f.Columns == 0 {
-				f.MinWidth = 90
+				f.MinWidth = 100
 			} else {
 				f.Columns += 2 // just add a bit of padding
 			}
