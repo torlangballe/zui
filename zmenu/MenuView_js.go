@@ -23,7 +23,7 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 	sel.Set("style", "position:absolute")
 	v.View = v
 	// v.SetNativeMargin(zgeo.RectFromXY2(0, 0, 0, -12))
-	v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
+	// v.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal)) // Has to be 14!!!
 	v.SetObjectName(name)
 	if len(items) > 0 {
 		v.UpdateItems(items, value, false)
