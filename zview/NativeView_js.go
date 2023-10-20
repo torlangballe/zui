@@ -1263,3 +1263,13 @@ func (v *NativeView) RootParent() *NativeView {
 	}
 	return all[i]
 }
+
+func DownloadURI(uri, name string) {
+	link := zdom.DocumentJS.Call("createElement", "a")
+	link.Set("href", uri)
+	link.Set("download", name)
+	zdom.DocumentJS.Get("body").Call("appendChild", link)
+	link.Call("click")
+	zdom.DocumentJS.Get("body").Call("removeChild", link)
+	// link.Delete()
+}
