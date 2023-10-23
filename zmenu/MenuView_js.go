@@ -129,13 +129,14 @@ func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
 	//  zlog.Info("updateVals:", v.ObjectName(), value, setID)
 }
 
-func (v *MenuView) SelectWithValue(value any) {
+func (v *MenuView) SelectWithValue(value any) bool {
 	// zlog.Info("MV SelectWithValue:", value)
 	if value == nil {
-		if len(v.items) != 0 {
-			v.SelectWithValue(v.items[0].Value)
-		}
-		return
+		return false
+		// if len(v.items) != 0 {
+		// 	v.SelectWithValue(v.items[0].Value)
+		// }
+		// return true
 	}
 	// if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.CallingStackString()) {
 	// 	return
@@ -148,9 +149,10 @@ func (v *MenuView) SelectWithValue(value any) {
 			// zlog.Info("MV SelectWithValue Set:", i, v.ObjectName(), len(v.items), options, value)
 			o := options.Index(i)
 			o.Set("selected", "true")
-			break
+			return true
 		}
 	}
+	return false
 }
 
 // func (v *MenuView) IDAndValue() (id string, value any) {

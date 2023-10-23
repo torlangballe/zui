@@ -15,8 +15,7 @@ func (v *MenuView) SetSelectedHandler(handler func()) {}
 func (v *MenuView) Empty()                            {}
 func (v *MenuView) AddSeparator()                     {}
 
-func (v *MenuView) SetAndSelect(items zdict.NamedValues, value any)         {}
-func (v *MenuView) SelectWithValue(value any) *MenuView                     { return v }
+func (v *MenuView) SelectWithValue(value any) bool                          { return true }
 func (v *MenuView) SetFont(font *zgeo.Font)                                 {}
 func (v *MenuView) AddItem(name string, value any)                          {}
 func (v *MenuView) RemoveItemByValue(value any)                             {}

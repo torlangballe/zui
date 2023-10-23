@@ -71,6 +71,11 @@ func (v *MenuView) SetStoreKey(key string) {
 	v.storeKey = key
 	a, got := zkeyvalue.DefaultStore.GetItemAsAny(v.storeKey)
 	if got {
-		v.SelectWithValue(a)
+		if v.SelectWithValue(a) {
+			return
+		}
+	}
+	if len(v.items) != 0 && v.currentValue == nil {
+		v.SelectWithValue(v.items[0].Value)
 	}
 }
