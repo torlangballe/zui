@@ -92,7 +92,6 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		zkeyvalue.SetOptionChangeHandler(v, func(key string) {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 			hour, err := strconv.Atoi(v.hourText.Text())
-			// zlog.Info("Opt changed", changed, hour, err)
 			if err == nil {
 				var pm bool
 				if v.currentUse24Clock != zlocale.IsUse24HourClock.Get() {

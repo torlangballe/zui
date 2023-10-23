@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -88,8 +89,9 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.Add(v.margin.Size.Negative())
 	s = s.Ceil()
 	s.W += 6
-	s.H -= 2 // 2
-	// zlog.Info("TextView size:", s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
+	s.H -= 2
+	zfloat.Maximize(&s.H, 34)
+	// zlog.Info("TextView size:", v.Hierarchy(), s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
 	return s
 }
 
