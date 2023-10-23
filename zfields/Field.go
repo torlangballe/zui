@@ -166,6 +166,7 @@ type Field struct {
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	Download             string
 	StringSep            string // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
+	RPCCall              string // an RPC method to Call, typically on press of a button
 }
 
 var EmptyField = Field{
@@ -348,6 +349,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Styling.BGColor.SetFromString(val)
 		case "download":
 			f.Download = val
+		case "zrpc":
+			f.RPCCall = val
 		case "zdebug":
 			f.Flags |= FlagIsForZDebugOnly
 		case "height":

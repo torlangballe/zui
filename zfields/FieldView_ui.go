@@ -34,6 +34,7 @@ import (
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
+	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
@@ -655,6 +656,14 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
 	button.SetTextColor(zgeo.ColorBlack)
 	button.TextXMargin = 0
+	if f.RPCCall != "" {
+		button.SetPressedHandler(func() {
+			err := zrpc.MainClient.Call(f.RPCCall, nil, nil)
+			if err != nil {
+				zalert.ShowError(err)
+			}
+		})
+	}
 	return button
 }
 
