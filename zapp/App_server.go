@@ -53,7 +53,10 @@ func Init() {
 
 	var beforeWWW string
 	stat := zrest.StaticFolderPathFunc("")
-	zstr.HasSuffix(stat, "/www", &beforeWWW)                           // we remove www because os.DirFS does not include it in path names, but //go:embed www does...
+	zstr.HasSuffix(stat, "/www", &beforeWWW) // we remove www because os.DirFS does not include it in path names, but //go:embed www does...
+	if beforeWWW == "" {
+		beforeWWW = "."
+	}
 	AllWebFS = append(zfile.MultiFS{os.DirFS(beforeWWW)}, AllWebFS...) // we insert the disk system first, so we can override embeded
 }
 
@@ -109,6 +112,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	//f, err := AllWebFS.Open("www/" + spath)
 	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, "www/"+spath)
+	// zlog.Info("FilesRedir2:", spath, err, len)
 	if len != 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
 	}
