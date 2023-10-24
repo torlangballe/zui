@@ -1,3 +1,5 @@
+//go:build zui
+
 package zview
 
 import (

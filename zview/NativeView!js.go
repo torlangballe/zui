@@ -1,4 +1,4 @@
-//go:build !js && zui
+//go:build !js 
 
 package zview
 
