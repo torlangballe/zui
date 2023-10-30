@@ -123,16 +123,6 @@ func (i *Image) load(spath string, done func(success bool)) {
 	i.ImageJS.Set("crossOrigin", "Anonymous")
 
 	// i.ImageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	i.ImageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		i.Loading = false
-		i.size.W = i.ImageJS.Get("width").Float()
-		i.size.H = i.ImageJS.Get("height").Float()
-		// zlog.Info("Image Loaded", this, args, len(args))
-		if done != nil {
-			done(true)
-		}
-		return nil
-	}))
 	i.ImageJS.Set("onerror", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		i.Loading = false
 		i.size.W = 5
@@ -140,6 +130,16 @@ func (i *Image) load(spath string, done func(success bool)) {
 		// zlog.Info("Image Load fail:", spath)
 		if done != nil {
 			done(false)
+		}
+		return nil
+	}))
+	i.ImageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		i.Loading = false
+		i.size.W = i.ImageJS.Get("width").Float()
+		i.size.H = i.ImageJS.Get("height").Float()
+		// zlog.Info("Image Loaded", this, args, len(args))
+		if done != nil {
+			done(true)
 		}
 		return nil
 	}))
