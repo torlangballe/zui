@@ -662,7 +662,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			setDurationColumns(f)
 		}
 		if f.Format != "" {
-			f.Columns = len(f.Format)
+			f.Columns = len(f.Format) + 1 // one for breathing room
 			if f.Format == "nice" {
 				f.Columns = len(ztime.NiceFormat)
 			}
