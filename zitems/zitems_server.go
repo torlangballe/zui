@@ -3,7 +3,6 @@
 package zitems
 
 import (
-	"path/filepath"
 	"reflect"
 
 	"github.com/torlangballe/zutil/zjson"
@@ -21,7 +20,7 @@ func Init() {
 
 func RegisterItemForServer(dataPtr any, resourceID, name string) *Item {
 	item := RegisterItem(dataPtr, resourceID, name)
-	file := filepath.Join(FileStoreFolder, resourceID+".json")
+	file := zfile.JoinPathParts(FileStoreFolder, resourceID+".json")
 	err := zjson.UnmarshalFromFile(dataPtr, file, true)
 	// zlog.Info("Loaded:", resourceID, err, dataPtr, file)
 	if err != nil {
@@ -34,7 +33,7 @@ func SaveItem(resourceID string) error {
 	item, _ := FindItem(resourceID)
 	zlog.Assert(item != nil, resourceID)
 	data := reflect.ValueOf(item.DataPtr).Elem().Interface()
-	file := filepath.Join(FileStoreFolder, resourceID+".json")
+	file := zfile.JoinPathParts(FileStoreFolder, resourceID+".json")
 	// zlog.Info("Save:", reflect.ValueOf(item.DataPtr).Elem().Len(), data)
 	err := zjson.MarshalToFile(data, file)
 	return err
