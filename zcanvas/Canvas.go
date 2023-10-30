@@ -55,8 +55,7 @@ func (c *Canvas) DrawImage(image *zimage.Image, useDownsampleCache bool, destRec
 		if sourceRect.IsNull() {
 			sourceRect = zgeo.Rect{Size: image.Size()}
 		}
-		ds := destRect.ExpandedD(-1)
-		drew := c.drawPlainImage(image, useDownsampleCache, ds, opacity, sourceRect)
+		drew := c.drawPlainImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 		return drew
 	}
 	c.drawInsetImage(image, image.CapInsets(), destRect, opacity)
