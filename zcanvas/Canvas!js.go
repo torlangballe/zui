@@ -44,7 +44,7 @@ func CanvasFromGoImage(img image.Image) *Canvas {
 func (c *Canvas) SetSize(size zgeo.Size) {
 	c.size = size
 	c.context = gg.NewContext(int(size.W), int(size.H))
-	c.context.Clear()
+	c.Clear()
 }
 
 func (c *Canvas) SetRect(rect zgeo.Rect) {
@@ -142,6 +142,7 @@ func (c *Canvas) PopState() {
 }
 
 func (c *Canvas) Clear() {
+	c.SetColor(zgeo.ColorClear)
 	c.context.Clear()
 }
 
