@@ -631,9 +631,9 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				if f.MinWidth == 0 {
 					f.MinWidth = 40
 				}
-				if f.MaxWidth == 0 {
-					f.MaxWidth = 80
-				}
+				// if f.MaxWidth == 0 {
+				// 	f.MaxWidth = 80
+				// }
 			}
 			break
 		}
@@ -707,7 +707,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	if f.WidgetName != "" && callSetupWidgeter != nil {
 		callSetupWidgeter(f)
 	}
-	// zlog.Info("Field:", f.Name, f.Flags&FlagHasSeconds != 0)
+	// zlog.Info("Field:", f.Name, f.Columns)
 	return true
 }
 

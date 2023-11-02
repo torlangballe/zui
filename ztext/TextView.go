@@ -91,7 +91,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.W += 6
 	s.H -= 2
 	zfloat.Maximize(&s.H, 34)
-	// zlog.Info("TextView size:", v.Hierarchy(), s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
+	// zlog.Info("TextView size:", v.Columns, v.Hierarchy(), s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
 	return s
 }
 
