@@ -1,4 +1,4 @@
-// +build !js,zui,catalyst
+//go:build !js,zui,catalyst
 
 #include <Cocoa/Cocoa.h>
 

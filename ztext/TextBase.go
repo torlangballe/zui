@@ -1,5 +1,4 @@
 //go:build zui
-// +build zui
 
 package ztext
 
