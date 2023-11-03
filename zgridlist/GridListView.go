@@ -41,6 +41,7 @@ type GridListView struct {
 	Selectable             bool
 	MultiSelectable        bool
 	MakeFullSize           bool
+	RecreateCells          bool // RecreateCells foces creation of new cells on next layout
 	MaxColumns             int
 	MinColumns             int
 	MinRowsForFullSize     int
@@ -839,7 +840,16 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc(), v.HorizontalFirst) //, zlog.CallingStackString())
 	v.layoutDirty = false
 	placed := map[string]bool{}
+	if v.RecreateCells {
+		for cid, view := range v.children {
+			v.cellsView.RemoveChild(view)
+			delete(v.children, cid)
+		}
+		v.children = map[string]zview.View{}
+		v.RecreateCells = false
+	}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
+		// zlog.Info("GridLayout", v.Hierarchy(), outer, visible)
 		if visible {
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible

@@ -63,6 +63,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	options       OptionType
 	SearchField   *ztext.SearchField
 	ActionMenu    *zmenu.MenuedOwner
+	Layout        *zimageview.ValuesView
 }
 
 type LayoutType string
@@ -169,15 +170,15 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if storeName != "" {
 			key = storeName + ".layout"
 		}
-		layout := zimageview.NewValuesView(zgeo.Size{31, 19}, key)
-		layout.SetObjectName("layout")
-		layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
-		layout.AddVariant(LayoutVerticalFirstType, "images/zcore/order-vert-first.png")
-		layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
-		layout.ValueChangedHandlerFunc = func() {
-			v.handleLayoutButton(layout.Value())
+		v.Layout = zimageview.NewValuesView(zgeo.Size{31, 19}, key)
+		v.Layout.SetObjectName("layout")
+		v.Layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
+		v.Layout.AddVariant(LayoutVerticalFirstType, "images/zcore/order-vert-first.png")
+		v.Layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
+		v.Layout.ValueChangedHandlerFunc = func() {
+			v.handleLayoutButton(v.Layout.Value())
 		}
-		v.Bar.Add(layout, zgeo.CenterLeft)
+		v.Bar.Add(v.Layout, zgeo.CenterLeft)
 	}
 	if options&AddMenu != 0 {
 		actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
@@ -309,6 +310,7 @@ func (v *SliceGridView[S]) handleLayoutButton(value string) {
 		v.Grid.HorizontalFirst = true
 		v.Grid.MaxColumns = 1
 	}
+	v.Grid.RecreateCells = true
 	v.ArrangeChildren()
 }
 
