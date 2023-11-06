@@ -33,7 +33,7 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 		index := v.JSGet("selectedIndex").Int()
 		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
-		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value)
+		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value, reflect.ValueOf(v.currentValue).IsValid())
 		if v.storeKey != "" {
 			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}

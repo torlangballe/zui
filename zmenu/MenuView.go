@@ -3,6 +3,8 @@
 package zmenu
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
@@ -33,6 +35,10 @@ var menuViewHeight = 21.0
 
 func (v *MenuView) CurrentValue() interface{} {
 	return v.currentValue
+}
+
+func (v *MenuView) GetDump() string {
+	return fmt.Sprintf("%+v", v.items)
 }
 
 func (v *MenuView) getNumberOfItemsString() string {
