@@ -137,6 +137,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.EditParameters = zfields.FieldViewParametersDefault()
 	v.EditParameters.LabelizeWidth = 120
 	v.EditParameters.HideStatic = true
+	v.EditParameters.EditWithoutCallbacks = true
 
 	var s S
 	var a any = s
@@ -550,7 +551,6 @@ func (v *SliceGridView[S]) addNewItem() {
 	title := "Add New " + v.StructName + ":"
 	a = &ns
 	initer, _ := a.(zfields.StructInitializer)
-	zlog.Info("SGV addNewItem:", initer != nil)
 	if initer != nil {
 		initer.InitZFieldStruct()
 	}
