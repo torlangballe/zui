@@ -574,6 +574,7 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 	}
 	zint.Maximize(&nx, v.MinColumns)
 	ny = (v.CellCountFunc() + nx - 1) / nx
+	// zlog.Info("CalculateColumnsAndRows:", childWidth, totalWidth, nx, ny)
 	return
 }
 
@@ -584,13 +585,14 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.CellCountFunc() == 0 {
 		return s.Plus(marg)
 	}
-	if v.MakeFullSize {
-		return v.CalculatedGridSize(total).Plus(marg)
-	}
 	childSize := v.getAChildSize(total)
 	mx := math.Max(1, float64(v.MinColumns))
 	w := childSize.W*mx + v.Spacing.W*(mx-1) - v.margin.Size.W
 	zfloat.Maximize(&s.W, w)
+	if v.MakeFullSize {
+		my := (float64(v.CellCountFunc()) + mx - 1) / mx
+		s.H = childSize.H*my + v.Spacing.H*(my-1) - v.margin.Size.H
+	}
 	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), s, v.MinSize())
 	return s.Plus(marg)
 }
@@ -599,8 +601,10 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	if v.CellCountFunc() == 0 {
 		return v.MinSize()
 	}
-	childSize := v.getAChildSize(total)
-	nx, ny := v.CalculateColumnsAndRows(childSize.W, total.W)
+	totalMinusBar := total.Minus(zgeo.SizeD(v.BarSize, 0))
+	childSize := v.getAChildSize(totalMinusBar)
+	nx, ny := v.CalculateColumnsAndRows(childSize.W, totalMinusBar.W)
+	// zlog.Info("CalculatedGridSize childsize:", childSize, total.W, nx, ny)
 	zint.Maximize(&ny, v.MinRowsForFullSize)
 	if v.MaxRowsForFullSize != 0 {
 		zint.Minimize(&ny, v.MaxRowsForFullSize)
@@ -727,14 +731,16 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	if v.CellCountFunc() == 0 {
 		return
 	}
-	rect := v.cellsView.LocalRect().ExpandedToInt()
+	lrect := v.LocalRect()
+	lrect.Size.W -= v.BarSize
 	// zlog.Info("ForEachCell", rect)
-	pos := rect.Pos.Floor()
-	width := rect.Size.W + v.margin.Size.W - v.Spacing.W
-	childSize := v.getAChildSize(zgeo.Size{width, rect.Size.H}).Ceil()
+	pos := lrect.Pos.Floor()
+	width := lrect.Size.W + v.margin.Size.W - v.Spacing.W
+	localSize := v.LocalRect().Size
+	childSize := v.getAChildSize(localSize.Ceil())
 	zlog.Assert(v.MaxColumns <= 1)
-	// zlog.Info("ForEachCell", rect, childSize)
-	v.Columns, v.Rows = v.CalculateColumnsAndRows(childSize.W, rect.Size.W)
+	v.Columns, v.Rows = v.CalculateColumnsAndRows(childSize.W, lrect.Size.W)
+	// zlog.Info("ForEachCell childsize2:", childSize, "width:", width, v.Columns, v.Rows, lrect)
 	width -= (float64(v.Columns) - 1) * v.Spacing.W
 	var x, y int
 	v.VisibleRows = 0
@@ -786,7 +792,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		}
 		if v.HorizontalFirst {
 			if lastx {
-				pos.X = rect.Pos.X
+				pos.X = lrect.Pos.X
 				x = 0
 				y++
 				pos.Y += r.Size.H
@@ -802,7 +808,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			pos.Y++
 		}
 		if lasty {
-			pos.Y = rect.Pos.Y
+			pos.Y = lrect.Pos.Y
 			y = 0
 			x++
 			pos.X += r.Size.W - 1
@@ -818,8 +824,8 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 
 func (v *GridListView) ArrangeChildren() {
 	v.ScrollView.ArrangeChildren()
-	cellsSize := v.innerRect().Size
-	s := v.CalculatedGridSize(cellsSize)
+	// zlog.Info("GV.ArrangeChildren:", cellsSize)
+	s := v.CalculatedGridSize(v.LocalRect().Size)
 	w := v.LocalRect().Size.W - v.BarSize
 	r := zgeo.Rect{Size: zgeo.Size{w, s.H}}
 	v.cellsView.SetRect(r)
@@ -849,7 +855,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 		v.RecreateCells = false
 	}
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
-		// zlog.Info("GridLayout", v.Hierarchy(), outer, visible)
+		// zlog.Info(v.LocalRect(), "GridLayout", x, y, v.Hierarchy(), outer, visible)
 		if visible {
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
