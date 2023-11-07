@@ -70,6 +70,7 @@ func New() *App {
 	a.activationTime = time.Now()
 	a.StartTime = a.activationTime
 	AppMain = a
+	appNew(a)
 	return a
 }
 

@@ -8,10 +8,15 @@
 @public
     NSFileHandle *logFile;
 }
+- (void)keyDown:(NSEvent *)theEvent;
 //- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message;
 @end
 
 @implementation ZWKWebView
+- (void)keyDown:(NSEvent *)theEvent {
+    NSLog(@"web keyDown\n");
+}
+
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message
 {
     static NSDateFormatter *formatter = NULL;

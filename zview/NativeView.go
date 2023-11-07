@@ -38,6 +38,7 @@ var (
 	ChildOfViewFunc      func(v View, path string) View
 	RangeAllChildrenFunc func(root View, visibleOnly bool, got func(View) bool)
 	LastPressedPos       zgeo.Pos
+	SkipEnterHandler     bool
 )
 
 func (v *NativeView) IsPresented() bool {

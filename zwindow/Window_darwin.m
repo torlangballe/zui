@@ -1,26 +1,46 @@
-//go:build !js,zui,catalyst
+//go:build !js && zui && catalyst
 
 #include <Cocoa/Cocoa.h>
 
+
+@interface ZWindow : NSWindow
+{
+@public
+//    ZWindow *window;
+}
+- (void)keyDown:(NSEvent *)theEvent;
+@end
+
+@implementation ZWindow
+- (void)keyDown:(NSEvent *)theEvent {
+    NSLog(@"keyDown\n");
+}
+- (BOOL)becomeFirstResponder {
+    return YES;
+}
+@end
+
 void *NewWindow(int x, int y, int width, int height)
 {
-    NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(x, y, width, height)
+    ZWindow* window = [[ZWindow alloc] initWithContentRect:NSMakeRect(x, y, width, height)
                                               styleMask: NSWindowStyleMaskBorderless  // NSWindowStyleMaskTitled
                                               backing:NSBackingStoreBuffered 
                                               defer:NO];
 
-    [window setLevel:NSMainMenuWindowLevel+1];
+    [window setLevel:NSMainMenuWindowLevel];
+//    [window setLevel:NSMainMenuWindowLevel+1];
     [window setOpaque:YES];
+    NSLog(@"NewWindow\n");
     return window;
 }
 
 void MakeKeyAndOrderFront(void *self) {
-    NSWindow *window = self;
+    ZWindow *window = self;
     [window makeKeyAndOrderFront:nil];
 }
 
 void SetTitle(void *self, char *title) {
-    NSWindow *window = self;
+    ZWindow *window = self;
     NSString *nsTitle =  [NSString stringWithUTF8String:title];
 
     [window setTitle:nsTitle];
@@ -28,6 +48,6 @@ void SetTitle(void *self, char *title) {
 }
 
 void AddView(void *win, void *view) {
-    [(NSWindow *)win setContentView: view];
+    [(ZWindow *)win setContentView: view];
 }
 

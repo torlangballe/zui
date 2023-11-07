@@ -1,4 +1,4 @@
-//go:build zui
+//go:build zui && js
 
 package zview
 
@@ -43,7 +43,6 @@ var (
 
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
-	SkipEnterHandler               bool
 )
 
 func (v *NativeView) MakeJSElement(view View, etype string) {

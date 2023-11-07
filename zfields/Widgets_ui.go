@@ -3,6 +3,7 @@
 package zfields
 
 import (
+	"github.com/torlangballe/zui/zcolor"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
@@ -18,6 +19,7 @@ func init() {
 	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
 	RegisterWidgeter("set-images", SetImagesWidgeter{})
+	zcolor.RegisterWidgeter()
 }
 
 func (a AmountBarWidgeter) Create(f *Field) zview.View {

@@ -13,10 +13,10 @@ import (
 type windowNative struct {
 }
 
-func GetMain() *Window {
-	w := &Window{}
-	return w
-}
+// func GetMain() *Window {
+// 	w := &Window{}
+// 	return w
+// }
 
 func (w *Window) Rect() zgeo.Rect {
 	var s zgeo.Size

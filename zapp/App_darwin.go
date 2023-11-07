@@ -1,6 +1,6 @@
 //go:build !js && !windows && catalyst
 
-package app
+package zapp
 
 // #cgo CFLAGS: -x objective-c
 // #cgo LDFLAGS: -framework Cocoa

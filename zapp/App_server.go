@@ -189,3 +189,6 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 	}
 	return m
 }
+
+func appNew(a *App) {
+}

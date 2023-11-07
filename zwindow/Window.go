@@ -16,6 +16,12 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+var (
+	winMain       *Window
+	barCalculated bool
+	// RemovePresentedWindowFunc func(view zview.View)
+)
+
 type Window struct {
 	windowNative
 	HandleClosed        func()
@@ -49,6 +55,10 @@ var (
 	PresentedViewCurrentIsParentFunc func(v zview.View) bool
 	barHeight                        = 28.0
 )
+
+func GetMain() *Window {
+	return winMain
+}
 
 // BarHeight is height of a normal window's title bar, can be different for each os
 func BarHeight() float64 {

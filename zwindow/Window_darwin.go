@@ -2,6 +2,7 @@
 
 package zwindow
 
+// #include <stdlib.h>
 // #cgo CFLAGS: -x objective-c
 // #cgo LDFLAGS: -framework Cocoa
 // void *NewWindow(int x, int y, int width, int height);
@@ -12,9 +13,11 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 )
 
 // https://github.com/alediaferia/gogoa/blob/master/window.go
@@ -24,8 +27,14 @@ type windowNative struct {
 	rect      zgeo.Rect
 }
 
-func WindowGetMain() *Window {
+var GetViewNativePointerFunc func(v zview.View) unsafe.Pointer
+
+func Current() *Window {
 	return nil
+}
+
+func FromNativeView(v *zview.NativeView) *Window {
+	return GetMain()
 }
 
 func (w *Window) Rect() zgeo.Rect {
@@ -36,7 +45,10 @@ func (w *Window) ContentRect() zgeo.Rect {
 	return w.rect
 }
 
-func WindowOpen(o WindowOptions) *Window {
+func (win *Window) SetOnKeyEvents() {
+}
+
+func Open(o Options) *Window {
 	w := &Window{}
 	sm := zscreen.GetMain()
 	var r zgeo.Rect
@@ -50,7 +62,7 @@ func WindowOpen(o WindowOptions) *Window {
 	} else if o.FullScreenID == -1 {
 		r = sm.Rect
 	} else {
-		screen := ScreenFromID(o.FullScreenID)
+		screen := zscreen.FromID(o.FullScreenID)
 		if screen == nil {
 			zlog.Error(nil, "ScreenFromID is nil:", o.FullScreenID)
 			return nil
@@ -76,13 +88,13 @@ func (w *Window) SetTitle(title string) {
 	C.free(unsafe.Pointer(ctitle))
 }
 
-func (w *Window) AddView(v View) {
-	wv, got := v.(*WebView)
-	zlog.Assert(got)
-	C.AddView(w.windowPtr, wv.webViewPtr)
+func (w *Window) AddView(v zview.View) {
+	p := GetViewNativePointerFunc(v)
+	zlog.Assert(p != nil)
+	C.AddView(w.windowPtr, p)
 }
 
-func (win *Window) AddKeypressHandler(v View, handler func(zkeyboard.Key, zkeyboard.Modifier)) {
+func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.KeyMod, down bool) bool) {
 }
 
 func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {}
@@ -90,3 +102,5 @@ func (win *Window) SetAddressBarURL(surl string)              {}
 func (win *Window) SetLocation(surl string)                   {}
 func (w *Window) Close()                                      {}
 func (win *Window) SetOnResizeHandling()                      {}
+
+func (win *Window) AddStyle() {}

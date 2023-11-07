@@ -17,12 +17,6 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-var (
-	winMain       *Window
-	barCalculated bool
-	// RemovePresentedWindowFunc func(view zview.View)
-)
-
 type windowNative struct {
 	hasResized      bool
 	Element         js.Value
@@ -50,10 +44,6 @@ func init() {
 		win := FromNativeView(v.Native())
 		win.removeKeyPressHandlerViews(v)
 	}
-}
-
-func GetMain() *Window {
-	return winMain
 }
 
 func (w *Window) Rect() zgeo.Rect {
