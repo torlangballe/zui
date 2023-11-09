@@ -41,7 +41,7 @@ type GridListView struct {
 	Selectable             bool
 	MultiSelectable        bool
 	MakeFullSize           bool
-	RecreateCells          bool // RecreateCells foces creation of new cells on next layout
+	RecreateCells          bool // RecreateCells forces creation of new cells on next layout
 	MaxColumns             int
 	MinColumns             int
 	MinRowsForFullSize     int
@@ -64,7 +64,7 @@ type GridListView struct {
 	CreateCellFunc             func(grid *GridListView, id string) zview.View
 	UpdateCellFunc             func(grid *GridListView, id string)
 	UpdateSelectionFunc        func(grid *GridListView, id string)
-	CellHeightFunc             func(id string) float64 // only need to have variable-height
+	CellHeightFunc             func(id string) float64 // only needed to have variable-height
 	HandleSelectionChangedFunc func()
 	HandleRowPressed           func(id string) // this only gets called for non-selectable grids
 	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
