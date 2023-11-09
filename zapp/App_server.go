@@ -63,6 +63,7 @@ func Init() {
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
 func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	spath := req.URL.Path
+	// zlog.Info("FilesRedir:", spath)
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
 		localRedirect(w, req, zrest.AppURLPrefix)
 		req.Body.Close()
@@ -162,7 +163,6 @@ func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string, o
 
 func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
 	on := zrest.GetBoolVal(req.URL.Query(), "on")
-	zlog.Info("handleSetVerbose", on, req.Method)
 	var set string
 	if on {
 		zlog.PrintPriority = zlog.VerboseLevel
