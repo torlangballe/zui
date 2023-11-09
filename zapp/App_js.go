@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
@@ -13,15 +15,20 @@ import (
 )
 
 // URL returns the url that invoked this app
-func URL() string {
+func URL() *url.URL {
+	u, err := url.Parse(URLString())
+	zlog.AssertNotError(err)
+	return u
+}
+
+func URLString() string {
 	return zdom.WindowJS.Get("location").Get("href").String()
 }
 
 // MainArgs returns the path of browser and url parameters as args map of max one parameter of each key
 func MainArgs() (path string, args map[string]string) {
 	args = map[string]string{}
-	u, err := url.Parse(URL())
-	zlog.AssertNotError(err)
+	u := URL()
 	path = strings.TrimRight(u.Path, "/")
 	for k, v := range u.Query() {
 		args[k] = v[0]
@@ -29,9 +36,16 @@ func MainArgs() (path string, args map[string]string) {
 	return
 }
 
+func URLStub() string {
+	u := URL()
+	u.Path = ""
+	u.RawQuery = ""
+	return u.String()
+}
+
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
 func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
-	url, _ := url.Parse(URL())
+	url := URL()
 	// host, _ := znet.GetHostAndPort(url)
 	url.Path = ""
 	host := url.Host
