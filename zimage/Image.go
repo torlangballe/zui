@@ -495,3 +495,11 @@ func GoTransformed(img image.Image, set func(x, y int, c zgeo.Color) zgeo.Color)
 	})
 	return out
 }
+
+func GoImageFlippedHorizontal(img image.Image) *image.NRGBA {
+	return imaging.FlipH(img)
+}
+
+func GoImageFlippedVertical(img image.Image) *image.NRGBA {
+	return imaging.FlipV(img)
+}
