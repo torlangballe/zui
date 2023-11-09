@@ -9,6 +9,7 @@ import (
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
@@ -126,7 +127,7 @@ func (v *VideoView) makeRenderCanvas() {
 	//			v.renderCanvas.context.Call("scale", scale, scale) // this must be AFTER SetElementRect, doesn't do anything!
 	v.Element.Call("appendChild", v.renderCanvas.JSElement())
 	v.renderCanvas.JSElement().Get("style").Set("visible", "hidden")
-	SetElementRect(v.renderCanvas.JSElement(), zgeo.Rect{Size: v.StreamSize})
+	zview.SetElementRect(v.renderCanvas.JSElement(), zgeo.Rect{Size: v.StreamSize})
 }
 
 // func (v *VideoView) Capture() {

@@ -4,14 +4,16 @@ package zvideo
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
 type VideoView struct {
-	NativeView
+	zview.NativeView
 	baseVideoView
-	Out *ImageView
-	LongPresser
+	Out *zimageview.ImageView
+	zview.LongPresser
 	streaming        bool
 	StreamSize       zgeo.Size
 	renderCanvas     *zcanvas.Canvas
@@ -19,12 +21,12 @@ type VideoView struct {
 	pressed          func()
 	longPressed      func()
 	StreamingStarted func()
-	Overlay          View
+	Overlay          zview.View
 
 	draw func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 }
 
-func New(maxSize zgeo.Size) *VideoView {
+func NewView(maxSize zgeo.Size) *VideoView {
 	v := &VideoView{}
 	v.Init(v, maxSize)
 	return v
