@@ -46,8 +46,8 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 					v.Back.SetUsable(true)
 				}
 				v.setTitle()
-				if v.URLChangedHandler != nil {
-					v.URLChangedHandler(newURL)
+				if v.URLChangedFunc != nil {
+					v.URLChangedFunc(newURL)
 				}
 			}
 		}
@@ -72,8 +72,8 @@ func (v *WebView) SetURL(surl string) {
 	v.Element.Set("src", surl)
 	old := v.url
 	v.url = surl
-	if old != "" && v.URLChangedHandler != nil {
-		v.URLChangedHandler(surl)
+	if old != "" && v.URLChangedFunc != nil {
+		v.URLChangedFunc(surl)
 	}
 	v.setTitle()
 }

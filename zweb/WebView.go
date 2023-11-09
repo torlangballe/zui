@@ -20,10 +20,11 @@ var DefaultBarIconSize float64 = 20
 type WebView struct {
 	nativeWebView
 	zview.NativeView
-	url               string
-	minSize           zgeo.Size
-	History           []string
-	URLChangedHandler func(surl string)
+	url             string
+	minSize         zgeo.Size
+	History         []string
+	URLChangedFunc  func(surl string)
+	HandleErrorFunc func(code int)
 
 	TitleLabel *zlabel.Label
 	Back       *zimageview.ImageView

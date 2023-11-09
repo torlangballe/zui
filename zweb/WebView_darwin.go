@@ -9,6 +9,7 @@ package zweb
 // void *NewWKWebView(int width, int heigt);
 // void WebViewSetLogPath(void *w, const char *logPath);
 // void WebViewSetURL(void *view, const char *surl);
+// void WebViewSetContent(void *view, const char *html);
 // void WebViewClearAllCaches();
 import "C"
 
@@ -26,15 +27,45 @@ type nativeWebView struct {
 	webViewPtr unsafe.Pointer
 }
 
+type webkitCode struct {
+	webKit unsafe.Pointer
+	code   int
+}
+
+var (
+	nativeToWebView = map[unsafe.Pointer]*WebView{}
+	errorChan       = make(chan webkitCode)
+)
+
 func init() {
 	zwindow.GetViewNativePointerFunc = func(v zview.View) unsafe.Pointer {
 		wv, got := v.(*WebView)
 		zlog.Assert(got)
 		return wv.webViewPtr
 	}
+	go selectLoopForError()
 }
+
+func selectLoopForError() {
+	for {
+		select {
+		case wkCode := <-errorChan:
+			webView := nativeToWebView[wkCode.webKit]
+			zlog.Assert(webView != nil)
+			webView.HandleErrorFunc(wkCode.code)
+		}
+	}
+}
+
+//export goErrorkHandler
+func goErrorkHandler(wk unsafe.Pointer, code C.int) {
+	zlog.Info("goErrorkHandler", wk, code)
+	errorChan <- webkitCode{wk, int(code)}
+}
+
 func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	v.webViewPtr = C.NewWKWebView(C.int(minSize.W), C.int(minSize.H))
+	nativeToWebView[v.webViewPtr] = v
 }
 
 func (v *WebView) SetLogPath(path string) {
@@ -51,4 +82,8 @@ func (v *WebView) SetURL(surl string) {
 
 func WebViewClearAllCaches() {
 	C.WebViewClearAllCaches()
+}
+
+func (v *WebView) SetHTMLContent(html string) {
+	C.WebViewSetContent(v.webViewPtr, C.CString(html))
 }
