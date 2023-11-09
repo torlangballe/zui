@@ -6,6 +6,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 var DocumentJS = js.Global().Get("document")
@@ -50,6 +51,10 @@ func CreateDotSeparatedObject(f string) js.Value {
 	parts := strings.Split(f, ".")
 	for _, p := range parts {
 		parent = parent.Get(p)
+		if parent.IsUndefined() {
+			zlog.Error(nil, "Unknown dot-sep part:", p)
+			return js.Undefined()
+		}
 	}
 	return parent
 }
