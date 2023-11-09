@@ -378,3 +378,12 @@ input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 	}
 	doc.Call("getElementsByTagName", "head").Index(0).Call("appendChild", styleTag)
 }
+
+func (win *Window) AddScript(scriptURL string) {
+	// https://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml ???
+	doc := win.Element.Get("document")
+	scriptTag := doc.Call("createElement", "script")
+	scriptTag.Set("type", "text/javascript")
+	scriptTag.Set("src", scriptURL)
+	doc.Call("getElementsByTagName", "head").Index(0).Call("appendChild", scriptTag)
+}
