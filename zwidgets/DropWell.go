@@ -5,6 +5,7 @@ package zwidgets
 import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -18,6 +19,8 @@ type DropWell struct {
 	Styling             zstyle.Styling
 	Activity            *ActivityView
 	placeHolder         string
+	image               *zimage.Image
+	ImageAlignment      zgeo.Alignment
 }
 
 func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
@@ -30,6 +33,7 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Styling.StrokeWidth = 1
 	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
 	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.Size{5, 5}, Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
+	v.ImageAlignment = zgeo.Center | zgeo.Shrink
 	v.SetPlaceholder(placeHolder)
 	v.SetMinSize(size)
 	// v.SetCanTabFocus(true)
@@ -54,6 +58,21 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	})
 	v.SetDrawHandler(v.draw)
 	return v
+}
+
+func (v *DropWell) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
+	if image != nil {
+		v.image = image
+		v.Expose()
+		return
+	}
+	zimage.FromPath(path, func(i *zimage.Image) {
+		v.image = i
+		v.Expose()
+		if got != nil {
+			got(i)
+		}
+	})
 }
 
 func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
@@ -87,6 +106,10 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 		ti.Alignment = zgeo.Center
 		ti.Color = zgeo.ColorNewGray(0, 0.5)
 		ti.Draw(canvas)
+	}
+	if v.image != nil {
+		drect := v.LocalRect().Align(v.image.Size(), v.ImageAlignment, zgeo.SizeBoth(4))
+		canvas.DrawImage(v.image, true, drect, 1, zgeo.Rect{})
 	}
 }
 
