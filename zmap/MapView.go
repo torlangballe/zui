@@ -3,16 +3,16 @@
 package zmap
 
 import (
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
 
 type MapView struct {
-	NativeView
+	zview.NativeView
 	baseMapView
-	LongPresser
+	zview.LongPresser
 	canvas      *zcanvas.Canvas
 	minSize     zgeo.Size
 	pressed     func()

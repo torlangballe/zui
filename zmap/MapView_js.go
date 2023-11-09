@@ -11,9 +11,9 @@ import (
 )
 
 // https://developers.google.com/maps/documentation/javascript/maxzoom
-// https://stackoverflow.com/questions/view zview.Viewview zview.View659884/load-google-map-without-using-callback-method
+// https://stackoverflow.com/questions/load-google-map-without-using-callback-method
+// Add somewhere: <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBCTFepe9x-EB1bauT0XR-_bZqyiob9UYA&callback=googleMapCreated"></script>
 
-sadasd
 type baseMapView struct {
 	MapJS js.Value
 }
