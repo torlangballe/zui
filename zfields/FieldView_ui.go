@@ -116,7 +116,7 @@ func FieldViewParametersDefault() (f FieldViewParameters) {
 	return f
 }
 
-func IsFieldViewEditedRecently(fv *FieldView) bool {
+func (fv *FieldView) IsEditedRecently() bool {
 	h := fv.Hierarchy()
 	t, got := fieldViewEdited[h]
 	if got {
@@ -126,6 +126,11 @@ func IsFieldViewEditedRecently(fv *FieldView) bool {
 		delete(fieldViewEdited, h)
 	}
 	return false
+}
+
+func (fv *FieldView) ClearEditedRecently() {
+	h := fv.Hierarchy()
+	delete(fieldViewEdited, h)
 }
 
 func makeFrameIfFlag(f *Field, child zview.View) zview.View {
@@ -294,10 +299,10 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 
 func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
-	if data != nil { // must be after IsFieldViewEditedRecently, or we set new data without update slice pointers and maybe more
+	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
 	}
-	recentEdit := (dontOverwriteEdited && IsFieldViewEditedRecently(v))
+	recentEdit := (dontOverwriteEdited && v.IsEditedRecently())
 	fh, _ := v.data.(ActionHandler)
 	sview := v.View
 	if fh != nil {
@@ -364,7 +369,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
-		zlog.Info("updateField menuType")
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
@@ -826,7 +830,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 			dur = time.Since(rval.Interface().(time.Time))
 		} else {
 			dur = time.Duration(rval.Int())
-			zlog.Info("DurTime", dur, f.Flags&FlagHasSeconds != 0)
+			// zlog.Info("DurTime", dur, f.Flags&FlagHasSeconds != 0)
 		}
 		t := ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
 		return t, dur
