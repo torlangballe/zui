@@ -13,13 +13,14 @@ type AmountBarWidgeter struct{}
 type AmountCircleWidgeter struct{}
 type ActivityWidgeter struct{}
 type SetImagesWidgeter struct{}
+type ColorWidgeter struct{}
 
 func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
 	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
 	RegisterWidgeter("set-images", SetImagesWidgeter{})
-	zcolor.RegisterWidgeter()
+	RegisterWidgeter("zcolor", ColorWidgeter{})
 }
 
 func (a AmountBarWidgeter) Create(f *Field) zview.View {
@@ -87,4 +88,8 @@ func (a SetImagesWidgeter) Create(f *Field) zview.View {
 	v := zwidgets.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
 	v.SetStyling(f.Styling)
 	return v
+}
+
+func (a ColorWidgeter) Create(f *Field) zview.View {
+	return zcolor.New(zgeo.ColorClear)
 }
