@@ -45,10 +45,13 @@ type filesRedirector struct {
 //go:embed www
 var wwwFS embed.FS
 
-var AllWebFS zfile.MultiFS
+var (
+	AllWebFS          zfile.MultiFS
+	RequestRedirector *filesRedirector
+)
 
-func Init() {
-	zrpc.Register(AppCalls{})
+func Init(executor *zrpc.Executor) {
+	executor.Register(AppCalls{})
 	AllWebFS.Add(wwwFS)
 
 	var beforeWWW string
@@ -134,11 +137,11 @@ func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 }
 
 func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
-	f := &filesRedirector{
+	RequestRedirector = &filesRedirector{
 		ServeDirectories: serveDirs,
 		Override:         override,
 	}
-	zrest.AddSubHandler(router, "", f)
+	zrest.AddSubHandler(router, "", RequestRedirector)
 
 	// zlog.Info("HandleApp:", zrest.AppURLPrefix)
 	//	route := router.PathPrefix(zrest.AppURLPrefix)
