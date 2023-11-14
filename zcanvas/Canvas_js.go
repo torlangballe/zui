@@ -10,7 +10,6 @@ import (
 
 	"fmt"
 	"image"
-	"strings"
 	"syscall/js"
 )
 
@@ -25,11 +24,16 @@ type canvasNative struct {
 	context js.Value
 }
 
+var idCount int
+
 func New() *Canvas {
 	c := Canvas{}
 	c.element = zdom.DocumentJS.Call("createElement", "canvas")
 	c.element.Set("style", "position:absolute;pointer-events:none") // pointer-events:none makes canvas not be target when pressed
 	c.context = c.element.Call("getContext", "2d")
+	c.element.Set("id", fmt.Sprintf("canvas-%d", idCount))
+	idCount++
+
 	// c.context.Set("imageSmoothingEnabled", true)
 	// c.context.Set("imageSmoothingQuality", "high")
 	return &c
@@ -198,9 +202,9 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 	ss := sourceRect.Size
 	ds := destRect.Size
 	drawnNow := true
-	if strings.Contains(image.Path, "plus-circled-darkgray.png") {
-		// zlog.Info("drawPlainImage:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
-	}
+	// if strings.Contains(image.Path, "sort-triangle-down") {
+	// 	zlog.Info("drawPlainImage:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
+	// }
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
 		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 		// zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
@@ -222,6 +226,11 @@ func (c *Canvas) rawDrawPlainImage(image *zimage.Image, destRect zgeo.Rect, opac
 	if opacity != 1 {
 		c.context.Set("globalAlpha", opacity)
 	}
+	// if strings.Contains(image.Path, "sort-triangle-down") {
+	// 	c.SetColor(zgeo.ColorRandom())
+	// 	c.FillRect(destRect)
+	// 	zlog.Info("rawDrawPlainImage:", image.ImageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
+	// }
 	c.context.Call("drawImage", image.ImageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 	if opacity != 1 {
 		c.context.Set("globalAlpha", oldAlpha)
@@ -383,7 +392,7 @@ func CanvasFromGoImage(i image.Image) *Canvas {
 
 func RenderToImage(size zgeo.Size, draw func(canvasContext js.Value)) image.Image {
 	canvas := New()
-	canvas.element.Set("id", "render-canvas")
+	// canvas.element.Set("id", "render-canvas")
 	canvas.SetSize(size)
 	draw(canvas.context)
 	return canvas.GoImage(zgeo.Rect{})
