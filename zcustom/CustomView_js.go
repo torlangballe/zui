@@ -118,7 +118,7 @@ func (v *CustomView) makeCanvas() {
 		return
 	}
 	v.canvas = zcanvas.New()
-	v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
+	// v.canvas.JSElement().Set("id", v.ObjectName()+".canvas")
 	v.canvas.DownsampleImages = v.DownsampleImages
 	firstChild := v.JSGet("firstChild")
 	v.canvas.JSElement().Get("style").Set("zIndex", 1)
@@ -145,6 +145,9 @@ func (v *CustomView) drawSelf() {
 			if !v.OpaqueDraw {
 				v.canvas.Clear()
 			}
+			// if v.ObjectName() == "sort" {
+			// 	zlog.Info(v.ObjectName(), "CV drawSelf: draw")
+			// }
 			v.draw(r, v.canvas, v.View)
 		}
 		v.drawing = false
@@ -155,6 +158,9 @@ func (v *CustomView) drawSelf() {
 var count int
 
 func (v *CustomView) ExposeIn(secs float64) {
+	// if v.ObjectName() == "sort" {
+	// 	zlog.Info(v.ObjectName(), "CV Expose:", v.draw, v.visible)
+	// }
 	if v.draw == nil {
 		return
 	}
