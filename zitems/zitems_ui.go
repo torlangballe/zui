@@ -16,7 +16,7 @@ func RepeatGetItems() {
 	ztimer.RepeatNow(2, func() bool {
 		var resIDs []string
 		if !firstGets {
-			zrpc.MainClient.Call("RPCCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
+			zrpc.MainClient.Call("ResourceCalls.GetUpdatedResourcesAndSetSent", nil, &resIDs)
 		}
 		for _, item := range AllItems {
 			// zlog.Info("Get1:", item.ResourceID, firstGets, resIDs)
