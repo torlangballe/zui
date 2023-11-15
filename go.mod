@@ -2,7 +2,7 @@ module github.com/torlangballe/zui
 
 go 1.20
 
-require github.com/torlangballe/zutil v0.0.0-20231106160042-4d3743d93f32
+require github.com/torlangballe/zutil v0.0.0-20231109124926-d00f91eb934b
 
 require (
 	github.com/creack/pty v1.1.20 // indirect

@@ -48,6 +48,8 @@ github.com/torlangballe/zutil v0.0.0-20231030114406-7d03824177a1 h1:oOhuxSLKrNQf
 github.com/torlangballe/zutil v0.0.0-20231030114406-7d03824177a1/go.mod h1:7LUGSGkUV4lyxRTCHxbQcGsQ2uBrwHZYYZoOfPGXbZo=
 github.com/torlangballe/zutil v0.0.0-20231106160042-4d3743d93f32 h1:tM5hEQPMMYxBpaR6InejmeeSZ32W0fuGxYDMSxsu4vg=
 github.com/torlangballe/zutil v0.0.0-20231106160042-4d3743d93f32/go.mod h1:yMJPbWHpi/zEXwOPv4hGqZ3KKV+Plfki44YWvUj55/c=
+github.com/torlangballe/zutil v0.0.0-20231109124926-d00f91eb934b h1:LyWaK5h8yD3cdMWQiwi3sqPU92k8hShYdG9suBkrKts=
+github.com/torlangballe/zutil v0.0.0-20231109124926-d00f91eb934b/go.mod h1:yMJPbWHpi/zEXwOPv4hGqZ3KKV+Plfki44YWvUj55/c=
 github.com/yusufpapurcu/wmi v1.2.3 h1:E1ctvB7uKFMOJw3fdOW32DwGE9I7t++CRUEMKvFoFiw=
 github.com/yusufpapurcu/wmi v1.2.3/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 golang.org/x/crypto v0.14.0 h1:wBqGXzWJW6m1XrIKlAH0Hs1JJ7+9KBwnIO8v66Q9cHc=
