@@ -26,6 +26,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -1021,7 +1022,7 @@ func updateOldDuration(label *zlabel.Label, dur time.Duration, f *Field) {
 }
 
 func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
-	if zlog.IsInTests { // if in unit-tests, we don't show anything as it would change
+	if zdebug.IsInTests { // if in unit-tests, we don't show anything as it would change
 		label.SetText("")
 		return
 	}

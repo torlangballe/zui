@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -861,7 +862,7 @@ func jsFileToGo(file js.Value, got func(data []byte, name string), progress func
 }
 
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
-	if zlog.IsInTests {
+	if zdebug.IsInTests {
 		return
 	}
 	//	v.JSSet("className", "zdropper")
@@ -977,7 +978,7 @@ func getMousePosRelative(v *NativeView, e js.Value) zgeo.Pos {
 }
 
 func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
-	if zlog.IsInTests {
+	if zdebug.IsInTests {
 		return
 	}
 	v.JSSet("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {

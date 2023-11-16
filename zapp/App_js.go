@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
@@ -67,7 +68,7 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 		zui.DebugMode = true
 	}
 	if zbool.FromString(args["ztest"], false) {
-		zlog.IsInTests = true
+		zdebug.IsInTests = true // for testing gui
 	}
 	return
 }
