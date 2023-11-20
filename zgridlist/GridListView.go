@@ -987,7 +987,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 	if !down {
 		return false
 	}
-	// zlog.Info("List keypress other!", v.ObjectName(), key, mod == zkeyboard.ModifierNone)
+	// zlog.Info("GridList keypress other!", v.ObjectName(), km)
 	if km.Key.IsReturnish() && (v.Selectable || v.MultiSelectable) {
 		id := v.CurrentHoverID
 		if id == "" && v.selectedIndex != -1 {
@@ -1046,7 +1046,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 		}
 	}
 	if v.HandleKeyFunc != nil {
-		// zlog.Info("List keypress2", key, km.Modifier)
+		// zlog.Info("GridListView keypress2", km, v.HandleKeyFunc)
 		return v.HandleKeyFunc(km, down)
 	}
 	return false
