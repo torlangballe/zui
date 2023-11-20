@@ -40,7 +40,7 @@ func RegisterWidgeter(name string, w Widgeter) {
 }
 
 func (f *Field) SetFont(view zview.View, from *zgeo.Font) {
-	to := view.(ztext.LayoutOwner)
+	to := view.(ztext.TextOwner)
 	size := f.Styling.Font.Size
 	if size <= 0 {
 		if from != nil {

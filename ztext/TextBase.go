@@ -4,8 +4,9 @@ package ztext
 
 import "github.com/torlangballe/zutil/zgeo"
 
-type LayoutOwner interface {
+type TextOwner interface {
 	//Font() *Font
+	Text() string
 	SetText(text string)
 	//Text() string
 	// SetTextAlignment(a zgeo.Alignment) View

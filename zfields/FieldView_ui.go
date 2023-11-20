@@ -439,7 +439,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			break
 		}
 		valStr = getTimeString(rval, f)
-		to := foundView.(ztext.LayoutOwner)
+		to := foundView.(ztext.TextOwner)
 		to.SetText(valStr)
 
 	case zreflect.KindStruct:
