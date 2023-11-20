@@ -23,7 +23,6 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
@@ -142,7 +141,7 @@ func makeFrameIfFlag(f *Field, child zview.View) zview.View {
 		title = f.TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
-	zwidgets.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
+	zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
 	frame.Add(child, zgeo.TopLeft)
 	return frame
 }
