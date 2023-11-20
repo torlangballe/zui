@@ -1,3 +1,5 @@
+//go:build zui
+
 package zwidgets
 
 // SetImagesView uses a value that can give a String() as a|b|c, and shows it as a row of images,
