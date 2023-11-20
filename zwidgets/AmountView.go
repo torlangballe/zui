@@ -5,8 +5,8 @@ package zwidgets
 import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcustom"
-	"github.com/torlangballe/zui/zdraw"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdraw"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
