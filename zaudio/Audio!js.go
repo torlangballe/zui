@@ -1,6 +1,6 @@
 //go:build !js
 
-package zaudiocl
+package zaudio
 
 type audioNative struct {
 }
