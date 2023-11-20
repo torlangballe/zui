@@ -11,7 +11,6 @@ import (
 
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
-	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
@@ -893,14 +892,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		label.SetTextAlignment(j)
 		label.SetWrap(ztextinfo.WrapTailTruncate)
 		if f.Flags&FlagToClipboard != 0 {
-			label.SetPressedHandler(func() {
-				text := label.Text()
-				zclipboard.SetString(text)
-				label.SetText("📋 " + text)
-				ztimer.StartIn(0.6, func() {
-					label.SetText(text)
-				})
-			})
+			ztext.MakeViewPressToClipboard(label)
 		}
 		return label
 	}
