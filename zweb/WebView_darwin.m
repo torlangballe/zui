@@ -103,10 +103,13 @@ void WebViewSetLogPath(void *v, const char *logPath) {
 }
 
 void WebViewSetURL(void *view, const char *surl) {
-    NSString *nsStr = [NSString stringWithUTF8String:surl];
-    NSURL *nsURL = [NSURL URLWithString: nsStr];
-    NSURLRequest *nsReq = [NSURLRequest requestWithURL: nsURL];
-    [ (ZWKWebView *)view loadRequest: nsReq];   
+    dispatch_async(dispatch_get_main_queue(),
+    ^{     
+        NSString *nsStr = [NSString stringWithUTF8String:surl];
+        NSURL *nsURL = [NSURL URLWithString: nsStr];
+        NSURLRequest *nsReq = [NSURLRequest requestWithURL: nsURL];
+        [ (ZWKWebView *)view loadRequest: nsReq];
+    });
 }
 
 void WebViewSetContent(void *view, const char *html) {    
