@@ -226,18 +226,14 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	if ti.Type == Stroke {
 		w = ti.StrokeWidth
 	}
-	font := ti.Font
-	// if ti.Alignment&zgeo.HorCenter != 0 {
-	//        r = r.Expanded(ZSize(1, 0))
-	// }
-
 	if ti.Alignment&zgeo.HorShrink != 0 {
 		zlog.Assert(!ti.Rect.Size.IsNull())
-		// fmt.Println("CANVAS TI SetFont B4 Scale:", font)
-		font = ti.ScaledFontToFit(ti.MinimumFontScale)
+		// s := ti.Font.Size
+		ti.Font = ti.ScaledFontToFit(ti.MinimumFontScale)
+		// zlog.Warn("Font Scaled:", s, "->", ti.Font.Size, ti.Text)
 	}
 	// fmt.Println("CANVAS TI SetFont:", font)
-	canvas.SetFont(font, nil)
+	canvas.SetFont(ti.Font, nil)
 	if ti.Rect.Size.IsNull() {
 		canvas.DrawTextInPos(ti.Rect.Pos, ti.Text, w)
 		return zgeo.Rect{}
@@ -247,7 +243,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
-	h := font.LineHeight()
+	h := ti.Font.LineHeight()
 	y := ra.Pos.Y + h*0.73 // 0.71
 	zlog.Assert(len(lines) == len(widths) || len(widths) == 0, len(lines), len(widths))
 	for i, s := range lines {
@@ -267,20 +263,24 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 }
 
 func (ti *Info) ScaledFontToFit(minScale float64) *zgeo.Font {
-	w := ti.Rect.Size.W
-	w -= ti.Margin.W
+	mr := ti.Rect.Expanded(ti.Margin.Negative())
+	w := mr.Size.W
 	if ti.Alignment&zgeo.HorCenter != 0 {
-		w -= ti.Margin.W
+		w -= ti.Margin.W // ???
 	}
-	s, _, _ := ti.GetBounds()
+	t2 := *ti
+	t2.Rect = zgeo.Rect{}
+	s, _, _ := t2.GetBounds()
 
+	// zlog.Warn("XScale1:", s.W, w, ti.Text)
 	var r float64
 	if s.W > w {
-		r = w / s.W
+		r = math.Floor(w) / math.Ceil(s.W+1)
 		if r < 0.94 {
 			r = math.Max(r, minScale)
 		}
-	} else if s.H > ti.Rect.Size.H {
+		// zlog.Warn("XScale:", s.W*r, w, r, ti.Text)
+	} else if s.H > mr.Size.H {
 		r = math.Max(5, (w/s.H)*1.01)
 	} else {
 		return ti.Font
