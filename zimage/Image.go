@@ -514,31 +514,6 @@ func GoImageFlippedVertical(img image.Image) *image.NRGBA {
 	return imaging.FlipV(img)
 }
 
-func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
-	// config := cutter.Config{
-	// 	Width:  int(crop.Size.W),
-	// 	Height: int(crop.Size.H),
-	// 	Anchor: image.Point{int(crop.Pos.X), int(crop.Pos.Y)},
-	// 	Mode:   cutter.TopLeft,
-	// }
-	// if copy {
-	// 	config.Options = cutter.Copy
-	// }
-	// newImage, err := cutter.Crop(i.GoImage, config)
-	// if err != nil {
-	// 	zlog.Error(err, "cutter.Crop")
-	// 	return i
-	// }
-
-	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
-	newImage := imaging.Crop(i.GoImage, r)
-
-	ni := &Image{}
-	ni.Scale = i.Scale
-	ni.GoImage = newImage
-	return ni
-}
-
 func GoImageCropped(img image.Image, crop zgeo.Rect, copy bool) (image.Image, error) {
 	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
 	ni := imaging.Crop(img, r)
