@@ -8,7 +8,6 @@ import (
 	"image/png"
 	"os"
 
-	"github.com/disintegration/imaging"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -55,7 +54,7 @@ func (i *Image) ToGo() image.Image {
 func FromPath(path string, got func(*Image)) {
 	var goImage image.Image
 	if zhttp.StringStartsWithHTTPX(path) {
-		goImage, _ = GoImageFromURL(path)
+		goImage, _, _ = GoImageFromURL(path)
 	} else {
 		goImage, _, _ = GoImageFromFile(path)
 	}
@@ -105,31 +104,6 @@ func (i *Image) HasAlpha() bool {
 // 	img := FromGo(newImage)
 // 	return img
 // }
-
-func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
-	// config := cutter.Config{
-	// 	Width:  int(crop.Size.W),
-	// 	Height: int(crop.Size.H),
-	// 	Anchor: image.Point{int(crop.Pos.X), int(crop.Pos.Y)},
-	// 	Mode:   cutter.TopLeft,
-	// }
-	// if copy {
-	// 	config.Options = cutter.Copy
-	// }
-	// newImage, err := cutter.Crop(i.GoImage, config)
-	// if err != nil {
-	// 	zlog.Error(err, "cutter.Crop")
-	// 	return i
-	// }
-
-	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
-	newImage := imaging.Crop(i.GoImage, r)
-
-	ni := &Image{}
-	ni.Scale = i.Scale
-	ni.GoImage = newImage
-	return ni
-}
 
 func (i *Image) SaveToPNG(filepath string) error {
 	out, err := os.Create(filepath)

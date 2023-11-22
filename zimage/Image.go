@@ -157,17 +157,15 @@ func GoImageFromFile(path string) (img image.Image, format string, err error) {
 	return image.Decode(file)
 }
 
-func GoImageFromURL(path string) (image.Image, error) {
+func GoImageFromURL(path string) (img image.Image, format string, err error) {
 	params := zhttp.MakeParameters()
 	params.Method = http.MethodGet
-	// params.Headers["Origin"] = "https://192.168.0.30:443"
 	resp, err := zhttp.GetResponse(path, params)
 	if err != nil {
 		zlog.Error(err, path)
-		return nil, err
+		return nil, "", err
 	}
-	goImage, _, err := image.Decode(resp.Body)
-	return goImage, err
+	return image.Decode(resp.Body)
 }
 
 func GoImagePNGData(goImage image.Image) ([]byte, error) {
@@ -242,6 +240,18 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 		}
 		got(img)
 	})
+}
+
+func GoImageShrunkCroppedToFillSize(img image.Image, size zgeo.Size, proportional bool) (image.Image, error) {
+	is := GoImageZSize(img)
+	ns := zgeo.Rect{Size: size}.Align(is, zgeo.Shrink|zgeo.Center|zgeo.Out|zgeo.Proportional, zgeo.Size{}).Size
+	ni, err := GoImageShrunkInto(img, ns, true)
+	if err != nil {
+		return nil, err
+	}
+	r := zgeo.Rect{Size: ns}.Align(size, zgeo.Center|zgeo.Proportional, zgeo.Size{})
+	niCropped, err := GoImageCropped(ni, r, false)
+	return niCropped, err
 }
 
 func GoImagesAreIdentical(img1, img2 image.Image) bool {
@@ -502,4 +512,35 @@ func GoImageFlippedHorizontal(img image.Image) *image.NRGBA {
 
 func GoImageFlippedVertical(img image.Image) *image.NRGBA {
 	return imaging.FlipV(img)
+}
+
+func (i *Image) Cropped(crop zgeo.Rect, copy bool) *Image {
+	// config := cutter.Config{
+	// 	Width:  int(crop.Size.W),
+	// 	Height: int(crop.Size.H),
+	// 	Anchor: image.Point{int(crop.Pos.X), int(crop.Pos.Y)},
+	// 	Mode:   cutter.TopLeft,
+	// }
+	// if copy {
+	// 	config.Options = cutter.Copy
+	// }
+	// newImage, err := cutter.Crop(i.GoImage, config)
+	// if err != nil {
+	// 	zlog.Error(err, "cutter.Crop")
+	// 	return i
+	// }
+
+	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
+	newImage := imaging.Crop(i.GoImage, r)
+
+	ni := &Image{}
+	ni.Scale = i.Scale
+	ni.GoImage = newImage
+	return ni
+}
+
+func GoImageCropped(img image.Image, crop zgeo.Rect, copy bool) (image.Image, error) {
+	r := image.Rect(int(crop.Min().X), int(crop.Min().Y), int(crop.Max().X), int(crop.Max().Y))
+	ni := imaging.Crop(img, r)
+	return ni, nil
 }
