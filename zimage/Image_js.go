@@ -93,13 +93,6 @@ func FromPath(spath string, got func(*Image)) {
 	})
 }
 
-func (i *Image) ToGo() image.Image {
-	s := i.Size()
-	return DrawInCanvasFunc(s, func(canvasContext js.Value) {
-		canvasContext.Call("drawImage", i.ImageJS, 0, 0, s.W, s.H)
-	})
-}
-
 func (i *Image) RGBAImage() *Image {
 	zlog.Fatal(nil, "Not implemented")
 	return nil
@@ -206,6 +199,13 @@ func FromGo(img image.Image, got func(image *Image)) {
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
 	FromPath(surl, got)
+}
+
+func (i *Image) ToGo() image.Image {
+	s := i.Size()
+	return DrawInCanvasFunc(s, func(canvasContext js.Value) {
+		canvasContext.Call("drawImage", i.ImageJS, 0, 0, s.W, s.H)
+	})
 }
 
 func (i *Image) IsLoaded() bool {
