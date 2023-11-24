@@ -847,20 +847,6 @@ func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 	}))
 }
 
-func jsFileToGo(file js.Value, got func(data []byte, name string), progress func(p float64)) {
-	// TODO progress: https://developer.mozilla.org/en-US/docs/Web/API/FileReader/progress_event
-	reader := js.Global().Get("FileReader").New()
-	reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		array := js.Global().Get("Uint8Array").New(this.Get("result"))
-		data := make([]byte, array.Length())
-		js.CopyBytesToGo(data, array)
-		name := file.Get("name").String()
-		got(data, name)
-		return nil
-	}))
-	reader.Call("readAsArrayBuffer", file)
-}
-
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
 	if zdebug.IsInTests {
 		return
@@ -905,7 +891,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 			return nil
 		}
 		// zlog.Info("FileProcessing")
-		jsFileToGo(file, func(data []byte, name string) {
+		zdom.JSFileToGo(file, func(data []byte, name string) {
 			var pos zgeo.Pos
 			pos.X = event.Get("offsetX").Float()
 			pos.Y = event.Get("offsetY").Float()
@@ -932,7 +918,7 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 			if skip != nil && skip(name) {
 				return nil
 			}
-			jsFileToGo(file, got, progress)
+			zdom.JSFileToGo(file, got, progress)
 		}
 		return nil
 	}))

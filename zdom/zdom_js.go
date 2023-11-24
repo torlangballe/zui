@@ -1,6 +1,7 @@
 package zdom
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"syscall/js"
@@ -66,4 +67,35 @@ func MakeRGBAString(c zgeo.Color) string {
 	return c.Hex()
 	//	rgba := c.GetRGBA()
 	//	return fmt.Sprintf("rgba(%d,%d,%d,%g)", int(rgba.R*255), int(rgba.G*255), int(rgba.B*255), rgba.A)
+}
+
+func New(stype string, args ...any) js.Value {
+	return js.Global().Get(stype).New(args)
+}
+
+func JSFileToGo(file js.Value, got func(data []byte, name string), progress func(p float64)) {
+	// TODO progress: https://developer.mozilla.org/en-US/docs/Web/API/FileReader/progress_event
+	reader := js.Global().Get("FileReader").New()
+	reader.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		array := js.Global().Get("Uint8Array").New(this.Get("result"))
+		data := make([]byte, array.Length())
+		js.CopyBytesToGo(data, array)
+		name := file.Get("name").String()
+		got(data, name)
+		return nil
+	}))
+	reader.Call("readAsArrayBuffer", file)
+}
+
+func Resolve(val js.Value, done func(resolved js.Value, err error)) {
+	then := val.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		done(args[0], nil)
+		return nil
+	}))
+	then.Call("catch", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		str := fmt.Sprint(args[0]) // ???
+		zlog.Info("CATCH!", args[0])
+		done(js.Undefined(), errors.New(str))
+		return nil
+	}))
 }
