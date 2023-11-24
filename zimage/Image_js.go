@@ -99,13 +99,7 @@ func (i *Image) RGBAImage() *Image {
 }
 
 func (i *Image) load(spath string, done func(success bool)) {
-	// if !strings.HasPrefix(spath, "http:") && !strings.HasPrefix(spath, "https:") {
-	// 	if !strings.HasPrefix(spath, "images/") {
-	// 		spath = "images/" + spath
-	// 	}
-	// }
 	// zlog.Info("Image Load:", spath)
-
 	i.Path = spath
 	i.Loading = true
 	i.Loading = strings.HasPrefix(spath, "images/")
