@@ -185,6 +185,9 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 	scale := zscreen.GetMain().Scale
 	ds.MultiplyD(scale)
 	image.ShrunkInto(ds, proportional, func(shrunkImage *zimage.Image) {
+		if shrunkImage == nil {
+			return
+		}
 		shrunkImage.Scale = int(scale)
 		if useDownsampleCache {
 			scaledImageMap[si] = shrunkImage
