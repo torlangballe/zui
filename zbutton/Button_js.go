@@ -93,7 +93,9 @@ func (v *Button) MakeEscapeCanceler() {
 
 func (v *Button) SetPressedHandler(handler func()) {
 	v.pressed = handler
-	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		e := args[0]
+		v.SetStateOnDownPress(e)
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
