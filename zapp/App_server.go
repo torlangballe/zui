@@ -121,7 +121,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
 	}
 	// zlog.Info("FilesRedir2:", spath, err)
-	if !zlog.OnError(err, spath) {
+	if !zlog.OnError(err, spath, req.URL) {
 		_, err := io.Copy(w, f)
 		zlog.OnError(err, spath)
 	}
