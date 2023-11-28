@@ -10,6 +10,8 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
+// https://github.com/teamortix/golang-wasm
+
 var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")
 var WindowJS = js.Global().Get("window")
@@ -89,13 +91,18 @@ func JSFileToGo(file js.Value, got func(data []byte, name string), progress func
 
 func Resolve(val js.Value, done func(resolved js.Value, err error)) {
 	then := val.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		done(args[0], nil)
+		if done != nil {
+			done(args[0], nil)
+		}
 		return nil
 	}))
+
 	then.Call("catch", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		str := fmt.Sprint(args[0]) // ???
-		zlog.Info("CATCH!", args[0])
-		done(js.Undefined(), errors.New(str))
+		str := fmt.Sprint(args[0].Call("toString").String()) // ???
+		zlog.Info("CATCH!", args[0].String(), this)
+		if done != nil {
+			done(js.Undefined(), errors.New(str))
+		}
 		return nil
 	}))
 }
