@@ -10,6 +10,7 @@ import (
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
@@ -54,11 +55,12 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	v.limit = limit
 	if v.Header != nil {
 		v.Header.SortingPressedFunc = func() {
-			go v.fillPage()
+			go v.FillPage()
 		}
 	}
 	v.SortFunc = nil
 	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
+	zlog.Info("SQLTableInit:", v.Bar != nil)
 	v.StoreChangedItemsFunc = v.updateForIDs
 	v.DeleteItemsFunc = v.deleteItems
 	v.equalFields = map[string]string{}
@@ -94,8 +96,10 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 		}
 		return true
 	})
-	v.addActionButton()
-	go v.fillPage()
+	if v.options&AddHeader != 0 {
+		v.addActionButton()
+	}
+	go v.FillPage()
 }
 
 func (v *SQLTableView[S]) addActionButton() {
@@ -104,32 +108,43 @@ func (v *SQLTableView[S]) addActionButton() {
 	actionMenu := zmenu.NewMenuedOwner()
 	actionMenu.Build(actions, nil)
 	actionMenu.CreateItemsFunc = func() []zmenu.MenuedOItem {
-		dup := zmenu.MenuedFuncAction("Duplcate selected "+v.StructName, func() {
-			v.addNew(true)
-		})
-		dup.IsDisabled = (len(v.Grid.SelectedIDs()) != 1)
-		return []zmenu.MenuedOItem{
-			zmenu.MenuedFuncAction("New "+v.StructName, func() {
-				v.addNew(false)
-			}), dup,
+		var items []zmenu.MenuedOItem
+		ids := v.Grid.SelectedIDs()
+		noItems := v.NameOfXItemsFunc(ids, true)
+		if v.options&AllowDelete != 0 {
+			idel := zmenu.MenuedSCFuncAction("Delete "+noItems+"…", zkeyboard.KeyBackspace, 0, func() {
+				v.handleDeleteKey(true)
+			})
+			items = append(items, idel)
 		}
+		if v.options&AllowDuplicate != 0 {
+			idup := zmenu.MenuedFuncAction("Duplcate "+noItems, func() {
+				v.addNewAction(true)
+			})
+			idup.IsDisabled = (len(v.Grid.SelectedIDs()) != 1)
+			items = append(items, idup)
+		}
+		if v.options&AllowNew != 0 {
+			inew := zmenu.MenuedFuncAction("New "+v.StructName, func() {
+				v.addNewAction(false)
+			})
+			items = append(items, inew)
+		}
+		return items
 	}
 	v.Bar.Add(actions, zgeo.TopRight, zgeo.Size{})
 }
 
-func (v *SQLTableView[S]) addNew(duplicate bool) {
+func (v *SQLTableView[S]) addNewAction(duplicate bool) {
 	var s S
 	if duplicate {
 		sid := v.Grid.SelectedIDs()[0]
 		s = *v.StructForID(sid)
-		zreflect.ForEachField(&s, zfields.FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
-			tags := zreflect.GetTagAsMap(string(sf.Tag))
-			primary := zstr.StringsContain(tags["db"], "primary")
+		zsql.ForEachColumn(&s, nil, "", func(val reflect.Value, column string, primary bool) {
 			// zlog.Info("Column:", column, primary, dbTags)
 			if primary {
 				val.Set(reflect.Zero(val.Type()))
 			}
-			return true
 		})
 	}
 	zfields.PresentOKCancelStruct(&s, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
@@ -234,7 +249,7 @@ func (v *SQLTableView[S]) SetConstraints(constraints string) {
 	v.Constraints = constraints
 }
 
-func (v *SQLTableView[S]) fillPage() {
+func (v *SQLTableView[S]) FillPage() {
 	var slice []S
 	var q zsql.QueryBase
 
