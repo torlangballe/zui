@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -24,15 +25,30 @@ func AudioNew(path string) *Audio {
 }
 
 func (a *Audio) Play() {
-	a.audio.Call("play")
+	promise := a.audio.Call("play")
+	zdom.Resolve(promise, func(resolved js.Value, err error) {
+		if err != nil {
+			zalert.ShowError(err)
+		}
+	})
 }
 
 func (a *Audio) Stop() {
-	// a.audio.Call("stop")
+	a.audio.Call("pause")
+	a.audio.Set("currentTime", 0)
 }
 
 func (a *Audio) SetVolume(v float32) {
 	a.audio.Set("volume", v)
+}
+
+func (a *Audio) SetHandleFinished(f func()) {
+	a.audio.Set("onended", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if f != nil {
+			f()
+		}
+		return nil
+	}))
 }
 
 func getMediaDevices() js.Value {
@@ -92,7 +108,7 @@ func NewAudioRecording(opts Options, w io.Writer, started func(r *Recording), fi
 			// zlog.Info("DataAvailable")
 			zdom.JSFileToGo(audioBlob, func(data []byte, name string) {
 				if len(data) != 0 {
-					zlog.Info("Bytes:", len(data), name)
+					// zlog.Info("Bytes:", len(data), name)
 					w.Write(data)
 				}
 				if r.stopped {

@@ -108,6 +108,8 @@ const (
 	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
 	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
 	FlagIsURL                                     // Field is string, and it's a url
+	FlagIsAudio                                   // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
+	FlagIsDownload                                // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
 )
 
 const (
@@ -134,6 +136,7 @@ type Field struct {
 	ImageFixedPath       string
 	OffImagePath         string
 	HeaderImageFixedPath string
+	Path                 string
 	Height               float64
 	Enum                 string
 	LocalEnum            string
@@ -164,9 +167,8 @@ type Field struct {
 	UseIn                []string // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
 	Styling              zstyle.Styling
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
-	Download             string
-	StringSep            string // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
-	RPCCall              string // an RPC method to Call, typically on press of a button
+	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
+	RPCCall              string            // an RPC method to Call, typically on press of a button
 }
 
 var EmptyField = Field{
@@ -348,7 +350,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "bgcolor":
 			f.Styling.BGColor.SetFromString(val)
 		case "download":
-			f.Download = val
+			f.Flags |= FlagIsDownload
 		case "zrpc":
 			f.RPCCall = val
 		case "zdebug":
@@ -500,6 +502,10 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				}
 			}
 
+		case "path":
+			f.Path = val
+		case "audio":
+			f.Flags |= FlagIsAudio
 		case "off":
 			f.OffImagePath = "images/" + val
 		case "image", "himage":
@@ -580,6 +586,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			} else {
 				f.Placeholder = "$HAS$" // set to this special value to set to name once set
 			}
+		case "dur":
+			f.Flags |= FlagIsDuration
 		case "since":
 			f.Flags |= FlagIsStatic | FlagIsDuration
 		default:

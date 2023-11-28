@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zaudio"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
@@ -832,6 +833,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 			// zlog.Info("DurTime", dur, f.Flags&FlagHasSeconds != 0)
 		}
 		t := ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
+		// zlog.Info("DurTime", dur, t, f.HasFlag(FlagHasSeconds))
 		return t, dur
 	}
 	format := f.Format
@@ -1184,6 +1186,17 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				view = v.makeImage(rval, f)
 				break
 			}
+			if f.HasFlag(FlagIsAudio) {
+				s := f.Size
+				if s.IsNull() {
+					s = zgeo.SizeBoth(20)
+				}
+				iv := zimageview.New(nil, "images/zcore/speaker.png", s)
+				iv.DownsampleImages = true
+				iv.SetObjectName(f.FieldName)
+				view = iv
+				break
+			}
 			b := zbool.ToBoolInd(rval.Interface().(bool))
 			exp = zgeo.AlignmentNone
 			view = v.makeCheckbox(f, b)
@@ -1308,17 +1321,28 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		view.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
 	}
 	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
-	if f.Download != "" {
-		surl := zstr.ReplaceAllCapturesFunc(zstr.InDoubleSquigglyBracketsRegex, f.Download, zstr.RegWithoutMatch, func(fieldName string, index int) string {
-			a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
-			if findex == -1 {
-				zlog.Error(nil, "field download", f.Download, ":", "field not found in struct:", fieldName)
-				return ""
+	if f.Path != "" {
+		path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
+		p := view.(zview.Pressable)
+		if p != nil {
+			if f.HasFlag(FlagIsDownload) {
+				if f.HasFlag(FlagIsAudio) {
+					p.SetLongPressedHandler(func() {
+						zlog.Info("Down:", path)
+						zview.DownloadURI(path, "")
+					})
+				} else {
+					p.SetPressedHandler(func() {
+						zview.DownloadURI(path, "")
+					})
+				}
 			}
-			return fmt.Sprint(a.Interface())
-		})
-		link := zcontainer.MakeLinkedStack(surl, "", view)
-		view = link
+			if f.HasFlag(FlagIsAudio) {
+				p.SetPressedHandler(func() {
+					playAudio(v, f, path, view)
+				})
+			}
+		}
 	}
 	cell := &zcontainer.Cell{}
 	def := defaultAlign
@@ -1349,6 +1373,36 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
+}
+
+func playAudio(v *FieldView, f *Field, path string, view zview.View) {
+	audio := zaudio.AudioNew(path)
+	p := view.(zview.Pressable)
+	if p != nil {
+		old := p.PressedHandler()
+		audio.SetHandleFinished(func() {
+			zlog.Info("Finished playing!")
+			p.SetPressedHandler(old)
+		})
+		p.SetPressedHandler(func() {
+			zlog.Info("STOP!")
+			audio.Stop()
+			p.SetPressedHandler(old)
+		})
+	}
+	audio.Play()
+}
+
+func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {
+	out := zstr.ReplaceAllCapturesFunc(zstr.InDoubleSquigglyBracketsRegex, str, zstr.RegWithoutMatch, func(fieldName string, index int) string {
+		a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
+		if findex == -1 {
+			zlog.Error(nil, "field download", str, ":", "field not found in struct:", fieldName)
+			return ""
+		}
+		return fmt.Sprint(a.Interface())
+	})
+	return out
 }
 
 func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
