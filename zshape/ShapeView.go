@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -90,6 +91,15 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 	v.CustomView.SetMinSize(minSize)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
+	v.NativeView.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if !down && km.Key.IsReturnish() && km.Modifier == zkeyboard.ModifierNone {
+			if v.PressedHandler() != nil {
+				v.PressedHandler()()
+				return true
+			}
+		}
+		return false
+	})
 }
 
 // Text sets the ShapeView's textInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used

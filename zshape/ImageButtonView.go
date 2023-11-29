@@ -3,20 +3,22 @@
 package zshape
 
 import (
-	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
 //  Created by Tor Langballe on /14/12/17.
 
-var ImageButtonViewDefaultName = "gray"
+var (
+	ImageButtonViewDefaultName = "gray"
+	DefaultInsets              = zgeo.SizeF(6, 10)
+)
 
 type ImageButtonView struct {
 	ShapeView
 }
 
-func ImageButtonViewNewSimple(title, imageName string) *ImageButtonView {
-	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 22}, zgeo.Size{6, 10})
+func ImageButtonViewSimpleInsets(title, imageName string) *ImageButtonView {
+	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 22}, DefaultInsets)
 }
 
 func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *ImageButtonView {
@@ -27,10 +29,10 @@ func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.
 
 func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, insets zgeo.Size) {
 	v.ShapeView.Init(v, TypeNone, minSize, title)
-	if insets.IsNull() {
-		insets = zgeo.Size{6, 10}
-	}
 	v.MaxSize.H = minSize.H
+	if insets.IsNull() {
+		insets = DefaultInsets
+	}
 	v.SetCanTabFocus(false)
 	v.ImageAlign = zgeo.Expand | zgeo.Center
 	v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
@@ -42,15 +44,6 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
 	v.ImageMargin = zgeo.Size{}
-	v.NativeView.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if !down && km.Key.IsReturnish() && km.Modifier == zkeyboard.ModifierNone {
-			if v.PressedHandler() != nil {
-				v.PressedHandler()()
-				return true
-			}
-		}
-		return false
-	})
 }
 
 func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
