@@ -9,12 +9,10 @@ import (
 
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zfields"
-	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zrpc"
@@ -103,26 +101,23 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 }
 
 func (v *SQLTableView[S]) addActionButton() {
-	actions := zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
-	actions.DownsampleImages = true
-	actionMenu := zmenu.NewMenuedOwner()
-	actionMenu.Build(actions, nil)
-	actionMenu.CreateItemsFunc = func() []zmenu.MenuedOItem {
+	v.ActionMenu.CreateItemsFunc = func() []zmenu.MenuedOItem {
 		var items []zmenu.MenuedOItem
 		ids := v.Grid.SelectedIDs()
 		noItems := v.NameOfXItemsFunc(ids, true)
-		if v.options&AllowDelete != 0 {
-			idel := zmenu.MenuedSCFuncAction("Delete "+noItems+"…", zkeyboard.KeyBackspace, 0, func() {
-				v.handleDeleteKey(true)
-			})
-			items = append(items, idel)
-		}
-		if v.options&AllowDuplicate != 0 {
-			idup := zmenu.MenuedFuncAction("Duplcate "+noItems, func() {
-				v.addNewAction(true)
-			})
-			idup.IsDisabled = (len(v.Grid.SelectedIDs()) != 1)
-			items = append(items, idup)
+		if len(ids) > 0 {
+			if v.options&AllowDelete != 0 {
+				idel := zmenu.MenuedSCFuncAction("Delete "+noItems+"…", zkeyboard.KeyBackspace, 0, func() {
+					v.handleDeleteKey(true)
+				})
+				items = append(items, idel)
+			}
+			if v.options&AllowDuplicate != 0 {
+				idup := zmenu.MenuedFuncAction("Duplcate "+noItems, func() {
+					v.addNewAction(true)
+				})
+				items = append(items, idup)
+			}
 		}
 		if v.options&AllowNew != 0 {
 			inew := zmenu.MenuedFuncAction("New "+v.StructName, func() {
@@ -132,7 +127,6 @@ func (v *SQLTableView[S]) addActionButton() {
 		}
 		return items
 	}
-	v.Bar.Add(actions, zgeo.TopRight, zgeo.Size{})
 }
 
 func (v *SQLTableView[S]) addNewAction(duplicate bool) {
