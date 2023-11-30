@@ -54,12 +54,39 @@ type Info struct {
 	Margin                zgeo.Size
 }
 
+type DecorationPos int
+type DecorationStyle int
+type Decoration struct {
+	LinePos DecorationPos
+	Style   DecorationStyle
+	Width   float64
+	Color   zgeo.Color
+}
+
+const (
+	DecorationPosNone DecorationPos = 0
+	DecorationUnder   DecorationPos = 1 << iota
+	DecorationOver
+	DecorationMiddle
+
+	DecorationStyleNone DecorationStyle = 0
+	DecorationSolid     DecorationStyle = 1 << iota
+	DecorationWavy
+	DecorationDashed
+)
+
 type Owner interface {
 	GetTextInfo() Info
 }
 
 type TextSetter interface {
 	SetText(text string)
+}
+
+var DecorationUnderlined = Decoration{
+	LinePos: DecorationUnder,
+	Style:   DecorationSolid,
+	Width: 1,
 }
 
 func New() *Info {
