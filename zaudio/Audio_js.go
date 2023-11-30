@@ -1,15 +1,10 @@
 package zaudio
 
 import (
-	"io"
-	"net/http"
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zdom"
-	"github.com/torlangballe/zutil/zhttp"
-	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zrest"
 )
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder
@@ -54,4 +49,3 @@ func (a *Audio) SetHandleFinished(f func()) {
 func getMediaDevices() js.Value {
 	return zdom.CreateDotSeparatedObject("navigator.mediaDevices")
 }
-

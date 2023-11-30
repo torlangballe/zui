@@ -6,7 +6,7 @@ import (
 	"syscall/js"
 	"time"
 
-	"github.com/torlangballe/zutil/zdom"
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
@@ -20,12 +20,13 @@ type Recording struct {
 }
 
 type RecOptions struct {
-	BitsPerSecond int
-	TimeSliceMS   int
-	MimeFormat    string
-	Progress      func(dur time.Duration)
-	Started       func(r *Recording)
-	Finished      func()
+	BitsPerSecond     int
+	TimeSliceMS       int
+	MimeFormat        string
+	Progress          func(dur time.Duration)
+	Started           func(r *Recording)
+	FinishedRecording func()
+	Posted            func(resultMessage string)
 }
 
 func (r *Recording) Stop() {
@@ -37,7 +38,7 @@ func (r *Recording) Stop() {
 	}
 }
 
-func NewAudioRecording(opts RecOptions, w io.Writer) {
+func NewAudioRecording(opts RecOptions, w io.Writer) *Recording {
 	r := &Recording{}
 	mediaDevs := getMediaDevices()
 	constraints := map[string]any{
@@ -85,8 +86,8 @@ func NewAudioRecording(opts RecOptions, w io.Writer) {
 					if c != nil {
 						c.Close()
 					}
-					if opts.Finished != nil {
-						opts.Finished()
+					if opts.FinishedRecording != nil {
+						opts.FinishedRecording()
 					}
 					if r.progTimer != nil {
 						r.progTimer.Stop()
@@ -109,7 +110,7 @@ func NewAudioRecording(opts RecOptions, w io.Writer) {
 		}
 		if opts.Progress != nil {
 			start := time.Now()
-			r.progTimer = ztimer.RepeatForeverNow(0.1, func() {
+			r.progTimer = ztimer.RepeatForeverNow(0.43, func() {
 				opts.Progress(time.Since(start))
 			})
 		}
@@ -117,14 +118,17 @@ func NewAudioRecording(opts RecOptions, w io.Writer) {
 			opts.Started(r)
 		}
 	})
+	return r
 }
 
 func PostAudioRecording(opts RecOptions, surl, userTokenForHeader string) {
 	reader, writer := io.Pipe()
+	NewAudioRecording(opts, writer)
 	go func() {
 		params := zhttp.MakeParameters()
 		params.Reader = reader
 		params.Method = http.MethodPost
+		params.TimeoutSecs = 60 * 30
 		if opts.MimeFormat == "" {
 			opts.MimeFormat = "audio/mp4"
 		}
@@ -132,8 +136,14 @@ func PostAudioRecording(opts RecOptions, surl, userTokenForHeader string) {
 		if userTokenForHeader != "" {
 			params.Headers[zrest.UserAuthTokenHeaderKey] = userTokenForHeader
 		}
-		_, err := zhttp.GetResponse(surl, params)
-		zlog.OnError(err, "post")
+		resp, err := zhttp.GetResponse(surl, params)
+		if zlog.OnError(err, "post") {
+			return
+		}
+		zlog.Info("REC POSTED:", resp.Header)
+		message := resp.Header.Get(ResultMessageHeaderKey)
+		if opts.Posted != nil {
+			opts.Posted(message)
+		}
 	}()
-	NewAudioRecording(opts, writer)
 }
