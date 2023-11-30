@@ -107,7 +107,8 @@ const (
 	FlagAllowEmptyAsZero                          // This shows the empty value as nothing. So int 0 would be shown as "" in text
 	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
 	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
-	FlagIsURL                                     // Field is string, and it's a url
+	FlagIsURL                                     // (Field is string, and it's a url) OR (it has Path set to fixed URL)
+	FlagIsDocumentation                           // It is a .Path link to Documentation view.
 	FlagIsAudio                                   // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
 	FlagIsDownload                                // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
 )
@@ -330,7 +331,11 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "title":
 			f.Title = origVal
 		case "url":
+			f.Path = val
 			f.Flags |= FlagIsURL
+		case "doc":
+			f.Path = val
+			f.Flags |= FlagIsDocumentation
 		case "usein":
 			f.UseIn = barParts
 		case "rebuild":

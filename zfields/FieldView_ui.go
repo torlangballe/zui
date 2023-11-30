@@ -24,6 +24,7 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
@@ -872,11 +873,21 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
 	str, _ := getTextFromNumberishItem(rval, f)
 	if f.IsStatic() || v.params.AllStatic {
-		var label *zlabel.Label
-		if f.HasFlag(FlagIsURL) {
-			label = zlabel.NewLink(str, str)
-		} else {
-			label = zlabel.New(str)
+		label := zlabel.New(str)
+		if f.Flags&(FlagIsURL|FlagIsDocumentation) != 0 {
+			surl := str
+			if f.Path != "" {
+				surl = f.Path
+			}
+			if f.HasFlag(FlagIsDocumentation) {
+				// zlog.Info("DOC:", surl, ztextinfo.DecorationUnderlined)
+				ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
+				label.SetPressedHandler(func() {
+					go zwidgets.DocumentationViewPresent(surl, false)
+				})
+			} else {
+				label = zlabel.NewLink(str, surl)
+			}
 		}
 		label.SetMaxLines(f.Rows)
 		if f.Flags&FlagIsDuration != 0 {
