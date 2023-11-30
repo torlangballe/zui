@@ -372,15 +372,12 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 func (v *NativeView) SetInteractive(interactive bool) {
 	if interactive {
 		v.JSSet("pointer-events", "auto")
-		v.JSSet("inert", "")
+		// v.JSSet("inert", "")
 		// v.Element.Delete("inert")
 		return
 	}
 	v.JSSet("pointer-events", "none")
-	v.JSSet("inert", "true")
-	// fmt.Printf("NV SetInteractive: %p %s %v %s\n", v, v.ObjectName(), interactive, str)
-	//
-	//	v.JSStyle().Set("pointer-events", str)
+	// v.JSSet("inert", "true")
 }
 
 // func (v *NativeView) Interactive() bool {
