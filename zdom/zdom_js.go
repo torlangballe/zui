@@ -11,6 +11,7 @@ import (
 )
 
 // https://github.com/teamortix/golang-wasm
+// https://pkg.go.dev/honnef.co/go/js/dom/v2
 
 var DocumentJS = js.Global().Get("document")
 var DocumentElementJS = DocumentJS.Get("documentElement")
