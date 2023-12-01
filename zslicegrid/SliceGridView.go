@@ -341,9 +341,12 @@ func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
 }
 
 func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
-	for _, id := range ids {
-		i := v.Grid.IndexOfID(id)
-		zslice.RemoveAt(v.slicePtr, i)
+	for i := 0; i < len(*v.slicePtr); i++ {
+		id := (*v.slicePtr)[i].GetStrID()
+		if zstr.StringsContain(ids, id) {
+			zslice.RemoveAt(v.slicePtr, i)
+			i--
+		}
 	}
 	v.doFilterAndSort(*v.slicePtr)
 }
