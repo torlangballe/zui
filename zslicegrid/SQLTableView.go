@@ -190,6 +190,8 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 	if err != nil {
 		zalert.ShowError(err, "updating")
 	}
+	v.RemoveItemsFromSlice(ids)
+	v.updateView()
 }
 
 func (v *SQLTableView[S]) updateForIDs(items []S) {
