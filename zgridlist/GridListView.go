@@ -990,7 +990,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 	// zlog.Info("GridList keypress other!", v.ObjectName(), km)
 	if km.Key.IsReturnish() && (v.Selectable || v.MultiSelectable) {
 		id := v.CurrentHoverID
-		if id == "" && v.selectedIndex != -1 {
+		if id == "" && v.selectedIndex != -1 && v.selectedIndex < v.CellCountFunc() {
 			id = v.IDAtIndexFunc(v.selectedIndex)
 		}
 		if id != "" {
