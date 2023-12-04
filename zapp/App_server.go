@@ -187,9 +187,6 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 	m.Dir = "www/doc/"
 	m.FileSystem = AllWebFS
 	// zlog.Info("makeMarkdownConverter fs:", m.FileSystem)
-	m.PartNames = []string{
-		"setup.shared.md",
-	}
 	return m
 }
 
