@@ -1202,10 +1202,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				if s.IsNull() {
 					s = zgeo.SizeBoth(20)
 				}
-				iv := zimageview.New(nil, "images/zcore/speaker.png", s)
-				iv.DownsampleImages = true
-				iv.SetObjectName(f.FieldName)
-				view = iv
+				path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
+				av := zaudio.NewAudioIconView(s, path)
+				av.SetObjectName(f.FieldName)
+				view = av
 				break
 			}
 			b := zbool.ToBoolInd(rval.Interface().(bool))
@@ -1337,21 +1337,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		p := view.(zview.Pressable)
 		if p != nil {
 			if f.HasFlag(FlagIsDownload) {
-				if f.HasFlag(FlagIsAudio) {
-					p.SetLongPressedHandler(func() {
-						zlog.Info("Down:", path)
-						zview.DownloadURI(path, "")
-					})
-				} else {
+				if !f.HasFlag(FlagIsAudio) {
 					p.SetPressedHandler(func() {
 						zview.DownloadURI(path, "")
 					})
 				}
-			}
-			if f.HasFlag(FlagIsAudio) {
-				p.SetPressedHandler(func() {
-					playAudio(v, f, path, view)
-				})
 			}
 		}
 	}
@@ -1384,24 +1374,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
-}
-
-func playAudio(v *FieldView, f *Field, path string, view zview.View) {
-	audio := zaudio.AudioNew(path)
-	p := view.(zview.Pressable)
-	if p != nil {
-		old := p.PressedHandler()
-		audio.SetHandleFinished(func() {
-			zlog.Info("Finished playing!")
-			p.SetPressedHandler(old)
-		})
-		p.SetPressedHandler(func() {
-			zlog.Info("STOP!")
-			audio.Stop()
-			p.SetPressedHandler(old)
-		})
-	}
-	audio.Play()
 }
 
 func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {

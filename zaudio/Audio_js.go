@@ -3,8 +3,8 @@ package zaudio
 import (
 	"syscall/js"
 
-	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder
@@ -19,11 +19,14 @@ func AudioNew(path string) *Audio {
 	return a
 }
 
-func (a *Audio) Play() {
+func (a *Audio) Play(fail func(err error)) {
 	promise := a.audio.Call("play")
 	zdom.Resolve(promise, func(resolved js.Value, err error) {
 		if err != nil {
-			zalert.ShowError(err)
+			zlog.Error(err, "play")
+			if fail != nil {
+				fail(err)
+			}
 		}
 	})
 }
