@@ -376,7 +376,11 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		} else {
 			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
 			zlog.Assert(findex != -1, f.Name, f.LocalEnum)
-			enum = ei.Interface().(zdict.ItemsGetter).GetItems()
+			var err error
+			enum, err = getDictItemsFromSlice(ei, f)
+			if err != nil {
+				return false
+			}
 		}
 		if v.params.ForceZeroOption {
 			var rtype reflect.Type
@@ -693,8 +697,9 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 	var view zview.View
 	static := f.IsStatic() || v.params.AllStatic
 	isSlice := rval.Kind() == reflect.Slice
+	// zlog.Info("makeMenu", f.Name, f.IsStatic(), v.params.AllStatic, isSlice, rval.Kind())
 	if static || isSlice {
-		multi := isSlice
+		// multi := isSlice
 		isImage := (f.ImageFixedPath != "")
 		shape := zshape.TypeRoundRect
 		if isImage {
@@ -702,7 +707,14 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		}
 		menuOwner := zmenu.NewMenuedOwner()
 		menuOwner.IsStatic = static
-		menuOwner.IsMultiple = multi
+		// menuOwner.IsMultiple = multi
+		if f.HasFlag(FlagIsEdit) {
+			menuOwner.AddValueFunc = func() any {
+				zlog.Assert(isSlice)
+				e := zslice.MakeAnElementOfSliceRValType(rval)
+				return e
+			}
+		}
 		if v.params.IsEditOnNewStruct {
 			menuOwner.StoreKey = f.ValueStoreKey
 		}
@@ -716,13 +728,14 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 				menuOwner.TitleIsAll = " "
 			case "%d":
 				menuOwner.GetTitleFunc = func(icount int) string { return strconv.Itoa(icount) }
-			case `%n`:
+			case `title`:
 				menuOwner.TitleIsValueIfOne = true
 			default:
 				menuOwner.PluralableWord = format
 			}
 		}
 		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, nil, f.Flags&FlagIsActions != 0)
+
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
 			menu.SetImage(nil, f.ImageFixedPath, nil)
@@ -747,7 +760,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 				}
 			}
 			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
-			zlog.Info("MV.Call action:", f.Name, rval)
+			// zlog.Info("MV.Call action:", f.Name, rval)
 			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 		}
 		menuOwner.ClosedFunc = func() {
@@ -1065,6 +1078,18 @@ func getColumnsForTime(f *Field) int {
 	return c - 1
 }
 
+func getDictItemsFromSlice(slice reflect.Value, f *Field) (zdict.Items, error) {
+	getter, _ := slice.Interface().(zdict.ItemsGetter)
+	items := zdict.ItemsFromRowGetterSlice(slice.Interface())
+	if getter == nil && items == nil {
+		return zdict.Items{}, zlog.Error(nil, "field isn't enum, not Item(s)Getter type", f.Name, f.LocalEnum)
+	}
+	if items == nil {
+		return getter.GetItems(), nil
+	}
+	return *items, nil
+}
+
 func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
@@ -1097,11 +1122,10 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		if zlog.ErrorIf(findex == -1, v.Hierarchy(), f.Name, f.LocalEnum) {
 			return nil, true
 		}
-		getter, _ := ei.Interface().(zdict.ItemsGetter)
-		if zlog.ErrorIf(getter == nil, "field isn't enum, not ItemGetter type", f.Name, f.LocalEnum) {
-			return nil, true
+		enum, err := getDictItemsFromSlice(ei, f)
+		if err != nil {
+			return nil, false
 		}
-		enum := getter.GetItems()
 		for i := range enum {
 			if f.Flags&FlagAllowEmptyAsZero != 0 {
 				if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
@@ -1109,8 +1133,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 				}
 			}
 		}
-
-		menu := v.makeMenu(rval, f, enum)
+		menu := v.makeMenu(ei, f, enum)
 		if menu == nil {
 			zlog.Error(nil, "no local enum for", f.LocalEnum)
 			return nil, true
@@ -1245,6 +1268,12 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			getter, _ := rval.Interface().(zdict.ItemsGetter)
 			if getter != nil {
 				menu := v.makeMenu(rval, f, getter.GetItems())
+				view = menu
+				break
+			}
+			items := zdict.ItemsFromRowGetterSlice(rval.Interface())
+			if items != nil {
+				menu := v.makeMenu(rval, f, *items)
 				view = menu
 				break
 			}

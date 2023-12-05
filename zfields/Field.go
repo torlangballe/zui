@@ -111,6 +111,7 @@ const (
 	FlagIsDocumentation                           // It is a .Path link to Documentation view.
 	FlagIsAudio                                   // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
 	FlagIsDownload                                // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
+	FlagIsEdit                                    // If set things like slice-menus have an edit and delete option
 )
 
 const (
@@ -406,6 +407,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.ValueStoreKey = val
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
+		case "edit":
+			f.Flags |= FlagIsEdit
 		case "static":
 			if flag || val == "" {
 				f.Flags |= FlagIsStatic

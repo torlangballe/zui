@@ -42,9 +42,10 @@ type MenuedOwner struct {
 	ActionHandlerFunc   func(id string)
 	CreateItemsFunc     func() []MenuedOItem
 	ClosedFunc          func()
-	PluralableWord      string // if set, used instead of GetTitle, and pluralized
-	TitleIsValueIfOne   bool   // if set and IsMultiple, name of value used as title if only one set
-	TitleIsAll          string // if != "", all items are listed in title, separated by TitleIsAll string
+	AddValueFunc        func() any // if AddValueFunc != nil add/delete actions are added to menu, delete works on selected item
+	PluralableWord      string     // if set, used instead of GetTitle, and pluralized
+	TitleIsValueIfOne   bool       // if set and IsMultiple, name of value used as title if only one set
+	TitleIsAll          string     // if != "", all items are listed in title, separated by TitleIsAll string
 	Font                *zgeo.Font
 	ImagePath           string
 	IsStatic            bool // if set, user can't set a different value, but can press and see them. Shows number of items
@@ -73,6 +74,11 @@ type MenuedOItem struct {
 	IsSeparator bool
 	Function    func()
 }
+
+const (
+	deleteValue = "$delete"
+	addValue    = "$add"
+)
 
 var (
 	MenuedOItemSeparator        = MenuedOItem{IsSeparator: true}
@@ -314,10 +320,6 @@ func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool
 				break
 			}
 		}
-		m.IsAction = isActions
-		m.Name = item.Name
-		m.Value = item.Value
-		mItems = append(mItems, m)
 	}
 	return mItems
 }
@@ -327,7 +329,27 @@ func (o *MenuedOwner) UpdateItems(items zdict.Items, values any, isAction bool) 
 	o.UpdateMenuedItems(mitems)
 }
 
+func (o *MenuedOwner) AddMOItem(item MenuedOItem) {
+	o.items = append(o.items, item)
+}
+
+func (o *MenuedOwner) AddSeparator(item MenuedOItem) {
+	var i MenuedOItem
+	i.IsSeparator = true
+	o.AddMOItem(i)
+}
+
 func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
+	if o.AddValueFunc != nil && !o.IsStatic {
+		empty := (len(items) == 0)
+		if !empty {
+			items = append(items, MenuedOItemSeparator)
+		}
+		items = append(items, MenuedAction("Add", addValue))
+		if !empty {
+			items = append(items, MenuedAction("Delete", deleteValue))
+		}
+	}
 	o.items = items
 	o.updateTitleAndImage()
 }
@@ -410,6 +432,7 @@ func (o *MenuedOwner) popup() {
 	list.MaxColumns = 1
 	list.MultiplyColorAlternate = 1
 	list.CurrentHoverID = "0"
+	list.BorderColor = zgeo.Color{}
 	// list.CellColorFunc = func(id string) zgeo.Color {
 	// 	i := list.IndexOfID(id)
 	// 	if o.items[i].IsSeparator {
@@ -418,6 +441,9 @@ func (o *MenuedOwner) popup() {
 	// 	return o.BGColor
 	// }
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
+	if list.CellCountFunc != nil {
+		zlog.Info("MO popup:", list.CellCountFunc())
+	}
 
 	lineHeight := o.Font.LineHeight() + 8
 	list.CellHeightFunc = func(id string) float64 {
@@ -476,15 +502,14 @@ func (o *MenuedOwner) popup() {
 		return false
 	}
 	list.HandleSelectionChangedFunc = func() {
-		// zlog.Info("SelChanged")
 		if o.IsStatic {
 			return
 		}
-		old := map[string]bool{}
+		oldSelected := map[string]bool{}
 		if !o.IsMultiple {
 			for i := range o.items {
 				if o.items[i].Selected {
-					old[strconv.Itoa(i)] = true
+					oldSelected[strconv.Itoa(i)] = true
 				}
 				o.items[i].Selected = false
 			}
@@ -492,30 +517,35 @@ func (o *MenuedOwner) popup() {
 		ids := list.SelectedIDs()
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
-			o.items[i].Selected = !o.items[i].Selected
-			if o.items[i].IsAction {
-				o.items[i].Selected = false
-				if o.items[i].Function != nil {
+			item := o.items[i]
+			item.Selected = !item.Selected
+			if item.IsAction {
+				item.Selected = false
+				if o.tryEditActions(item, oldSelected) {
+				} else if item.Function != nil {
 					go func() {
-						o.items[i].Function()
+						item.Function()
 						o.getItems()
 						o.updateTitleAndImage()
 					}()
 				} else if o.ActionHandlerFunc != nil {
-					id := o.items[i].Value.(string)
+					id := item.Value.(string)
 					o.ActionHandlerFunc(id)
 					o.getItems()
 					o.updateTitleAndImage()
 				}
 				zpresent.Close(stack, false, nil)
 				return
+			} else {
+				zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
+				list.LayoutCells(true)
 			}
 		}
 		o.updateTitleAndImage()
 		for _, id := range ids {
-			old[id] = true
+			oldSelected[id] = true
 		}
-		for id := range old {
+		for id := range oldSelected {
 			list.UpdateSelectionFunc(list, id)
 		}
 		if !o.IsMultiple { // && fromPressed {
@@ -570,6 +600,35 @@ func (o *MenuedOwner) popup() {
 	zpresent.PresentView(stack, att)
 }
 
+func (o *MenuedOwner) tryEditActions(item MenuedOItem, selected map[string]bool) bool {
+	str, is := item.Value.(string)
+	zlog.Info("tryEditActions:", str, is)
+	if !is {
+		return false
+	}
+	if str == deleteValue {
+
+		return true
+	}
+	if str == addValue {
+		val := o.AddValueFunc()
+		var sep bool
+		for _, item := range o.items {
+			if item.IsSeparator {
+				sep = true
+				break
+			}
+		}
+		if !sep {
+			o.items = append([]MenuedOItem{MenuedOItemSeparator}, o.items...)
+		}
+		mo := MenuedOItem{Name: "New Item", Value: val, Selected: true}
+		o.items = append([]MenuedOItem{mo}, o.items...)
+		return true
+	}
+	return false
+}
+
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	for i, item := range o.getItems() {
 		if item.Shortcut == sc {
@@ -603,7 +662,7 @@ func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id strin
 	if item.IsDisabled || o.IsStatic {
 		col.SetOpacity(0.5)
 	}
-	// zlog.Info("updateRow", id, item.Name, item.Selected)
+	// zlog.Info("updateRow", id, item.Name, item.Selected, item.IsDisabled || o.IsStatic)
 	v := grid.CellView(id)
 	zcontainer.ViewRangeChildren(v, false, false, func(view zview.View) bool {
 		label, _ := view.(*zlabel.Label)
@@ -636,6 +695,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	}
 	marg := zgeo.Size{4, 0}
 
+	zlog.Info("CreateRow:", item.Name, item.Selected)
 	if !item.IsAction {
 		status := zlabel.New("")
 		status.SetObjectName("status")
@@ -644,16 +704,17 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 			status.SetText("√")
 		}
 		v.Add(status, zgeo.CenterLeft, marg)
-		marg.W += 20
 	}
+	marg.W += 20
 	title := zlabel.New(item.Name)
 	title.SetText(item.Name)
 	title.SetObjectName("title")
-	font := o.Font
+	font := *o.Font
 	if item.IsAction {
 		font.Style = zgeo.FontStyleItalic
 	}
-	title.SetFont(font)
+	zlog.Info("Font:", font, item.Name)
+	title.SetFont(&font)
 	v.Add(title, zgeo.CenterLeft, marg)
 
 	//	marg.W = 8
@@ -711,12 +772,12 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.ImageGap = 4
-	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorGray, 0.1))
+	v.SetMinSize(zgeo.SizeD(40, 20))
+	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorWhite, 0.2))
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.5)
 	v.StrokeWidth = 1
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)
 	v.SetTextColor(zstyle.DefaultFGColor())
 	menu.Build(v, items)
-
 	return v
 }

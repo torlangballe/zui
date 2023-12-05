@@ -114,7 +114,6 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.AddChild(v.cellsView, -1)
 	v.cellsView.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 	v.cellsView.SetPointerEnterHandler(true, v.handleHover)
-	v.cellsView.SetStrokeSide(1, zgeo.ColorBlack, zgeo.TopLeft, true) // we set if for non also, in case it moved
 	v.CellColor = DefaultCellColor
 	v.BorderColor = DefaultBorderColor
 	v.SelectColor = DefaultSelectColor
@@ -586,14 +585,21 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		return s.Plus(marg)
 	}
 	childSize := v.getAChildSize(total)
-	mx := math.Max(1, float64(v.MinColumns))
-	w := childSize.W*mx + v.Spacing.W*(mx-1) - v.margin.Size.W
+	max := math.Max(1, float64(v.MinColumns))
+	w := childSize.W*max + v.Spacing.W*(max-1) - v.margin.Size.W
 	zfloat.Maximize(&s.W, w)
 	if v.MakeFullSize {
-		my := (float64(v.CellCountFunc()) + mx - 1) / mx
-		s.H = childSize.H*my + v.Spacing.H*(my-1) - v.margin.Size.H
+		s = v.CalculatedGridSize(total)
+		// if v.CellHeightFunc != nil {
+		// 	for y := 0; y < int(max) && y < v.CellCountFunc(); y++ {
+		// 		s.H += CellHeightFunc()
+		// 	}
+		// } else {
+		// 	my := (float64(v.CellCountFunc()) + max - 1) / max
+		// 	s.H = childSize.H*my + v.Spacing.H*(my-1) - v.margin.Size.H
+		// }
 	}
-	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), s, v.MinSize())
+	// zlog.Info("GLV CalculatedSize:", childSize.H, v.Hierarchy(), s, v.MinSize(), v.CellCountFunc(), max)
 	return s.Plus(marg)
 }
 
@@ -1054,6 +1060,9 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("List ReadyToShow:", v.ObjectName(), v.CreateCellFunc != nil)
+	if v.BorderColor.Valid {
+		v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // we set if for non also, in case it moved
+	}
 	if beforeWindow && v.BorderColor.Valid {
 		// v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
 	}
