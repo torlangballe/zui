@@ -527,12 +527,12 @@ func (v *NativeView) RemoveFromParent() {
 }
 
 func (v *NativeView) SetFont(font *zgeo.Font) {
-	// zlog.Debug("font:", v.ObjectName(), font.Style&FontStyleItalic, font.Style&FontStyleBold)
 	cssStyle := v.JSStyle()
 	if font.Style == zgeo.FontStyleUndef {
 		font.Style = zgeo.FontStyleNormal
 	}
-	cssStyle.Set("font-style", string(font.Style&zgeo.FontStyleItalic))
+	// zlog.Debug("font-style:", v.ObjectName(), (font.Style & zgeo.FontStyleItalic).String())
+	cssStyle.Set("font-style", (font.Style & zgeo.FontStyleItalic).String())
 	str := (font.Style & (zgeo.FontStyleBold | zgeo.FontStyleNormal)).String()
 	cssStyle.Set("font-weight", str)
 	// zlog.Info("NS font-weight", v.Hierarchy(), str)
