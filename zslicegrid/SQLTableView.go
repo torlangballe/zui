@@ -58,41 +58,31 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	}
 	v.SortFunc = nil
 	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
-	zlog.Info("SQLTableInit:", v.Bar != nil)
 	v.StoreChangedItemsFunc = v.updateForIDs
 	v.DeleteItemsFunc = v.deleteItems
 	v.equalFields = map[string]string{}
 	v.setFields = map[string]string{}
 	v.fieldIsString = map[string]bool{}
-	zreflect.ForEachField(s, zfields.FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		var column string
-		tags := zreflect.GetTagAsMap(string(sf.Tag))
-		dbTags := tags["db"]
-		if len(dbTags) == 0 {
-			return true // next ForEachField
-		}
-		column = dbTags[0]
-		primary := zstr.StringsContain(dbTags, "primary")
-		// zlog.Info("Column:", column, primary, dbTags)
+	zsql.ForEachColumn(s, nil, "", func(rval reflect.Value, sf reflect.StructField, column string, primary bool) {
+		zlog.Info("Column:", column, primary)
+		dbTags := zreflect.GetTagAsMap(string(sf.Tag))["db"]
 		if primary {
 			v.equalFields[sf.Name] = column
 		}
-		for _, part := range tags["zui"] {
-			if part == "-" || primary {
-				v.EditParameters.SkipFieldNames = append(v.EditParameters.SkipFieldNames, sf.Name)
-				break
-			}
-			if val.Kind() == reflect.String {
-				v.fieldIsString[sf.Name] = true
-			}
-			if !primary {
-				v.setFields[sf.Name] = column
-			}
-			if part == "search" {
-				v.searchFields = append(v.searchFields, column)
-			}
+		if primary { // part == "-" ||
+			v.EditParameters.SkipFieldNames = append(v.EditParameters.SkipFieldNames, sf.Name)
+			return
 		}
-		return true
+		if rval.Kind() == reflect.String {
+			v.fieldIsString[sf.Name] = true
+		}
+		if !primary {
+			v.setFields[sf.Name] = column
+		}
+		if zstr.StringsContain(dbTags, "search") {
+			v.searchFields = append(v.searchFields, column)
+		}
+		return
 	})
 	if v.options&AddHeader != 0 {
 		v.addActionButton()
@@ -134,7 +124,7 @@ func (v *SQLTableView[S]) addNewAction(duplicate bool) {
 	if duplicate {
 		sid := v.Grid.SelectedIDs()[0]
 		s = *v.StructForID(sid)
-		zsql.ForEachColumn(&s, nil, "", func(val reflect.Value, column string, primary bool) {
+		zsql.ForEachColumn(&s, nil, "", func(val reflect.Value, sf reflect.StructField, column string, primary bool) {
 			// zlog.Info("Column:", column, primary, dbTags)
 			if primary {
 				val.Set(reflect.Zero(val.Type()))
@@ -200,6 +190,7 @@ func (v *SQLTableView[S]) updateForIDs(items []S) {
 	info.TableName = v.tableName
 	info.SetColumns = v.setFields
 	info.EqualColumns = v.equalFields
+	zlog.Info("updateForIDs1", zlog.Full(items))
 	err := zrpc.MainClient.Call("SQLCalls.UpdateRows", info, nil)
 	zlog.Info("updateForIDs", len(items), err)
 	if err != nil {
