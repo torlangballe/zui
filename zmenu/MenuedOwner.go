@@ -278,27 +278,9 @@ func (o *MenuedOwner) updateTitleAndImage() {
 	}
 }
 
-// func (o *MenuedOwner) UpdateItems(items zdict.Items, values []interface{}) {
-// 	var mitems []MenuedOItem
-// 	for _, item := range items {
-// 		var m MenuedOItem
-// 		m.Name = item.Name
-// 		m.Value = item.Value
-// 		for _, v := range values {
-// 			if reflect.DeepEqual(item.Value, v) {
-// 				m.Selected = true
-// 				break
-// 			}
-// 		}
-// 		mitems = append(mitems, m)
-// 	}
-// 	zlog.Info("MO UpdateItems", values)
-// 	o.UpdateMenuedItems(mitems)
-// }
-
 // MOItemsFromZDictItemsAndValues creates MenuedOItem slice from zdict Items and a slice or single value of anything
 func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool) []MenuedOItem {
-	// zlog.Info("FV.MOItemsFromZDictItemsAndValues:", zlog.Full(values), "enum:", zlog.Full(enum))
+	// zlog.Info("FV.MOItemsFromZDictItemsAndValues:", zlog.Full(enum))
 	var mItems []MenuedOItem
 	var vals []any
 	rval := reflect.ValueOf(values)
@@ -312,19 +294,25 @@ func MOItemsFromZDictItemsAndValues(enum zdict.Items, values any, isActions bool
 	for _, item := range enum {
 		var m MenuedOItem
 		// zlog.Info("MOItemsFromZDictItemsAndValues:", item, vals)
-		sitem := reflect.ValueOf(item.Value).String()
+		sitem := fmt.Sprint(item.Value)
 		for _, v := range vals {
 			// zlog.Info("EQ:", item.Value, v, reflect.DeepEqual(item.Value, v), reflect.TypeOf(item.Value), reflect.TypeOf(v))
-			if reflect.DeepEqual(item.Value, v) || sitem == reflect.ValueOf(v).String() {
+			if reflect.DeepEqual(item.Value, v) || sitem == fmt.Sprint(v) {
 				m.Selected = true
 				break
 			}
 		}
+		// zlog.Info("MOItemsFromZDictItemsAndValues:", m)
+		m.IsAction = isActions
+		m.Name = item.Name
+		m.Value = item.Value
+		mItems = append(mItems, m)
 	}
 	return mItems
 }
 
 func (o *MenuedOwner) UpdateItems(items zdict.Items, values any, isAction bool) {
+	// zlog.Info("MO UpdateItems", values, zlog.CallingStackString())
 	mitems := MOItemsFromZDictItemsAndValues(items, values, isAction)
 	o.UpdateMenuedItems(mitems)
 }
@@ -340,6 +328,7 @@ func (o *MenuedOwner) AddSeparator(item MenuedOItem) {
 }
 
 func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
+	// zlog.Info("Update:", zlog.Full(items), zlog.CallingStackString())
 	if o.AddValueFunc != nil && !o.IsStatic {
 		empty := (len(items) == 0)
 		if !empty {
@@ -405,7 +394,6 @@ func (o *MenuedOwner) popup() {
 	allAction := true
 	o.hasShortcut = false
 	for _, item := range o.items {
-		// zlog.Info("popitem:", i, item.Selected, o.IsMultiple)
 		if !item.IsAction {
 			allAction = false
 		}
@@ -441,10 +429,6 @@ func (o *MenuedOwner) popup() {
 	// 	return o.BGColor
 	// }
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
-	if list.CellCountFunc != nil {
-		zlog.Info("MO popup:", list.CellCountFunc())
-	}
-
 	lineHeight := o.Font.LineHeight() + 8
 	list.CellHeightFunc = func(id string) float64 {
 		i, _ := strconv.Atoi(id)
@@ -518,9 +502,9 @@ func (o *MenuedOwner) popup() {
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
 			item := o.items[i]
-			item.Selected = !item.Selected
+			o.items[i].Selected = !item.Selected
 			if item.IsAction {
-				item.Selected = false
+				o.items[i].Selected = false
 				if o.tryEditActions(item, oldSelected) {
 				} else if item.Function != nil {
 					go func() {
@@ -537,7 +521,7 @@ func (o *MenuedOwner) popup() {
 				zpresent.Close(stack, false, nil)
 				return
 			} else {
-				zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
+				// zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
 				list.LayoutCells(true)
 			}
 		}
@@ -695,7 +679,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	}
 	marg := zgeo.Size{4, 0}
 
-	zlog.Info("CreateRow:", item.Name, item.Selected)
+	// zlog.Info("CreateRow:", i, item.Name, item.Selected, item.IsAction, item.Value)
 	if !item.IsAction {
 		status := zlabel.New("")
 		status.SetObjectName("status")
@@ -713,7 +697,6 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	if item.IsAction {
 		font.Style = zgeo.FontStyleItalic
 	}
-	zlog.Info("Font:", font, item.Name)
 	title.SetFont(&font)
 	v.Add(title, zgeo.CenterLeft, marg)
 
@@ -780,4 +763,10 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.SetTextColor(zstyle.DefaultFGColor())
 	menu.Build(v, items)
 	return v
+}
+
+func (o *MenuedOwner) Dump() {
+	for _, item := range o.items {
+		zlog.Info("MDump:", item.Name, item.Selected)
+	}
 }
