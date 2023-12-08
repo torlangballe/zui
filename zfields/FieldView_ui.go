@@ -299,7 +299,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 }
 
 func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
-	zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
+	// zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
 	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
 	}
@@ -697,7 +697,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 	var view zview.View
 	static := f.IsStatic() || v.params.AllStatic
 	isSlice := rval.Kind() == reflect.Slice
-	// zlog.Info("makeMenu", f.Name, f.IsStatic(), v.params.AllStatic, isSlice, rval.Kind())
+	// zlog.Info("makeMenu", f.Name, f.IsStatic(), v.params.AllStatic, isSlice, rval.Kind(), len(items))
 	if static || isSlice {
 		// multi := isSlice
 		isImage := (f.ImageFixedPath != "")
@@ -748,14 +748,19 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		menu.Ratio = 0.3
 		view = menu
 		menuOwner.SelectedHandlerFunc = func() {
-			if menuOwner.IsStatic {
-				sel := menuOwner.SelectedItem()
-				if sel != nil {
-					kind := reflect.ValueOf(sel.Value).Kind()
+			sel := menuOwner.SelectedItem()
+			if sel != nil {
+				kind := reflect.ValueOf(sel.Value).Kind()
+				if menuOwner.IsStatic {
 					if kind != reflect.Ptr && kind != reflect.Struct {
 						nf := *f
 						nf.ActionValue = sel.Value
 						callActionHandlerFunc(ActionPack{FieldView: v, Field: &nf, Action: PressedAction, RVal: rval, View: &view})
+					}
+				} else {
+					if sel.Value != nil {
+						val, _ := v.fieldToDataItem(f, menu)
+						val.Set(reflect.ValueOf(sel.Value))
 					}
 				}
 			}
