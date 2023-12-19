@@ -133,7 +133,7 @@ func (v *GridView) getLayoutRows(rect zgeo.Rect) [][]zgeo.LayoutCell {
 		}
 	}
 	// for i := range rows[0] {
-	// 	zlog.Info("NewCellHMax2:", i, rows[0][i].OriginalSize.H, rows[0][i].Name)
+	// 	zlog.Info("NewCellHMax2:", i, rows[0][i].OriginalSize.W, rows[0][i].Name)
 	// }
 	for j := 1; j < len(rows); j++ {
 		for i := range rows[j] {
@@ -153,7 +153,8 @@ func (v *GridView) getLayoutRows(rect zgeo.Rect) [][]zgeo.LayoutCell {
 			zfloat.Maximize(&minH, rows[j][i].MinSize.H)
 		}
 		for i := range rows[j] {
-			rows[j][i].OriginalSize.H = maxOH
+			// TODO: Won't expand vertically, need to fix! OriginalSize should not change, as we need to place it with it's actualy size, but a new variable creating a box to place it in should be max'ed below:
+			//rows[j][i].OriginalSize.H = maxOH
 			rows[j][i].MaxSize.H = maxMH
 			rows[j][i].MinSize.H = minH
 		}
@@ -162,16 +163,8 @@ func (v *GridView) getLayoutRows(rect zgeo.Rect) [][]zgeo.LayoutCell {
 }
 
 func (v *GridView) ArrangeChildren() {
-	// zlog.Info("*********** GridView.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
-	// zlog.PushProfile(v.ObjectName())
-	// zlog.Info("GridArrangeCh:", v.LocalRect().Size)
 	rect := v.LocalRect()
 	rows := v.getLayoutRows(rect)
-	// for j := range rows {
-	// 	for i, c := range rows[j] {
-	// 		zlog.Info("RowCell:", j, i, c.OriginalSize, c.Name)
-	// 	}
-	// }
 	for j, row := range rows {
 		r := rect
 		r.Size.H = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, row).H
@@ -185,8 +178,8 @@ func (v *GridView) ArrangeChildren() {
 				continue
 			}
 			zfloat.Maximize(&y, r.Max().Y)
-			ar := r.AlignPro(r.Size, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
-			// zlog.Info("Layout:", cell.Alignment, row[i].OriginalSize, j, i, row[i].Name, rects[i], ar)
+			ar := r.AlignPro(row[i].OriginalSize, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
+			// zlog.Info("Layout:", cell.Alignment, row[i].OriginalSize, j, i, row[i].Name, rects[i], ar, "osize:", r.Size)
 			cell.View.SetRect(ar)
 		}
 		rect.SetMinY(r.Max().Y + v.Spacing.H)
