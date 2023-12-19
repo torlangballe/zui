@@ -241,10 +241,10 @@ func (v *CalendarView) handleSettingsPressed() {
 	//!!!	backdrop-filter: url(filters.svg#filter) blur(4px) saturate(150%);
 	// https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter
 
-	v.addSettingsCheck(s, "Week Starts on Monday", &zlocale.IsMondayFirstInWeek, true)
-	v.addSettingsCheck(s, "Show Week Numbers", &zlocale.IsShowWeekNumbersInCalendars, true)
-	v.addSettingsCheck(s, "Use 24-hour Clock", &zlocale.IsUse24HourClock, false)
-	v.addSettingsCheck(s, "Show Month before Day", &zlocale.IsShowMonthBeforeDay, false)
+	v.addSettingsCheck(s, "Week Starts on Monday", zlocale.IsMondayFirstInWeek, true)
+	v.addSettingsCheck(s, "Show Week Numbers", zlocale.IsShowWeekNumbersInCalendars, true)
+	v.addSettingsCheck(s, "Use 24-hour Clock", zlocale.IsUse24HourClock, false)
+	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
 	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
 	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
 	close.SetPressedHandler(func() {
