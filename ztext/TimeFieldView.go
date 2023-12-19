@@ -20,7 +20,6 @@ import (
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
-	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztime"
@@ -89,7 +88,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.ampmLabel.SetPressedHandler(v.toggleAMPM)
 		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.Size{-8, 0})
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
-		zkeyvalue.SetOptionChangeHandler(v, func(key string) {
+		zlocale.IsUse24HourClock.SetChangedHandler(v, func() {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 			hour, err := strconv.Atoi(v.hourText.Text())
 			if err == nil {
@@ -111,7 +110,9 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 				zcontainer.ArrangeChildrenAtRootContainer(v)
 			}
 		})
-		v.AddOnRemoveFunc(func() { zkeyvalue.SetOptionChangeHandler(v, nil) })
+		v.AddOnRemoveFunc(func() {
+			zlocale.IsUse24HourClock.SetChangedHandler(v, nil)
+		})
 		if flags&TimeFieldTimeOnly == 0 {
 			spacing := zcustom.NewView("spacing")
 			spacing.SetMinSize(zgeo.Size{23, 6})
@@ -235,8 +236,11 @@ func (v *TimeFieldView) popCalendar() {
 		v.SetValue(t)
 	}
 	cal.JSSet("className", "znofocus")
-
-	zpresent.PopupView(cal, v, zgeo.TopRight|zgeo.HorOut, zgeo.Size{-8, -4})
+	att := zpresent.AttributesNew()
+	att.Alignment = zgeo.TopRight | zgeo.HorOut
+	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
+	att.FocusView = cal
+	zpresent.PopupView(cal, v, att)
 }
 
 func clearColorTexts(texts ...*TextView) {

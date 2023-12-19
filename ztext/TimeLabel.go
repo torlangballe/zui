@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 )
 
@@ -39,11 +38,11 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 				}
 			}
 			tf.SetValue(tl.value)
-			zpresent.PopupView(tf, tl, zgeo.TopLeft, zgeo.Size{})
+			zpresent.PopupView(tf, tl, zpresent.AttributesNew())
 		})
 	}
 	tl.SetColor(col)
-	zkeyvalue.SetOptionChangeHandler(tl, func(key string) {
+	zlocale.IsUse24HourClock.SetChangedHandler(tl, func() {
 		tl.SetValue(tl.value)
 		zcontainer.ArrangeChildrenAtRootContainer(tl)
 	})
