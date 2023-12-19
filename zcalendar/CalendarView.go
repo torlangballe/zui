@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zwindow"
 
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -109,9 +108,12 @@ func (v *CalendarView) Init(view zview.View) {
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
 	v.settingsGear.SetPressedHandler(v.handleSettingsPressed)
-	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.Size{6, 6}).Free = true
+	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.SizeF(6, 6)).Free = true
 
 	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if km.Key == zkeyboard.KeyCommandKey {
+			showSettings(v, v.settingsGear, down)
+		}
 		if !down {
 			return false
 		}
@@ -128,16 +130,10 @@ func (v *CalendarView) Init(view zview.View) {
 		}
 		return zcontainer.HandleOutsideShortcutRecursively(v, km)
 	})
-	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v, func(km zkeyboard.KeyMod, down bool) bool {
-		if km.Key == zkeyboard.KeyCommandKey {
-			showSettings(v, v.settingsGear, down)
-		}
-		return false
-	})
 }
 
 func (v *CalendarView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	marg := zgeo.Size{6, 6}
+	marg := zgeo.SizeD(6, 6)
 	s := v.StackView.CalculatedSize(total)
 	return s.Plus(marg)
 }
