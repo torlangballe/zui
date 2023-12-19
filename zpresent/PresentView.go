@@ -76,6 +76,7 @@ func PresentView(v zview.View, attributes Attributes) {
 
 	CallReady(v, true)
 
+	// zlog.Info("PresentView:", v.Native().Hierarchy(), attributes.Alignment)
 	win := zwindow.GetMain()
 	w := zwindow.Current()
 	if w != nil {
@@ -89,6 +90,7 @@ func PresentView(v zview.View, attributes Attributes) {
 	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
+			// zlog.Info("PresentView2:", v.Native().Hierarchy(), attributes.Alignment)
 			presentLoaded(win, v, outer, attributes)
 		})
 	} else {
@@ -109,7 +111,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		if nv != nil {
 			r := rect
 			if attributes.PlaceOverView != nil {
-				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone)
+				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone, v.Native().Hierarchy())
 				r = attributes.PlaceOverView.Native().AbsoluteRect().Align(size, attributes.Alignment, attributes.PlaceOverMargin)
 			} else if attributes.Pos != nil {
 				if attributes.Alignment == zgeo.AlignmentNone {
@@ -448,10 +450,12 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	PresentView(stack, att)
 }
 
-func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
+func PopupView(view, over zview.View, att Attributes) {
 	var root zview.View
 	view.Native().JSSet("className", "znofocus")
-	att := AttributesNew()
+	if att.Alignment == zgeo.AlignmentNone {
+		att.Alignment = zgeo.TopLeft
+	}
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
@@ -459,7 +463,6 @@ func PopupView(view, over zview.View, align zgeo.Alignment, marg zgeo.Size) {
 	att.ModalDropShadow.Blur = 2
 	att.ModalDismissOnEscapeKey = true
 	att.PlaceOverView = over
-	att.PlaceOverMargin = marg
 	att.PresentedFunc = func(win *zwindow.Window) {
 		root = win.ViewsStack[len(win.ViewsStack)-2] // we can only do this for sure if modal is true
 		root.Native().SetInteractive(false)
