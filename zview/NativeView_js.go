@@ -11,7 +11,6 @@ import (
 
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zdom"
-	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
@@ -1117,10 +1116,10 @@ func (v *NativeView) MakeLink(surl, name string) {
 }
 
 func (v *NativeView) SetTilePath(spath string) {
-	spath2 := zimage.MakeImagePathWithAddedScale(spath, 2)
-	format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
-	s := fmt.Sprintf(format, spath, spath2)
-	v.JSStyle().Set("backgroundImage", s)
+	// spath2 := zimage.MakeImagePathWithAddedScale(spath, 2)
+	// format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
+	// s := fmt.Sprintf(format, spath, spath2)
+	// v.JSStyle().Set("backgroundImage", s)
 }
 
 // SetHandleExposed sets a handler for v that is called with intersectsViewport=true, when v becomes visible.
