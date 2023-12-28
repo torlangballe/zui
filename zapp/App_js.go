@@ -9,7 +9,6 @@ import (
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
-	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
@@ -61,8 +60,6 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 		url.Path = ""
 		zrpc.MainClient = zrpc.NewClient(url.String(), "")
 	}
-	zkeyvalue.DefaultStore = zkeyvalue.NewJSStore(false)
-	zkeyvalue.DefaultSessionStore = zkeyvalue.NewJSStore(true)
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		zui.DebugMode = true
