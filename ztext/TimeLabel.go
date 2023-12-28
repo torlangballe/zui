@@ -42,7 +42,7 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 		})
 	}
 	tl.SetColor(col)
-	zlocale.IsUse24HourClock.SetChangedHandler(tl, func() {
+	zlocale.IsUse24HourClock.AddChangedHandler(func() {
 		tl.SetValue(tl.value)
 		zcontainer.ArrangeChildrenAtRootContainer(tl)
 	})

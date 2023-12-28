@@ -88,7 +88,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.ampmLabel.SetPressedHandler(v.toggleAMPM)
 		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.Size{-8, 0})
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
-		zlocale.IsUse24HourClock.SetChangedHandler(v, func() {
+		zlocale.IsUse24HourClock.AddChangedHandler(func() {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 			hour, err := strconv.Atoi(v.hourText.Text())
 			if err == nil {
@@ -111,7 +111,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			}
 		})
 		v.AddOnRemoveFunc(func() {
-			zlocale.IsUse24HourClock.SetChangedHandler(v, nil)
+			zlocale.IsUse24HourClock.AddChangedHandler(nil)
 		})
 		if flags&TimeFieldTimeOnly == 0 {
 			spacing := zcustom.NewView("spacing")

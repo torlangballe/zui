@@ -814,7 +814,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		if secs {
 			format = "15:04:03"
 		}
-		if zlocale.DisplayServerTime.Get() {
+		if zlocale.IsDisplayServerTime.Get() {
 			format += "-07"
 		}
 		format += " 02-Jan-06"

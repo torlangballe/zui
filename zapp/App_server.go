@@ -27,6 +27,7 @@ import (
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 // nativeApp is used in App in zapp.go, so must be defined even if empty:
@@ -48,6 +49,7 @@ var wwwFS embed.FS
 var (
 	AllWebFS          zfile.MultiFS
 	RequestRedirector *filesRedirector
+	lastTimeZoneName  string
 )
 
 func Init(executor *zrpc.Executor) {
@@ -61,6 +63,9 @@ func Init(executor *zrpc.Executor) {
 		beforeWWW = "."
 	}
 	AllWebFS = append(zfile.MultiFS{os.DirFS(beforeWWW)}, AllWebFS...) // we insert the disk system first, so we can override embeded
+	ztimer.RepeatForeverNow(10, func() {
+		updateTimeInfo()
+	})
 }
 
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
@@ -151,15 +156,6 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	})
 }
 
-func (AppCalls) GetTimeInfo(in zrpc.Unused, info *LocationTimeInfo) error {
-	t := time.Now().Local()
-	name, offset := t.Zone()
-	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)
-	info.ZoneName = name
-	info.ZoneOffsetSeconds = offset
-	return nil
-}
-
 func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string, output zmarkdown.OutputType) error {
 	return m.Convert(w, name, output)
 }
@@ -191,4 +187,16 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 }
 
 func appNew(a *App) {
+}
+
+func updateTimeInfo() {
+	t := time.Now().Local()
+	name, offset := t.Zone()
+	if name != lastTimeZoneName {
+		zlog.Info("updateTimeInfo:", t)
+		ServerTimeJSISO.Set(t.UTC().Format(ztime.JavascriptISO), true)
+		ServerTimezoneName.Set(name, true)
+		ServerTimeDifferenceSeconds.Set(offset, true)
+		lastTimeZoneName = name
+	}
 }
