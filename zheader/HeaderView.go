@@ -171,7 +171,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell.Alignment = h.Align
 		header := h
 		s := zgeo.Size{h.MinWidth, 26}
-		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets) 
+		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets)
 		// zlog.Info("HEADER:", h.Title, h.Justify)
 		j := h.Justify
 		if j == zgeo.AlignmentNone {

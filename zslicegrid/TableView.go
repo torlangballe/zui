@@ -32,11 +32,11 @@ type TableView[S zstr.StrIDer] struct {
 	ColumnMargin float64             // Margin between columns
 	RowInset     float64             // inset on far left and right
 	// DefaultHeight         float64
-	HeaderHeight          float64
-	HeaderPressedFunc     func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
-	HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
-	FieldParameters       zfields.FieldViewParameters
-	fields                []zfields.Field // the fields in an S struct used to generate columns for the table
+	HeaderHeight      float64
+	HeaderPressedFunc func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
+	// HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
+	FieldParameters zfields.FieldViewParameters
+	fields          []zfields.Field // the fields in an S struct used to generate columns for the table
 	// addFlags              OptionType
 }
 
@@ -147,7 +147,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
 		}
-		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
+	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
 			fv := grid.CellView(id).(*zfields.FieldView)
 			zlog.Assert(fv != nil)
 			fv.Update(v.StructForID(id), true)
@@ -155,7 +155,6 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		headers := makeHeaderFields(v.fields, v.HeaderHeight)
 		v.Header.Populate(headers)
 		v.Header.HeaderPressedFunc = v.HeaderPressedFunc
-		v.Header.HeaderLongPressedFunc = v.HeaderLongPressedFunc
 	}
 }
 
