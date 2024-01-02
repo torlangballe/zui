@@ -15,7 +15,7 @@ import (
 func (label *Label) InitAsLink(view zview.View, title, surl string) {
 	label.MakeJSElement(view, "a")
 	label.init(title)
-	label.SetURL(surl)
+	label.SetURL(surl, false)
 }
 func (label *Label) Init(view zview.View, text string) {
 	label.MakeJSElement(view, "label")
@@ -58,8 +58,16 @@ func (label *Label) init(text string) {
 	label.SetFont(f)
 }
 
-func (label *Label) SetURL(surl string) {
+func (label *Label) SetURL(surl string, newWindow bool) {
 	label.JSSet("href", surl)
+	label.SetUsable(surl != "")
+	if newWindow {
+		label.JSSet("target", "_blank")
+		label.JSSet("rel", "noopener noreferrer")
+		return
+	}
+	label.JSSet("target", "")
+	label.JSSet("rel", "")
 }
 
 func (v *Label) SetText(text string) {
