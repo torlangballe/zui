@@ -35,7 +35,7 @@ func init() {
 }
 
 func handleTimeInfoChanged() error {
-	zlog.Info("handleTimeInfoChanged:", ServerTimeDifferenceSeconds.Get(), ServerTimezoneName.Get(), ServerTimeJSISO.Get(), zlocale.IsDisplayServerTime.Get())
+	// zlog.Info("handleTimeInfoChanged:", ServerTimeDifferenceSeconds.Get(), ServerTimezoneName.Get(), ServerTimeJSISO.Get(), zlocale.IsDisplayServerTime.Get())
 	stime := ServerTimeJSISO.Get()
 	if stime != "" {
 		t, err := time.Parse(ztime.JavascriptISO, stime)
