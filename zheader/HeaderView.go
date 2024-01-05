@@ -27,11 +27,11 @@ import (
 )
 
 type Header struct {
-	FieldName      string
-	Title          string
-	Align          zgeo.Alignment
-	Justify        zgeo.Alignment
-	Height         float64
+	FieldName string
+	Title     string
+	Align     zgeo.Alignment
+	Justify   zgeo.Alignment
+	// Height         float64
 	ImagePath      string
 	MinWidth       float64
 	MaxWidth       float64
