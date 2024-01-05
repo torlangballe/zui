@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zheader"
@@ -19,8 +18,8 @@ import (
 )
 
 const (
-	AddHeader      OptionType = 512
-	AddBarInHeader OptionType = 1024
+	AddHeader      OptionType = LastBaseOption
+	AddBarInHeader OptionType = LastBaseOption << 1
 )
 
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
@@ -28,11 +27,9 @@ const (
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
-	Header       *zheader.HeaderView // Optional header based on S struct
-	ColumnMargin float64             // Margin between columns
-	RowInset     float64             // inset on far left and right
-	// DefaultHeight         float64
-	HeaderHeight      float64
+	Header            *zheader.HeaderView  // Optional header based on S struct
+	ColumnMargin      float64              // Margin between columns
+	RowInset          float64              // inset on far left and right
 	HeaderPressedFunc func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
 	// HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
 	FieldParameters zfields.FieldViewParameters
@@ -47,23 +44,18 @@ func TableViewNew[S zstr.StrIDer](s *[]S, name string, options OptionType) *Tabl
 }
 
 func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options OptionType) {
-	if options&AddBarInHeader != 0 {
-		zlog.Assert(options&AddHeader != 0)
-		v.Bar = zcontainer.StackViewHor("bar")
-		v.Bar.SetSpacing(4)
-	}
 	v.SliceGridView.Init(view, s, storeName, options)
 	v.Grid.MaxColumns = 1
 	v.Grid.SetMargin(zgeo.Rect{})
 	v.ColumnMargin = 5
 	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
-	v.HeaderHeight = 28
+	// v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
 	v.FieldParameters.UseInValues = []string{zfields.RowUseInSpecialName}
 	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(fv *zfields.FieldView, f *zfields.Field, value any, view *zview.View) bool {
 		if v.StoreChangedItemFunc != nil {
-			go v.StoreChangedItemFunc(*(fv.Data().(*S)), nil, true)
+			go v.StoreChangedItemFunc(*(fv.Data().(*S)), true)
 		}
 		return false
 	})
@@ -78,8 +70,12 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	if v.options&AddHeader != 0 {
 		v.Header = zheader.NewView(v.ObjectName() + ".header")
 		index := 0
-		if v.options&AddBar != 0 {
+		if v.options&AddBar != 0 && v.options&AddBarInHeader == 0 {
 			index = 1
+		}
+		if v.options&AddBarInHeader != 0 {
+			v.RemoveChild(v.Bar)
+			v.Bar.SetMargin(zgeo.RectFromXY2(6, 2, -6, -3))
 		}
 		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, index, false)
 		if v.Bar != nil && options&AddBarInHeader != 0 {
@@ -147,12 +143,12 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
 		}
-	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
+		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
 			fv := grid.CellView(id).(*zfields.FieldView)
 			zlog.Assert(fv != nil)
 			fv.Update(v.StructForID(id), true)
 		}
-		headers := makeHeaderFields(v.fields, v.HeaderHeight)
+		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
 		v.Header.HeaderPressedFunc = v.HeaderPressedFunc
 	}
@@ -184,24 +180,20 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	return fv
 }
 
-func makeHeaderFields(fields []zfields.Field, height float64) []zheader.Header {
+func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 	var headers []zheader.Header
 	for _, f := range fields {
 		var h zheader.Header
-		h.Height = f.Height
 		h.FieldName = f.FieldName
 		h.Align = zgeo.Left | zgeo.VertCenter
 		h.Justify = f.Justify
 		if f.Kind == zreflect.KindString && f.Enum == "" {
 			h.Align |= zgeo.HorExpand
 		}
-		if f.Height == 0 {
-			h.Height = height - 6
-		}
 		if f.Flags&zfields.FlagHasHeaderImage != 0 {
 			h.ImageSize = f.HeaderSize
 			if h.ImageSize.IsNull() {
-				h.ImageSize = zgeo.SizeBoth(height - 8)
+				h.ImageSize = zgeo.SizeBoth(20)
 			}
 			h.ImagePath = f.HeaderImageFixedPath
 		}
