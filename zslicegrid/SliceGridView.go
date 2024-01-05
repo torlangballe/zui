@@ -19,6 +19,7 @@ import (
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
@@ -54,7 +55,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	SortFunc              func(s []S)                                   // SortFunc is called to sort the slice after any updates.
 	FilterFunc            func(s S) bool                                // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
 	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
-	StoreChangedItemFunc  func(item S, showErr *bool, last bool) error  // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	StoreChangedItemFunc  func(item S, last bool) error                 // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
 	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
 	DeleteItemFunc        func(item *S, showErr *bool, last bool) error // DeleteItemFunc is called from default DeleteItemsFunc, with index and struct in slicePtr of each item to delete. The items are then removed from the slicePtr. last is true if it's the last one in items.
 
@@ -78,15 +79,17 @@ const (
 type OptionType int
 
 const (
-	AddNone         OptionType = 0
-	AddBar          OptionType = 1 << iota // Adds a bar stack above the grid.
-	AddSearch                              // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
-	AddMenu                                // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
-	AddChangeLayout                        // If set a button to order horizontal first or vertical first is shown
-	AllowNew                               // There is a Add New item menu
-	AllowDuplicate                         // There is a Add Duplicate item menu
-	AllowDelete                            // It is deletable, and allows keyboard/menu delete
-	AllowEdit                              // Allows selected cell(s) to be edited with menu or return key.
+	AddNone              OptionType = 0
+	AddBar               OptionType = 1 << iota // Adds a bar stack above the grid.
+	AddSearch                                   // Adds a search field that uses v.FilterFunc to decide if the search matches. Sets AddBar.
+	AddMenu                                     // Adds a menu of actions in the bar, with some defaults. Sets AddBar. v.CreateDefaultMenuItems() creates default actions.
+	AddChangeLayout                             // If set a button to order horizontal first or vertical first is shown
+	AllowNew                                    // There is a Add New item menu
+	AllowDuplicate                              // There is a Add Duplicate item menu
+	AllowDelete                                 // It is deletable, and allows keyboard/menu delete
+	AllowEdit                                   // Allows selected cell(s) to be edited with menu or return key.
+	AddDocumentationIcon                        // Adds a icon to press to show doc/name.md file where name is in init
+	LastBaseOption
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
 
@@ -115,6 +118,15 @@ func (o OptionType) String() string {
 	}
 	if o&AllowEdit != 0 {
 		str += "edit "
+	}
+	if o&AddBarInHeader != 0 {
+		str += "hbar "
+	}
+	if o&AddDocumentationIcon != 0 {
+		str += "doc "
+	}
+	if o&AddHeader != 0 {
+		str += "head "
 	}
 	return strings.TrimRight(str, " ")
 }
@@ -146,12 +158,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AllowAllEditing != 0 {
 		options |= AddMenu
 	}
-	if options&(AddSearch|AddMenu|AddChangeLayout) != 0 {
+	if options&(AddSearch|AddMenu|AddChangeLayout|AddDocumentationIcon|AddBarInHeader) != 0 {
 		options |= AddBar
 	}
 	v.options = options
 	if options&AddBar != 0 {
-		// zlog.Info("AddBar!!!")
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.SetSpacing(8)
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
@@ -188,6 +199,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.ActionMenu = zmenu.NewMenuedOwner()
 		v.ActionMenu.Build(actions, nil)
 		v.Bar.Add(actions, zgeo.CenterRight, zgeo.Size{})
+	}
+	if options&AddDocumentationIcon != 0 {
+		doc := zwidgets.DocumentationIconViewNew(storeName)
+		doc.SetZIndex(200)
+		v.Bar.Add(doc, zgeo.CenterRight, zgeo.Size{})
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
@@ -257,14 +273,19 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		for i, item := range items {
 			if len(*v.slicePtr) <= i || zstr.HashAnyToInt64(item, "") != zstr.HashAnyToInt64((*v.slicePtr)[i], "") {
 				wg.Add(1)
-				go func(i int, item S, showErr *bool) {
+				go func(i int, item S) {
 					// zlog.Info("StoreChangedItemsFunc call item")
-					err := v.StoreChangedItemFunc(item, showErr, i == len(items)-1)
+					err := v.StoreChangedItemFunc(item, i == len(items)-1)
 					if err == nil {
 						storeItems = append(storeItems, item)
+					} else {
+						if showErr {
+							showErr = false
+							zalert.ShowError(err)
+						}
 					}
 					wg.Done()
-				}(i, item, &showErr)
+				}(i, item)
 			}
 		}
 		wg.Wait()
