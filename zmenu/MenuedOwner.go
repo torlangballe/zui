@@ -700,7 +700,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	title.SetFont(&font)
 	v.Add(title, zgeo.CenterLeft, marg)
 
-	//	marg.W = 8
+	marg.W = 8
 
 	if o.ImagePath != "" {
 		sval := fmt.Sprint(item.Value)
