@@ -61,7 +61,6 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s.MaximizeNonZero(v.MinSize())
 	s.Subtract(v.Margin().Size)
-	// zlog.Info("GridView size:", s, v.Spacing)
 	return s
 }
 
@@ -110,8 +109,10 @@ func (v *GridView) addCell(rect zgeo.Rect, rows *[][]zgeo.LayoutCell, i, j int) 
 		// zlog.Info("Size:", i, j, cell.View.ObjectName(), l.OriginalSize)
 		l.Name = cell.View.ObjectName()
 	}
-	l.Alignment = zgeo.CenterLeft // we force a simple layout and align in cells later
-	// zlog.Info("OrgSize:", l.Name, l.OriginalSize)
+	l.Alignment = zgeo.CenterLeft
+	if cell != nil && cell.Alignment&zgeo.VertExpand != 0 {
+		l.Alignment |= zgeo.VertExpand
+	}
 	row[i] = l
 }
 
@@ -179,7 +180,6 @@ func (v *GridView) ArrangeChildren() {
 			}
 			zfloat.Maximize(&y, r.Max().Y)
 			ar := r.AlignPro(row[i].OriginalSize, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
-			// zlog.Info("Layout:", cell.Alignment, row[i].OriginalSize, j, i, row[i].Name, rects[i], ar, "osize:", r.Size)
 			cell.View.SetRect(ar)
 		}
 		rect.SetMinY(r.Max().Y + v.Spacing.H)
