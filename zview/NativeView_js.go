@@ -376,7 +376,7 @@ func (v *NativeView) SetInteractive(interactive bool) {
 		return
 	}
 	v.JSSet("pointer-events", "none")
-	// v.JSSet("inert", "true")
+	// v.JSSet("inert", "true") // need this on for checkbox...
 }
 
 // func (v *NativeView) Interactive() bool {
