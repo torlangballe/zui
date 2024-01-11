@@ -22,6 +22,7 @@ import (
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
@@ -271,22 +272,21 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		var storeItems []S
 		var wg sync.WaitGroup
 		for i, item := range items {
-			if len(*v.slicePtr) <= i || zstr.HashAnyToInt64(item, "") != zstr.HashAnyToInt64((*v.slicePtr)[i], "") {
-				wg.Add(1)
-				go func(i int, item S) {
-					// zlog.Info("StoreChangedItemsFunc call item")
-					err := v.StoreChangedItemFunc(item, i == len(items)-1)
-					if err == nil {
-						storeItems = append(storeItems, item)
-					} else {
-						if showErr {
-							showErr = false
-							zalert.ShowError(err)
-						}
+			// if true { //len(*v.slicePtr) <= i || zreflect.HashAnyToInt64(item, "") != zreflect.HashAnyToInt64((*v.slicePtr)[i], "") {
+			wg.Add(1)
+			go func(i int, item S) {
+				err := v.StoreChangedItemFunc(item, i == len(items)-1)
+				if err == nil {
+					storeItems = append(storeItems, item)
+				} else {
+					if showErr {
+						showErr = false
+						zalert.ShowError(err)
 					}
-					wg.Done()
-				}(i, item)
-			}
+				}
+				wg.Done()
+			}(i, item)
+			// }
 		}
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
@@ -536,6 +536,7 @@ func (v *SliceGridView[S]) EditItemIDs(ids []string) {
 		zlog.Fatal(nil, "SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
 	title := "Edit " + v.NameOfXItemsFunc(ids, true)
+	// zlog.Info("EditItemIDs", zlog.Pointer(&items), zlog.Pointer(v.slicePtr))
 	v.EditItems(items, title, false, false)
 }
 
@@ -549,7 +550,6 @@ func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, se
 		params.LabelizeWidth = 120
 	}
 	params.Styling.Spacing = 10
-
 	params.IsEditOnNewStruct = isEditOnNewStruct
 	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
 		if !ok {
