@@ -27,14 +27,11 @@ const (
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
-	Header            *zheader.HeaderView  // Optional header based on S struct
-	ColumnMargin      float64              // Margin between columns
-	RowInset          float64              // inset on far left and right
-	HeaderPressedFunc func(fieldID string) // triggered if user presses in header. fieldID is zfield-based id of field header column is based on
-	// HeaderLongPressedFunc func(fieldID string) // Like HeaderPressedFunc
+	Header          *zheader.HeaderView // Optional header based on S struct
+	ColumnMargin    float64             // Margin between columns
+	RowInset        float64             // inset on far left and right
 	FieldParameters zfields.FieldViewParameters
 	fields          []zfields.Field // the fields in an S struct used to generate columns for the table
-	// addFlags              OptionType
 }
 
 func TableViewNew[S zstr.StrIDer](s *[]S, name string, options OptionType) *TableView[S] {
@@ -150,7 +147,6 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
-		v.Header.HeaderPressedFunc = v.HeaderPressedFunc
 	}
 }
 
