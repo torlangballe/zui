@@ -426,7 +426,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
-		hash := zstr.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
+		hash := zreflect.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
 		sameHash := (sv.dataHash == hash)
 		sv.dataHash = hash
 		if !sameHash {
@@ -607,7 +607,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 				fv, _ := parent.View.(*FieldView)
 				if fv != nil {
 					if fv.IsSlice() {
-						fv.dataHash = zstr.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
+						fv.dataHash = zreflect.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
 					}
 					if !first {
 						fh2, _ := fv.data.(ActionHandler)
@@ -1633,6 +1633,9 @@ func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
 	// a := rval.Interface()
 	e := reflect.New(rval.Type().Elem()).Elem()
 	zslice.Empty(rval.Addr().Interface())
+	if text == "" {
+		return
+	}
 	for _, part := range strings.Split(text, sep) {
 		switch zreflect.KindFromReflectKindAndType(e.Kind(), e.Type()) {
 		case zreflect.KindString:

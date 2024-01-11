@@ -476,7 +476,7 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := v.ForceUpdateSlice
 	if !update {
-		update = (len(s) != len(*v.slicePtr) || zstr.HashAnyToInt64(s, "") != zstr.HashAnyToInt64(*v.slicePtr, ""))
+		update = (len(s) != len(*v.slicePtr) || zreflect.HashAnyToInt64(s, "") != zreflect.HashAnyToInt64(*v.slicePtr, ""))
 	}
 	if update {
 		v.ForceUpdateSlice = false

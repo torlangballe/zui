@@ -198,7 +198,6 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if sf.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}
-				// zlog.Info("PresentOKCanceledView foreach:", sf.Name)
 				bid := sf.Name
 				view, _ := fview.FindNamedViewOrInLabelized(bid)
 				check, _ := view.(*zcheckbox.CheckBox)
@@ -207,6 +206,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 					return true // skip to next
 				}
 				f := findFieldWithIndex(&fview.Fields, index)
+				// zlog.Info("PresentOKCanceledView foreach:", sf.Name, f.Name, f.IsStatic())
 				if f.IsStatic() {
 					return true // means continue
 				}

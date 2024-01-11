@@ -8,7 +8,7 @@ import (
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/zreflect"
 )
 
 //	Created by Tor Langballe on /21/10/15.
@@ -111,7 +111,7 @@ func canvasCreateGradientLocations(colors int) []float64 {
 
 func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	m := measurement{Font: *font, Text: text}
-	hash := zstr.HashAnyToInt64(m, "")
+	hash := zreflect.HashAnyToInt64(m, "")
 	key := strconv.FormatInt(hash, 16)
 	var s zgeo.Size
 	got := measuredTexts.Get(&s, key)
