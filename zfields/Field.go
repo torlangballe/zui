@@ -145,6 +145,7 @@ type Field struct {
 	LocalEnum            string
 	Size                 zgeo.Size
 	HeaderSize           zgeo.Size
+	Margin               zgeo.Size
 	Flags                FlagType
 	Tooltip              string
 	Description          string
@@ -403,6 +404,10 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if f.Size.IsNull() {
 				f.Size = zgeo.SizeBoth(n)
 			}
+		case "marg":
+			var err error
+			f.Margin, err = zgeo.SizeFromString(val)
+			zlog.OnError(err, val)
 		case "minwidth":
 			if floatErr == nil {
 				f.MinWidth = n

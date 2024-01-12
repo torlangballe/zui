@@ -1191,6 +1191,9 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	// zlog.Info("BuildItem:", f.Name, rval.Interface())
+	if !f.Margin.IsNull() {
+		cellMargin = f.Margin
+	}
 	labelizeWidth := v.params.LabelizeWidth
 	parentFV := ParentFieldView(v)
 	if parentFV != nil && v.params.LabelizeWidth == 0 {
@@ -1387,6 +1390,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	cell.Margin = cellMargin
 	cell.Alignment = def | exp | f.Alignment
+	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	if labelizeWidth != 0 || f.LabelizeWidth < 0 {
 		var lstack *zcontainer.StackView
 		title := f.Name
