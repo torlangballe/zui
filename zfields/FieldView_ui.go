@@ -852,7 +852,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 			// zlog.Info("DurTime", dur, f.Flags&FlagHasSeconds != 0)
 		}
 		t := ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
-		// zlog.Info("DurTime", dur, t, f.HasFlag(FlagHasSeconds))
+		// zlog.Info("DurTime", dur, t, f.HasFlag(FlagHasHours))
 		return t, dur
 	}
 	format := f.Format

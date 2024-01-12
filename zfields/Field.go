@@ -105,6 +105,7 @@ const (
 	FlagIsSearchable                              // This field can be used to search in tables etc
 	FlagIsUseInValue                              // This value is set as a string to InNames before entire struct is created
 	FlagAllowEmptyAsZero                          // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagZeroIsBig                                 // If set, a zero value is considered big, currenlty used in sorting
 	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
 	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
 	FlagIsURL                                     // (Field is string, and it's a url) OR (it has Path set to fixed URL)
@@ -380,12 +381,19 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "widget":
 			f.WidgetName = val
-		case "ascending":
-			f.SortSmallFirst = zbool.True
-			f.SortPriority = int(n)
-		case "descending":
-			f.SortSmallFirst = zbool.False
-			f.SortPriority = int(n)
+		case "descending", "ascending":
+			if key == "ascending" {
+				f.SortSmallFirst = zbool.True
+			} else {
+				f.SortSmallFirst = zbool.False
+			}
+			for _, part := range barParts {
+				if part == "bigzero" {
+					f.Flags |= FlagZeroIsBig
+				} else {
+					f.SortPriority, _ = strconv.Atoi(part)
+				}
+			}
 		case "actions":
 			f.Flags |= FlagIsActions
 		case "noautofill":
@@ -860,7 +868,7 @@ func getSortCache(slice any, fields []Field, sortOrder []SortInfo) (fieldMap map
 func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 	// start := time.Now()
 	fieldMap, enumTitles := getSortCache(slice, fields, sortOrder)
-	// fmt.Printf("FieldMap: %+v %+v\n", fieldMap, sortOrder)
+	// fmt.Printf("Sort FieldMap: %+v %+v\n", fieldMap, sortOrder)
 	val := reflect.ValueOf(slice)
 	// zlog.Info("SORT:", sortOrder, enumTitles, val.Len())
 	sort.SliceStable(slice, func(i, j int) bool {
@@ -929,7 +937,15 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 				if ia == ja {
 					continue
 				}
-				return (ia.Sub(ja) < 0) == s.SmallFirst
+				if f.HasFlag(FlagZeroIsBig) {
+					if ia.IsZero() {
+						ia = ztime.BigTime
+					}
+					if ja.IsZero() {
+						ja = ztime.BigTime
+					}
+				}
+				return ia.Before(ja) == s.SmallFirst
 			default:
 				continue
 			}
