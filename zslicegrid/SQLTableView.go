@@ -64,7 +64,7 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	v.setFields = map[string]string{}
 	v.fieldIsString = map[string]bool{}
 	zsql.ForEachColumn(s, nil, "", func(rval reflect.Value, sf reflect.StructField, column string, primary bool) {
-		zlog.Info("Column:", column, primary)
+		// zlog.Info("Column:", column, primary)
 		dbTags := zreflect.GetTagAsMap(string(sf.Tag))["db"]
 		if primary {
 			v.equalFields[sf.Name] = column
