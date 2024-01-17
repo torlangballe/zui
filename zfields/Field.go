@@ -113,6 +113,7 @@ const (
 	FlagIsAudio                                   // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
 	FlagIsDownload                                // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
 	FlagIsEdit                                    // If set things like slice-menus have an edit and delete option
+	FlagNoLabel                                   // If set, not labelized "nolabel"
 )
 
 const (
@@ -579,6 +580,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if n == 0 {
 				f.LabelizeWidth = 200
 			}
+		case "nolabel":
+			f.Flags |= FlagNoLabel
 		case "button":
 			f.Flags |= FlagIsButton
 		case "enable":

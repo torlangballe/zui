@@ -237,6 +237,7 @@ func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool
 	if not {
 		zero = !zero
 	}
+	// zlog.Info("LocalDisable", view.Native().Hierarchy(), rval, isShow, zero)
 	if isShow {
 		view.Show(!zero)
 	} else {
@@ -1391,8 +1392,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	cell.Margin = cellMargin
 	cell.Alignment = def | exp | f.Alignment
+	doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
-	if labelizeWidth != 0 || f.LabelizeWidth < 0 {
+	if doLabelize {
 		var lstack *zcontainer.StackView
 		title := f.Name
 		if f.Title != "" {
@@ -1409,7 +1411,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.MinSize.W = f.MinWidth
 	}
 	cell.MaxSize.W = f.MaxWidth
-	if labelizeWidth == 0 {
+	if !doLabelize {
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
