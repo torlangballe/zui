@@ -31,7 +31,7 @@ func (v *GridView) Init(view zview.View, name string, cols int) {
 	// zlog.Info("GridView Init")
 	v.ContainerView.Init(view, name)
 	v.Columns = cols
-	v.Spacing = zgeo.Size{6, 4}
+	v.Spacing = zgeo.SizeD(6, 4)
 	v.addingToColumn = -1
 	v.table = map[zgeo.IPos]zview.View{}
 }

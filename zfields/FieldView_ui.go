@@ -217,13 +217,14 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 			if foundView == nil {
 				continue
 			}
+			zero := isZero
 			if neg {
-				isShow = !isShow
+				zero = !zero
 			}
 			if isShow {
-				foundView.Show(!isZero)
+				foundView.Show(!zero)
 			} else {
-				foundView.SetUsable(!isZero)
+				foundView.SetUsable(!zero)
 			}
 			continue
 		}
