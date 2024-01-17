@@ -23,7 +23,7 @@ extern void goErrorkHandler(void *, int);
 //- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    NSLog(@"didStartProvisionalNavigation\n");
+    NSLog(@"didFinishNavigation\n");
 }
 
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
