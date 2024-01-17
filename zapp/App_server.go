@@ -124,6 +124,11 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// zlog.Info("FilesRedir2:", spath, err, len)
 	if len != 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
+		smime := mime.TypeByExtension(path.Ext(spath))
+		// zlog.Info("FilesRedir2:", spath, smime)
+		if smime != "" {
+			w.Header().Set("Content-Type", smime)
+		}
 	}
 	// zlog.Info("FilesRedir2:", spath, err)
 	if !zlog.OnError(err, spath, req.URL) {

@@ -50,7 +50,7 @@ func handleTimeInfoChanged() error {
 func NewCurrentTimeLabel() *zlabel.Label {
 	label := zlabel.New("")
 	label.SetObjectName("time")
-	label.SetFont(zgeo.FontDefault().NewWithSize(zgeo.FontDefaultSize - 2))
+	label.SetFont(zgeo.FontDefault(-2))
 	label.SetColor(zgeo.ColorNewGray(0.5, 1))
 	label.SetMinWidth(145)
 	label.SetTextAlignment(zgeo.Right)
