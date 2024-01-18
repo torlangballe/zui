@@ -681,15 +681,21 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if f.Height != 0 {
 		s.H = f.Height
 	}
-	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{}) //ShapeViewNew(ShapeViewTypeRoundRect, s)
+	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{})
 	button.SetTextColor(zgeo.ColorBlack)
 	button.TextXMargin = 0
 	if f.RPCCall != "" {
 		button.SetPressedHandler(func() {
-			err := zrpc.MainClient.Call(f.RPCCall, nil, nil)
-			if err != nil {
-				zalert.ShowError(err)
-			}
+			go func() {
+				var reply string
+				err := zrpc.MainClient.Call(f.RPCCall, nil, &reply)
+				if err != nil {
+					zalert.ShowError(err)
+				}
+				if reply != "" {
+					zalert.Show(reply)
+				}
+			}()
 		})
 	}
 	return button
@@ -1596,6 +1602,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			text := tv.Text()
 			str := rval.Addr().Interface().(*string)
 			*str = text
+			v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
 		}
 
 	case zreflect.KindFunc:
