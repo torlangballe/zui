@@ -109,7 +109,8 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 	ForEachField(editStruct, params.FieldParameters, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
 		var notEqual bool
 		for i := 0; i < length; i++ {
-			sliceField := sliceVal.Index(i).Field(index)
+			zlog.Info("PresentOKCancelStructSlice.ForEachField findex:", index, f.Name)
+			sliceField, _ := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, index) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 			if !sliceField.CanInterface() || !val.CanInterface() {
 				continue
 			}
@@ -231,7 +232,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				if wildTransformer != nil {
 					for i := 0; i < length; i++ {
-						sliceField := sliceVal.Index(i).Field(index)
+						sliceField, _ := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, index) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 						replaced, err := wildTransformer.Transform(sliceField.String())
 						if err != nil {
 							zlog.Error(err)
@@ -244,7 +245,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				if !val.IsZero() || length == 1 || isCheck {
 					for i := 0; i < length; i++ {
 						// zlog.Info("SetFieldForSlice:", f.Name, i, val)
-						sliceField := sliceVal.Index(i).Field(index)
+						sliceField, _ := zreflect.FieldForIndex(sliceVal.Index(i).Addr().Interface(), FlattenIfAnonymousOrZUITag, index) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 						sliceField.Set(val)
 					}
 				}
