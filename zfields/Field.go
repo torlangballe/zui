@@ -634,15 +634,17 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	if f.MaxWidth != 0 {
 		zfloat.Minimize(&f.MinWidth, f.MaxWidth)
 	}
+	name := zstr.PadCamelCase(sf.Name, " ")
+	name = zlocale.FirstToTitleCaseExcept(name, "")
 	if f.Name == "" {
-		str := zstr.PadCamelCase(sf.Name, " ")
-		str = zlocale.FirstToTitleCaseExcept(str, "")
-		f.Name = str
+		f.Name = name
+	}
+	if f.Title == "" {
+		f.Title = name
 	}
 	if f.Placeholder == "$HAS$" {
 		f.Placeholder = f.Name
 	}
-
 	switch f.Kind {
 	case zreflect.KindFloat:
 		if f.MinWidth == 0 {
