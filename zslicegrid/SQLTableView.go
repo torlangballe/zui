@@ -14,7 +14,6 @@ import (
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zsql"
 	"github.com/torlangballe/zutil/zstr"
@@ -22,22 +21,20 @@ import (
 
 type SQLTableView[S zstr.StrIDer] struct {
 	TableView[S]
-	searchString  string
-	tableName     string
-	selectMethod  string
-	DeleteQuery   string
-	IsSqlite      bool
-	IsQuoteIDs    bool
-	Constraints   string
-	skipFields    []string
-	searchFields  []string
-	showID        int64
-	equalFields   map[string]string
-	setFields     map[string]string
-	fieldIsString map[string]bool
-	slicePage     []S
-	limit         int
-	offset        int
+	searchString string
+	tableName    string
+	selectMethod string
+	DeleteQuery  string
+	IsSqlite     bool
+	IsQuoteIDs   bool
+	Constraints  string
+	CallerName   string
+	// skipFields   []string
+	searchFields []string
+	showID       int64
+	slicePage    []S
+	limit        int
+	offset       int
 }
 
 func NewSQLView[S zstr.StrIDer](tableName, selectMethod string, limit int, options OptionType) (sv *SQLTableView[S]) {
@@ -47,7 +44,6 @@ func NewSQLView[S zstr.StrIDer](tableName, selectMethod string, limit int, optio
 }
 
 func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, limit int, options OptionType) {
-	var s S
 	v.tableName = tableName
 	v.selectMethod = selectMethod
 	v.limit = limit
@@ -58,32 +54,8 @@ func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, 
 	}
 	v.SortFunc = nil
 	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
-	v.StoreChangedItemsFunc = v.updateForIDs
+	v.StoreChangedItemsFunc = v.UpdateItems
 	v.DeleteItemsFunc = v.deleteItems
-	v.equalFields = map[string]string{}
-	v.setFields = map[string]string{}
-	v.fieldIsString = map[string]bool{}
-	zsql.ForEachColumn(s, nil, "", func(rval reflect.Value, sf reflect.StructField, column string, primary bool) {
-		// zlog.Info("Column:", column, primary)
-		dbTags := zreflect.GetTagAsMap(string(sf.Tag))["db"]
-		if primary {
-			v.equalFields[sf.Name] = column
-		}
-		if primary { // part == "-" ||
-			v.EditParameters.SkipFieldNames = append(v.EditParameters.SkipFieldNames, sf.Name)
-			return
-		}
-		if rval.Kind() == reflect.String {
-			v.fieldIsString[sf.Name] = true
-		}
-		if !primary {
-			v.setFields[sf.Name] = column
-		}
-		if zstr.StringsContain(dbTags, "search") {
-			v.searchFields = append(v.searchFields, column)
-		}
-		return
-	})
 	if v.options&AddHeader != 0 {
 		v.addActionButton()
 	}
@@ -124,11 +96,12 @@ func (v *SQLTableView[S]) addNewAction(duplicate bool) {
 	if duplicate {
 		sid := v.Grid.SelectedIDs()[0]
 		s = *v.StructForID(sid)
-		zsql.ForEachColumn(&s, nil, "", func(val reflect.Value, sf reflect.StructField, column string, primary bool) {
+		zsql.ForEachColumn(&s, nil, "", func(each zsql.ColumnInfo) bool {
 			// zlog.Info("Column:", column, primary, dbTags)
-			if primary {
-				val.Set(reflect.Zero(val.Type()))
+			if each.IsPrimary {
+				each.ReflectValue.Set(reflect.Zero(each.ReflectValue.Type()))
 			}
+			return true
 		})
 	}
 	zfields.PresentOKCancelStruct(&s, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
@@ -142,28 +115,9 @@ func (v *SQLTableView[S]) addNewAction(duplicate bool) {
 }
 
 func (v *SQLTableView[S]) insertRow(s S) {
-	var info zsql.UpsertInfo
-	var offset int64
-	info.Rows = []S{s}
-	info.TableName = v.tableName
-	info.SetColumns = v.setFields
-	info.EqualColumns = v.equalFields
-
-	first := v.setFields[v.Header.SortOrder[0].FieldName]
-	val, _, findex := zreflect.FieldForName(&s, zfields.FlattenIfAnonymousOrZUITag, first)
-	if zlog.ErrorIf(findex == -1, first) {
-		return
-	}
-	sval := fmt.Sprint(val)
-	if v.fieldIsString[first] {
-		sval = zsql.QuoteString(sval)
-	}
-	info.OffsetQuery = fmt.Sprintf("SELECT COUNT(*) FROM ", v.tableName, " WHERE ", first, "<", sval)
-	zlog.Info("InserOffQ:", info.OffsetQuery)
-	err := zrpc.MainClient.Call("SQLCalls.InsertRows", info, &offset)
-	zlog.Info("insert", err)
+	err := zrpc.MainClient.Call(v.CallerName+".InsertRows", []S{s}, nil)
 	if err != nil {
-		zalert.ShowError(err, "updating")
+		zalert.ShowError(err, "inserting")
 		return
 	}
 }
@@ -184,28 +138,30 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 	v.updateView()
 }
 
-func (v *SQLTableView[S]) updateForIDs(items []S) {
-	var info zsql.UpsertInfo
-	info.Rows = items
-	info.TableName = v.tableName
-	info.SetColumns = v.setFields
-	info.EqualColumns = v.equalFields
-	zlog.Info("updateForIDs1", zlog.Full(items))
-	err := zrpc.MainClient.Call("SQLCalls.UpdateRows", info, nil)
-	zlog.Info("updateForIDs", len(items), err)
+func (v *SQLTableView[S]) UpdateItems(items []S) {
+	// zlog.Info("UpdateItems:", zlog.Full(items))
+	v.SetItemsInSlice(items)
+	v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
+	err := zrpc.MainClient.Call(v.CallerName+".UpdateRows", items, nil)
 	if err != nil {
 		zalert.ShowError(err, "updating")
+		return
 	}
 }
 
 func (v *SQLTableView[S]) createConstraints() string {
-	// var s S
 	var order string
 	// zlog.Info("createConstraints", v.Header != nil, v.Header.SortOrder)
 	if v.Header != nil {
+		var s S
+		fieldColMap, primary := zsql.FieldNamesToColumnFromStruct(s, nil, "")
 		var orders []string
 		for _, s := range v.Header.SortOrder {
-			o := v.setFields[s.FieldName] + " "
+			column := fieldColMap[s.FieldName] + " "
+			if column == primary {
+				continue
+			}
+			o := column + " "
 			if s.SmallFirst {
 				o += "ASC"
 			} else {
@@ -242,7 +198,6 @@ func (v *SQLTableView[S]) FillPage() {
 
 	q.Table = v.tableName
 	q.Constraints = v.createConstraints()
-	q.SkipFields = v.skipFields
 	err := zrpc.MainClient.Call(v.selectMethod, q, &slice)
 	if err != nil {
 		zlog.Error(err, "select", q.Constraints, v.limit, v.offset)
