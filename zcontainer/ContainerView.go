@@ -367,18 +367,10 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 	}
 	if arrange && v.IsPresented() {
 		at := v.View.(Arranger) // we might be "inherited" by StackView or something
-		// zlog.Info("Arrange on collapse", v.Hierarchy())
 		at.ArrangeChildren()
 	}
 	if !collapse {
 		cell.View.Show(true)
-		// cv, _ := cell.View.(*ShapeView)
-		// if cell.View.ObjectName() == "xxx" {
-		// 	zlog.Info("Uncollapse Disco", cv != nil)
-		// }
-		// if cv != nil && cv.IsPresented() {
-		// 	cv.visible = true
-		// }
 		zview.ExposeView(cell.View)
 	}
 	return changed
