@@ -195,7 +195,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		zfloat.Minimize(&s.H, v.MaxSize.H)
 	}
 
-	// zlog.Info(v.margin, v.MaxSize, v.ImageMargin, "SV Calcsize:", v.ObjectName(), s)
+	// zlog.Info(v.MaxSize, v.ImageMargin, "SV Calcsize:", v.ObjectName(), s, zlog.CallingStackString())
 	if v.Type == TypeCircle {
 		//		zmath.Float64Maximize(&s.H, s.W)
 	}
@@ -245,7 +245,6 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	v.SetImage(nil, str, func(image *zimage.Image) {
 		v.image = image
 		if image != nil {
-			// zlog.Info("SetImageButtonName:", str)
 			if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {
 				zlog.Error(nil, "Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
 				return
@@ -313,7 +312,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 			canvas.SetDropShadow(zstyle.DropShadow{zgeo.Size{}, 2, zgeo.ColorBlack}) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
-		// zlog.Info("ShapeView draw text:", textRect, t.Rect, v.TextXMargin, t.Text)
+		// zlog.Info("ShapeView draw text:", rect, textRect, t.Rect, v.TextXMargin, t.Text)
 		// }
 
 		// canvas.SetColor(zgeo.ColorGreen)
@@ -340,6 +339,7 @@ func (v *ShapeView) SetFont(font *zgeo.Font) {
 }
 
 func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePath *zgeo.Path, rect zgeo.Rect, textRect *zgeo.Rect) {
+	// zlog.Info("ShapeView.draw:", v.Hierarchy(), rect)
 	useDownsampleCache := true
 	imarg := v.ImageMargin
 	o := v.ImageOpacity

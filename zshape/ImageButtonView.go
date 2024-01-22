@@ -56,5 +56,8 @@ func (v *ImageButtonView) SetImageName(name string, insets zgeo.Size) {
 	if name == "" {
 		name = ImageButtonViewDefaultName
 	}
+	if insets.IsNull() {
+		insets = DefaultInsets
+	}
 	v.SetNamedCapImage("images/zbuttons/"+name, insets)
 }
