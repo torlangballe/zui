@@ -15,16 +15,16 @@ import (
 
 func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 	var args []zstr.KeyValue
-	ForEachField(s, FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
-		kind := zreflect.KindFromReflectKindAndType(val.Kind(), val.Type())
+	ForEachField(s, FieldParameters{}, nil, func(each FieldInfo) bool {
+		kind := zreflect.KindFromReflectKindAndType(each.ReflectValue.Kind(), each.ReflectValue.Type())
 		isPointer := (kind == zreflect.KindPointer)
-		name := strings.ToLower(f.FieldName)
+		name := strings.ToLower(each.Field.FieldName)
 		var arg zstr.KeyValue
 		if isPointer {
-			eval := reflect.New(val.Type().Elem()).Elem()
+			eval := reflect.New(each.ReflectValue.Type().Elem()).Elem()
 			zlog.Info("GetCommandArgsHelpForStructFields:", eval)
 			kind := zreflect.KindFromReflectKindAndType(eval.Kind(), eval.Type())
-			zlog.Info("GetCommandArgsHelpForStructFields2:", f.Name, kind)
+			zlog.Info("GetCommandArgsHelpForStructFields2:", each.Field.Name, kind)
 			if len(name) == 1 && kind == zreflect.KindBool {
 				arg.Key = fmt.Sprintf("[-%s]", name)
 			} else {
@@ -32,13 +32,13 @@ func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 			}
 		} else {
 			arg.Key = fmt.Sprintf("%s", name)
-			if f.Flags&FlagAllowEmptyAsZero != 0 {
+			if each.Field.Flags&FlagAllowEmptyAsZero != 0 {
 				arg.Key = "[" + arg.Key + "]"
 			}
 		}
-		arg.Value = f.Description
+		arg.Value = each.Field.Description
 		if arg.Value == "" {
-			arg.Value = f.Tooltip
+			arg.Value = each.Field.Tooltip
 		}
 		args = append(args, arg)
 		return true
@@ -49,25 +49,25 @@ func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 	var err error
 	var hasAllowEmpty bool
-	ForEachField(rval.Interface(), FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
-		kind := zreflect.KindFromReflectKindAndType(val.Kind(), val.Type())
+	ForEachField(rval.Interface(), FieldParameters{}, nil, func(each FieldInfo) bool {
+		kind := zreflect.KindFromReflectKindAndType(each.ReflectValue.Kind(), each.ReflectValue.Type())
 		isPointer := (kind == zreflect.KindPointer)
-		name := strings.ToLower(f.FieldName)
+		name := strings.ToLower(each.Field.FieldName)
 		// zlog.Info("ParseCommandArgsToStructFields:", name, isPointer)
 		if isPointer {
-			val = reflect.New(val.Type().Elem()).Elem()
+			each.ReflectValue = reflect.New(each.ReflectValue.Type().Elem()).Elem()
 			if len(args) == 0 {
 				return false
 			}
 			for i, a := range args {
 				var set string
 				if kind == zreflect.KindBool && a == "-"+name {
-					val.SetBool(true)
+					each.ReflectValue.SetBool(true)
 					zslice.RemoveAt(&args, i)
 					break
 				}
 				if zstr.HasPrefix(a, "--"+name+"=", &set) {
-					err = setStrToRVal(set, kind, f, val, name)
+					err = setStrToRVal(set, kind, each.Field, each.ReflectValue, name)
 					if err != nil {
 						return false
 					}
@@ -78,7 +78,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 			return true
 		}
 		if len(args) == 0 {
-			if f.Flags&FlagAllowEmptyAsZero != 0 {
+			if each.Field.Flags&FlagAllowEmptyAsZero != 0 {
 				if !hasAllowEmpty {
 					return true
 				}
@@ -88,8 +88,8 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 			return false
 		}
 		arg := zstr.ExtractFirstString(&args)
-		// zlog.Info("setStr2Val", arg, kind, val.Type(), name)
-		err = setStrToRVal(arg, kind, f, val, name)
+		// zlog.Info("setStr2Val", arg, kind, each.ReflectValue.Type(), name)
+		err = setStrToRVal(arg, kind, each.Field, each.ReflectValue, name)
 		if err != nil {
 			return false
 		}

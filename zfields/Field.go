@@ -51,12 +51,11 @@ type SortInfo struct {
 }
 
 type FieldParameters struct {
-	HideStatic              bool
-	ForceZeroOption         bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
-	AllStatic               bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	TipsAsDescriptionLabels bool     // Used for labelizing fields, todo.
-	UseInValues             []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
-	SkipFieldNames          []string
+	HideStatic      bool
+	ForceZeroOption bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
+	AllStatic       bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
+	UseInValues     []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
+	SkipFieldNames  []string
 }
 
 const (
@@ -77,43 +76,44 @@ const (
 type FlagType zbits.NamedBit
 
 const (
-	FlagIsStatic             FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
-	FlagHasSeconds                                // FlagHasSeconds means it's a time/duration where seconds should be shown/used
-	FlagHasMinutes                                // FlagHasMinutes is the same but for minutes
-	FlagHasHours                                  // FlagHasMinutes is the same but for hours
-	FlagHasDays                                   // FlagHasMinutes is the same but for days of the month
-	FlagHasMonths                                 // FlagHasMinutes is the same but for months
-	FlagHasYears                                  // FlagHasMinutes is the same but for years
-	FlagIsImage                                   // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
-	FlagIsFixed                                   // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from.
-	FlagIsButton                                  // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
-	FlagHasHeaderImage                            // FlagHasHeaderImage is true true if it has a an image for showing in header
-	FlagNoTitle                                   // FlagNoTitle i set when we don't use FieldName as a title, show nothing
-	FlagToClipboard                               // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
-	FlagIsPassword                                // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
-	FlagIsDuration                                // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
-	FlagIsOpaque                                  // FlagIsOpaque means entire view will be covered when drawn
-	FlagIsActions                                 // FlagIsActions means a menu created from an enum is actions and not a value to set
-	FlagHasFrame                                  // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
-	FlagIsGroup                                   // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
-	FlagGroupSingle                               // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
-	FlagFrameIsTitled                             // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
-	FlagFrameTitledOnFrame                        // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
-	FlagSkipIndicator                             // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
-	FlagLongPress                                 // If FlagLongPress is set this button/image etc handles long-press
-	FlagDisableAutofill                           // FlagDisableAutofill if set makes a text field not autofill
-	FlagIsSearchable                              // This field can be used to search in tables etc
-	FlagIsUseInValue                              // This value is set as a string to InNames before entire struct is created
-	FlagAllowEmptyAsZero                          // This shows the empty value as nothing. So int 0 would be shown as "" in text
-	FlagZeroIsBig                                 // If set, a zero value is considered big, currenlty used in sorting
-	FlagIsForZDebugOnly                           // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
-	FlagIsRebuildAllOnChange                      // If set, and this item is edited, rebuild the FieldView
-	FlagIsURL                                     // (Field is string, and it's a url) OR (it has Path set to fixed URL)
-	FlagIsDocumentation                           // It is a .Path link to Documentation view.
-	FlagIsAudio                                   // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
-	FlagIsDownload                                // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
-	FlagIsEdit                                    // If set things like slice-menus have an edit and delete option
-	FlagNoLabel                                   // If set, not labelized "nolabel"
+	FlagIsStatic                 FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
+	FlagHasSeconds                                    // FlagHasSeconds means it's a time/duration where seconds should be shown/used
+	FlagHasMinutes                                    // FlagHasMinutes is the same but for minutes
+	FlagHasHours                                      // FlagHasMinutes is the same but for hours
+	FlagHasDays                                       // FlagHasMinutes is the same but for days of the month
+	FlagHasMonths                                     // FlagHasMinutes is the same but for months
+	FlagHasYears                                      // FlagHasMinutes is the same but for years
+	FlagIsImage                                       // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
+	FlagIsFixed                                       // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from.
+	FlagIsButton                                      // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
+	FlagHasHeaderImage                                // FlagHasHeaderImage is true true if it has a an image for showing in header
+	FlagNoTitle                                       // FlagNoTitle i set when we don't use FieldName as a title, show nothing
+	FlagToClipboard                                   // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
+	FlagIsPassword                                    // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
+	FlagIsDuration                                    // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
+	FlagIsOpaque                                      // FlagIsOpaque means entire view will be covered when drawn
+	FlagIsActions                                     // FlagIsActions means a menu created from an enum is actions and not a value to set
+	FlagHasFrame                                      // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
+	FlagIsGroup                                       // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
+	FlagGroupSingle                                   // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
+	FlagFrameIsTitled                                 // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
+	FlagFrameTitledOnFrame                            // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
+	FlagSkipIndicator                                 // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
+	FlagLongPress                                     // If FlagLongPress is set this button/image etc handles long-press
+	FlagDisableAutofill                               // FlagDisableAutofill if set makes a text field not autofill
+	FlagIsSearchable                                  // This field can be used to search in tables etc
+	FlagIsUseInValue                                  // This value is set as a string to InNames before entire struct is created
+	FlagAllowEmptyAsZero                              // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagZeroIsBig                                     // If set, a zero value is considered big, currenlty used in sorting
+	FlagIsForZDebugOnly                               // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
+	FlagIsRebuildAllOnChange                          // If set, and this item is edited, rebuild the FieldView
+	FlagIsURL                                         // (Field is string, and it's a url) OR (it has Path set to fixed URL)
+	FlagIsDocumentation                               // It is a .Path link to Documentation view.
+	FlagIsAudio                                       // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
+	FlagIsDownload                                    // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
+	FlagIsEdit                                        // If set things like slice-menus have an edit and delete option
+	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
+	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
 )
 
 const (
@@ -151,7 +151,6 @@ type Field struct {
 	Tooltip              string
 	Description          string
 	UpdateSecs           float64
-	LabelizeWidth        float64
 	LocalEnable          string
 	LocalDisable         string
 	LocalShow            string
@@ -174,6 +173,7 @@ type Field struct {
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 	RPCCall              string            // an RPC method to Call, typically on press of a button
+	// Labelize             bool              // Set to force rows of: <label> view [desc] in children
 }
 
 var EmptyField = Field{
@@ -182,28 +182,41 @@ var EmptyField = Field{
 }
 
 var flagsNameMap = zbits.NamedBitMap{
-	"HasSeconds":      uint64(FlagHasSeconds),
-	"HasMinutes":      uint64(FlagHasMinutes),
-	"HasHours":        uint64(FlagHasHours),
-	"HasDays":         uint64(FlagHasDays),
-	"HasMonths":       uint64(FlagHasMonths),
-	"HasYears":        uint64(FlagHasYears),
-	"IsImage":         uint64(FlagIsImage),
-	"IsFixed":         uint64(FlagIsFixed),
-	"IsButton":        uint64(FlagIsButton),
-	"HasHeaderImage":  uint64(FlagHasHeaderImage),
-	"NoTitle":         uint64(FlagNoTitle),
-	"ToClipboard":     uint64(FlagToClipboard),
-	"IsPassword":      uint64(FlagIsPassword),
-	"IsDuration":      uint64(FlagIsDuration),
-	"IsOpaque":        uint64(FlagIsOpaque),
-	"IsActions":       uint64(FlagIsActions),
-	"FrameIsTitled":   uint64(FlagFrameIsTitled),
-	"IsGroup":         uint64(FlagIsGroup),
-	"HasFrame":        uint64(FlagHasFrame),
-	"SkipIndicator":   uint64(FlagSkipIndicator),
-	"LongPress":       uint64(FlagLongPress),
-	"DisableAutofill": uint64(FlagDisableAutofill),
+	"HasSeconds":                   uint64(FlagHasSeconds),
+	"HasMinutes":                   uint64(FlagHasMinutes),
+	"HasHours":                     uint64(FlagHasHours),
+	"HasDays":                      uint64(FlagHasDays),
+	"HasMonths":                    uint64(FlagHasMonths),
+	"HasYears":                     uint64(FlagHasYears),
+	"IsImage":                      uint64(FlagIsImage),
+	"IsFixed":                      uint64(FlagIsFixed),
+	"IsButton":                     uint64(FlagIsButton),
+	"HasHeaderImage":               uint64(FlagHasHeaderImage),
+	"NoTitle":                      uint64(FlagNoTitle),
+	"ToClipboard":                  uint64(FlagToClipboard),
+	"IsPassword":                   uint64(FlagIsPassword),
+	"IsDuration":                   uint64(FlagIsDuration),
+	"IsOpaque":                     uint64(FlagIsOpaque),
+	"IsActions":                    uint64(FlagIsActions),
+	"FrameIsTitled":                uint64(FlagFrameIsTitled),
+	"IsGroup":                      uint64(FlagIsGroup),
+	"HasFrame":                     uint64(FlagHasFrame),
+	"SkipIndicator":                uint64(FlagSkipIndicator),
+	"LongPress":                    uint64(FlagLongPress),
+	"DisableAutofill":              uint64(FlagDisableAutofill),
+	"FlagIsSearchable":             uint64(FlagIsSearchable),
+	"FlagIsUseInValue":             uint64(FlagIsUseInValue),
+	"FlagAllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
+	"FlagZeroIsBig":                uint64(FlagZeroIsBig),
+	"FlagIsForZDebugOnly":          uint64(FlagIsForZDebugOnly),
+	"FlagIsRebuildAllOnChange":     uint64(FlagIsRebuildAllOnChange),
+	"FlagIsURL":                    uint64(FlagIsURL),
+	"FlagIsDocumentation":          uint64(FlagIsDocumentation),
+	"FlagIsAudio":                  uint64(FlagIsAudio),
+	"FlagIsDownload":               uint64(FlagIsDownload),
+	"FlagIsEdit":                   uint64(FlagIsEdit),
+	"FlagIsLabelize":               uint64(FlagIsLabelize),
+	"FlagLabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
 }
 
 // callSetupWidgeter is called to set gui widgets registered for use in zui tags.
@@ -232,6 +245,14 @@ func (f Field) HasFlag(flag FlagType) bool {
 	return f.Flags&flag != 0
 }
 
+func (f Field) SetFlag(flag FlagType) {
+	f.Flags |= flag
+}
+
+func (f Field) ClearFlag(flag FlagType) {
+	f.Flags &= ^flag
+}
+
 func findFieldWithIndex(fields *[]Field, index int) *Field {
 	for i, f := range *fields {
 		if f.Index == index {
@@ -243,13 +264,19 @@ func findFieldWithIndex(fields *[]Field, index int) *Field {
 
 func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int) {
 	name = zstr.HeadUntil(name, ".")
-	fval, _, i := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, name)
-	return fval, i
+	finfo, found := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, name)
+	if !found {
+		finfo.FieldIndex = -1
+	}
+	return finfo.ReflectValue, finfo.FieldIndex
 }
 
 // func fieldNameToID(name string) string {
 // 	return zstr.FirstToLowerWithAcronyms(name)
 // }
+
+var colonReplacer = strings.NewReplacer("::", "•°©")
+var colonReReplacer = strings.NewReplacer("•°©", ":")
 
 func GetZUITagMap(tagMap map[string][]string) (m map[string]string, skip bool) {
 	zuiParts, got := tagMap["zui"]
@@ -262,7 +289,11 @@ func GetZUITagMap(tagMap map[string][]string) (m map[string]string, skip bool) {
 			return nil, true
 		}
 		var key, val string
-		if !zstr.SplitN(part, ":", &key, &val) {
+		parts := zstr.SplitStringWithDoubleAsEscape(part, ":")
+		if len(parts) == 2 {
+			key = parts[0]
+			val = parts[1]
+		} else {
 			key = part
 		}
 		key = strings.TrimSpace(key)
@@ -575,13 +606,13 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "2clip":
 			f.Flags |= FlagToClipboard
+		// case "nolabel":
+		// 	f.Flags |= FlagNoLabel
 		case "labelize":
-			f.LabelizeWidth = n
-			if n == 0 {
-				f.LabelizeWidth = 200
+			f.Flags |= FlagIsLabelize
+			if val == "withdesc" {
+				f.Flags |= FlagLabelizeWithDescriptions
 			}
-		case "nolabel":
-			f.Flags |= FlagNoLabel
 		case "button":
 			f.Flags |= FlagIsButton
 		case "enable":
@@ -994,32 +1025,37 @@ func FlattenIfAnonymousOrZUITag(f reflect.StructField) bool {
 	return got
 }
 
-func ForEachField(structure any, params FieldParameters, fields []Field, got func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool) {
+type FieldInfo struct {
+	zreflect.FieldInfo
+	Field *Field
+}
+
+func ForEachField(structure any, params FieldParameters, fields []Field, got func(each FieldInfo) bool) {
 	if len(fields) == 0 {
-		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
+		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 			f := EmptyField
-			if !f.SetFromReflectValue(val, sf, index, params) {
+			if !f.SetFromReflectValue(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
 			fields = append(fields, f)
 			return true
 		})
 	}
-	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		f := findFieldWithIndex(&fields, index)
+	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		f := findFieldWithIndex(&fields, each.FieldIndex)
 		if f == nil {
 			return true
 		}
 		if f.Flags&FlagIsUseInValue != 0 {
-			zstr.AddToSet(&params.UseInValues, fmt.Sprint(val.Interface()))
+			zstr.AddToSet(&params.UseInValues, fmt.Sprint(each.ReflectValue.Interface()))
 		}
 		return true
 	})
-	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		if zstr.IndexOf(sf.Name, params.SkipFieldNames) != -1 {
+	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		if zstr.IndexOf(each.StructField.Name, params.SkipFieldNames) != -1 {
 			return true
 		}
-		f := findFieldWithIndex(&fields, index)
+		f := findFieldWithIndex(&fields, each.FieldIndex)
 		if f == nil {
 			return true
 		}
@@ -1032,7 +1068,10 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues))) { //} || (isInRow && !wantsDialog))) {
 			return true
 		}
-		return got(index, f, val, sf)
+		var finfo FieldInfo
+		finfo.FieldInfo = each
+		finfo.Field = f
+		return got(finfo)
 	})
 }
 
@@ -1047,11 +1086,11 @@ func FindIndicatorOfSlice(slicePtr any) string {
 
 func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field, got bool) {
 	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
-	ForEachField(structPtr, FieldParameters{}, nil, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
-		for _, part := range zreflect.GetTagAsMap(string(sf.Tag))["zui"] {
+	ForEachField(structPtr, FieldParameters{}, nil, func(each FieldInfo) bool {
+		for _, part := range zreflect.GetTagAsMap(string(each.StructField.Tag))["zui"] {
 			if part == "indicator" {
-				rval = val
-				field = f
+				rval = each.ReflectValue
+				field = each.Field
 				got = true
 			}
 		}
@@ -1097,10 +1136,10 @@ func getField(val reflect.Value, indent, desc string) string {
 func OutputJsonStructDescription(s any, indent string) string {
 	var str string
 	str += indent + "struct {\n"
-	zreflect.ForEachField(s, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
-		tagMap := zreflect.GetTagAsMap(string(sf.Tag))
+	zreflect.ForEachField(s, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		tagMap := zreflect.GetTagAsMap(string(each.StructField.Tag))
 		zuiMap, _ := GetZUITagMap(tagMap)
-		fn := sf.Name
+		fn := each.StructField.Name
 		tj := tagMap["json"]
 		if len(tj) != 0 && tj[0] != "" {
 			if tj[0] == "-" {
@@ -1113,7 +1152,7 @@ func OutputJsonStructDescription(s any, indent string) string {
 			desc = zuiMap["desc"]
 		}
 		str += indent + `"` + fn + `": `
-		str += getField(val, indent+"  ", desc)
+		str += getField(each.ReflectValue, indent+"  ", desc)
 		return true
 	})
 	str += indent + "}\n"

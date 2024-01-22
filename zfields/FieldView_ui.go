@@ -4,6 +4,7 @@ package zfields
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -151,17 +152,19 @@ func makeFrameIfFlag(f *Field, child zview.View) zview.View {
 func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters, marg zgeo.Size, parent *FieldView) *FieldView {
 	v := &FieldView{}
 	v.StackView.Init(v, vertical, id)
+
 	v.SetSpacing(params.Styling.Spacing)
+
 	v.data = data
-	zreflect.ForEachField(v.data, FlattenIfAnonymousOrZUITag, func(index int, val reflect.Value, sf reflect.StructField) bool {
+	zreflect.ForEachField(v.data, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 		f := EmptyField
-		if !f.SetFromReflectValue(val, sf, index, params.FieldParameters) {
+		if !f.SetFromReflectValue(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
 			return true
 		}
 		if params.ImmediateEdit {
 			f.UpdateSecs = 0
 		}
-		callActionHandlerFunc(ActionPack{FieldView: v, Field: &f, Action: SetupFieldAction, RVal: val.Addr(), View: nil})
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: &f, Action: SetupFieldAction, RVal: each.ReflectValue.Addr(), View: nil})
 		v.Fields = append(v.Fields, f)
 		return true
 	})
@@ -272,9 +275,9 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 		var prefix, fname string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(local, "./", &fname) {
-			rval, _, findex := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
-			if findex != -1 {
-				doShowEnableItem(rval, isShow, view, neg)
+			finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
+			if found {
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
 			}
 			continue
 		}
@@ -284,16 +287,16 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
-			rval, _, findex := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
-			if findex != -1 {
-				doShowEnableItem(rval, isShow, view, neg)
+			finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
+			if found {
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
 			}
 			continue
 		}
 		if zstr.HasPrefix(local, "../", &fname) && v.parent != nil {
-			rval, _, findex := zreflect.FieldForName(v.parent.Data(), FlattenIfAnonymousOrZUITag, fname)
-			if findex != -1 {
-				doShowEnableItem(rval, isShow, view, neg)
+			finfo, found := zreflect.FieldForName(v.parent.Data(), FlattenIfAnonymousOrZUITag, fname)
+			if found {
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
 			}
 			continue
 		}
@@ -311,10 +314,10 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	if fh != nil {
 		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
 	}
-	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
-		zlog.Info(EnableLog, "FV Update field:", f.Name, recentEdit, f.IsStatic(), sf.Type.Kind())
-		if !recentEdit || f.IsStatic() || sf.Type.Kind() == reflect.Slice {
-			v.updateField(index, val, sf, dontOverwriteEdited)
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
+		zlog.Info(EnableLog, "FV Update field:", each.Field.Name, recentEdit, each.Field.IsStatic(), each.StructField.Type.Kind())
+		if !recentEdit || each.Field.IsStatic() || each.StructField.Type.Kind() == reflect.Slice {
+			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited)
 		}
 		return true
 	})
@@ -631,11 +634,11 @@ func callActionHandlerFunc(ap ActionPack) bool {
 			sv := reflect.ValueOf(ap.FieldView.data)
 			if sv.Kind() == reflect.Ptr || sv.CanAddr() {
 				// Here we run thru the possiblly new struct again, and find the item with same id as field
-				fieldVal, found := zreflect.FindFieldWithNameInStruct(ap.Field.FieldName, ap.FieldView.data, true)
+				finfo, found := zreflect.FieldForName(ap.FieldView.data, FlattenIfAnonymousOrZUITag, ap.Field.FieldName)
 				if found {
 					changed = true
-					if fieldVal.CanAddr() {
-						fieldAddress = fieldVal.Addr().Interface()
+					if finfo.ReflectValue.CanAddr() {
+						fieldAddress = finfo.ReflectValue.Addr().Interface()
 					}
 				}
 			}
@@ -673,9 +676,9 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if len(f.Colors) > 0 {
 		color = f.Colors[0]
 	}
-	name := f.Name
-	if f.Title != "" && fv.params.LabelizeWidth == 0 {
-		name = f.Title
+	name := f.Title
+	if f.Name != "" || fv.params.Field.HasFlag(FlagIsLabelize) {
+		name = f.Name
 	}
 	s := zgeo.Size{20, 24}
 	if f.Height != 0 {
@@ -969,7 +972,6 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 }
 
 func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
-	// zlog.Info("fieldHandleEdited:", v.Hierarchy(), f.Name, len(v.params.triggerHandlers))
 	rval, err := v.fieldToDataItem(f, view)
 	if zlog.OnError(err) {
 		return
@@ -993,7 +995,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		}
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &view})
 	})
-	if v.params.LabelizeWidth == 0 && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
 		_, stack := zcheckbox.Labelize(cv, f.TitleOrName())
 		return stack
 	}
@@ -1036,9 +1038,9 @@ func setColorFromField(view zview.View, f *Field) {
 }
 
 func (v *FieldView) updateOldTime(label *zlabel.Label, f *Field) {
-	val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
+	finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, f.FieldName)
 	if found {
-		t := val.Interface().(time.Time)
+		t := finfo.ReflectValue.Interface().(time.Time)
 		updateOldDuration(label, time.Since(t), f)
 	}
 }
@@ -1058,10 +1060,10 @@ func (v *FieldView) updateSinceTime(label *zlabel.Label, f *Field) {
 	}
 	sv := reflect.ValueOf(v.data)
 	zlog.Assert(sv.Kind() == reflect.Ptr || sv.CanAddr())
-	val, found := zreflect.FindFieldWithNameInStruct(f.FieldName, v.data, true)
+	finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, f.FieldName)
 	if found {
 		var str string
-		t := val.Interface().(time.Time)
+		t := finfo.ReflectValue.Interface().(time.Time)
 		tooBig := false
 		if !t.IsZero() {
 			since := time.Since(t)
@@ -1190,9 +1192,14 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+	if v.params.Field.HasFlag(FlagIsLabelize) {
+		// zlog.Info("FV BuildStack labelized:", v.Hierarchy())
+		v.GridVerticalSpace = math.Max(6, v.Spacing())
+		v.SetSpacing(math.Max(12, v.Spacing()))
+	}
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data, reflect.ValueOf(v.data).Kind())
-	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(index int, f *Field, val reflect.Value, sf reflect.StructField) bool {
-		v.buildItem(f, val, index, defaultAlign, cellMargin, useMinWidth)
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
+		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
 		return true
 	})
 }
@@ -1202,11 +1209,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
-	labelizeWidth := v.params.LabelizeWidth
-	parentFV := ParentFieldView(v)
-	if parentFV != nil && v.params.LabelizeWidth == 0 {
-		labelizeWidth = parentFV.params.LabelizeWidth
-	}
+	// labelizeWidth := v.params.LabelizeWidth
+	// parentFV := ParentFieldView(v)
+	// if parentFV != nil && v.params.LabelizeWidth == 0 {
+	// 	labelizeWidth = parentFV.params.LabelizeWidth
+	// }
 	exp := zgeo.AlignmentNone
 	if v.params.HideStatic && f.IsStatic() {
 		return
@@ -1275,23 +1282,25 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 
 		case zreflect.KindSlice:
-			if f.StringSep != "" {
-				noUpdate := true
-				rv := reflect.ValueOf("")
-				view = v.makeText(rv, f, noUpdate)
-				break
-			}
-			getter, _ := rval.Interface().(zdict.ItemsGetter)
-			if getter != nil {
-				menu := v.makeMenu(rval, f, getter.GetItems())
-				view = menu
-				break
-			}
-			items := zdict.ItemsFromRowGetterSlice(rval.Interface())
-			if items != nil {
-				menu := v.makeMenu(rval, f, *items)
-				view = menu
-				break
+			if !f.HasFlag(FlagIsGroup) || zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+				if f.StringSep != "" {
+					noUpdate := true
+					rv := reflect.ValueOf("")
+					view = v.makeText(rv, f, noUpdate)
+					break
+				}
+				getter, _ := rval.Interface().(zdict.ItemsGetter)
+				if getter != nil {
+					menu := v.makeMenu(rval, f, getter.GetItems())
+					view = menu
+					break
+				}
+				items := zdict.ItemsFromRowGetterSlice(rval.Interface())
+				if items != nil {
+					menu := v.makeMenu(rval, f, *items)
+					view = menu
+					break
+				}
 			}
 			if v.params.MultiSliceEditInProgress {
 				return
@@ -1398,10 +1407,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	cell.Margin = cellMargin
 	cell.Alignment = def | exp | f.Alignment
-	doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
+	// doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
-	if doLabelize {
-		var lstack *zcontainer.StackView
+	var lstack *zcontainer.StackView
+	if v.params.Field.HasFlag(FlagIsLabelize) {
 		title := f.Name
 		if f.Title != "" {
 			title = f.Title
@@ -1409,7 +1418,14 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if f.Flags&FlagNoTitle != 0 {
 			title = ""
 		}
-		_, lstack, cell = zguiutil.Labelize(view, title, labelizeWidth, cell.Alignment)
+		var desc string
+		if v.params.Field.HasFlag(FlagLabelizeWithDescriptions) {
+			desc = f.Description
+			if desc == "" {
+				desc = " " // we force an empty description so grid handles easy
+			}
+		}
+		_, lstack, cell = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
 		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
@@ -1417,7 +1433,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.MinSize.W = f.MinWidth
 	}
 	cell.MaxSize.W = f.MaxWidth
-	if !doLabelize {
+	if !v.params.Field.HasFlag(FlagIsLabelize) {
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
@@ -1438,9 +1454,10 @@ func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) strin
 func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 	var tipField, tip string
 	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
-		ei, _, findex := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, tipField)
-		if findex != -1 {
-			tip = fmt.Sprint(ei.Interface())
+		// ei, _, findex := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, tipField)
+		finfo, found := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, tipField)
+		if found {
+			tip = fmt.Sprint(finfo.ReflectValue.Interface())
 		} else { // can't use tip == "" to check, since field might just be empty
 			zlog.Error(nil, "updateItemLocalToolTip: no local field for tip", f.Name, tipField)
 		}
@@ -1475,7 +1492,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	if f.IsStatic() {
 		return
 	}
-	rval, _ := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
+	finfo := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
 	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name, rval)
 
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
@@ -1484,8 +1501,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			getter, _ := view.(zview.AnyValueGetter)
 			if getter != nil {
 				val := getter.ValueAsAny()
-				rval.Set(reflect.ValueOf(val))
-				value = rval
+				finfo.ReflectValue.Set(reflect.ValueOf(val))
+				value = finfo.ReflectValue
 			}
 			return
 		}
@@ -1497,12 +1514,12 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			vo := reflect.ValueOf(iface)
 			// zlog.Info("fieldToDataItem:", iface, f.Name, vo.IsValid(), iface == nil)
 			if iface == nil {
-				vo = reflect.Zero(rval.Type())
+				vo = reflect.Zero(finfo.ReflectValue.Type())
 			}
-			rval.Set(vo)
-			// zlog.Info("fieldToDataItem2:", rval.IsValid())
+			finfo.ReflectValue.Set(vo)
+			// zlog.Info("fieldToDataItem2:", finfo.ReflectValue.IsValid())
 		}
-		return rval, nil
+		return finfo.ReflectValue, nil
 	}
 
 	switch f.Kind {
@@ -1521,40 +1538,40 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				zlog.Fatal(nil, "Should be checkbox", view, reflect.TypeOf(view))
 			}
 		}
-		b, _ := rval.Addr().Interface().(*bool)
+		b, _ := finfo.ReflectValue.Addr().Interface().(*bool)
 		if b != nil {
 			*b = bv.Value().Bool()
 		}
-		bi, _ := rval.Addr().Interface().(*zbool.BoolInd)
+		bi, _ := finfo.ReflectValue.Addr().Interface().(*zbool.BoolInd)
 		if bi != nil {
 			*bi = bv.Value()
 		}
 
 	case zreflect.KindInt:
-		if rval.Type().Name() == "BoolInd" {
+		if finfo.ReflectValue.Type().Name() == "BoolInd" {
 			bv, _ := view.(*zcheckbox.CheckBox)
-			*rval.Addr().Interface().(*zbool.BoolInd) = bv.Value()
+			*finfo.ReflectValue.Addr().Interface().(*zbool.BoolInd) = bv.Value()
 		} else {
 			tv, _ := view.(*ztext.TextView)
 			if f.Flags&FlagAllowEmptyAsZero != 0 {
 				if tv.Text() == "" {
-					rval.SetZero()
-					v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
+					finfo.ReflectValue.SetZero()
+					v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 					break
 				}
 			}
 			str := tv.Text()
-			if f.PackageName == "time" && rval.Type().Name() == "Duration" {
+			if f.PackageName == "time" && finfo.ReflectValue.Type().Name() == "Duration" {
 				var secs float64
 				secs, err = ztime.GetSecsFromHMSString(str, f.Flags&FlagHasHours != 0, f.Flags&FlagHasMinutes != 0, f.Flags&FlagHasSeconds != 0)
 				if err != nil {
 					break
 				}
-				d := rval.Addr().Interface().(*time.Duration)
+				d := finfo.ReflectValue.Addr().Interface().(*time.Duration)
 				if d != nil {
 					*d = ztime.SecondsDur(secs)
 				}
-				value = rval
+				value = finfo.ReflectValue
 				return
 			}
 			var i64 int64
@@ -1565,8 +1582,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 					break
 				}
 			}
-			zint.SetAny(rval.Addr().Interface(), i64)
-			v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
+			zint.SetAny(finfo.ReflectValue.Addr().Interface(), i64)
+			v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 		}
 
 	case zreflect.KindFloat:
@@ -1575,8 +1592,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		var f64 float64
 		if f.Flags&FlagAllowEmptyAsZero != 0 {
 			if text == "" {
-				rval.SetZero()
-				v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
+				finfo.ReflectValue.SetZero()
+				v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 				break
 			}
 		}
@@ -1587,8 +1604,8 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		if err != nil {
 			break
 		}
-		zfloat.SetAny(rval.Addr().Interface(), f64)
-		v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
+		zfloat.SetAny(finfo.ReflectValue.Addr().Interface(), f64)
+		v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 
 	case zreflect.KindTime:
 		break
@@ -1600,9 +1617,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				zlog.Fatal(nil, "Copy Back string not TV:", f.Name)
 			}
 			text := tv.Text()
-			str := rval.Addr().Interface().(*string)
+			str := finfo.ReflectValue.Addr().Interface().(*string)
 			*str = text
-			v.updateShowEnableFromZeroer(rval.IsZero(), false, tv.ObjectName())
+			v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 		}
 
 	case zreflect.KindFunc:
@@ -1610,7 +1627,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 
 	case zreflect.KindSlice:
 		if f.StringSep != "" {
-			separatedStringToData(f.StringSep, view, rval)
+			separatedStringToData(f.StringSep, view, finfo.ReflectValue)
 		}
 
 	case zreflect.KindStruct:
@@ -1633,7 +1650,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		// zlog.Info("fieldToDataItem for slice:", f.Name)
 		break
 	}
-	value = reflect.ValueOf(rval.Addr().Interface()).Elem() //.Interface()
+	value = reflect.ValueOf(finfo.ReflectValue.Addr().Interface()).Elem() //.Interface()
 	return
 }
 
@@ -1673,14 +1690,16 @@ func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
 	}
 }
 
+// ParentFieldView returns the closest FieldView parent to view
 func ParentFieldView(view zview.View) *FieldView {
+	var got *FieldView
 	for _, nv := range view.Native().AllParents() {
 		fv, _ := nv.View.(*FieldView)
 		if fv != nil {
-			return fv
+			got = fv
 		}
 	}
-	return nil
+	return got
 }
 
 func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {

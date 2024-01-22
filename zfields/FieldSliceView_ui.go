@@ -142,9 +142,9 @@ func (v *FieldSliceView) updateMenu() {
 	rval := reflect.ValueOf(v.data).Elem()
 	for i := 0; i < rval.Len(); i++ {
 		a := rval.Index(i).Interface()
-		rval, got := zreflect.FindFieldWithNameInStruct(v.indicatorFieldName, a, true)
-		zlog.Assert(got)
-		str := fmt.Sprint(rval.Interface())
+		finfo, found := zreflect.FieldForName(a, FlattenIfAnonymousOrZUITag, v.indicatorFieldName)
+		zlog.Assert(found)
+		str := fmt.Sprint(finfo.ReflectValue.Interface())
 		menuItems.Add(str, i)
 	}
 	v.menu.UpdateItems(menuItems, v.currentIndex, false)
@@ -176,8 +176,11 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	var add zview.View
 	if v.isStructItems {
 		id := strconv.Itoa(i)
-		fv := FieldViewNew(id, rval.Addr().Interface(), v.params)
-		fv.Vertical = !v.Vertical || v.field.LabelizeWidth != 0
+		copyParams := v.params
+		// copyParams.Labelize = false
+		fv := FieldViewNew(id, rval.Addr().Interface(), copyParams)
+		fv.Vertical = !v.Vertical || v.field.HasFlag(FlagIsLabelize)
+		// zlog.Info("FieldSliceView:AddItem", fv.Vertical)
 		fv.SetMargin(zgeo.RectFromXY2(4, 4, -4, -4))
 		fv.parent = &v.FieldView
 		if v.field.Flags&FlagGroupSingle == 0 || v.field.IsStatic() {
@@ -195,8 +198,8 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 			if f.FieldName == v.indicatorFieldName {
 				v.updateMenu()
 			}
-			v.callEditedAction()
-			return true
+			// v.callEditedAction() // we return false below instead
+			return false
 		})
 	} else {
 		special, skip := v.createSpecialView(rval, v.field)
