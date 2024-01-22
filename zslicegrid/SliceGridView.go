@@ -148,7 +148,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.slicePtr = slice
 
 	v.EditParameters = zfields.FieldViewParametersDefault()
-	v.EditParameters.LabelizeWidth = 120
+	v.EditParameters.Field.Flags |= zfields.FlagIsLabelize
 	v.EditParameters.HideStatic = true
 	v.EditParameters.EditWithoutCallbacks = true
 
@@ -265,9 +265,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
-		if v.StoreChangedItemFunc == nil {
-			return
-		}
+		zlog.Assert(v.StoreChangedItemFunc != nil)
 		showErr := true
 		var storeItems []S
 		var wg sync.WaitGroup
@@ -286,12 +284,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 				}
 				wg.Done()
 			}(i, item)
-			// }
 		}
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
 		v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
 	}
+
 	v.DeleteItemsFunc = func(ids []string) {
 		if v.DeleteItemFunc == nil {
 			return
@@ -530,29 +528,30 @@ func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	return items
 }
 
-func (v *SliceGridView[S]) EditItemIDs(ids []string) {
+func (v *SliceGridView[S]) EditItemIDs(ids []string, after func(ok bool)) {
 	items := v.getItemsFromIDs(ids)
 	if len(items) == 0 {
 		zlog.Fatal(nil, "SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
 	title := "Edit " + v.NameOfXItemsFunc(ids, true)
 	// zlog.Info("EditItemIDs", zlog.Pointer(&items), zlog.Pointer(v.slicePtr))
-	v.EditItems(items, title, false, false)
+	v.EditItems(items, title, false, false, after)
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
 	// ids := v.Grid.SelectedIDs()
 }
 
-func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool) {
+func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
 	params := v.EditParameters
-	if params.LabelizeWidth == 0 {
-		params.LabelizeWidth = 120
-	}
+	params.Field.Flags |= zfields.FlagIsLabelize
 	params.Styling.Spacing = 10
 	params.IsEditOnNewStruct = isEditOnNewStruct
 	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
 		if !ok {
+			if after != nil {
+				after(false)
+			}
 			return true
 		}
 		if v.StoreChangedItemsFunc != nil { // if we do this before setting the slice below, StoreChangedItemsFunc func can compare with original items
@@ -564,6 +563,9 @@ func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, se
 				ids = append(ids, n.GetStrID())
 			}
 			v.Grid.SelectCells(ids, true)
+		}
+		if after != nil {
+			after(true)
 		}
 		return true
 	})
@@ -578,7 +580,7 @@ func (v *SliceGridView[S]) addNewItem() {
 	if initer != nil {
 		initer.InitZFieldStruct()
 	}
-	v.EditItems([]S{ns}, title, true, true)
+	v.EditItems([]S{ns}, title, true, true, nil)
 }
 
 func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
@@ -592,7 +594,7 @@ func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
 		}
 		newItems = append(newItems, n)
 	}
-	v.EditItems(newItems, title, false, true)
+	v.EditItems(newItems, title, false, true, nil)
 }
 
 func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
@@ -724,7 +726,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 			}
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
-					v.EditItemIDs(ids)
+					v.EditItemIDs(ids, nil)
 				})
 				items = append(items, edit)
 			}
@@ -747,7 +749,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItemsForCell(id string) []zmenu.Menu
 	}
 	if v.options&AllowEdit != 0 {
 		edit := zmenu.MenuedSCFuncAction("Edit "+name, 'E', 0, func() {
-			v.EditItemIDs(ids)
+			v.EditItemIDs(ids, nil)
 		})
 		items = append(items, edit)
 	}
