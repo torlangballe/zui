@@ -167,12 +167,12 @@ func editSliceIndicator(s *StructCommander, c *zcommands.CommandInfo, edit editF
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
-		fval, _, findex := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
+		finfo, found := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
 		var title string
-		if findex == -1 {
+		if !found {
 			title = fmt.Sprint(j + 1)
 		} else {
-			title = fmt.Sprint(fval.Interface())
+			title = fmt.Sprint(finfo.ReflectValue.Interface())
 		}
 		ids = append(ids, id)
 		titles = append(titles, title)
@@ -193,49 +193,49 @@ func editSliceIndicator(s *StructCommander, c *zcommands.CommandInfo, edit editF
 }
 
 func outputFields(s *StructCommander, c *zcommands.CommandInfo, path string, structurePtr any, i int, indent int, inStatic bool, edits *[]editField) int {
-	zfields.ForEachField(structurePtr, s.Parameters, []zfields.Field{}, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) bool {
+	zfields.ForEachField(structurePtr, s.Parameters, []zfields.Field{}, func(each zfields.FieldInfo) bool {
 		// col := indentColors[indent%len(indentColors)]
-		if f.Flags&zfields.FlagIsButton != 0 || f.Flags&zfields.FlagIsImage != 0 {
-			if !f.IsImageToggle() {
+		if each.Field.Flags&zfields.FlagIsButton != 0 || each.Field.Flags&zfields.FlagIsImage != 0 {
+			if !each.Field.IsImageToggle() {
 				return true // skip
 			}
 		}
-		kind := zreflect.KindFromReflectKindAndType(val.Kind(), val.Type())
-		sval, skip := getValueString(val, f, sf, 3000, false)
+		kind := zreflect.KindFromReflectKindAndType(each.ReflectValue.Kind(), each.ReflectValue.Type())
+		sval, skip := getValueString(each.ReflectValue, each.Field, each.StructField, 3000, false)
 		if skip {
 			return true
 		}
 		sindent := strings.Repeat(" ", 2*indent)
 		var readOnlyStruct bool
-		if val.Kind() == reflect.Struct {
+		if each.ReflectValue.Kind() == reflect.Struct {
 			if sval == "" {
-				c.Session.TermSession.Writeln(sindent + zstr.EscMagenta + f.Name + zstr.EscNoColor)
-				// zlog.Info("AddSubStructEdit:", reflect.TypeOf(structurePtr), f.Name, val.Type(), val.CanAddr())
-				i = outputFields(s, c, path+"/"+sf.Name, val.Addr().Interface(), i, indent+1, f.IsStatic(), edits)
+				c.Session.TermSession.Writeln(sindent + zstr.EscMagenta + each.Field.Name + zstr.EscNoColor)
+				// zlog.Info("AddSubStructEdit:", reflect.TypeOf(structurePtr), each.Field.Name, each.ReflectValue.Type(), val.CanAddr())
+				i = outputFields(s, c, path+"/"+each.StructField.Name, each.ReflectValue.Addr().Interface(), i, indent+1, each.Field.IsStatic(), edits)
 				return true
 			}
-			if f.LocalEnum == "" {
-				_, got := val.Interface().(zfields.UISetStringer)
+			if each.Field.LocalEnum == "" {
+				_, got := each.ReflectValue.Interface().(zfields.UISetStringer)
 				readOnlyStruct = !got
 			}
 		}
 		var pre string
-		fpath := path + "/" + sf.Name
-		if kind == zreflect.KindSlice && val.Type().Elem().Kind() == reflect.Struct {
-			sliceVal := val
-			if val.CanAddr() {
-				sliceVal = val.Addr()
+		fpath := path + "/" + each.StructField.Name
+		if kind == zreflect.KindSlice && each.ReflectValue.Type().Elem().Kind() == reflect.Struct {
+			sliceVal := each.ReflectValue
+			if each.ReflectValue.CanAddr() {
+				sliceVal = each.ReflectValue.Addr()
 			}
-			i = outputSlice(s, c, pre, fpath, sliceVal, f, i, indent, edits)
+			i = outputSlice(s, c, pre, fpath, sliceVal, each.Field, i, indent, edits)
 			return true
 		}
-		if !f.IsStatic() && !inStatic && !readOnlyStruct && s.UpdateFunc != nil {
+		if !each.Field.IsStatic() && !inStatic && !readOnlyStruct && s.UpdateFunc != nil {
 			pre = fmt.Sprintf("%d) ", i+1)
-			zlog.Info("AddEdit:", reflect.TypeOf(structurePtr), f.Name, val.Type(), val.CanAddr())
-			*edits = append(*edits, editField{value: val, field: f})
+			zlog.Info("AddEdit:", reflect.TypeOf(structurePtr), each.Field.Name, each.ReflectValue.Type(), each.ReflectValue.CanAddr())
+			*edits = append(*edits, editField{value: each.ReflectValue, field: each.Field})
 			i++
 		}
-		c.Session.TermSession.Write(sindent, zstr.EscGreen, pre, f.Name, zstr.EscNoColor, " ", sval, "\n")
+		c.Session.TermSession.Write(sindent, zstr.EscGreen, pre, each.Field.Name, zstr.EscNoColor, " ", sval, "\n")
 		return true
 	})
 	return i
@@ -259,11 +259,12 @@ func outputSlice(s *StructCommander, c *zcommands.CommandInfo, pre, path string,
 	lastUsedID, _ := zkeyvalue.DefaultStore.GetString(key)
 	for j := 0; j < length; j++ {
 		a := sliceVal.Index(j).Addr().Interface()
-		fval, _, indicatorIndex := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
+		// fval, _, indicatorIndex := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
+		finfo, found := zreflect.FieldForName(a, zfields.FlattenIfAnonymousOrZUITag, indicatorName)
 		id := zstr.GetIDFromAnySliceItemWithIndex(a, j)
 		if lastUsedID == id || lastUsedID == "" || j == length-1 {
-			title := fmt.Sprint(fval)
-			if indicatorIndex == -1 || lastUsedID == "" {
+			title := fmt.Sprint(finfo.ReflectValue)
+			if !found || lastUsedID == "" {
 				title = fmt.Sprint(j + 1)
 			}
 			c.Session.TermSession.Write(sindent, zstr.EscCyan, pre, f.Name, zstr.EscNoColor, " [", title, "/", length, "]\n")

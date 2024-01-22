@@ -188,26 +188,26 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWrite
 	var tabColumn int = 1 // we start at one, since we output index as well
 	keep := (wildCard == "")
 
-	zfields.ForEachField(val.Interface(), s.RowParameters, []zfields.Field{}, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) bool {
-		if f.Flags&zfields.FlagIsButton != 0 || f.Flags&zfields.FlagIsImage != 0 {
-			if !f.IsImageToggle() {
+	zfields.ForEachField(val.Interface(), s.RowParameters, []zfields.Field{}, func(each zfields.FieldInfo) bool {
+		if each.Field.Flags&zfields.FlagIsButton != 0 || each.Field.Flags&zfields.FlagIsImage != 0 {
+			if !each.Field.IsImageToggle() {
 				return true // skip
 			}
 		}
 		if i == 0 {
-			title := f.Name
-			if f.Title != "" {
-				title = f.Title
+			title := each.Field.Name
+			if each.Field.Title != "" {
+				title = each.Field.Title
 			}
 			title = strings.Replace(title, " ", "", -1)
 			fmt.Fprint(tabs, zstr.EscGreen, title, "\t")
 		}
 		cols := 60
-		if f.Columns != 0 {
-			cols = f.Columns
+		if each.Field.Columns != 0 {
+			cols = each.Field.Columns
 		}
 		tabs.MaxColumnWidths[tabColumn] = cols
-		sval, skip := getValueString(val, f, sf, cols, true)
+		sval, skip := getValueString(val, each.Field, each.StructField, cols, true)
 		if skip {
 			return true
 		}
@@ -216,7 +216,7 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWrite
 			"\t", " ",
 		)
 		sval = replacer.Replace(sval)
-		if f.Justify&zgeo.Right != 0 {
+		if each.Field.Justify&zgeo.Right != 0 {
 			tabs.RighAdjustedColumns[tabColumn] = true
 		}
 		if !keep && wildCard != "" && zstr.MatchWildcard(wildCard, sval) {
@@ -224,13 +224,13 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWrite
 		}
 		tabColumn++
 		var diffed bool
-		_, got := f.CustomFields["diff"]
+		_, got := each.Field.CustomFields["diff"]
 		if got && len(sval) > cols {
 			if s.diffMatch == nil {
 				s.diffMatch = diffmatchpatch.New()
 			}
-			last := lastFieldValues[index]
-			lastFieldValues[index] = sval
+			last := lastFieldValues[each.FieldIndex]
+			lastFieldValues[each.FieldIndex] = sval
 			if len(last) > cols && last != sval {
 				sval = MakeColoredDiff(s.diffMatch, last, sval, cols)
 				diffed = true

@@ -3,7 +3,6 @@
 package zslicegrid
 
 import (
-	"reflect"
 	"strings"
 
 	"github.com/torlangballe/zui/zfields"
@@ -64,6 +63,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		r := v.createRow(id)
 		return r
 	}
+	// zlog.Info("TABLE INIT:", v.Hierarchy(), v.Grid.CreateCellFunc != nil, zlog.Pointer(v.Grid))
 	if v.options&AddHeader != 0 {
 		v.Header = zheader.NewView(v.ObjectName() + ".header")
 		index := 0
@@ -124,8 +124,8 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
-	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(index int, f *zfields.Field, val reflect.Value, sf reflect.StructField) bool {
-		v.fields = append(v.fields, *f)
+	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
+		v.fields = append(v.fields, *each.Field)
 		return true
 	})
 	if v.options&AddHeader != 0 {
