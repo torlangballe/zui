@@ -26,48 +26,48 @@ const (
 const DefaultSecs = 0.8
 const repeatInfinite = -1
 
-func AnimationRemoveAllFromView(view *zview.NativeView) {
+func RemoveAllFromView(view *zview.NativeView) {
 }
 
-func AnimationViewHasAnimations(view *zview.NativeView) bool {
+func ViewHasAnimations(view *zview.NativeView) bool {
 	return false
 }
 
-func AnimationPulseView(view *zview.NativeView, scale float64, durationSecs float64, fromScale float64, repeatCount float64) {
+func PulseView(view *zview.NativeView, scale float64, durationSecs float64, fromScale float64, repeatCount float64) {
 	animateView(view, fromScale, scale, durationSecs, "transform.scale", repeatCount, false)
 }
 
-func AnimationScaleView(view *zview.NativeView, scaleTo float64, durationSecs float64) {
+func ScaleView(view *zview.NativeView, scaleTo float64, durationSecs float64) {
 	animateView(view, 1, scaleTo, durationSecs, "transform.scale", 1, false)
 }
 
-func AnimationFadeView(view *zview.NativeView, to float64, durationSecs float64, from float64) {
+func FadeView(view *zview.NativeView, to float64, durationSecs float64, from float64) {
 	animateView(view, from, to, durationSecs, "opacity", 0, false)
 }
 
-func AnimationPulseOpacity(view *zview.NativeView, to float64, durationSecs float64, from float64, repeatCount float64) {
+func PulseOpacity(view *zview.NativeView, to float64, durationSecs float64, from float64, repeatCount float64) {
 	animateView(view, from, to, durationSecs, "opacity", repeatCount, false)
 }
 
-func AnimationRippleWidget(view *zview.NativeView, durationSecs float64) {
+func RippleWidget(view *zview.NativeView, durationSecs float64) {
 }
 
-func AnimationMoveViewOnPath(view *zview.NativeView, path *zgeo.Path, float64, repeatCount float64, begin float64) {
+func MoveViewOnPath(view *zview.NativeView, path *zgeo.Path, float64, repeatCount float64, begin float64) {
 }
 
-func AnimationRotateView(view *zview.NativeView, degreesClockwise float64, secs float64, repeatCount float64) {
+func RotateView(view *zview.NativeView, degreesClockwise float64, secs float64, repeatCount float64) {
 }
 
 type GradientLayer int
 
-func AnimationAddGradientToView(view *zview.NativeView, colors []zgeo.Color, locations [][]float64, durationSecs float64, autoReverse bool, speed float64, opacity float64, min, max zgeo.Pos) *GradientLayer {
+func AddGradientToView(view *zview.NativeView, colors []zgeo.Color, locations [][]float64, durationSecs float64, autoReverse bool, speed float64, opacity float64, min, max zgeo.Pos) *GradientLayer {
 	return nil
 }
 
-func AnimationSetViewLayerSpeed(view *zview.NativeView, speed float64, resetTime bool) {
+func SetViewLayerSpeed(view *zview.NativeView, speed float64, resetTime bool) {
 }
 
-func AnimationFlipViewHorizontal(view *zview.NativeView, durationSecs float64, left bool, animate *func()) {
+func FlipViewHorizontal(view *zview.NativeView, durationSecs float64, left bool, animate *func()) {
 	//        let  uitrans = left ? *zview.NativeViewAnimationTransition.flipFromLeft   *zview.NativeViewAnimationTransition.flipFromRight
 }
 
