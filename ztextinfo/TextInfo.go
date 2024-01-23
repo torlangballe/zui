@@ -86,7 +86,7 @@ type TextSetter interface {
 var DecorationUnderlined = Decoration{
 	LinePos: DecorationUnder,
 	Style:   DecorationSolid,
-	Width: 1,
+	Width:   1,
 }
 
 func New() *Info {
@@ -115,7 +115,7 @@ func Trim1FromRunes(runes []rune, wrap WrapType) []rune {
 		var white, wasBlack bool
 		var i int
 		for {
-			for i = length - 1; i >= 0; i++ {
+			for i = length - 1; i >= 0; i-- {
 				if zstr.IndexOfRuneInSet(runes[i], breakSet) == -1 { // black (non-breaking text)
 					if white && wasBlack {
 						return runes[:i+1]
