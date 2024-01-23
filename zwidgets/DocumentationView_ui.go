@@ -4,7 +4,6 @@ package zwidgets
 
 import (
 	"github.com/torlangballe/zui"
-	"github.com/torlangballe/zui/zcode"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zpresent"
@@ -14,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 // https://apple.stackexchange.com/questions/365857/create-system-preferences-url-to-privacy-files-and-folders-in-10-15-catalina
@@ -78,19 +76,19 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	if zui.DebugOwnerMode {
 		edit := zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.SizeBoth(zweb.DefaultBarIconSize))
 		edit.DownsampleImages = true
-		edit.SetPressedHandler(v.startEdit)
+		// edit.SetPressedHandler(v.startEdit)
 		v.WebView.Bar.Add(edit, zgeo.CenterLeft)
 	}
 	return v
 }
 
-func (v *DocumentationView) startEdit() {
-	zlog.Info("Edit")
-	editor := zcode.NewEditorView("", 50, 50)
-	hstack := v.NativeView.Child("hstack").(*zcontainer.StackView)
-	hstack.AddAdvanced(editor, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, 0, false)
-	v.ArrangeChildren()
-}
+// func (v *DocumentationView) startEdit() {
+// 	zlog.Info("Edit")
+// 	editor := zcode.NewEditorView("", 50, 50)
+// 	hstack := v.NativeView.Child("hstack").(*zcontainer.StackView)
+// 	hstack.AddAdvanced(editor, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, 0, false)
+// 	v.ArrangeChildren()
+// }
 
 // func setCSSFile(win *Window, surl string) {
 // 	var css string
