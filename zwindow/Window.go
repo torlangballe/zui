@@ -176,5 +176,8 @@ func (win *Window) SetAddressBarPathAndArgs(spath string, args zdict.Dict) {
 }
 
 func TopView(win *Window) zview.View {
+	if win == nil {
+		win = Current()
+	}
 	return win.ViewsStack[len(win.ViewsStack)-1]
 }

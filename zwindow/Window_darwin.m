@@ -27,8 +27,8 @@ void *NewWindow(int x, int y, int width, int height)
                                               backing:NSBackingStoreBuffered 
                                               defer:NO];
 
-    [window setLevel:NSNormalWindowLevel];
-//    [window setLevel:NSMainMenuWindowLevel+1];
+    // [window setLevel:NSNormalWindowLevel];
+    [window setLevel:NSMainMenuWindowLevel+1];
     [window setOpaque:YES];
     NSLog(@"NewWindow\n");
     return window;
