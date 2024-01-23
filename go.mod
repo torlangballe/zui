@@ -8,7 +8,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sergi/go-diff v1.3.1
-	github.com/torlangballe/zutil v0.0.0-20240118120135-61ee18ca73de
+	github.com/torlangballe/zutil v0.0.0-20240123140536-00385b295855
 )
 
 require (
