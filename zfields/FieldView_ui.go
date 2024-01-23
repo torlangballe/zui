@@ -1425,7 +1425,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				desc = " " // we force an empty description so grid handles easy
 			}
 		}
-		_, lstack, cell = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
+		_, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
 		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}

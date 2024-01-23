@@ -158,9 +158,6 @@ func (v *CustomView) drawSelf() {
 var count int
 
 func (v *CustomView) ExposeIn(secs float64) {
-	// if v.ObjectName() == "sort" {
-	// 	zlog.Info(v.ObjectName(), "CV Expose:", v.draw, v.visible)
-	// }
 	if v.draw == nil {
 		return
 	}
