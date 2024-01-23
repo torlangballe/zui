@@ -3,6 +3,7 @@
 package zview
 
 import (
+	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -85,4 +86,32 @@ func (v *NativeView) IsParentOf(c *NativeView) bool {
 		}
 	}
 	return false
+}
+
+func (v *NativeView) SetResizeCursorFromAlignment(a zgeo.Alignment) bool {
+	var cursor zcursor.Type
+	switch a {
+	case zgeo.Top:
+		cursor = zcursor.ResizeTop
+	case zgeo.Bottom:
+		cursor = zcursor.ResizeBottom
+	case zgeo.Left:
+		cursor = zcursor.ResizeLeft
+	case zgeo.Right:
+		cursor = zcursor.ResizeRight
+	case zgeo.TopLeft:
+		cursor = zcursor.ResizeTopLeft
+	case zgeo.TopRight:
+		cursor = zcursor.ResizeTopRight
+	case zgeo.BottomLeft:
+		cursor = zcursor.ResizeBottomLeft
+	case zgeo.BottomRight:
+		cursor = zcursor.ResizeBottomRight
+	case zgeo.Center:
+		cursor = zcursor.Grab
+	default:
+		return false
+	}
+	v.SetCursor(cursor)
+	return true
 }
