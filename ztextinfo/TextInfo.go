@@ -126,8 +126,11 @@ func Trim1FromRunes(runes []rune, wrap WrapType) []rune {
 					white = true
 				}
 			}
+			if i == -1 {
+				break
+			}
 		}
-		return runes[:i]
+		fallthrough
 
 	case WrapChar:
 	case WrapTailTruncate:
@@ -213,10 +216,10 @@ func reduceTextToFit(ti *Info) {
 	runes := []rune(ti.Text)
 	for {
 		s := zcanvas.GetTextSize(ti.Text, ti.Font)
-		// zlog.Info("REDUCE1:", ti.Wrap, ti.Text, s, ti.Rect.Size.W)
+		zlog.Info("REDUCE1:", ti.Wrap, ti.Text, s, ti.Rect.Size.W)
 		if s.W <= ti.Rect.Size.W {
-			return
 			// zlog.Info("REDUCED:", lines)
+			return
 		}
 		runes = Trim1FromRunes(runes, ti.Wrap)
 		ti.Text = string(runes) + "…"
@@ -282,7 +285,6 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 				x += (ra.Size.W - widths[i])
 			}
 		}
-		// zlog.Info("TI.Draw:", ti.Rect, x, y, font.Size, s)
 		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, w)
 		y += h
 	}
