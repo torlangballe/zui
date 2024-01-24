@@ -198,8 +198,7 @@ func updateTimeInfo() {
 	t := time.Now().Local()
 	name, offset := t.Zone()
 	if name != lastTimeZoneName {
-		zlog.Info("updateTimeInfo:", t)
-		ServerTimeJSISO.Set(t.UTC().Format(ztime.JavascriptISO), true)
+=		ServerTimeJSISO.Set(t.UTC().Format(ztime.JavascriptISO), true)
 		ServerTimezoneName.Set(name, true)
 		ServerTimeDifferenceSeconds.Set(offset, true)
 		lastTimeZoneName = name
