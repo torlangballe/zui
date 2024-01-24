@@ -218,6 +218,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	v.Grid.IDAtIndexFunc = func(i int) string {
 		if !hasHierarchy {
+			if i >= len(v.filteredSlice) {
+				return ""
+			}
 			return v.filteredSlice[i].GetStrID()
 		}
 		var count int
