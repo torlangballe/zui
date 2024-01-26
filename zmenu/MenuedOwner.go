@@ -509,8 +509,8 @@ func (o *MenuedOwner) popup() {
 				} else if item.Function != nil {
 					go func() {
 						item.Function()
-						o.getItems()
-						o.updateTitleAndImage()
+						// o.getItems() // getItems+updateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
+						// o.updateTitleAndImage()
 					}()
 				} else if o.ActionHandlerFunc != nil {
 					id := item.Value.(string)
@@ -586,7 +586,6 @@ func (o *MenuedOwner) popup() {
 
 func (o *MenuedOwner) tryEditActions(item MenuedOItem, selected map[string]bool) bool {
 	str, is := item.Value.(string)
-	zlog.Info("tryEditActions:", str, is)
 	if !is {
 		return false
 	}
