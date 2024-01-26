@@ -619,11 +619,9 @@ func FocusNext(view zview.View, recursive, loop bool) {
 }
 
 func init() {
-	zview.RangeAllChildrenFunc = func(root zview.View, visible bool, got func(zview.View) bool) {
+	zview.RangeChildrenFunc = func(root zview.View, recursive, includeCollapsed bool, got func(zview.View) bool) {
 		// ct, _ := root.(ContainerOwner)
 		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
-		recursive := true
-		includeCollapsed := false
 		ViewRangeChildren(root, recursive, includeCollapsed, got)
 	}
 	zview.ChildOfViewFunc = ChildView

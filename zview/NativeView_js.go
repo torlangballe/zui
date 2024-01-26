@@ -346,7 +346,7 @@ func (v *NativeView) SetUsable(usable bool) {
 	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
 	zbits.ChangeBit((*int64)(&v.Flags), ViewUsableFlag, usable)
 	v.setUsableAttributes(usable)
-	RangeAllChildrenFunc(v, false, func(view View) bool {
+	RangeChildrenFunc(v, false, true, func(view View) bool {
 		view.Native().setUsableAttributes(usable)
 		return true
 	})
@@ -467,7 +467,7 @@ func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, 
 func FindChildWithElement(root *NativeView, e js.Value) View {
 	var found View
 	foundID := e.Get("id").String()
-	RangeAllChildrenFunc(root.View, true, func(view View) bool {
+	RangeChildrenFunc(root.View, true, true, func(view View) bool {
 		n := view
 		id := n.Native().JSGet("id").String()
 		if id == foundID {

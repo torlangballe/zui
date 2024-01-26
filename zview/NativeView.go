@@ -36,10 +36,10 @@ const (
 )
 
 var (
-	ChildOfViewFunc      func(v View, path string) View
-	RangeAllChildrenFunc func(root View, visibleOnly bool, got func(View) bool)
-	LastPressedPos       zgeo.Pos
-	SkipEnterHandler     bool
+	ChildOfViewFunc   func(v View, path string) View
+	RangeChildrenFunc func(root View, recursive, includeCollapsed bool, got func(View) bool)
+	LastPressedPos    zgeo.Pos
+	SkipEnterHandler  bool
 )
 
 func (v *NativeView) IsPresented() bool {
@@ -64,19 +64,23 @@ func (v *NativeView) AddOnAddFunc(f func()) {
 }
 
 func (v *NativeView) PerformAddRemoveFuncs(add bool) {
+	var count int
 	if add {
 		for _, f := range v.DoOnAdd {
 			f()
 		}
 		return
 	}
-	RangeAllChildrenFunc(v.View, false, func(child View) bool {
+	// zlog.Info("PerformAddRemoveFuncs START:", zlog.Pointer(v), v.Hierarchy(), len(v.DoOnRemove))
+	RangeChildrenFunc(v.View, false, true, func(child View) bool {
 		child.Native().PerformAddRemoveFuncs(false)
+		count++
 		return true
 	})
 	for _, f := range v.DoOnRemove {
 		f()
 	}
+	// zlog.Info(indent+"PerformAddRemoveFuncs  DONE:", zlog.Pointer(v), v.Hierarchy(), len(v.DoOnRemove), count)
 }
 
 func (v *NativeView) IsParentOf(c *NativeView) bool {
