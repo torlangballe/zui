@@ -90,7 +90,7 @@ var (
 	DefaultCellColor    = zgeo.ColorNewGray(0.95, 1)
 	DefaultBorderColor  = zgeo.ColorDarkGray
 	DefaultPressedColor = zstyle.DefaultFGColor().WithOpacity(0.6)
-	DefaultSelectColor  = zstyle.DefaultFGColor().WithOpacity(0.3)
+	DefaultSelectColor  = zstyle.Col(zgeo.ColorNew(0.6, 0.9, 0.8, 1), zgeo.ColorNew(0.2, 0.5, 0.4, 1))
 	DefaultHoverColor   = DefaultPressedColor
 )
 
@@ -758,11 +758,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		var s zgeo.Size
 		s.W = float64(x+1)*width/float64(v.Columns) - float64(x)*width/float64(v.Columns)
 		s.H = childSize.H
-		// if r.Max().X < endx {
-		// zlog.Info("HERE???", v.Columns, r.Max().X, endx, x+1, width, v.Columns)
-
 		r := zgeo.Rect{Pos: pos, Size: s}
-		// }
 		lastx := (x == v.Columns-1)
 		lasty := (y == v.Rows-1)
 		var minx, maxx, miny, maxy float64
