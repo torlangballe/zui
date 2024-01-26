@@ -425,6 +425,12 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			v.updateSeparatedStringWithSlice(f, rval, foundView)
 			break
 		}
+		if f.HasFlag(FlagShowSliceCount) {
+			label, _ := foundView.(*zlabel.Label)
+			label.SetText(strconv.Itoa(rval.Len()))
+			return true
+		}
+
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
@@ -1188,6 +1194,11 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if got && (f.IsStatic() || v.params.AllStatic) {
 		return v.makeText(rval, f, false), false
 	}
+	if f.HasFlag(FlagShowSliceCount) {
+		zlog.Assert(rval.Kind() == reflect.Slice, rval.Kind(), f.Name)
+		zlog.Assert(f.IsStatic(), f.Name)
+		return v.makeText(rval, f, false), false
+	}
 	return nil, false
 }
 
@@ -1326,6 +1337,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				label.Columns = columns
 				if f.Flags&FlagIsDuration != 0 || f.OldSecs != 0 {
 					timer := ztimer.RepeatNow(1, func() bool {
+						// zlog.Info("Repeat time update", zlog.Pointer(nat), nat.Hierarchy())
 						nlabel := view.(*zlabel.Label)
 						if f.Flags&FlagIsDuration != 0 {
 							v.updateSinceTime(nlabel, f)
@@ -1334,7 +1346,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 						}
 						return true
 					})
-					v.AddOnRemoveFunc(timer.Stop)
+					// v.AddOnRemoveFunc(timer.Stop)
 					view.Native().AddOnRemoveFunc(timer.Stop)
 				} else {
 					if f.Format == "nice" {

@@ -69,7 +69,8 @@ const (
 	CreateFieldViewAction ActionType = "createview"  // called to create view, view is pointer to view and is returned in it
 	CreatedViewAction     ActionType = "createdview" // called after view created, view is pointer to newly created view.
 
-	RowUseInSpecialName = "$row"
+	RowUseInSpecialName    = "$row"
+	DialogUseInSpecialName = "$dialog"
 )
 
 // The FlagType are a number of flags a field can have set, based on the struct field/tag it is created from.
@@ -114,6 +115,7 @@ const (
 	FlagIsEdit                                        // If set things like slice-menus have an edit and delete option
 	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
+	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
 )
 
 const (
@@ -245,11 +247,11 @@ func (f Field) HasFlag(flag FlagType) bool {
 	return f.Flags&flag != 0
 }
 
-func (f Field) SetFlag(flag FlagType) {
+func (f *Field) SetFlag(flag FlagType) {
 	f.Flags |= flag
 }
 
-func (f Field) ClearFlag(flag FlagType) {
+func (f *Field) ClearFlag(flag FlagType) {
 	f.Flags &= ^flag
 }
 
@@ -278,12 +280,11 @@ func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int
 var colonReplacer = strings.NewReplacer("::", "•°©")
 var colonReReplacer = strings.NewReplacer("•°©", ":")
 
-func GetZUITagMap(tagMap map[string][]string) (m map[string]string, skip bool) {
+func GetZUITags(tagMap map[string][]string) (keyVals []zstr.KeyValue, skip bool) {
 	zuiParts, got := tagMap["zui"]
 	if !got {
 		return nil, false
 	}
-	m = map[string]string{}
 	for _, part := range zuiParts {
 		if part == "-" {
 			return nil, true
@@ -298,9 +299,9 @@ func GetZUITagMap(tagMap map[string][]string) (m map[string]string, skip bool) {
 		}
 		key = strings.TrimSpace(key)
 		val = strings.TrimSpace(val)
-		m[key] = val
+		keyVals = append(keyVals, zstr.KeyValue{Key: key, Value: val})
 	}
-	return m, false
+	return keyVals, false
 }
 
 func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
@@ -320,11 +321,13 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
-	kvMap, skip := GetZUITagMap(zreflect.GetTagAsMap(string(sf.Tag)))
+	keyVals, skip := GetZUITags(zreflect.GetTagAsMap(string(sf.Tag)))
 	if skip {
 		return false
 	}
-	for key, val := range kvMap {
+	for _, kv := range keyVals {
+		key := kv.Key
+		val := kv.Value
 		origVal := val
 		barParts := strings.Split(val, "|")
 		if key == "IN" {
@@ -380,6 +383,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if val == "" {
 				f.StringSep = " "
 			}
+		case "count":
+			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
 		case "isuseinval":
 			f.Flags |= FlagIsUseInValue
 		case "color":
@@ -1017,12 +1022,16 @@ func FlattenIfAnonymousOrZUITag(f reflect.StructField) bool {
 	if f.Anonymous {
 		return true
 	}
-	kvMap, skip := GetZUITagMap(zreflect.GetTagAsMap(string(f.Tag)))
+	kvMap, skip := GetZUITags(zreflect.GetTagAsMap(string(f.Tag)))
 	if kvMap == nil || skip {
 		return false
 	}
-	_, got := kvMap["flatten"]
-	return got
+	for _, kv := range kvMap {
+		if kv.Key == "flatten" {
+			return true
+		}
+	}
+	return false
 }
 
 type FieldInfo struct {
@@ -1062,9 +1071,6 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
-		// isInRow := zstr.StringsContain(params.UseInValues, RowUseInSpecialName)
-		// wantsDialog := zstr.StringsContain(f.UseIn, "$dialog")
-		// zlog.Info("IFIn:", f.Name, wantsDialog, len(f.UseIn), isInRow, zstr.SlicesIntersect(f.UseIn, params.UseInValues))
 		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues))) { //} || (isInRow && !wantsDialog))) {
 			return true
 		}
@@ -1133,12 +1139,13 @@ func getField(val reflect.Value, indent, desc string) string {
 	return ""
 }
 
+// OutputJsonStructDescription outputs a json encoding of s, but with descriptions etc from zui tags
 func OutputJsonStructDescription(s any, indent string) string {
 	var str string
 	str += indent + "struct {\n"
 	zreflect.ForEachField(s, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 		tagMap := zreflect.GetTagAsMap(string(each.StructField.Tag))
-		zuiMap, _ := GetZUITagMap(tagMap)
+		zuiKV, _ := GetZUITags(tagMap)
 		fn := each.StructField.Name
 		tj := tagMap["json"]
 		if len(tj) != 0 && tj[0] != "" {
@@ -1148,8 +1155,13 @@ func OutputJsonStructDescription(s any, indent string) string {
 			fn = tj[0]
 		}
 		var desc string
-		if zuiMap != nil {
-			desc = zuiMap["desc"]
+		if zuiKV != nil {
+			for _, kv := range zuiKV {
+				if kv.Key == "desc" {
+					desc = kv.Value
+					break
+				}
+			}
 		}
 		str += indent + `"` + fn + `": `
 		str += getField(each.ReflectValue, indent+"  ", desc)
