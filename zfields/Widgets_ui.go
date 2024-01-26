@@ -14,6 +14,7 @@ type AmountCircleWidgeter struct{}
 type ActivityWidgeter struct{}
 type SetImagesWidgeter struct{}
 type ColorWidgeter struct{}
+type ScreensViewWidgeter struct{}
 
 func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
@@ -21,6 +22,7 @@ func init() {
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
 	RegisterWidgeter("set-images", SetImagesWidgeter{})
 	RegisterWidgeter("zcolor", ColorWidgeter{})
+	RegisterWidgeter("zscreens", ScreensViewWidgeter{})
 }
 
 func (a AmountBarWidgeter) Create(f *Field) zview.View {
@@ -92,4 +94,12 @@ func (a SetImagesWidgeter) Create(f *Field) zview.View {
 
 func (a ColorWidgeter) Create(f *Field) zview.View {
 	return zcolor.New(zgeo.ColorClear)
+}
+
+func (s ScreensViewWidgeter) Create(f *Field) zview.View {
+	minSize := zgeo.SizeD(120, 90)
+	if f.Size.IsNull() {
+		minSize = f.Size
+	}
+	return zwidgets.NewScreensView(minSize)
 }
