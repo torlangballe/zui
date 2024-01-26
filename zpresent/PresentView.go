@@ -234,10 +234,12 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 			old(dismissed)
 		}
 		plen := len(previousFocusViews)
-		oldFoc := previousFocusViews[plen-1]
-		previousFocusViews = previousFocusViews[:plen-1]
-		if oldFoc != nil {
-			oldFoc.Native().Focus(true)
+		if plen > 0 {
+			oldFoc := previousFocusViews[plen-1]
+			previousFocusViews = previousFocusViews[:plen-1]
+			if oldFoc != nil {
+				oldFoc.Native().Focus(true)
+			}
 		}
 	}
 	nv := view.Native()
