@@ -51,6 +51,9 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	host := url.Host
 	args = map[string]string{}
 	for k, v := range url.Query() {
+		if k == "zdev" && v[0] == "1" {
+			zui.DebugOwnerMode = true
+		}
 		args[k] = v[0]
 	}
 	DownloadPathPrefix = "http://" + host + zrest.AppURLPrefix
