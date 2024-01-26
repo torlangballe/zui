@@ -149,7 +149,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	v.EditParameters = zfields.FieldViewParametersDefault()
 	v.EditParameters.Field.Flags |= zfields.FlagIsLabelize
-	v.EditParameters.HideStatic = true
 	v.EditParameters.EditWithoutCallbacks = true
 
 	var s S
@@ -158,6 +157,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	if options&AllowAllEditing != 0 {
 		options |= AddMenu
+	}
+	if options&AddBarInHeader != 0 {
+		options |= AddHeader
 	}
 	if options&(AddSearch|AddMenu|AddChangeLayout|AddDocumentationIcon|AddBarInHeader) != 0 {
 		options |= AddBar
@@ -267,7 +269,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand) //, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
-		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
+		zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
 		zlog.Assert(v.StoreChangedItemFunc != nil)
 		showErr := true
 		var storeItems []S
@@ -291,6 +293,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
 		v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
+		zlog.Info("StoreChangedItemsFunc done")
 	}
 
 	v.DeleteItemsFunc = func(ids []string) {
@@ -507,19 +510,6 @@ func (v *SliceGridView[S]) UpdateSliceWithSelf() {
 	v.UpdateSlice(*v.slicePtr)
 }
 
-// func (v *SliceGridView[S]) HandleEditAction() {
-// 	ids := v.Grid.SelectedIDs()
-// 	zlog.Info("HandleEditAction:", len(ids))
-// 	if len(ids) == 0 {
-// 		zlog.Info("No Selected! Using hover")
-// 		if v.Grid.CurrentHoverID == "" {
-// 			return
-// 		}
-// 		ids = []string{v.Grid.CurrentHoverID}
-// 	}
-// 	v.EditItemIDs(ids)
-// }
-
 func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	var items []S
 	for i := 0; i < len(*v.slicePtr); i++ {
@@ -695,23 +685,21 @@ func addHierarchy(stack *zcontainer.StackView) {
 }
 */
 
-func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
+func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
-	// zlog.Info("CreateDefaultMenuItems", v.Grid.CellCountFunc())
+	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
 	ids := v.Grid.SelectedIDs()
-	if v.options&AllowNew != 0 {
+	if v.options&AllowNew != 0 && !forSingleCell {
 		del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, del)
 	}
 	if v.Grid.CellCountFunc() > 0 {
-		if v.Grid.MultiSelectable {
+		if v.Grid.MultiSelectable && !forSingleCell {
 			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
 				v.Grid.SelectAll(true)
 			})
 			items = append(items, all)
 		}
-		// zlog.Info("Edit items1:", ids)
-
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
 			var s S
@@ -734,27 +722,6 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems() []zmenu.MenuedOItem {
 				items = append(items, edit)
 			}
 		}
-	}
-	return items
-}
-
-func (v *SliceGridView[S]) CreateDefaultMenuItemsForCell(id string) []zmenu.MenuedOItem {
-	var items []zmenu.MenuedOItem
-	// zlog.Info("CreateDefaultMenuItems for cell", id)
-	ids := []string{id}
-	name := v.NameOfXItemsFunc(ids, true)
-	if v.options&AllowDelete != 0 {
-		del := zmenu.MenuedSCFuncAction("Delete "+name+"…", zkeyboard.KeyBackspace, 0, func() {
-			// zlog.Info("Delete item:", id)
-			v.DeleteItemsAsk(ids)
-		})
-		items = append(items, del)
-	}
-	if v.options&AllowEdit != 0 {
-		edit := zmenu.MenuedSCFuncAction("Edit "+name, 'E', 0, func() {
-			v.EditItemIDs(ids, nil)
-		})
-		items = append(items, edit)
 	}
 	return items
 }
