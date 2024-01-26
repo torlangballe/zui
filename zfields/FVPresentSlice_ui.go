@@ -152,7 +152,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 		return true
 	})
 	params.MultiSliceEditInProgress = (len(*structSlicePtr) > 1)
-	params.UseInValues = []string{"$dialog"}
+	params.UseInValues = []string{DialogUseInSpecialName}
 	fview := FieldViewNew("OkCancel", editStruct, params)
 	update := true
 	fview.Build(update)
