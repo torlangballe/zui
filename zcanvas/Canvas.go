@@ -148,24 +148,3 @@ func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color)
 	path := zgeo.PathNewRect(rect, zgeo.Size{})
 	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 }
-
-func MergeImages(box zgeo.Size, images []*zimage.ImageGetter, done func(img *zimage.Image)) {
-	zimage.GetImages(images, func(all bool) {
-		if !all {
-			zlog.Error(nil, "Not all images got")
-			return
-		}
-		if box.IsNull() {
-			for _, ig := range images {
-				box.Maximize(ig.Image.Size())
-			}
-		}
-		canvas := New()
-		canvas.SetSize(box)
-		for _, ig := range images {
-			r := zgeo.Rect{Size: box}.Align(ig.Image.Size(), ig.Alignment, ig.Margin)
-			canvas.DrawImageAt(ig.Image, r.Pos, false, ig.Opacity)
-		}
-		canvas.ZImage(false, done)
-	})
-}
