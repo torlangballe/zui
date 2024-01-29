@@ -619,7 +619,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.Flags |= FlagLabelizeWithDescriptions
 			}
 		case "button":
-			f.Flags |= FlagIsButton
+			f.Flags |= FlagIsButton | FlagIsStatic
 		case "enable":
 			f.LocalEnable = val
 		case "disable":
@@ -1170,3 +1170,25 @@ func OutputJsonStructDescription(s any, indent string) string {
 	str += indent + "}\n"
 	return str
 }
+
+// func HashFVStructToInt64(s any, add string) int64 {
+// 	var enums string
+// 	ForEachField(s, FieldParameters{}, nil, func(each FieldInfo) bool {
+// 		keyVals, skip := GetZUITags(zreflect.GetTagAsMap(string(each.StructField.Tag)))
+// 		zlog.Info("Hashfields:", each.StructField.Name)
+// 		if skip {
+// 			return true
+// 		}
+// 		for _, kv := range keyVals {
+// 			if kv.Key == "enum" {
+// 				enums += " " + kv.Key + ": "
+// 				enum := GetEnum(kv.Value)
+// 				data, _ := json.Marshal(enum)
+// 				enums += string(data)
+// 			}
+// 		}
+// 		return true
+// 	})
+// 	zlog.Info("HashFVStructToInt64:", reflect.TypeOf(s), enums)
+// 	return zreflect.HashAnyToInt64(s, enums+add)
+// }

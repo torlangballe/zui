@@ -76,6 +76,40 @@ func reduceLocalEnumField[S any](editStruct *S, enumField reflect.Value, index i
 	}
 }
 
+// func reduceEnumField[S any](editStruct *S, enumField reflect.Value, index int, fromStruct reflect.Value, f *Field) {
+// 	finfo := zreflect.FieldForIndex(fromStruct.Interface(), FlattenIfAnonymousOrZUITag, index)
+// 	fromVal := finfo.ReflectValue
+// 	// zlog.Info("reduceLocalEnumField", f.Name, findex, ei.Len(), ei.Type(), fromStruct.Type(), fromStruct.Kind())
+// 	var reduce, hasZero bool
+// 	for i := 0; i < ei.Len(); {
+// 		eval := ei.Index(i)
+// 		if eval.IsZero() {
+// 			hasZero = true
+// 		}
+// 		var has bool
+// 		for j := 0; j < fromVal.Len(); j++ {
+// 			if reflect.DeepEqual(eval.Interface(), fromVal.Index(j).Interface()) {
+// 				has = true
+// 				break
+// 			}
+// 		}
+// 		if has {
+// 			i++
+// 		} else {
+// 			zslice.RemoveAt(ei.Addr().Interface(), i)
+// 			reduce = true
+// 		}
+// 	}
+// 	if ei.Len() == 0 && fromVal.Len() > 0 {
+// 		reduce = true
+// 	}
+// 	// zlog.Info("REDUCE?", f.Name, reduce, hasZero)
+// 	if reduce && !hasZero {
+// 		zslice.AddEmptyElementAtEnd(ei.Addr().Interface())
+// 		// enumField.Set(reflect.Zero(enumField.Type()))
+// 	}
+// }
+
 func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 	var reduced bool
 	for i := 0; i < reduceSlice.Len(); {
@@ -120,6 +154,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 			}
 			setupWidgeter(each.Field)
 			if !reflect.DeepEqual(sliceField.Interface(), each.ReflectValue.Interface()) {
+				// zlog.Info("NoEq:", each.StructField.Name, sliceField.Interface(), each.ReflectValue.Interface())
 				if each.Field.IsStatic() {
 					if each.ReflectValue.Kind() == reflect.Slice {
 						accumilateSlice(each.ReflectValue, sliceField)
@@ -127,8 +162,8 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 						each.ReflectValue.Set(reflect.Zero(each.ReflectValue.Type()))
 					}
 				} else {
-					// if f.Enum != "" {
-					// 	reduceEnumField(val, sliceField, f.Enum)
+					// if each.Field.Enum != "" {
+					// reduceEnumField(val, sliceField, f.Enum)
 					// } else
 					if each.Field.LocalEnum != "" {
 						reduceLocalEnumField(editStruct, each.ReflectValue, each.FieldIndex, sliceVal.Index(i), each.Field)
@@ -199,7 +234,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				return false
 			}
 			// zlog.Info("EDITAfter2data:", zlog.Full(editStruct))
-			zreflect.ForEachField(editStruct, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+			ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 				if each.StructField.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}
@@ -217,7 +252,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				if params.MultiSliceEditInProgress && each.ReflectValue.Kind() == reflect.Slice {
 					if f.Enum == "" {
-						zlog.Info("Skip non-enum slice in multi-edit:", each.StructField.Name)
+						// zlog.Info("Skip non-enum slice in multi-edit:", each.StructField.Name)
 						return true // skip to next
 					}
 				}

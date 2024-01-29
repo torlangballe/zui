@@ -188,7 +188,7 @@ func (v *FieldView) Build(update bool) {
 	v.BuildStack(v.ObjectName(), a, zgeo.Size{}, true)
 	if update {
 		dontOverwriteEdited := false
-		v.Update(nil, dontOverwriteEdited)
+		v.Update(nil, dontOverwriteEdited, false)
 	}
 }
 
@@ -212,6 +212,9 @@ func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, maybeLabel zv
 }
 
 func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string) {
+	if v.params.MultiSliceEditInProgress {
+		return
+	}
 	for _, f := range v.Fields {
 		var id string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
@@ -268,6 +271,9 @@ func getLocalFromShowOrEnable(isShow bool, f *Field) (local string, neg bool) {
 }
 
 func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toFieldName string) {
+	if v.params.MultiSliceEditInProgress {
+		return
+	}
 	for _, f := range v.Fields {
 		if f.FieldName != toFieldName {
 			continue
@@ -303,7 +309,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 	}
 }
 
-func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
+func (v *FieldView) Update(data any, dontOverwriteEdited, forceOnSlice bool) {
 	// zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
 	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
@@ -315,9 +321,9 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
 	}
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
-		zlog.Info(EnableLog, "FV Update field:", each.Field.Name, recentEdit, each.Field.IsStatic(), each.StructField.Type.Kind())
+		// zlog.Info(EnableLog, "FV Update field:", each.Field.Name, recentEdit, each.Field.IsStatic(), each.StructField.Type.Kind()) // EnableLog,
 		if !recentEdit || each.Field.IsStatic() || each.StructField.Type.Kind() == reflect.Slice {
-			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited)
+			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited, forceOnSlice)
 		}
 		return true
 	})
@@ -327,7 +333,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited bool) {
 	}
 }
 
-func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited bool) bool {
+func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited, forceOnSlice bool) bool {
 	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
 	var valStr string
 	f := findFieldWithIndex(&v.Fields, index)
@@ -351,7 +357,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		called = v.callTriggerHandler(f, DataChangedAction, rval.Addr().Interface(), &foundView)
 	}
 	if !called {
-		called = callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: DataChangedAction, RVal: rval.Addr(), View: &foundView})
+		defer callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: DataChangedAction, RVal: rval.Addr(), View: &foundView})
 	}
 	if called {
 		return true
@@ -378,6 +384,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
+			// zlog.Info("updateMenu2:", v.Hierarchy(), sf.Name, enum)
 		} else {
 			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
 			zlog.Assert(findex != -1, f.Name, f.LocalEnum)
@@ -387,7 +394,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 				return false
 			}
 		}
-		if v.params.ForceZeroOption {
+		if v.params.MultiSliceEditInProgress {
 			var rtype reflect.Type
 			var hasZero bool
 			for _, item := range enum {
@@ -400,7 +407,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 					}
 				}
 			}
-			if !hasZero && rtype.Kind() != reflect.Invalid {
+			if !hasZero && rtype != nil && rtype.Kind() != reflect.Invalid {
 				item := zdict.Item{Name: "", Value: reflect.Zero(rtype)}
 				enum = append(zdict.Items{item}, enum...)
 			}
@@ -437,13 +444,13 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
-		hash := zreflect.HashAnyToInt64(reflect.ValueOf(sv.data).Elem(), "")
+		hash := zreflect.HashAnyToInt64(sv.data, "")
 		sameHash := (sv.dataHash == hash)
+		zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), sameHash)
 		sv.dataHash = hash
-		if !sameHash {
+		if !sameHash || forceOnSlice {
 			sv.UpdateSlice(rval.Addr().Interface())
 		}
-
 	case zreflect.KindTime:
 		tv, _ := foundView.(*ztext.TextView)
 		if tv != nil && tv.IsEditing() {
@@ -465,7 +472,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		if fv == nil {
 			break
 		}
-		fv.Update(rval.Addr().Interface(), dontOverwriteEdited)
+		fv.Update(rval.Addr().Interface(), dontOverwriteEdited, forceOnSlice)
 
 	case zreflect.KindBool:
 		if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
@@ -618,7 +625,8 @@ func callActionHandlerFunc(ap ActionPack) bool {
 				fv, _ := parent.View.(*FieldView)
 				if fv != nil {
 					if fv.IsSlice() {
-						fv.dataHash = zreflect.HashAnyToInt64(reflect.ValueOf(fv.data).Elem(), "")
+						zlog.Info("SetDataHash:", n.Hierarchy())
+						fv.dataHash = zreflect.HashAnyToInt64(reflect.ValueOf(fv.data).Elem().Interface(), "")
 					}
 					if !first {
 						fh2, _ := fv.data.(ActionHandler)
@@ -678,7 +686,8 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if format == "" {
 		format = "%v"
 	}
-	color := "gray"
+	color := "gray-dark"
+	// color = "dark-gray"
 	if len(f.Colors) > 0 {
 		color = f.Colors[0]
 	}
@@ -1023,7 +1032,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 			on := val.Bool()
 			on = !on
 			val.SetBool(on)
-			v.Update(nil, false)
+			v.Update(nil, false, false)
 			v.callTriggerHandler(f, EditedAction, on, &iv.View)
 			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View})
 		})
@@ -1162,32 +1171,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return menu, false
 	}
 	if f.Enum != "" {
-		enum, got := fieldEnums[f.Enum]
-		zlog.Assert(got, f.Enum, f.FieldName, enum)
-		if rval.IsZero() {
-			if !v.params.MultiSliceEditInProgress {
-				if len(enum) > 0 {
-					rv := reflect.ValueOf(enum[0].Value)
-					if rv.IsValid() {
-						rval.Set(rv)
-					} else {
-						rval.Set(reflect.Zero(rval.Type()))
-					}
-				}
-			} else {
-				var zero bool
-				for i := range enum {
-					if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
-						zero = true
-						break
-					}
-				}
-				if !zero {
-					enum = append(enum, zdict.Item{"", rval.Interface()})
-				}
-			}
-		}
-		view = v.makeMenu(rval, f, enum)
+		view = v.makeMenu(rval, f, nil)
 		return view, false
 	}
 	_, got := rval.Interface().(UIStringer)
@@ -1203,8 +1187,8 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+	// zlog.Info("FV BuildStack:", name, v.Hierarchy())
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		// zlog.Info("FV BuildStack labelized:", v.Hierarchy())
 		v.GridVerticalSpace = math.Max(6, v.Spacing())
 		v.SetSpacing(math.Max(12, v.Spacing()))
 	}
@@ -1216,7 +1200,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
-	// zlog.Info("BuildItem:", f.Name, rval.Interface())
+	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index)
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
@@ -1505,9 +1489,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		return
 	}
 	finfo := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
-	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name, rval)
+	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name)
 
-	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
+	if f.WidgetName != "" { //&& f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
 			getter, _ := view.(zview.AnyValueGetter)
@@ -1547,7 +1531,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				return bv == nil
 			})
 			if bv == nil {
-				zlog.Fatal(nil, "Should be checkbox", view, reflect.TypeOf(view))
+				zlog.Fatal(nil, "Should be checkbox", view.Native().Hierarchy(), reflect.TypeOf(view))
 			}
 		}
 		b, _ := finfo.ReflectValue.Addr().Interface().(*bool)

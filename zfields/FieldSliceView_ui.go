@@ -52,11 +52,11 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	v.params = fv.params
 	v.currentIndex = -1
 	v.params.Field.MergeInField(f)
-	v.build()
+	v.build(false)
 	return v
 }
 
-func (v *FieldSliceView) build() {
+func (v *FieldSliceView) build(addItems bool) {
 	var header *zcontainer.StackView
 	var index int
 	// zlog.Info("FieldSliceView build:", v.Hierarchy(), v.data != nil, reflect.ValueOf(v.data).Kind())
@@ -109,9 +109,11 @@ func (v *FieldSliceView) build() {
 		header.Add(v.addButton, zgeo.CenterRight)
 		v.addButton.SetPressedHandler(v.handleAddItem)
 	}
-	for i := 0; i < sliceRval.Len(); i++ {
-		// zlog.Info("SliceFView.Add:", i, v.Hierarchy(), collapse)
-		v.addItem(i, sliceRval.Index(i), collapse)
+	if addItems {
+		for i := 0; i < sliceRval.Len(); i++ {
+			// zlog.Info("SliceFView.Add:", i, v.Hierarchy(), collapse)
+			v.addItem(i, sliceRval.Index(i), collapse)
+		}
 	}
 	v.selectItem(index)
 }
@@ -162,14 +164,13 @@ func (v *FieldSliceView) handleAddItem() {
 }
 
 func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
-	var itemStack *zcontainer.StackView
 	exp := zgeo.VertExpand
 	if v.Vertical {
 		exp = zgeo.HorExpand
 	}
-	itemStack = v.stack
+	itemStack := v.stack
 	if !v.field.IsStatic() {
-		itemStack = zcontainer.StackViewNew(!v.Vertical, "item-stack")
+		itemStack = zcontainer.StackViewNew(!v.Vertical, "zitem-stack")
 		v.stack.Add(itemStack, zgeo.TopLeft|exp).Collapsed = collapse
 		collapse = false
 	}
@@ -248,6 +249,19 @@ func (v *FieldSliceView) handleDeleteItem(i int) {
 	v.callEditedAction()
 }
 
+func (v *FieldSliceView) GetNthSubFieldViewInNonStatic(n int, childName string) zview.View {
+	if n >= len(v.stack.Cells) {
+		return nil
+	}
+	itemStack := v.stack.Cells[n].View.(*zcontainer.StackView)
+	zlog.Assert(len(itemStack.Cells) == 2)
+	view := itemStack.Cells[0].View
+	if childName != "" {
+		view, _ = zcontainer.ContainerOwnerFindViewWithName(view, childName, false)
+	}
+	return view
+}
+
 func (v *FieldSliceView) handleMenuSelected() {
 	v.selectItem(v.menu.CurrentValue().(int))
 }
@@ -275,6 +289,7 @@ func (v *FieldSliceView) selectItem(i int) {
 }
 
 func (v *FieldSliceView) UpdateSlice(slicePtr any) {
+	// zlog.Info("FieldSliceView.UpdateSlice", v.Hierarchy()) //, zlog.CallingStackString())
 	var focusedPath string
 	focused := v.GetFocusedChildView(false)
 	if focused != nil {
@@ -284,7 +299,7 @@ func (v *FieldSliceView) UpdateSlice(slicePtr any) {
 		v.data = slicePtr
 	}
 	v.RemoveAllChildren()
-	v.build()
+	v.build(true)
 	f := zview.ChildOfViewFunc(v, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
 	if f != nil {
 		f.Native().Focus(true)
