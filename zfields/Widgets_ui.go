@@ -98,7 +98,7 @@ func (a ColorWidgeter) Create(f *Field) zview.View {
 
 func (s ScreensViewWidgeter) Create(f *Field) zview.View {
 	minSize := zgeo.SizeD(120, 90)
-	if f.Size.IsNull() {
+	if !f.Size.IsNull() {
 		minSize = f.Size
 	}
 	return zwidgets.NewScreensView(minSize)
