@@ -53,12 +53,12 @@ type SliceGridView[S zstr.StrIDer] struct {
 	NameOfXItemsFunc      func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc  func(ids []string) string
 	UpdateViewFunc        func()
-	SortFunc              func(s []S)                                   // SortFunc is called to sort the slice after any updates.
-	FilterFunc            func(s S) bool                                // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
-	StoreChangedItemsFunc func(items []S)                               // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
-	StoreChangedItemFunc  func(item S, last bool) error                 // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
-	DeleteItemsFunc       func(ids []string)                            // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
-	DeleteItemFunc        func(item *S, showErr *bool, last bool) error // DeleteItemFunc is called from default DeleteItemsFunc, with index and struct in slicePtr of each item to delete. The items are then removed from the slicePtr. last is true if it's the last one in items.
+	SortFunc              func(s []S)                                     // SortFunc is called to sort the slice after any updates.
+	FilterFunc            func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
+	StoreChangedItemsFunc func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
+	StoreChangedItemFunc  func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	DeleteItemsFunc       func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
+	CallDeleteItemFunc    func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 
 	slicePtr      *[]S
 	filteredSlice []S
@@ -269,7 +269,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand) //, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
 
 	v.StoreChangedItemsFunc = func(items []S) {
-		zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
+		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
 		zlog.Assert(v.StoreChangedItemFunc != nil)
 		showErr := true
 		var storeItems []S
@@ -293,11 +293,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
 		v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
-		zlog.Info("StoreChangedItemsFunc done")
+		// zlog.Info("StoreChangedItemsFunc done")
 	}
 
 	v.DeleteItemsFunc = func(ids []string) {
-		if v.DeleteItemFunc == nil {
+		if v.CallDeleteItemFunc == nil {
 			return
 		}
 		showErr := true
@@ -306,8 +306,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		for i, id := range ids {
 			wg.Add(1)
 			go func(id string, showErr *bool, i int) {
-				s := v.StructForID(id)
-				err := v.DeleteItemFunc(s, showErr, i == len(ids)-1)
+				err := v.CallDeleteItemFunc(id, showErr, i == len(ids)-1)
 				if err == nil {
 					deleteIDs = append(deleteIDs, id)
 				}
