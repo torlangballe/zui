@@ -57,7 +57,7 @@ func (v *NativeView) RemoveFromParent()                                      {}
 func (v *NativeView) Font() *zgeo.Font                                       { return nil }
 func (v *NativeView) SetText(text string)                                    {}
 func (v *NativeView) Text() string                                           { return "" }
-func (v *NativeView) InsertBefore(child, before View)                        {}
+func (v *NativeView) InsertBefore(before View)                               {}
 func (v *NativeView) AddChild(child View, index int)                         {}
 func (v *NativeView) RemoveChild(child View)                                 {}
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                 {}
@@ -109,3 +109,5 @@ func (v *NativeView) Press()                                                    
 func (v *NativeView) RootParent() *NativeView                                                { return nil }
 func (v *NativeView) SetFocusHandler(focused func(focus bool))                               {}
 func (*NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {}
+
+func DownloadURI(uri, name string) {}

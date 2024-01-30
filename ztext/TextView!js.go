@@ -4,6 +4,7 @@ package ztext
 
 import (
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -35,3 +36,5 @@ func (v *TextView) SetPlaceholder(str string)                                   
 func (v *TextView) SetMargin(m zgeo.Rect)                                           {}
 
 // func (v *TextView) InsertionPos() int                                               { return 0 }
+
+func SetTextDecoration(v *zview.NativeView, d ztextinfo.Decoration) {}
