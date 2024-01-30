@@ -143,7 +143,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
 			fv := grid.CellView(id).(*zfields.FieldView)
 			zlog.Assert(fv != nil)
-			fv.Update(v.StructForID(id), true)
+			fv.Update(v.StructForID(id), true, false)
 		}
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
@@ -172,7 +172,7 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	useWidth := true //(v.Header != nil)
 	fv.BuildStack(name, zgeo.CenterLeft, zgeo.Size{v.ColumnMargin, 0}, useWidth)
 	dontOverwriteEdited := false
-	fv.Update(nil, dontOverwriteEdited)
+	fv.Update(nil, dontOverwriteEdited, false)
 	return fv
 }
 
