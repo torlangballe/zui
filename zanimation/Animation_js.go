@@ -96,37 +96,6 @@ func FlipHorizontal(v zview.View, secs float64, done func()) {
 	v.Native().SetJSStyle("transform", "rotateY(360deg)")
 }
 
-type Swapper struct {
-	OriginalRect  zgeo.Rect
-	LastTransform zgeo.Pos
-}
-
-func (s *Swapper) SlideViewInOverOld(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
-	translateViews(s, false, parent, oldView, newView, dir, secs, done)
-}
-
-func (s *Swapper) SlideViewInOldOut(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
-	translateViews(s, true, parent, oldView, newView, dir, secs, done)
-}
-
-func translateViews(s *Swapper, moveOld bool, parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
-	// newView.Native().SetAlpha(0.1)
-	r := s.OriginalRect
-	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
-	dirPos := dir.Vector()
-	move := dirPos.Times(r.Size.Pos())
-	newView.SetRect(r.Translated(move))
-	r.Pos.Subtract(move)
-	newView.SetRect(r)
-	newView.Native().SetAlpha(1)
-	Translate(newView, move, secs, nil)
-	if moveOld {
-		delta := move.Plus(s.LastTransform)
-		Translate(oldView, delta, secs, done)
-	}
-	s.LastTransform = move
-}
-
 func (s *Swapper) FlipSwapViews(parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
 	zlog.Info("FlipViews!")
 	// newView.Native().SetAlpha(0)

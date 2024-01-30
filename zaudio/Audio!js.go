@@ -23,3 +23,11 @@ func MP4DurationSecs(reader io.ReadSeeker, size int64) (float64, error) {
 	// durationSec := float64(mp4.Moov.Mvhd.Duration) / float64(mp4.Moov.Mvhd.Timescale)
 	// return durationSec, nil
 }
+
+func AudioNew(path string) *Audio {
+	return nil
+}
+
+func (a *Audio) SetHandleFinished(f func()) {}
+func (a *Audio) Play(fail func(err error))  {}
+func (a *Audio) Stop()                      {}
