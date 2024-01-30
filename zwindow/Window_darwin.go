@@ -11,6 +11,7 @@ package zwindow
 // void AddView(void *win, void *view);
 import "C"
 import (
+	"strconv"
 	"unsafe"
 
 	"github.com/torlangballe/zui/zkeyboard"
@@ -52,7 +53,9 @@ func Open(o Options) *Window {
 	w := &Window{}
 	sm := zscreen.GetMain()
 	var r zgeo.Rect
-	zlog.Assert(o.FullScreenID != 0 || !o.Size.IsNull())
+	zlog.Assert(o.FullScreenID != 0, o.FullScreenID)
+	zlog.Assert(!o.Size.IsNull())
+	zlog.Info("Win Open")
 	if o.FullScreenID == 0 {
 		a := o.Alignment
 		if a == zgeo.AlignmentNone {
@@ -62,7 +65,8 @@ func Open(o Options) *Window {
 	} else if o.FullScreenID == -1 {
 		r = sm.Rect
 	} else {
-		screen := zscreen.FromID(o.FullScreenID)
+		sid := strconv.FormatInt(o.FullScreenID, 10)
+		screen := zscreen.FindFromID(sid)
 		if screen == nil {
 			zlog.Error(nil, "ScreenFromID is nil:", o.FullScreenID)
 			return nil
