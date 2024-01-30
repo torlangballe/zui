@@ -21,8 +21,8 @@ func init() {
 func NewWithStore(defaultVal bool, storeKey string) *CheckBox {
 	val := defaultVal
 	if storeKey != "" {
-		v, got := zkeyvalue.DefaultStore.GetBool(storeKey, false)
-		// zlog.Info("NewWithStore:", val, got, storeKey, defaultVal)
+		v, got := zkeyvalue.DefaultStore.GetBool(storeKey, defaultVal)
+		// zlog.Info("NewWithStore:", val, v, got, storeKey, defaultVal)
 		if got {
 			val = v
 		}
