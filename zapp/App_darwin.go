@@ -7,7 +7,10 @@ package zapp
 // void* SharedApplication(void);
 // void Run(void *app);
 import "C"
-import "unsafe"
+import (
+	"net/url"
+	"unsafe"
+)
 
 type nativeApp struct {
 	sharedPtr unsafe.Pointer
@@ -19,4 +22,12 @@ func appNew(a *App) {
 
 func (a *App) Run() {
 	C.Run(a.sharedPtr)
+}
+
+func URLStub() string {
+	return ""
+}
+
+func URL() *url.URL {
+	return nil
 }

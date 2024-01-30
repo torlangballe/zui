@@ -9,13 +9,23 @@ void *SharedApplication(void) {
 	return [NSApplication sharedApplication];
 }
 
-// Run starts the app and runs until quit. This function doesn't exit. 
+// Run starts the app in the background, but on main thread
 void Run() {
+    static bool running = false;
+    if (running) {
+       return;
+    }
+    running = true;
     @autoreleasepool {
         NSApplication* a = (NSApplication*)SharedApplication();
         [a setActivationPolicy:NSApplicationActivationPolicyRegular];
         [a activateIgnoringOtherApps : YES];
-        [a run];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSLog(@"Dispatch Run1\n");
+            [a run];
+            NSLog(@"Dispatch run() done\n");
+       });
+       NSLog(@"Dispatch Run exited\n");
 	}
 }
 
