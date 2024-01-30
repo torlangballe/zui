@@ -446,7 +446,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 		hash := zreflect.HashAnyToInt64(sv.data, "")
 		sameHash := (sv.dataHash == hash)
-		zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), sameHash)
+		// zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), sameHash)
 		sv.dataHash = hash
 		if !sameHash || forceOnSlice {
 			sv.UpdateSlice(rval.Addr().Interface())
@@ -686,10 +686,21 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if format == "" {
 		format = "%v"
 	}
-	color := "gray-dark"
-	// color = "dark-gray"
+	color := "gray"
 	if len(f.Colors) > 0 {
 		color = f.Colors[0]
+	}
+	var textCol zgeo.Color
+	if len(f.Colors) > 1 {
+		textCol = zgeo.ColorFromString(f.Colors[1])
+	}
+	if !textCol.Valid {
+		fg := zgeo.ColorFromString(color)
+		if fg.Valid {
+			textCol = fg.ContrastingGray()
+		} else {
+			textCol = zgeo.ColorBlack
+		}
 	}
 	name := f.Title
 	if f.Name != "" || fv.params.Field.HasFlag(FlagIsLabelize) {
@@ -700,7 +711,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 		s.H = f.Height
 	}
 	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{})
-	button.SetTextColor(zgeo.ColorBlack)
+	button.SetTextColor(textCol)
 	button.TextXMargin = 0
 	if f.RPCCall != "" {
 		button.SetPressedHandler(func() {
