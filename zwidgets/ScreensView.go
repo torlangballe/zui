@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type ScreensInfo struct {
@@ -53,7 +52,7 @@ func (v *ScreensView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	tinfo.Alignment = zgeo.Center
 	for id, r := range v.Rects {
 		srect := zgeo.TranslateRectInSystems(union, intoRect, r)
-		zlog.Info("Draw", id, r, union, srect)
+		// zlog.Info("Draw", id, r, union, srect)
 		path := zgeo.PathNewRect(srect, zgeo.Size{})
 		col := zgeo.ColorNewGray(0.8, 1)
 		if id == v.CurrentID {

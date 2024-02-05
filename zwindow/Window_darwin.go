@@ -66,7 +66,7 @@ func Open(o Options) *Window {
 		r = sm.Rect
 	} else {
 		sid := strconv.FormatInt(o.FullScreenID, 10)
-		screen := zscreen.FindFromID(sid)
+		screen := zscreen.FindForID(sid)
 		if screen == nil {
 			zlog.Error(nil, "ScreenFromID is nil:", o.FullScreenID)
 			return nil
@@ -106,5 +106,5 @@ func (win *Window) SetAddressBarURL(surl string)              {}
 func (win *Window) SetLocation(surl string)                   {}
 func (w *Window) Close()                                      {}
 func (win *Window) SetOnResizeHandling()                      {}
-
-func (win *Window) AddStyle() {}
+func (win *Window) AddStyle()                                 {}
+func (w *Window) Reload()                                     {}
