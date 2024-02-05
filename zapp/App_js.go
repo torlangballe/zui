@@ -73,5 +73,5 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	return
 }
 
-func appNew(a *App) {
-}
+// func appNew(a *App) {
+// }

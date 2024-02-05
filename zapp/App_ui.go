@@ -92,3 +92,6 @@ func updateCurrentTime(label *zlabel.Label) {
 	}
 	label.SetColor(col.WithOpacity(0.7))
 }
+
+func appNew(a *App) {
+}
