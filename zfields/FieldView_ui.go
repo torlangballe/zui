@@ -717,7 +717,8 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 		button.SetPressedHandler(func() {
 			go func() {
 				var reply string
-				err := zrpc.MainClient.Call(f.RPCCall, nil, &reply)
+				a := reflect.ValueOf(fv.data).Elem().Interface()
+				err := zrpc.MainClient.Call(f.RPCCall, a, &reply)
 				if err != nil {
 					zalert.ShowError(err)
 				}
@@ -888,9 +889,14 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 			dur = time.Duration(rval.Int())
 			// zlog.Info("DurTime", dur, f.Flags&FlagHasSeconds != 0)
 		}
-		t := ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
+		var str string
+		if dur != 0 && dur < time.Second {
+			str = fmt.Sprintf("%dms", dur/time.Millisecond)
+		} else {
+			str = ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
+		}
 		// zlog.Info("DurTime", dur, t, f.HasFlag(FlagHasHours))
-		return t, dur
+		return str, dur
 	}
 	format := f.Format
 	significant := f.Columns
@@ -1022,7 +1028,11 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &view})
 	})
 	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-		_, stack := zcheckbox.Labelize(cv, f.TitleOrName())
+		title := f.TitleOrName()
+		if f.HasFlag(FlagNoTitle) {
+			title = ""
+		}
+		_, stack := zcheckbox.Labelize(cv, title)
 		return stack
 	}
 	return cv
@@ -1418,11 +1428,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		title := f.Name
-		if f.Title != "" {
-			title = f.Title
-		}
-		if f.Flags&FlagNoTitle != 0 {
+		title := f.TitleOrName()
+		if f.HasFlag(FlagNoTitle) {
 			title = ""
 		}
 		var desc string
