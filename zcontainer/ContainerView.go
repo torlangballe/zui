@@ -504,7 +504,7 @@ func (v *ContainerView) DetachChild(subView zview.View) {
 func (v *ContainerView) ReplaceChild(child, with zview.View) {
 	c, _ := v.FindCellWithView(child)
 	if c == nil {
-		zlog.Error(nil, "CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy())
+		zlog.Error(nil, "CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zlog.CallingStackString())
 		for _, c := range v.GetChildren(true) {
 			fmt.Printf("Children: %s %p != %p\n", c.ObjectName(), c, child)
 		}

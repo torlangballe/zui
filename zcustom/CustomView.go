@@ -21,12 +21,10 @@ type CustomView struct {
 	pressed          func()
 	longPressed      func()
 	valueChanged     func()
-	// pointerEnclosed func(inside bool)
 	draw    func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 	exposed bool
 	visible bool
 	drawing bool
-	// color         zgeo.Color
 	exposeTimer   *ztimer.Timer
 	isSetup       bool
 	isHighlighted bool
