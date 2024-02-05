@@ -3,6 +3,7 @@ package zalert
 import (
 	"syscall/js"
 
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zlog"
 )
 
@@ -12,12 +13,14 @@ func (a *Alert) showNative(handle func(result Result)) {
 	if a.SubText != "" {
 		str += "\n\n" + a.SubText
 	}
+	e := zwindow.Current().Element
+	// e := js.Global()
 	// zlog.Info("alert:", str)
 	if a.CancelButton != "" {
-		alert := js.Global().Get("confirm")
+		alert := e.Get("confirm")
 		r = alert.Invoke(str).Bool()
 	} else {
-		alert := js.Global().Get("alert")
+		alert := e.Get("alert")
 		alert.Invoke(str)
 	}
 	go func() {
