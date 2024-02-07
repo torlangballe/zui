@@ -119,6 +119,9 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	// v.AddGroupItem(id, title, imagePath, set, view, create)
 	var button *zshape.ShapeView
 	minSize := zgeo.Size{20, 22}
+	if title == "" {
+		title = id
+	}
 	if v.ButtonName != "" {
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
 		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
