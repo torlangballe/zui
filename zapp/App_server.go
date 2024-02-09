@@ -10,6 +10,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"os"
@@ -204,3 +205,22 @@ func updateTimeInfo() {
 		lastTimeZoneName = name
 	}
 }
+
+// CheckServeFilesExists sees if paths exists in AllWebFS embeded and dir.
+// They should be non-absolute, without www/ prefix.
+func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) error {
+	var returnErr error
+	for _, p := range paths {
+		urlPath := "www/" + p
+		_, err := AllWebFS.Open(urlPath)
+		if err != nil {
+			if err != fs.ErrNotExist {
+				returnErr = err
+			}
+			continue
+		}
+		*existPaths = append(*existPaths, p)
+	}
+	return returnErr
+}
+
