@@ -514,7 +514,7 @@ func (v *ContainerView) ReplaceChild(child, with zview.View) {
 	c.View = with
 }
 
-// CollapseView collapses/uncollapses a view in it's parent which is Collapsable type. (ContainerView)
+// CollapseView collapses/uncollapses a view in its parent which is Collapsable type. (ContainerView)
 func CollapseView(v zview.View, collapse, arrange bool) bool {
 	p := v.Native().Parent()
 	c := p.View.(Collapser) // crash if parent isn't ContainerView of some sort

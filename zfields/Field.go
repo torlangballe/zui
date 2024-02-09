@@ -41,7 +41,7 @@ type UISetStringer interface {
 }
 
 // ActionType are the types of actions any type can handle an HandleAction method with type of.
-// This allows a type to handle it's  Field setup, it's creation, editing, data changed and more.
+// This allows a type to handle its  Field setup, its creation, editing, data changed and more.
 type ActionType string
 
 // SortInfo is information about how to sort fields/columns
@@ -78,7 +78,7 @@ type FlagType zbits.NamedBit
 
 const (
 	FlagIsStatic                 FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
-	FlagHasSeconds                                    // FlagHasSeconds means it's a time/duration where seconds should be shown/used
+	FlagHasSeconds                                    // FlagHasSeconds means its a time/duration where seconds should be shown/used
 	FlagHasMinutes                                    // FlagHasMinutes is the same but for minutes
 	FlagHasHours                                      // FlagHasMinutes is the same but for hours
 	FlagHasDays                                       // FlagHasMinutes is the same but for days of the month
@@ -86,7 +86,7 @@ const (
 	FlagHasYears                                      // FlagHasMinutes is the same but for years
 	FlagIsImage                                       // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
 	FlagIsFixed                                       // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from.
-	FlagIsButton                                      // FlagIsButton means the field is actually a button. It's type is irrelevant. Will call the PressedAction
+	FlagIsButton                                      // FlagIsButton means the field is actually a button. its type is irrelevant. Will call the PressedAction
 	FlagHasHeaderImage                                // FlagHasHeaderImage is true true if it has a an image for showing in header
 	FlagNoTitle                                       // FlagNoTitle i set when we don't use FieldName as a title, show nothing
 	FlagToClipboard                                   // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly

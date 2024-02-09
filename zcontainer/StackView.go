@@ -186,7 +186,7 @@ func (v *StackView) getGridLayoutRows(total zgeo.Size) (rows [][]zgeo.LayoutCell
 			zfloat.Maximize(&minH, rows[j][i].MinSize.H)
 		}
 		for i := range rows[j] {
-			// TODO: Won't expand vertically, need to fix! OriginalSize should not change, as we need to place it with it's actualy size, but a new variable creating a box to place it in should be max'ed below:
+			// TODO: Won't expand vertically, need to fix! OriginalSize should not change, as we need to place it with its actualy size, but a new variable creating a box to place it in should be max'ed below:
 			//rows[j][i].OriginalSize.H = maxOH
 			rows[j][i].MaxSize.H = maxMH
 			rows[j][i].MinSize.H = minH

@@ -1,4 +1,4 @@
-// The server variant of App is an App (program) in it's own right, but also contains functionality to
+// The server variant of App is an App (program) in its own right, but also contains functionality to
 // serve a wasm app to a browser.
 // It is invoked with ServeZUIWasm (below), which uses a filesRedirector (below) instance to handle serving the wasm, html and assets.
 

@@ -1,5 +1,5 @@
 // The zgridlist package defines GridListView, a view for displaying cells in multiple rows and columns.
-// It knows nothing about the content of it's cells.
+// It knows nothing about the content of its cells.
 // If CellHeightFunc is set, each cells hight is based on that, otherwise based on the first cell created.
 // See also the slicegridview package which expands the grid list to use slices, make tables with headers and automatic sql tables.
 // Also TableView, which use a GridListView and zfield package to create rows based on a struct.

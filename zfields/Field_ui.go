@@ -12,19 +12,19 @@ func init() {
 	callSetupWidgeter = setupWidgeter
 }
 
-// Widgeter is an interface to make a type create it's own view when build with zfields package.
+// Widgeter is an interface to make a type create its own view when build with zfields package.
 // It is registered with the RegisterWidgeter function, and specified with the zui:"widget:xxx" tag.
 type Widgeter interface {
 	Create(f *Field) zview.View
 	// SetValue(view zview.View, val any)
 }
 
-// // ReadWidgeter is a Widgeter that also can return it's value
+// // ReadWidgeter is a Widgeter that also can return its value
 // type ReadWidgeter interface {
 // 	GetValue(view zview.View) any
 // }
 
-// SetupWidgeter is a Widgeter that also can setup it's field before creation
+// SetupWidgeter is a Widgeter that also can setup its field before creation
 type SetupWidgeter interface {
 	SetupField(f *Field)
 }

@@ -50,13 +50,13 @@ func (v *NativeView) IsUsable() bool {
 	return v.Flags&ViewUsableFlag != 0
 }
 
-// AddOnRemoveFunc adds a function to call when the v is removed from it's parent.
+// AddOnRemoveFunc adds a function to call when the v is removed from its parent.
 func (v *NativeView) AddOnRemoveFunc(f func()) {
 	// zlog.Info("AddStopper:", v.ObjectName())
 	v.DoOnRemove = append(v.DoOnRemove, f)
 }
 
-// AddOnAddFunc adds a function to call when v is added to it's parent
+// AddOnAddFunc adds a function to call when v is added to its parent
 // Some views don't get these functions called until visible, so always create timers etc on a view
 // with AddOnAddFunc and use timer.Stop with AddOnRemoveFunc to ensure they are added/removed correctly
 func (v *NativeView) AddOnAddFunc(f func()) {
