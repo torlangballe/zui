@@ -1130,6 +1130,10 @@ func getColumnsForTime(f *Field) int {
 }
 
 func getDictItemsFromSlice(slice reflect.Value, f *Field) (zdict.Items, error) {
+	ditems, got := slice.Interface().(zdict.Items)
+	if got {
+		return ditems, nil
+	}
 	getter, _ := slice.Interface().(zdict.ItemsGetter)
 	items := zdict.ItemsFromRowGetterSlice(slice.Interface())
 	if getter == nil && items == nil {
