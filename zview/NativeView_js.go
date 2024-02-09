@@ -84,7 +84,7 @@ func (v *NativeView) Native() *NativeView {
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// if rect.Pos.Y > 3000 || rect.Size.H > 3000 {
-	// 	zlog.Error(nil, "strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
+	// 	zlog.Error("strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
 	// }
 	rect = rect.ExpandedToInt()
 	SetElementRect(v.Element, rect)
@@ -146,14 +146,14 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else if v.IsPresented() {
-		zlog.Error(nil, "parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.CallingStackString())
+		zlog.Error("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.CallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)
 }
 
 func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
-	zlog.Fatal(nil, "NOT IMPLEMENTED")
+	zlog.Fatal("NOT IMPLEMENTED")
 }
 
 func (v *NativeView) ObjectName() string {
@@ -583,7 +583,7 @@ func (v *NativeView) InsertBefore(before View) {
 func (v *NativeView) AddChild(child View, index int) {
 	n := child.Native()
 	if n == nil {
-		zlog.Fatal(nil, "NativeView AddChild child not native", v.Hierarchy(), child.ObjectName())
+		zlog.Fatal("NativeView AddChild child not native", v.Hierarchy(), child.ObjectName())
 	}
 	n.parent = v
 	// if child.ObjectName() == "tab-separator" {

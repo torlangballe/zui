@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -37,6 +38,7 @@ type TabsView struct {
 	currentChild       zview.View
 	header             *zcontainer.StackView
 	ChangedHandlerFunc func(newID string)
+	Dark               bool
 }
 
 const (
@@ -55,6 +57,7 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 	v.StackView.Init(v, true, storeName)
 	v.SetBGColor(zstyle.DefaultBGColor())
 	v.SetSpacing(0) // note: for vertical stack v
+	v.Dark = zstyle.Dark
 	v.header = zcontainer.StackViewHor("header")
 	if buttons {
 		v.ButtonName = DefaultButtonName
@@ -123,7 +126,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 		title = id
 	}
 	if v.ButtonName != "" {
-		// zlog.Info("Add Tab button:", title, v.ButtonName)
+		zlog.Info("Add Tab button:", title, v.ButtonName)
 		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
 		button = &b.ShapeView
 		button.SetTextColor(DefaultTextColor())
@@ -249,9 +252,10 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 		button, _ := view.(*zshape.ImageButtonView)
 		if button != nil {
 			str := DefaultButtonName
-			if selected {
+			if selected == v.Dark {
 				str += "-selected"
 			}
+			zlog.Info("tab-sel:", id, str)
 			button.SetImageName(str, zgeo.Size{11, 8})
 			if v.InvertSelectedTabText {
 				col := DefaultTextColor()

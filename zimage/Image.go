@@ -227,7 +227,7 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 	// this can be better, use canvas.Image()
 	goImage := i.ToGo()
 	if goImage == nil {
-		zlog.Error(nil, "ToGo")
+		zlog.Error("ToGo")
 		got(nil)
 	}
 	newGoImage, err := GoImageShrunkInto(goImage, size, proportional)

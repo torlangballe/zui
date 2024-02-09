@@ -52,7 +52,7 @@ func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 			return false
 		}
 	}
-	zlog.Fatal(nil, "GetSynchronous can't get here")
+	zlog.Fatal("GetSynchronous can't get here")
 	return false
 }
 
@@ -94,7 +94,7 @@ func FromPath(spath string, got func(*Image)) {
 }
 
 func (i *Image) RGBAImage() *Image {
-	zlog.Fatal(nil, "Not implemented")
+	zlog.Fatal("Not implemented")
 	return nil
 }
 

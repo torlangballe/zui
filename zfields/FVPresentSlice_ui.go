@@ -271,7 +271,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 				}
 				if wildTransformer != nil {
 					for i := 0; i < length; i++ {
-						finfo := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
+						finfo := zreflect.FieldForIndex(sliceVal.Index(i).Addr().Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 						sliceField := finfo.ReflectValue
 						replaced, err := wildTransformer.Transform(sliceField.String())
 						if err != nil {

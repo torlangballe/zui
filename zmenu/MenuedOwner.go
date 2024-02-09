@@ -141,7 +141,7 @@ func (o *MenuedOwner) IsKeyStored() bool {
 
 func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	if view == nil {
-		zlog.Fatal(nil, "MO Build with view==nil")
+		zlog.Fatal("MO Build with view==nil")
 	} else {
 		o.View = view
 		// nv := view.Native()
@@ -379,7 +379,7 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
 			return
 		}
 	}
-	zlog.Error(nil, "no value to change name for")
+	zlog.Error("no value to change name for")
 }
 
 func (o *MenuedOwner) popup() {

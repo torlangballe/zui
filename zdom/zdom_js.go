@@ -56,7 +56,7 @@ func CreateDotSeparatedObject(f string) js.Value {
 	for _, p := range parts {
 		parent = parent.Get(p)
 		if parent.IsUndefined() {
-			zlog.Error(nil, "Unknown dot-sep part:", p)
+			zlog.Error("Unknown dot-sep part:", p)
 			return js.Undefined()
 		}
 	}

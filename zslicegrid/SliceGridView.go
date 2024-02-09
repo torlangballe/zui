@@ -523,7 +523,7 @@ func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 func (v *SliceGridView[S]) EditItemIDs(ids []string, after func(ok bool)) {
 	items := v.getItemsFromIDs(ids)
 	if len(items) == 0 {
-		zlog.Fatal(nil, "SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
+		zlog.Fatal("SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
 	title := "Edit " + v.NameOfXItemsFunc(ids, true)
 	// zlog.Info("EditItemIDs", zlog.Pointer(&items), zlog.Pointer(v.slicePtr))

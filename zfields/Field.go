@@ -593,7 +593,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			} else {
 				_, got := fieldEnums[val]
 				if !got {
-					zlog.Error(nil, "no such enum:", val, fieldEnums)
+					zlog.Error("no such enum:", val, fieldEnums)
 				}
 				f.Enum = val
 			}
@@ -996,7 +996,7 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 				continue
 			}
 		}
-		// zlog.Fatal(nil, "No sort fields set for struct")
+		// zlog.Fatal("No sort fields set for struct")
 		return false
 	})
 	// zlog.Info("SORT TIME:", time.Since(start))

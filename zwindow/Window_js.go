@@ -87,7 +87,7 @@ func Open(o Options) *Window {
 	// zlog.Info("OPEN WIN:", o.URL, specs)
 	win.Element = zdom.WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.Element.IsNull() {
-		zlog.Error(nil, "open window failed", o.URL)
+		zlog.Error("open window failed", o.URL)
 		return nil
 	}
 	ztimer.StartIn(0.2, func() { // This is a hack as we don't know browser title bar height. It waits until window is placed, then calculates what title bar height should be, stores and changes for this window.

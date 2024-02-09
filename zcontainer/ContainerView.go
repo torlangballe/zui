@@ -102,7 +102,7 @@ func (v *ContainerView) GetCells() *[]Cell {
 func ArrangeAncestorContainer(view zview.View) {
 	a := FindAncestorArranger(view)
 	if a == nil {
-		zlog.Error(nil, "no parent arranger", view.Native().Hierarchy())
+		zlog.Error("no parent arranger", view.Native().Hierarchy())
 		return
 	}
 	a.ArrangeChildren()
@@ -396,7 +396,7 @@ func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach
 	children := ct.GetChildren(includeCollapsed)
 	for _, c := range children {
 		if c == nil {
-			zlog.Fatal(nil, "nil child in range", view.Native().Hierarchy())
+			zlog.Fatal("nil child in range", view.Native().Hierarchy())
 		}
 		cont := foreach(c)
 		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews, cont)
@@ -443,7 +443,7 @@ func ContainerOwnerFindViewWithName(view zview.View, name string, recursive bool
 
 	ct, _ := view.(ChildrenOwner)
 	if ct == nil {
-		zlog.Fatal(nil, "view is not container")
+		zlog.Fatal("view is not container")
 		return nil, -1
 	}
 	i := 0
@@ -504,7 +504,7 @@ func (v *ContainerView) DetachChild(subView zview.View) {
 func (v *ContainerView) ReplaceChild(child, with zview.View) {
 	c, _ := v.FindCellWithView(child)
 	if c == nil {
-		zlog.Error(nil, "CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zlog.CallingStackString())
+		zlog.Error("CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zlog.CallingStackString())
 		for _, c := range v.GetChildren(true) {
 			fmt.Printf("Children: %s %p != %p\n", c.ObjectName(), c, child)
 		}
@@ -546,7 +546,7 @@ func ChildView(v zview.View, path string) zview.View {
 	}
 	ct, _ := v.(ChildrenOwner)
 	if ct == nil {
-		zlog.Error(nil, "ChildView from non-container", v.Native().Hierarchy(), reflect.TypeOf(v))
+		zlog.Error("ChildView from non-container", v.Native().Hierarchy(), reflect.TypeOf(v))
 		return nil
 	}
 	for _, ch := range ct.GetChildren(true) {

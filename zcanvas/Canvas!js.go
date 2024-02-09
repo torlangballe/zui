@@ -65,7 +65,7 @@ func (c *Canvas) FillPath(path *zgeo.Path) {
 }
 
 func (c *Canvas) FillPathEO(path *zgeo.Path) {
-	zlog.Fatal(nil, "Not implemented")
+	zlog.Fatal("Not implemented")
 }
 
 var fontMutex sync.Mutex
@@ -100,7 +100,7 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 			}
 		}
 	}
-	return zlog.Error(nil, "couldn't load font", font.Name, paths)
+	return zlog.Error("couldn't load font", font.Name, paths)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {

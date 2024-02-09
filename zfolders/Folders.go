@@ -42,7 +42,7 @@ func FoldersGetFileInFolderType(ftype FolderType, addPath string) string {
 	case FoldersTemporary:
 		return os.TempDir() + addPath
 	}
-	zlog.Fatal(nil, "wrong type:", ftype)
+	zlog.Fatal("wrong type:", ftype)
 	return ""
 }
 

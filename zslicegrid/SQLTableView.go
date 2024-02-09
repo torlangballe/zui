@@ -23,12 +23,12 @@ type SQLTableView[S zstr.StrIDer] struct {
 	TableView[S]
 	searchString string
 	tableName    string
-	selectMethod string
-	DeleteQuery  string
-	IsSqlite     bool
-	IsQuoteIDs   bool
-	Constraints  string
-	CallerName   string
+	// selectMethod  string
+	DeleteQuery   string
+	IsSqlite      bool
+	IsQuoteIDs    bool
+	Constraints   string
+	rpcCallerName string
 	// skipFields   []string
 	searchFields []string
 	showID       int64
@@ -37,15 +37,15 @@ type SQLTableView[S zstr.StrIDer] struct {
 	offset       int
 }
 
-func NewSQLView[S zstr.StrIDer](tableName, selectMethod string, limit int, options OptionType) (sv *SQLTableView[S]) {
+func NewSQLView[S zstr.StrIDer](tableName, rpcCallerName string, limit int, options OptionType) (sv *SQLTableView[S]) {
 	v := &SQLTableView[S]{}
-	v.Init(v, tableName, selectMethod, limit, options)
+	v.Init(v, tableName, rpcCallerName, limit, options)
 	return v
 }
 
-func (v *SQLTableView[S]) Init(view zview.View, tableName, selectMethod string, limit int, options OptionType) {
+func (v *SQLTableView[S]) Init(view zview.View, tableName, rpcCallerName string, limit int, options OptionType) {
 	v.tableName = tableName
-	v.selectMethod = selectMethod
+	v.rpcCallerName = rpcCallerName
 	v.limit = limit
 	if v.Header != nil {
 		v.Header.SortingPressedFunc = func() {
@@ -115,7 +115,7 @@ func (v *SQLTableView[S]) addNewAction(duplicate bool) {
 }
 
 func (v *SQLTableView[S]) insertRow(s S) {
-	err := zrpc.MainClient.Call(v.CallerName+".InsertRows", []S{s}, nil)
+	err := zrpc.MainClient.Call(v.rpcCallerName+".InsertRows", []S{s}, nil)
 	if err != nil {
 		zalert.ShowError(err, "inserting")
 		return
@@ -142,7 +142,7 @@ func (v *SQLTableView[S]) UpdateItems(items []S) {
 	// zlog.Info("UpdateItems:", zlog.Full(items))
 	v.SetItemsInSlice(items)
 	v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
-	err := zrpc.MainClient.Call(v.CallerName+".UpdateRows", items, nil)
+	err := zrpc.MainClient.Call(v.rpcCallerName+".UpdateRows", items, nil)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 		return
@@ -198,7 +198,7 @@ func (v *SQLTableView[S]) FillPage() {
 
 	q.Table = v.tableName
 	q.Constraints = v.createConstraints()
-	err := zrpc.MainClient.Call(v.selectMethod, q, &slice)
+	err := zrpc.MainClient.Call(v.rpcCallerName+".Select", q, &slice)
 	if err != nil {
 		zlog.Error(err, "select", q.Constraints, v.limit, v.offset)
 		return

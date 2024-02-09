@@ -246,7 +246,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 		v.image = image
 		if image != nil {
 			if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {
-				zlog.Error(nil, "Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
+				zlog.Error("Button: Small image for inset:", v.ObjectName(), pathedName, v.image.Size(), insets)
 				return
 			}
 			v.image.SetCapInsetsCorner(insets)

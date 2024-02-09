@@ -15,7 +15,7 @@ func ErrorOnRelease() {
 	if IsRelease() {
 		var n = 100
 		for n > 0 {
-			zlog.Fatal(nil, "Should not run on ")
+			zlog.Fatal("Should not run on ")
 			n--
 		}
 	}

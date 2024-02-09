@@ -69,7 +69,7 @@ func Col(l, d zgeo.Color) zgeo.Color {
 	if Dark {
 		return useInvertedIfInvalid(d, l)
 	}
-	// zlog.Error(nil, zlog.StackAdjust(1), "ColLight:", l)
+	// zlog.Error(zlog.StackAdjust(1), "ColLight:", l)
 	return useInvertedIfInvalid(l, d)
 }
 

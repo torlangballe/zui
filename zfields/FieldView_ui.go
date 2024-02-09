@@ -290,7 +290,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 		if zstr.SplitN(local, "/", &prefix, &fname) && prefix == f.FieldName {
 			fv := view.(*FieldView)
 			if fv == nil {
-				zlog.Error(nil, "updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
+				zlog.Error("updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
 			}
 			finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
@@ -441,7 +441,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
-			zlog.Error(nil, "UpdateSlice: not a *FieldSliceView:", v.Hierarchy(), reflect.TypeOf(foundView))
+			zlog.Error("UpdateSlice: not a *FieldSliceView:", f.Name, v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
 		hash := zreflect.HashAnyToInt64(sv.data, "")
@@ -589,12 +589,12 @@ func (v *FieldView) Rebuild() {
 func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValue interface{}) {
 	view, _ := v.FindViewWithName(fieldID, false)
 	if view == nil {
-		zlog.Error(nil, "CallFieldAction find view", fieldID)
+		zlog.Error("CallFieldAction find view", fieldID)
 		return
 	}
 	f := v.findFieldWithFieldName(fieldID)
 	if f == nil {
-		zlog.Error(nil, "CallFieldAction find field", fieldID)
+		zlog.Error("CallFieldAction find field", fieldID)
 		return
 	}
 	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: reflect.ValueOf(fieldValue), View: &view})
@@ -658,7 +658,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 			}
 			if !changed {
 				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil)
-				zlog.Fatal(nil, "Not CHANGED!", ap.Field.FN())
+				zlog.Fatal("Not CHANGED!", ap.Field.FN())
 			}
 		}
 		aih, _ := ap.RVal.Interface().(ActionHandler)
@@ -1133,7 +1133,7 @@ func getDictItemsFromSlice(slice reflect.Value, f *Field) (zdict.Items, error) {
 	getter, _ := slice.Interface().(zdict.ItemsGetter)
 	items := zdict.ItemsFromRowGetterSlice(slice.Interface())
 	if getter == nil && items == nil {
-		return zdict.Items{}, zlog.Error(nil, "field isn't enum, not Item(s)Getter type", f.Name, f.LocalEnum)
+		return zdict.Items{}, zlog.Error("field isn't enum, not Item(s)Getter type", f.Name, f.LocalEnum)
 	}
 	if items == nil {
 		return getter.GetItems(), nil
@@ -1186,7 +1186,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		menu := v.makeMenu(ei, f, enum)
 		if menu == nil {
-			zlog.Error(nil, "no local enum for", f.LocalEnum)
+			zlog.Error("no local enum for", f.LocalEnum)
 			return nil, true
 		}
 		return menu, false
@@ -1457,7 +1457,7 @@ func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) strin
 	out := zstr.ReplaceAllCapturesFunc(zstr.InDoubleSquigglyBracketsRegex, str, zstr.RegWithoutMatch, func(fieldName string, index int) string {
 		a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
 		if findex == -1 {
-			zlog.Error(nil, "field download", str, ":", "field not found in struct:", fieldName)
+			zlog.Error("field download", str, ":", "field not found in struct:", fieldName)
 			return ""
 		}
 		return fmt.Sprint(a.Interface())
@@ -1473,7 +1473,7 @@ func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 		if found {
 			tip = fmt.Sprint(finfo.ReflectValue.Interface())
 		} else { // can't use tip == "" to check, since field might just be empty
-			zlog.Error(nil, "updateItemLocalToolTip: no local field for tip", f.Name, tipField)
+			zlog.Error("updateItemLocalToolTip: no local field for tip", f.Name, tipField)
 		}
 	} else if f.Tooltip != "" {
 		tip = f.Tooltip
@@ -1549,7 +1549,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				return bv == nil
 			})
 			if bv == nil {
-				zlog.Fatal(nil, "Should be checkbox", view.Native().Hierarchy(), reflect.TypeOf(view))
+				zlog.Fatal("Should be checkbox", view.Native().Hierarchy(), reflect.TypeOf(view))
 			}
 		}
 		b, _ := finfo.ReflectValue.Addr().Interface().(*bool)
@@ -1628,7 +1628,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		if (!f.IsStatic() && !v.params.AllStatic) && f.Flags&FlagIsImage == 0 {
 			tv, _ := view.(*ztext.TextView)
 			if tv == nil {
-				zlog.Fatal(nil, "Copy Back string not TV:", f.Name)
+				zlog.Fatal("Copy Back string not TV:", f.Name)
 			}
 			text := tv.Text()
 			str := finfo.ReflectValue.Addr().Interface().(*string)

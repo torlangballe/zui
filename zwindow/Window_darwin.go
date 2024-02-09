@@ -68,7 +68,7 @@ func Open(o Options) *Window {
 		sid := strconv.FormatInt(o.FullScreenID, 10)
 		screen := zscreen.FindForID(sid)
 		if screen == nil {
-			zlog.Error(nil, "ScreenFromID is nil:", o.FullScreenID)
+			zlog.Error("ScreenFromID is nil:", o.FullScreenID)
 			return nil
 		}
 		r = screen.Rect
