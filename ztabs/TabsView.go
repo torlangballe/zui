@@ -252,7 +252,7 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 		button, _ := view.(*zshape.ImageButtonView)
 		if button != nil {
 			str := DefaultButtonName
-			if selected == v.Dark {
+			if selected != v.Dark {
 				str += "-selected"
 			}
 			zlog.Info("tab-sel:", id, str)
