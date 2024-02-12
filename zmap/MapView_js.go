@@ -32,6 +32,9 @@ func (v *MapView) Init(view zview.View, center zgeo.Pos, zoom int) {
 	v.View = view
 	v.SetObjectName("map")
 	mapConstructor := zdom.CreateDotSeparatedObject("google.maps.Map")
+	if mapConstructor.IsUndefined() {
+		return
+	}
 	opts := map[string]interface{}{
 		"zoom": zoom,
 	}
