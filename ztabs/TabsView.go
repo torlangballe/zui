@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -108,6 +107,9 @@ func (v *TabsView) ReadyToShow(beforeWindow bool) {
 	if v.CurrentID == "" && v.DefaultID != "" {
 		v.SelectItem(v.DefaultID, nil)
 	}
+	for _, item := range v.items {
+		v.setButtonOn(item.id, item.id == v.CurrentID)
+	}
 }
 
 // AddItem adds a new tab to the row of tabs.
@@ -126,7 +128,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 		title = id
 	}
 	if v.ButtonName != "" {
-		zlog.Info("Add Tab button:", title, v.ButtonName)
+		// zlog.Info("Add Tab button:", title, v.ButtonName)
 		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
 		button = &b.ShapeView
 		button.SetTextColor(DefaultTextColor())
@@ -255,11 +257,10 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 			if selected != v.Dark {
 				str += "-selected"
 			}
-			zlog.Info("tab-sel:", id, str)
 			button.SetImageName(str, zgeo.Size{11, 8})
 			if v.InvertSelectedTabText {
 				col := DefaultTextColor()
-				if selected {
+				if selected != v.Dark {
 					col = col.ContrastingGray()
 				}
 				button.SetTextColor(col)
