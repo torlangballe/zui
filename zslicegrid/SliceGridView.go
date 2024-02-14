@@ -476,6 +476,57 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	// v.Grid.UpdateCell = v.UpdateCell
 }
 
+func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
+	sgv, _ := onGrid.(*SliceGridView[S])
+	if sgv == nil {
+		table, _ := onGrid.(*TableView[S])
+		if table != nil {
+			sgv = &table.SliceGridView
+		}
+	}
+	if sgv != nil {
+		orSlice = sgv.slicePtr
+	}
+	for _, r := range rows {
+		var found bool
+		rid := r.GetStrID()
+		for i, s := range *orSlice {
+			if s.GetStrID() == rid {
+				found = true
+				(*orSlice)[i] = r
+				break
+			}
+		}
+		// zlog.Info("UpdateRows add?", found, r.GetStrID(), len(rows), len(*orSlice), found)
+		if !found {
+			*orSlice = append(*orSlice, r)
+		}
+	}
+	if sgv != nil {
+		sgv.updateView()
+		sgv.updateSelectedIDs()
+	}
+}
+
+func (v *SliceGridView[S]) updateSelectedIDs() {
+	var selected []string
+	oldSelected := v.Grid.SelectedIDs()
+	var hoverOK bool
+	for _, sl := range *v.slicePtr {
+		sid := sl.GetStrID()
+		if v.Grid.CurrentHoverID == sid {
+			hoverOK = true
+		}
+		if zstr.StringsContain(oldSelected, sid) {
+			selected = append(selected, sid)
+		}
+	}
+	if !hoverOK {
+		v.Grid.SetHoverID("")
+	}
+	v.Grid.SelectCells(selected, false)
+}
+
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := v.ForceUpdateSlice
 	if !update {
@@ -486,22 +537,7 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 		*v.slicePtr = s
 		//remove non-selected :
 		v.updateView()
-		var selected []string
-		oldSelected := v.Grid.SelectedIDs()
-		var hoverOK bool
-		for _, sl := range s {
-			sid := sl.GetStrID()
-			if v.Grid.CurrentHoverID == sid {
-				hoverOK = true
-			}
-			if zstr.StringsContain(oldSelected, sid) {
-				selected = append(selected, sid)
-			}
-		}
-		if !hoverOK {
-			v.Grid.SetHoverID("")
-		}
-		v.Grid.SelectCells(selected, false)
+		v.updateSelectedIDs()
 	}
 }
 
@@ -568,10 +604,7 @@ func (v *SliceGridView[S]) addNewItem() {
 	var a any
 	title := "Add New " + v.StructName + ":"
 	a = &ns
-	initer, _ := a.(zfields.StructInitializer)
-	if initer != nil {
-		initer.InitZFieldStruct()
-	}
+	zfields.CallStructInitializer(a)
 	v.EditItems([]S{ns}, title, true, true, nil)
 }
 
@@ -580,10 +613,7 @@ func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
 	title := "Duplicate " + nitems + ":"
 	for _, o := range v.getItemsFromIDs(ids) {
 		var n = o
-		initer := zfields.GetStructInitializer(&n)
-		if initer != nil {
-			initer.InitZFieldStruct()
-		}
+		zfields.CallStructInitializer(&n)
 		newItems = append(newItems, n)
 	}
 	v.EditItems(newItems, title, false, true, nil)
@@ -679,7 +709,7 @@ var stuff = []Row{
 }
 
 func addHierarchy(stack *zcontainer.StackView) {
-	v := zslicegrid.TableViewNew[Row](&stuff, "hierarchy", zslicegrid.AddHeader)
+	v := TableViewNew[Row](&stuff, "hierarchy", AddHeader)
 	stack.Add(v, zgeo.TopLeft|zgeo.Expand)
 }
 */
@@ -701,8 +731,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.Me
 		}
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			var s S
-			if v.options&AllowDuplicate != 0 && zfields.GetStructInitializer(&s) != nil {
+			if v.options&AllowDuplicate != 0 {
 				del := zmenu.MenuedSCFuncAction("Duplicate "+nitems+"…", 'D', 0, func() {
 					v.duplicateItems(nitems, ids)
 				})
