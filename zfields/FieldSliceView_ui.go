@@ -155,10 +155,7 @@ func (v *FieldSliceView) updateMenu() {
 func (v *FieldSliceView) handleAddItem() {
 	i := zslice.AddEmptyElementAtEnd(v.data)
 	e := reflect.ValueOf(v.data).Elem().Index(i)
-	initer, _ := e.Addr().Interface().(StructInitializer)
-	if initer != nil {
-		initer.InitZFieldStruct()
-	}
+	CallStructInitializer(e.Addr().Interface())
 	v.addItem(i, e, false)
 	v.selectItem(i)
 }

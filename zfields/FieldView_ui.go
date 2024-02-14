@@ -94,9 +94,11 @@ func init() {
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
 }
 
-func GetStructInitializer(a any) StructInitializer {
+func CallStructInitializer(a any) {
 	i, _ := a.(StructInitializer)
-	return i
+	if i != nil {
+		i.InitZFieldStruct()
+	}
 }
 
 func (v *FieldView) Data() any {
@@ -852,7 +854,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		if secs {
 			format = "15:04:03"
 		}
-		if zlocale.IsDisplayServerTime.Get() {
+		if zlocale.IsDisplayServerTime {
 			format += "-07"
 		}
 		format += " 02-Jan-06"
