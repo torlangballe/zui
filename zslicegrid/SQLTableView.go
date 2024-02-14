@@ -75,15 +75,23 @@ func (v *SQLTableView[S]) addActionButton() {
 				items = append(items, idel)
 			}
 			if v.options&AllowDuplicate != 0 {
-				idup := zmenu.MenuedFuncAction("Duplcate "+noItems, func() {
-					v.addNewAction(true)
+				idup := zmenu.MenuedSCFuncAction("Duplcate "+noItems, 'D', 0, func() {
+					v.doEdit(ids, true, true, true)
+				})
+				items = append(items, idup)
+			}
+			if v.options&AllowEdit != 0 {
+				idup := zmenu.MenuedSCFuncAction("Edit "+noItems, 'E', 0, func() {
+					v.doEdit(ids, false, false, false)
 				})
 				items = append(items, idup)
 			}
 		}
 		if v.options&AllowNew != 0 {
-			inew := zmenu.MenuedFuncAction("New "+v.StructName, func() {
-				v.addNewAction(false)
+			inew := zmenu.MenuedSCFuncAction("New "+v.StructName, 'N', 0, func() {
+				var s S
+				zfields.CallStructInitializer(&s)
+				v.editRows([]S{s}, true)
 			})
 			items = append(items, inew)
 		}
@@ -91,31 +99,41 @@ func (v *SQLTableView[S]) addActionButton() {
 	}
 }
 
-func (v *SQLTableView[S]) addNewAction(duplicate bool) {
-	var s S
-	if duplicate {
-		sid := v.Grid.SelectedIDs()[0]
-		s = *v.StructForID(sid)
-		zsql.ForEachColumn(&s, nil, "", func(each zsql.ColumnInfo) bool {
-			// zlog.Info("Column:", column, primary, dbTags)
-			if each.IsPrimary {
-				each.ReflectValue.Set(reflect.Zero(each.ReflectValue.Type()))
-			}
-			return true
-		})
+func (v *SQLTableView[S]) doEdit(ids []string, clearPrimary, initStruct, insert bool) {
+	var rows []S
+	for _, sid := range ids {
+		s := *v.StructForID(sid)
+		if clearPrimary {
+			zsql.ForEachColumn(&s, nil, "", func(each zsql.ColumnInfo) bool {
+				// zlog.Info("Column:", column, primary, dbTags)
+				if each.IsPrimary {
+					each.ReflectValue.Set(reflect.Zero(each.ReflectValue.Type()))
+				}
+				return true
+			})
+		}
+		rows = append(rows, s)
 	}
-	zfields.PresentOKCancelStruct(&s, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
+	v.editRows(rows, insert)
+}
+
+func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
+	zfields.PresentOKCancelStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
 		// zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
 		if !ok {
 			return true
 		}
-		go v.insertRow(s)
+		if insert {
+			go v.insertRows(rows)
+		} else {
+			v.UpdateItems(rows)
+		}
 		return true
 	})
 }
 
-func (v *SQLTableView[S]) insertRow(s S) {
-	err := zrpc.MainClient.Call(v.rpcCallerName+".InsertRows", []S{s}, nil)
+func (v *SQLTableView[S]) insertRows(s []S) {
+	err := zrpc.MainClient.Call(v.rpcCallerName+".InsertRows", s, nil)
 	if err != nil {
 		zalert.ShowError(err, "inserting")
 		return
