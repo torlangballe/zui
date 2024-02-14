@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
+	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
@@ -53,6 +54,8 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	for k, v := range url.Query() {
 		if k == "zdev" && v[0] == "1" {
 			zui.DebugOwnerMode = true
+		} else if k == "zservertime" && v[0] == "1" {
+			zlocale.IsDisplayServerTime = true
 		}
 		args[k] = v[0]
 	}

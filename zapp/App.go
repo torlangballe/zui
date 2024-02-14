@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zdict"
-	"github.com/torlangballe/zutil/zkeyvalrpc"
 	"github.com/torlangballe/zutil/zprocess"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -25,20 +24,18 @@ type App struct {
 	handler        AppHandler // settable interface that handle lots of app-specific callbacks
 }
 
-// type LocationTimeInfo struct {
-// 	ZoneName          string
-// 	ZoneOffsetSeconds int
-// 	JSISOTimeString   string
-// }
+type TimeInfo struct {
+	ZoneName          string
+	ZoneOffsetSeconds int
+	JSISOTimeString   string
+}
 
 var (
 	AppMain            *App   // AppMain is the main instance of app. Likely the ONLY one
 	DownloadPathPrefix string // DownloadPathPrefix is the prefix to create a url to download something from the app
 	docValuesFuncs     []func() zdict.Dict
 
-	ServerTimezoneName          = zkeyvalrpc.NewOption[string]("ServerTimezoneName", "")
-	ServerTimeDifferenceSeconds = zkeyvalrpc.NewOption[int]("ServerTimeDifferenceSeconds", 0)
-	ServerTimeJSISO             = zkeyvalrpc.NewOption[string]("ServerTimeJSISO", "")
+	ServerTimezoneName string
 )
 
 func AddDocumentationValuesFunc(f func() zdict.Dict) {

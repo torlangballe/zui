@@ -1,4 +1,4 @@
-// The server variant of App is an App (program) in its own right, but also contains functionality to
+// The server variant of App is an App (program) in itsZ own right, but also contains functionality to
 // serve a wasm app to a browser.
 // It is invoked with ServeZUIWasm (below), which uses a filesRedirector (below) instance to handle serving the wasm, html and assets.
 
@@ -28,7 +28,6 @@ import (
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
-	"github.com/torlangballe/zutil/ztimer"
 )
 
 // nativeApp is used in App in zapp.go, so must be defined even if empty:
@@ -50,7 +49,6 @@ var wwwFS embed.FS
 var (
 	AllWebFS          zfile.MultiFS
 	RequestRedirector *filesRedirector
-	lastTimeZoneName  string
 )
 
 func Init(executor *zrpc.Executor) {
@@ -64,9 +62,6 @@ func Init(executor *zrpc.Executor) {
 		beforeWWW = "."
 	}
 	AllWebFS = append(zfile.MultiFS{os.DirFS(beforeWWW)}, AllWebFS...) // we insert the disk system first, so we can override embeded
-	ztimer.RepeatForeverNow(10, func() {
-		updateTimeInfo()
-	})
 }
 
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
@@ -195,17 +190,6 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 func appNew(a *App) {
 }
 
-func updateTimeInfo() {
-	t := time.Now().Local()
-	name, offset := t.Zone()
-	if name != lastTimeZoneName {
-		ServerTimeJSISO.Set(t.UTC().Format(ztime.JavascriptISO), true)
-		ServerTimezoneName.Set(name, true)
-		ServerTimeDifferenceSeconds.Set(offset, true)
-		lastTimeZoneName = name
-	}
-}
-
 // CheckServeFilesExists sees if paths exists in AllWebFS embeded and dir.
 // They should be non-absolute, without www/ prefix.
 func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) error {
@@ -224,3 +208,10 @@ func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) erro
 	return returnErr
 }
 
+func (AppCalls) GetTimeInfo(a zrpc.Unused, info *TimeInfo) error {
+	t := time.Now()
+	ServerTimezoneName, info.ZoneOffsetSeconds = t.Zone()
+	info.ZoneName = ServerTimezoneName
+	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)
+	return nil
+}

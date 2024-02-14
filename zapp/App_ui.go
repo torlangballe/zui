@@ -8,8 +8,10 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -17,80 +19,95 @@ import (
 type nativeApp struct {
 }
 
-var ServerTimeDifference time.Duration
-
-func init() {
-	ServerTimeDifferenceSeconds.AddChangedHandler(func() {
-		handleTimeInfoChanged()
-	})
-	ServerTimezoneName.AddChangedHandler(func() {
-		handleTimeInfoChanged()
-	})
-	ServerTimeJSISO.AddChangedHandler(func() {
-		handleTimeInfoChanged()
-	})
-	zlocale.IsDisplayServerTime.AddChangedHandler(func() {
-		handleTimeInfoChanged()
-	})
-}
-
-func handleTimeInfoChanged() error {
-	// zlog.Info("handleTimeInfoChanged:", ServerTimeDifferenceSeconds.Get(), ServerTimezoneName.Get(), ServerTimeJSISO.Get(), zlocale.IsDisplayServerTime.Get())
-	stime := ServerTimeJSISO.Get()
-	if stime != "" {
-		t, err := time.Parse(ztime.JavascriptISO, stime)
-		if err != nil {
-			return zlog.Error(err, "parse")
-		}
-		ServerTimeDifference = t.Sub(time.Now()) / 2
-	}
-	return nil
-}
+var (
+	ServerTimeDifference time.Duration
+	getTimeCount         int
+)
 
 func NewCurrentTimeLabel() *zlabel.Label {
 	label := zlabel.New("")
 	label.SetObjectName("time")
-	label.SetFont(zgeo.FontDefault(-2))
-	label.SetColor(zgeo.ColorNewGray(0.5, 1))
+	label.SetFont(zgeo.FontDefault(0))
+	label.SetColor(zgeo.ColorNewGray(0.3, 1))
 	label.SetMinWidth(145)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetPressedDownHandler(func() {
 		toggleTimeZoneMode(label)
 	})
-	updateCurrentTime(label)
-	ztimer.RepeatForever(1, func() {
+	ztimer.RepeatForeverNow(1, func() {
+		if getTimeCount%10 == 0 {
+			if !fetchTimeInfo() {
+				getTimeCount = 0
+				return
+			}
+		}
+		getTimeCount++
 		updateCurrentTime(label)
 	})
 	return label
 }
 
 func toggleTimeZoneMode(label *zlabel.Label) {
-	d := !zlocale.IsDisplayServerTime.Get()
-	zlocale.IsDisplayServerTime.Set(d, true)
+	zlocale.IsDisplayServerTime = !zlocale.IsDisplayServerTime
 	updateCurrentTime(label)
-	zwindow.GetMain().Reload()
-	ztimer.StartIn(2, func() {
-		zlog.Info("toggleTimeZoneMode", d)
-	})
+
+	win := zwindow.GetMain()
+	surl := win.GetURL()
+	stime := "0"
+	if zlocale.IsDisplayServerTime {
+		stime = "1"
+	}
+	surl, _ = zhttp.MakeURLWithArgs(surl, map[string]string{"zservertime": stime})
+	win.SetLocation(surl)
+}
+
+func fetchTimeInfo() bool {
+	var info TimeInfo
+	start := time.Now()
+	err := zrpc.MainClient.Call("AppCalls.GetTimeInfo", nil, &info)
+	if zlog.OnError(err) {
+		return false
+	}
+	since := time.Since(start)
+	ServerTimezoneName = info.ZoneName
+	// zlog.Info("fetchTimeInfo:", ServerTimezoneName)
+	if since > time.Second {
+		return false
+	}
+	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
+	if err != nil {
+		zlog.Error(err, "parse")
+		return false
+	}
+	mid := start.Add(since / 2)
+	ServerTimeDifference = mid.Sub(t)
+	return true
 }
 
 func updateCurrentTime(label *zlabel.Label) {
+	if ServerTimezoneName == "" {
+		label.SetText("")
+		return
+	}
+	format := "15:04:05"
 	t := time.Now()
-	t = t.Add(ServerTimeDifference)
-	// zlog.Info("updateCurrentTime:", ServerTimezoneName.Get())
-	if ServerTimezoneName.Get() != "" {
-		loc, _ := time.LoadLocation(ServerTimezoneName.Get())
+	str := ""
+	if zlocale.IsDisplayServerTime {
+		t = t.Add(ServerTimeDifference)
+		loc, _ := time.LoadLocation(ServerTimezoneName)
 		if loc != nil {
 			t = t.In(loc)
 		}
+		format += "-07"
+		str = "☁️"
 	}
-	str := ztime.GetNice(time.Now(), true)
-	label.SetText(str)
+	str += time.Now().Format(format)
 	col := zgeo.ColorBlack
-	if ServerTimeDifference > time.Second*4 {
+	if ServerTimeDifference > time.Second*2 {
 		col = zgeo.ColorRed
 	}
-	label.SetColor(col.WithOpacity(0.7))
+	label.SetColor(col)
+	label.SetText(str)
 }
 
 func appNew(a *App) {
