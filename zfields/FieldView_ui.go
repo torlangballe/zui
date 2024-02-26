@@ -137,7 +137,7 @@ func (fv *FieldView) ClearEditedRecently() {
 	delete(fieldViewEdited, h)
 }
 
-func makeFrameIfFlag(f *Field, child zview.View) zview.View {
+func makeFrameIfFlag(f *Field, fv *FieldView) zview.View {
 	if f.Flags&FlagHasFrame == 0 {
 		return nil
 	}
@@ -147,7 +147,7 @@ func makeFrameIfFlag(f *Field, child zview.View) zview.View {
 	}
 	frame := zcontainer.StackViewVert("frame")
 	zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
-	frame.Add(child, zgeo.TopLeft)
+	frame.Add(fv, zgeo.TopLeft)
 	return frame
 }
 
@@ -854,7 +854,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		if secs {
 			format = "15:04:03"
 		}
-		if zlocale.IsDisplayServerTime {
+		if zlocale.IsDisplayServerTime.Get() {
 			format += "-07"
 		}
 		format += " 02-Jan-06"
