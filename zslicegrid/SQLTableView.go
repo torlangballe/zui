@@ -19,47 +19,60 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-type SQLTableView[S zstr.StrIDer] struct {
-	TableView[S]
-	searchString string
-	tableName    string
-	// selectMethod  string
+type SQLOwner[S zstr.StrIDer] struct {
+	Grid *SQLTableView[S]
+	// slice         *[]S // we need to store slice when grid is nil
+	TableName     string
+	rpcCallerName string
 	DeleteQuery   string
 	IsSqlite      bool
 	IsQuoteIDs    bool
 	Constraints   string
-	rpcCallerName string
-	// skipFields   []string
-	searchFields []string
-	showID       int64
-	slicePage    []S
-	limit        int
-	offset       int
+	limit         int
+	offset        int
+	slicePage     *[]S
+	searchFields  []string
 }
 
-func NewSQLView[S zstr.StrIDer](tableName, rpcCallerName string, limit int, options OptionType) (sv *SQLTableView[S]) {
+type SQLTableView[S zstr.StrIDer] struct {
+	TableView[S]
+	owner        *SQLOwner[S]
+	searchString string
+	// selectMethod  string
+	// skipFields   []string
+	showID int64
+}
+
+func (o *SQLOwner[S]) Init(slice *[]S, tableName, rpcCallerName string, limit int) {
+	o.slicePage = slice
+	o.TableName = tableName
+	o.rpcCallerName = rpcCallerName
+	o.limit = limit
+}
+
+func (o *SQLOwner[S]) NewTable(options OptionType) (sv *SQLTableView[S]) {
 	v := &SQLTableView[S]{}
-	v.Init(v, tableName, rpcCallerName, limit, options)
+	v.StructName = o.TableName
+	v.Init(v, o, options)
+	o.Grid = v
 	return v
 }
 
-func (v *SQLTableView[S]) Init(view zview.View, tableName, rpcCallerName string, limit int, options OptionType) {
-	v.tableName = tableName
-	v.rpcCallerName = rpcCallerName
-	v.limit = limit
+func (v *SQLTableView[S]) Init(view zview.View, owner *SQLOwner[S], options OptionType) {
 	if v.Header != nil {
 		v.Header.SortingPressedFunc = func() {
-			go v.FillPage()
+			go v.owner.UpdateSlice()
 		}
 	}
+	v.owner = owner
 	v.SortFunc = nil
-	v.TableView.Init(v, &v.slicePage, "ztable."+tableName, options)
-	v.StoreChangedItemsFunc = v.UpdateItems
+	v.TableView.Init(v, v.owner.slicePage, "ztable."+v.owner.TableName, options)
+	v.StoreChangedItemsFunc = v.owner.PushRowsToServer
 	v.DeleteItemsFunc = v.deleteItems
 	if v.options&AddHeader != 0 {
 		v.addActionButton()
 	}
-	go v.FillPage()
+	go owner.UpdateSlice()
 }
 
 func (v *SQLTableView[S]) addActionButton() {
@@ -126,14 +139,14 @@ func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 		if insert {
 			go v.insertRows(rows)
 		} else {
-			v.UpdateItems(rows)
+			v.owner.PushRowsToServer(rows)
 		}
 		return true
 	})
 }
 
 func (v *SQLTableView[S]) insertRows(s []S) {
-	err := zrpc.MainClient.Call(v.rpcCallerName+".InsertRows", s, nil)
+	err := zrpc.MainClient.Call(v.owner.rpcCallerName+".InsertRows", s, nil)
 	if err != nil {
 		zalert.ShowError(err, "inserting")
 		return
@@ -142,12 +155,12 @@ func (v *SQLTableView[S]) insertRows(s []S) {
 
 func (v *SQLTableView[S]) deleteItems(ids []string) {
 	var affected int64
-	if v.IsQuoteIDs {
+	if v.owner.IsQuoteIDs {
 		for i := range ids {
 			ids[i] = zsql.QuoteString(ids[i])
 		}
 	}
-	query := "DELETE FROM " + v.tableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
+	query := "DELETE FROM " + v.owner.TableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
 	err := zrpc.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
 	if err != nil {
 		zalert.ShowError(err, "updating")
@@ -156,25 +169,14 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 	v.updateView()
 }
 
-func (v *SQLTableView[S]) UpdateItems(items []S) {
-	// zlog.Info("UpdateItems:", zlog.Full(items))
-	v.SetItemsInSlice(items)
-	v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
-	err := zrpc.MainClient.Call(v.rpcCallerName+".UpdateRows", items, nil)
-	if err != nil {
-		zalert.ShowError(err, "updating")
-		return
-	}
-}
-
-func (v *SQLTableView[S]) createConstraints() string {
+func (o *SQLOwner[S]) createConstraints() string {
 	var order string
 	// zlog.Info("createConstraints", v.Header != nil, v.Header.SortOrder)
-	if v.Header != nil {
+	if o.Grid != nil && o.Grid.Header != nil {
 		var s S
 		fieldColMap, primary := zsql.FieldNamesToColumnFromStruct(s, nil, "")
 		var orders []string
-		for _, s := range v.Header.SortOrder {
+		for _, s := range o.Grid.Header.SortOrder {
 			column := fieldColMap[s.FieldName] + " "
 			if column == primary {
 				continue
@@ -189,11 +191,11 @@ func (v *SQLTableView[S]) createConstraints() string {
 		}
 		order = strings.Join(orders, ",")
 	}
-	cons := v.Constraints
-	if cons == "" && v.searchString != "" && len(v.searchFields) > 0 {
+	cons := o.Constraints
+	if o.Grid != nil && cons == "" && o.Grid.searchString != "" && len(o.searchFields) > 0 {
 		var wheres []string
-		for _, s := range v.searchFields {
-			w := s + `ILIKE '%` + zsql.SanitizeString(v.searchString) + `%'`
+		for _, s := range o.searchFields {
+			w := s + `ILIKE '%` + zsql.SanitizeString(o.Grid.searchString) + `%'`
 			wheres = append(wheres, w)
 		}
 		cons = "WHERE (" + strings.Join(wheres, " OR ") + ")"
@@ -201,25 +203,43 @@ func (v *SQLTableView[S]) createConstraints() string {
 	if order != "" {
 		cons += " ORDER BY " + order
 	}
-	cons += fmt.Sprintf(" LIMIT %d OFFSET %d", v.limit, v.offset)
+	cons += fmt.Sprintf(" LIMIT %d OFFSET %d", o.limit, o.offset)
 	// zlog.Info("createConstraints:", cons)
 	return cons
 }
 
-func (v *SQLTableView[S]) SetConstraints(constraints string) {
-	v.Constraints = constraints
+// func (v *SQLTableView[S]) SetConstraints(constraints string) {
+// 	v.owner.Constraints = constraints
+// }
+
+func (o *SQLOwner[S]) UpdateRows(rows []S) {
+	UpdateRows[S](rows, o.Grid, o.slicePage)
+	o.PushRowsToServer(rows)
 }
 
-func (v *SQLTableView[S]) FillPage() {
+func (o *SQLOwner[S]) UpdateSlice() {
 	var slice []S
 	var q zsql.QueryBase
 
-	q.Table = v.tableName
-	q.Constraints = v.createConstraints()
-	err := zrpc.MainClient.Call(v.rpcCallerName+".Select", q, &slice)
+	q.Table = o.TableName
+	q.Constraints = o.createConstraints()
+	err := zrpc.MainClient.Call(o.rpcCallerName+".Select", q, &slice)
 	if err != nil {
-		zlog.Error(err, "select", q.Constraints, v.limit, v.offset)
+		zlog.Error(err, "select", q.Constraints, o.limit, o.offset)
 		return
 	}
-	v.UpdateSlice(slice)
+	if o.Grid != nil {
+		o.Grid.UpdateSlice(slice)
+	}
+}
+
+func (o *SQLOwner[S]) PushRowsToServer(items []S) {
+	// zlog.Info("UpdateItems:", zlog.Full(items))
+	// v.SetItemsInSlice(items)
+	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
+	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", items, nil)
+	if err != nil {
+		zalert.ShowError(err, "updating")
+		return
+	}
 }
