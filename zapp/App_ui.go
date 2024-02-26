@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrpc"
@@ -47,20 +46,6 @@ func NewCurrentTimeLabel() *zlabel.Label {
 	return label
 }
 
-func toggleTimeZoneMode(label *zlabel.Label) {
-	zlocale.IsDisplayServerTime = !zlocale.IsDisplayServerTime
-	updateCurrentTime(label)
-
-	win := zwindow.GetMain()
-	surl := win.GetURL()
-	stime := "0"
-	if zlocale.IsDisplayServerTime {
-		stime = "1"
-	}
-	surl, _ = zhttp.MakeURLWithArgs(surl, map[string]string{"zservertime": stime})
-	win.SetLocation(surl)
-}
-
 func fetchTimeInfo() bool {
 	var info TimeInfo
 	start := time.Now()
@@ -92,7 +77,8 @@ func updateCurrentTime(label *zlabel.Label) {
 	format := "15:04:05"
 	t := time.Now()
 	str := ""
-	if zlocale.IsDisplayServerTime {
+	// zlog.Info("updateCurrentTime:", zlocale.IsDisplayServerTime.Get())
+	if zlocale.IsDisplayServerTime.Get() {
 		t = t.Add(ServerTimeDifference)
 		loc, _ := time.LoadLocation(ServerTimezoneName)
 		if loc != nil {
@@ -111,4 +97,10 @@ func updateCurrentTime(label *zlabel.Label) {
 }
 
 func appNew(a *App) {
+}
+
+func toggleTimeZoneMode(label *zlabel.Label) {
+	zlog.Info("toggleTimeZoneMode:", zlocale.IsDisplayServerTime != nil)
+	zlocale.IsDisplayServerTime.Set(!zlocale.IsDisplayServerTime.Get(), false)
+	zwindow.GetMain().Reload()
 }

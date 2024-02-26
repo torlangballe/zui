@@ -9,7 +9,6 @@ import (
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
-	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
@@ -47,15 +46,12 @@ func URLStub() string {
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
 func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	url := URL()
-	// host, _ := znet.GetHostAndPort(url)
 	url.Path = ""
 	host := url.Host
 	args = map[string]string{}
 	for k, v := range url.Query() {
 		if k == "zdev" && v[0] == "1" {
 			zui.DebugOwnerMode = true
-		} else if k == "zservertime" && v[0] == "1" {
-			zlocale.IsDisplayServerTime = true
 		}
 		args[k] = v[0]
 	}
@@ -75,6 +71,3 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	}
 	return
 }
-
-// func appNew(a *App) {
-// }
