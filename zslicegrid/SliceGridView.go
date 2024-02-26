@@ -141,6 +141,7 @@ func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (
 
 // Init sets up an allocated SliceGridView with a slice, storeName for hierarchy state, and options for setup
 func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, options OptionType) {
+	zlog.Assert(slice != nil)
 	v.StackView.Init(view, true, "slice-grid-view")
 	v.SetObjectName(storeName)
 	v.SetSpacing(0)
@@ -344,24 +345,30 @@ func (v *SliceGridView[S]) updateView() {
 	v.UpdateViewFunc()
 }
 
-func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
+func setItemsInSlice[S zstr.StrIDer](items []S, slicePtr *[]S) int {
+	var added int
 	found := false
 	for _, item := range items {
-		for i, s := range *v.slicePtr {
+		for i, s := range *slicePtr {
 			if s.GetStrID() == item.GetStrID() {
 				found = true
 				// fmt.Printf("edited: %+v %v %d\n", (*v.slicePtr)[i], item, i)
-				(*v.slicePtr)[i] = item
+				(*slicePtr)[i] = item
 				break
 			}
 		}
 		if !found {
-			*v.slicePtr = append(*v.slicePtr, item)
+			*slicePtr = append(*slicePtr, item)
 			added++
 		}
 	}
+	return added
+}
+
+func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
+	added = setItemsInSlice(items, v.slicePtr)
 	v.doFilterAndSort(*v.slicePtr)
-	return
+	return added
 }
 
 func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
@@ -487,21 +494,7 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 	if sgv != nil {
 		orSlice = sgv.slicePtr
 	}
-	for _, r := range rows {
-		var found bool
-		rid := r.GetStrID()
-		for i, s := range *orSlice {
-			if s.GetStrID() == rid {
-				found = true
-				(*orSlice)[i] = r
-				break
-			}
-		}
-		// zlog.Info("UpdateRows add?", found, r.GetStrID(), len(rows), len(*orSlice), found)
-		if !found {
-			*orSlice = append(*orSlice, r)
-		}
-	}
+	setItemsInSlice(rows, orSlice)
 	if sgv != nil {
 		sgv.updateView()
 		sgv.updateSelectedIDs()
