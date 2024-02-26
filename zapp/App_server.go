@@ -92,7 +92,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	smime := mime.TypeByExtension(path.Ext(spath))
 	if spath == "main.wasm.gz" {
-		zlog.Info("Serve WASM.gz:", spath, req.Method)
+		zlog.Info("Serve WASM.gz:", spath, req.Method, req.RemoteAddr)
 		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
 		smime = "application/wasm"
 		w.Header().Set("Content-Encoding", "gzip")
@@ -107,11 +107,9 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// w.Header().Set("Cross-Origin-Opener-Policy-Report-Only", `same-origin; report-to="geo-earth-eng-team"`)
 		// w.Header().Set("Cross-Origin-Opener-Policy", `same-origin; report-to="geo-earth-eng-team"`)
 	}
-	if smime != "" {
-		w.Header().Set("Content-Type", smime)
-	}
 	w.Header().Set("Cache-Control", "public, max-age=604800")
 	if !zbuild.Build.At.IsZero() {
+		// zlog.Info("LastMod:", spath, zbuild.Build.At.Format(time.RFC1123))
 		w.Header().Set("Last-Modified", zbuild.Build.At.Format(time.RFC1123))
 		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
 	}
@@ -120,7 +118,6 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// zlog.Info("FilesRedir2:", spath, err, len)
 	if len != 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
-		smime := mime.TypeByExtension(path.Ext(spath))
 		// zlog.Info("FilesRedir2:", spath, smime)
 		if smime != "" {
 			w.Header().Set("Content-Type", smime)
