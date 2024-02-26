@@ -59,7 +59,7 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 			s.H += v.Spacing.H
 		}
 	}
-	s.MaximizeNonZero(v.MinSize())
+	s.Maximize(v.MinSize())
 	s.Subtract(v.Margin().Size)
 	return s
 }
