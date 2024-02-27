@@ -954,6 +954,13 @@ func (v *NativeView) SetPressedDownHandler(handler func()) {
 	}))
 }
 
+func (v *NativeView) SetDoublePressedHandler(handler func()) {
+	v.JSCall("addEventListener", "dblclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		handler()
+		return nil
+	}))
+}
+
 func getMousePosRelative(v *NativeView, e js.Value) zgeo.Pos {
 	pos := getMousePos(e)
 	return pos.Minus(v.AbsoluteRect().Pos)
