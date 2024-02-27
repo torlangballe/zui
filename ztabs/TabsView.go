@@ -104,8 +104,12 @@ func (v *TabsView) ReadyToShow(beforeWindow bool) {
 	if !beforeWindow {
 		return
 	}
-	if v.CurrentID == "" && v.DefaultID != "" {
-		v.SelectItem(v.DefaultID, nil)
+	defID := v.DefaultID
+	if defID == "" && len(v.items) > 0 {
+		defID = v.items[0].id
+	}
+	if v.CurrentID == "" && defID != "" {
+		v.SelectItem(defID, nil)
 	}
 	for _, item := range v.items {
 		v.setButtonOn(item.id, item.id == v.CurrentID)
