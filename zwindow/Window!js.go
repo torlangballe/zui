@@ -52,3 +52,4 @@ func (win *Window) SetOnKeyEvents()              {}
 func FromNativeView(v *zview.NativeView) *Window { return nil }
 func Current() *Window                           { return nil }
 func (win *Window) AddStyle()                    {}
+func (w *Window) Reload()                        {}
