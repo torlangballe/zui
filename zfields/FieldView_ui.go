@@ -26,6 +26,7 @@ import (
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
@@ -715,6 +716,12 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{})
 	button.SetTextColor(textCol)
 	button.TextXMargin = 0
+	if f.HasFlag(FlagIsURL) {
+		button.SetPressedHandler(func() {
+			surl := replaceDoubleSquiggliesWithFields(fv, f, f.Path)
+			zwindow.GetMain().SetLocation(surl)
+		})
+	}
 	if f.RPCCall != "" {
 		button.SetPressedHandler(func() {
 			go func() {
@@ -1049,6 +1056,13 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 	if f.Styling.FGColor.Valid {
 		iv.EmptyColor = f.Styling.FGColor
 	}
+	if f.HasFlag(FlagIsURL) {
+		iv.SetPressedHandler(func() {
+			surl := replaceDoubleSquiggliesWithFields(v, f, f.Path)
+			zwindow.GetMain().SetLocation(surl)
+		})
+		return iv
+	}
 	if f.IsImageToggle() && rval.Kind() == reflect.Bool {
 		iv.SetPressedHandler(func() {
 			val, _ := v.fieldToDataItem(f, iv)
@@ -1059,11 +1073,11 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 			v.callTriggerHandler(f, EditedAction, on, &iv.View)
 			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View})
 		})
-	} else {
-		iv.SetPressedHandler(func() {
-			v.callTriggerHandler(f, PressedAction, f.FieldName, &iv.View)
-		})
+		return iv
 	}
+	iv.SetPressedHandler(func() {
+		v.callTriggerHandler(f, PressedAction, f.FieldName, &iv.View)
+	})
 	return iv
 }
 
