@@ -742,7 +742,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 
 func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
 	var view zview.View
-	static := f.IsStatic() || v.params.AllStatic
+	static := f.IsStatic() //|| v.params.AllStatic
 	isSlice := rval.Kind() == reflect.Slice
 	// zlog.Info("makeMenu", f.Name, f.IsStatic(), v.params.AllStatic, isSlice, rval.Kind(), len(items))
 	if static || isSlice {
@@ -754,7 +754,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		}
 		menuOwner := zmenu.NewMenuedOwner()
 		menuOwner.IsStatic = static
-		// menuOwner.IsMultiple = multi
+		menuOwner.IsMultiple = isSlice
 		if f.HasFlag(FlagIsEdit) {
 			menuOwner.AddValueFunc = func() any {
 				zlog.Assert(isSlice)
@@ -781,7 +781,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 				menuOwner.PluralableWord = format
 			}
 		}
-		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, nil, f.Flags&FlagIsActions != 0)
+		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, rval.Interface(), f.Flags&FlagIsActions != 0)
 
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
@@ -805,6 +805,16 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 						callActionHandlerFunc(ActionPack{FieldView: v, Field: &nf, Action: PressedAction, RVal: rval, View: &view})
 					}
 				} else {
+					zlog.Info("Here!", menuOwner.IsMultiple, rval, rval.Type())
+					if menuOwner.IsMultiple {
+						allSelected := menuOwner.SelectedItems()
+						slicePtr := rval.Addr().Interface()
+						zslice.Empty(slicePtr)
+						for _, item := range allSelected {
+							zslice.AddAtEnd(slicePtr, item.Value)
+						}
+						return
+					}
 					if sel.Value != nil {
 						val, _ := v.fieldToDataItem(f, menu)
 						val.Set(reflect.ValueOf(sel.Value))
