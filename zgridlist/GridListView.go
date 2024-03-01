@@ -879,6 +879,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	})
 	for cid, view := range v.children {
 		if !placed[cid] {
+			delete(v.selectedIDs, cid)
 			v.cellsView.RemoveChild(view)
 			delete(v.children, cid)
 		}
@@ -1057,7 +1058,8 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	// zlog.Info("List ReadyToShow:", v.ObjectName(), v.CreateCellFunc != nil)
 	if v.BorderColor.Valid {
-		v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // we set if for non also, in case it moved
+		// v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // we set if for non also, in case it moved
+		v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft|zgeo.BottomRight, true) // we set if for non also, in case it moved
 	}
 	if beforeWindow && v.BorderColor.Valid {
 		// v.cellsView.SetStrokeSide(1, v.BorderColor, zgeo.TopLeft, true) // We set top and left
