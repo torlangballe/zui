@@ -50,10 +50,10 @@ func (o *SQLOwner[S]) Init(slice *[]S, tableName, rpcCallerName string, limit in
 	o.limit = limit
 }
 
-func (o *SQLOwner[S]) NewTable(options OptionType) (sv *SQLTableView[S]) {
+func (o *SQLOwner[S]) NewTable(structName string, options OptionType) (sv *SQLTableView[S]) {
 	v := &SQLTableView[S]{}
-	v.StructName = o.TableName
 	v.Init(v, o, options)
+	v.StructName = structName
 	o.Grid = v
 	return v
 }
@@ -132,7 +132,6 @@ func (v *SQLTableView[S]) doEdit(ids []string, clearPrimary, initStruct, insert 
 
 func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 	zfields.PresentOKCancelStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
-		// zlog.Info("Edited items:", ok, v.StoreChangedItemsFunc != nil)
 		if !ok {
 			return true
 		}
@@ -230,6 +229,8 @@ func (o *SQLOwner[S]) UpdateSlice() {
 	}
 	if o.Grid != nil {
 		o.Grid.UpdateSlice(slice)
+	} else {
+		*o.slicePage = slice
 	}
 }
 
