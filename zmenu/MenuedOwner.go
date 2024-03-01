@@ -382,15 +382,18 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
 	zlog.Error("no value to change name for")
 }
 
+const (
+	gap           = 4
+	colorWidth    = 20
+	imageWidth    = 40
+	checkWidth    = 14
+	shortcutWidth = 22
+	topMarg       = 6
+	bottomMarg    = 2
+	rightMarg     = 4
+)
+
 func (o *MenuedOwner) popup() {
-	const (
-		imageWidth = 40
-		imageMarg  = 8
-		checkWidth = 14
-		topMarg    = 6
-		bottomMarg = 2
-		rightMarg  = 4
-	)
 	allAction := true
 	o.hasShortcut = false
 	for _, item := range o.items {
@@ -457,15 +460,15 @@ func (o *MenuedOwner) popup() {
 	}
 	w := ztextinfo.WidthOfString(max, o.Font) * 1.1
 	if !allAction && !o.IsStatic {
-		w += checkWidth
+		w += checkWidth + gap
 	}
 	if o.ImagePath != "" {
-		w += imageWidth + imageMarg
+		w += imageWidth + gap
 	}
 	if o.hasShortcut {
-		w += 32
+		w += shortcutWidth + gap
 	}
-	w += 18 // test
+	w += 40 // test
 	zfloat.Maximize(&w, o.MinWidth)
 	list.SetMinSize(zgeo.Size{w, 0})
 	if len(o.items) < 20 {
@@ -707,18 +710,22 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		iv := zimageview.New(nil, spath, zgeo.Size{32, 20})
 		iv.DownsampleImages = true
 		v.Add(iv, zgeo.CenterRight, marg)
-		marg.W += 22
+		marg.W += gap + imageWidth
 	}
-	if o.HasLabelColor && item.LabelColor.Valid {
-		cv := zcustom.NewView(id)
-		col := item.LabelColor
-		if item.IsDisabled {
-			col.SetOpacity(0.5)
+	if o.HasLabelColor {
+		if item.LabelColor.Valid {
+			cv := zcustom.NewView(id)
+			col := item.LabelColor
+			if item.IsDisabled {
+				col.SetOpacity(0.5)
+			}
+			cv.SetMinSize(zgeo.SizeD(colorWidth, 0))
+			cv.SetBGColor(col)
+			cv.SetCorner(3)
+			cv.SetObjectName("color-label")
+			v.Add(cv, zgeo.CenterRight, marg)
 		}
-		cv.SetBGColor(col)
-		cv.SetCorner(3)
-		cv.SetObjectName("color-label")
-		v.Add(cv, zgeo.CenterRight, marg)
+		marg.W += gap + colorWidth
 	}
 	if o.hasShortcut {
 		str := zkeyboard.GetModifiersString(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
@@ -727,8 +734,8 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		font := o.Font
 		font.Style = zgeo.FontStyleBold
 		keyLabel.SetFont(font)
-		marg.W += 4
 		v.Add(keyLabel, zgeo.CenterRight, marg)
+		marg.W += gap + shortcutWidth
 	}
 
 	return v
