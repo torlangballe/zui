@@ -95,6 +95,7 @@ func (v *NativeView) SetPointerEnterHandler(moves bool, handler func(pos zgeo.Po
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 }
 func (v *NativeView) SetPressedDownHandler(handler func())                                   {}
+func (v *NativeView) SetDoublePressedHandler(handler func())                                 {}
 func (v *NativeView) HasPressedDownHandler() bool                                            { return false }
 func (v *NativeView) Native() *NativeView                                                    { return v }
 func (v *NativeView) SetStyling(style zstyle.Styling)                                        {}
