@@ -633,7 +633,7 @@ func (v *NativeView) ReplaceChild(child, with View) {
 	v.RemoveChild(child)
 	if focusedPath != "" {
 		f := ChildOfViewFunc(with, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
-		zlog.Assert(f != nil)
+		zlog.Assert(f != nil, "focusedPath: ", `"`+focusedPath+`"`)
 		f.Native().Focus(true)
 		// zlog.Info("ReplaceChild old focus:", focusedPath, f.Native().Hierarchy())
 	}

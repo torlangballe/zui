@@ -471,9 +471,9 @@ func (v *ContainerView) FindCellWithName(name string) (*Cell, int) {
 
 func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
 	for i, c := range v.Cells {
-		// fmt.Printf("FindCellWithView: %s %p != %p %v\n", c.View.ObjectName(), c.View.Native(), view.Native(), c.View == view)
-		// zlog.Info("FindCellWithView:", c.View.ObjectName(), reflect.TypeOf(c.View), reflect.TypeOf(view))
-		if c.View == view {
+		// fmt.Printf("FindCellWithView: %d) %s %p == %p %v\n", i, c.View.ObjectName(), c.View.Native(), view.Native(), c.View.Native() == view.Native())
+		// zlog.Info("FindCellWithView:", i, c.View.ObjectName(), reflect.TypeOf(c.View), reflect.TypeOf(view))
+		if c.View.Native() == view.Native() {
 			return &v.Cells[i], i
 		}
 	}
@@ -502,11 +502,12 @@ func (v *ContainerView) DetachChild(subView zview.View) {
 }
 
 func (v *ContainerView) ReplaceChild(child, with zview.View) {
+	// zlog.Info("CV ReplaceChild:", v.Hierarchy())
 	c, _ := v.FindCellWithView(child)
 	if c == nil {
 		zlog.Error("CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zlog.CallingStackString())
 		for _, c := range v.GetChildren(true) {
-			fmt.Printf("Children: %s %p != %p\n", c.ObjectName(), c, child)
+			fmt.Printf("Children: %s %p != %p %v\n", c.ObjectName(), c, child, c == child)
 		}
 		return
 	}
