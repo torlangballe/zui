@@ -207,7 +207,7 @@ func (s *SliceCommander) outputRow(c *zcommands.CommandInfo, tabs *zstr.TabWrite
 			cols = each.Field.Columns
 		}
 		tabs.MaxColumnWidths[tabColumn] = cols
-		sval, skip := getValueString(val, each.Field, each.StructField, cols, true)
+		sval, skip := getValueString(each.ReflectValue, each.Field, each.StructField, cols, true)
 		if skip {
 			return true
 		}
