@@ -11,7 +11,7 @@ import (
 )
 
 type ScreensInfo struct {
-	Rects     map[string]zgeo.Rect
+	Rects     map[string]zgeo.Rect // screenid:rect
 	MainID    string
 	CurrentID string
 }
