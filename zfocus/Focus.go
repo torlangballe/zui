@@ -17,7 +17,7 @@ func Draw(canvas *zcanvas.Canvas, rect zgeo.Rect, corner, width float64, opacity
 	if width == 0 {
 		width = 4
 	}
-	ss := zscreen.MainSoftScale
+	ss := zscreen.MainSoftScale()
 	w := width * ss
 	r := rect.ExpandedD(-width / 2 * ss)
 	path := zgeo.PathNewRect(r, zgeo.Size{corner, corner})

@@ -88,11 +88,11 @@ func FromPathAddScreenScaleSuffix(spath string, got func(*Image)) {
 	dir, _, stub, ext := zfile.Split(spath)
 	size := ""
 	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
-	if zscreen.MainScale >= 2 {
+	if zscreen.MainScale() >= 2 {
 		size = "@2x"
 	}
 	spath = path.Join(dir, stub+size+ext)
-	zlog.Info("FromPathAddScreenScaleSuffix:", spath, zscreen.MainScale)
+	zlog.Info("FromPathAddScreenScaleSuffix:", spath, zscreen.MainScale())
 	FromPath(spath, got)
 }
 

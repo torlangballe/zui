@@ -98,7 +98,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 	v.NativeView.SetRect(r)
 	if v.canvas != nil && s != r.Size {
 		s := v.LocalRect().Size
-		scale := zscreen.MainScale
+		scale := zscreen.MainScale()
 		v.setCanvasSize(s, scale)
 		v.Expose()
 	}
@@ -124,7 +124,7 @@ func (v *CustomView) makeCanvas() {
 	firstChild := v.JSGet("firstChild")
 	v.canvas.JSElement().Get("style").Set("zIndex", 1)
 	s := v.LocalRect().Size
-	scale := zscreen.MainScale
+	scale := zscreen.MainScale()
 	v.setCanvasSize(s, scale)
 
 	if firstChild.IsUndefined() {

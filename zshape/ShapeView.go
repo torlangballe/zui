@@ -68,7 +68,7 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 	v.CustomView.Init(view, name)
 	v.textInfo = *ztextinfo.New()
 	v.Type = shapeType
-	v.ImageMargin = zgeo.Size{4, 1}.TimesD(zscreen.MainSoftScale)
+	v.ImageMargin = zgeo.Size{4, 1}.TimesD(zscreen.MainSoftScale())
 	v.ImageOpacity = 1
 	v.ImageGap = 4
 	v.Count = 5
@@ -236,7 +236,7 @@ func (v *ShapeView) IsLoading() bool {
 
 func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	s := ""
-	if zscreen.MainScale >= 2 {
+	if zscreen.MainScale() >= 2 {
 		s = "@2x"
 	}
 	str := pathedName + s + ".png"
@@ -261,7 +261,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		path.AddStar(rect, v.Count, v.Ratio)
 
 	case TypeCircle:
-		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(zscreen.MainSoftScale)
+		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(zscreen.MainSoftScale())
 		w := s.Min()
 		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
 
@@ -303,7 +303,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		t := v.textInfo // .Copy()
 		t.Color = v.GetStateColor(t.Color)
-		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale, 0}
+		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale(), 0}
 		t.Rect = textRect.Expanded(exp)
 		t.Rect.Pos.Y += 3
 		t.Font = v.Font()
