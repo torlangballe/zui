@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	remoteCache      = zcache.NewWithExpiry(3600, false)
-	localCache       = zcache.New() // cache for with-app images, no expiry
+	remoteCache      = zcache.NewWithExpiry(10*60, false)
+	localCache       = zcache.New() // cache for included-in-app images, no expiry.
 	DrawInCanvasFunc func(size zgeo.Size, draw func(e js.Value)) image.Image
 )
 
@@ -56,7 +56,7 @@ func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	return false
 }
 
-func FromPath(spath string, got func(*Image)) {
+func FromPathWithCache(spath string, cache *zcache.Cache, got func(*Image)) {
 	// if !strings.HasSuffix(spath, ".png") {
 	// zlog.Info("FromPath:", spath, zlog.GetCallingStackString())
 	// }
@@ -70,27 +70,35 @@ func FromPath(spath string, got func(*Image)) {
 	if !strings.HasPrefix(spath, "data:") && !zhttp.StringStartsWithHTTPX(spath) {
 		spath = path.Join(GlobalURLPrefix, spath)
 	}
-	cache := remoteCache
-	if strings.HasPrefix(spath, "images/") {
-		cache = localCache
-	}
 	i := &Image{}
-	if cache.Get(&i, spath) {
-		if got != nil {
-			got(i)
+	if cache != nil {
+		if cache.Get(&i, spath) {
+			if got != nil {
+				got(i)
+			}
+			return
 		}
-		return
 	}
 	i.load(spath, func(success bool) {
 		// zlog.Info("FromPath loaded:", success, got != nil, spath)
 		if !success {
 			i = nil
 		}
-		cache.Put(spath, i)
+		if cache != nil {
+			cache.Put(spath, i)
+		}
 		if got != nil {
 			got(i)
 		}
 	})
+}
+
+func FromPath(spath string, got func(*Image)) {
+	cache := remoteCache
+	if strings.HasPrefix(spath, "images/") {
+		cache = localCache
+	}
+	FromPathWithCache(spath, cache, got)
 }
 
 func (i *Image) RGBAImage() *Image {
