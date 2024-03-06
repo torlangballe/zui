@@ -134,8 +134,10 @@ func (v *Label) SetRect(r zgeo.Rect) {
 func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	// zlog.Info("label.SetPressedHandler:", v.Hierarchy())
-	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// zlog.Info("label.Pressed:", v.Hierarchy())
+		e := args[0]
+		v.SetStateOnDownPress(e)
 		(&v.LongPresser).HandleOnClick(v)
 		return nil
 	}))
