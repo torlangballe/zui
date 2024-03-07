@@ -161,6 +161,12 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 }
 
 func (v *TabsView) SelectItem(id string, done func()) {
+	if v.CurrentID == id {
+		if done != nil {
+			done()
+		}
+		return
+	}
 	i := v.findItem(v.CurrentID)
 	if i != -1 {
 		item := v.items[i]
