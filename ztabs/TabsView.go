@@ -161,7 +161,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 }
 
 func (v *TabsView) SelectItem(id string, done func()) {
-	if v.CurrentID == id {
+	if v.CurrentID == id && v.findItem(id) != -1 && v.currentChild != nil {
 		if done != nil {
 			done()
 		}
