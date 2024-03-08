@@ -845,6 +845,9 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
+	var selected []string
+	oldSelected := v.SelectedIDs()
+	var hoverOK bool
 	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc(), v.HorizontalFirst) //, zlog.CallingStackString())
 	v.layoutDirty = false
 	placed := map[string]bool{}
@@ -859,6 +862,12 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		// zlog.Info(v.LocalRect(), "GridLayout", x, y, v.Hierarchy(), outer, visible)
 		if visible {
+			if v.CurrentHoverID == cid {
+				hoverOK = true
+			}
+			if zstr.StringsContain(oldSelected, cid) {
+				selected = append(selected, cid)
+			}
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
 			ms, _ := child.(zview.Marginalizer)
@@ -883,6 +892,12 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			v.cellsView.RemoveChild(view)
 			delete(v.children, cid)
 		}
+	}
+	if !hoverOK {
+		v.SetHoverID("")
+	}
+	if !zstr.SlicesAreEqual(v.SelectedIDs(), selected) {
+		v.SelectCells(selected, false)
 	}
 }
 

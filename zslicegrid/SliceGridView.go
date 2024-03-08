@@ -497,27 +497,7 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 	setItemsInSlice(rows, orSlice)
 	if sgv != nil {
 		sgv.updateView()
-		sgv.updateSelectedIDs()
 	}
-}
-
-func (v *SliceGridView[S]) updateSelectedIDs() {
-	var selected []string
-	oldSelected := v.Grid.SelectedIDs()
-	var hoverOK bool
-	for _, sl := range *v.slicePtr {
-		sid := sl.GetStrID()
-		if v.Grid.CurrentHoverID == sid {
-			hoverOK = true
-		}
-		if zstr.StringsContain(oldSelected, sid) {
-			selected = append(selected, sid)
-		}
-	}
-	if !hoverOK {
-		v.Grid.SetHoverID("")
-	}
-	v.Grid.SelectCells(selected, false)
 }
 
 func (v *SliceGridView[S]) UpdateSlice(s []S) {
@@ -530,7 +510,6 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 		*v.slicePtr = s
 		//remove non-selected :
 		v.updateView()
-		v.updateSelectedIDs()
 	}
 }
 
