@@ -48,7 +48,7 @@ import (
 type FieldView struct {
 	zcontainer.StackView
 	ID       string
-	parent   *FieldView
+	ParentFV *FieldView
 	Fields   []Field
 	data     interface{}
 	dataHash int64
@@ -176,7 +176,7 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	}
 	v.params = params
 	v.ID = id
-	v.parent = parent
+	v.ParentFV = parent
 
 	return v
 }
@@ -302,8 +302,8 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 			}
 			continue
 		}
-		if zstr.HasPrefix(local, "../", &fname) && v.parent != nil {
-			finfo, found := zreflect.FieldForName(v.parent.Data(), FlattenIfAnonymousOrZUITag, fname)
+		if zstr.HasPrefix(local, "../", &fname) && v.ParentFV != nil {
+			finfo, found := zreflect.FieldForName(v.ParentFV.Data(), FlattenIfAnonymousOrZUITag, fname)
 			if found {
 				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
 			}

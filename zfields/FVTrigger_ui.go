@@ -36,11 +36,11 @@ func (v *FieldView) rebuildFieldViewIfUseInValueChangedOrIsRebuild(f *Field) {
 		return
 	}
 	if f.Flags&FlagIsUseInValue != 0 {
-		if v.parent != nil {
-			sv, _ := v.parent.View.(*FieldSliceView)
+		if v.ParentFV != nil {
+			sv, _ := v.ParentFV.View.(*FieldSliceView)
 			if sv != nil {
 				sv.UpdateSlice(f, nil)
-				zcontainer.ArrangeChildrenAtRootContainer(v.parent)
+				zcontainer.ArrangeChildrenAtRootContainer(v.ParentFV)
 				return
 			}
 		}
@@ -75,8 +75,8 @@ func (v *FieldView) callTriggerHandler(f *Field, action ActionType, value any, v
 			}
 		}
 	}
-	if v.parent != nil {
-		return v.parent.callTriggerHandler(f, action, value, view)
+	if v.ParentFV != nil {
+		return v.ParentFV.callTriggerHandler(f, action, value, view)
 	}
 	return false
 }

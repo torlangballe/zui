@@ -48,7 +48,7 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	v.Init(v, vert, f.FieldName)
 	v.data = slicePtr
 	v.field = f
-	v.parent = fv
+	v.ParentFV = fv
 	v.params = fv.params
 	v.currentIndex = -1
 	v.params.Field.MergeInField(f)
@@ -180,7 +180,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		fv.Vertical = !v.Vertical || v.field.HasFlag(FlagIsLabelize)
 		// zlog.Info("FieldSliceView:AddItem", fv.Vertical)
 		fv.SetMargin(zgeo.RectFromXY2(4, 4, -4, -4))
-		fv.parent = &v.FieldView
+		fv.ParentFV = &v.FieldView
 		if v.field.Flags&FlagGroupSingle == 0 || v.field.IsStatic() {
 			fv.SetCorner(5)
 			fv.SetBGColor(zstyle.DefaultFGColor().WithOpacity(0.1))
