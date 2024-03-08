@@ -39,7 +39,7 @@ func (v *FieldView) rebuildFieldViewIfUseInValueChangedOrIsRebuild(f *Field) {
 		if v.parent != nil {
 			sv, _ := v.parent.View.(*FieldSliceView)
 			if sv != nil {
-				sv.UpdateSlice(nil)
+				sv.UpdateSlice(f, nil)
 				zcontainer.ArrangeChildrenAtRootContainer(v.parent)
 				return
 			}

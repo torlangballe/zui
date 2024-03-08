@@ -285,7 +285,7 @@ func (v *FieldSliceView) selectItem(i int) {
 	}
 }
 
-func (v *FieldSliceView) UpdateSlice(slicePtr any) {
+func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
 	// zlog.Info("FieldSliceView.UpdateSlice", v.Hierarchy()) //, zlog.CallingStackString())
 	var focusedPath string
 	focused := v.GetFocusedChildView(false)
@@ -297,9 +297,9 @@ func (v *FieldSliceView) UpdateSlice(slicePtr any) {
 	}
 	v.RemoveAllChildren()
 	v.build(true)
-	f := zview.ChildOfViewFunc(v, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
-	if f != nil {
-		f.Native().Focus(true)
+	focused = zview.ChildOfViewFunc(v, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
+	if focused != nil {
+		focused.Native().Focus(true)
 	}
 }
 
