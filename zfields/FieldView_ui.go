@@ -447,12 +447,12 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			zlog.Error("UpdateSlice: not a *FieldSliceView:", f.Name, v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
-		hash := zreflect.HashAnyToInt64(sv.data, "")
+		hash := zreflect.HashAnyToInt64(rval.Interface(), "")
 		sameHash := (sv.dataHash == hash)
-		// zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), sameHash)
+		// zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), zlog.CallingStackString())
 		sv.dataHash = hash
 		if !sameHash || forceOnSlice {
-			sv.UpdateSlice(rval.Addr().Interface())
+			sv.UpdateSlice(f, rval.Addr().Interface())
 		}
 	case zreflect.KindTime:
 		tv, _ := foundView.(*ztext.TextView)
