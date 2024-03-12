@@ -21,7 +21,7 @@ type ActivityView struct {
 
 func NewActivityView(size zgeo.Size) *ActivityView {
 	v := &ActivityView{}
-	v.Init(v, nil, "images/zcore/activity.png", size)
+	v.Init(v, true, nil, "images/zcore/activity.png", size)
 	v.rotationSecs = 1.5
 	v.repeater = ztimer.RepeaterNew()
 	v.SetAlpha(0)

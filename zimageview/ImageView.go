@@ -36,16 +36,20 @@ type ImageView struct {
 	KeyboardShortcut   zkeyboard.KeyMod
 }
 
-func New(image *zimage.Image, imagePath string, fitSize zgeo.Size) *ImageView {
+func NewWithCachedPath(imagePath string, fitSize zgeo.Size) *ImageView {
+	return New(nil, true, imagePath, fitSize)
+}
+
+func New(image *zimage.Image, useCache bool, imagePath string, fitSize zgeo.Size) *ImageView {
 	v := &ImageView{}
-	v.Init(v, image, imagePath, fitSize)
+	v.Init(v, useCache, image, imagePath, fitSize)
 	return v
 }
 
-func (v *ImageView) Init(view zview.View, image *zimage.Image, imagePath string, fitSize zgeo.Size) {
+func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, imagePath string, fitSize zgeo.Size) {
 	v.CustomView.Init(view, imagePath)
 	v.SetFitSize(fitSize)
-	v.UseDownsampleCache = true
+	v.UseDownsampleCache = useCache
 	v.DownsampleImages = true
 	v.SetSelectable(false)
 	name := "image"
@@ -70,7 +74,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 				if !zhttp.StringStartsWithHTTPX(path) {
 					path = zstr.Concat("/", zrest.AppURLPrefix, path)
 				}
-				nv := New(v.image, v.image.Path, zgeo.Size{})
+				nv := New(v.image, v.UseDownsampleCache, v.image.Path, zgeo.Size{})
 				att := zpresent.AttributesNew()
 				att.Modal = true
 				att.ModalCloseOnOutsidePress = true
@@ -173,7 +177,8 @@ func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimag
 	} else {
 		// zlog.Info("SetImagePath:", v.ObjectName(), path)
 		v.loading = true
-		zimage.FromPath(path, func(ni *zimage.Image) {
+
+		zimage.FromPath(path, v.UseDownsampleCache, func(ni *zimage.Image) {
 			v.loading = false
 			// zlog.Info(v.ObjectName(), "Image from path gotten:", path, ni != nil)
 			// if ni != nil {

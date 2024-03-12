@@ -383,7 +383,7 @@ func (c *Canvas) ZImage(ensureCopy bool, got func(img *zimage.Image)) {
 	// }
 	// return ImageFromGo(gi)
 	surl := c.element.Call("toDataURL").String()
-	zimage.FromPath(surl, got)
+	zimage.FromPath(surl, false, got)
 }
 
 func CanvasFromGoImage(i image.Image) *Canvas {

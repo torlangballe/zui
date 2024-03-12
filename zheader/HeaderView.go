@@ -179,7 +179,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		}
 		button.SetTextAlignment(j)
 		if h.ImagePath != "" {
-			iv := zimageview.New(nil, h.ImagePath, h.ImageSize)
+			iv := zimageview.NewWithCachedPath(h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.FieldName + ".image")
 			button.Add(iv, zgeo.Center, zgeo.Size{})
@@ -203,7 +203,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			}
 		})
 		if h.SortSmallFirst != zbool.Unknown {
-			triangle := zimageview.New(nil, "", zgeo.Size{6, 5})
+			triangle := zimageview.NewWithCachedPath("", zgeo.Size{6, 5})
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
 			button.Add(triangle, zgeo.TopRight, zgeo.Size{2, 3})

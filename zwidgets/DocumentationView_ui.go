@@ -74,7 +74,7 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	// hstack.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
 
 	if zui.DebugOwnerMode {
-		edit := zimageview.New(nil, "images/zcore/edit-dark-gray.png", zgeo.SizeBoth(zweb.DefaultBarIconSize))
+		edit := zimageview.NewWithCachedPath("images/zcore/edit-dark-gray.png", zgeo.SizeBoth(zweb.DefaultBarIconSize))
 		edit.DownsampleImages = true
 		// edit.SetPressedHandler(v.startEdit)
 		v.WebView.Bar.Add(edit, zgeo.CenterLeft)

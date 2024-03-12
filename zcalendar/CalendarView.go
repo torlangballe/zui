@@ -104,7 +104,7 @@ func (v *CalendarView) Init(view zview.View) {
 	yearSub.SetPressedHandler(func() {
 		v.Increase(0, -1)
 	})
-	v.settingsGear = zimageview.New(nil, "images/zcore/gear.png", zgeo.Size{18, 18})
+	v.settingsGear = zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.Size{18, 18})
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
 	v.settingsGear.SetPressedHandler(v.handleSettingsPressed)
@@ -241,7 +241,7 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.addSettingsCheck(s, "Show Week Numbers", zlocale.IsShowWeekNumbersInCalendars, true)
 	v.addSettingsCheck(s, "Use 24-hour Clock", zlocale.IsUse24HourClock, false)
 	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
-	close := zimageview.New(nil, "images/zcore/cross-circled.png", zgeo.Size{20, 20})
+	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.Size{20, 20})
 	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
 	close.SetPressedHandler(func() {
 		v.daysGrid.SetJSStyle("filter", "none")

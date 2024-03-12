@@ -148,7 +148,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	button.MaxSize.H = 26
 	button.SetObjectName(id)
 	if imagePath != "" {
-		button.SetImage(nil, imagePath, nil)
+		button.SetImage(nil, true, imagePath, nil)
 	}
 	button.SetPressedHandler(func() {
 		go v.SelectItem(id, nil)

@@ -207,7 +207,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *ShapeView) SetImage(image *zimage.Image, spath string, done func(i *zimage.Image)) {
+func (v *ShapeView) SetImage(image *zimage.Image, useCache bool, spath string, done func(i *zimage.Image)) {
 	// zlog.Info("SVSetImage:", v.ObjectName(), spath)
 	v.image = image
 	v.SetExposed(false)
@@ -218,7 +218,7 @@ func (v *ShapeView) SetImage(image *zimage.Image, spath string, done func(i *zim
 	v.loading = false
 	if image == nil && spath != "" {
 		v.loading = true
-		zimage.FromPath(spath, func(i *zimage.Image) {
+		zimage.FromPath(spath, useCache, func(i *zimage.Image) {
 			v.loading = false
 			// zlog.Info("sv image loaded: " + spath + ": " + v.ObjectName())
 			v.image = i // we must set it here, or it's not set yet in done() below
@@ -242,7 +242,7 @@ func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	str := pathedName + s + ".png"
 
 	// zlog.Info("SetImageButtonName:", v.Hierarchy(), str)
-	v.SetImage(nil, str, func(image *zimage.Image) {
+	v.SetImage(nil, true, str, func(image *zimage.Image) {
 		v.image = image
 		if image != nil {
 			if v.image.Size().W < insets.W*2 || v.image.Size().H < insets.H*2 {

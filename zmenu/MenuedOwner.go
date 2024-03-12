@@ -707,7 +707,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	if o.ImagePath != "" {
 		sval := fmt.Sprint(item.Value)
 		spath := path.Join(o.ImagePath, sval+".png")
-		iv := zimageview.New(nil, spath, zgeo.Size{32, 20})
+		iv := zimageview.NewWithCachedPath(spath, zgeo.Size{32, 20})
 		iv.DownsampleImages = true
 		v.Add(iv, zgeo.CenterRight, marg)
 		marg.W += gap + imageWidth
@@ -756,7 +756,7 @@ func (o *MenuedOwner) saveToStore() {
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
 	v := zshape.NewView(shape, zgeo.Size{12, 12})
-	v.SetImage(nil, "images/zcore/zmenu-arrows.png", nil)
+	v.SetImage(nil, true, "images/zcore/zmenu-arrows.png", nil)
 	v.ImageMargin = zgeo.Size{4, 4}
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.SetTextAlignment(zgeo.CenterLeft)

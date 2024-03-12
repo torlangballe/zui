@@ -51,7 +51,7 @@ func (i *Image) ToGo() image.Image {
 	return i.GoImage
 }
 
-func FromPath(path string, got func(*Image)) {
+func FromPath(path string, useCache bool, got func(*Image)) {
 	var goImage image.Image
 	if zhttp.StringStartsWithHTTPX(path) {
 		goImage, _, _ = GoImageFromURL(path)

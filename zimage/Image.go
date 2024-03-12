@@ -1,9 +1,7 @@
-// Copyright 2022 Tor Langballe. All rights reserved.
-// Created by Tor Langballe on /20/10/15.
-// Package image implements a pixel image;
-// On a browser it a javascript image,
-// otherwise a wrapper to a go image.Image
-// (and other native images in future)
+// Copyright 2022 Tor Langballe. All rights reserved. Created by Tor Langballe on /20/10/15.
+// Package image implements a pixel image; On a browser it a javascript image,
+// otherwise a wrapper to a go image.Image (and other native images in future).
+// It also has numerous general image manipulation functions.
 
 package zimage
 
@@ -32,11 +30,8 @@ import (
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 )
-
-// https: //developer.apple.com/documentation/accelerate/finding_the_sharpest_image_in_a_sequence_of_captured_images
 
 type Image struct {
 	imageBase
@@ -59,7 +54,10 @@ type Owner interface {
 	SetImage(image *Image, path string, got func(*Image))
 }
 
-var GlobalURLPrefix string
+var (
+	GlobalURLPrefix string
+	MainScreenScale float64 = 1
+)
 
 func (i *Image) ForPixels(got func(x, y int, color zgeo.Color)) {
 	gi := i.ToGo()
@@ -84,16 +82,16 @@ func MakeImagePathWithAddedScale(spath string, scale int) string {
 	return path.Join(dir, stub+size+ext)
 }
 
-func FromPathAddScreenScaleSuffix(spath string, got func(*Image)) {
+func FromPathAddScreenScaleSuffix(spath string, useCache bool, got func(*Image)) {
 	dir, _, stub, ext := zfile.Split(spath)
 	size := ""
 	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
-	if zscreen.MainScale() >= 2 {
+	if MainScreenScale >= 2 {
 		size = "@2x"
 	}
 	spath = path.Join(dir, stub+size+ext)
-	zlog.Info("FromPathAddScreenScaleSuffix:", spath, zscreen.MainScale())
-	FromPath(spath, got)
+	zlog.Info("FromPathAddScreenScaleSuffix:", spath, MainScreenScale)
+	FromPath(spath, useCache, got)
 }
 
 func imageGetScaleFromPath(path string) int {
@@ -414,12 +412,12 @@ func tryChangeTint(ig *ImageGetter, wg *sync.WaitGroup) {
 	}
 }
 
-func GetImages(images []*ImageGetter, got func(all bool)) {
+func GetImages(images []*ImageGetter, useCache bool, got func(all bool)) {
 	var wg sync.WaitGroup
 	var count int
 	for _, ig := range images {
 		wg.Add(1)
-		FromPath(ig.Path, func(img *Image) {
+		FromPath(ig.Path, useCache, func(img *Image) {
 			if img != nil {
 				count++
 				ig.Image = img

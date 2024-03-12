@@ -92,7 +92,7 @@ func (v *WebView) MakeBar() *zcontainer.StackView {
 	// v.Bar.Add(v.Forward, zgeo.CenterLeft)
 
 	if zui.DebugOwnerMode {
-		v.Refresh = zimageview.New(nil, "images/zcore/refresh.png", zgeo.SizeBoth(DefaultBarIconSize))
+		v.Refresh = zimageview.NewWithCachedPath("images/zcore/refresh.png", zgeo.SizeBoth(DefaultBarIconSize))
 		v.Refresh.SetPressedHandler(func() {
 			v.SetURL(v.url)
 		})

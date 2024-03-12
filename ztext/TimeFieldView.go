@@ -131,7 +131,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.yearText = addText(v, cols, "Y", "/")
 		}
 		if flags&TimeFieldNoCalendar == 0 {
-			cal := zimageview.New(nil, "images/zcore/calendar.png", zgeo.Size{16, 16})
+			cal := zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.Size{16, 16})
 			cal.SetPressedHandler(v.popCalendar)
 			v.Add(cal, zgeo.CenterLeft, zgeo.Size{1, 0})
 		}

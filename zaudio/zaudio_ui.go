@@ -34,7 +34,7 @@ func NewAudioIconView(size zgeo.Size, path string) *AudioIconView {
 	v.activity = zwidgets.NewActivityView(size)
 	v.Add(v.activity, zgeo.Center)
 
-	v.imageView = zimageview.New(nil, "images/zcore/speaker.png", size)
+	v.imageView = zimageview.NewWithCachedPath("images/zcore/speaker.png", size)
 	v.imageView.DownsampleImages = true
 	v.imageView.SetObjectName("image")
 	v.Add(v.imageView, zgeo.Center)

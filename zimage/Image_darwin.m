@@ -68,3 +68,18 @@ struct Image ImageNRGBABytesToJPEGDataNative(unsigned char *imgBytes, int w, int
     CGImageRelease(imageRef);
     return ri;
 }
+
+void ConvertARGBToRGBAOpaque(int w, int h, int stride, unsigned char *img) {
+	for (int iy = 0; iy < h; iy++) {
+        unsigned char *p = &img[iy*stride];
+		for (int ix = 0; ix < w; ix++) {
+			// ARGB => RGBA, and set A to 255
+            p[0] = p[1];
+            p[1] = p[2];
+            p[2] = p[3];
+            p[3] = 255;
+            p += 4;
+		}
+	}
+}
+

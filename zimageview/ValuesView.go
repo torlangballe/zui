@@ -30,7 +30,7 @@ type variant struct {
 
 func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size, key string) {
 	v.storeKey = key
-	v.ImageView.Init(view, nil, "", fitSize)
+	v.ImageView.Init(view, true, nil, "", fitSize)
 	v.SetPressedHandler(v.pressed)
 	v.SetObjectName("ValuesView")
 	ztimer.StartIn(0.1, func() {

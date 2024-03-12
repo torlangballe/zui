@@ -785,7 +785,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
-			menu.SetImage(nil, f.ImageFixedPath, nil)
+			menu.SetImage(nil, true, f.ImageFixedPath, nil)
 			menu.ImageMaxSize = f.Size
 		} else {
 			if len(f.Colors) != 0 {
@@ -1058,7 +1058,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 }
 
 func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
-	iv := zimageview.New(nil, "", f.Size)
+	iv := zimageview.NewWithCachedPath("", f.Size)
 	iv.DownsampleImages = true
 	iv.SetMinSize(f.Size)
 	iv.SetObjectName(f.FieldName)

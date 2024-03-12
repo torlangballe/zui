@@ -27,13 +27,13 @@ type imageBase struct {
 	ImageJS   js.Value
 }
 
-func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
+func GetSynchronous(timeoutSecs float64, useCache bool, imagePaths ...interface{}) bool {
 	added := make(chan struct{}, 100)
 	for i := 0; i < len(imagePaths); i++ {
 		imgPtr := imagePaths[i].(**Image)
 		i++
 		spath := imagePaths[i].(string)
-		FromPath(spath, func(image *Image) {
+		FromPath(spath, useCache, func(image *Image) {
 			*imgPtr = image
 			added <- struct{}{}
 			// zlog.Info("GetSynchronous got", spath, image != nil)
@@ -56,10 +56,16 @@ func GetSynchronous(timeoutSecs float64, imagePaths ...interface{}) bool {
 	return false
 }
 
-func FromPathWithCache(spath string, cache *zcache.Cache, got func(*Image)) {
-	// if !strings.HasSuffix(spath, ".png") {
-	// zlog.Info("FromPath:", spath, zlog.GetCallingStackString())
-	// }
+func FromPath(spath string, useCache bool, got func(*Image)) {
+	var cache *zcache.Cache
+
+	if useCache {
+		cache = remoteCache
+		if strings.HasPrefix(spath, "images/") {
+			cache = localCache
+		}
+	}
+
 	if spath == "" {
 		if got != nil {
 			got(nil)
@@ -91,14 +97,6 @@ func FromPathWithCache(spath string, cache *zcache.Cache, got func(*Image)) {
 			got(i)
 		}
 	})
-}
-
-func FromPath(spath string, got func(*Image)) {
-	cache := remoteCache
-	if strings.HasPrefix(spath, "images/") {
-		cache = localCache
-	}
-	FromPathWithCache(spath, cache, got)
 }
 
 func (i *Image) RGBAImage() *Image {
@@ -200,7 +198,7 @@ func FromGo(img image.Image, got func(image *Image)) {
 		got(nil)
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")
-	FromPath(surl, got)
+	FromPath(surl, false, got)
 }
 
 func (i *Image) ToGo() image.Image {

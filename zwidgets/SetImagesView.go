@@ -46,7 +46,7 @@ func (v *SetImagesView) SetValueWithAny(bitset any) {
 	parts := strings.Split(stringer.String(), "|")
 	for _, part := range parts {
 		path := zstr.Concat("/", "images/flags", v.prefix, part) + ".png"
-		iv := zimageview.New(nil, path, v.imageSize)
+		iv := zimageview.New(nil, true, path, v.imageSize)
 		iv.DownsampleImages = true
 		iv.SetToolTip(part)
 		v.Add(iv, zgeo.CenterLeft)

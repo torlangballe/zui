@@ -60,13 +60,13 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	return v
 }
 
-func (v *DropWell) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
+func (v *DropWell) SetImage(image *zimage.Image, useCache bool, path string, got func(i *zimage.Image)) {
 	if image != nil {
 		v.image = image
 		v.Expose()
 		return
 	}
-	zimage.FromPath(path, func(i *zimage.Image) {
+	zimage.FromPath(path, useCache, func(i *zimage.Image) {
 		v.image = i
 		v.Expose()
 		if got != nil {
