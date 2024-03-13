@@ -1,9 +1,12 @@
 package zcanvas
 
 import (
+	"strings"
+
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
@@ -160,7 +163,7 @@ type scaledImage struct {
 	size zgeo.Size
 }
 
-var scaledImageMap = map[scaledImage]*zimage.Image{}
+var scaledImageMap = zcache.NewExpiringMap[scaledImage, *zimage.Image](60 * 10)
 
 func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache bool, destRect zgeo.Rect, opacity float32, sourceRect zgeo.Rect) bool {
 	proportional := false
@@ -169,18 +172,15 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 	sourceRect = zgeo.Rect{Size: ds}
 	var newImage *zimage.Image
 	if useDownsampleCache {
-		newImage, _ = scaledImageMap[si]
+		newImage, _ = scaledImageMap.Get(si)
 	}
 	// if strings.Contains(image.Path, "plus-circled-darkgray.png") {
-	// 	zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, destRect, newImage != nil)
+	// zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, destRect, newImage != nil)
 	// }
 	if newImage != nil {
 		image = newImage
 		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 		return true
-	}
-	if len(scaledImageMap) > 500 {
-		scaledImageMap = map[scaledImage]*zimage.Image{}
 	}
 	scale := zscreen.GetMain().Scale
 	ds.MultiplyD(scale)
@@ -190,9 +190,17 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 		}
 		shrunkImage.Scale = int(scale)
 		if useDownsampleCache {
-			scaledImageMap[si] = shrunkImage
+			if strings.HasPrefix(image.Path, "images/") {
+				// zlog.Info("SetForever:", image.Path)
+				scaledImageMap.SetForever(si, shrunkImage)
+			} else {
+				scaledImageMap.Set(si, shrunkImage)
+			}
 		}
 		c.rawDrawPlainImage(shrunkImage, destRect, opacity, sourceRect)
+		if !useDownsampleCache {
+			shrunkImage.Release()
+		}
 	})
 	return false
 }

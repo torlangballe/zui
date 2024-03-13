@@ -412,6 +412,7 @@ func tryChangeTint(ig *ImageGetter, wg *sync.WaitGroup) {
 	}
 }
 
+// GetImages goes thu the ImageGetter's scaling/tinting images, returning when all are done. Release() is NOT called on input or output images
 func GetImages(images []*ImageGetter, useCache bool, got func(all bool)) {
 	var wg sync.WaitGroup
 	var count int

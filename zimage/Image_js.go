@@ -7,6 +7,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
@@ -105,8 +106,9 @@ func (i *Image) RGBAImage() *Image {
 }
 
 func (i *Image) load(spath string, done func(success bool)) {
-	// zlog.Info("Image Load:", spath)
-	i.Path = spath
+	if !strings.HasPrefix(spath, "data:") {
+		i.Path = spath
+	}
 	i.Loading = true
 	i.Loading = strings.HasPrefix(spath, "images/")
 	i.Scale = imageGetScaleFromPath(spath)
@@ -116,7 +118,7 @@ func (i *Image) load(spath string, done func(success bool)) {
 	i.ImageJS.Set("crossOrigin", "Anonymous")
 
 	// i.ImageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	i.ImageJS.Set("onerror", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	i.ImageJS.Set("onerror", zdom.MakeSingleCallJSCallback(func(js.Value, []js.Value) interface{} {
 		i.Loading = false
 		i.size.W = 5
 		i.size.H = 5
@@ -126,17 +128,21 @@ func (i *Image) load(spath string, done func(success bool)) {
 		}
 		return nil
 	}))
-	i.ImageJS.Call("addEventListener", "load", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	f := zdom.MakeSingleCallJSCallback(func(this js.Value, args []js.Value) any {
 		i.Loading = false
 		i.size.W = i.ImageJS.Get("width").Float()
 		i.size.H = i.ImageJS.Get("height").Float()
-		// zlog.Info("Image Loaded", this, args, len(args))
 		if done != nil {
 			done(true)
 		}
 		return nil
-	}))
+	})
+	i.ImageJS.Call("addEventListener", "load", f)
 	i.ImageJS.Set("src", spath)
+}
+
+func (i *Image) Release() {
+	i.ImageJS.Set("src", "")
 }
 
 func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {

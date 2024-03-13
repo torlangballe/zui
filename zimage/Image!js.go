@@ -163,3 +163,5 @@ func (i *Image) RGBAImage(got func(img *Image)) {
 	n := GoImageToGoRGBA(i.GoImage)
 	FromGo(n, got)
 }
+
+func (i *Image) Release() {}

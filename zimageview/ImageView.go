@@ -127,20 +127,10 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.image != nil {
 		s = v.image.Size()
 	}
-	// zlog.Info("IV CS", v.Hierarchy(), s, p, v.image != nil, zlog.GetCallingStackString())
 	margSize := v.Margin().Size
 	if !v.fitSize.IsNull() {
 		s = v.fitSize
-		// s = s.ShrunkInto(v.fitSize.Plus(margSize))
 	}
-	// if !v.minSize.IsNull() {
-	// 	ms := v.minSize.Plus(margSize)
-	// 	if s.IsNull() || v.alignment&zgeo.Proportional == 0 {
-	// 		s = ms
-	// 	} else {
-	// 		s = s.ExpandedInto(ms)
-	// 	}
-	// }
 	s.Add(margSize.Negative())
 	s.Maximize(zgeo.Size{2, 2})
 	return s

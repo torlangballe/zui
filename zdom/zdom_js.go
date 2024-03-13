@@ -107,3 +107,13 @@ func Resolve(val js.Value, done func(resolved js.Value, err error)) {
 		return nil
 	}))
 }
+
+func MakeSingleCallJSCallback(call func(this js.Value, args []js.Value) any) js.Func {
+	var f js.Func
+	f = js.FuncOf(func(this js.Value, args []js.Value) any {
+		a := call(this, args)
+		f.Release()
+		return a
+	})
+	return f
+}
