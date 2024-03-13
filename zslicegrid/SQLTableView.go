@@ -17,6 +17,7 @@ import (
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zsql"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type SQLOwner[S zstr.StrIDer] struct {
@@ -32,6 +33,7 @@ type SQLOwner[S zstr.StrIDer] struct {
 	offset        int
 	slicePage     *[]S
 	searchFields  []string
+	HandleGot     func()
 }
 
 type SQLTableView[S zstr.StrIDer] struct {
@@ -48,6 +50,9 @@ func (o *SQLOwner[S]) Init(slice *[]S, tableName, rpcCallerName string, limit in
 	o.TableName = tableName
 	o.rpcCallerName = rpcCallerName
 	o.limit = limit
+	ztimer.StartIn(0.05, func() { // we give it time to set o.HandleGot etc
+		o.GetAndUpdate()
+	})
 }
 
 func (o *SQLOwner[S]) NewTable(structName string, options OptionType) (sv *SQLTableView[S]) {
@@ -61,7 +66,7 @@ func (o *SQLOwner[S]) NewTable(structName string, options OptionType) (sv *SQLTa
 func (v *SQLTableView[S]) Init(view zview.View, owner *SQLOwner[S], options OptionType) {
 	if v.Header != nil {
 		v.Header.SortingPressedFunc = func() {
-			go v.owner.UpdateSlice()
+			go v.owner.GetAndUpdate()
 		}
 	}
 	v.owner = owner
@@ -72,7 +77,6 @@ func (v *SQLTableView[S]) Init(view zview.View, owner *SQLOwner[S], options Opti
 	if v.options&AddHeader != 0 {
 		v.addActionButton()
 	}
-	go owner.UpdateSlice()
 }
 
 func (v *SQLTableView[S]) addActionButton() {
@@ -216,7 +220,7 @@ func (o *SQLOwner[S]) UpdateRows(rows []S) {
 	o.PushRowsToServer(rows)
 }
 
-func (o *SQLOwner[S]) UpdateSlice() {
+func (o *SQLOwner[S]) GetAndUpdate() {
 	var slice []S
 	var q zsql.QueryBase
 
@@ -231,6 +235,9 @@ func (o *SQLOwner[S]) UpdateSlice() {
 		o.Grid.UpdateSlice(slice)
 	} else {
 		*o.slicePage = slice
+	}
+	if o.HandleGot != nil {
+		o.HandleGot()
 	}
 }
 
