@@ -133,9 +133,11 @@ func (i *Image) load(spath string, done func(success bool)) {
 		i.Loading = false
 		i.size.W = i.ImageJS.Get("width").Float()
 		i.size.H = i.ImageJS.Get("height").Float()
+		// zlog.Info("Image Load success:", spath)
 		if done != nil {
 			done(true)
 		}
+		i.ImageJS.Set("onerror", nil) // if we don't do this first, clearing onload seems to generate an onerror event.
 		i.ImageJS.Set("onload", nil)
 		return nil
 	})
