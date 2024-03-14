@@ -63,9 +63,11 @@ type SliceGridView[S zstr.StrIDer] struct {
 	slicePtr      *[]S
 	filteredSlice []S
 	options       OptionType
-	SearchField   *ztext.SearchField
-	ActionMenu    *zmenu.MenuedOwner
-	Layout        *zimageview.ValuesView
+	layedOut      bool
+
+	SearchField *ztext.SearchField
+	ActionMenu  *zmenu.MenuedOwner
+	Layout      *zimageview.ValuesView
 }
 
 type LayoutType string
@@ -336,7 +338,9 @@ func (v *SliceGridView[S]) handleLayoutButton(value string) {
 		v.Grid.HorizontalFirst = true
 		v.Grid.MaxColumns = 1
 	}
-	v.Grid.RecreateCells = true
+	v.Grid.RecreateCells = v.layedOut
+	v.layedOut = true
+	// zlog.Info("handleLayoutButton:", v.Grid.RecreateCells)
 	v.ArrangeChildren()
 }
 
