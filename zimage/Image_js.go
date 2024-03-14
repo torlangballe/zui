@@ -126,6 +126,7 @@ func (i *Image) load(spath string, done func(success bool)) {
 		if done != nil {
 			done(false)
 		}
+		i.ImageJS.Set("onerror", nil)
 		return nil
 	}))
 	f := zdom.MakeSingleCallJSCallback(func(this js.Value, args []js.Value) any {
@@ -135,9 +136,11 @@ func (i *Image) load(spath string, done func(success bool)) {
 		if done != nil {
 			done(true)
 		}
+		i.ImageJS.Set("onload", nil)
 		return nil
 	})
-	i.ImageJS.Call("addEventListener", "load", f)
+	// i.ImageJS.Call("addEventListener", "load", f)
+	i.ImageJS.Set("onload", f)
 	i.ImageJS.Set("src", spath)
 }
 
