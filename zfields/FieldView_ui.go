@@ -376,6 +376,13 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			return true
 		}
 	}
+	if f.Enum != "" && (f.IsStatic() || v.params.AllStatic) {
+		enum := GetEnum(f.Enum)
+		str := findNameOfEnumForRVal(rval, enum)
+		foundView.(*zlabel.Label).SetText(str)
+		return true
+	}
+
 	menuType, _ := foundView.(zmenu.MenuType)
 	if menuType == nil {
 		o := zmenu.OwnerForView(foundView)
@@ -1222,7 +1229,15 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return menu, false
 	}
 	if f.Enum != "" {
-		view = v.makeMenu(rval, f, nil)
+		if f.IsStatic() || v.params.AllStatic {
+			enum := GetEnum(f.Enum)
+			str := findNameOfEnumForRVal(rval, enum)
+			view = v.makeText(reflect.ValueOf(str), f, true)
+			tv := view.(*zlabel.Label)
+			tv.SetFont(tv.Font().NewWithStyle(zgeo.FontStyleBold))
+		} else {
+			view = v.makeMenu(rval, f, nil)
+		}
 		return view, false
 	}
 	_, got := rval.Interface().(UIStringer)
@@ -1235,6 +1250,15 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return v.makeText(rval, f, false), false
 	}
 	return nil, false
+}
+
+func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
+	a := rval.Interface()
+	item := enum.FindValue(a)
+	if item == nil {
+		return ""
+	}
+	return item.Name
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
