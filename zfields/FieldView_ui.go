@@ -1221,7 +1221,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 				}
 			}
 		}
-		menu := v.makeMenu(ei, f, enum)
+		menu := v.makeMenu(rval, f, enum)
 		if menu == nil {
 			zlog.Error("no local enum for", f.LocalEnum)
 			return nil, true
