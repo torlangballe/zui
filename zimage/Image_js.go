@@ -7,7 +7,6 @@ import (
 	"syscall/js"
 	"time"
 
-	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
@@ -117,8 +116,8 @@ func (i *Image) load(spath string, done func(success bool)) {
 	i.ImageJS = imageF.New()
 	i.ImageJS.Set("crossOrigin", "Anonymous")
 
-	// i.ImageJS.Set("onload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	i.ImageJS.Set("onerror", zdom.MakeSingleCallJSCallback(func(js.Value, []js.Value) interface{} {
+	var fo, fl js.Func
+	fo = js.FuncOf(func(this js.Value, args []js.Value) any {
 		i.Loading = false
 		i.size.W = 5
 		i.size.H = 5
@@ -126,10 +125,13 @@ func (i *Image) load(spath string, done func(success bool)) {
 		if done != nil {
 			done(false)
 		}
+		fo.Release()
+		fl.Release()
 		i.ImageJS.Set("onerror", nil)
+		i.ImageJS.Set("onload", nil)
 		return nil
-	}))
-	f := zdom.MakeSingleCallJSCallback(func(this js.Value, args []js.Value) any {
+	})
+	fl = js.FuncOf(func(this js.Value, args []js.Value) any {
 		i.Loading = false
 		i.size.W = i.ImageJS.Get("width").Float()
 		i.size.H = i.ImageJS.Get("height").Float()
@@ -137,16 +139,19 @@ func (i *Image) load(spath string, done func(success bool)) {
 		if done != nil {
 			done(true)
 		}
+		fl.Release()
+		fo.Release()
 		i.ImageJS.Set("onerror", nil) // if we don't do this first, clearing onload seems to generate an onerror event.
 		i.ImageJS.Set("onload", nil)
 		return nil
 	})
-	// i.ImageJS.Call("addEventListener", "load", f)
-	i.ImageJS.Set("onload", f)
+	i.ImageJS.Set("onerror", fo)
+	i.ImageJS.Set("onload", fl)
 	i.ImageJS.Set("src", spath)
 }
 
 func (i *Image) Release() {
+	// zlog.Info("Image.Release:", i.Size(), i.Path)
 	i.ImageJS.Set("src", "")
 }
 
