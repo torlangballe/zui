@@ -74,11 +74,6 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 		args[0].Call("stopPropagation")
 		return nil
 	}))
-	// v.JSSet("onkeyup", js.FuncOf(func(val js.Value, args []js.Value) interface{} {
-	// 	args[0].Call("stopPropagation")
-	// 	zlog.Info("key in textview:", args)
-	// 	return nil
-	// }))
 	if DefaultBGColor().Valid {
 		v.SetBGColor(DefaultBGColor())
 	}

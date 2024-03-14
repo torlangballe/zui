@@ -985,14 +985,6 @@ func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos z
 				handler(getMousePosRelative(v, e), zbool.Unknown)
 				return nil
 			}))
-			// listener := we.Call("addEventListener", "mousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			// 	handler(getMousePosRelative(v, args[0]), zbool.Unknown)
-			// 	return nil
-			// }))
-			// moverListeners[v] = listener
-			// v.AddOnRemoveFunc(func() {
-			// 	delete(moverListeners, v)
-			// })
 		}
 		return nil
 	}))
@@ -1004,13 +996,6 @@ func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos z
 		handler(getMousePosRelative(v, args[0]), zbool.False)
 		if handleMoves {
 			v.JSSet("onmousemove", nil)
-			// 	listener, got := moverListeners[v]
-			// 	zlog.Info("Remove mover:", got, v.Hierarchy())
-			// 	if got {
-			// 		we := v.GetWindowElement()
-			// 		we.Call("removeEventListener", "mousemove", listener)
-			// 		delete(moverListeners, v)
-			// 	}
 		}
 		return nil
 	}))

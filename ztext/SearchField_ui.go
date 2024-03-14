@@ -41,10 +41,6 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 			old()
 		}
 	})
-	// Call("addEventListener", "input", js.FuncOf(func(js.Value, []js.Value) interface{} {
-	// 	iv.Show(t.Text() == "")
-	// 	return nil
-	// }))
 	return s
 }
 
