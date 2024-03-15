@@ -610,7 +610,7 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	totalMinusBar := total.Minus(zgeo.SizeD(v.BarSize, 0))
 	childSize := v.getAChildSize(totalMinusBar)
 	nx, ny := v.CalculateColumnsAndRows(childSize.W, totalMinusBar.W)
-	// zlog.Info("CalculatedGridSize childsize:", childSize, total.W, nx, ny)
+	// zlog.Info("CalculatedGridSize childsize:", childSize, totalMinusBar.W, nx, ny)
 	zint.Maximize(&ny, v.MinRowsForFullSize)
 	if v.MaxRowsForFullSize != 0 {
 		zint.Minimize(&ny, v.MaxRowsForFullSize)

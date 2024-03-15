@@ -3,7 +3,6 @@ package zlabel
 import (
 	"syscall/js"
 
-	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
@@ -51,8 +50,8 @@ func (label *Label) init(text string) {
 		}
 		return false
 	})
-	textNode := zdom.DocumentJS.Call("createTextNode", "")
-	label.JSCall("appendChild", textNode)
+	// textNode := zdom.DocumentJS.Call("createTextNode", "")
+	// label.JSCall("appendChild", textNode)
 	label.SetText(text)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	label.SetFont(f)
