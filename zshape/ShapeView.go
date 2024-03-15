@@ -153,8 +153,8 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		ts, _, _ := v.textInfo.GetBounds()
 		// zlog.Info("ShapeView.CalculatedSize:", v.ObjectName(), v.textInfo.Text, s, ts)
 
+		ts.W *= 1.1
 		ts.Add(zgeo.Size{12, 6})
-		// ts.W *= 1.1
 		s.Maximize(ts)
 	}
 	if v.image != nil {
