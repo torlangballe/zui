@@ -1061,6 +1061,9 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		_, stack := zcheckbox.Labelize(cv, title)
 		return stack
 	}
+	if f.IsStatic() {
+		cv.SetUsable(false)
+	}
 	return cv
 }
 
@@ -1561,7 +1564,6 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		return
 	}
 	finfo := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
-	// zlog.Info("fieldToDataItem:", v.Hierarchy(), f.Name)
 
 	if f.WidgetName != "" { //&& f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
