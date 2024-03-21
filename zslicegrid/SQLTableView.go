@@ -98,10 +98,10 @@ func (v *SQLTableView[S]) addActionButton() {
 				items = append(items, idup)
 			}
 			if v.options&AllowEdit != 0 {
-				idup := zmenu.MenuedSCFuncAction("Edit "+noItems, 'E', 0, func() {
+				iedit := zmenu.MenuedSCFuncAction("Edit "+noItems, 'E', 0, func() {
 					v.doEdit(ids, false, false, false)
 				})
-				items = append(items, idup)
+				items = append(items, iedit)
 			}
 		}
 		if v.options&AllowNew != 0 {
