@@ -1,9 +1,10 @@
 package zaudio
 
 import (
+	"syscall/js"
+
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zlog"
-	"syscall/js"
 )
 
 // https://talkrapp.com/speechSynthesis.html
@@ -13,10 +14,10 @@ type VoiceJS js.Value
 var allVoices []Voice = nil
 
 func init() {
-	getSynth().Set("onvoiceschanged", js.FuncOf(func(this js.Value, args []js.Value) any {
-		zlog.Info("Voices changed")
-		return nil
-	}))
+	// getSynth().Set("onvoiceschanged", js.FuncOf(func(this js.Value, args []js.Value) any {
+	// 	zlog.Info("Voices changed")
+	// 	return nil
+	// }))
 }
 func (v VoiceJS) Name() string {
 	return js.Value(v).Get("name").String()
