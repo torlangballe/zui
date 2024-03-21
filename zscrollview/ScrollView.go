@@ -27,11 +27,11 @@ type ScrollView struct {
 	BarSize                float64
 }
 
-var DefaultBarSize = 16.0 // 22?
+var DefaultBarSize = 15.0 //16.0 // 22?
 
 func init() {
 	if zdevice.WasmBrowser() == zdevice.Safari {
-		DefaultBarSize = 15
+		DefaultBarSize = 15 // 15
 	}
 }
 
