@@ -134,24 +134,24 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 	}
 }
 
+// func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+// 	as := make([]any, len(*structSlicePtr), len(*structSlicePtr))
+
+// 	for i, s := range *structSlicePtr {
+// 		as[i] = s
+// 	}
+// 	PresentOKCancelStructSliceOfAny(&as, params, title, att, func(ok bool) (close bool) {
+// 		if ok {
+// 			for i, a := range as {
+// 				st := a.(S)
+// 				(*structSlicePtr)[i] = st
+// 			}
+// 		}
+// 		return done(ok)
+// 	})
+// }
+
 func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
-	as := make([]any, len(*structSlicePtr), len(*structSlicePtr))
-
-	for i, s := range *structSlicePtr {
-		as[i] = s
-	}
-	PresentOKCancelStructSliceOfAny(&as, params, title, att, func(ok bool) (close bool) {
-		if ok {
-			for i, a := range as {
-				st := a.(S)
-				(*structSlicePtr)[i] = st
-			}
-		}
-		return done(ok)
-	})
-}
-
-func PresentOKCancelStructSliceOfAny(structSlicePtr *[]any, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr).Elem()
 	first := (*structSlicePtr)[0] // we want a copy, so do in two stages
 	editStruct := &first
