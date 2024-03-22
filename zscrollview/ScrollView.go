@@ -18,13 +18,14 @@ import (
 
 type ScrollView struct {
 	zcustom.CustomView
-	child                  zview.View
 	YOffset                float64
 	ScrollHandler          func(pos zgeo.Pos, infiniteDir int)
 	ExpandToChildHightUpTo float64
 	lastEdgeScroll         time.Time
 	ScrolledAt             time.Time
-	BarSize                float64
+	ShowBar                bool
+	child                  zview.View
+	overflow               bool
 }
 
 var DefaultBarSize = 15.0 //16.0 // 22?
@@ -39,6 +40,13 @@ func New() *ScrollView {
 	v := &ScrollView{}
 	v.Init(v, "scrollview")
 	return v
+}
+
+func (v *ScrollView) BarSize() float64 {
+	if v.overflow && v.ShowBar {
+		return DefaultBarSize
+	}
+	return 0
 }
 
 func (v *ScrollView) AddChild(child zview.View, index int) {
@@ -76,18 +84,6 @@ func (v *ScrollView) Update() {
 	v.Expose()
 }
 
-func (v *ScrollView) ArrangeChildren() {
-	if v.child != nil {
-		ls := v.Rect().Size
-		ls.H = 20000
-		cs := v.child.CalculatedSize(ls)
-		cs.W = ls.W
-		r := zgeo.Rect{Size: cs}
-		r.Size.W -= v.BarSize
-		v.child.SetRect(r) // this will call arrange children on child if container
-	}
-}
-
 func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s := v.MinSize()
 	if v.child != nil {
@@ -103,16 +99,31 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *ScrollView) SetRect(rect zgeo.Rect) {
-	v.CustomView.SetRect(rect)
+	var cs zgeo.Size
 	if v.child != nil {
 		ls := rect.Size
 		ls.H = 20000
-		cs := v.child.CalculatedSize(ls)
+		cs = v.child.CalculatedSize(ls)
+		// zlog.Info("SV SetRect:", v.Hierarchy(), v.child != nil, "content:", cs.H, rect)
 		cs.W = ls.W - 16
-		r := zgeo.Rect{Size: cs}
-		// zlog.Info("SV SetRect:", v.Hierarchy(), v.LocalRect(), r)
-		v.child.SetRect(r)
 	}
+	v.SetRectWithChildSize(rect, cs)
+}
+
+func (v *ScrollView) SetRectWithChildSize(rect zgeo.Rect, cs zgeo.Size) {
+	v.CustomView.SetRect(rect)
+	if rect.Size.W < 0 {
+		zlog.Info("ScrollStRectW:", v.Hierarchy(), rect, cs, zlog.CallingStackString())
+	}
+	if v.child != nil {
+		v.child.SetRect(zgeo.Rect{Size: cs})
+	}
+	v.overflow = (cs.H > v.LocalRect().Size.H)
+	// zlog.Info("ScrollOverflow:", v.Hierarchy(), rect, cs, v.overflow)
+}
+
+func (v *ScrollView) ArrangeChildren() {
+	v.SetRect(v.Rect())
 }
 
 func (v *ScrollView) Expose() {

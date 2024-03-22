@@ -472,7 +472,7 @@ func (o *MenuedOwner) popup() {
 	zfloat.Maximize(&w, o.MinWidth)
 	list.SetMinSize(zgeo.Size{w, 0})
 	if len(o.items) < 20 {
-		list.BarSize = 0
+		list.ShowBar = false
 	}
 
 	list.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
