@@ -367,6 +367,9 @@ func (v *GridListView) SetHoverID(id string) {
 	var ids []string
 	// c, r := v.FindColRowForID(id)
 	// zlog.Info("SetHoverID:", id, c, r)
+	if v.CurrentHoverID == id {
+		return
+	}
 	if v.CurrentHoverID != "" && v.children[v.CurrentHoverID] != nil {
 		ids = []string{v.CurrentHoverID}
 		if v.UpdateCellFunc != nil {
