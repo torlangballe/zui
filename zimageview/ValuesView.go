@@ -34,7 +34,9 @@ func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size, key string) {
 	v.SetPressedHandler(v.pressed)
 	v.SetObjectName("ValuesView")
 	ztimer.StartIn(0.1, func() {
-		v.update() // a bit of a hack to use a timer, but v.ReadyToShow() seems to mess up exposing. TODO: Fix
+		if !v.Rect().Size.IsNull() { // Don't do if not laid out
+			v.update() // a bit of a hack to use a timer, but v.ReadyToShow() seems to mess up exposing. TODO: Fix
+		}
 	})
 }
 
