@@ -154,8 +154,8 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	})
 }
 
-func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string, output zmarkdown.OutputType) error {
-	return m.Convert(w, name, output)
+func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string) error {
+	return m.ConvertToHTML(w, name)
 }
 
 func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
