@@ -103,7 +103,7 @@ func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) strin
 		return ""
 	}
 	uBase.Path = uAdd.Path
-	vals := uBase.Query()
+	vals := url.Values{}
 	setValues(vals, uAdd.Query())
 	setValues(vals, args.ToURLValues())
 	uBase.RawQuery = vals.Encode()
