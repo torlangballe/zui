@@ -96,44 +96,6 @@ const (
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
 
-func (o OptionType) String() string {
-	str := ""
-	if o&AddBar != 0 {
-		str += "bar "
-	}
-	if o&AddSearch != 0 {
-		str += "search "
-	}
-	if o&AddMenu != 0 {
-		str += "menu "
-	}
-	if o&AddChangeLayout != 0 {
-		str += "chlayout "
-	}
-	if o&AllowNew != 0 {
-		str += "new "
-	}
-	if o&AllowDuplicate != 0 {
-		str += "dup "
-	}
-	if o&AllowDelete != 0 {
-		str += "del "
-	}
-	if o&AllowEdit != 0 {
-		str += "edit "
-	}
-	if o&AddBarInHeader != 0 {
-		str += "hbar "
-	}
-	if o&AddDocumentationIcon != 0 {
-		str += "doc "
-	}
-	if o&AddHeader != 0 {
-		str += "head "
-	}
-	return strings.TrimRight(str, " ")
-}
-
 // NewView creates a new SliceGridView using v.Init()
 func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
@@ -728,4 +690,42 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.Me
 		}
 	}
 	return items
+}
+
+func (o OptionType) String() string {
+	str := ""
+	if o&AddBar != 0 {
+		str += "bar "
+	}
+	if o&AddSearch != 0 {
+		str += "search "
+	}
+	if o&AddMenu != 0 {
+		str += "menu "
+	}
+	if o&AddChangeLayout != 0 {
+		str += "chlayout "
+	}
+	if o&AllowNew != 0 {
+		str += "new "
+	}
+	if o&AllowDuplicate != 0 {
+		str += "dup "
+	}
+	if o&AllowDelete != 0 {
+		str += "del "
+	}
+	if o&AllowEdit != 0 {
+		str += "edit "
+	}
+	if o&AddBarInHeader != 0 {
+		str += "hbar "
+	}
+	if o&AddDocumentationIcon != 0 {
+		str += "doc "
+	}
+	if o&AddHeader != 0 {
+		str += "head "
+	}
+	return strings.TrimRight(str, " ")
 }
