@@ -52,7 +52,9 @@ var (
 )
 
 func Init(executor *zrpc.Executor) {
-	executor.Register(AppCalls{})
+	if executor != nil {
+		executor.Register(AppCalls{})
+	}
 	AllWebFS.Add(wwwFS)
 
 	var beforeWWW string
@@ -152,10 +154,6 @@ func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.Respo
 	router.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, zrest.StaticFolderPathFunc("/favicon.ico"))
 	})
-}
-
-func ManualFlattened(m *zmarkdown.MarkdownConverter, w io.Writer, name string) error {
-	return m.ConvertToHTML(w, name)
 }
 
 func handleSetVerbose(w http.ResponseWriter, req *http.Request) {
