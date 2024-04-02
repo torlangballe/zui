@@ -175,19 +175,22 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 
 func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr)
-	if reflect.ValueOf(sliceVal).Kind() == reflect.Pointer {
+	// zlog.Info("PresentOKCancelStructAnySlice:", sliceVal.Type())
+	if sliceVal.Kind() == reflect.Pointer {
 		sliceVal = sliceVal.Elem()
 	}
 	first := sliceVal.Index(0)
-	editStruct := first.Addr().Interface()
+	if first.Kind() != reflect.Pointer {
+		first = first.Addr()
+	}
+	editStruct := first.Interface()
 	sliceLength := sliceVal.Len()
 	unknownBoolViewIDs := map[string]bool{}
 
-	zlog.Info("PresentOKCancelStructSlice:", sliceLength, editStruct)
-
+	// zlog.Info("PresentOKCancelStructAnySlice:", sliceLength, editStruct, first.Type())
 	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 		var notEqual bool
-		zlog.Info("PresentOKCancelStructAnySlice.ForEachField:", each.Field.Name, each.ReflectValue)
+		// zlog.Info("PresentOKCancelStructAnySlice.ForEachField:", each.Field.Name, each.ReflectValue)
 		for i := 0; i < sliceLength; i++ {
 			finfo := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 			sliceField := finfo.ReflectValue
@@ -325,9 +328,13 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 					return true
 				}
 				if !each.ReflectValue.IsZero() || sliceLength == 1 || isCheck {
+					// zlog.Info("sliceVal:", sliceVal.Index(i).Type())
 					for i := 0; i < sliceLength; i++ {
-						// zlog.Info("SetFieldForSlice:", f.Name, i, val)
-						finfo := zreflect.FieldForIndex(sliceVal.Index(i).Addr().Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
+						itemRVal := sliceVal.Index(i)
+						if itemRVal.Kind() != reflect.Pointer {
+							itemRVal = itemRVal.Addr()
+						}
+						finfo := zreflect.FieldForIndex(itemRVal.Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 						sliceField := finfo.ReflectValue
 						sliceField.Set(each.ReflectValue)
 					}
@@ -339,6 +346,11 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 	})
 }
 
+func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	PresentOKCancelStructAnySlice(structSlicePtr, params, title, att, done)
+}
+
+/*
 func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr).Elem()
 	first := (*structSlicePtr)[0] // we want a copy, so do in two stages
@@ -501,6 +513,7 @@ func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewPara
 		return done(ok)
 	})
 }
+*/
 
 func getFocusedEmptyTextView(parent *zview.NativeView) *ztext.TextView {
 	tv, _ := parent.GetFocusedChildView(false).(*ztext.TextView)

@@ -312,7 +312,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 	}
 }
 
-func (v *FieldView) Update(data any, dontOverwriteEdited, forceOnSlice bool) {
+func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlice bool) {
 	// zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
 	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
@@ -326,7 +326,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceOnSlice bool) {
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
 		// zlog.Info(EnableLog, "FV Update field:", each.Field.Name, recentEdit, each.Field.IsStatic(), each.StructField.Type.Kind()) // EnableLog,
 		if !recentEdit || each.Field.IsStatic() || each.StructField.Type.Kind() == reflect.Slice {
-			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited, forceOnSlice)
+			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited, forceUpdateOnFieldSlice)
 		}
 		return true
 	})
@@ -336,7 +336,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceOnSlice bool) {
 	}
 }
 
-func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited, forceOnSlice bool) bool {
+func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited, forceUpdateOnFieldSlice bool) bool {
 	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
 	var valStr string
 	f := findFieldWithIndex(&v.Fields, index)
@@ -437,6 +437,13 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	switch f.Kind {
+	case zreflect.KindMap:
+		if f.HasFlag(FlagShowSliceCount) {
+			label, _ := foundView.(*zlabel.Label)
+			label.SetText(strconv.Itoa(rval.Len()))
+			return true
+		}
+
 	case zreflect.KindSlice:
 		if f.StringSep != "" {
 			v.updateSeparatedStringWithSlice(f, rval, foundView)
@@ -458,9 +465,10 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		sameHash := (sv.dataHash == hash)
 		// zlog.Info("FV.Update slice:", f.Name, v.Hierarchy(), zlog.CallingStackString())
 		sv.dataHash = hash
-		if !sameHash || forceOnSlice {
+		if !sameHash || forceUpdateOnFieldSlice {
 			sv.UpdateSlice(f, rval.Addr().Interface())
 		}
+
 	case zreflect.KindTime:
 		tv, _ := foundView.(*ztext.TextView)
 		if tv != nil && tv.IsEditing() {
@@ -482,7 +490,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		if fv == nil {
 			break
 		}
-		fv.Update(rval.Addr().Interface(), dontOverwriteEdited, forceOnSlice)
+		fv.Update(rval.Addr().Interface(), dontOverwriteEdited, forceUpdateOnFieldSlice)
 
 	case zreflect.KindBool:
 		if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
@@ -977,6 +985,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			}
 		}
 		label.SetMaxLines(f.Rows)
+		if f.MaxWidth != 0 {
+			label.SetMaxWidth(f.MaxWidth)
+		}
 		if f.Flags&FlagIsDuration != 0 {
 			v.updateSinceTime(label, f) // we should really not do getTextFromNumberishItem above if we do this
 		}
@@ -1248,7 +1259,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		return v.makeText(rval, f, false), false
 	}
 	if f.HasFlag(FlagShowSliceCount) {
-		zlog.Assert(rval.Kind() == reflect.Slice, rval.Kind(), f.Name)
+		zlog.Assert(rval.Kind() == reflect.Slice || rval.Kind() == reflect.Map, rval.Kind(), f.Name)
 		zlog.Assert(f.IsStatic(), f.Name)
 		return v.makeText(rval, f, false), false
 	}
@@ -1582,7 +1593,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		if mv != nil {
 			iface := mv.CurrentValue()
 			vo := reflect.ValueOf(iface)
-			// zlog.Info("fieldToDataItem:", iface, f.Name, vo.IsValid(), iface == nil)
+			// zlog.Info("fieldToDataItem1:", iface, f.Name, vo.IsValid(), iface == nil)
 			if iface == nil {
 				vo = reflect.Zero(finfo.ReflectValue.Type())
 			}
