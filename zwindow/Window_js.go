@@ -337,12 +337,16 @@ func FromNativeView(v *zview.NativeView) *Window {
 }
 
 func Current() *Window {
+	var first *Window
 	for w := range windows {
+		if first == nil {
+			first = w
+		}
 		if w.Element.Get("document").Call("hasFocus").Bool() {
 			return w
 		}
 	}
-	return nil
+	return first
 }
 
 func (win *Window) AddStyle() {
