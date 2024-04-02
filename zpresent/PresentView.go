@@ -20,6 +20,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -63,6 +64,7 @@ var ModalDialogAttributes = Attributes{
 	ModalCloseOnOutsidePress: true,
 	ModalDimBackground:       true,
 	ModalDropShadow:          zstyle.DropShadowDefault,
+	ModalDismissOnEscapeKey:  true,
 }
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
@@ -102,7 +104,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
-	size := v.CalculatedSize(zgeo.Size{99999, 99999})
+	s := zscreen.GetMain().UsableRect.ExpandedD(-10).Size
+	size := v.CalculatedSize(s)
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.Size{})
 	}
