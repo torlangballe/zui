@@ -494,14 +494,14 @@ func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	return items
 }
 
-func (v *SliceGridView[S]) EditItemIDs(ids []string, after func(ok bool)) {
+func (v *SliceGridView[S]) EditItemIDs(ids []string, isEditOnNewStruct bool, after func(ok bool)) {
 	items := v.getItemsFromIDs(ids)
 	if len(items) == 0 {
 		zlog.Fatal("SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
 	title := "Edit " + v.NameOfXItemsFunc(ids, true)
-	// zlog.Info("EditItemIDs", zlog.Pointer(&items), zlog.Pointer(v.slicePtr))
-	v.EditItems(items, title, false, false, after)
+	zlog.Info("EditItemIDs", v.Hierarchy(), zlog.CallingStackString())
+	v.EditItems(items, title, isEditOnNewStruct, false, after)
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
@@ -513,6 +513,9 @@ func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, se
 	params.Field.Flags |= zfields.FlagIsLabelize
 	params.Styling.Spacing = 10
 	params.IsEditOnNewStruct = isEditOnNewStruct
+	if isEditOnNewStruct {
+		params.HideStatic = true
+	}
 	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
 		if !ok {
 			if after != nil {
@@ -683,7 +686,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.Me
 			}
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
-					v.EditItemIDs(ids, nil)
+					v.EditItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}

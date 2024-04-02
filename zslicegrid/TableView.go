@@ -156,7 +156,7 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	view.Native().SetSelectable(false)
 	if v.options&AllowEdit != 0 {
 		view.Native().SetDoublePressedHandler(func() {
-			v.EditItemIDs([]string{id}, nil)
+			v.EditItemIDs([]string{id}, false, nil)
 		})
 	}
 	return view
