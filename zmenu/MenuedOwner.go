@@ -728,7 +728,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		marg.W += gap + colorWidth
 	}
 	if o.hasShortcut {
-		str := zkeyboard.GetModifiersString(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
+		str := zkeyboard.GetModifiersSymbol(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
 		keyLabel := zlabel.New(str)
 		title.SetObjectName("shortcut")
 		font := o.Font

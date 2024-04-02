@@ -1,8 +1,9 @@
 package zkeyboard
 
 import (
-	"github.com/torlangballe/zui/zdom"
 	"syscall/js"
+
+	"github.com/torlangballe/zui/zdom"
 )
 
 func GetKeyModFromEvent(event js.Value) KeyMod {
@@ -18,7 +19,7 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 		km.Modifier |= ModifierControl
 	}
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
-		km.Modifier |= ModifierCommand
+		km.Modifier |= MetaModifierMultiSelect
 	}
 	if zdom.GetBoolIfDefined(event, "shiftKey") {
 		km.Modifier |= ModifierShift

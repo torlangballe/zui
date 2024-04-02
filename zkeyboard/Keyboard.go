@@ -1,6 +1,9 @@
 package zkeyboard
 
-import "github.com/torlangballe/zutil/zgeo"
+import (
+	"github.com/torlangballe/zutil/zdevice"
+	"github.com/torlangballe/zutil/zgeo"
+)
 
 type Key int
 type Modifier int
@@ -80,9 +83,20 @@ const (
 	ReturnKeyContinue ReturnKeyType = "continue"
 )
 
-// ModifiersAtPress is set from  events before handlers are called.
-// This is global to avoid passing mods in all pressed/longpressed handlers
-var ModifiersAtPress Modifier
+var (
+	ModifiersAtPress        Modifier          // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
+	MetaModifierMultiSelect = ModifierControl // set to ModifierCommand on mac
+	AltModifierName         = "Alt"
+	CommandModifierName     = "Meta"
+)
+
+func init() {
+	if zdevice.OS() == zdevice.MacOSType {
+		MetaModifierMultiSelect = ModifierCommand
+		AltModifierName = "Option"
+		CommandModifierName = "Command"
+	}
+}
 
 // Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType
 
@@ -95,6 +109,20 @@ func (k KeyMod) IsNull() bool {
 }
 
 func GetModifiersString(m Modifier) string {
+	switch m {
+	case ModifierAlt:
+		return AltModifierName
+	case ModifierShift:
+		return "Shift"
+	case ModifierControl:
+		return "Control"
+	case ModifierCommand:
+		return CommandModifierName
+	}
+	return ""
+}
+
+func GetModifiersSymbol(m Modifier) string {
 	var str string
 	if m&ModifierShift != 0 {
 		str += "⇧"
