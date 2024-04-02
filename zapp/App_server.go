@@ -38,9 +38,8 @@ type AppCalls zrpc.CallsBase
 
 // filesRedirector is a type that can handle serving files
 type filesRedirector struct {
-	Override         func(w http.ResponseWriter, req *http.Request, filepath string) bool // Override is a method to handle special cases of files, return true if handled
-	ServeDirectories bool
-	Router           *mux.Router // if ServeDirectories is true, it serves content list of directory
+	Override func(w http.ResponseWriter, req *http.Request, filepath string) bool // Override is a method to handle special cases of files, return true if handled
+	Router   *mux.Router
 }
 
 //go:embed www
@@ -143,8 +142,7 @@ func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 
 func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
 	RequestRedirector = &filesRedirector{
-		ServeDirectories: serveDirs,
-		Override:         override,
+		Override: override,
 	}
 	zrest.AddSubHandler(router, "", RequestRedirector)
 
