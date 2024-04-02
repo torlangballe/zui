@@ -521,6 +521,7 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 
 func (v *NativeView) RemoveFromParent() {
 	zlog.Assert(v.parent != nil, v.Hierarchy())
+	// zlog.Info("NV.RemoveFromParent:", v.Hierarchy())
 	v.parent.RemoveChild(v.View)
 	v.parent = nil
 }
@@ -1007,6 +1008,7 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 		event = "onkeydown"
 	}
 	v.JSSet(event, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+		// zlog.Info("Key!")
 		if !v.Document().Call("hasFocus").Bool() {
 			return nil
 		}

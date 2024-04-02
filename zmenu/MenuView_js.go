@@ -29,11 +29,10 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 		v.UpdateItems(items, value, false)
 	}
 	v.JSSet("onchange", js.FuncOf(func(_ js.Value, args []js.Value) any {
-		//			zlog.Info("menuview selected", v.ObjectName())
 		index := v.JSGet("selectedIndex").Int()
 		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
-		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value, reflect.ValueOf(v.currentValue).IsValid())
+		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value, v.currentValue, reflect.ValueOf(v.currentValue).IsValid(), zlog.Full(v.items))
 		if v.storeKey != "" {
 			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}
