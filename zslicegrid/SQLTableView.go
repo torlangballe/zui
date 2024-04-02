@@ -140,7 +140,7 @@ func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 			return true
 		}
 		if insert {
-			go v.insertRows(rows)
+			go v.owner.InsertRows(rows)
 		} else {
 			v.owner.PushRowsToServer(rows)
 		}
@@ -148,8 +148,8 @@ func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 	})
 }
 
-func (v *SQLTableView[S]) insertRows(s []S) {
-	err := zrpc.MainClient.Call(v.owner.rpcCallerName+".InsertRows", s, nil)
+func (o *SQLOwner[S]) InsertRows(slice any) {
+	err := zrpc.MainClient.Call(o.rpcCallerName+".InsertRows", slice, nil)
 	if err != nil {
 		zalert.ShowError(err, "inserting")
 		return
@@ -242,10 +242,21 @@ func (o *SQLOwner[S]) GetAndUpdate() {
 }
 
 func (o *SQLOwner[S]) PushRowsToServer(items []S) {
-	// zlog.Info("UpdateItems:", zlog.Full(items))
+	// zlog.Info("UpdateItems:", o.TableName, zlog.Full(items))
 	// v.SetItemsInSlice(items)
 	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
 	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", items, nil)
+	if err != nil {
+		zalert.ShowError(err, "updating")
+		return
+	}
+}
+
+func (o *SQLOwner[S]) PushRowsToServerWithAnySlice(slice any) {
+	// v.SetItemsInSlice(items)
+	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
+	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", slice, nil)
+	zlog.Info("PushRowsToServerWithAnySlice:", o.TableName, reflect.TypeOf(slice), err)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 		return
