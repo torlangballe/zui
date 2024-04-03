@@ -33,6 +33,7 @@ type TimeInfo struct {
 var (
 	AppMain            *App   // AppMain is the main instance of app. Likely the ONLY one
 	DownloadPathPrefix string // DownloadPathPrefix is the prefix to create a url to download something from the app
+	FixedDocValues     = zdict.Dict{}
 	docValuesFuncs     []func() zdict.Dict
 
 	ServerTimezoneName string
@@ -82,7 +83,7 @@ func GetProcessID() int {
 }
 
 func GetDocumentationValues() zdict.Dict {
-	m := zdict.Dict{}
+	m := FixedDocValues
 	for _, dict := range docValuesFuncs {
 		for k, v := range dict() {
 			m[k] = v
