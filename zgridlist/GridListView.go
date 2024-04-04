@@ -185,6 +185,14 @@ func (v *GridListView) saveOpenBranches() {
 	zkeyvalue.DefaultStore.SetString(str, v.makeOpenBranchesKey(), true)
 }
 
+func (v *GridListView) SelectedIDsOrHoverID() []string {
+	ids := v.SelectedIDs()
+	if len(ids) == 0 && v.CurrentHoverID != "" {
+		ids = []string{v.CurrentHoverID}
+	}
+	return ids
+}
+
 func (v *GridListView) SelectedIDs() []string {
 	ids := make([]string, len(v.selectedIDs))
 	i := 0
@@ -394,7 +402,7 @@ func (v *GridListView) SetHoverID(id string) {
 }
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
-	// zlog.Info("handleUpDownMovedHandler")
+	// zlog.Info("handleUpDownMovedHandler", down)
 	eventHandled := true
 	var index int
 	id, inside := v.FindCellForPos(pos)

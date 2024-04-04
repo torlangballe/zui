@@ -195,12 +195,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	v.Grid.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
 		var oneID string
-		if len(v.Grid.SelectedIDs()) == 1 {
-			oneID = v.Grid.SelectedIDs()[0]
+		ids := v.Grid.SelectedIDsOrHoverID()
+		if len(ids) == 1 {
+			oneID = ids[0]
 		}
-		if oneID == "" && len(v.Grid.SelectedIDs()) == 0 {
-			oneID = v.Grid.CurrentHoverID
-		}
+		zlog.Info("SG:Key:", oneID)
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
 			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
@@ -500,7 +499,7 @@ func (v *SliceGridView[S]) EditItemIDs(ids []string, isEditOnNewStruct bool, aft
 		zlog.Fatal("SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
 	title := "Edit " + v.NameOfXItemsFunc(ids, true)
-	zlog.Info("EditItemIDs", v.Hierarchy(), zlog.CallingStackString())
+	// zlog.Info("EditItemIDs", v.Hierarchy(), zlog.CallingStackString())
 	v.EditItems(items, title, isEditOnNewStruct, false, after)
 }
 
@@ -561,10 +560,10 @@ func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
 }
 
 func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
-	if len(v.Grid.SelectedIDs()) == 0 {
+	ids := v.Grid.SelectedIDsOrHoverID()
+	if len(ids) == 0 {
 		return
 	}
-	ids := v.Grid.SelectedIDs()
 	if ask {
 		v.DeleteItemsAsk(ids)
 	} else {
@@ -658,7 +657,7 @@ func addHierarchy(stack *zcontainer.StackView) {
 func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
-	ids := v.Grid.SelectedIDs()
+	ids := v.Grid.SelectedIDsOrHoverID()
 	if v.options&AllowNew != 0 && !forSingleCell {
 		del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, del)
