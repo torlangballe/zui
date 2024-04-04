@@ -46,6 +46,7 @@ type ReadyToShowType interface {
 
 type Pressable interface {
 	SetPressedHandler(handler func())
+	SetPressedDownHandler(handler func())
 	SetLongPressedHandler(handler func())
 	PressedHandler() func()
 	LongPressedHandler() func()
