@@ -116,6 +116,7 @@ const (
 	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
+	FlagShowPopup                                     // press to show a popup of contents
 )
 
 const (
@@ -387,6 +388,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
 		case "isuseinval":
 			f.Flags |= FlagIsUseInValue
+		case "popup":
+			f.Flags |= FlagShowPopup
 		case "color":
 			f.Colors = barParts
 			if len(f.Colors) == 1 {

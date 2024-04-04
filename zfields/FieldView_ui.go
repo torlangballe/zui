@@ -1442,7 +1442,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if pt != nil {
 		nowItem := rval           // store item in nowItem so closures below uses right item
 		ph := pt.PressedHandler() // get old handler before we set it to override
-		pt.SetPressedHandler(func() {
+		pt.SetPressedDownHandler(func() {
+			if f.HasFlag(FlagShowPopup) {
+				popupContent(view, f, rval)
+			}
 			if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view}) && ph != nil {
 				ph()
 			}
@@ -1519,6 +1522,26 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
+}
+
+func popupContent(target zview.View, f *Field, rval reflect.Value) {
+	zlog.Info("popupContent")
+	att := zpresent.AttributesNew()
+	att.Alignment = zgeo.TopRight | zgeo.HorOut
+	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
+	stack := zcontainer.StackViewVert("popup")
+	stack.SetMarginS(zgeo.SizeD(14, 10))
+	stack.SetBGColor(zgeo.ColorWhite)
+	a := rval.Interface()
+	str := fmt.Sprint(a)
+	zs, _ := a.(UIStringer)
+	if zs != nil {
+		str = zs.ZUIString()
+	}
+	label := zlabel.New(str)
+	label.SetColor(target.Native().Color())
+	stack.Add(label, zgeo.Center|zgeo.Expand)
+	zpresent.PopupView(stack, target, att)
 }
 
 func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {
