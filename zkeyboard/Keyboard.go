@@ -128,13 +128,25 @@ func GetModifiersSymbol(m Modifier) string {
 		str += "⇧"
 	}
 	if m&ModifierControl != 0 {
-		str += "^"
+		if zdevice.OS() == zdevice.MacOSType {
+			str += "^"
+		} else {
+			str += "ctrl-"
+		}
 	}
 	if m&ModifierAlt != 0 {
-		str += "⎇"
+		if zdevice.OS() == zdevice.MacOSType {
+			str += "⎇"
+		} else {
+			str += "alt-"
+		}
 	}
 	if m&ModifierCommand != 0 {
-		str += "⌘"
+		if zdevice.OS() == zdevice.MacOSType {
+			str += "⌘"
+		} else {
+			str += "ctrl-"
+		}
 	}
 	return str
 }
