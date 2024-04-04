@@ -193,6 +193,23 @@ func (v *GridListView) SelectedIDsOrHoverID() []string {
 	return ids
 }
 
+func (v *GridListView) SelectedIDInt64() int64 {
+	str := v.SelectedID()
+	if str == "" {
+		return 0
+	}
+	n, _ := strconv.ParseInt(str, 10, 64)
+	return n
+}
+
+func (v *GridListView) SelectedID() string {
+	zlog.Assert(!v.MultiSelectable)
+	if len(v.selectedIDs) == 0 {
+		return ""
+	}
+	return zmap.GetAnyKeyAsString(v.selectedIDs)
+}
+
 func (v *GridListView) SelectedIDs() []string {
 	ids := make([]string, len(v.selectedIDs))
 	i := 0
