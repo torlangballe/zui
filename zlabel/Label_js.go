@@ -135,7 +135,7 @@ func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	// zlog.Info("label.SetPressedHandler:", v.Hierarchy())
 	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		zlog.Info("label.Pressed:", v.Hierarchy())
+		// zlog.Info("label.Pressed:", v.Hierarchy())
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		(&v.LongPresser).HandleOnClick(v)
@@ -146,6 +146,7 @@ func (v *Label) SetPressedHandler(handler func()) {
 
 func (v *Label) SetPressedDownHandler(handler func()) {
 	v.pressed = handler
+	// zlog.Info("label.SetPressedDownHandler:", zlog.CallingStackString())
 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		e := args[0]
 		v.SetStateOnDownPress(e)
