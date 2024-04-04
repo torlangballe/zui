@@ -16,6 +16,7 @@ func (label *Label) InitAsLink(view zview.View, title, surl string) {
 	label.init(title)
 	label.SetURL(surl, false)
 }
+
 func (label *Label) Init(view zview.View, text string) {
 	label.MakeJSElement(view, "label")
 	label.init(text)

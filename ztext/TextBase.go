@@ -3,6 +3,8 @@
 package ztext
 
 import (
+	"strings"
+
 	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
@@ -19,10 +21,15 @@ type TextOwner interface {
 	//TextAlignment() zgeo.Alignment
 }
 
-func MakeViewPressToClipboard(t TextOwner) {
-	p := t.(zview.Pressable) // crash if misused
+func MakeViewPressToClipboard(view zview.View) {
+	t := view.(TextOwner)
+	p := view.(zview.Pressable) // crash if misused
+	// view.Native().SetSelectable(true) // no point
 	p.SetPressedHandler(func() {
 		text := t.Text()
+		if strings.HasPrefix(text, "📋 ") {
+			return
+		}
 		zclipboard.SetString(text)
 		t.SetText("📋 " + text)
 		ztimer.StartIn(0.6, func() {
