@@ -1444,7 +1444,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		ph := pt.PressedHandler() // get old handler before we set it to override
 		if f.HasFlag(FlagShowPopup) {
 			pt.SetPressedDownHandler(func() {
-				popupContent(view, f, rval)
+				v.popupContent(view, f)
 			})
 		} else {
 			pt.SetPressedHandler(func() {
@@ -1527,18 +1527,26 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 }
 
-func popupContent(target zview.View, f *Field, rval reflect.Value) {
+func (fv *FieldView) freshRValue(fieldName string) reflect.Value {
+	finfo, found := zreflect.FieldForName(fv.data, FlattenIfAnonymousOrZUITag, fieldName)
+	zlog.Assert(found, fieldName)
+	return finfo.ReflectValue
+}
+
+func (fv *FieldView) popupContent(target zview.View, f *Field) {
+	rval := fv.freshRValue(f.FieldName)
 	a := rval.Interface()
 	str := fmt.Sprint(a)
 	zs, _ := a.(UIStringer)
 	if zs != nil {
 		str = zs.ZUIString()
 	}
+	// zlog.Info("popupContent:", str)
 	if str == "" {
 		return
 	}
 	att := zpresent.AttributesNew()
-	att.Alignment = zgeo.TopRight | zgeo.HorOut
+	att.Alignment = zgeo.TopLeft // | zgeo.HorOut
 	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
 	stack := zcontainer.StackViewVert("popup")
 	stack.SetMarginS(zgeo.SizeD(14, 10))
