@@ -1442,14 +1442,17 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if pt != nil {
 		nowItem := rval           // store item in nowItem so closures below uses right item
 		ph := pt.PressedHandler() // get old handler before we set it to override
-		pt.SetPressedDownHandler(func() {
-			if f.HasFlag(FlagShowPopup) {
+		if f.HasFlag(FlagShowPopup) {
+			pt.SetPressedDownHandler(func() {
 				popupContent(view, f, rval)
-			}
-			if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view}) && ph != nil {
-				ph()
-			}
-		})
+			})
+		} else {
+			pt.SetPressedHandler(func() {
+				if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view}) && ph != nil {
+					ph()
+				}
+			})
+		}
 		if f.Flags&FlagLongPress != 0 {
 			lph := pt.LongPressedHandler() // get old handler before we set it to override
 			pt.SetLongPressedHandler(func() {
@@ -1525,19 +1528,21 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 }
 
 func popupContent(target zview.View, f *Field, rval reflect.Value) {
-	zlog.Info("popupContent")
-	att := zpresent.AttributesNew()
-	att.Alignment = zgeo.TopRight | zgeo.HorOut
-	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
-	stack := zcontainer.StackViewVert("popup")
-	stack.SetMarginS(zgeo.SizeD(14, 10))
-	stack.SetBGColor(zgeo.ColorWhite)
 	a := rval.Interface()
 	str := fmt.Sprint(a)
 	zs, _ := a.(UIStringer)
 	if zs != nil {
 		str = zs.ZUIString()
 	}
+	if str == "" {
+		return
+	}
+	att := zpresent.AttributesNew()
+	att.Alignment = zgeo.TopRight | zgeo.HorOut
+	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
+	stack := zcontainer.StackViewVert("popup")
+	stack.SetMarginS(zgeo.SizeD(14, 10))
+	stack.SetBGColor(zgeo.ColorWhite)
 	label := zlabel.New(str)
 	label.SetColor(target.Native().Color())
 	stack.Add(label, zgeo.Center|zgeo.Expand)
