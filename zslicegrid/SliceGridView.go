@@ -199,7 +199,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if len(ids) == 1 {
 			oneID = ids[0]
 		}
-		zlog.Info("SG:Key:", oneID)
+		// zlog.Info("SG:Key:", oneID)
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
 			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {

@@ -7,7 +7,6 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -67,7 +66,7 @@ func (v *Button) MakeReturnKeyDefault() {
 				}
 			}
 			if down && km.Key == zkeyboard.KeyReturn && km.Modifier == zkeyboard.ModifierNone {
-				zlog.Info("Default click")
+				// zlog.Info("Default click")
 				// v.Element.Call("click")
 				v.Press()
 				return true
