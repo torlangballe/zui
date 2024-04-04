@@ -98,7 +98,9 @@ func (v *Label) SetFont(font *zgeo.Font) {
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
 	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
 	style := v.JSStyle()
-	// style.Set("textOverflow", "ellipsis")
+	if wrap == ztextinfo.WrapTailTruncate {
+		style.Set("textOverflow", "ellipsis")
+	}
 	style.Set("display", "inline-block")
 	style.Set("overflow", "hidden")
 	style.Set("whiteSpace", "nowrap")
@@ -133,7 +135,7 @@ func (v *Label) SetPressedHandler(handler func()) {
 	v.pressed = handler
 	// zlog.Info("label.SetPressedHandler:", v.Hierarchy())
 	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("label.Pressed:", v.Hierarchy())
+		zlog.Info("label.Pressed:", v.Hierarchy())
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		(&v.LongPresser).HandleOnClick(v)
