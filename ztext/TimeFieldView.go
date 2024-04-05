@@ -53,6 +53,7 @@ type TimeFieldView struct {
 	dayText                *TextView
 	monthText              *TextView
 	yearText               *TextView
+	calendar               *zimageview.ImageView
 	location               *time.Location
 	flags                  TimeFieldFlags
 	ampmLabel              *zlabel.Label
@@ -131,9 +132,10 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.yearText = addText(v, cols, "Y", "/")
 		}
 		if flags&TimeFieldNoCalendar == 0 {
-			cal := zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.Size{16, 16})
-			cal.SetPressedHandler(v.popCalendar)
-			v.Add(cal, zgeo.CenterLeft, zgeo.Size{1, 0})
+			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.Size{16, 16})
+			v.calendar.SetUsable(false)
+			v.calendar.SetPressedHandler(v.popCalendar)
+			v.Add(v.calendar, zgeo.CenterLeft, zgeo.Size{1, 0})
 		}
 	}
 	flipDayMonth(v, false)
@@ -325,6 +327,7 @@ func (v *TimeFieldView) SetValue(t time.Time) {
 
 	}
 	setInt(v.yearText, year, "%d")
+	v.calendar.SetUsable(true)
 }
 
 func get24Hour(v *TimeFieldView, hour int) (h int, pm bool) {
@@ -362,6 +365,7 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 	hour, _ = get24Hour(v, hour)
 	getInt(v.minuteText, &min, 0, 60, &err, false)
 	getInt(v.secondsText, &sec, 0, 60, &err, false)
+	v.calendar.SetUsable(err == nil)
 	getInt(v.monthText, &month, 1, 12, &err, true)
 	days := ztime.DaysInMonth(time.Month(month), year)
 	if v.flags&TimeFieldYears != 0 {
