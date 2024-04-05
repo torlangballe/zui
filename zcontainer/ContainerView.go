@@ -309,6 +309,9 @@ func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 	}
 	r := zgeo.Rect{Size: v.Rect().Size}.Plus(v.margin)
 	for _, c := range v.Cells {
+		if c.View == nil {
+			continue
+		}
 		clayouter, _ := c.View.(zview.Layouter)
 		if clayouter != nil {
 			clayouter.HandleBeforeLayout()
@@ -419,6 +422,9 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	for {
 		removed := false
 		for _, c := range v.Cells {
+			if c.View == nil {
+				continue
+			}
 			if c.View.ObjectName() == name {
 				v.RemoveChild(c.View)
 				removed = true
@@ -462,6 +468,9 @@ func ContainerOwnerFindViewWithName(view zview.View, name string, recursive bool
 
 func (v *ContainerView) FindCellWithName(name string) (*Cell, int) {
 	for i, c := range v.Cells {
+		if c.View == nil {
+			continue
+		}
 		if c.View.ObjectName() == name {
 			return &v.Cells[i], i
 		}
@@ -471,6 +480,9 @@ func (v *ContainerView) FindCellWithName(name string) (*Cell, int) {
 
 func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
 	for i, c := range v.Cells {
+		if c.View == nil {
+			continue
+		}
 		// fmt.Printf("FindCellWithView: %d) %s %p == %p %v\n", i, c.View.ObjectName(), c.View.Native(), view.Native(), c.View.Native() == view.Native())
 		// zlog.Info("FindCellWithView:", i, c.View.ObjectName(), reflect.TypeOf(c.View), reflect.TypeOf(view))
 		if c.View.Native() == view.Native() {
@@ -487,6 +499,9 @@ func (v *ContainerView) RemoveChild(subView zview.View) {
 
 func (v *ContainerView) RemoveAllChildren() {
 	for _, c := range v.Cells {
+		if c.View == nil {
+			continue
+		}
 		v.CustomView.RemoveChild(c.View)
 	}
 	v.Cells = v.Cells[:0]

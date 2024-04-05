@@ -95,7 +95,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
 func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
 	// zlog.Info("Layout Stack getCells start", v.ObjectName())
 	for _, c := range v.Cells {
-		if c.Free {
+		if c.Free || c.View == nil {
 			continue
 		}
 		l := c.LayoutCell
@@ -207,7 +207,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 		var height float64
 		// zlog.Info("getGridLayoutRow:", v.Hierarchy(), j, vc.View.ObjectName(), i, len(rowCells), len(row))
 		for _, rc := range rowCells {
-			if rc.Collapsed || rc.Free {
+			if rc.Collapsed || rc.Free || rc.View == nil {
 				continue
 			}
 			l := rc.LayoutCell
@@ -239,70 +239,6 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 	return row, heights
 }
 
-/*
-func (v *StackView) getGridLayoutRows(total zgeo.Size) (rows [][]zgeo.LayoutCell, rowStackCells [][]Cell) {
-	for j := 0; j < len(v.Cells); j++ {
-		vertCell := v.Cells[j]
-		if vertCell.Collapsed || vertCell.View == nil {
-			continue
-		}
-		cellsOwner, _ := vertCell.View.(CellsOwner)
-		zlog.Assert(cellsOwner != nil, v.Hierarchy())
-		rowCells := cellsOwner.GetCells()
-		rowStackCells = append(rowStackCells, *rowCells)
-		var row []zgeo.LayoutCell
-		for _, rc := range *rowCells {
-			l := rc.LayoutCell
-			l.Alignment = zgeo.CenterLeft
-			l.OriginalSize = rc.View.CalculatedSize(total)
-			l.Alignment = zgeo.CenterLeft
-			l.Name = rc.View.ObjectName()
-			if rc.Alignment&zgeo.VertExpand != 0 {
-				l.Alignment |= zgeo.VertExpand
-			}
-			row = append(row, l)
-		}
-		rows = append(rows, row)
-	}
-	for j := 1; j < len(rows); j++ {
-		for i := range rows[j] {
-			zfloat.Maximize(&rows[0][i].OriginalSize.W, rows[j][i].OriginalSize.W)
-			zfloat.Maximize(&rows[0][i].MaxSize.W, rows[j][i].MaxSize.W)
-			if rows[j][i].MinSize.W != 0 {
-				zfloat.Maximize(&rows[0][i].MinSize.W, rows[j][i].MinSize.W)
-			}
-		}
-	}
-	// for i := range rows[0] {
-	// 	zlog.Info("NewCellHMax2:", i, rows[0][i].OriginalSize.W, rows[0][i].Name)
-	// }
-	for j := 1; j < len(rows); j++ {
-		for i := range rows[j] {
-			// zlog.Info("NewCellHMax:", j, i, rows[j][i].OriginalSize.H, rows[j][i].Name)
-			rows[j][i].OriginalSize.W = rows[0][i].OriginalSize.W
-			rows[j][i].MinSize.W = rows[0][i].MinSize.W
-			rows[j][i].MaxSize.W = rows[0][i].MaxSize.W
-		}
-	}
-	for j := range rows {
-		var maxOH, maxMH, minH float64
-		for i := range rows[j] {
-			// zlog.Info("NewCellHMax2:", j, i, rows[j][i].OriginalSize.H, rows[j][i].Name)
-			zfloat.Maximize(&maxOH, rows[j][i].OriginalSize.H)
-			zfloat.Maximize(&maxMH, rows[j][i].MaxSize.H)
-			zfloat.Maximize(&minH, rows[j][i].MinSize.H)
-		}
-		for i := range rows[j] {
-			// TODO: Won't expand vertically, need to fix! OriginalSize should not change, as we need to place it with its actualy size, but a new variable creating a box to place it in should be max'ed below:
-			//rows[j][i].OriginalSize.H = maxOH
-			rows[j][i].MaxSize.H = maxMH
-			rows[j][i].MinSize.H = minH
-		}
-	}
-	return rows, rowStackCells
-}
-*/
-
 func (v *StackView) ArrangeChildren() {
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), v.GridVerticalSpace)
 	// zlog.PushProfile(v.ObjectName())
@@ -321,6 +257,9 @@ func (v *StackView) ArrangeChildren() {
 	// zlog.ProfileLog("did layout")
 	j := 0
 	for _, c := range v.Cells {
+		if c.View == nil {
+			continue
+		}
 		if c.Free {
 			v.ArrangeChild(c, rm)
 			continue
