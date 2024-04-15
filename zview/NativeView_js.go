@@ -805,6 +805,19 @@ func (v *NativeView) SetContentOffset(y float64) {
 	v.RootParent().JSSet("scrollTop", y)
 }
 
+func (v *NativeView) ShowScrollBars(x, y bool) {
+	str := "hidden"
+	if x {
+		str = "auto"
+	}
+	v.SetJSStyle("overflow-x", str)
+	str = "hidden"
+	if y {
+		str = "auto"
+	}
+	v.SetJSStyle("overflow-y", str)
+}
+
 func (v *NativeView) RotateDeg(deg float64) {
 	v.JSStyle().Set("transform", fmt.Sprintf("rotate(%fdeg)", deg))
 }
