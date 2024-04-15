@@ -146,9 +146,6 @@ func (v *CustomView) drawSelf() {
 			if !v.OpaqueDraw {
 				v.canvas.Clear()
 			}
-			// if v.ObjectName() == "sort" {
-			// 	zlog.Info(v.ObjectName(), "CV drawSelf: draw")
-			// }
 			v.draw(r, v.canvas, v.View)
 		}
 		v.drawing = false

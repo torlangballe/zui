@@ -238,8 +238,8 @@ func (c *Canvas) rawDrawPlainImage(image *zimage.Image, destRect zgeo.Rect, opac
 		c.context.Set("globalAlpha", opacity)
 	}
 	// if strings.Contains(image.Path, "sort-triangle-down") {
-	// 	c.SetColor(zgeo.ColorRandom())
-	// 	c.FillRect(destRect)
+	// c.SetColor(zgeo.ColorRandom())
+	// c.FillRect(destRect)
 	// 	zlog.Info("rawDrawPlainImage:", image.ImageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)
 	// }
 	c.context.Call("drawImage", image.ImageJS, sr.Pos.X, sr.Pos.Y, sr.Size.W, sr.Size.H, destRect.Pos.X, destRect.Pos.Y, destRect.Size.W, destRect.Size.H)

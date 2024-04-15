@@ -253,6 +253,5 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rig
 		x = e
 		hr.Size.H--
 		hv.SetRect(hr)
-		// zlog.Info("Header View rect item:", stack.ObjectName(), hv.ObjectName(), hv.Rect())
 	}
 }
