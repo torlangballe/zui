@@ -83,9 +83,9 @@ func (v *NativeView) Native() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
-	// if rect.Pos.Y > 3000 || rect.Size.H > 3000 {
-	// 	zlog.Error("strange rect for view:", v.Hierarchy(), rect, zlog.GetCallingStackString())
-	// }
+	if rect.Pos.Y < -10 {
+		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zlog.CallingStackString())
+	}
 	rect = rect.ExpandedToInt()
 	SetElementRect(v.Element, rect)
 }
@@ -799,6 +799,10 @@ func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
 		}
 		return nil
 	}))
+}
+
+func (v *NativeView) SetContentOffset(y float64) {
+	v.RootParent().JSSet("scrollTop", y)
 }
 
 func (v *NativeView) RotateDeg(deg float64) {
