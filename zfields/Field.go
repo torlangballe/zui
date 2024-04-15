@@ -920,17 +920,19 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 	// fmt.Printf("Sort FieldMap: %+v %+v\n", fieldMap, sortOrder)
 	val := reflect.ValueOf(slice)
 	// zlog.Info("SORT:", sortOrder, enumTitles, val.Len())
+	// var count int
 	sort.SliceStable(slice, func(i, j int) bool {
+		// count++
 		ei := val.Index(i).Addr().Interface()
 		ej := val.Index(j).Addr().Interface()
-		ic, ierr := zreflect.ItterateStruct(ei, zreflect.Options{UnnestAnonymous: true})
-		jc, jerr := zreflect.ItterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
-		zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
+		// ic, ierr := zreflect.ItterateStruct(ei, zreflect.Options{UnnestAnonymous: true})
+		// jc, jerr := zreflect.ItterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
+		// zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 		for _, s := range sortOrder {
 			f := fieldMap[s.FieldName]
 			// zlog.Info("SORTING:", i, j, s.FieldName, f != nil)
-			iitem := ic.Children[f.Index]
-			jitem := jc.Children[f.Index]
+			iitem := zreflect.FieldForIndex(ei, zreflect.FlattenIfAnonymous, f.Index).ReflectValue
+			jitem := zreflect.FieldForIndex(ej, zreflect.FlattenIfAnonymous, f.Index).ReflectValue
 			sliceEnumNames := enumTitles[f.FieldName]
 			if sliceEnumNames != nil {
 				ni := sliceEnumNames[iitem.Interface]
@@ -943,37 +945,37 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 				// zlog.Info("sliceEnumNames:", r, s.FieldName, i, ni, j, nj)
 				return r
 			}
-			switch iitem.Kind {
+			switch zreflect.KindFromReflectKindAndType(iitem.Kind(), iitem.Type()) {
 			case zreflect.KindBool:
-				ia := iitem.Interface.(bool)
-				ja := jitem.Interface.(bool)
+				ia := iitem.Interface().(bool)
+				ja := jitem.Interface().(bool)
 				if ia == ja {
 					continue
 				}
 				return (ia == false) == s.SmallFirst
 
 			case zreflect.KindInt:
-				ia, ierr := zint.GetAny(iitem.Interface)
-				ja, jerr := zint.GetAny(jitem.Interface)
+				ia, ierr := zint.GetAny(iitem.Interface())
+				ja, jerr := zint.GetAny(jitem.Interface())
 				zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 				if ia == ja {
 					continue
 				}
 				return (ia < ja) == s.SmallFirst
 			case zreflect.KindFloat:
-				ia, ierr := zfloat.GetAny(iitem.Interface)
-				ja, jerr := zfloat.GetAny(jitem.Interface)
+				ia, ierr := zfloat.GetAny(iitem.Interface())
+				ja, jerr := zfloat.GetAny(jitem.Interface())
 				zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 				if ia == ja {
 					continue
 				}
 				return (ia < ja) == s.SmallFirst
 			case zreflect.KindString:
-				ia, got := iitem.Interface.(string)
-				ja, _ := jitem.Interface.(string)
+				ia, got := iitem.Interface().(string)
+				ja, _ := jitem.Interface().(string)
 				if !got {
-					ia = fmt.Sprint(iitem.Interface)
-					ja = fmt.Sprint(iitem.Interface)
+					ia = fmt.Sprint(iitem.Interface())
+					ja = fmt.Sprint(iitem.Interface())
 				}
 				if ia == ja {
 					continue
@@ -981,8 +983,8 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 				// zlog.Info("sort:", i, j, ia, "<", ja, "less:", zstr.CaselessCompare(ia, ja) < 0, s.SmallFirst)
 				return (zstr.CaselessCompare(ia, ja) < 0) == s.SmallFirst
 			case zreflect.KindTime:
-				ia := iitem.Interface.(time.Time)
-				ja := jitem.Interface.(time.Time)
+				ia := iitem.Interface().(time.Time)
+				ja := jitem.Interface().(time.Time)
 				if ia == ja {
 					continue
 				}
@@ -1002,7 +1004,7 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 		// zlog.Fatal("No sort fields set for struct")
 		return false
 	})
-	// zlog.Info("SORT TIME:", time.Since(start))
+	// zlog.Info("SORT TIME:", time.Since(start), count)
 }
 
 // FN is convenience method to get FieldName from a field if any (used often in HandleAction methods).
