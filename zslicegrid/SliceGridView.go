@@ -310,12 +310,19 @@ func (v *SliceGridView[S]) updateView() {
 	v.UpdateViewFunc()
 }
 
-func setItemsInSlice[S zstr.StrIDer](items []S, slicePtr *[]S) int {
+func (v *SliceGridView[S]) insertItemsIntoASlice(items []S, slicePtr *[]S) int {
 	var added int
 	found := false
+	if v != nil {
+		v.Grid.DirtyIDs = map[string]bool{}
+	}
 	for _, item := range items {
+		isid := item.GetStrID()
+		if v != nil {
+			v.Grid.DirtyIDs[isid] = true
+		}
 		for i, s := range *slicePtr {
-			if s.GetStrID() == item.GetStrID() {
+			if s.GetStrID() == isid {
 				found = true
 				// fmt.Printf("edited: %+v %v %d\n", (*v.slicePtr)[i], item, i)
 				(*slicePtr)[i] = item
@@ -331,7 +338,7 @@ func setItemsInSlice[S zstr.StrIDer](items []S, slicePtr *[]S) int {
 }
 
 func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
-	added = setItemsInSlice(items, v.slicePtr)
+	added = v.insertItemsIntoASlice(items, v.slicePtr)
 	v.doFilterAndSort(*v.slicePtr)
 	return added
 }
@@ -459,7 +466,7 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 	if sgv != nil {
 		orSlice = sgv.slicePtr
 	}
-	setItemsInSlice(rows, orSlice)
+	sgv.insertItemsIntoASlice(rows, orSlice)
 	if sgv != nil {
 		sgv.updateView()
 	}
