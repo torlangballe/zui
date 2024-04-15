@@ -32,7 +32,7 @@ func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking 
 		h.Add(label, zgeo.TopLeft)
 		return h
 	}
-	grid.HandleRowPressed = func(id string) {
+	grid.HandleRowPressedFunc = func(id string) {
 		i := grid.IndexOfID(id)
 		if !keepPicking {
 			zpresent.Close(grid, false, nil)
