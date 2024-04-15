@@ -71,6 +71,9 @@ func (label *Label) SetURL(surl string, newWindow bool) {
 }
 
 func (v *Label) SetText(text string) {
+	if v.Text() == text {
+		return
+	}
 	v.text = text
 	v.NativeView.SetText(text)
 }
