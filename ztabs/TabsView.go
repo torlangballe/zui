@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type item struct {
@@ -203,6 +204,9 @@ func (v *TabsView) SelectItem(id string, done func()) {
 	if done != nil {
 		done()
 	}
+	ztimer.StartIn(0.02, func() {
+		v.SetContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
+	})
 }
 
 func (v *TabsView) RemoveItem(id string) {
