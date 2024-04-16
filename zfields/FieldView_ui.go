@@ -58,6 +58,7 @@ type FieldView struct {
 type FieldViewParameters struct {
 	Field
 	FieldParameters
+	BuildChildrenHidden      bool
 	ImmediateEdit            bool                                                                        // ImmediateEdit forces immediate write-to-data when editing a field.
 	MultiSliceEditInProgress bool                                                                        // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
 	EditWithoutCallbacks     bool                                                                        // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
@@ -522,7 +523,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			updateOldDuration(label, dur, f)
 		}
 
-	case zreflect.KindString, zreflect.KindFunc:
+	case zreflect.KindString, zreflect.KindFunc: // why KindFunc???
 		valStr = rval.String()
 		if f.Flags&FlagIsImage != 0 {
 			path := ""
@@ -966,14 +967,15 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 }
 
 func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
-	str, _ := getTextFromNumberishItem(rval, f)
+	var str string
 	if f.IsStatic() || v.params.AllStatic {
 		var label *zlabel.Label
 		isLink := f.HasFlag(FlagIsURL)
 		if !isLink {
-			label = zlabel.New(str)
+			label = zlabel.New("")
 		}
 		if isLink || f.HasFlag(FlagIsDocumentation) {
+			str, _ := getTextFromNumberishItem(rval, f)
 			surl := str
 			if f.Path != "" {
 				surl = f.Path
@@ -1286,6 +1288,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 		v.SetSpacing(math.Max(12, v.Spacing()))
 	}
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data, reflect.ValueOf(v.data).Kind())
+
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
 		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
 		return true
@@ -1525,6 +1528,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.MinSize.W = f.MinWidth
 	}
 	cell.MaxSize.W = f.MaxWidth
+	if v.params.BuildChildrenHidden {
+		view.Show(false)
+	}
 	if !v.params.Field.HasFlag(FlagIsLabelize) {
 		cell.View = view
 		v.AddCell(*cell, -1)
