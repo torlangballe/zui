@@ -140,13 +140,13 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
 		}
-		v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-			fv := grid.CellView(id).(*zfields.FieldView)
-			zlog.Assert(fv != nil)
-			fv.Update(v.StructForID(id), true, false)
-		}
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
+	}
+	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
+		fv := grid.CellView(id).(*zfields.FieldView)
+		zlog.Assert(fv != nil)
+		fv.Update(v.StructForID(id), true, false)
 	}
 }
 
@@ -163,11 +163,11 @@ func (v *TableView[S]) createRow(id string) zview.View {
 }
 
 func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
-	name := "row " + id
 	params := v.FieldParameters
 	params.ImmediateEdit = false
 	params.Styling.Spacing = 0
 	params.AllStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)
+
 	fv := zfields.FieldViewNew(id, s, params)
 	fv.Vertical = false
 	fv.Fields = v.fields
@@ -175,9 +175,10 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	// fv.SetCanFocus(true)
 	fv.SetMargin(zgeo.Rect{})
 	useWidth := true //(v.Header != nil)
+	name := "row " + id
 	fv.BuildStack(name, zgeo.CenterLeft, zgeo.Size{v.ColumnMargin, 0}, useWidth)
-	dontOverwriteEdited := false
-	fv.Update(nil, dontOverwriteEdited, false)
+	// dontOverwriteEdited := false
+	// fv.Update(nil, dontOverwriteEdited, false)
 	return fv
 }
 
