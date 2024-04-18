@@ -31,7 +31,7 @@ var (
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.Size{20, 20}, "documentation:"+path)
+	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(20, 20), "documentation:"+path)
 	v.MaxSize = v.MinSize()
 	v.SetText("?")
 	v.SetColor(DocumentationDefaultIconColor())
@@ -61,17 +61,11 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v.Init(v, true, "docview")
 	v.SetSpacing(0)
 
-	// v.SetBGColor(zgeo.ColorWhite)
-	// hstack := zcontainer.StackViewHor("hstack")
-	// hstack.SetSpacing(0)
-	//	hstack.SetMarginS(zgeo.Size{30, 30})
-
 	isFrame := true
 	isMakeBar := true
 	v.WebView = zweb.NewView(minSize, isFrame, isMakeBar)
 	v.Add(v.WebView.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	v.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
-	// hstack.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
 
 	if zui.DebugOwnerMode {
 		edit := zimageview.NewWithCachedPath("images/zcore/edit-dark-gray.png", zgeo.SizeBoth(zweb.DefaultBarIconSize))
@@ -86,7 +80,7 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 // 	zlog.Info("Edit")
 // 	editor := zcode.NewEditorView("", 50, 50)
 // 	hstack := v.NativeView.Child("hstack").(*zcontainer.StackView)
-// 	hstack.AddAdvanced(editor, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, 0, false)
+// 	hstack.AddAdvanced(editor, zgeo.TopLeft|zgeo.Expand, zgeo.SizeNull, zgeo.SizeNull, 0, false)
 // 	v.ArrangeChildren()
 // }
 
@@ -112,7 +106,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 	if zwindow.ExistsActivate(opts.ID) {
 		return nil
 	}
-	v := DocumentationViewNew(zgeo.Size{980, 800})
+	v := DocumentationViewNew(zgeo.SizeD(980, 800))
 	if !zhttp.StringStartsWithHTTPX(path) {
 		path = DocumentationPathPrefix + path
 	}

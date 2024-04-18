@@ -14,7 +14,7 @@ import (
 
 func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking bool, got func(row S, closed bool)) {
 	grid := NewView("picker")
-	grid.Spacing = zgeo.Size{}
+	grid.Spacing = zgeo.SizeNull
 	grid.MakeFullSize = true
 	// grid.SetMinSize(zgeo.SizeD(340, 400))
 	// v.grid.MinRowsForFullSize = 5

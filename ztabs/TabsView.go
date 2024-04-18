@@ -63,7 +63,7 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 		v.ButtonName = DefaultButtonName
 		v.header.SetMargin(zgeo.RectFromXY2(2, 4, 0, 0))
 	} else {
-		v.MaxImageSize = zgeo.Size{60, 24}
+		v.MaxImageSize = zgeo.SizeD(60, 24)
 		v.header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
 	}
 	v.storeKey = storeName
@@ -93,7 +93,7 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 					r.SetMaxX(rect.Max().X)
 				}
 				canvas.SetColor(v.selectedImageBGColor)
-				path := zgeo.PathNewRect(r, zgeo.Size{})
+				path := zgeo.PathNewRect(r, zgeo.SizeNull)
 				canvas.FillPath(path)
 			}
 		})
@@ -128,22 +128,22 @@ func (v *TabsView) ReadyToShow(beforeWindow bool) {
 func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create func(id string, delete bool) zview.View) {
 	// v.AddGroupItem(id, title, imagePath, set, view, create)
 	var button *zshape.ShapeView
-	minSize := zgeo.Size{20, 22}
+	minSize := zgeo.SizeD(20, 22)
 	if title == "" {
 		title = id
 	}
 	if v.ButtonName != "" {
 		// zlog.Info("Add Tab button:", title, v.ButtonName)
-		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.Size{11, 8})
+		b := zshape.ImageButtonViewNew(title, v.ButtonName, minSize, zgeo.SizeD(11, 8))
 		button = &b.ShapeView
 		button.SetTextColor(DefaultTextColor())
-		button.SetMarginS(zgeo.Size{10, 0})
+		button.SetMarginS(zgeo.SizeD(10, 0))
 		button.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 		view = b
 	} else {
 		button = zshape.NewView(zshape.TypeNone, minSize)
 		button.MaxSize = v.MaxImageSize
-		button.ImageMargin = zgeo.Size{}
+		button.ImageMargin = zgeo.SizeNull
 		view = button
 	}
 	button.MaxSize.H = 26
@@ -228,7 +228,7 @@ func (v *TabsView) GetHeader() *zcontainer.StackView {
 
 func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner float64, forIDs []string) {
 	cv := zcustom.NewView(tabSeparatorID)
-	cv.SetMinSize(zgeo.Size{10, thickness})
+	cv.SetMinSize(zgeo.SizeD(10, thickness))
 	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 		selectedView, _ := v.header.FindViewWithName(v.CurrentID, false)
 		canvas.SetColor(color)
@@ -238,14 +238,14 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 			x1 := r.Max().X - v.SeparatorLineInset
 			r = rect
 			r.SetMaxX(x0)
-			path := zgeo.PathNewRect(r, zgeo.Size{})
+			path := zgeo.PathNewRect(r, zgeo.SizeNull)
 			canvas.FillPath(path)
 			r = rect
 			r.SetMinX(x1)
-			path = zgeo.PathNewRect(r, zgeo.Size{})
+			path = zgeo.PathNewRect(r, zgeo.SizeNull)
 			canvas.FillPath(path)
 		} else {
-			path := zgeo.PathNewRect(rect, zgeo.Size{})
+			path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 			canvas.FillPath(path)
 		}
 	})
@@ -271,7 +271,7 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 			if selected != v.Dark {
 				str += "-selected"
 			}
-			button.SetImageName(str, zgeo.Size{11, 8})
+			button.SetImageName(str, zgeo.SizeD(11, 8))
 			if v.InvertSelectedTabText {
 				col := DefaultTextColor()
 				if selected != v.Dark {

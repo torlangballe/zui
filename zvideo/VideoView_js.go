@@ -130,11 +130,6 @@ func (v *VideoView) makeRenderCanvas() {
 	zview.SetElementRect(v.renderCanvas.JSElement(), zgeo.Rect{Size: v.StreamSize})
 }
 
-// func (v *VideoView) Capture() {
-// 	canvas := CanvasNew()
-// 	canvas.SetSize(zgeo.Size{500, 100})
-// }
-
 func getMediaDevices() js.Value {
 	return zdom.CreateDotSeparatedObject("navigator.mediaDevices")
 }

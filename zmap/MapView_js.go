@@ -42,5 +42,5 @@ func (v *MapView) Init(view zview.View, center zgeo.Pos, zoom int) {
 		opts["center"] = makeLatLingJS(center)
 	}
 	v.MapJS = mapConstructor.New(v.Element, opts)
-	v.minSize = zgeo.Size{300, 200}
+	v.minSize = zgeo.SizeD(300, 200)
 }

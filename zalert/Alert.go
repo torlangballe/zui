@@ -138,7 +138,7 @@ func ShowStatus(secs float64, parts ...interface{}) {
 }
 
 func makeUploadButton() *zshape.ShapeView {
-	v := zshape.NewView(zshape.TypeRoundRect, zgeo.Size{68, 22})
+	v := zshape.NewView(zshape.TypeRoundRect, zgeo.SizeD(68, 22))
 	v.SetColor(zgeo.ColorWhite)
 	v.StrokeColor = zgeo.ColorNew(0, 0.6, 0, 1)
 	v.StrokeWidth = 2
@@ -196,13 +196,12 @@ func (a *Alert) Show(handle func(result Result)) {
 	if a.SubText != "" {
 		subLabel := zlabel.New(a.SubText)
 		subLabel.SetMaxLines(0)
-		// subLabel.SetMinSize(zgeo.Size{100, 100})
 		subLabel.SetFont(zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal))
 		// subLabel.SetMaxLines(4)
 		stack.Add(subLabel, zgeo.TopCenter|zgeo.HorExpand)
 	}
 	bar := zcontainer.StackViewHor("bar")
-	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 10})
+	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.SizeD(0, 10))
 
 	a.addButtonIfNotEmpty(stack, bar, a.CancelButton, handle, Cancel)
 	a.addButtonIfNotEmpty(stack, bar, a.DestructiveButton, handle, Destructive)
@@ -245,9 +244,9 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 		if footer != nil {
 			// zlog.Info("OKCancel2:", footer.Native() != nil)
 		}
-		stack.Add(footer, zgeo.TopLeft|zgeo.HorExpand, zgeo.Size{0, 2})
+		stack.Add(footer, zgeo.TopLeft|zgeo.HorExpand, zgeo.SizeD(0, 2))
 	}
-	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.Size{0, 2})
+	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.SizeD(0, 2))
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
 	okButton := addButton(bar, stack, "OK", true, done)

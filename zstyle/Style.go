@@ -43,7 +43,7 @@ type DropShadow struct {
 const UndefinedFloat32 = math.MaxFloat32
 
 var (
-	DropShadowDefault = DropShadow{Delta: zgeo.Size{3, 3}, Blur: 3, Color: zgeo.ColorBlack}
+	DropShadowDefault = DropShadow{Delta: zgeo.SizeBoth(3), Blur: 3, Color: zgeo.ColorBlack}
 	DropShadowUndef   = DropShadow{Delta: zgeo.SizeUndef, Blur: -1}
 	DropShadowClear   = DropShadow{}
 

@@ -17,22 +17,21 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	s := &SearchField{}
 	s.StackView.Init(s, false, "search-stack")
 	// s.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
-	s.SetMinSize(zgeo.Size{0, 34})
+	s.SetMinSize(zgeo.SizeD(0, 34))
 	style.Type = Search
 	t := NewView("", style, chars, 1)
 	t.JSSet("className", "rounded")
 	s.TextView = t
-	// size := t.CalculatedSize(zgeo.Size{300, 50})
 	t.SetCorner(14)
 	t.SetObjectName("search")
 	t.SetMargin(zgeo.RectFromXY2(0, 3, -24, -10))
 	t.SetNativePadding(zgeo.RectFromXY2(16, 0, -0, -0))
 	t.JSSet("inputmode", "search")
 	t.UpdateSecs = 0.2
-	iv := zimageview.NewWithCachedPath("images/zcore/magnifier.png", zgeo.Size{12, 12})
+	iv := zimageview.NewWithCachedPath("images/zcore/magnifier.png", zgeo.SizeD(12, 12))
 	iv.SetAlpha(0.4)
 	s.Add(t, zgeo.CenterLeft|zgeo.VertExpand)
-	s.Add(iv, zgeo.CenterLeft, zgeo.Size{5, 0}).Free = true
+	s.Add(iv, zgeo.CenterLeft, zgeo.SizeD(5, 0)).Free = true
 	old := t.ChangedHandler()
 	t.SetChangedHandler(func() {
 		iv.Show(t.Text() == "")

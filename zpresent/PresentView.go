@@ -107,7 +107,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	s := zscreen.GetMain().UsableRect.ExpandedD(-10).Size
 	size := v.CalculatedSize(s)
 	if attributes.Modal || FirstPresented {
-		rect = rect.Align(size, attributes.Alignment, zgeo.Size{})
+		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
 	nv := v.Native()
 	if attributes.Modal {
@@ -120,7 +120,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 				if attributes.Alignment == zgeo.AlignmentNone {
 					r.Pos = *attributes.Pos
 				} else {
-					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.Size{}).Pos
+					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.SizeNull).Pos
 				}
 			}
 			full := fullRect
@@ -323,7 +323,7 @@ func AttributesNew() Attributes {
 	a.PortraitOnly = false
 	a.ModalDimBackground = true
 	a.ModalDropShadow = zstyle.DropShadow{
-		Delta: zgeo.Size{4, 4},
+		Delta: zgeo.SizeD(4, 4),
 		Blur:  8,
 		Color: zgeo.ColorNewGray(0.2, 1),
 	}
@@ -419,14 +419,14 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	}
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetSpacing(2)
-	bar.SetMarginS(zgeo.Size{6, 2})
+	bar.SetMarginS(zgeo.SizeD(6, 2))
 	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
-		path := zgeo.PathNewRect(rect, zgeo.Size{})
+		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
-	m := zgeo.Size{att.TitledMargin.W, 0}
+	m := zgeo.SizeD(att.TitledMargin.W, 0)
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
 
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
@@ -437,17 +437,16 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	if len(barViews) == 0 {
 		a = zgeo.HorCenter
 	}
-	bar.Add(titleLabel, a|zgeo.VertCenter) //, zgeo.Size{20, 0})
+	bar.Add(titleLabel, a|zgeo.VertCenter)
 
 	xmargin := 0.0 //10.0
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.Vertical
 		}
-		bar.AddAdvanced(v, a, zgeo.Size{xmargin, 0}, zgeo.Size{}, 0, false)
+		bar.AddAdvanced(v, a, zgeo.SizeD(xmargin, 0), zgeo.SizeNull, 0, false)
 		xmargin = 0
 	}
-	// stack.AddAdvanced(bar, zgeo.TopCenter|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, 0, false)
 	if ready != nil {
 		ready(stack, bar, titleLabel)
 	}

@@ -118,5 +118,5 @@ func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 }
 
 func (v *DividerView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.Size{10, 10}
+	return zgeo.SizeD(10, 10)
 }

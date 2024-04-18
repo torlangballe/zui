@@ -32,14 +32,14 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Styling.FGColor = zgeo.ColorNewGray(0, 0.05)
 	v.Styling.StrokeWidth = 1
 	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
-	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.Size{5, 5}, Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
+	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.SizeBoth(5), Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
 	v.ImageAlignment = zgeo.Center | zgeo.Shrink
 	v.SetPlaceholder(placeHolder)
 	v.SetMinSize(size)
 	// v.SetCanTabFocus(true)
 
-	v.Activity = NewActivityView(zgeo.Size{12, 12})
-	v.Add(v.Activity, zgeo.CenterRight, zgeo.Size{4, 0})
+	v.Activity = NewActivityView(zgeo.SizeD(12, 12))
+	v.Add(v.Activity, zgeo.CenterRight, zgeo.SizeD(4, 0))
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
 		// zlog.Info("HandleDropish:", name, dtype)
 		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
@@ -89,7 +89,7 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 	canvas.FillPath(path)
 	canvas.PushState()
 	canvas.ClipPath(path, false)
-	path.AddRect(rect.ExpandedD(20), zgeo.Size{}) // add an outer box, so drop-shadow is an inset
+	path.AddRect(rect.ExpandedD(20), zgeo.SizeNull) // add an outer box, so drop-shadow is an inset
 	canvas.SetDropShadow(v.Styling.DropShadow)
 	canvas.SetColor(v.Styling.StrokeColor)
 	canvas.FillPathEO(path)

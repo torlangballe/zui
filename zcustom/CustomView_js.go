@@ -90,7 +90,7 @@ func (v *CustomView) ReadyToShow(beforeWindow bool) {
 
 func (v *CustomView) SetRect(rect zgeo.Rect) {
 	r := rect.ExpandedToInt()
-	s := zgeo.Size{}
+	s := zgeo.SizeNull
 	if v.HasSize() {
 		s = v.Rect().Size
 	}

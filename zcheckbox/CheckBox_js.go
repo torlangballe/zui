@@ -14,7 +14,7 @@ import (
 
 func init() {
 	if zdevice.WasmBrowser() == zdevice.Chrome {
-		checkboxSize = zgeo.Size{14, 14}
+		checkboxSize = zgeo.SizeD(14, 14)
 	}
 }
 

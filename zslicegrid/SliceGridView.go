@@ -150,7 +150,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if storeName != "" {
 			key = storeName + ".layout"
 		}
-		v.Layout = zimageview.NewValuesView(zgeo.Size{31, 19}, key)
+		v.Layout = zimageview.NewValuesView(zgeo.SizeD(31, 19), key)
 		v.Layout.SetObjectName("layout")
 		v.Layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
 		v.Layout.AddVariant(LayoutVerticalFirstType, "images/zcore/order-vert-first.png")
@@ -161,17 +161,17 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.Bar.Add(v.Layout, zgeo.CenterLeft)
 	}
 	if options&AddMenu != 0 {
-		actions := zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.Size{18, 18})
+		actions := zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.SizeD(18, 18))
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
 		v.ActionMenu.Build(actions, nil)
-		v.Bar.Add(actions, zgeo.CenterRight, zgeo.Size{})
+		v.Bar.Add(actions, zgeo.CenterRight, zgeo.SizeNull)
 	}
 	if options&AddDocumentationIcon != 0 {
 		doc := zwidgets.DocumentationIconViewNew(storeName)
 		doc.SetZIndex(200)
-		v.Bar.Add(doc, zgeo.CenterRight, zgeo.Size{})
+		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeNull)
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
@@ -230,7 +230,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
-	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand) //, zgeo.Size{4, 4}) //.Margin = zgeo.Size{4, 0}
+	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand)
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)

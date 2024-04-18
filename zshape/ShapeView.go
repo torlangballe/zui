@@ -68,7 +68,7 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 	v.CustomView.Init(view, name)
 	v.textInfo = *ztextinfo.New()
 	v.Type = shapeType
-	v.ImageMargin = zgeo.Size{4, 1}.TimesD(zscreen.MainSoftScale())
+	v.ImageMargin = zgeo.SizeD(4, 1).TimesD(zscreen.MainSoftScale())
 	v.ImageOpacity = 1
 	v.ImageGap = 4
 	v.Count = 5
@@ -154,7 +154,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		// zlog.Info("ShapeView.CalculatedSize:", v.ObjectName(), v.textInfo.Text, s, ts)
 
 		ts.W *= 1.1
-		ts.Add(zgeo.Size{12, 6})
+		ts.Add(zgeo.SizeD(12, 6))
 		s.Maximize(ts)
 	}
 	if v.image != nil {
@@ -263,15 +263,15 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	case TypeCircle:
 		s := rect.Size.MinusD(v.StrokeWidth + 0.5).DividedByD(2).TimesD(zscreen.MainSoftScale())
 		w := s.Min()
-		path.ArcDegFromCenter(rect.Center(), zgeo.Size{w, w}, 0, 360)
+		path.ArcDegFromCenter(rect.Center(), zgeo.SizeBoth(w), 0, 360)
 
 	case TypeRoundRect:
-		r := rect.Expanded(zgeo.Size{-1, -1}) //.TimesD(zscreen.GetMain().SoftScale))
+		r := rect.Expanded(zgeo.SizeBoth(-1)) //.TimesD(zscreen.GetMain().SoftScale))
 		corner := math.Round(math.Min(math.Min(r.Size.W, r.Size.H)*float64(v.Ratio), 15))
-		path.AddRect(r, zgeo.Size{corner, corner})
+		path.AddRect(r, zgeo.SizeBoth(corner))
 
 	case TypeRectangle:
-		path.AddRect(rect, zgeo.Size{})
+		path.AddRect(rect, zgeo.SizeNull)
 	}
 	col := v.Color()
 	if col.Valid {
@@ -303,13 +303,13 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		t := v.textInfo // .Copy()
 		t.Color = v.GetStateColor(t.Color)
-		exp := zgeo.Size{-v.TextXMargin * zscreen.MainSoftScale(), 0}
+		exp := zgeo.SizeD(-v.TextXMargin*zscreen.MainSoftScale(), 0)
 		t.Rect = textRect.Expanded(exp)
 		t.Rect.Pos.Y += 3
 		t.Font = v.Font()
 		t.Wrap = ztextinfo.WrapNone
 		if v.IsImageFill {
-			canvas.SetDropShadow(zstyle.DropShadow{zgeo.Size{}, 2, zgeo.ColorBlack}) // why do we do this????
+			canvas.SetDropShadow(zstyle.DropShadow{zgeo.SizeNull, 2, zgeo.ColorBlack}) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
 		// zlog.Info("ShapeView draw text:", rect, textRect, t.Rect, v.TextXMargin, t.Text)
@@ -353,7 +353,7 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 		canvas.PopState()
 	} else {
 		a := v.ImageAlign | zgeo.Shrink
-		ir := rect.AlignPro(v.image.Size(), a, v.ImageMargin, v.ImageMaxSize, zgeo.Size{})
+		ir := rect.AlignPro(v.image.Size(), a, v.ImageMargin, v.ImageMaxSize, zgeo.SizeNull)
 		var corner float64
 		if v.IsRoundImage {
 			if v.Type == TypeRoundRect {
@@ -361,7 +361,7 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 			} else if v.Type == TypeCircle {
 				corner = v.image.Size().Max() / 2
 			}
-			clipPath := zgeo.PathNewRect(ir, zgeo.Size{corner, corner})
+			clipPath := zgeo.PathNewRect(ir, zgeo.SizeBoth(corner))
 			canvas.PushState()
 			canvas.ClipPath(clipPath, false)
 		}

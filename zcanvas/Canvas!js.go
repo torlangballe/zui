@@ -219,7 +219,7 @@ func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
 	fontMutex.Lock()
 	w, h := c.context.MeasureString(text)
 	fontMutex.Unlock()
-	return zgeo.Size{w, h}
+	return zgeo.SizeD(w, h)
 }
 
 func (c *Canvas) setAlphaMask(opacity float32) {

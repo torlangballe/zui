@@ -190,7 +190,7 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 }
 
 // func (v *ContainerView) AddView(view zview.View, align zgeo.Alignment) *Cell {
-// 	return v.AddAdvanced(view, align, zgeo.Size{}, zgeo.Size{}, -1, false)
+// 	return v.AddAdvanced(view, align, zgeo.SizeNull, zgeo.SizeNull, -1, false)
 // }
 
 func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell {
@@ -200,7 +200,7 @@ func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg 
 	if view != nil {
 		name = view.ObjectName()
 	}
-	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.Size{}, collapsed, free, zgeo.Size{}, 0.0, name}
+	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.SizeNull, collapsed, free, zgeo.SizeNull, 0.0, name}
 	return v.addCellWithAdder(Cell{LayoutCell: lc, View: view}, index)
 }
 
@@ -250,7 +250,7 @@ func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
 		ir := r.Expanded(c.Margin.MinusD(2.0))
 		s := c.View.CalculatedSize(ir.Size)
-		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.Size{})
+		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.SizeNull)
 		c.View.SetRect(rv)
 	}
 }

@@ -134,7 +134,7 @@ func LabelizeCV(view zview.View, prefix string, minWidth float64, alignment zgeo
 	stack = StackViewHor("$labelize." + prefix) // give it special name so not easy to mis-search for in recursive search
 
 	stack.AddView(label, zgeo.CenterLeft).MinSize.W = minWidth
-	marg := zgeo.Size{}
+	marg := zgeo.SizeNull
 	if isCheck {
 		marg.W = -6 // in html cell has a box around it of 20 pixels
 	}

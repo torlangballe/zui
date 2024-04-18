@@ -122,7 +122,7 @@ func (v *NativeView) Rect() zgeo.Rect {
 	pos.X = v.parseElementCoord(style.Get("left"))
 	pos.Y = v.parseElementCoord(style.Get("top"))
 	size := v.LocalRect().Size
-	return zgeo.Rect{pos, size}
+	return zgeo.Rect{Pos: pos, Size: size}
 }
 
 func SetElementRect(e js.Value, rect zgeo.Rect) {
@@ -134,7 +134,7 @@ func SetElementRect(e js.Value, rect zgeo.Rect) {
 }
 
 func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.Size{10, 10}
+	return zgeo.SizeD(10, 10)
 }
 
 func (v *NativeView) LocalRect() zgeo.Rect {
@@ -795,7 +795,7 @@ func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
 	v.JSSet("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if handler != nil {
 			y := v.JSGet("scrollTop").Float()
-			handler(zgeo.Pos{0, y})
+			handler(zgeo.PosD(0, y))
 		}
 		return nil
 	}))

@@ -90,13 +90,13 @@ func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opac
 }
 
 func (c *Canvas) FillRect(rect zgeo.Rect) {
-	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 	c.FillPath(path)
 }
 
 func (c *Canvas) Fill() {
 	rect := zgeo.Rect{Size: c.size}
-	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 	c.FillPath(path)
 }
 
@@ -120,7 +120,7 @@ func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	}
 	if measureCanvas == nil {
 		measureCanvas = New()
-		measureCanvas.SetSize(zgeo.Size{800, 100})
+		measureCanvas.SetSize(zgeo.SizeD(800, 100))
 	}
 	s = measureCanvas.MeasureText(text, font)
 	measuredTexts.Put(key, s)
@@ -145,6 +145,6 @@ func (c *Canvas) StrokeVertical(x, y1, y2 float64, width float64, ltype zgeo.Pat
 
 func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color) {
 	colors := []zgeo.Color{col1, col2}
-	path := zgeo.PathNewRect(rect, zgeo.Size{})
+	path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 }

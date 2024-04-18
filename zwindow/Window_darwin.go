@@ -61,7 +61,7 @@ func Open(o Options) *Window {
 		if a == zgeo.AlignmentNone {
 			a = zgeo.Center
 		}
-		r = sm.UsableRect.Align(o.Size, a, zgeo.Size{})
+		r = sm.UsableRect.Align(o.Size, a, zgeo.SizeNull)
 	} else if o.FullScreenID == -1 {
 		r = sm.Rect
 	} else {

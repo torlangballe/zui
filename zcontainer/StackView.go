@@ -278,6 +278,6 @@ func MakeLinkedStack(surl, name string, add zview.View) *StackView {
 	v.SetAboveParent(true)
 	v.SetMargin(zgeo.RectFromXY2(3, 0, -3, 0))
 	v.MakeLink(surl, name)
-	v.Add(add, zgeo.TopLeft, zgeo.Size{})
+	v.Add(add, zgeo.TopLeft, zgeo.SizeNull)
 	return v
 }

@@ -305,5 +305,5 @@ func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
 
 func makeButton(shape, col string) *zimageview.ImageView {
 	str := fmt.Sprintf("images/zcore/%s-circled-dark%s.png", shape, col)
-	return zimageview.New(nil, true, str, zgeo.Size{20, 20})
+	return zimageview.New(nil, true, str, zgeo.SizeD(20, 20))
 }

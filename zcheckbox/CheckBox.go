@@ -39,8 +39,8 @@ func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) 
 	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
 	stack.SetMargin(zgeo.RectFromXY2(0, 3, 0, -3))
 	stack.SetSpacing(0)
-	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.Size{0, -4})
-	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.Size{6, 0})
+	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.SizeD(0, -4))
+	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.SizeD(6, 0))
 
 	return label, stack
 }

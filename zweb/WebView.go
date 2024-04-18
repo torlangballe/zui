@@ -64,10 +64,10 @@ func (v *WebView) ReadyToShow(beforeWindow bool) {
 func (v *WebView) MakeBar() *zcontainer.StackView {
 	v.Bar = zcontainer.StackViewHor("bar")
 	v.Bar.SetSpacing(8)
-	v.Bar.SetMarginS(zgeo.Size{8, 6})
+	v.Bar.SetMarginS(zgeo.SizeD(8, 6))
 	v.Bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
-		path := zgeo.PathNewRect(rect, zgeo.Size{})
+		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	v.TitleLabel = zlabel.New("")

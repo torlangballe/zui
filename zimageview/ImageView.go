@@ -74,7 +74,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 				if !zhttp.StringStartsWithHTTPX(path) {
 					path = zstr.Concat("/", zrest.AppURLPrefix, path)
 				}
-				nv := New(v.image, v.UseDownsampleCache, v.image.Path, zgeo.Size{})
+				nv := New(v.image, v.UseDownsampleCache, v.image.Path, zgeo.SizeNull)
 				att := zpresent.AttributesNew()
 				att.Modal = true
 				att.ModalCloseOnOutsidePress = true
@@ -132,7 +132,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		s = v.fitSize
 	}
 	s.Add(margSize.Negative())
-	s.Maximize(zgeo.Size{2, 2})
+	s.Maximize(zgeo.SizeD(2, 2))
 	return s
 }
 
@@ -192,7 +192,7 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 	// 	a = AlignmentNone
 	// }
 	r := inRect.Plus(v.Margin())
-	ir := r.Align(v.image.Size(), a, zgeo.Size{})
+	ir := r.Align(v.image.Size(), a, zgeo.SizeNull)
 	return ir
 }
 
@@ -212,7 +212,7 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	if v.EmptyColor.Valid {
 		a := v.alignment | zgeo.Shrink | zgeo.Proportional
 		r := rect.Plus(v.Margin())
-		ir := r.Align(r.ExpandedD(-2).Size, a, zgeo.Size{})
+		ir := r.Align(r.ExpandedD(-2).Size, a, zgeo.SizeNull)
 		path := zgeo.PathNewRect(ir, zgeo.SizeBoth(4))
 		canvas.SetColor(v.EmptyColor)
 		canvas.FillPath(path)

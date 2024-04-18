@@ -109,7 +109,7 @@ func imageGetScaleFromPath(path string) int {
 }
 
 func GoImageZSize(img image.Image) zgeo.Size {
-	return zgeo.Size{float64(img.Bounds().Dx()), float64(img.Bounds().Dy())}
+	return zgeo.SizeD(float64(img.Bounds().Dx()), float64(img.Bounds().Dy()))
 }
 
 // GGoImageShrunkInto scales down the image to fit inside size.
@@ -120,7 +120,7 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) (
 	var vsize = size
 	s := GoImageZSize(goImage)
 	if proportional {
-		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.Size{}).Size
+		vsize = zgeo.Rect{Size: size}.Align(s, zgeo.Center|zgeo.Shrink|zgeo.Proportional, zgeo.SizeNull).Size
 	}
 	//	this didn't work for large image?
 	width := int(vsize.W)
@@ -242,12 +242,12 @@ func (i *Image) ShrunkInto(size zgeo.Size, proportional bool, got func(*Image)) 
 
 func GoImageShrunkCroppedToFillSize(img image.Image, size zgeo.Size, proportional bool) (image.Image, error) {
 	is := GoImageZSize(img)
-	ns := zgeo.Rect{Size: size}.Align(is, zgeo.Shrink|zgeo.Center|zgeo.Out|zgeo.Proportional, zgeo.Size{}).Size
+	ns := zgeo.Rect{Size: size}.Align(is, zgeo.Shrink|zgeo.Center|zgeo.Out|zgeo.Proportional, zgeo.SizeNull).Size
 	ni, err := GoImageShrunkInto(img, ns, true)
 	if err != nil {
 		return nil, err
 	}
-	r := zgeo.Rect{Size: ns}.Align(size, zgeo.Center|zgeo.Proportional, zgeo.Size{})
+	r := zgeo.Rect{Size: ns}.Align(size, zgeo.Center|zgeo.Proportional, zgeo.SizeNull)
 	niCropped, err := GoImageCropped(ni, r, false)
 	return niCropped, err
 }

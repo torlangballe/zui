@@ -15,5 +15,5 @@ type SliderView struct {
 }
 
 func (s *SliderView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.Size{100, 20}
+	return zgeo.SizeD(100, 20)
 }

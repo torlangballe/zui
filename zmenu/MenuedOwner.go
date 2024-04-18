@@ -470,7 +470,7 @@ func (o *MenuedOwner) popup() {
 	}
 	w += 40 // test
 	zfloat.Maximize(&w, o.MinWidth)
-	list.SetMinSize(zgeo.Size{w, 0})
+	list.SetMinSize(zgeo.SizeD(w, 0))
 	if len(o.items) < 20 {
 		list.ShowBar = false
 	}
@@ -679,7 +679,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		})
 		return v
 	}
-	marg := zgeo.Size{4, 0}
+	marg := zgeo.SizeD(4, 0)
 
 	// zlog.Info("CreateRow:", i, item.Name, item.Selected, item.IsAction, item.Value)
 	if !item.IsAction {
@@ -707,7 +707,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	if o.ImagePath != "" {
 		sval := fmt.Sprint(item.Value)
 		spath := path.Join(o.ImagePath, sval+".png")
-		iv := zimageview.NewWithCachedPath(spath, zgeo.Size{32, 20})
+		iv := zimageview.NewWithCachedPath(spath, zgeo.SizeD(32, 20))
 		iv.DownsampleImages = true
 		v.Add(iv, zgeo.CenterRight, marg)
 		marg.W += gap + imageWidth
@@ -755,9 +755,9 @@ func (o *MenuedOwner) saveToStore() {
 }
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
-	v := zshape.NewView(shape, zgeo.Size{12, 12})
+	v := zshape.NewView(shape, zgeo.SizeD(12, 12))
 	v.SetImage(nil, true, "images/zcore/zmenu-arrows.png", nil)
-	v.ImageMargin = zgeo.Size{4, 4}
+	v.ImageMargin = zgeo.SizeD(4, 4)
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.ImageGap = 4

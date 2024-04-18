@@ -81,30 +81,30 @@ func (v *CalendarView) Init(view zview.View) {
 	v.monthLabel.SetToolTip("Press to go to today. Shift press to go to selected month.")
 	monthAdd := makeHeaderLabel("▼", zgeo.Right)
 	// monthAdd.SetObjectName("month-add")
-	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.Size{30, 0}).Free = true
+	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.SizeD(30, 0)).Free = true
 	monthAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
 	monthAdd.SetPressedHandler(func() {
 		v.Increase(1, 0)
 	})
 	yearAdd := makeHeaderLabel("⏵⏵", zgeo.Right)
 	yearAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
-	v.header.Add(yearAdd, zgeo.CenterRight, zgeo.Size{4, 0}).Free = true
+	v.header.Add(yearAdd, zgeo.CenterRight, zgeo.SizeD(4, 0)).Free = true
 	yearAdd.SetPressedHandler(func() {
 		v.Increase(0, 1)
 	})
 	monthSub := makeHeaderLabel("▲", zgeo.Left)
 	monthSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
-	v.header.Add(monthSub, zgeo.CenterLeft, zgeo.Size{30, 0}).Free = true
+	v.header.Add(monthSub, zgeo.CenterLeft, zgeo.SizeD(30, 0)).Free = true
 	monthSub.SetPressedHandler(func() {
 		v.Increase(-1, 0)
 	})
 	yearSub := makeHeaderLabel("⏴⏴", zgeo.Left)
 	yearSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
-	v.header.Add(yearSub, zgeo.CenterLeft, zgeo.Size{4, 0}).Free = true
+	v.header.Add(yearSub, zgeo.CenterLeft, zgeo.SizeD(4, 0)).Free = true
 	yearSub.SetPressedHandler(func() {
 		v.Increase(0, -1)
 	})
-	v.settingsGear = zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.Size{18, 18})
+	v.settingsGear = zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.SizeD(18, 18))
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
 	v.settingsGear.SetPressedHandler(v.handleSettingsPressed)
@@ -241,8 +241,8 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.addSettingsCheck(s, "Show Week Numbers", zlocale.IsShowWeekNumbersInCalendars, true)
 	v.addSettingsCheck(s, "Use 24-hour Clock", zlocale.IsUse24HourClock, false)
 	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
-	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.Size{20, 20})
-	s.Add(close, zgeo.BottomRight, zgeo.Size{4, 4})
+	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(20, 20))
+	s.Add(close, zgeo.BottomRight, zgeo.SizeD(4, 4))
 	close.SetPressedHandler(func() {
 		v.daysGrid.SetJSStyle("filter", "none")
 		zanimation.Translate(s, zgeo.Pos{0, -v.settingsSlider.OriginalRect.Size.H}, 0.5, func() {
@@ -365,7 +365,7 @@ func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.La
 func addLabel(v *CalendarView, grid *zcontainer.GridView, a any) (label *zlabel.Label, box *zcontainer.ContainerView, cell *zcontainer.Cell) {
 	str := fmt.Sprint(a)
 	box = zcontainer.New(str)
-	box.SetMinSize(zgeo.Size{28, 26})
+	box.SetMinSize(zgeo.SizeD(28, 26))
 	box.SetMargin(zgeo.RectFromXY2(2, 4, -6, -2))
 	box.SetCorner(3)
 
@@ -439,7 +439,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 	cols := 9
 	grid := zcontainer.GridViewNew("days", cols)
 	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
-	grid.Spacing = zgeo.Size{0, 0}
+	grid.Spacing = zgeo.SizeD(0, 0)
 
 	month := t.Month()
 	year := t.Year()

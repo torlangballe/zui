@@ -40,7 +40,7 @@ func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSiz
 // 				if !zhttp.StringStartsWithHTTPX(path) {
 // 					path = zstr.Concat("/", zrest.AppURLPrefix, path)
 // 				}
-// 				nv := New(v.image, v.image.Path, zgeo.Size{})
+// 				nv := New(v.image, v.image.Path, zgeo.SizeNull)
 // 				att := zpresent.AttributesNew()
 // 				att.Modal = true
 // 				att.ModalCloseOnOutsidePress = true
@@ -81,7 +81,7 @@ func (v *XImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// 	}
 	// }
 	// s.Add(margSize.Negative())
-	s.Maximize(zgeo.Size{2, 2})
+	s.Maximize(zgeo.SizeD(2, 2))
 	return s
 }
 

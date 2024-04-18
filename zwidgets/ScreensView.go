@@ -53,7 +53,7 @@ func (v *ScreensView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	for id, r := range v.Rects {
 		srect := zgeo.TranslateRectInSystems(union, intoRect, r)
 		// zlog.Info("Draw", id, r, union, srect)
-		path := zgeo.PathNewRect(srect, zgeo.Size{})
+		path := zgeo.PathNewRect(srect, zgeo.SizeNull)
 		col := zgeo.ColorNewGray(0.8, 1)
 		if id == v.CurrentID {
 			col = zgeo.ColorNewGray(0.3, 1)

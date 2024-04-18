@@ -60,7 +60,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if zdevice.OS() != zdevice.MacOSType {
 		w += 5
 	}
-	s := zgeo.Size{w, menuViewHeight}
+	s := zgeo.SizeD(w, menuViewHeight)
 	s.H += 4 // 8
 	return s
 }

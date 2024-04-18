@@ -124,7 +124,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.HoverColor = DefaultHoverColor
 	v.OpenBranches = map[string]bool{}
 	v.BranchToggleType = zwidgets.BranchToggleTriangle
-	v.Spacing = zgeo.Size{14, 6}
+	v.Spacing = zgeo.SizeD(14, 6)
 	v.MultiplyColorAlternate = 0.95
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
@@ -620,8 +620,8 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 
 func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total)
-	focusMarg := zgeo.Size{6, 6}
-	v.cachedChildSize = zgeo.Size{}
+	focusMarg := zgeo.SizeD(6, 6)
+	v.cachedChildSize = zgeo.SizeNull
 	s := v.MinSize()
 	if v.CellCountFunc() == 0 {
 		return s.Plus(focusMarg)
@@ -716,7 +716,7 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 		if v.BranchToggleType != zwidgets.BranchToggleNone {
 			if !leaf {
 				bt := zwidgets.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
-				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.Size{4 + w, 0}, zgeo.Size{}, -1, true)
+				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.SizeD(4+w, 0), zgeo.SizeNull, -1, true)
 			}
 			w += 24
 		}

@@ -78,10 +78,10 @@ func (i *Image) Colored(color zgeo.Color, size zgeo.Size) *Image {
 
 func (i *Image) Size() zgeo.Size {
 	if i.GoImage == nil {
-		return zgeo.Size{}
+		return zgeo.SizeNull
 	}
 	s := i.GoImage.Bounds().Size()
-	return zgeo.Size{float64(s.X), float64(s.Y)}
+	return zgeo.SizeD(float64(s.X), float64(s.Y))
 }
 
 func (i *Image) SetCapInsets(capInsets zgeo.Rect) *Image {

@@ -14,7 +14,7 @@ type ColorView struct {
 }
 
 func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.Size{30, 20}
+	return zgeo.SizeD(30, 20)
 }
 
 func (v *ColorView) SetValueWithAny(col any) {

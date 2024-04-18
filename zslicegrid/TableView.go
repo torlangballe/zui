@@ -74,7 +74,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 			v.RemoveChild(v.Bar)
 			v.Bar.SetMargin(zgeo.RectFromXY2(6, 2, -6, -3))
 		}
-		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.Size{}, zgeo.Size{}, index, false)
+		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.SizeNull, zgeo.SizeNull, index, false)
 		if v.Bar != nil && options&AddBarInHeader != 0 {
 			v.Header.Add(v.Bar, zgeo.CenterRight).Free = true
 			v.Bar.SetZIndex(200)
@@ -176,7 +176,7 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	fv.SetMargin(zgeo.Rect{})
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
-	fv.BuildStack(name, zgeo.CenterLeft, zgeo.Size{v.ColumnMargin, 0}, useWidth)
+	fv.BuildStack(name, zgeo.CenterLeft, zgeo.SizeD(v.ColumnMargin, 0), useWidth)
 	// dontOverwriteEdited := false
 	// fv.Update(nil, dontOverwriteEdited, false)
 	return fv

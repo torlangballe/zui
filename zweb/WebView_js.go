@@ -97,5 +97,5 @@ func (v *WebView) SetHTMLContent(html string) {
 func (v *WebView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	h := v.JSGet("scrollHeight").Float()
 	zfloat.Maximize(&h, v.minSize.H)
-	return zgeo.Size{v.minSize.W, h}
+	return zgeo.SizeD(v.minSize.W, h)
 }

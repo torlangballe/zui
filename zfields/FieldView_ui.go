@@ -189,7 +189,7 @@ func (v *FieldView) Build(update bool) {
 	} else {
 		a |= zgeo.VertCenter
 	}
-	v.BuildStack(v.ObjectName(), a, zgeo.Size{}, true)
+	v.BuildStack(v.ObjectName(), a, zgeo.SizeNull, true)
 	if update {
 		dontOverwriteEdited := false
 		v.Update(nil, dontOverwriteEdited, false)
@@ -590,7 +590,7 @@ func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 }
 
 func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
-	v := fieldViewNew(id, true, data, params, zgeo.Size{10, 10}, nil)
+	v := fieldViewNew(id, true, data, params, zgeo.SizeD(10, 10), nil)
 	return v
 }
 
@@ -725,11 +725,11 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if f.Name != "" || fv.params.Field.HasFlag(FlagIsLabelize) {
 		name = f.Name
 	}
-	s := zgeo.Size{20, 24}
+	s := zgeo.SizeD(20, 24)
 	if f.Height != 0 {
 		s.H = f.Height
 	}
-	button := zshape.ImageButtonViewNew(name, color, s, zgeo.Size{})
+	button := zshape.ImageButtonViewNew(name, color, s, zgeo.SizeNull)
 	button.SetTextColor(textCol)
 	button.TextXMargin = 0
 	if f.HasFlag(FlagIsURL) {
@@ -1322,12 +1322,12 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 			params := v.params
 			params.Field.MergeInField(f)
-			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.Size{}, v)
+			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
 			view = makeFrameIfFlag(f, fieldView)
 			if view == nil {
 				view = fieldView
 			}
-			fieldView.BuildStack(f.FieldName, zgeo.TopLeft, zgeo.Size{}, true)
+			fieldView.BuildStack(f.FieldName, zgeo.TopLeft, zgeo.SizeNull, true)
 
 		case zreflect.KindBool:
 			if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {

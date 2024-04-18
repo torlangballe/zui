@@ -170,7 +170,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		cell := zcontainer.Cell{}
 		cell.Alignment = h.Align
 		header := h
-		s := zgeo.Size{h.MinWidth, 26}
+		s := zgeo.SizeD(h.MinWidth, 26)
 		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets)
 		// zlog.Info("HEADER:", h.Title, h.Justify)
 		j := h.Justify
@@ -182,13 +182,10 @@ func (v *HeaderView) Populate(headers []Header) {
 			iv := zimageview.NewWithCachedPath(h.ImagePath, h.ImageSize)
 			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.FieldName + ".image")
-			button.Add(iv, zgeo.Center, zgeo.Size{})
+			button.Add(iv, zgeo.Center, zgeo.SizeNull)
 		}
 		button.SetTextColor(zgeo.ColorWhite)
 		button.SetObjectName(h.FieldName)
-		// if !h.ImageSize.IsNull() {
-		// 	cell.MaxSize = h.ImageSize.Plus(zgeo.Size{8, 8})
-		// }
 		if h.Tip != "" {
 			button.SetToolTip(h.Tip)
 		}
@@ -203,13 +200,13 @@ func (v *HeaderView) Populate(headers []Header) {
 			}
 		})
 		if h.SortSmallFirst != zbool.Unknown {
-			triangle := zimageview.NewWithCachedPath("", zgeo.Size{6, 5})
+			triangle := zimageview.NewWithCachedPath("", zgeo.SizeD(6, 5))
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
-			button.Add(triangle, zgeo.TopRight, zgeo.Size{2, 3})
+			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(2, 3))
 			v.updateTriangle(triangle, h.FieldName)
 		}
-		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.Size{}).W)
+		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.SizeNull).W)
 		if h.MaxWidth != 0 {
 			zfloat.Maximize(&cell.MaxSize.W, math.Max(h.MaxWidth, h.MinWidth))
 		}

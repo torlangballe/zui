@@ -18,7 +18,7 @@ type ImageButtonView struct {
 }
 
 func ImageButtonViewSimpleInsets(title, imageName string) *ImageButtonView {
-	return ImageButtonViewNew(title, imageName, zgeo.Size{20, 22}, DefaultInsets)
+	return ImageButtonViewNew(title, imageName, zgeo.SizeD(20, 22), DefaultInsets)
 }
 
 func ImageButtonViewNew(title, imageName string, minSize zgeo.Size, insets zgeo.Size) *ImageButtonView {
@@ -43,7 +43,7 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	// zlog.Info("ImGButton:", v.Hierarchy(), v.textInfo.Font)
 	v.textInfo.Color = zgeo.ColorBlack //White
 	v.textInfo.MaxLines = 1
-	v.ImageMargin = zgeo.Size{}
+	v.ImageMargin = zgeo.SizeNull
 }
 
 func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {

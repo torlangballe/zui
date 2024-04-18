@@ -21,13 +21,13 @@ type CustomView struct {
 	pressed          func()
 	longPressed      func()
 	valueChanged     func()
-	draw    func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
-	exposed bool
-	visible bool
-	drawing bool
-	exposeTimer   *ztimer.Timer
-	isSetup       bool
-	isHighlighted bool
+	draw             func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
+	exposed          bool
+	visible          bool
+	drawing          bool
+	exposeTimer      *ztimer.Timer
+	isSetup          bool
+	isHighlighted    bool
 }
 
 func NewView(name string) *CustomView {
@@ -119,7 +119,7 @@ func (v *CustomView) GetViewsRectInMyCoordinates(view zview.View) zgeo.Rect {
 
 func zConvertViewSizeThatFitstToSize(view *zview.NativeView, sizeIn zgeo.Size) zgeo.Size {
 	//    return Size(view.sizeThatFits(sizeIn.GetCGSize()))
-	return zgeo.Size{}
+	return zgeo.SizeNull
 }
 
 func (v *CustomView) GetStateColor(col zgeo.Color) zgeo.Color {

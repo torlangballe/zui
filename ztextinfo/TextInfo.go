@@ -250,7 +250,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	ti := *tin
 	w := 0.0
 	if ti.Text == "" {
-		return zgeo.Rect{ti.Rect.Pos, zgeo.Size{}}
+		return zgeo.Rect{ti.Rect.Pos, zgeo.SizeNull}
 	}
 	canvas.SetColor(ti.Color)
 	if ti.Type == Stroke {
@@ -270,7 +270,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	}
 	reduceTextToFit(&ti)
 	ts, lines, widths := ti.GetBounds()
-	ts = zgeo.Size{math.Ceil(ts.W), math.Ceil(ts.H)}
+	ts = zgeo.SizeD(math.Ceil(ts.W), math.Ceil(ts.H))
 	ra := ti.Rect.Align(ts, ti.Alignment, ti.Margin)
 	// https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks/21574562#21574562
 	h := ti.Font.LineHeight()

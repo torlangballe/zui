@@ -86,7 +86,7 @@ func (v *AmountView) drawBar(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.
 		if rect.Size.W < 3 {
 			rect.Size.W = 3
 		}
-		path := zgeo.PathNewRect(rect, zgeo.Size{3, 3})
+		path := zgeo.PathNewRect(rect, zgeo.SizeD(3, 3))
 		col := v.getColorForValue()
 		canvas.SetColor(col)
 		canvas.FillPath(path)
@@ -101,7 +101,7 @@ func AmountViewBarNew(width float64) *AmountView {
 	v.SetBGColor(zgeo.ColorNewGray(0, 0.15))
 	v.SetColor(zgeo.ColorNew(0.4, 0.4, 0.8, 1))
 	v.SetCorner(3)
-	v.CustomView.SetMinSize(zgeo.Size{width, 10})
+	v.CustomView.SetMinSize(zgeo.SizeD(width, 10))
 	v.SetDrawHandler(v.drawBar)
 	v.ColorsFromValue = map[float64]zgeo.Color{}
 	return v

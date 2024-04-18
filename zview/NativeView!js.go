@@ -21,7 +21,7 @@ func (v *NativeView) Child(path string) View                                 { r
 func (v *NativeView) Rect() zgeo.Rect                                        { return zgeo.Rect{} }
 func (v *NativeView) LocalRect() zgeo.Rect                                   { return zgeo.Rect{} }
 func (v *NativeView) Parent() *NativeView                                    { return nil }
-func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size               { return zgeo.Size{10, 10} }
+func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size               { return zgeo.SizeD(10, 10) }
 func (v *NativeView) ObjectName() string                                     { return "" }
 func (v *NativeView) Hierarchy() string                                      { return "" }
 func (v *NativeView) SetLocalRect(rect zgeo.Rect)                            {}

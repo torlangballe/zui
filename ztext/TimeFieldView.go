@@ -73,7 +73,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		style := Style{KeyboardType: zkeyboard.TypeInteger}
 		tv := NewView("", style, 1, 1)
 		tv.Show(false)
-		v.Add(tv, zgeo.TopLeft, zgeo.Size{-15, 0})
+		v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-15, 0))
 	}
 	if flags&TimeFieldDateOnly == 0 {
 		v.hourText = addText(v, 2, "H", "")
@@ -87,7 +87,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
 		v.ampmLabel.SetColor(zgeo.ColorNewGray(0.5, 1))
 		v.ampmLabel.SetPressedHandler(v.toggleAMPM)
-		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.Size{-8, 0})
+		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(-8, 0))
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 		zlocale.IsUse24HourClock.AddChangedHandler(func() {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
@@ -116,7 +116,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		})
 		if flags&TimeFieldTimeOnly == 0 {
 			spacing := zcustom.NewView("spacing")
-			spacing.SetMinSize(zgeo.Size{23, 6})
+			spacing.SetMinSize(zgeo.SizeD(23, 6))
 			v.Add(spacing, zgeo.CenterLeft)
 		}
 	}
@@ -132,10 +132,10 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.yearText = addText(v, cols, "Y", "/")
 		}
 		if flags&TimeFieldNoCalendar == 0 {
-			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.Size{16, 16})
+			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
 			v.calendar.SetUsable(false)
 			v.calendar.SetPressedHandler(v.popCalendar)
-			v.Add(v.calendar, zgeo.CenterLeft, zgeo.Size{1, 0})
+			v.Add(v.calendar, zgeo.CenterLeft, zgeo.SizeD(1, 0))
 		}
 	}
 	flipDayMonth(v, false)
@@ -176,7 +176,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		v.Value() // getting value will set error color
 	})
 	tv.SetTextAlignment(zgeo.Right)
-	v.Add(tv, zgeo.TopLeft, zgeo.Size{-2, 2})
+	v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-2, 2))
 	tv.SetKeyHandler(v.handleReturn)
 	return tv
 }
