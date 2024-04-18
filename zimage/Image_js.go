@@ -21,9 +21,9 @@ var (
 )
 
 type imageBase struct {
-	size      zgeo.Size `json:"size"`
-	capInsets zgeo.Rect `json:"capInsets"`
-	hasAlpha  bool      `json:"hasAlpha"`
+	size      zgeo.Size
+	capInsets zgeo.Rect
+	hasAlpha  bool
 	ImageJS   js.Value
 }
 
@@ -52,8 +52,6 @@ func GetSynchronous(timeoutSecs float64, useCache bool, imagePaths ...interface{
 			return false
 		}
 	}
-	zlog.Fatal("GetSynchronous can't get here")
-	return false
 }
 
 func FromPath(spath string, useCache bool, got func(*Image)) {

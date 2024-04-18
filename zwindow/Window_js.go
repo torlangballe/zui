@@ -210,7 +210,7 @@ func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {
 	w.Element.Set("scroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if handler != nil {
 			y := w.Element.Get("scrollY").Float()
-			handler(zgeo.Pos{0, y})
+			handler(zgeo.PosD(0, y))
 		}
 		return nil
 	}))

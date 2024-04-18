@@ -397,7 +397,7 @@ func (c *Canvas) ZImage(ensureCopy bool, got func(img *zimage.Image)) {
 func CanvasFromGoImage(i image.Image) *Canvas {
 	canvas := New()
 	canvas.SetSize(zimage.GoImageZSize(i))
-	canvas.SetGoImage(i, zgeo.Pos{0, 0})
+	canvas.SetGoImage(i, zgeo.PosD(0, 0))
 	return canvas
 }
 

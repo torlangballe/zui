@@ -130,16 +130,16 @@ func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 func (c *Canvas) StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.PathLineType) {
 	path := zgeo.PathNew()
 	y = math.Floor(y)
-	path.MoveTo(zgeo.Pos{x1, y})
-	path.LineTo(zgeo.Pos{x2, y})
+	path.MoveTo(zgeo.PosD(x1, y))
+	path.LineTo(zgeo.PosD(x2, y))
 	c.StrokePath(path, width, ltype)
 }
 
 func (c *Canvas) StrokeVertical(x, y1, y2 float64, width float64, ltype zgeo.PathLineType) {
 	path := zgeo.PathNew()
 	x = math.Floor(x)
-	path.MoveTo(zgeo.Pos{x, y1})
-	path.LineTo(zgeo.Pos{x, y2})
+	path.MoveTo(zgeo.PosD(x, y1))
+	path.LineTo(zgeo.PosD(x, y2))
 	c.StrokePath(path, width, ltype)
 }
 

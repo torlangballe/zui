@@ -200,7 +200,13 @@ func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg 
 	if view != nil {
 		name = view.ObjectName()
 	}
-	lc := zgeo.LayoutCell{align, marg, maxSize, zgeo.SizeNull, collapsed, free, zgeo.SizeNull, 0.0, name}
+	lc := zgeo.LayoutCell{
+		Alignment: align,
+		Margin:    marg,
+		MaxSize:   maxSize,
+		Collapsed: collapsed,
+		Free:      free, Name: name,
+	}
 	return v.addCellWithAdder(Cell{LayoutCell: lc, View: view}, index)
 }
 
@@ -437,7 +443,6 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 			return false
 		}
 	}
-	return true
 }
 
 func (v *ContainerView) FindViewWithName(name string, recursive bool) (zview.View, int) {

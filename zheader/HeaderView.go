@@ -159,7 +159,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		return pi.pri < pj.pri
 	})
 	for _, n := range newSorts {
-		v.SortOrder = append(v.SortOrder, zfields.SortInfo{n.fieldName, n.small})
+		v.SortOrder = append(v.SortOrder, zfields.SortInfo{FieldName: n.fieldName, SmallFirst: n.small})
 	}
 	SetUserAdjustedSortOrder(v.ObjectName(), v.SortOrder)
 	// for _, s := range v.SortOrder {

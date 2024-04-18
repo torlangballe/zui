@@ -309,7 +309,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		t.Font = v.Font()
 		t.Wrap = ztextinfo.WrapNone
 		if v.IsImageFill {
-			canvas.SetDropShadow(zstyle.DropShadow{zgeo.SizeNull, 2, zgeo.ColorBlack}) // why do we do this????
+			canvas.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // why do we do this????
 		}
 		// if v.textInfotextInfo.Text == "On" {
 		// zlog.Info("ShapeView draw text:", rect, textRect, t.Rect, v.TextXMargin, t.Text)

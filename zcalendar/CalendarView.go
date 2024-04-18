@@ -245,7 +245,7 @@ func (v *CalendarView) handleSettingsPressed() {
 	s.Add(close, zgeo.BottomRight, zgeo.SizeD(4, 4))
 	close.SetPressedHandler(func() {
 		v.daysGrid.SetJSStyle("filter", "none")
-		zanimation.Translate(s, zgeo.Pos{0, -v.settingsSlider.OriginalRect.Size.H}, 0.5, func() {
+		zanimation.Translate(s, zgeo.PosD(0, -v.settingsSlider.OriginalRect.Size.H), 0.5, func() {
 			v.settingsGear.Show(true)
 			v.RemoveChild(s)
 			v.header.SetUsable(true)

@@ -846,7 +846,7 @@ func SetEnumItems(name string, nameValPairs ...any) {
 func SetStringBasedEnum(name string, vals ...string) {
 	var items zdict.Items
 	for _, s := range vals {
-		item := zdict.Item{s, s}
+		item := zdict.Item{Name: s, Value: s}
 		items = append(items, item)
 	}
 	fieldEnums[name] = items
@@ -856,7 +856,7 @@ func SetAnyToEnum[S any](name string, vals ...S) {
 	var items zdict.Items
 	for _, v := range vals {
 		s := fmt.Sprint(v)
-		item := zdict.Item{s, v}
+		item := zdict.Item{Name: s, Value: v}
 		items = append(items, item)
 	}
 	fieldEnums[name] = items
@@ -1141,7 +1141,6 @@ func getField(val reflect.Value, indent, desc string) string {
 	default:
 		return "[unknown]" + dstr + "\n"
 	}
-	return ""
 }
 
 // OutputJsonStructDescription outputs a json encoding of s, but with descriptions etc from zui tags

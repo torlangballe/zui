@@ -250,7 +250,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	ti := *tin
 	w := 0.0
 	if ti.Text == "" {
-		return zgeo.Rect{ti.Rect.Pos, zgeo.SizeNull}
+		return zgeo.Rect{Pos:ti.Rect.Pos, Size:zgeo.SizeNull}
 	}
 	canvas.SetColor(ti.Color)
 	if ti.Type == Stroke {
@@ -285,7 +285,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 				x += (ra.Size.W - widths[i])
 			}
 		}
-		canvas.DrawTextInPos(zgeo.Pos{x, y}, s, w)
+		canvas.DrawTextInPos(zgeo.PosD(x, y), s, w)
 		y += h
 	}
 	return ra

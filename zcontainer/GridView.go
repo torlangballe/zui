@@ -41,7 +41,7 @@ func (v *GridView) SetColumnToAddTo(c int) {
 	v.addingToColumn = c
 	v.addPos.X = c
 	for y := 0; ; y++ {
-		if v.table[zgeo.IPos{c, y}] == nil {
+		if v.table[zgeo.IPos{X: c, Y: y}] == nil {
 			v.addPos.Y = y
 			return
 		}
@@ -65,7 +65,7 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *GridView) GetCell(x, y int) *Cell {
-	view := v.table[zgeo.IPos{x, y}]
+	view := v.table[zgeo.IPos{X: x, Y: y}]
 	if view == nil {
 		return nil
 	}

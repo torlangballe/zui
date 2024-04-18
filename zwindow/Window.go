@@ -127,19 +127,10 @@ func getRectFromOptions(o Options) (rect zgeo.Rect, gotPos, gotSize bool) {
 		// wrects := []zgeo.Rect{GetMain().Rect()}
 		srect := zscreen.GetMain().Rect
 		wrects := []zgeo.Rect{srect}
-		// for w := range windows {
-		// 	wrects = append(wrects, w.Rect())
-		// }
-		// orects = append(orects, srect.PlusPos(zgeo.Pos{0, srect.Size.H}))
-		// orects = append(orects, srect.PlusPos(zgeo.Pos{0, -srect.Size.H}))
-		// orects = append(orects, srect.PlusPos(zgeo.Pos{srect.Size.W, 0}))
-		// orects = append(orects, srect.PlusPos(zgeo.Pos{-srect.Size.W, 0}))
-		// zlog.Info("getRectFromOptions:", o.Alignment)
 		var minSum float64
 		for _, ai := range o.Alignment.SplitIntoIndividual() {
 			for _, wr := range wrects {
 				b4 := wr.Align(size, ai, zgeo.SizeNull)
-				// zlog.Info("RECT:", wr, ai, b4)
 				r := b4.MovedInto(srect)
 				var sumArea float64
 				for _, or := range wrects {
