@@ -104,7 +104,12 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	fullRect := win.ContentRect()
 	fullRect.Pos = zgeo.Pos{}
 	rect := fullRect
-	s := zscreen.GetMain().UsableRect.ExpandedD(-10).Size
+	var s zgeo.Size
+	if attributes.Modal {
+		s = win.ContentRect().ExpandedD(-10).Size
+	} else {
+		s = zscreen.GetMain().UsableRect.ExpandedD(-10).Size
+	}
 	size := v.CalculatedSize(s)
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
