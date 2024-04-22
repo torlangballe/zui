@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	ua "github.com/mileusna/useragent"
 	"github.com/torlangballe/zutil/zbuild"
 	"github.com/torlangballe/zutil/zfile"
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
 	"github.com/torlangballe/zutil/zrest"
@@ -54,7 +56,7 @@ func Init(executor *zrpc.Executor) {
 	if executor != nil {
 		executor.Register(AppCalls{})
 	}
-	AllWebFS.Add(wwwFS)
+	AllWebFS.Add(wwwFS, "zapp.www")
 
 	var beforeWWW string
 	stat := zrest.StaticFolderPathFunc("")
@@ -62,7 +64,15 @@ func Init(executor *zrpc.Executor) {
 	if beforeWWW == "" {
 		beforeWWW = "."
 	}
-	AllWebFS = append(zfile.MultiFS{os.DirFS(beforeWWW)}, AllWebFS...) // we insert the disk system first, so we can override embeded
+	AllWebFS.InsertFirst(os.DirFS(beforeWWW), "disk.www") // we insert the disk system first, so we can override embeded
+}
+
+func canBrotly(req *http.Request) bool {
+	if req.URL.Scheme == "https" || zhttp.HostIsLocal(req.Host) {
+		return true
+	}
+	u := ua.Parse(req.UserAgent())
+	return u.Name == ua.Safari
 }
 
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
@@ -92,31 +102,61 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		spath = "index.html"
 	}
 	smime := mime.TypeByExtension(path.Ext(spath))
-	if spath == "main.wasm.gz" {
-		zlog.Info("Serve WASM.gz:", spath, req.Method, req.RemoteAddr)
-		// If we are serving the gzip'ed wasm file, set encoding to gzip and type to wasm
+	fpath := "www/" + spath
+	if spath == "main.wasm" {
+		var enc string
+		var filesystem string
+		es := []string{"gz"}
+		if canBrotly(req) {
+			es = append([]string{"br"}, es...) // we want if first, to use if possible
+		}
+	allWebFS:
+		for _, f := range AllWebFS {
+			for _, ext := range es {
+				wpath := fpath + "." + ext
+				exists := zfile.CanOpenInFS(f.FS, wpath)
+				// zlog.Info("wasm?", wpath, exists, f.FSName)
+				if exists {
+					filesystem = f.FSName
+					fpath = wpath
+					enc = ext
+					if ext == "gz" {
+						enc = "gzip"
+					}
+					break allWebFS
+				}
+			}
+		}
+		if enc == "" {
+			zrest.ReturnAndPrintError(w, req, http.StatusNotFound, "No main.wasm for", es, spath, fpath)
+			return
+		}
+		zlog.Info("Serve WASM bin:", fpath, req.RemoteAddr, "filesystem:", filesystem)
 		smime = "application/wasm"
-		w.Header().Set("Content-Encoding", "gzip")
-		// w.Header().Set("Expires", time.Now().Add(time.Hour).Format(time.RFC1123))
+		w.Header().Set("Content-Encoding", enc)
+		w.Header().Set("Expires", time.Now().Add(time.Hour).Format(time.RFC1123))
 		// w.Header().Set("Vary", "Accept-Encoding")
-		// w.Header().Set("Accept-Ranges", "bytes")
-		// w.Header().Set("X-Frame-Options", "sameorigin")
-		// w.Header().Set("X-Content-Type-Options", "nosniff")
-		// w.Header().Set("Age", "586183")
+		w.Header().Set("Accept-Ranges", "bytes")
+		w.Header().Set("X-Frame-Options", "sameorigin")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Age", "586183")
+		w.Header().Set("Cache-Control", "public, max-age=604800")
 		// w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
 		// w.Header().Set("Cross-Origin-Embedder-Policy-Report-Only", `credentialless; report-to="geo-earth-eng-team"`)
 		// w.Header().Set("Cross-Origin-Opener-Policy-Report-Only", `same-origin; report-to="geo-earth-eng-team"`)
 		// w.Header().Set("Cross-Origin-Opener-Policy", `same-origin; report-to="geo-earth-eng-team"`)
+		// w.Header().Set("Cache-Control", "public, max-age=604800")
 	}
-	w.Header().Set("Cache-Control", "public, max-age=604800")
 	if !zbuild.Build.At.IsZero() {
 		// zlog.Info("LastMod:", spath, zbuild.Build.At.Format(time.RFC1123))
 		w.Header().Set("Last-Modified", zbuild.Build.At.Format(time.RFC1123))
 		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
 	}
 	//f, err := AllWebFS.Open("www/" + spath)
-	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, "www/"+spath)
-	// zlog.Info("FilesRedir2:", spath, err, len)
+	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
+	// if strings.Contains(spath, "edit-dark-gray.png") || strings.Contains(spath, "head-dark.png") {
+	// 	zlog.Info("FilesRedir2:", spath, err, len)
+	// }
 	if len != 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
 		// zlog.Info("FilesRedir2:", spath, smime)
