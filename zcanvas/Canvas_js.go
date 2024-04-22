@@ -174,9 +174,6 @@ func (c *Canvas) drawCachedScaledImage(image *zimage.Image, useDownsampleCache b
 	if useDownsampleCache {
 		newImage, _ = scaledImageMap.Get(si)
 	}
-	// if strings.Contains(image.Path, "plus-circled-darkgray.png") {
-	// zlog.Info("drawCachedScaledImage:", image.Size(), destRect, image.Path, destRect, newImage != nil)
-	// }
 	if newImage != nil {
 		image = newImage
 		c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
@@ -213,12 +210,15 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 	ss := sourceRect.Size
 	ds := destRect.Size
 	drawnNow := true
-	// if strings.Contains(image.Path, "sort-triangle-down") {
-	// 	zlog.Info("drawPlainImage:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
+	// if strings.Contains(image.Path, "edit-dark-gray.png") {
+	// 	zlog.Info("drawPlainImage2:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
+	// 	zlog.Info("drawPlainImage3:", image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95))
 	// }
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
 		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
-		// zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
+		// if strings.Contains(image.Path, "edit-dark-gray.png") {
+		// 	zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
+		// }
 		if drawnNow {
 			return true
 		}

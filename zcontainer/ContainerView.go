@@ -408,7 +408,7 @@ func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach
 			zlog.Fatal("nil child in range", view.Native().Hierarchy())
 		}
 		cont := foreach(c)
-		// zlog.Info("ContainerViewRangeChildren1:", c.ObjectName(), subViews, cont)
+		// zlog.Info("ContainerViewRangeChildren2:", c.ObjectName(), subViews, cont)
 		if !cont {
 			return false
 		}

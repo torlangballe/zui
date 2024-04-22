@@ -467,9 +467,11 @@ func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, 
 func FindChildWithElement(root *NativeView, e js.Value) View {
 	var found View
 	foundID := e.Get("id").String()
+	// zlog.Info("FindChildWithElement:", root.Hierarchy())
 	RangeChildrenFunc(root.View, true, true, func(view View) bool {
 		n := view
 		id := n.Native().JSGet("id").String()
+		// zlog.Info("FindChildWithElement:", root.Hierarchy(), id, foundID)
 		if id == foundID {
 			found = n
 			return false
@@ -1068,12 +1070,16 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
 	const minDiff = 10.0
 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("NV.PressUpDownMovedHandler down:", v.Hierarchy())
 		we := v.GetWindowElement()
 		if we.IsUndefined() {
 			return nil
 		}
 		e := args[0]
+		target := e.Get("target")
+		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
+			e.Call("stopPropagation")
+			return false
+		}
 		pos := getMousePosRelative(v, e)
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		we.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
