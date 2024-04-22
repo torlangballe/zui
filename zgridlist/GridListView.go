@@ -67,8 +67,8 @@ type GridListView struct {
 	UpdateSelectionFunc        func(grid *GridListView, id string)
 	CellHeightFunc             func(id string) float64 // only needed to have variable-height
 	HandleSelectionChangedFunc func()
-	HandleRowPressedFunc       func(id string) // this only gets called for non-selectable grids
-	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
+	HandleRowPressedFunc       func(id string) bool // this only gets called for non-selectable grids. Return if it eats press
+	HandleHoverOverFunc        func(id string)      // this gets "" id when hovering out of a cell
 	HandleKeyFunc              func(km zkeyboard.KeyMod, down bool) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
 
@@ -433,8 +433,9 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	id, inside := v.FindCellForPos(pos)
 	if id != "" {
 		if !v.Selectable && !v.MultiSelectable && v.HandleRowPressedFunc != nil {
-			if down.IsTrue() {
-				v.HandleRowPressedFunc(id)
+			if inside && down.IsTrue() {
+				// zlog.Info("HandleRowPressedFunc:", id, inside)
+				return v.HandleRowPressedFunc(id)
 			}
 			return true
 		}
@@ -619,10 +620,10 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 }
 
 func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total)
 	focusMarg := zgeo.SizeD(6, 6)
 	v.cachedChildSize = zgeo.SizeNull
 	s := v.MinSize()
+	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total, s)
 	if v.CellCountFunc() == 0 {
 		return s.Plus(focusMarg)
 	}
@@ -661,6 +662,7 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	s := v.margin.Size.Negative()
 	x := float64(nx)
 	y := float64(ny)
+	// zlog.Info("GLV CalculatedGridSize:", total, childSize, nx, ny, s, v.CellHeightFunc != nil)
 	if v.CellHeightFunc != nil {
 		for i := 0; i < ny; i++ {
 			s.H += v.CellHeightFunc(v.IDAtIndexFunc(i))
@@ -669,7 +671,6 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 	} else {
 		s.H += childSize.H*y + v.Spacing.H*y //(y-1)
 	}
-	// zlog.Info("GLV CalculatedGridSize2:", s, v.Spacing.H)
 	s.W += childSize.W*x + v.Spacing.W*(x-1)
 	s.H++
 	return s
