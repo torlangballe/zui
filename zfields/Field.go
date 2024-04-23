@@ -176,6 +176,7 @@ type Field struct {
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 	RPCCall              string            // an RPC method to Call, typically on press of a button
+	Filter               string            // Registered filter. Currently used for textview fields to filter keyboard chars with RegisterKeyboardFilter
 	// Labelize             bool              // Set to force rows of: <label> view [desc] in children
 }
 
@@ -384,6 +385,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if val == "" {
 				f.StringSep = " "
 			}
+		case "filter":
+			f.Filter = val
 		case "count":
 			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
 		case "isuseinval":

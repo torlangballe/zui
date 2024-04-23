@@ -89,11 +89,20 @@ type StructInitializer interface {
 
 var (
 	fieldViewEdited = map[string]time.Time{}
+	keyboardFilters = map[string]func(r rune) bool{}
 	EnableLog       zlog.Enabler
 )
 
 func init() {
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
+}
+
+func RegisterKeyboardFilter(name string, filter func(r rune) bool) {
+	keyboardFilters[name] = filter
+}
+
+func GetKeyboardFilter(name string) func(r rune) bool {
+	return keyboardFilters[name]
 }
 
 func CallStructInitializer(a any) {
@@ -1037,6 +1046,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	tv.UpdateSecs = f.UpdateSecs
 	if !noUpdate && tv.UpdateSecs == -1 {
 		tv.UpdateSecs = 4
+	}
+	if f.Filter != "" {
+		tv.Filter = GetKeyboardFilter(f.Filter)
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetChangedHandler(func() {
