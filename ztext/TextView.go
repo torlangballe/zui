@@ -50,6 +50,7 @@ type TextView struct {
 	margin zgeo.Rect
 	// ContinuousUpdateCalls bool
 	UpdateSecs float64
+	Filter     func(r rune) bool
 	editDone   func(canceled bool)
 }
 

@@ -220,14 +220,20 @@ func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
 }
 
 func (v *TextView) updateEnterHandlers() {
-	if v.changed != nil || v.editDone != nil {
-		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+	if v.changed != nil || v.editDone != nil || v.Filter != nil {
+		// v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		v.JSSet("onkeypress", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			event := vs[0]
 			w := event.Get("which")
 			if w.IsUndefined() {
 				return nil
 			}
 			key := w.Int()
+			r := rune(event.Get("charCode").Int())
+			if v.Filter != nil && !v.Filter(r) {
+				event.Call("preventDefault")
+				return nil
+			}
 			if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
 				if v.editDone != nil {
 					v.editDone(false)
