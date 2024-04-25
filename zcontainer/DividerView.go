@@ -81,10 +81,9 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 	v.CustomView.ReadyToShow(beforeWindow)
 	if beforeWindow {
 		if v.storeKey != "" {
-			delta, got := zkeyvalue.DefaultStore.GetDouble(v.storeKey, 0)
+			delta, got := zkeyvalue.DefaultSessionStore.GetDouble(v.storeKey, 0)
 			if got {
 				v.Delta = delta
-				v.Delta = 0
 				// ArrangeChildrenAtRootContainer(v)
 				// v.Expose()
 			}
@@ -94,7 +93,7 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 
 func (v *DividerView) storeDelta() {
 	if v.storeKey != "" {
-		zkeyvalue.DefaultStore.SetDouble(v.Delta, v.storeKey, true)
+		zkeyvalue.DefaultSessionStore.SetDouble(v.Delta, v.storeKey, true)
 	}
 }
 
