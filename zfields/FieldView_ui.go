@@ -547,7 +547,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			io := foundView.(zimage.Owner)
 			io.SetImage(nil, path, nil)
 		} else {
-			if f.IsStatic() && v.params.AllStatic && f.Flags&FlagIsFixed != 0 {
+			if f.IsStatic() && f.Flags&FlagIsFixed != 0 {
 				valStr = f.Name
 			}
 			v.setText(f, valStr, foundView)
