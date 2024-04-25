@@ -73,7 +73,7 @@ func MakeRGBAString(c zgeo.Color) string {
 }
 
 func New(stype string, args ...any) js.Value {
-	return js.Global().Get(stype).New(args)
+	return js.Global().Get(stype).New(args...)
 }
 
 func JSFileToGo(file js.Value, got func(data []byte, name string), progress func(p float64)) {
