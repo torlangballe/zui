@@ -60,6 +60,8 @@ type GridListView struct {
 	FocusWidth             float64
 	HorizontalFirst        bool // HorizontalFirst means 1 2 3 on first row, not down first
 
+	UpdateOnceOnSetRect bool
+
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
 	CreateCellFunc             func(grid *GridListView, id string) zview.View
@@ -138,12 +140,12 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.IDAtIndexFunc = strconv.Itoa
 }
 
-// func (v *GridListView) SetDirtyIDs(ids []string) {
-// 	v.DirtyIDs = map[string]bool{}
-// 	for _, id := range ids {
-// 		v.DirtyIDs[id] = true
-// 	}
-// }
+func (v *GridListView) SetDirtyRow(id string) {
+	if v.DirtyIDs == nil {
+		v.DirtyIDs = map[string]bool{}
+	}
+	v.DirtyIDs[id] = true
+}
 
 func (v *GridListView) IndexOfID(id string) int {
 	count := v.CellCountFunc()
@@ -741,15 +743,15 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	v.children[id] = child
 	v.cellsView.AddChild(child, -1)
 	child.Native().SetJSStyle("userSelect", "none")
-	zpresent.CallReady(child, true)
 	if v.DirtyIDs != nil {
 		v.DirtyIDs[id] = true
 	}
+	zpresent.CallReady(child, true)
 	zpresent.CallReady(child, false)
-	e, _ := child.(zview.ExposableType)
-	if e != nil {
-		e.Expose()
-	}
+	// e, _ := child.(zview.ExposableType)
+	// if e != nil {
+	// 	e.Expose()
+	// }
 	return child, false
 }
 
@@ -804,7 +806,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		if x == 0 {
 			minx += v.margin.Min().X
 		} else {
-			r.SetMinX(r.Pos.X - 1)
+			r.SetMinX(r.Pos.X)
 		}
 		maxx = -v.Spacing.W / 2
 		if lastx {
@@ -834,7 +836,6 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		}
 		if v.HorizontalFirst {
 			if lastx {
-				pos.X = lrect.Pos.X
 				x = 0
 				y++
 				pos.Y += r.Size.H
@@ -842,7 +843,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 					v.VisibleRows++
 				}
 			} else {
-				pos.X += r.Size.W - 1
+				//				pos.X += r.Size.W - 12
 				x++
 			}
 			continue
@@ -853,7 +854,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 			pos.Y = lrect.Pos.Y
 			y = 0
 			x++
-			pos.X += r.Size.W - 1
+			//			pos.X += r.Size.W - 1
 		} else {
 			if visible {
 				v.VisibleRows++
@@ -871,7 +872,8 @@ func (v *GridListView) SetRect(rect zgeo.Rect) {
 	cs := zgeo.SizeD(w, s.H)
 	// zlog.Info("GLV:SetRect:", v.Hierarchy(), cs, rect.Size.W, is.W)
 	v.ScrollView.SetRectWithChildSize(rect.ExpandedD(-v.FocusWidth), cs)
-	v.LayoutCells(false)
+	v.LayoutCells(v.UpdateOnceOnSetRect)
+	v.UpdateOnceOnSetRect = false
 }
 
 func (v *GridListView) ArrangeChildren() {
@@ -895,7 +897,6 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	var selected []string
 	oldSelected := v.SelectedIDs()
 	var hoverOK bool
-	// zlog.Info("LayoutCells", v.Hierarchy(), v.CellCountFunc(), v.HorizontalFirst) //, zlog.CallingStackString())
 	v.layoutDirty = false
 	placed := map[string]bool{}
 	if v.RecreateCells {
@@ -907,10 +908,12 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 		v.RecreateCells = false
 	}
 	v.updateBorder()
-	// var updateCount int
-	// var wg sync.WaitGroup
+	var updateCount int
+	// zlog.Info("LayoutCells", updateCells, v.Hierarchy(), v.CellCountFunc(), len(v.DirtyIDs), zlog.CallingStackString())
+	// start := time.Now()
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if visible {
+			// prof := zlog.NewProfile(0.001, "GV.Layout", v.ObjectName(), cid)
 			if v.CurrentHoverID == cid {
 				hoverOK = true
 			}
@@ -919,6 +922,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			}
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
+			// prof.Log("After Make")
 			ms, _ := child.(zview.Marginalizer)
 			if ms != nil {
 				marg := inner.Minus(outer)
@@ -926,18 +930,22 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				ms.SetMargin(marg)
 			}
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
-			child.SetRect(o)
+			if !child.Native().HasSize() || child.Rect() != o {
+				child.SetRect(o)
+			}
 			v.updateCellBackground(cid, x, y, child)
-			// zlog.Info("GridLayout", cid, updateCells, v.UpdateCellFunc != nil, v.DirtyIDs)
 			if v.UpdateCellFunc != nil && (updateCells || v.DirtyIDs != nil && v.DirtyIDs[cid]) {
-				// updateCount++
+				updateCount++
 				// zlog.Info("GridLayout cell", x, y)
 				v.UpdateCellFunc(v, cid)
+				// prof.Log("After update cell")
 			}
 			placed[cid] = true
+			// prof.End("End")
 		}
 		return true
 	})
+	// zlog.Info("Layed:", len(v.DirtyIDs), updateCount, v.Hierarchy(), time.Since(start))
 	v.DirtyIDs = nil
 	for cid, view := range v.children {
 		if !placed[cid] {
@@ -1129,7 +1137,8 @@ func (v *GridListView) updateBorder() {
 		if v.CellCountFunc() > 0 {
 			w = 1
 		}
-		v.cellsView.SetStrokeSide(w, v.BorderColor, zgeo.TopLeft, true) // we set if for non also, in case it moved
+		// v.cellsView.SetStrokeSide(w, v.BorderColor, zgeo.TopLeft, true) // we set if for non also, in case it moved
+		v.cellsView.SetStrokeSide(w, v.BorderColor, zgeo.TopLeft|zgeo.BottomRight, true) // we set if for non also, in case it moved
 	}
 }
 func (v *GridListView) ReadyToShow(beforeWindow bool) {

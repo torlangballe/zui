@@ -219,8 +219,8 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	v.UpdateViewFunc = func() {
 		v.doFilterAndSort(*v.slicePtr)
-		v.Grid.LayoutCells(true)
 		a := v.View.(zcontainer.Arranger)
+		// v.Grid.UpdateOnceOnSetRect = updateAllRows
 		a.ArrangeChildren()
 		v.UpdateWidgets()
 	}
@@ -241,6 +241,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		for i, item := range items {
 			// if true { //len(*v.slicePtr) <= i || zreflect.HashAnyToInt64(item, "") != zreflect.HashAnyToInt64((*v.slicePtr)[i], "") {
 			wg.Add(1)
+			v.Grid.SetDirtyRow(item.GetStrID())
 			go func(i int, item S) {
 				err := v.StoreChangedItemFunc(item, i == len(items)-1)
 				if err == nil {
@@ -301,8 +302,10 @@ func (v *SliceGridView[S]) handleLayoutButton(value string) {
 	}
 	v.Grid.RecreateCells = v.layedOut
 	v.layedOut = true
-	// zlog.Info("handleLayoutButton:", v.Grid.RecreateCells)
-	v.ArrangeChildren()
+	// zlog.Info("handleLayoutButton:", v.Grid.RecreateCells, v.IsPresented())
+	if v.IsPresented() {
+		v.ArrangeChildren()
+	}
 }
 
 func (v *SliceGridView[S]) updateView() {
@@ -338,6 +341,9 @@ func (v *SliceGridView[S]) insertItemsIntoASlice(items []S, slicePtr *[]S) int {
 }
 
 func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
+	for _, s := range items {
+		v.Grid.SetDirtyRow(s.GetStrID())
+	}
 	added = v.insertItemsIntoASlice(items, v.slicePtr)
 	v.doFilterAndSort(*v.slicePtr)
 	return added
@@ -467,7 +473,7 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 		orSlice = sgv.slicePtr
 	}
 	sgv.insertItemsIntoASlice(rows, orSlice)
-	if sgv != nil {
+	if sgv != nil && len(sgv.Grid.DirtyIDs) != 0 {
 		sgv.updateView()
 	}
 }
@@ -476,6 +482,9 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	update := v.ForceUpdateSlice
 	if !update {
 		update = (len(s) != len(*v.slicePtr) || zreflect.HashAnyToInt64(s, "") != zreflect.HashAnyToInt64(*v.slicePtr, ""))
+	}
+	for _, si := range s {
+		v.Grid.SetDirtyRow(si.GetStrID())
 	}
 	if update {
 		v.ForceUpdateSlice = false
