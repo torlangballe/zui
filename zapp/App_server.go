@@ -50,6 +50,7 @@ var wwwFS embed.FS
 var (
 	AllWebFS          zfile.MultiFS
 	RequestRedirector *filesRedirector
+	CanBrotlyFunc     func(req *http.Request) bool
 )
 
 func Init(executor *zrpc.Executor) {
@@ -68,6 +69,9 @@ func Init(executor *zrpc.Executor) {
 }
 
 func canBrotly(req *http.Request) bool {
+	if CanBrotlyFunc != nil && !CanBrotlyFunc(req) {
+		return false
+	}
 	if req.URL.Scheme == "https" || zhttp.HostIsLocal(req.Host) {
 		return true
 	}
@@ -131,14 +135,14 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			zrest.ReturnAndPrintError(w, req, http.StatusNotFound, "No main.wasm for", es, spath, fpath)
 			return
 		}
-		zlog.Info("Serve WASM bin:", fpath, req.RemoteAddr, "filesystem:", filesystem)
+		zlog.Info("Serve WASM bin:", fpath, req.RemoteAddr, "filesystem:", filesystem, enc)
 		smime = "application/wasm"
 		w.Header().Set("Content-Encoding", enc)
 		w.Header().Set("Expires", time.Now().Add(time.Hour).Format(time.RFC1123))
 		// w.Header().Set("Vary", "Accept-Encoding")
 		w.Header().Set("Accept-Ranges", "bytes")
-		w.Header().Set("X-Frame-Options", "sameorigin")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// w.Header().Set("X-Frame-Options", "sameorigin")
+		// w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Age", "586183")
 		w.Header().Set("Cache-Control", "public, max-age=604800")
 		// w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
@@ -155,7 +159,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//f, err := AllWebFS.Open("www/" + spath)
 	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
 	// if strings.Contains(spath, "edit-dark-gray.png") || strings.Contains(spath, "head-dark.png") {
-	// 	zlog.Info("FilesRedir2:", spath, err, len)
+	// zlog.Info("FilesRedir2:", spath, err, len, req.URL)
 	// }
 	if len != 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
@@ -167,7 +171,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// zlog.Info("FilesRedir2:", spath, err)
 	if !zlog.OnError(err, spath, req.URL) {
 		_, err := io.Copy(w, f)
-		zlog.OnError(err, spath)
+		zlog.OnError(err, spath, fpath)
 	}
 }
 
