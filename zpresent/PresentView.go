@@ -191,7 +191,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		win.ResizeHandlingView = v
 		r := zgeo.Rect{Size: win.ContentRect().Size}
-		zlog.Info("presentLoaded:", win.Rect().Size, r)
 		v.SetRect(r)
 	}
 	FirstPresented = true

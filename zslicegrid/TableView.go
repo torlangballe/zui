@@ -57,8 +57,6 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	})
 
 	// v.DefaultHeight = 30
-	cell, _ := v.FindCellWithView(v.Grid)
-	cell.Margin.H = -1
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
