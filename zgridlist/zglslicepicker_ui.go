@@ -3,16 +3,20 @@
 package zgridlist
 
 import (
+	"strconv"
+
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking bool, got func(row S, closed bool)) {
+func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking bool, lastPickedClientForAssetType int64, got func(row S, closed bool)) {
 	grid := NewView("picker")
 	grid.Spacing = zgeo.SizeNull
 	grid.MakeFullSize = true
@@ -37,6 +41,8 @@ func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking 
 		i := grid.IndexOfID(id)
 		if !keepPicking {
 			zpresent.Close(grid, false, nil)
+			zlog.Info("Here")
+			// return true //!!
 		}
 		ztimer.StartIn(0.1, func() {
 			got(slice[i], false)
@@ -47,6 +53,12 @@ func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking 
 	att.ClosedFunc = func(dismissed bool) {
 		var s S
 		got(s, true)
+	}
+	if lastPickedClientForAssetType != 0 {
+		att.PresentedFunc = func(win *zwindow.Window) {
+			sid := strconv.FormatInt(lastPickedClientForAssetType, 10)
+			grid.HandleRowPressedFunc(sid)
+		}
 	}
 	zpresent.PresentTitledView(grid, title, att, nil, nil)
 }
