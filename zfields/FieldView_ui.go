@@ -89,20 +89,21 @@ type StructInitializer interface {
 
 var (
 	fieldViewEdited = map[string]time.Time{}
-	keyboardFilters = map[string]func(r rune) bool{}
+	textFilters     = map[string]func(string) string{}
 	EnableLog       zlog.Enabler
 )
 
 func init() {
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
+	RegisterTextFilter("$trim", strings.TrimSpace)
 }
 
-func RegisterKeyboardFilter(name string, filter func(r rune) bool) {
-	keyboardFilters[name] = filter
+func RegisterTextFilter(name string, filter func(string) string) {
+	textFilters[name] = filter
 }
 
-func GetKeyboardFilter(name string) func(r rune) bool {
-	return keyboardFilters[name]
+func GetTextFilter(name string) func(string) string {
+	return textFilters[name]
 }
 
 func CallStructInitializer(a any) {
@@ -1048,7 +1049,11 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		tv.UpdateSecs = 4
 	}
 	if f.Filter != "" {
-		tv.Filter = GetKeyboardFilter(f.Filter)
+		fn := GetTextFilter(f.Filter)
+		tv.FilterFunc = fn
+		if fn == nil {
+			zlog.Error("No registerd text filter for:", f.Filter, f.FieldName)
+		}
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetChangedHandler(func() {
