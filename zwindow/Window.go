@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 var (
@@ -32,6 +33,7 @@ type Window struct {
 	ViewsStack          []zview.View
 
 	ResizeHandlingView zview.View
+	resizeTimer        *ztimer.Timer
 	dismissed          bool // this stores if window is dismissed or closed for other reasons, used by present close functions
 	keyHandlers        []keyHandler
 }

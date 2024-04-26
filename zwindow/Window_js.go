@@ -126,14 +126,17 @@ func Open(o Options) *Window {
 }
 
 func (win *Window) SetOnResizeHandling() {
+	win.resizeTimer = ztimer.TimerNew()
+	// zlog.Info("Set Resize0", win.ProgrammaticView.ObjectName(), win.Element.IsUndefined())
 	win.Element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName(), win.ResizeHandlingView != nil)
 		// if !win.hasResized { // removing this so we can get first resize... what was it for?
 		// 	win.hasResized = true
 		// 	return nil
 		// }
-		ztimer.StartIn(0.2, func() {
+		// zlog.Info("Resize0", win.ProgrammaticView.ObjectName())
+		win.resizeTimer.StartIn(0.2, func() {
 			r := win.ContentRect()
+			// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName(), r)
 			if win.HandleBeforeResized != nil {
 				win.HandleBeforeResized(r)
 			}
@@ -142,6 +145,8 @@ func (win *Window) SetOnResizeHandling() {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				// zlog.Info("On Resize", win.ResizeHandlingView.Native().Hierarchy(), r)
 				win.ResizeHandlingView.SetRect(r)
+				win.ResizeHandlingView.Show(true)
+				zview.ExposeView(win.ResizeHandlingView)
 				// SetElementRect(win.Element, r)
 				if win.HandleAfterResized != nil {
 					win.HandleAfterResized(r)
@@ -355,6 +360,7 @@ input.rounded:focus { border: 2px solid rgb(147,180,248); }
 .zfocus:focus { outline: solid 4px rgb(147,180,248); }
 .znofocus:focus { outline: none; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type=number] { -moz-appearance: textfield; }
 input.rounded {
 	border: 1px solid #666;
 	-moz-border-radius: 10px;

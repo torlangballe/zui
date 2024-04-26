@@ -75,16 +75,13 @@ func PresentView(v zview.View, attributes Attributes) {
 		presentCloseFuncs[v] = attributes.ClosedFunc
 	}
 	Presenting = true
-
 	CallReady(v, true)
-
 	// zlog.Info("PresentView:", v.Native().Hierarchy(), attributes.Alignment)
 	win := zwindow.GetMain()
 	w := zwindow.Current()
 	if w != nil {
 		win = w
 	}
-
 	outer := v
 	if attributes.Modal {
 		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes)
@@ -179,6 +176,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 				return
 			}
 			win.AddStyle()
+			// v.Show(false)
 			win.AddView(v)
 			if attributes.Title != "" {
 				win.SetTitle(attributes.Title)
@@ -192,7 +190,9 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			}
 		}
 		win.ResizeHandlingView = v
-		v.SetRect(zgeo.Rect{Size: rect.Size})
+		r := zgeo.Rect{Size: win.ContentRect().Size}
+		zlog.Info("presentLoaded:", win.Rect().Size, r)
+		v.SetRect(r)
 	}
 	FirstPresented = true
 	win.SetOnKeyEvents()
@@ -252,11 +252,15 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 	}
 	nv := view.Native()
 	parent := nv.Parent()
+	// zlog.Info("CloseOverride:", nv.Hierarchy())
 	if parent != nil && parent.ObjectName() == "$titled" {
 		nv = parent
+		// zlog.Info("CloseOverride:", nv.Hierarchy(), parent.ObjectName())
+		parent = parent.Parent()
 	}
 	if parent != nil && parent.ObjectName() == "$blocker" {
 		nv = parent
+		// zlog.Info("CloseOverride:", nv.Hierarchy())
 	}
 	win := zwindow.FromNativeView(nv)
 	plen := len(win.ViewsStack)
