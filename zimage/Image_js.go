@@ -149,7 +149,10 @@ func (i *Image) load(spath string, done func(success bool)) {
 }
 
 func (i *Image) Release() {
-	// zlog.Info("Image.Release:", i.Size(), i.Path)
+	if i == nil || i.ImageJS.IsNull() {
+		zlog.Info("Image.Release nil:", i != nil)
+		return
+	}
 	i.ImageJS.Set("src", "")
 }
 
