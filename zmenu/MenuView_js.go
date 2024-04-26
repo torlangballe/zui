@@ -3,7 +3,6 @@ package zmenu
 import (
 	"fmt"
 	"html"
-	"reflect"
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
@@ -32,8 +31,8 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 		index := v.JSGet("selectedIndex").Int()
 		zlog.Assert(index < len(v.items), "index too big", index, len(v.items))
 		v.currentValue = v.items[index].Value
-		// zlog.Info("Selected:", index, v.items[index].Name, v.items[index].Value, v.currentValue, reflect.ValueOf(v.currentValue).IsValid(), zlog.Full(v.items))
 		if v.storeKey != "" {
+			// zlog.Info("Selected:", v.storeKey, v.currentValue)
 			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}
 		if v.selectedHandler != nil {
@@ -42,6 +41,15 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 		return nil
 	}))
 	return v
+}
+
+func (v *MenuView) ReadyToShow(beforeWindow bool) {
+	if beforeWindow && v.storeKey != "" {
+		val, got := zkeyvalue.DefaultStore.GetItemAsAny(v.storeKey)
+		if got {
+			v.SelectWithValue(val)
+		}
+	}
 }
 
 func (v *MenuView) Empty() {
@@ -64,9 +72,8 @@ func (v *MenuView) ChangeNameForValue(name string, value any) {
 		return
 	}
 	for i, item := range v.items {
-		if reflect.DeepEqual(item.Value, value) {
+		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
 			options := v.JSGet("options")
-			// zlog.Info("MV ChangeNameForValue:", i, v.ObjectName(), name, value)
 			v.items[i].Name = name
 			o := options.Index(i)
 			o.Set("text", name)
@@ -129,7 +136,7 @@ func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
 }
 
 func (v *MenuView) SelectWithValue(value any) bool {
-	// zlog.Info("MV SelectWithValue:", value)
+	// zlog.Info("MV SelectWithValue:", value, zlog.CallingStackString())
 	if value == nil {
 		return false
 		// if len(v.items) != 0 {
@@ -142,7 +149,8 @@ func (v *MenuView) SelectWithValue(value any) bool {
 	// }
 	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)
 	for i, item := range v.items {
-		if reflect.DeepEqual(item.Value, value) {
+		// zlog.Info("MV SelectWithValue Set?:", item.Value, value, reflect.TypeOf(item.Value), reflect.TypeOf(value))
+		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
 			v.currentValue = item.Value
 			options := v.JSGet("options")
 			// zlog.Info("MV SelectWithValue Set:", i, v.ObjectName(), len(v.items), options, value)
