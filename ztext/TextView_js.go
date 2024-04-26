@@ -7,7 +7,6 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -252,11 +251,11 @@ func (v *TextView) updateEnterHandlers() {
 				return nil
 			}
 			r := rune(event.Get("charCode").Int())
-			zlog.Info("OnKey", w, r, v.FilterFunc != nil)
+			// zlog.Info("OnKey", w, r, v.FilterFunc != nil)
 			if v.FilterFunc != nil {
 				in := string(r)
 				out := v.FilterFunc(in)
-				zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
+				// zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
 				if out != in {
 					event.Call("preventDefault")
 					if out != "" {
