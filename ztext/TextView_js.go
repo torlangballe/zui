@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -139,6 +140,9 @@ func (v *TextView) SetMargin(m zgeo.Rect) {
 }
 
 func (v *TextView) SetText(text string) {
+	if v.FilterFunc != nil {
+		text = v.FilterFunc(text)
+	}
 	if v.Text() != text {
 		v.JSSet("value", text)
 	}
@@ -146,6 +150,9 @@ func (v *TextView) SetText(text string) {
 
 func (v *TextView) Text() string {
 	text := v.JSGet("value").String()
+	if v.FilterFunc != nil {
+		text = v.FilterFunc(text)
+	}
 	return text
 }
 
@@ -197,7 +204,6 @@ func (v *TextView) SetChangedHandler(handler func()) {
 	if handler != nil {
 		v.updateEnterHandlers()
 		v.JSSet("oninput", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			// v.updated = true
 			if v.UpdateSecs < 0 {
 				return nil
 			}
@@ -220,27 +226,15 @@ func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
 }
 
 func (v *TextView) updateEnterHandlers() {
-	if v.changed != nil || v.editDone != nil || v.Filter != nil {
-		// v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		v.JSSet("onkeypress", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+	if v.changed != nil || v.editDone != nil || v.FilterFunc != nil {
+		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			event := vs[0]
-			w := event.Get("which")
-			if w.IsUndefined() {
-				return nil
-			}
-			key := w.Int()
-			r := rune(event.Get("charCode").Int())
-			if v.Filter != nil && !v.Filter(r) {
-				event.Call("preventDefault")
-				return nil
-			}
+			key := event.Get("which").Int()
 			if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
 				if v.editDone != nil {
 					v.editDone(false)
 				}
-				if v.UpdateSecs != 0 { //  && v.updated
-					//				zlog.Info("down-key:", key, v.ObjectName())
-					//					zlog.Info("push:", v.ContinuousUpdateCalls, v.updated)
+				if v.UpdateSecs != 0 {
 					v.updateDone()
 				}
 			}
@@ -248,6 +242,28 @@ func (v *TextView) updateEnterHandlers() {
 				if v.editDone != nil {
 					v.editDone(true)
 				}
+			}
+			return nil
+		}))
+		v.JSSet("onkeypress", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+			event := vs[0]
+			w := event.Get("which")
+			if w.IsUndefined() {
+				return nil
+			}
+			r := rune(event.Get("charCode").Int())
+			zlog.Info("OnKey", w, r, v.FilterFunc != nil)
+			if v.FilterFunc != nil {
+				in := string(r)
+				out := v.FilterFunc(in)
+				zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
+				if out != in {
+					event.Call("preventDefault")
+					if out != "" {
+						v.JSSet("value", v.JSGet("value").String()+out)
+					}
+				}
+				return nil
 			}
 			return nil
 		}))

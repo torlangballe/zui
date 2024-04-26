@@ -47,10 +47,9 @@ type TextView struct {
 	//	isSearch      bool
 	//	updated       bool
 
-	margin zgeo.Rect
-	// ContinuousUpdateCalls bool
+	margin     zgeo.Rect
 	UpdateSecs float64
-	Filter     func(r rune) bool
+	FilterFunc func(str string) string // Filter changes text before .SetText() and .Text(). Also called on each key input. return 0 means no rune
 	editDone   func(canceled bool)
 }
 
