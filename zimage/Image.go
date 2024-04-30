@@ -209,7 +209,7 @@ func GoImageToPNGFile(img image.Image, filepath string) error {
 	defer out.Close()
 	err = png.Encode(out, img)
 	if err != nil {
-		return zlog.Error(err, "encode")
+		return zlog.Error(err, "encode", filepath)
 	}
 	return nil
 }
