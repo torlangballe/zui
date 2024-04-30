@@ -936,16 +936,17 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				// zlog.Info("Grid SetMarg on child", cid, marg, v.margin)
 				ms.SetMargin(marg)
 			}
+			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
-			if !child.Native().HasSize() || child.Rect() != o {
+			if dirty || !child.Native().HasSize() || child.Rect() != o {
 				child.SetRect(o)
 			}
+			// prof.Log("After Set Rect")
 			v.updateCellBackground(cid, x, y, child)
-			if v.UpdateCellFunc != nil && (updateCells || v.DirtyIDs != nil && v.DirtyIDs[cid]) {
+			if v.UpdateCellFunc != nil && (updateCells || dirty) {
 				updateCount++
 				// zlog.Info("GridLayout cell", x, y)
 				v.UpdateCellFunc(v, cid)
-				// prof.Log("After update cell")
 			}
 			placed[cid] = true
 			// prof.End("End")
