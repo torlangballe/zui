@@ -175,8 +175,9 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
 	fv.BuildStack(name, zgeo.CenterLeft, zgeo.SizeD(v.ColumnMargin, 0), useWidth)
-	// dontOverwriteEdited := false
-	// fv.Update(nil, dontOverwriteEdited, false)
+	dontOverwriteEdited := false
+	fv.Update(nil, dontOverwriteEdited, false)
+	v.Grid.ClearDirtyRow(id) // we clear dirty as we did update above so ArrangeChild will work better
 	return fv
 }
 
