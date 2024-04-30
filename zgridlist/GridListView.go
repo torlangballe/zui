@@ -147,6 +147,13 @@ func (v *GridListView) SetDirtyRow(id string) {
 	v.DirtyIDs[id] = true
 }
 
+func (v *GridListView) ClearDirtyRow(id string) {
+	if v.DirtyIDs == nil {
+		return
+	}
+	delete(v.DirtyIDs, id)
+}
+
 func (v *GridListView) IndexOfID(id string) int {
 	count := v.CellCountFunc()
 	for i := 0; i < count; i++ {
@@ -736,6 +743,9 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	if child != nil {
 		return child, true
 	}
+	if v.DirtyIDs != nil { // set this before v.CreateCellFunc below, so it can clear it.
+		v.DirtyIDs[id] = true
+	}
 	child = v.CreateCellFunc(v, id)
 	if v.HierarchyLevelFunc != nil {
 		v.insertBranchToggle(id, child)
@@ -743,9 +753,6 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	v.children[id] = child
 	v.cellsView.AddChild(child, -1)
 	child.Native().SetJSStyle("userSelect", "none")
-	if v.DirtyIDs != nil {
-		v.DirtyIDs[id] = true
-	}
 	zpresent.CallReady(child, true)
 	zpresent.CallReady(child, false)
 	// e, _ := child.(zview.ExposableType)
