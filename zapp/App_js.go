@@ -57,7 +57,7 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	}
 	DownloadPathPrefix = url.Scheme + "://" + host + zrest.AppURLPrefix
 	zwidgets.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
-	zlog.Info("zapp: DocumentationPathPrefix", zwidgets.DocumentationPathPrefix)
+	// zlog.Info("zapp: DocumentationPathPrefix", zwidgets.DocumentationPathPrefix)
 	if useRPC {
 		url.RawQuery = ""
 		url.Path = ""
