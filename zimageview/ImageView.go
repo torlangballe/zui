@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -133,6 +134,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s.Add(margSize.Negative())
 	s.Maximize(zgeo.SizeD(2, 2))
+	// zlog.Info("IV CalcS:", v.Hierarchy(), total, s, v.fitSize, margSize)
 	return s
 }
 
@@ -225,6 +227,9 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 		canvas.PushState()
 		path := zgeo.PathNewRect(ir.Plus(v.Margin()), zgeo.SizeBoth(v.imageCorner))
 		canvas.ClipPath(path, true)
+	}
+	if ir.Size.W == 0 {
+		zlog.Info("IV.drawImage null:", v.Hierarchy(), v.Rect(), v.fitSize)
 	}
 	if !canvas.DrawImage(img, v.UseDownsampleCache, ir, 1, zgeo.Rect{}) {
 		//		v.Expose() // causes endless loop of drawing...
