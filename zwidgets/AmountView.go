@@ -25,7 +25,6 @@ type AmountView struct {
 
 func (v *AmountView) SetValue(value float64) {
 	v.value = value
-	// zlog.Info("AmountView SetValue:", value, v.exposed, presentViewPresenting)
 	v.Expose()
 }
 
