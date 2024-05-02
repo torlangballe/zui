@@ -56,7 +56,8 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		return false
 	})
 
-	// v.DefaultHeight = 30
+	cell, _ := v.FindCellWithView(v.Grid)
+	cell.Margin.H = -1 // this seems to make no 1-space beteen header and table
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
@@ -145,10 +146,12 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		fv := grid.CellView(id).(*zfields.FieldView)
 		zlog.Assert(fv != nil)
 		fv.Update(v.StructForID(id), true, false)
+		// fv.ArrangeChildren()
 	}
 }
 
 func (v *TableView[S]) createRow(id string) zview.View {
+	// zlog.Info("createRow", id)
 	s := v.StructForID(id)
 	view := v.createRowFromStruct(s, id)
 	view.Native().SetSelectable(false)
@@ -175,9 +178,9 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
 	fv.BuildStack(name, zgeo.CenterLeft, zgeo.SizeD(v.ColumnMargin, 0), useWidth)
-	dontOverwriteEdited := false
-	fv.Update(nil, dontOverwriteEdited, false)
-	v.Grid.ClearDirtyRow(id) // we clear dirty as we did update above so ArrangeChild will work better
+	// dontOverwriteEdited := false
+	// fv.Update(nil, dontOverwriteEdited, false)
+	// v.Grid.ClearDirtyRow(id) // we clear dirty as we did update above so ArrangeChild will work better
 	return fv
 }
 
