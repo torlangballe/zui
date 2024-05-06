@@ -49,9 +49,9 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
 	v.FieldParameters.UseInValues = []string{zfields.RowUseInSpecialName}
-	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(fv *zfields.FieldView, f *zfields.Field, value any, view *zview.View) bool {
+	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(ap zfields.ActionPack) bool {
 		if v.StoreChangedItemFunc != nil {
-			go v.StoreChangedItemFunc(*(fv.Data().(*S)), true)
+			go v.StoreChangedItemFunc(*(ap.FieldView.Data().(*S)), true)
 		}
 		return false
 	})

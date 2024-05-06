@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ import (
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zmap"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zslice"
@@ -59,11 +61,11 @@ type FieldViewParameters struct {
 	Field
 	FieldParameters
 	BuildChildrenHidden      bool
-	ImmediateEdit            bool                                                                        // ImmediateEdit forces immediate write-to-data when editing a field.
-	MultiSliceEditInProgress bool                                                                        // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
-	EditWithoutCallbacks     bool                                                                        // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	IsEditOnNewStruct        bool                                                                        // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
-	triggerHandlers          map[trigger]func(fv *FieldView, f *Field, value any, view *zview.View) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
+	ImmediateEdit            bool                                 // ImmediateEdit forces immediate write-to-data when editing a field.
+	MultiSliceEditInProgress bool                                 // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
+	EditWithoutCallbacks     bool                                 // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	IsEditOnNewStruct        bool                                 // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
+	triggerHandlers          map[trigger]func(ap ActionPack) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
 }
 
 type ActionPack struct {
@@ -368,7 +370,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	if !called {
 		// zlog.Info("Call trigger DataChangedAction:", v.Hierarchy(), f.Name, rval)
-		called = v.callTriggerHandler(f, DataChangedAction, rval.Addr().Interface(), &foundView)
+		ap := ActionPack{Field: f, Action: DataChangedAction, RVal: rval.Addr(), View: &foundView}
+		called = v.callTriggerHandler(ap)
 	}
 	if !called {
 		defer callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: DataChangedAction, RVal: rval.Addr(), View: &foundView})
@@ -453,6 +456,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			label, _ := foundView.(*zlabel.Label)
 			label.SetText(strconv.Itoa(rval.Len()))
 			return true
+		} else {
+			v.updateMapList(rval, foundView)
 		}
 
 	case zreflect.KindSlice:
@@ -555,6 +560,59 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	return true
+}
+
+func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
+	var outView zview.View
+	params := v.params
+	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
+	stackFV := fieldViewNew(f.FieldName, true, rval.Interface(), params, zgeo.Size{}, v)
+	outView = stackFV
+	stackFV.GridVerticalSpace = math.Max(6, v.Spacing())
+	stackFV.SetSpacing(f.Styling.SpacingOrMax(12))
+	stackFV.params.SetFlag(FlagIsLabelize)
+	frame := makeFrameIfFlag(f, stackFV)
+	if frame != nil {
+		outView = frame
+	}
+	var keys []reflect.Value
+	iter := rval.MapRange()
+	for iter.Next() {
+		keys = append(keys, iter.Key())
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return zstr.SmartCompare(fmt.Sprint(keys[i]), fmt.Sprint(keys[j]))
+	})
+	i := 0
+	for _, _mkey := range keys {
+		mkey := _mkey
+		mval := rval.MapIndex(mkey)
+		key := fmt.Sprint(mkey)
+		var mf Field
+		mf.Kind = zreflect.KindMap
+		mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
+		mf.FieldName = key
+		mf.SetFlag(FlagIsLabelize)
+		a := zgeo.Left
+		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
+		check, _ := view.(*zcheckbox.CheckBox)
+		if check != nil {
+			check.SetValueHandler(func() {
+				ron := reflect.ValueOf(check.On())
+				rval.SetMapIndex(mkey, ron)
+				var cview zview.View = check
+				ap := ActionPack{Field: &mf, Action: EditedAction, RVal: ron, View: &cview}
+				stackFV.callTriggerHandler(ap)
+				// zlog.Info("check in map:", key, check.On(), zlog.Full(rval.Interface()))
+			})
+		}
+		i++
+	}
+	return outView
+}
+
+func (v *FieldView) updateMapList(rval reflect.Value, foundView zview.View) {
+
 }
 
 func (v *FieldView) updateSeparatedStringWithSlice(f *Field, rval reflect.Value, foundView zview.View) {
@@ -847,7 +905,9 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 					}
 				}
 			}
-			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
+
+			ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+			v.callTriggerHandler(ap)
 			// zlog.Info("MV.Call action:", f.Name, rval)
 			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 		}
@@ -877,7 +937,8 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 			// zlog.Info("Menu Edited", v.Hierarchy(), f.Name, isZero, val, menu.CurrentValue())
 			v.updateShowEnableFromZeroer(isZero, true, menu.ObjectName())
 			v.updateShowEnableFromZeroer(isZero, false, menu.ObjectName())
-			v.callTriggerHandler(f, EditedAction, rval.Interface(), &view)
+			ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+			v.callTriggerHandler(ap)
 			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
 		})
 	}
@@ -1068,7 +1129,8 @@ func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
 	if zlog.OnError(err) {
 		return
 	}
-	if v.callTriggerHandler(f, EditedAction, rval.Interface(), &view) {
+	ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+	if v.callTriggerHandler(ap) {
 		return
 	}
 	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
@@ -1077,12 +1139,16 @@ func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	cv := zcheckbox.New(b)
 	cv.SetObjectName(f.FieldName)
+	// if reflect.ValueOf(v.data).Kind() == reflect.Map {
+	// 	return cv
+	// }
 	cv.SetValueHandler(func() {
 		val, _ := v.fieldToDataItem(f, cv)
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
 		v.updateShowEnableFromZeroer(val.IsZero(), false, cv.ObjectName())
 		view := zview.View(cv)
-		if v.callTriggerHandler(f, EditedAction, cv.On(), &cv.View) {
+		ap := ActionPack{Field: f, Action: EditedAction, RVal: reflect.ValueOf(cv.On()), View: &cv.View}
+		if v.callTriggerHandler(ap) {
 			return
 		}
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &view})
@@ -1124,13 +1190,15 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 			on = !on
 			val.SetBool(on)
 			v.Update(nil, false, false)
-			v.callTriggerHandler(f, EditedAction, on, &iv.View)
-			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View})
+			ap := ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View} // Set FieldView as used in callActionHandlerFunc
+			v.callTriggerHandler(ap)
+			callActionHandlerFunc(ap)
 		})
 		return iv
 	}
 	iv.SetPressedHandler(func() {
-		v.callTriggerHandler(f, PressedAction, f.FieldName, &iv.View)
+		ap := ActionPack{Field: f, Action: PressedAction, RVal: reflect.ValueOf(f.FieldName), View: &iv.View}
+		v.callTriggerHandler(ap)
 	})
 	return iv
 }
@@ -1235,12 +1303,15 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 			return widgetView, false
 		}
 	}
-	if v.callTriggerHandler(f, CreateFieldViewAction, nil, &view) {
+	ap := ActionPack{Field: f, Action: CreateFieldViewAction, RVal: reflect.ValueOf(nil), View: &view}
+	if v.callTriggerHandler(ap) {
 		return
 	}
-	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreateFieldViewAction, RVal: rval.Addr(), View: &view}) // this sees if actual ITEM is a field handler
-	if view != nil {
-		return
+	if rval.CanAddr() {
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreateFieldViewAction, RVal: rval.Addr(), View: &view}) // this sees if actual ITEM is a field handler
+		if view != nil {
+			return
+		}
 	}
 	if f.LocalEnum != "" {
 		ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
@@ -1304,7 +1375,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 		v.GridVerticalSpace = math.Max(6, v.Spacing())
 		v.SetSpacing(math.Max(12, v.Spacing()))
 	}
-	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, v.data, reflect.ValueOf(v.data).Kind())
+	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, reflect.ValueOf(v.data).Kind())
 
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
 		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
@@ -1312,7 +1383,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 	})
 }
 
-func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
 	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index)
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
@@ -1324,14 +1395,15 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// }
 	exp := zgeo.AlignmentNone
 	if v.params.HideStatic && f.IsStatic() {
-		return
+		return nil
 	}
 	view, skip := v.createSpecialView(rval, f)
 	if skip {
-		return
+		return nil
 	}
+	kind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	if view == nil {
-		switch f.Kind {
+		switch kind {
 		case zreflect.KindStruct:
 			vert := true
 			if !f.Vertical.IsUnknown() {
@@ -1389,6 +1461,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				view = v.makeText(rval, f, false)
 			}
 
+		case zreflect.KindMap:
+			view = v.buildMapList(rval, f)
+
 		case zreflect.KindSlice:
 			if !f.HasFlag(FlagIsGroup) || zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
 				if f.StringSep != "" {
@@ -1411,7 +1486,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				}
 			}
 			if v.params.MultiSliceEditInProgress {
-				return
+				return nil
 			}
 			if f.Alignment != zgeo.AlignmentNone {
 				exp = zgeo.Expand
@@ -1458,7 +1533,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 
 		default:
-			panic(fmt.Sprintln("buildStack bad type:", f.Name, f.Kind))
+			panic(fmt.Sprintln("buildStack bad type:", f.Name, kind))
 		}
 	}
 	zlog.Assert(view != nil)
@@ -1500,7 +1575,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
 		view.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
 	}
-	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
+	if rval.CanAddr() {
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
+	}
 	if f.Path != "" {
 		path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
 		p := view.(zview.Pressable)
@@ -1537,6 +1614,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				desc = " " // we force an empty description so grid handles easy
 			}
 		}
+		if view.ObjectName() == "" {
+			view.SetObjectName(title)
+		}
+		// zlog.Info("LAB:", title, view.ObjectName(), f.FieldName)
 		_, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
 		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
@@ -1552,6 +1633,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		cell.View = view
 		v.AddCell(*cell, -1)
 	}
+	return view
 }
 
 func (fv *FieldView) freshRValue(fieldName string) reflect.Value {
@@ -1639,7 +1721,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	}
 	finfo := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
 
-	if f.WidgetName != "" { //&& f.Kind != zreflect.KindSlice {
+	if f.WidgetName != "" {
 		w := widgeters[f.WidgetName]
 		if w != nil {
 			getter, _ := view.(zview.AnyValueGetter)
@@ -1790,11 +1872,22 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		})
 		break
 
+	case zreflect.KindMap:
+		fv := findSubFieldView(view, "")
+		zlog.Info("fieldToDataItem map:", view.Native().Hierarchy(), reflect.TypeOf(view), fv != nil, f.Name)
+		return
+		// iter := rval.MapRange()
+		// for iter.Next() {
+		// 	mkey := iter.Key()
+		// 	mval := iter.Value()
+		// 	zlog.Info("fieldToDataItem map:", mkey, mval)
+		// }
+
 	default:
 		// zlog.Info("fieldToDataItem for slice:", f.Name)
 		break
 	}
-	value = reflect.ValueOf(finfo.ReflectValue.Addr().Interface()).Elem() //.Interface()
+	value = reflect.ValueOf(finfo.ReflectValue.Addr().Interface()).Elem()
 	return
 }
 

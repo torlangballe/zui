@@ -191,9 +191,9 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		// 	zlog.Info("FVTrigger:", v.Hierarchy(), f.FieldName, zlog.Pointer(v.data))
 		// 	return false
 		// })
-		v.params.AddTrigger("*", EditedAction, func(fv *FieldView, f *Field, value any, view *zview.View) bool {
+		v.params.AddTrigger("*", EditedAction, func(ap ActionPack) bool {
 			// zlog.Info("Trigger:", fv.Hierarchy(), f.FieldName, zlog.Pointer(v.data))
-			if f.FieldName == v.indicatorFieldName {
+			if ap.Field.FieldName == v.indicatorFieldName {
 				v.updateMenu()
 			}
 			// v.callEditedAction() // we return false below instead
