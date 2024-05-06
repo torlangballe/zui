@@ -152,3 +152,11 @@ func (s Styling) MergeWith(m Styling) Styling {
 	}
 	return s
 }
+
+// SpacingOrMax returns s's spacing if defined, or max
+func (s Styling) SpacingOrMax(max float64) float64 {
+	if s.Spacing == UndefinedFloat32 {
+		return max
+	}
+	return math.Max(max, s.Spacing)
+}
