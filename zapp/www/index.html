@@ -5,12 +5,10 @@ Use of this source code is governed by a BSD-style
 license that can be found in the LICENSE file.
 -->
 <html>
-
 <head>
 	<meta charset="utf-8">
 	<title>Go wasm</title>
 </head>
-
 <body>
 	<script src="js/zcore/wasm_exec.js"></script>
 	<script>
@@ -21,11 +19,12 @@ license that can be found in the LICENSE file.
 			inst = result.instance;
             WebAssembly.instantiate(mod, go.importObject).then((result) => {
                 go.run(inst);
+				document.getElementById("_zspinner").remove();
             })
 		}).catch((err) => {
 			console.error(err);
 		});
 	</script>
-	<img src="images/zcore/spinner.gif" style="display: block; margin: auto;">
+	<img id="_zspinner" src="images/zcore/spinner.gif" style="display: block; margin: auto;">
 </body>
 </html>
