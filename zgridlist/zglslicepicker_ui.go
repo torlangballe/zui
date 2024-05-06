@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -41,7 +40,6 @@ func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking 
 		i := grid.IndexOfID(id)
 		if !keepPicking {
 			zpresent.Close(grid, false, nil)
-			zlog.Info("Here")
 			// return true //!!
 		}
 		ztimer.StartIn(0.1, func() {
