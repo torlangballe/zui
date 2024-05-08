@@ -194,6 +194,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsImage":                      uint64(FlagIsImage),
 	"IsFixed":                      uint64(FlagIsFixed),
 	"IsButton":                     uint64(FlagIsButton),
+	"IsStatic":                     uint64(FlagIsStatic),
 	"HasHeaderImage":               uint64(FlagHasHeaderImage),
 	"NoTitle":                      uint64(FlagNoTitle),
 	"ToClipboard":                  uint64(FlagToClipboard),
@@ -624,7 +625,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.Flags |= FlagLabelizeWithDescriptions
 			}
 		case "button":
-			f.Flags |= FlagIsButton | FlagIsStatic
+			f.Flags |= FlagIsButton
 		case "enable":
 			f.LocalEnable = val
 		case "disable":

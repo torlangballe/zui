@@ -112,7 +112,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 	sliceLength := sliceVal.Len()
 	unknownBoolViewIDs := map[string]bool{}
 
-	// zlog.Info("PresentOKCancelStructAnySlice:", reflect.ValueOf(editStruct).Type(), sliceLength)
+	// zlog.Info("PresentOKCancelStructAnySlice:", zlog.Full(editStruct))
 	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 		var notEqual bool
 		// zlog.Info("before PresentOKCancelStructAnySlice.ForEachField:", each.Field.Name, sliceLength)
@@ -163,6 +163,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 
 	params.MultiSliceEditInProgress = (sliceLength > 1)
 	params.UseInValues = []string{DialogUseInSpecialName}
+	// zlog.Info("PresentOKCancelStructAnySlice2:", zlog.Full(editStruct))
 	fview := FieldViewNew("OkCancel", editStruct, params)
 	update := true
 	fview.Build(update)
@@ -206,6 +207,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 				return false
 			}
 			ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
+				// zlog.Info("origFieldReflectValue1:", each.Field.Name, each.Field.Flags, each.Field.IsStatic(), FlagIsButton, FlagIsStatic)
 				if each.StructField.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}

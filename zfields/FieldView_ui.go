@@ -326,10 +326,10 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 }
 
 func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlice bool) {
-	// zlog.Info(EnableLog, "FV.Update:", v.Hierarchy(), data)
 	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
 	}
+	// zlog.Info("FV.Update:", v.Hierarchy(), zlog.Full(v.data))
 	recentEdit := (dontOverwriteEdited && v.IsEditedRecently())
 	fh, _ := v.data.(ActionHandler)
 	sview := v.View
@@ -440,15 +440,12 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		return true
 	}
 	updateItemLocalToolTip(f, v.data, foundView)
-	if f.IsStatic() || v.params.AllStatic {
-		zuistringer, _ := rval.Interface().(UIStringer)
-		if zuistringer != nil {
-			label, _ := foundView.(*zlabel.Label)
-			if label != nil {
-				label.SetText(zuistringer.ZUIString())
-				return true
-			}
-		}
+	to, _ := foundView.(ztext.TextOwner)
+	zuistringer, _ := rval.Interface().(UIStringer)
+	if to != nil && zuistringer != nil {
+		// if f.IsStatic() || v.params.AllStatic {
+		to.SetText(zuistringer.ZUIString())
+		return true
 	}
 	switch f.Kind {
 	case zreflect.KindMap:
