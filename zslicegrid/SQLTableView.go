@@ -38,7 +38,7 @@ type SQLOwner[S zstr.StrIDer] struct {
 
 type SQLTableView[S zstr.StrIDer] struct {
 	TableView[S]
-	owner        *SQLOwner[S]
+	Owner        *SQLOwner[S]
 	searchString string
 	// selectMethod  string
 	// skipFields   []string
@@ -66,13 +66,13 @@ func (o *SQLOwner[S]) NewTable(structName string, options OptionType) (sv *SQLTa
 func (v *SQLTableView[S]) Init(view zview.View, owner *SQLOwner[S], options OptionType) {
 	if v.Header != nil {
 		v.Header.SortingPressedFunc = func() {
-			go v.owner.GetAndUpdate()
+			go v.Owner.GetAndUpdate()
 		}
 	}
-	v.owner = owner
+	v.Owner = owner
 	v.SortFunc = nil
-	v.TableView.Init(v, v.owner.slicePage, "ztable."+v.owner.TableName, options)
-	v.StoreChangedItemsFunc = v.owner.PushRowsToServer
+	v.TableView.Init(v, v.Owner.slicePage, "ztable."+v.Owner.TableName, options)
+	v.StoreChangedItemsFunc = v.Owner.PushRowsToServer
 	v.DeleteItemsFunc = v.deleteItems
 	if v.options&AddHeader != 0 {
 		v.addActionButton()
@@ -140,9 +140,9 @@ func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 			return true
 		}
 		if insert {
-			go v.owner.InsertRows(rows)
+			go v.Owner.InsertRows(rows)
 		} else {
-			v.owner.PushRowsToServer(rows)
+			v.Owner.PushRowsToServer(rows)
 		}
 		return true
 	})
@@ -158,12 +158,12 @@ func (o *SQLOwner[S]) InsertRows(slice any) {
 
 func (v *SQLTableView[S]) deleteItems(ids []string) {
 	var affected int64
-	if v.owner.IsQuoteIDs {
+	if v.Owner.IsQuoteIDs {
 		for i := range ids {
 			ids[i] = zsql.QuoteString(ids[i])
 		}
 	}
-	query := "DELETE FROM " + v.owner.TableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
+	query := "DELETE FROM " + v.Owner.TableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
 	err := zrpc.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
 	if err != nil {
 		zalert.ShowError(err, "updating")
@@ -256,7 +256,7 @@ func (o *SQLOwner[S]) PushRowsToServerWithAnySlice(slice any) {
 	// v.SetItemsInSlice(items)
 	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
 	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", slice, nil)
-	zlog.Info("PushRowsToServerWithAnySlice:", o.TableName, reflect.TypeOf(slice), err)
+	zlog.Info("PushRowsToServerWithAnySlice:", o.TableName, reflect.TypeOf(slice), err, zlog.Full(slice))
 	if err != nil {
 		zalert.ShowError(err, "updating")
 		return
