@@ -133,9 +133,9 @@ func (v *HeaderView) Populate(headers []Header) {
 		pri       int
 	}
 	v.SortOrder = getUserAdjustedSortOrder(v.ObjectName())
-	zslice.RemoveIf(&v.SortOrder, func(i int) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
+	zslice.DeleteFromFunc(&v.SortOrder, func(si zfields.SortInfo) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
 		for _, h := range headers {
-			if v.SortOrder[i].FieldName == h.FieldName {
+			if si.FieldName == h.FieldName {
 				return false
 			}
 		}
