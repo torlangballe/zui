@@ -3,6 +3,8 @@
 package zwidgets
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zview"
@@ -25,6 +27,7 @@ type AmountView struct {
 
 func (v *AmountView) SetValue(value float64) {
 	v.value = value
+	v.SetToolTip(fmt.Sprint(value))
 	v.Expose()
 }
 

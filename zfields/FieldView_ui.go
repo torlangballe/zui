@@ -1740,7 +1740,6 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 				vo = reflect.Zero(finfo.ReflectValue.Type())
 			}
 			finfo.ReflectValue.Set(vo)
-			// zlog.Info("fieldToDataItem2:", finfo.ReflectValue.IsValid())
 		}
 		return finfo.ReflectValue, nil
 	}
