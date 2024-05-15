@@ -216,7 +216,9 @@ func (o *SQLOwner[S]) createConstraints() string {
 // }
 
 func (o *SQLOwner[S]) UpdateRows(rows []S) {
-	UpdateRows[S](rows, o.Grid, o.slicePage)
+	if o.Grid != nil {
+		UpdateRows[S](rows, o.Grid, o.slicePage)
+	}
 	o.PushRowsToServer(rows)
 }
 
