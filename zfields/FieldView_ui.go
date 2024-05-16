@@ -1114,7 +1114,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 	}
 	tv.SetPlaceholder(f.Placeholder)
-	tv.SetChangedHandler(func() {
+	tv.SetValueHandler(func() {
 		// zlog.Info("Changed:", tv.Text())
 		v.fieldHandleEdited(f, tv.View)
 	})
@@ -1291,9 +1291,9 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		w := widgeters[f.WidgetName]
 		if w != nil {
 			widgetView := w.Create(f)
-			changer, _ := widgetView.(zview.ChangedReporter)
+			changer, _ := widgetView.(zview.ValueHandler)
 			if changer != nil {
-				changer.SetChangedHandler(func() {
+				changer.SetValueHandler(func() {
 					v.fieldHandleEdited(f, widgetView)
 				})
 			}

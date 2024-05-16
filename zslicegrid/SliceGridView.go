@@ -138,7 +138,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
-		v.SearchField.TextView.SetChangedHandler(func() {
+		v.SearchField.TextView.SetValueHandler(func() {
 			v.updateView()
 		})
 		v.Bar.Add(v.SearchField, zgeo.CenterLeft)

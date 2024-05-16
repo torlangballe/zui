@@ -33,7 +33,7 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	s.Add(t, zgeo.CenterLeft|zgeo.VertExpand)
 	s.Add(iv, zgeo.CenterLeft, zgeo.SizeD(5, 0)).Free = true
 	old := t.ChangedHandler()
-	t.SetChangedHandler(func() {
+	t.SetValueHandler(func() {
 		iv.Show(t.Text() == "")
 		// zlog.Info("Show:", t.Text() == "")
 		if old != nil {

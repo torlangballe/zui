@@ -198,7 +198,7 @@ func (v *TextView) startUpdate() {
 	//	v.updated = false
 }
 
-func (v *TextView) SetChangedHandler(handler func()) {
+func (v *TextView) SetValueHandler(handler func()) {
 	v.changed = handler
 	if handler != nil {
 		v.updateEnterHandlers()

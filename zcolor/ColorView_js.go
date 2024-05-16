@@ -30,6 +30,6 @@ func (v *ColorView) Color() zgeo.Color {
 	return zgeo.ColorFromString(str)
 }
 
-func (v *ColorView) SetChangedHandler(f func()) {
+func (v *ColorView) SetValueHandler(f func()) {
 	v.valueChangedHandlerFunc = f
 }

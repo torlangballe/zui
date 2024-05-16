@@ -171,7 +171,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		}
 		tv.SetZIndex(index)
 	})
-	tv.SetChangedHandler(func() {
+	tv.SetValueHandler(func() {
 		clearColorTexts(v.hourText, v.minuteText, v.secondsText, v.dayText, v.monthText, v.yearText)
 		v.Value() // getting value will set error color
 	})

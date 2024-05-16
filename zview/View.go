@@ -103,6 +103,6 @@ type AnyValueGetter interface {
 	ValueAsAny() any
 }
 
-type ChangedReporter interface {
-	SetChangedHandler(func())
+type ValueHandler interface {
+	SetValueHandler(func())
 }
