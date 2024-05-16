@@ -144,6 +144,9 @@ func (v *TextView) SetText(text string) {
 	}
 	if v.Text() != text {
 		v.JSSet("value", text)
+		if v.changed != nil {
+			v.changed()
+		}
 	}
 }
 
