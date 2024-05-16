@@ -3,6 +3,8 @@
 package zcontainer
 
 import (
+	"slices"
+
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -128,7 +130,7 @@ func (v *StackView) arrangeChildrenInGrid() {
 		r.Size.H = heights[j]
 		cellsOwner, _ := vc.View.(CellsOwner)
 		zlog.Assert(cellsOwner != nil, v.Hierarchy())
-		rowCells := zslice.Copy(*cellsOwner.GetCells())
+		rowCells := slices.Clone(*cellsOwner.GetCells())
 		zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
 			return c.Collapsed || c.Free || c.View == nil
 		})
@@ -168,7 +170,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 		// zlog.Info("getGridLayoutRow2:", j)
 		cellsOwner, _ := vc.View.(CellsOwner)
 		zlog.Assert(cellsOwner != nil, v.Hierarchy())
-		rowCells := zslice.Copy(*cellsOwner.GetCells())
+		rowCells := slices.Clone(*cellsOwner.GetCells())
 		zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
 			return c.Collapsed || c.Free || c.View == nil
 		})
