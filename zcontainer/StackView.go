@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -127,7 +128,10 @@ func (v *StackView) arrangeChildrenInGrid() {
 		r.Size.H = heights[j]
 		cellsOwner, _ := vc.View.(CellsOwner)
 		zlog.Assert(cellsOwner != nil, v.Hierarchy())
-		rowCells := cellsOwner.GetCells()
+		rowCells := zslice.Copy(*cellsOwner.GetCells())
+		zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
+			return c.Collapsed || c.Free || c.View == nil
+		})
 		rowView := vc.View
 		rowView.Native().SetRect(r)
 		rbox := r
@@ -140,10 +144,10 @@ func (v *StackView) arrangeChildrenInGrid() {
 				continue
 			}
 			zfloat.Maximize(&maxHeight, box.Size.H)
-			if i >= len(*rowCells) {
+			if i >= len(rowCells) {
 				continue
 			}
-			cell := (*rowCells)[i]
+			cell := (rowCells)[i]
 			s := cell.View.CalculatedSize(box.Size)
 			ar := box.AlignPro(s, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
 			ar = ar.Intersected(box)
@@ -153,44 +157,6 @@ func (v *StackView) arrangeChildrenInGrid() {
 		j++
 	}
 }
-
-/*
-func (v *StackView) arrangeChildrenInGrid2() {
-	rect := v.LocalRect()
-	rows, rowStackCells := v.getGridLayoutRows(rect.Size)
-	// zlog.Info("arrangeChildrenInGrid:", v.LocalRect().Size)
-	y := rect.Min().Y
-	for j, row := range rows {
-		rowHeight := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.spacing, row).H
-		layoutRowRect := zgeo.RectFromXYWH(0, 0, rect.Size.W, rowHeight)
-		if j == 0 {
-			zlog.Info("Row1:", j, layoutRowRect, v.Hierarchy(), zlog.Full(row[1]))
-		}
-		rects := zgeo.LayoutCellsInStack(v.ObjectName(), layoutRowRect, false, v.spacing, row)
-		rowCells := rowStackCells[j]
-		rowView := v.Cells[j].View
-		placeRowRect := zgeo.RectFromXYWH(0, y, rect.Size.W, rowHeight)
-		//cv, _ := rowView.(*zcustom.CustomView)
-		rowView.Native().SetRect(placeRowRect)
-		var maxHeight float64
-		for i := range row {
-			box := rects[i]
-			if box.IsNull() {
-				continue
-			}
-			zfloat.Maximize(&maxHeight, box.Size.H)
-			if i >= len(rowCells) {
-				continue
-			}
-			cell := rowCells[i]
-			ar := box.AlignPro(row[i].OriginalSize, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
-			ar = ar.Intersected(box)
-			cell.View.SetRect(ar)
-		}
-		y += maxHeight + v.GridVerticalSpace
-	}
-}
-*/
 
 func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, heights []float64) {
 	firstRow := true
@@ -202,14 +168,14 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 		// zlog.Info("getGridLayoutRow2:", j)
 		cellsOwner, _ := vc.View.(CellsOwner)
 		zlog.Assert(cellsOwner != nil, v.Hierarchy())
-		rowCells := *cellsOwner.GetCells()
+		rowCells := zslice.Copy(*cellsOwner.GetCells())
+		zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
+			return c.Collapsed || c.Free || c.View == nil
+		})
 		i := 0
 		var height float64
 		// zlog.Info("getGridLayoutRow:", v.Hierarchy(), j, vc.View.ObjectName(), i, len(rowCells), len(row))
 		for _, rc := range rowCells {
-			if rc.Collapsed || rc.Free || rc.View == nil {
-				continue
-			}
 			l := rc.LayoutCell
 			l.OriginalSize = rc.View.CalculatedSize(total)
 			if firstRow {
@@ -242,16 +208,31 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 func (v *StackView) ArrangeChildren() {
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), v.GridVerticalSpace)
 	// zlog.PushProfile(v.ObjectName())
+	rm := v.LocalRect().Plus(v.Margin())
 	if v.GridVerticalSpace != 0 {
 		zlog.Assert(v.Vertical, v.Hierarchy(), v.GridVerticalSpace)
 		v.arrangeChildrenInGrid()
+		for _, c := range v.Cells {
+			if c.View != nil && !c.Free && !c.Collapsed {
+				co, _ := c.View.(CellsOwner)
+				ca, _ := c.View.(Arranger)
+				if co != nil && ca != nil {
+					// zlog.Info("CV ArrangeChild1:", len(*co.GetCells()))
+					for _, c := range *co.GetCells() {
+						// zlog.Info("CV ArrangeChild:", c.View.Native().ObjectName(), c.Free)
+						if c.Free && c.View != nil && !c.Collapsed {
+							ca.ArrangeChild(c, rm)
+						}
+					}
+				}
+			}
+		}
 		return
 	}
 	layouter, _ := v.View.(zview.Layouter)
 	if layouter != nil {
 		layouter.HandleBeforeLayout()
 	}
-	rm := v.LocalRect().Plus(v.Margin())
 	lays := v.getLayoutCells(rm.Size)
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
 	// zlog.ProfileLog("did layout")

@@ -54,6 +54,7 @@ type ChildrenOwner interface {
 
 type Arranger interface {
 	ArrangeChildren()
+	ArrangeChild(Cell, zgeo.Rect)
 }
 
 type Collapser interface {
@@ -205,7 +206,8 @@ func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg 
 		Margin:    marg,
 		MaxSize:   maxSize,
 		Collapsed: collapsed,
-		Free:      free, Name: name,
+		Free:      free,
+		Name:      name,
 	}
 	return v.addCellWithAdder(Cell{LayoutCell: lc, View: view}, index)
 }
@@ -256,6 +258,13 @@ func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
 		ir := r.Expanded(c.Margin.MinusD(2.0))
 		s := c.View.CalculatedSize(ir.Size)
+		if c.RelativeToName != "" {
+			rv, _ := v.FindCellWithName(c.RelativeToName)
+			// zlog.Info("CV Arrange relname:", c.View.Native().Hierarchy(), c.RelativeToName, rv != nil)
+			if rv != nil && rv.View != nil {
+				r = rv.View.Rect()
+			}
+		}
 		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.SizeNull)
 		c.View.SetRect(rv)
 	}
