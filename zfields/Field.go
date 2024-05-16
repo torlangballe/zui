@@ -117,6 +117,7 @@ const (
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
 	FlagShowPopup                                     // press to show a popup of contents
+	FlagLockable                                      // show a lock icon to right of item when labelized. Disables/Hides.
 )
 
 const (
@@ -208,19 +209,20 @@ var flagsNameMap = zbits.NamedBitMap{
 	"SkipIndicator":                uint64(FlagSkipIndicator),
 	"LongPress":                    uint64(FlagLongPress),
 	"DisableAutofill":              uint64(FlagDisableAutofill),
-	"FlagIsSearchable":             uint64(FlagIsSearchable),
-	"FlagIsUseInValue":             uint64(FlagIsUseInValue),
-	"FlagAllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
-	"FlagZeroIsBig":                uint64(FlagZeroIsBig),
-	"FlagIsForZDebugOnly":          uint64(FlagIsForZDebugOnly),
-	"FlagIsRebuildAllOnChange":     uint64(FlagIsRebuildAllOnChange),
-	"FlagIsURL":                    uint64(FlagIsURL),
-	"FlagIsDocumentation":          uint64(FlagIsDocumentation),
-	"FlagIsAudio":                  uint64(FlagIsAudio),
-	"FlagIsDownload":               uint64(FlagIsDownload),
-	"FlagIsEdit":                   uint64(FlagIsEdit),
-	"FlagIsLabelize":               uint64(FlagIsLabelize),
-	"FlagLabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
+	"IsSearchable":             uint64(FlagIsSearchable),
+	"IsUseInValue":             uint64(FlagIsUseInValue),
+	"AllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
+	"ZeroIsBig":                uint64(FlagZeroIsBig),
+	"IsForZDebugOnly":          uint64(FlagIsForZDebugOnly),
+	"IsRebuildAllOnChange":     uint64(FlagIsRebuildAllOnChange),
+	"IsURL":                    uint64(FlagIsURL),
+	"IsDocumentation":          uint64(FlagIsDocumentation),
+	"IsAudio":                  uint64(FlagIsAudio),
+	"IsDownload":               uint64(FlagIsDownload),
+	"IsEdit":                   uint64(FlagIsEdit),
+	"IsLabelize":               uint64(FlagIsLabelize),
+	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
+	"Lockable":                     uint64(FlagLockable),
 }
 
 // callSetupWidgeter is called to set gui widgets registered for use in zui tags.
@@ -385,6 +387,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if val == "" {
 				f.StringSep = " "
 			}
+		case "lockable":
+			f.SetFlag(FlagLockable)
 		case "filter":
 			f.Filter = val
 		case "count":
@@ -1101,7 +1105,8 @@ func FindIndicatorOfSlice(slicePtr any) string {
 func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field, got bool) {
 	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
 	ForEachField(structPtr, FieldParameters{}, nil, func(each FieldInfo) bool {
-		for _, part := range zreflect.GetTagAsMap(string(each.StructField.Tag))["zui"] {
+		vals, _ := zreflect.GetTagValuesForKey(each.StructField.Tag, "zui")
+		for _, part := range vals {
 			if part == "indicator" {
 				rval = each.ReflectValue
 				field = each.Field

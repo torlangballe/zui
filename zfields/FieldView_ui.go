@@ -1616,6 +1616,13 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		}
 		// zlog.Info("LAB:", title, view.ObjectName(), f.FieldName)
 		_, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
+		if f.HasFlag(FlagLockable) {
+			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
+				lock := zguiutil.CreateLockIconForView(view)
+				lstack.AddAdvanced(lock, zgeo.CenterRight, zgeo.SizeD(-7, 7), zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
+				zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
+			}
+		}
 		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
