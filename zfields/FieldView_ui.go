@@ -596,7 +596,7 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
-			check.SetValueHandler(func(edited bool) {
+			check.SetValueHandler("zfields.mapCheck", func(edited bool) {
 				ron := reflect.ValueOf(check.On())
 				rval.SetMapIndex(mkey, ron)
 				var cview zview.View = check
@@ -1116,7 +1116,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 	}
 	tv.SetPlaceholder(f.Placeholder)
-	tv.SetValueHandler(func(edited bool) {
+	tv.SetValueHandler("zfields.Filter", func(edited bool) {
 		// zlog.Info("Changed:", tv.Text())
 		v.fieldHandleValueChanged(f, edited, tv.View)
 	})
@@ -1141,7 +1141,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	// if reflect.ValueOf(v.data).Kind() == reflect.Map {
 	// 	return cv
 	// }
-	cv.SetValueHandler(func(edited bool) {
+	cv.SetValueHandler("zfields.checkBox", func(edited bool) {
 		action := DataChangedAction
 		if edited {
 			action = EditedAction
@@ -1299,7 +1299,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 			widgetView := w.Create(f)
 			changer, _ := widgetView.(zview.ValueHandler)
 			if changer != nil {
-				changer.SetValueHandler(func(edited bool) {
+				changer.SetValueHandler("zfields.widgetChanged", func(edited bool) {
 					v.fieldHandleValueChanged(f, edited, widgetView)
 				})
 			}

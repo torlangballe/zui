@@ -37,7 +37,7 @@ type TextView struct {
 	minWidth      float64
 	maxWidth      float64
 	alignment     zgeo.Alignment
-	changed       func(edited bool)
+	changed       zview.ValueHandlers
 	pushedBGColor zgeo.Color
 	//	keyPressed    func(km zkeyboard.KeyMod, down bool) bool
 	updateTimer *ztimer.Timer
@@ -131,6 +131,6 @@ func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
 }
 
-func (v *TextView) ChangedHandler() func(edited bool) {
-	return v.changed
-}
+// func (v *TextView) ChangedHandler() func(edited bool) {
+// 	return v.changed
+// }

@@ -144,9 +144,7 @@ func (v *TextView) SetText(text string) {
 	}
 	if v.Text() != text {
 		v.JSSet("value", text)
-		if v.changed != nil {
-			v.changed(false)
-		}
+		v.changed.CallAll(false)
 	}
 }
 
@@ -180,9 +178,7 @@ func (v *TextView) updateDone() {
 		v.SetBGColor(col)
 		v.pushedBGColor = zgeo.Color{}
 	}
-	if v.changed != nil {
-		v.changed(true)
-	}
+	v.changed.CallAll(true)
 }
 
 func (v *TextView) startUpdate() {
@@ -201,18 +197,18 @@ func (v *TextView) startUpdate() {
 	//	v.updated = false
 }
 
-func (v *TextView) SetValueHandler(handler func(edited bool)) {
-	v.changed = handler
-	if handler != nil {
+func (v *TextView) SetValueHandler(id string, handler func(edited bool)) {
+	v.changed.Add(id, handler)
+	if handler != nil && v.changed.Count() == 1 {
 		v.updateEnterHandlers()
 		v.JSSet("oninput", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			// zlog.Info("Edited:", v.ObjectName(), v.changed.Count())
 			if v.UpdateSecs < 0 {
 				return nil
 			}
 			if v.UpdateSecs == 0 {
-				if v.changed != nil {
-					v.changed(true)
-				}
+				// zlog.Info("Edited:", v.ObjectName(), v.Text(), v.changed.Count())
+				v.changed.CallAll(true)
 			} else {
 				v.startUpdate()
 			}
@@ -228,7 +224,7 @@ func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
 }
 
 func (v *TextView) updateEnterHandlers() {
-	if v.changed != nil || v.editDone != nil || v.FilterFunc != nil {
+	if v.changed.Count() != 0 || v.editDone != nil || v.FilterFunc != nil {
 		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
 			event := vs[0]
 			key := event.Get("which").Int()

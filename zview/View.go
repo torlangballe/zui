@@ -104,5 +104,30 @@ type AnyValueGetter interface {
 }
 
 type ValueHandler interface {
-	SetValueHandler(func(edited bool))
+	SetValueHandler(id string, f func(edited bool))
+}
+
+type ValueHandlers struct {
+	handlers map[string]func(edited bool)
+}
+
+func (vh *ValueHandlers) Add(id string, f func(edited bool)) {
+	if f == nil {
+		delete(vh.handlers, id)
+	} else {
+		if vh.handlers == nil {
+			vh.handlers = map[string]func(edited bool){}
+		}
+		vh.handlers[id] = f
+	}
+}
+
+func (vh ValueHandlers) CallAll(edited bool) {
+	for _, f := range vh.handlers {
+		f(edited)
+	}
+}
+
+func (vh ValueHandlers) Count() int {
+	return len(vh.handlers)
 }
