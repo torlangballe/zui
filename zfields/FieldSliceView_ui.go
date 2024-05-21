@@ -177,6 +177,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		copyParams := v.params
 		// copyParams.Labelize = false
 		fv := FieldViewNew(id, rval.Addr().Interface(), copyParams)
+		fv.sliceItemIndex = i
 		fv.Vertical = !v.Vertical || v.field.HasFlag(FlagIsLabelize)
 		// zlog.Info("FieldSliceView:AddItem", fv.Vertical)
 		fv.SetMargin(zgeo.RectFromXY2(4, 4, -4, -4))

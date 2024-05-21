@@ -49,12 +49,13 @@ import (
 
 type FieldView struct {
 	zcontainer.StackView
-	ID       string
-	ParentFV *FieldView
-	Fields   []Field
-	data     interface{}
-	dataHash int64
-	params   FieldViewParameters
+	ID             string
+	ParentFV       *FieldView
+	Fields         []Field
+	data           interface{}
+	dataHash       int64
+	params         FieldViewParameters
+	sliceItemIndex int
 }
 
 type FieldViewParameters struct {
@@ -172,6 +173,7 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	v.SetSpacing(params.Styling.Spacing)
 
 	v.data = data
+	v.sliceItemIndex = -1
 	zreflect.ForEachField(v.data, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 		f := EmptyField
 		if !f.SetFromReflectValue(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
@@ -594,7 +596,7 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
-			check.SetValueHandler(func() {
+			check.SetValueHandler(func(edited bool) {
 				ron := reflect.ValueOf(check.On())
 				rval.SetMapIndex(mkey, ron)
 				var cview zview.View = check
@@ -1114,14 +1116,14 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 	}
 	tv.SetPlaceholder(f.Placeholder)
-	tv.SetValueHandler(func() {
+	tv.SetValueHandler(func(edited bool) {
 		// zlog.Info("Changed:", tv.Text())
-		v.fieldHandleEdited(f, tv.View)
+		v.fieldHandleValueChanged(f, edited, tv.View)
 	})
 	return tv
 }
 
-func (v *FieldView) fieldHandleEdited(f *Field, view zview.View) {
+func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.View) {
 	rval, err := v.fieldToDataItem(f, view)
 	if zlog.OnError(err) {
 		return
@@ -1139,16 +1141,20 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	// if reflect.ValueOf(v.data).Kind() == reflect.Map {
 	// 	return cv
 	// }
-	cv.SetValueHandler(func() {
+	cv.SetValueHandler(func(edited bool) {
+		action := DataChangedAction
+		if edited {
+			action = EditedAction
+		}
 		val, _ := v.fieldToDataItem(f, cv)
 		v.updateShowEnableFromZeroer(val.IsZero(), true, cv.ObjectName())
 		v.updateShowEnableFromZeroer(val.IsZero(), false, cv.ObjectName())
 		view := zview.View(cv)
-		ap := ActionPack{Field: f, Action: EditedAction, RVal: reflect.ValueOf(cv.On()), View: &cv.View}
+		ap := ActionPack{Field: f, Action: action, RVal: reflect.ValueOf(cv.On()), View: &cv.View}
 		if v.callTriggerHandler(ap) {
 			return
 		}
-		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &view})
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: val, View: &view})
 	})
 	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
 		title := f.TitleOrName()
@@ -1293,8 +1299,8 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 			widgetView := w.Create(f)
 			changer, _ := widgetView.(zview.ValueHandler)
 			if changer != nil {
-				changer.SetValueHandler(func() {
-					v.fieldHandleEdited(f, widgetView)
+				changer.SetValueHandler(func(edited bool) {
+					v.fieldHandleValueChanged(f, edited, widgetView)
 				})
 			}
 			return widgetView, false
@@ -1723,7 +1729,13 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	if f.IsStatic() {
 		return
 	}
-	finfo := zreflect.FieldForIndex(v.data, FlattenIfAnonymousOrZUITag, f.Index)
+	data := v.data
+	if v.sliceItemIndex != -1 {
+		zlog.Assert(v.params.Kind == zreflect.KindSlice)
+		ritem := reflect.ValueOf(v.ParentFV.data).Elem().Index(v.sliceItemIndex)
+		data = ritem.Addr().Interface()
+	}
+	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, f.Index)
 
 	if f.WidgetName != "" {
 		w := widgeters[f.WidgetName]
@@ -1847,6 +1859,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			}
 			text := tv.Text()
 			str := finfo.ReflectValue.Addr().Interface().(*string)
+			// zlog.Info("fieldToData:", f.Name, text)
 			*str = text
 			v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 		}
