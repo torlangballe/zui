@@ -134,16 +134,21 @@ func (c *Canvas) GetClipRect() zgeo.Rect {
 	//        return SetRect(context.boundingBoxOfClipPath)
 }
 
+func (c *Canvas) SetLineDashes(dashes []int) {
+	var array []any
+	for _, d := range dashes {
+		array = append(array, d)
+	}
+	c.context.Call("setLineDash", array)
+}
+
+// Dashes []int
+
 func (c *Canvas) StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineType) {
 	c.setPath(path)
 	c.setLineType(ltype)
 	c.setLineWidth(width)
 
-	var array []interface{}
-	for _, d := range path.Dashes {
-		array = append(array, d)
-	}
-	c.context.Call("setLineDash", array)
 	c.context.Call("stroke")
 }
 
