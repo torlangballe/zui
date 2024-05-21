@@ -49,7 +49,7 @@ func (v *CheckBox) SetRect(rect zgeo.Rect) {
 	v.NativeView.SetRect(rect)
 }
 
-func (v *CheckBox) SetValueHandler(handler func()) {
+func (v *CheckBox) SetValueHandler(handler func(edited bool)) {
 	v.valueChanged = handler
 	v.JSSet("onclick", js.FuncOf(func(js.Value, []js.Value) interface{} {
 		if v.storeKey != "" {
@@ -57,7 +57,7 @@ func (v *CheckBox) SetValueHandler(handler func()) {
 			zkeyvalue.DefaultStore.SetBool(v.On(), v.storeKey, true)
 		}
 		if v.valueChanged != nil {
-			v.valueChanged()
+			v.valueChanged(true)
 		}
 		return nil
 	}))

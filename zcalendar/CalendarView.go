@@ -216,7 +216,7 @@ func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, o
 	s.Add(stack, zgeo.CenterLeft)
 	if option != nil {
 		check.SetOn(option.Get())
-		check.SetValueHandler(func() {
+		check.SetValueHandler(func(edited bool) {
 			v.updateAfterSettings = updateAfter
 			option.Set(check.On(), true)
 		})

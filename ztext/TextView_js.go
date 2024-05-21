@@ -145,7 +145,7 @@ func (v *TextView) SetText(text string) {
 	if v.Text() != text {
 		v.JSSet("value", text)
 		if v.changed != nil {
-			v.changed()
+			v.changed(false)
 		}
 	}
 }
@@ -181,7 +181,7 @@ func (v *TextView) updateDone() {
 		v.pushedBGColor = zgeo.Color{}
 	}
 	if v.changed != nil {
-		v.changed()
+		v.changed(true)
 	}
 }
 
@@ -201,7 +201,7 @@ func (v *TextView) startUpdate() {
 	//	v.updated = false
 }
 
-func (v *TextView) SetValueHandler(handler func()) {
+func (v *TextView) SetValueHandler(handler func(edited bool)) {
 	v.changed = handler
 	if handler != nil {
 		v.updateEnterHandlers()
@@ -211,7 +211,7 @@ func (v *TextView) SetValueHandler(handler func()) {
 			}
 			if v.UpdateSecs == 0 {
 				if v.changed != nil {
-					v.changed()
+					v.changed(true)
 				}
 			} else {
 				v.startUpdate()

@@ -104,5 +104,5 @@ type AnyValueGetter interface {
 }
 
 type ValueHandler interface {
-	SetValueHandler(func())
+	SetValueHandler(func(edited bool))
 }

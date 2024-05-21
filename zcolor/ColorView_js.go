@@ -1,8 +1,9 @@
 package zcolor
 
 import (
-	"github.com/torlangballe/zutil/zgeo"
 	"syscall/js"
+
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 func New(col zgeo.Color) *ColorView {
@@ -13,7 +14,7 @@ func New(col zgeo.Color) *ColorView {
 	v.JSSet("oninput", js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		v.SetToolTip(v.Color().HexNoAlpha())
 		if v.valueChangedHandlerFunc != nil {
-			v.valueChangedHandlerFunc()
+			v.valueChangedHandlerFunc(true)
 		}
 		return nil
 	}))
@@ -30,6 +31,6 @@ func (v *ColorView) Color() zgeo.Color {
 	return zgeo.ColorFromString(str)
 }
 
-func (v *ColorView) SetValueHandler(f func()) {
+func (v *ColorView) SetValueHandler(f func(edited bool)) {
 	v.valueChangedHandlerFunc = f
 }

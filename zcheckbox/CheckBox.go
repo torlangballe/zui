@@ -12,7 +12,7 @@ import (
 
 type CheckBox struct {
 	zview.NativeView
-	valueChanged func()
+	valueChanged func(edited bool)
 	storeKey     string
 }
 

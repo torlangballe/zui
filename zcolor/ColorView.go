@@ -10,7 +10,7 @@ import (
 
 type ColorView struct {
 	zview.NativeView
-	valueChangedHandlerFunc func()
+	valueChangedHandlerFunc func(edited bool)
 }
 
 func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {

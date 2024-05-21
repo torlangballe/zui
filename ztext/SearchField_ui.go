@@ -33,11 +33,11 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	s.Add(t, zgeo.CenterLeft|zgeo.VertExpand)
 	s.Add(iv, zgeo.CenterLeft, zgeo.SizeD(5, 0)).Free = true
 	old := t.ChangedHandler()
-	t.SetValueHandler(func() {
+	t.SetValueHandler(func(edited bool) {
 		iv.Show(t.Text() == "")
 		// zlog.Info("Show:", t.Text() == "")
 		if old != nil {
-			old()
+			old(edited)
 		}
 	})
 	return s
