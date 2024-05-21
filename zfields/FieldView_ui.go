@@ -955,7 +955,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 	if format == "" {
 		format = "15:04"
 		if secs {
-			format = "15:04:03"
+			format += ":05"
 		}
 		if zlocale.IsDisplayServerTime.Get() {
 			format += "-07"
@@ -1626,7 +1626,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
 				lstack.AddAdvanced(lock, zgeo.CenterRight, zgeo.SizeD(-7, 7), zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
-				zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
+				// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
 			}
 		}
 		updateItemLocalToolTip(f, v.data, lstack)
