@@ -36,8 +36,8 @@ func (v *BranchToggleView) Init(view zview.View, btype BranchToggleType, id stri
 	// zlog.Info("BranchToggleView Init:", id, open)
 	switch btype {
 	case BranchToggleTriangle:
-		v.openImage = "images/triangle-down-gray.png"
-		v.closedImage = "images/triangle-right-gray.png"
+		v.openImage = "images/zcore/triangle-down-gray.png"
+		v.closedImage = "images/zcore/triangle-right-gray.png"
 	}
 	v.ImageView.Init(v, true, nil, "", zgeo.SizeD(16, 16))
 	v.SetObjectName(id)
