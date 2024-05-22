@@ -177,7 +177,7 @@ type Field struct {
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 	RPCCall              string            // an RPC method to Call, typically on press of a button
-	Filter               string            // Registered filter. Currently used for textview fields to filter text in/output
+	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum
 }
 
 var EmptyField = Field{
@@ -186,29 +186,29 @@ var EmptyField = Field{
 }
 
 var flagsNameMap = zbits.NamedBitMap{
-	"HasSeconds":                   uint64(FlagHasSeconds),
-	"HasMinutes":                   uint64(FlagHasMinutes),
-	"HasHours":                     uint64(FlagHasHours),
-	"HasDays":                      uint64(FlagHasDays),
-	"HasMonths":                    uint64(FlagHasMonths),
-	"HasYears":                     uint64(FlagHasYears),
-	"IsImage":                      uint64(FlagIsImage),
-	"IsFixed":                      uint64(FlagIsFixed),
-	"IsButton":                     uint64(FlagIsButton),
-	"IsStatic":                     uint64(FlagIsStatic),
-	"HasHeaderImage":               uint64(FlagHasHeaderImage),
-	"NoTitle":                      uint64(FlagNoTitle),
-	"ToClipboard":                  uint64(FlagToClipboard),
-	"IsPassword":                   uint64(FlagIsPassword),
-	"IsDuration":                   uint64(FlagIsDuration),
-	"IsOpaque":                     uint64(FlagIsOpaque),
-	"IsActions":                    uint64(FlagIsActions),
-	"FrameIsTitled":                uint64(FlagFrameIsTitled),
-	"IsGroup":                      uint64(FlagIsGroup),
-	"HasFrame":                     uint64(FlagHasFrame),
-	"SkipIndicator":                uint64(FlagSkipIndicator),
-	"LongPress":                    uint64(FlagLongPress),
-	"DisableAutofill":              uint64(FlagDisableAutofill),
+	"HasSeconds":               uint64(FlagHasSeconds),
+	"HasMinutes":               uint64(FlagHasMinutes),
+	"HasHours":                 uint64(FlagHasHours),
+	"HasDays":                  uint64(FlagHasDays),
+	"HasMonths":                uint64(FlagHasMonths),
+	"HasYears":                 uint64(FlagHasYears),
+	"IsImage":                  uint64(FlagIsImage),
+	"IsFixed":                  uint64(FlagIsFixed),
+	"IsButton":                 uint64(FlagIsButton),
+	"IsStatic":                 uint64(FlagIsStatic),
+	"HasHeaderImage":           uint64(FlagHasHeaderImage),
+	"NoTitle":                  uint64(FlagNoTitle),
+	"ToClipboard":              uint64(FlagToClipboard),
+	"IsPassword":               uint64(FlagIsPassword),
+	"IsDuration":               uint64(FlagIsDuration),
+	"IsOpaque":                 uint64(FlagIsOpaque),
+	"IsActions":                uint64(FlagIsActions),
+	"FrameIsTitled":            uint64(FlagFrameIsTitled),
+	"IsGroup":                  uint64(FlagIsGroup),
+	"HasFrame":                 uint64(FlagHasFrame),
+	"SkipIndicator":            uint64(FlagSkipIndicator),
+	"LongPress":                uint64(FlagLongPress),
+	"DisableAutofill":          uint64(FlagDisableAutofill),
 	"IsSearchable":             uint64(FlagIsSearchable),
 	"IsUseInValue":             uint64(FlagIsUseInValue),
 	"AllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
@@ -222,7 +222,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsEdit":                   uint64(FlagIsEdit),
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
-	"Lockable":                     uint64(FlagLockable),
+	"Lockable":                 uint64(FlagLockable),
 }
 
 // callSetupWidgeter is called to set gui widgets registered for use in zui tags.
@@ -390,7 +390,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "lockable":
 			f.SetFlag(FlagLockable)
 		case "filter":
-			f.Filter = val
+			f.Filters = barParts
 		case "count":
 			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
 		case "isuseinval":

@@ -98,7 +98,17 @@ var (
 
 func init() {
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
-	RegisterTextFilter("$trim", strings.TrimSpace)
+
+	RegisterTextFilter("$nowhite", func(s string) string {
+		return zstr.WhitespaceRemover.Replace(s)
+	})
+	RegisterTextFilter("$lower", strings.ToLower)
+	RegisterTextFilter("$upper", strings.ToLower)
+	RegisterTextFilter("$uuid", zstr.CreateFilterFunc(zstr.IsRuneValidInUUID))
+	RegisterTextFilter("$hex", zstr.CreateFilterFunc(zstr.IsRuneHex))
+	RegisterTextFilter("$alpha", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlpha))
+	RegisterTextFilter("$num", zstr.CreateFilterFunc(zstr.IsRuneASCIINumeric))
+	RegisterTextFilter("$alphanum", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlphaNumeric))
 }
 
 func RegisterTextFilter(name string, filter func(string) string) {
@@ -1108,11 +1118,21 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	if !noUpdate && tv.UpdateSecs == -1 {
 		tv.UpdateSecs = 4
 	}
-	if f.Filter != "" {
-		fn := GetTextFilter(f.Filter)
-		tv.FilterFunc = fn
-		if fn == nil {
-			zlog.Error("No registerd text filter for:", f.Filter, f.FieldName)
+	if len(f.Filters) > 0 {
+		var funcs []func(string) string
+		for _, fname := range f.Filters {
+			fn := GetTextFilter(fname)
+			if fn == nil {
+				zlog.Error("No registerd text filter for:", fname, f.FieldName)
+				continue
+			}
+			funcs = append(funcs, fn)
+		}
+		tv.FilterFunc = func(s string) string {
+			for _, fn := range funcs {
+				s = fn(s)
+			}
+			return s
 		}
 	}
 	tv.SetPlaceholder(f.Placeholder)
