@@ -84,7 +84,8 @@ const (
 )
 
 var (
-	ModifiersAtPress        Modifier          // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
+	ModifiersAtPress        Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
+	MetaModifier            = ModifierControl
 	MetaModifierMultiSelect = ModifierControl // set to ModifierCommand on mac
 	AltModifierName         = "Alt"
 	CommandModifierName     = "Meta"
@@ -93,6 +94,7 @@ var (
 func init() {
 	if zdevice.OS() == zdevice.MacOSType {
 		MetaModifierMultiSelect = ModifierCommand
+		MetaModifier = ModifierCommand
 		AltModifierName = "Option"
 		CommandModifierName = "Command"
 	}
