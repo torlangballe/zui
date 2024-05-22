@@ -1596,7 +1596,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.Styling.BGColor.Valid {
 		view.SetBGColor(f.Styling.BGColor)
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
-		view.SetBGColor(zgeo.ColorNew(1, 0.9, 0.9, 1))
+		view.SetBGColor(zstyle.DebugBackgroundColor)
 	}
 	if rval.CanAddr() {
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
@@ -1641,13 +1641,18 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			view.SetObjectName(title)
 		}
 		// zlog.Info("LAB:", title, view.ObjectName(), f.FieldName)
-		_, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
+		var label *zlabel.Label
+		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
 		if f.HasFlag(FlagLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
 				lstack.AddAdvanced(lock, zgeo.CenterRight, zgeo.SizeD(-7, 7), zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
 				// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
 			}
+		}
+		if f.HasFlag(FlagIsForZDebugOnly) {
+			label.SetBGColor(zstyle.DebugBackgroundColor)
+			label.SetCorner(4)
 		}
 		updateItemLocalToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
@@ -1785,6 +1790,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 
 	switch f.Kind {
 	case zreflect.KindBool:
+		if f.HasFlag(FlagIsButton) {
+			return
+		}
 		_, got := view.(*zimageview.ImageView)
 		if got {
 			break

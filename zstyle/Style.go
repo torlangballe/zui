@@ -16,6 +16,8 @@ var (
 	DefaultBGColor    = GrayF(0.8, 0.2)
 	DefaultHoverColor = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
 	DefaultFocusColor = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
+
+	DebugBackgroundColor = zgeo.ColorNew(1, 0.9, 0.9, 1)
 )
 
 type Styling struct {
