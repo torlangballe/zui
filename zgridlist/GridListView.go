@@ -632,7 +632,7 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	focusMarg := zgeo.SizeD(6, 6)
 	v.cachedChildSize = zgeo.SizeNull
 	s := v.MinSize()
-	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total, s)
+	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total, s, v.MakeFullSize)
 	if v.CellCountFunc() == 0 {
 		return s.Plus(focusMarg)
 	}
@@ -651,7 +651,7 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		// 	s.H = childSize.H*my + v.Spacing.H*(my-1) - v.margin.Size.H
 		// }
 	}
-	// zlog.Info("GLV CalculatedSize:", childSize.H, v.Hierarchy(), s, v.MinSize(), v.CellCountFunc(), max)
+	// zlog.Info("GLV CalculatedSize2:", childSize.H, v.Hierarchy(), s, v.MinSize(), v.CellCountFunc(), max)
 	return s.Plus(focusMarg)
 }
 
@@ -722,18 +722,19 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 	co, _ := child.(zcontainer.CellsOwner)
 	aa, _ := child.(zcontainer.AdvancedAdder)
 	if level > 0 {
-		w := float64(level-1) * 14
+		w := float64(level-2) * 14
 		if v.BranchToggleType != zwidgets.BranchToggleNone {
 			if !leaf {
 				bt := zwidgets.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
-				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.SizeD(4+w, 0), zgeo.SizeNull, -1, true)
+				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.Size{}, zgeo.SizeNull, 0, false)
 			}
 			w += 24
 		}
 		cells := co.GetCells()
 		(*cells)[0].Margin.W += w
-		(*cells)[0].MinSize.W -= w
-		(*cells)[0].MaxSize.W -= w
+		// zlog.Info("insertBranch:", (*cells)[0].View.ObjectName(), (*cells)[0].Margin.W)
+		// (*cells)[0].MinSize.W -= w
+		// (*cells)[0].MaxSize.W -= w
 	}
 }
 
@@ -939,6 +940,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
 			if dirty || !child.Native().HasSize() || child.Rect() != o {
+				// zlog.Info("LayoutCell:", cid, o)
 				child.SetRect(o)
 			}
 			// prof.Log("After Set Rect")
