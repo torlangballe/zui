@@ -55,8 +55,10 @@ type Owner interface {
 }
 
 var (
-	GlobalURLPrefix string
-	MainScreenScale float64 = 1
+	GlobalURLPrefix     string
+	MainScreenScaleFunc = func() float64 {
+		return 1
+	}
 )
 
 func (i *Image) ForPixels(got func(x, y int, color zgeo.Color)) {
@@ -86,11 +88,11 @@ func FromPathAddScreenScaleSuffix(spath string, useCache bool, got func(*Image))
 	dir, _, stub, ext := zfile.Split(spath)
 	size := ""
 	zlog.Assert(!strings.HasSuffix(stub, "@2x"))
-	if MainScreenScale >= 2 {
+	if MainScreenScaleFunc() >= 2 {
 		size = "@2x"
 	}
 	spath = path.Join(dir, stub+size+ext)
-	zlog.Info("FromPathAddScreenScaleSuffix:", spath, MainScreenScale)
+	zlog.Info("FromPathAddScreenScaleSuffix:", spath, MainScreenScaleFunc())
 	FromPath(spath, useCache, got)
 }
 
