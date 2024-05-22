@@ -2,6 +2,7 @@ package ztext
 
 import (
 	"syscall/js"
+	"unicode/utf8"
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -70,13 +71,14 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	v.UpdateSecs = 1
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	v.SetFont(f)
-	v.JSCall("addEventListener", "mousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.JSCall("addEventListener", "mousedown", js.FuncOf(func(this js.Value, args []js.Value) any {
 		args[0].Call("stopPropagation")
 		return nil
 	}))
 	if DefaultBGColor().Valid {
 		v.SetBGColor(DefaultBGColor())
 	}
+	v.setHandlers()
 }
 
 func (v *TextView) Select(from, to int) {
@@ -138,21 +140,28 @@ func (v *TextView) SetMargin(m zgeo.Rect) {
 	v.NativeView.SetNativeMargin(m)
 }
 
+func (v *TextView) rawSetText(text string) bool {
+	if v.Text() != text {
+		v.JSSet("value", text)
+		return true
+	}
+	return false
+}
+
 func (v *TextView) SetText(text string) {
 	if v.FilterFunc != nil {
 		text = v.FilterFunc(text)
 	}
-	if v.Text() != text {
-		v.JSSet("value", text)
+	if v.rawSetText(text) {
 		v.changed.CallAll(false)
 	}
 }
 
 func (v *TextView) Text() string {
 	text := v.JSGet("value").String()
-	if v.FilterFunc != nil {
-		text = v.FilterFunc(text)
-	}
+	// if v.FilterFunc != nil {
+	// 	text = v.FilterFunc(text)
+	// }
 	return text
 }
 
@@ -198,74 +207,93 @@ func (v *TextView) startUpdate() {
 }
 
 func (v *TextView) SetValueHandler(id string, handler func(edited bool)) {
+	// zlog.Info("SetValHandler:", id)
 	v.changed.Add(id, handler)
-	if handler != nil && v.changed.Count() == 1 {
-		v.updateEnterHandlers()
-		v.JSSet("oninput", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			// zlog.Info("Edited:", v.ObjectName(), v.changed.Count())
-			if v.UpdateSecs < 0 {
-				return nil
-			}
-			if v.UpdateSecs == 0 {
-				// zlog.Info("Edited:", v.ObjectName(), v.Text(), v.changed.Count())
+}
+
+func (v *TextView) setHandlers() {
+	v.JSSet("oninput", js.FuncOf(func(this js.Value, args []js.Value) any {
+		if v.FilterFunc != nil {
+			text := v.Text()
+			ftext := v.FilterFunc(text)
+			if text != ftext {
+				v.rawSetText(ftext)
 				v.changed.CallAll(true)
-			} else {
-				v.startUpdate()
+				i := utf8.RuneCountInString(ftext)
+				v.Select(i, i)
 			}
-			args[0].Call("stopPropagation")
+		}
+		// zlog.Info("OnInput")
+		if v.UpdateSecs < 0 {
 			return nil
-		}))
-	}
+		}
+		if v.UpdateSecs == 0 {
+			// zlog.Info("Edited:", v.ObjectName(), v.Text(), v.changed.Count())
+			v.changed.CallAll(true)
+		} else {
+			v.startUpdate()
+		}
+		args[0].Call("stopPropagation")
+		return nil
+	}))
+	v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) any {
+		if v.changed.Count() == 0 && v.editDone == nil && v.FilterFunc == nil {
+			return nil
+		}
+		event := vs[0]
+		key := event.Get("which").Int()
+		// zlog.Info("OnKeyDown", key)
+		if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
+			if v.editDone != nil {
+				v.editDone(false)
+			}
+			if v.UpdateSecs != 0 {
+				v.updateDone()
+			}
+		}
+		if key == zkeyboard.KeyEscape {
+			if v.editDone != nil {
+				v.editDone(true)
+			}
+		}
+		return nil
+	}))
+	v.JSSet("onkeypress", js.FuncOf(func(val js.Value, vs []js.Value) any {
+		if v.FilterFunc == nil {
+			return nil
+		}
+		event := vs[0]
+		w := event.Get("which")
+		if w.IsUndefined() {
+			return nil
+		}
+		mod := zkeyboard.GetKeyModFromEvent(event).Modifier
+		if mod&zkeyboard.MetaModifier != 0 {
+			return nil
+		}
+		r := rune(event.Get("charCode").Int())
+		// zlog.Info("OnKey3", r, mod, mod&zkeyboard.MetaModifier)
+		if r < ' ' && r != '\t' || r == 127 {
+			return nil
+		}
+		if v.FilterFunc != nil {
+			in := string(r)
+			out := v.FilterFunc(in)
+			// zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
+			if out != in {
+				event.Call("preventDefault")
+				if out != "" {
+					v.JSSet("value", v.JSGet("value").String()+out)
+				}
+			}
+			return nil
+		}
+		return nil
+	}))
 }
 
 func (v *TextView) SetEditDoneHandler(handler func(canceled bool)) {
 	v.editDone = handler
-	v.updateEnterHandlers()
-}
-
-func (v *TextView) updateEnterHandlers() {
-	if v.changed.Count() != 0 || v.editDone != nil || v.FilterFunc != nil {
-		v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-			event := vs[0]
-			key := event.Get("which").Int()
-			if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
-				if v.editDone != nil {
-					v.editDone(false)
-				}
-				if v.UpdateSecs != 0 {
-					v.updateDone()
-				}
-			}
-			if key == zkeyboard.KeyEscape {
-				if v.editDone != nil {
-					v.editDone(true)
-				}
-			}
-			return nil
-		}))
-		v.JSSet("onkeypress", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-			event := vs[0]
-			w := event.Get("which")
-			if w.IsUndefined() {
-				return nil
-			}
-			r := rune(event.Get("charCode").Int())
-			// zlog.Info("OnKey", w, r, v.FilterFunc != nil)
-			if v.FilterFunc != nil {
-				in := string(r)
-				out := v.FilterFunc(in)
-				// zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
-				if out != in {
-					event.Call("preventDefault")
-					if out != "" {
-						v.JSSet("value", v.JSGet("value").String()+out)
-					}
-				}
-				return nil
-			}
-			return nil
-		}))
-	}
 }
 
 func (v *TextView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool) {
