@@ -425,27 +425,15 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	if att.TitledMargin.H != 0 {
 		stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
 	}
-	bar := zcontainer.StackViewHor("bar")
-	bar.SetSpacing(2)
-	bar.SetMarginS(zgeo.SizeD(6, 2))
-	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
-		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
-		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
-	})
-	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
-	m := zgeo.SizeD(att.TitledMargin.W, 0)
-	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
 
-	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
-	titleLabel := zlabel.New(stitle)
-	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
-	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
 	a := zgeo.Left
 	if len(barViews) == 0 {
 		a = zgeo.HorCenter
 	}
-	bar.Add(titleLabel, a|zgeo.VertCenter)
+	bar, titleLabel := MakeBar(stitle, a)
+	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
+	m := zgeo.SizeD(att.TitledMargin.W, 0)
+	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
 
 	xmargin := 0.0 //10.0
 	for v, a := range barViews {
@@ -460,6 +448,25 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	}
 	att.Title = stitle
 	PresentView(stack, att)
+}
+
+func MakeBar(stitle string, titleAlign zgeo.Alignment) (*zcontainer.StackView, *zlabel.Label) {
+	bar := zcontainer.StackViewHor("bar")
+	bar.SetSpacing(2)
+	bar.SetMarginS(zgeo.SizeD(6, 2))
+	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
+		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
+		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
+	})
+
+	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
+	titleLabel := zlabel.New(stitle)
+	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
+	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
+	bar.Add(titleLabel, titleAlign|zgeo.VertCenter)
+
+	return bar, titleLabel
 }
 
 func PopupView(view, over zview.View, att Attributes) {
