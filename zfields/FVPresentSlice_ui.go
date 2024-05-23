@@ -207,7 +207,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 				return false
 			}
 			ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
-				// zlog.Info("origFieldReflectValue1:", each.Field.Name, each.Field.Flags, each.Field.IsStatic(), FlagIsButton, FlagIsStatic)
+				// zlog.Info("origFieldReflectValue1:", each.Field.Name, each.ReflectValue.Interface(), each.Field.Flags, each.Field.IsStatic(), FlagIsButton, FlagIsStatic)
 				if each.StructField.Tag.Get("zui") == "-" {
 					return true // skip to next
 				}
@@ -226,7 +226,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 				origFieldReflectValue := finfo.ReflectValue
 				// zlog.Info("origFieldReflectValue:", each.Field.Name, origFieldReflectValue.Interface())
 				if params.MultiSliceEditInProgress && each.ReflectValue.Kind() == reflect.Slice {
-					if f.Enum == "" {
+					if f.Enum == "" && f.StringSep == "" { // todo: let it through if its a UISetStringer
 						// zlog.Info("Skip non-enum slice in multi-edit:", each.StructField.Name)
 						return true // skip to next
 					}
