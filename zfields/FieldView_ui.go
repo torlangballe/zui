@@ -893,9 +893,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 				kind := reflect.ValueOf(sel.Value).Kind()
 				if menuOwner.IsStatic {
 					if kind != reflect.Ptr && kind != reflect.Struct {
-						nf := *f
-						nf.ActionValue = sel.Value
-						callActionHandlerFunc(ActionPack{FieldView: v, Field: &nf, Action: PressedAction, RVal: rval, View: &view})
+						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: rval, View: &view})
 					}
 				} else {
 					zlog.Info("Here!", menuOwner.IsMultiple, rval, rval.Type())
