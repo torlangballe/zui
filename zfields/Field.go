@@ -36,20 +36,18 @@ type UIStringer interface {
 	ZUIString() string
 }
 
+// UISetStringer is like UIStringer, but for allowing a type to be edited as a string, then converted from that string.
 type UISetStringer interface {
 	ZUISetFromString(str string)
 }
 
-// ActionType are the types of actions any type can handle an HandleAction method with type of.
-// This allows a type to handle its  Field setup, its creation, editing, data changed and more.
-type ActionType string
-
-// SortInfo is information about how to sort fields/columns
+// SortInfo is information about how to sort fields/columns. See SortSliceWithFields().
 type SortInfo struct {
 	FieldName  string
 	SmallFirst bool
 }
 
+// FieldParameters are parameters for a FieldView's presentation.
 type FieldParameters struct {
 	HideStatic      bool
 	ForceZeroOption bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
@@ -57,6 +55,10 @@ type FieldParameters struct {
 	UseInValues     []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
 	SkipFieldNames  []string
 }
+
+// ActionType are the types of actions any type can handle an HandleAction method with type of.
+// This allows a type to handle its  Field setup, its creation, editing, data changed and more.
+type ActionType string
 
 const (
 	NoAction              ActionType = ""            // Add a trigger for this to get ALL actions
@@ -73,7 +75,7 @@ const (
 	DialogUseInSpecialName = "$dialog"
 )
 
-// The FlagType are a number of flags a field can have set, based on the struct field/tag it is created from.
+// The FlagType stores Field boolean options, based on the tag it is created from.
 type FlagType zbits.NamedBit
 
 const (
@@ -125,55 +127,55 @@ const (
 	flagDateFlags = FlagHasDays | FlagHasMonths | FlagHasYears
 )
 
+// The Field struct stores information about a struct field, based on zui:"" tags, used for displaying it.
 type Field struct {
-	Index int // Index is the position in the total amount of fields (inc anonymous) in struct
-	// ID                   string // ID is string from field's name using fieldNameToID(). TODO: Use this less, use FieldName more, as we are 100% sure what that is
-	ActionValue          any // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler
-	Name                 string
-	FieldName            string //
-	PackageName          string // the name of the package struct the field is in is from
-	Title                string // name of item in row, and header if no title
-	MaxWidth             float64
-	MinWidth             float64
-	Kind                 zreflect.TypeKind
-	Vertical             zbool.BoolInd
-	Alignment            zgeo.Alignment
-	Justify              zgeo.Alignment
-	Format               string
-	Colors               []string
-	ImageFixedPath       string
-	OffImagePath         string
-	HeaderImageFixedPath string
-	Path                 string
-	Height               float64
-	Enum                 string
-	LocalEnum            string
-	Size                 zgeo.Size
-	HeaderSize           zgeo.Size
-	Margin               zgeo.Size
-	Flags                FlagType
-	Tooltip              string
-	Description          string
-	UpdateSecs           float64
-	LocalEnable          string
-	LocalDisable         string
-	LocalShow            string
-	LocalHide            string
-	Placeholder          string
-	Columns              int
-	Rows                 int
-	SortSmallFirst       zbool.BoolInd
-	SortPriority         int
-	FractionDecimals     int
-	OldSecs              int
-	ValueStoreKey        string
-	Visible              bool
-	Disabled             bool
-	SetEdited            bool
-	WidgetName           string
-	BrancherType         string
-	UseIn                []string // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
-	Styling              zstyle.Styling
+	Index int // Index is the position in the total amount of fields (inc anonymous) in struct.
+	// ActionValue          any    // ActionValue is used to send other information with an action into ActionHandler / ActionFieldHandler.
+	FieldName            string            // The FieldName is the exact name of the struct field.
+	PackageName          string            // The name of the package struct the field variable type is in.
+	Name                 string            // zui:"name". Name is generated from the struct fields name, but can be overridden with the name tag.
+	Title                string            // zui:"title". Name of item in row, and header if no title.
+	MaxWidth             float64           // zui:"width/maxwidth"
+	MinWidth             float64           // zui:"width/minwidth"
+	Kind                 zreflect.TypeKind // Kind stores the general kind of value the field is.
+	Vertical             zbool.BoolInd     // Used to override layout, typically if this field is a struct. Unknown means do default.
+	Alignment            zgeo.Alignment    // zui:"align". see zgeo.Alignment for string values. Aligns item to parent
+	Justify              zgeo.Alignment    // zui:"justify". Justifies text etc within field.
+	Format               string            // zui:"format". Used to format numbers, time. See below.
+	Colors               []string          // zui:"color". Colors for field, can be multiple.
+	ImageFixedPath       string            // zui:"".
+	OffImagePath         string            // zui:"".
+	HeaderImageFixedPath string            // zui:"".
+	Path                 string            // zui:"".
+	Height               float64           // zui:"".
+	Enum                 string            // zui:"".
+	LocalEnum            string            // zui:"".
+	Size                 zgeo.Size         // zui:"".
+	HeaderSize           zgeo.Size         // zui:"".
+	Margin               zgeo.Size         // zui:"".
+	Flags                FlagType          // zui:"".
+	Tooltip              string            // zui:"".
+	Description          string            // zui:"".
+	UpdateSecs           float64           // zui:"".
+	LocalEnable          string            // zui:"".
+	LocalDisable         string            // zui:"".
+	LocalShow            string            // zui:"".
+	LocalHide            string            // zui:"".
+	Placeholder          string            // zui:"".
+	Columns              int               // zui:"".
+	Rows                 int               // zui:"".
+	SortSmallFirst       zbool.BoolInd     // zui:"".
+	SortPriority         int               // zui:"".
+	FractionDecimals     int               // zui:"".
+	OldSecs              int               // zui:"".
+	ValueStoreKey        string            // zui:"".
+	Visible              bool              // zui:"".
+	Disabled             bool              // zui:"".
+	SetEdited            bool              // zui:"".
+	WidgetName           string            // zui:"".
+	BrancherType         string            // zui:"".
+	UseIn                []string          // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
+	Styling              zstyle.Styling    // zui:"".
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 	RPCCall              string            // an RPC method to Call, typically on press of a button
@@ -225,11 +227,9 @@ var flagsNameMap = zbits.NamedBitMap{
 	"Lockable":                 uint64(FlagLockable),
 }
 
-// callSetupWidgeter is called to set gui widgets registered for use in zui tags.
-// It is dependent on a gui, so injected with this func variable.
 var (
-	callSetupWidgeter func(f *Field)
-	fieldEnums        = map[string]zdict.Items{}
+	callSetupWidgeter func(f *Field)             // callSetupWidgeter is called to set gui widgets registered for use in zui tags. It is dependent on a gui, so injected with this func variable.
+	fieldEnums        = map[string]zdict.Items{} // fieldEnums stores registered enums used by enum tag
 )
 
 func (f FlagType) String() string {
