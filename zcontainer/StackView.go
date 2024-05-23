@@ -251,6 +251,13 @@ func (v *StackView) ArrangeChildren() {
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
 			c.View.SetRect(r)
+			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
+				c.View.Show(true)
+			}
+		} else {
+			if c.View != nil {
+				c.View.Show(false)
+			}
 		}
 		j++
 	}
