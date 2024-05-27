@@ -735,20 +735,21 @@ func getMousePos(e js.Value) (pos zgeo.Pos) {
 }
 
 // AttachJSFunc calls setJSFunc below with isListener false.
-func (v *NativeView) AttachJSFunc(name string, fn func(this js.Value, args []js.Value) any) {
-	v.setJSFunc(name, false, fn)
+func (v *NativeView) AttachJSFunc(name string, fn func(this js.Value, args []js.Value) any) js.Func {
+	return v.setJSFunc(name, false, fn)
 }
 
 // SetListenerJSFunc calls setJSFunc below with isListener true.
-func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args []js.Value) any) {
-	v.setJSFunc(name, true, fn)
+func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args []js.Value) any) js.Func {
+	return v.setJSFunc(name, true, fn)
 }
 
 // setJSFunc adds a named js func created with js.FuncOf to a view's jsFuncs map.
 // These are released on view remove, or if set again for the same name.
 // If isListener is set, the func is added as a listener to the view, and removed as well.
 // anything after : in the name is removed first, to allow multiple listeners with same name to co-exist.
-func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) {
+func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) js.Func {
+	var outFunc js.Func
 	nameMainPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
 	if v.jsFuncs == nil {
 		v.jsFuncs = map[string]js.Func{}
@@ -761,6 +762,7 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 	} else {
 		f, got := v.jsFuncs[name]
 		if got {
+			outFunc = f
 			if isListener {
 				v.JSCall("removeEventListener", nameMainPart, f)
 			}
@@ -770,12 +772,13 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 	if fn == nil {
 		delete(v.jsFuncs, name)
 	} else {
-		f := js.FuncOf(fn)
+		outFunc = js.FuncOf(fn)
 		if isListener {
-			v.JSCall("addEventListener", nameMainPart, f)
+			v.JSCall("addEventListener", nameMainPart, outFunc)
 		}
-		v.jsFuncs[name] = f
+		v.jsFuncs[name] = outFunc
 	}
+	return outFunc
 }
 
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
@@ -1113,16 +1116,15 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 	zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(event).Modifier
 }
 
-var oldMouseMove js.Value
-
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
 	const minDiff = 10.0
 	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
-		// we := v.GetWindowElement()
-		// if we.IsUndefined() {
-		// 	return nil
-		// }
+		var moveFunc, upFunc js.Func
+		we := v.GetWindowElement()
+		if we.IsUndefined() {
+			return nil
+		}
 		e := args[0]
 		target := e.Get("target")
 		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
@@ -1131,14 +1133,11 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		}
 		pos := getMousePosRelative(v, e)
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
-		v.SetListenerJSFunc("mouseup:updown", func(this js.Value, args []js.Value) any {
-			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) any {
+		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			upPos := getMousePosRelative(v, args[0])
 			movingPos = nil
-			// v.GetWindowElement().Set("onmousemove", oldMouseMove)
-			// oldMouseMove = js.Null()
-			v.SetListenerJSFunc("mouseup:updown", nil)
-			v.SetListenerJSFunc("mousemove:updown", nil)
+			we.Call("removeEventListener", "mouseup", upFunc)
+			we.Call("removeEventListener", "mousemove", moveFunc)
 			// v.GetWindowElement().Set("onmouseup", nil)
 			if handler(upPos, zbool.False) {
 				// e.Call("stopPropagation")
@@ -1147,16 +1146,15 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			}
 			return nil
 		})
+		we.Call("addEventListener", "mouseup", upFunc)
 		v.SetStateOnDownPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		if handler(*movingPos, zbool.True) {
 			// e.Call("preventDefault")
 		}
-		// oldMouseMove = v.GetWindowElement().Get("onmousemove")
-		// v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) any {
-		v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
-			zlog.Info("MOUSE MOVE")
+		moveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+			// v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
 			if movingPos != nil {
 				pos := getMousePosRelative(v, args[0])
 				// zlog.Info("MM:", pos)
@@ -1166,6 +1164,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			}
 			return nil
 		})
+		we.Call("addEventListener", "mousemove", moveFunc)
 		return nil
 	})
 }
