@@ -27,6 +27,7 @@ type baseNativeView struct {
 	Element      js.Value
 	transparency float32
 	parent       *NativeView
+	jsFuncs      map[string]js.Func
 }
 
 type AddHandler interface {
@@ -428,14 +429,14 @@ func (v *NativeView) SetCanTabFocus(can bool) {
 }
 
 func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
-	v.JSSet("onfocus", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("focus", func(this js.Value, args []js.Value) any {
 		focused(true)
 		return nil
-	}))
-	v.JSSet("onblur", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("blur", func(this js.Value, args []js.Value) any {
 		focused(false)
 		return nil
-	}))
+	})
 }
 
 func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {
@@ -449,7 +450,7 @@ func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view Vie
 }
 
 func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, handle func(view View, focused bool)) {
-	root.Element.Call("addEventListener", eventName, js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	root.SetListenerJSFunc(eventName, func(this js.Value, args []js.Value) any {
 		// zlog.Info("child focused", eventName)
 		e := args[0].Get("target")
 		if e.IsNull() || e.IsUndefined() {
@@ -461,7 +462,7 @@ func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, 
 			handle(found, forFocused)
 		}
 		return nil
-	}))
+	})
 }
 
 func FindChildWithElement(root *NativeView, e js.Value) View {
@@ -733,17 +734,61 @@ func getMousePos(e js.Value) (pos zgeo.Pos) {
 	return
 }
 
+// AttachJSFunc calls setJSFunc below with isListener false.
+func (v *NativeView) AttachJSFunc(name string, fn func(this js.Value, args []js.Value) any) {
+	v.setJSFunc(name, false, fn)
+}
+
+// SetListenerJSFunc calls setJSFunc below with isListener true.
+func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args []js.Value) any) {
+	v.setJSFunc(name, true, fn)
+}
+
+// setJSFunc adds a named js func created with js.FuncOf to a view's jsFuncs map.
+// These are released on view remove, or if set again for the same name.
+// If isListener is set, the func is added as a listener to the view, and removed as well.
+// anything after : in the name is removed first, to allow multiple listeners with same name to co-exist.
+func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) {
+	nameMainPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
+	if v.jsFuncs == nil {
+		v.jsFuncs = map[string]js.Func{}
+		v.AddOnRemoveFunc(func() {
+			for _, f := range v.jsFuncs {
+				// zlog.Info("NV: Release func:", n)
+				f.Release()
+			}
+		})
+	} else {
+		f, got := v.jsFuncs[name]
+		if got {
+			if isListener {
+				v.JSCall("removeEventListener", nameMainPart, f)
+			}
+			f.Release()
+		}
+	}
+	if fn == nil {
+		delete(v.jsFuncs, name)
+	} else {
+		f := js.FuncOf(fn)
+		if isListener {
+			v.JSCall("addEventListener", nameMainPart, f)
+		}
+		v.jsFuncs[name] = f
+	}
+}
+
 func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 	const minDiff = 10.0
-	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("mousedown:swipe", func(this js.Value, args []js.Value) any {
 		if handler == nil {
 			return nil
 		}
 		mouseStartTime = time.Now()
 		mouseStartPos = getMousePos(args[0])
 		return nil
-	}))
-	v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("mousemove:swipe", func(this js.Value, args []js.Value) any {
 		if handler == nil {
 			return nil
 		}
@@ -769,7 +814,7 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 			handler(pos, diff)
 		}
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetAboveParent(above bool) {
@@ -781,11 +826,11 @@ func (v *NativeView) SetAboveParent(above bool) {
 	v.JSStyle().Set("overflow", str)
 }
 
-func (v *NativeView) JSCall(method string, args ...interface{}) js.Value {
+func (v *NativeView) JSCall(method string, args ...any) js.Value {
 	return v.Element.Call(method, args...)
 }
 
-func (v *NativeView) JSSet(property string, value interface{}) {
+func (v *NativeView) JSSet(property string, value any) {
 	v.Element.Set(property, value)
 }
 
@@ -794,13 +839,13 @@ func (v *NativeView) JSGet(property string) js.Value {
 }
 
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
-	v.JSSet("onscroll", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.SetListenerJSFunc("scroll", func(js.Value, []js.Value) any {
 		if handler != nil {
 			y := v.JSGet("scrollTop").Float()
 			handler(zgeo.PosD(0, y))
 		}
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetContentOffset(y float64) {
@@ -838,7 +883,7 @@ func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data
 	}
 	item := dt.Get("items").Index(0)
 	mime = item.Get("type").String()
-	item.Call("getAsString", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	item.Call("getAsString", zdom.MakeSingleCallJSCallback(func(this js.Value, args []js.Value) any {
 		val := []byte(args[0].String())
 		handled = handler(DragDrop, val, mime, pos)
 		return nil
@@ -850,7 +895,7 @@ func dragEvent(event js.Value, dtype DragType, handler func(dtype DragType, data
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 	// https://www.digitalocean.com/community/tutorials/js-drag-and-drop-vanilla-js
 	v.JSSet("draggable", true)
-	v.JSSet("ondragstart", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("dragstart", func(this js.Value, args []js.Value) any {
 		event := args[0]
 		data, mime := getData()
 		//		array := js.Global().Get("Uint8Array").New(len(data))
@@ -860,7 +905,7 @@ func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {
 		//		mime = "text/plain"
 		event.Get("dataTransfer").Call("setData", mime, data) //event.Get("target").Get("id"))
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []byte, name string, pos zgeo.Pos) bool) {
@@ -868,15 +913,15 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		return
 	}
 	//	v.JSSet("className", "zdropper")
-	v.JSSet("ondragenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("dragenter", func(this js.Value, args []js.Value) any {
 		if dragEnterView == nil {
 			dragEvent(args[0], DragEnter, handler)
 		}
 		// zlog.Info("ondragenter:", v.ObjectName())
 		dragEnterView = v
 		return nil
-	}))
-	v.JSSet("ondragleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("dragleave", func(this js.Value, args []js.Value) any {
 		// zlog.Info("ondragleave1:", dragEnterView != nil, dragEnterView == v, v.ObjectName())
 		// zlog.Info("ondragleave:", v.ObjectName(), dragEnterView != v)
 		// if dragEnterView != v {
@@ -885,12 +930,12 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 		dragEnterView = nil
 		dragEvent(args[0], DragLeave, handler)
 		return nil
-	}))
-	v.JSSet("ondragover", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("dragover", func(this js.Value, args []js.Value) any {
 		dragEvent(args[0], DragOver, handler)
 		return nil
-	}))
-	v.JSSet("ondrop", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("drop", func(this js.Value, args []js.Value) any {
 		event := args[0]
 		dt := event.Get("dataTransfer")
 		files := dt.Get("files")
@@ -916,7 +961,7 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 			handler(DragDropFile, data, name, pos)
 		}, nil)
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(name string) bool, progress func(p float64)) {
@@ -925,7 +970,8 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
 	// e.Set("accept", "*/*")
 
-	e.Set("onchange", js.FuncOf(func(this js.Value, args []js.Value) interface{} { // was onchange????
+	var changeFunc js.Func
+	changeFunc = js.FuncOf(func(this js.Value, args []js.Value) any { // was onchange????
 		// zlog.Info("uploader on change")
 		files := e.Get("files")
 		if files.Length() > 0 {
@@ -936,11 +982,13 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 			}
 			zdom.JSFileToGo(file, got, progress)
 		}
+		changeFunc.Release()
 		return nil
-	}))
+	})
+	e.Set("onchange", changeFunc)
 
 	// zlog.Info("NV SetUploader", v.ObjectName())
-	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("click", func(this js.Value, args []js.Value) any {
 		if time.Since(lastUploadClick) < time.Millisecond*100 { // e.Call("click") below causes v onclick to be re-called, bail + preventDefault important or it doesn't work (error started on Tor's M1 Mac Pro)
 			args[0].Call("preventDefault")
 			// zlog.Info("cancel clickthru")
@@ -950,7 +998,7 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 		// zlog.Info("uploader clickthru")
 		e.Call("click")
 		return nil
-	}))
+	})
 	v.JSCall("appendChild", e)
 }
 
@@ -964,21 +1012,21 @@ func (v *NativeView) HasPressedDownHandler() bool {
 
 func (v *NativeView) SetPressedDownHandler(handler func()) {
 	v.JSSet("className", "widget")
-	v.JSCall("addEventListener", "mousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("mousedown:pressed-down", func(this js.Value, args []js.Value) any {
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		e.Call("stopPropagation")
 		zlog.Assert(len(args) > 0)
 		handler()
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetDoublePressedHandler(handler func()) {
-	v.JSCall("addEventListener", "dblclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("dblclick", func(this js.Value, args []js.Value) any {
 		handler()
 		return nil
-	}))
+	})
 }
 
 func getMousePosRelative(v *NativeView, e js.Value) zgeo.Pos {
@@ -990,43 +1038,44 @@ func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos z
 	if zdebug.IsInTests {
 		return
 	}
-	v.JSSet("onmouseenter", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc("mouseenter", func(this js.Value, args []js.Value) any {
 		if SkipEnterHandler {
 			return nil
 		}
 		handler(getMousePosRelative(v, args[0]), zbool.True)
 		if handleMoves {
 			// we := v.GetWindowElement()
-			v.JSSet("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+			v.SetListenerJSFunc("mousemove:enter", func(this js.Value, args []js.Value) any {
+				// zlog.Info("mousemove:enter")
 				e := args[0]
 				if e.Get("movementX").Float() == 0 && e.Get("movementY").Float() == 0 { // if we don't do this, we get weird move events when modifier key is pressed. Maybe we want that one day, so follow this space.
 					return nil
 				}
 				handler(getMousePosRelative(v, e), zbool.Unknown)
 				return nil
-			}))
+			})
 		}
 		return nil
-	}))
-	v.JSSet("onmouseleave", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	})
+	v.SetListenerJSFunc("mouseleave", func(this js.Value, args []js.Value) any {
 		// zlog.Info("Mouse Leave")
 		if SkipEnterHandler {
 			return nil
 		}
 		handler(getMousePosRelative(v, args[0]), zbool.False)
 		if handleMoves {
-			v.JSSet("onmousemove", nil)
+			v.SetListenerJSFunc("mousemove:enter", nil)
 		}
 		return nil
-	}))
+	})
 }
 
 func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, down bool) bool) {
-	event := "onkeyup"
+	event := "keyup"
 	if down {
-		event = "onkeydown"
+		event = "keydown"
 	}
-	v.JSSet(event, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+	v.SetListenerJSFunc(event, func(val js.Value, args []js.Value) any {
 		// zlog.Info("Key!")
 		if !v.Document().Call("hasFocus").Bool() {
 			return nil
@@ -1040,7 +1089,7 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 			}
 		}
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) bool) {
@@ -1049,10 +1098,10 @@ func (v *NativeView) SetKeyHandler(handler func(km zkeyboard.KeyMod, down bool) 
 }
 
 func (v *NativeView) SetOnInputHandler(handler func()) {
-	v.Element.Set("oninput", js.FuncOf(func(js.Value, []js.Value) interface{} {
+	v.SetListenerJSFunc("input", func(js.Value, []js.Value) any {
 		handler()
 		return nil
-	}))
+	})
 }
 
 func (v *NativeView) SetStateOnDownPress(event js.Value) {
@@ -1069,11 +1118,11 @@ var oldMouseMove js.Value
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
 	const minDiff = 10.0
-	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		we := v.GetWindowElement()
-		if we.IsUndefined() {
-			return nil
-		}
+	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
+		// we := v.GetWindowElement()
+		// if we.IsUndefined() {
+		// 	return nil
+		// }
 		e := args[0]
 		target := e.Get("target")
 		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
@@ -1082,28 +1131,32 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		}
 		pos := getMousePosRelative(v, e)
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
-		we.Set("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		v.SetListenerJSFunc("mouseup:updown", func(this js.Value, args []js.Value) any {
+			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) any {
 			upPos := getMousePosRelative(v, args[0])
 			movingPos = nil
-			v.GetWindowElement().Set("onmousemove", oldMouseMove)
-			oldMouseMove = js.Null()
-			v.GetWindowElement().Set("onmouseup", nil)
+			// v.GetWindowElement().Set("onmousemove", oldMouseMove)
+			// oldMouseMove = js.Null()
+			v.SetListenerJSFunc("mouseup:updown", nil)
+			v.SetListenerJSFunc("mousemove:updown", nil)
+			// v.GetWindowElement().Set("onmouseup", nil)
 			if handler(upPos, zbool.False) {
 				// e.Call("stopPropagation")
 				e.Call("preventDefault")
 				// }
 			}
 			return nil
-		}))
+		})
 		v.SetStateOnDownPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		if handler(*movingPos, zbool.True) {
 			// e.Call("preventDefault")
 		}
-		oldMouseMove = v.GetWindowElement().Get("onmousemove")
-		v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// oldMouseMove = v.GetWindowElement().Get("onmousemove")
+		// v.GetWindowElement().Set("onmousemove", js.FuncOf(func(this js.Value, args []js.Value) any {
+		v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
+			zlog.Info("MOUSE MOVE")
 			if movingPos != nil {
 				pos := getMousePosRelative(v, args[0])
 				// zlog.Info("MM:", pos)
@@ -1112,18 +1165,60 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 				}
 			}
 			return nil
-		}))
+		})
 		return nil
-	}))
+	})
 }
 
-// func (v *NativeView) SetDownloader(surl, name string) {
-// 	if name == "" {
-// 		_, name = path.Split(surl)
-// 	}
-// 	// v.JSSet("download", name)
-// 	v.JSSet("href", surl)
-// }
+func (v *NativeView) SetPressUpDownMovedHandlerNew(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
+	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
+	const minDiff = 10.0
+	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
+		// we := v.GetWindowElement()
+		// if we.IsUndefined() {
+		// 	return nil
+		// }
+		e := args[0]
+		target := e.Get("target")
+		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
+			e.Call("stopPropagation")
+			return false
+		}
+		pos := getMousePosRelative(v, e)
+		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
+		v.SetListenerJSFunc("mouseup:updown", func(this js.Value, args []js.Value) any {
+			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) any {
+			upPos := getMousePosRelative(v, args[0])
+			movingPos = nil
+			v.SetListenerJSFunc("mousemove:updown", nil)
+			v.SetListenerJSFunc("mouseup:updown", nil)
+			if handler(upPos, zbool.False) {
+				// e.Call("stopPropagation")
+				e.Call("preventDefault")
+				// }
+			}
+			return nil
+		})
+		v.SetStateOnDownPress(e)
+		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
+		movingPos = &pos
+		if handler(*movingPos, zbool.True) {
+			// e.Call("preventDefault")
+		}
+		// oldMouseMove = v.GetWindowElement().Get("onmousemove")
+		v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
+			if movingPos != nil {
+				pos := getMousePosRelative(v, args[0])
+				// zlog.Info("MM:", pos)
+				if handler(pos, zbool.Unknown) {
+					e.Call("preventDefault")
+				}
+			}
+			return nil
+		})
+		return nil
+	})
+}
 
 func (v *NativeView) MakeLink(surl, name string) {
 	stype := strings.ToLower(v.Element.Get("nodeName").String())
@@ -1143,8 +1238,10 @@ func (v *NativeView) SetTilePath(spath string) {
 // It calls with intersectsViewport=false when it becomes inivisble.
 // In this js implementation is uses the IntersectionObserver, and removed the observation on view removal.
 // Note that it has to be called AFTER the window v will be in is opened, so v.GetWindow() gives correct window observe with.
+// If called twice. the js.Func will leak.
 func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
-	f := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	// zlog.Info("NV.SetHandleExposed", v.Hierarchy())
+	f := js.FuncOf(func(this js.Value, args []js.Value) any {
 		entries := args[0]
 		for i := 0; i < entries.Length(); i++ {
 			e := entries.Index(i)
@@ -1154,7 +1251,7 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 		return nil
 	})
 	e := v.GetWindowElement()
-	// opts := map[string]interface{}{
+	// opts := map[string]any{
 	// 	"root": all[0].Element,
 	// }
 	observer := e.Get("IntersectionObserver").New(f) //, js.ValueOf(opts))
@@ -1162,6 +1259,7 @@ func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
 	v.AddOnRemoveFunc(func() {
 		// zlog.Info("remove expose observer:", v.Hierarchy())
 		observer.Call("disconnect")
+		f.Release()
 		handle(false)
 	})
 }
