@@ -252,3 +252,8 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rig
 		hv.SetRect(hr)
 	}
 }
+
+func (v *HeaderView) ColumnView(id string) zview.View {
+	view, _ := v.FindViewWithName(id, false)
+	return view
+}
