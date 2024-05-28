@@ -21,6 +21,7 @@ type ValuesView struct {
 	variants                []variant
 	currentValue            string
 	storeKey                string
+	updated                 bool
 }
 
 type variant struct {
@@ -34,7 +35,9 @@ func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size, key string) {
 	v.SetPressedHandler(v.pressed)
 	v.SetObjectName("ValuesView")
 	ztimer.StartIn(0.1, func() {
-		v.update() // a bit of a hack to use a timer, but v.ReadyToShow() seems to mess up exposing. TODO: Fix
+		if !v.updated {
+			v.Update() // a bit of a hack to use a timer, but v.ReadyToShow() seems to mess up exposing. TODO: Fix
+		}
 	})
 }
 
@@ -49,6 +52,7 @@ func (v *ValuesView) AddVariant(value, path string) {
 }
 
 func (v *ValuesView) SetValue(value string) {
+	// zlog.Info("ValuesView.SetValue", value, v.ValueChangedHandlerFunc != nil)
 	v.currentValue = value
 	for _, a := range v.variants {
 		if a.value == value {
@@ -110,11 +114,11 @@ func (v *ValuesView) SetAsToggle(path, ptrue, pfalse string, initialValue bool) 
 	v.SetBoolValue(initialValue)
 }
 
-func (v *ValuesView) update() {
+func (v *ValuesView) Update() {
 	if len(v.variants) == 0 {
 		return
 	}
-	if v.currentValue == "" {
+	if !v.updated || v.currentValue == "" {
 		var val string
 		if v.storeKey != "" {
 			val, _ = zkeyvalue.DefaultStore.GetString(v.storeKey)
@@ -124,4 +128,5 @@ func (v *ValuesView) update() {
 		}
 		v.SetValue(val)
 	}
+	v.updated = true
 }
