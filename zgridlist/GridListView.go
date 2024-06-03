@@ -38,27 +38,28 @@ import (
 
 type GridListView struct {
 	zscrollview.ScrollView
-	Spacing                zgeo.Size
-	Selectable             bool
-	MultiSelectable        bool
-	MakeFullSize           bool
-	RecreateCells          bool // RecreateCells forces creation of new cells on next layout
-	MaxColumns             int
-	MinColumns             int
-	MinRowsForFullSize     int
-	MaxRowsForFullSize     int
-	BorderColor            zgeo.Color
-	CellColor              zgeo.Color
-	CellColorFunc          func(id string) zgeo.Color // Always set
-	MultiplyColorAlternate float32
-	PressedColor           zgeo.Color
-	SelectColor            zgeo.Color
-	HoverColor             zgeo.Color
-	BranchToggleType       zwidgets.BranchToggleType
-	OpenBranches           map[string]bool
-	CurrentHoverID         string
-	FocusWidth             float64
-	HorizontalFirst        bool // HorizontalFirst means 1 2 3 on first row, not down first
+	Spacing                   zgeo.Size
+	Selectable                bool
+	MultiSelectable           bool
+	MakeFullSize              bool
+	RecreateCells             bool // RecreateCells forces creation of new cells on next layout
+	MaxColumns                int
+	MinColumns                int
+	MinRowsForFullSize        int
+	MaxRowsForFullSize        int
+	BorderColor               zgeo.Color
+	CellColor                 zgeo.Color
+	CellColorFunc             func(id string) zgeo.Color // Always set
+	MultiplyColorAlternate    float32
+	PressedColor              zgeo.Color
+	SelectColor               zgeo.Color
+	HoverColor                zgeo.Color
+	BranchToggleType          zwidgets.BranchToggleType
+	OpenBranches              map[string]bool
+	CurrentHoverID            string
+	FocusWidth                float64
+	HorizontalFirst           bool // HorizontalFirst means 1 2 3 on first row, not down first
+	RestoreOffsetOnNextLayout bool
 
 	UpdateOnceOnSetRect bool
 
@@ -131,13 +132,14 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
 	v.loadOpenBranches()
-	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int) {
+	v.SetScrollHandler(func(pos zgeo.Pos, infinityDir int, delta float64) {
 		v.LayoutCells(false)
 	})
 	v.CellColorFunc = func(id string) zgeo.Color {
 		return v.CellColor
 	}
 	v.IDAtIndexFunc = strconv.Itoa
+	v.SetStroke(1, v.BorderColor, true)
 }
 
 func (v *GridListView) SetDirtyRow(id string) {
@@ -752,6 +754,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 		v.insertBranchToggle(id, child)
 	}
 	v.children[id] = child
+	// child.Show(false)
 	v.cellsView.AddChild(child, -1)
 	child.Native().SetJSStyle("userSelect", "none")
 	zpresent.CallReady(child, true)
@@ -837,8 +840,6 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		if v.BorderColor.Valid {
 			r2.Size.W--
 		}
-		// if lastx {
-		// }
 		if !got(cellID, r2, cr, x, y, visible) {
 			break
 		}
@@ -899,6 +900,33 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
+	// old := v.ScrollHandler
+	var oy float64
+	var topID string
+	if v.RestoreOffsetOnNextLayout {
+		// zlog.Info("GridListView.LayoutCells with RestoreOffsetOnNextLayout")
+		var top float64
+		for id, child := range v.children {
+			y := child.Rect().Pos.Y
+			if topID == "" || y < top && y >= 0 {
+				top = y
+				topID = id
+				// zlog.Info("GridListView.LayoutCells with RestoreOffsetOnNextLayout set top", topID, y)
+			}
+		}
+		if topID != "" {
+			v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
+				if cid == topID {
+					// v.SetScrollHandler(nil)
+					oy = outer.Pos.Y
+					v.ShowScrollBars(false, false)
+					// zlog.Info("GridListView.LayoutCells: set offset to old id:", outer.Pos.Y, len(v.children), v.CellCountFunc())
+					return false
+				}
+				return true
+			})
+		}
+	}
 	if v.DirtyIDs == nil {
 		v.DirtyIDs = map[string]bool{}
 	}
@@ -917,7 +945,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	}
 	v.updateBorder()
 	var updateCount int
-	// zlog.Info("LayoutCells", updateCells, v.Hierarchy(), v.CellCountFunc(), len(v.DirtyIDs), zlog.CallingStackString())
+	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), len(v.DirtyIDs), "y:", v.YOffset)
 	// start := time.Now()
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if visible {
@@ -940,7 +968,6 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
 			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
 			if dirty || !child.Native().HasSize() || child.Rect() != o {
-				// zlog.Info("LayoutCell:", cid, o)
 				child.SetRect(o)
 			}
 			// prof.Log("After Set Rect")
@@ -969,6 +996,13 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	}
 	if !zstr.SlicesAreEqual(v.SelectedIDs(), selected) {
 		v.SelectCells(selected, false)
+	}
+	v.RestoreOffsetOnNextLayout = false
+	if oy != 0 {
+		// zlog.Info("GridListView.LayoutCells: set offset to old set:", oy)
+		// v.SetScrollHandler(old)
+		v.SetContentOffset(oy, false)
+		v.ShowScrollBars(false, true)
 	}
 }
 
@@ -1135,7 +1169,6 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 		}
 	}
 	if v.HandleKeyFunc != nil {
-		// zlog.Info("GridListView keypress2", km, v.HandleKeyFunc)
 		return v.HandleKeyFunc(km, down)
 	}
 	return false
