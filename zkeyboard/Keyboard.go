@@ -48,6 +48,10 @@ const (
 	KeyControlKey = 17
 	KeyAltKey     = 18
 	KeyCommandKey = 91
+	KeyPageUp     = 33
+	KeyPageDown   = 34
+	KeyEnd        = 35
+	KeyHome       = 36
 )
 
 const (
