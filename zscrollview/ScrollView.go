@@ -28,10 +28,10 @@ type ScrollView struct {
 	overflow               bool
 }
 
-var DefaultBarSize = 15.0 //16.0 // 22?
+var DefaultBarSize = 17.0 //16.0 // 22?
 
 func init() {
-	if zdevice.WasmBrowser() == zdevice.Safari {
+	if zdevice.OS() == zdevice.MacOSType {
 		DefaultBarSize = 15 // 15
 	}
 }
