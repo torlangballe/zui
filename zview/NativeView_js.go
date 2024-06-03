@@ -773,8 +773,13 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 	if fn == nil {
 		delete(v.jsFuncs, name)
 	} else {
+		// outFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+		// 	// zlog.Info("ListenerFired:", v.Hierarchy(), name)
+		// 	return fn(this, args)
+		// })
 		outFunc = js.FuncOf(fn)
 		if isListener {
+			// zlog.Info("addEventListener", name, v.Hierarchy())
 			v.JSCall("addEventListener", nameMainPart, outFunc)
 		}
 		v.jsFuncs[name] = outFunc
@@ -1015,8 +1020,10 @@ func (v *NativeView) HasPressedDownHandler() bool {
 }
 
 func (v *NativeView) SetPressedDownHandler(handler func()) {
+	zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
 	v.SetListenerJSFunc("mousedown:pressed-down", func(this js.Value, args []js.Value) any {
+		zlog.Info("DOWN:", v.Hierarchy())
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		e.Call("stopPropagation")
@@ -1027,6 +1034,7 @@ func (v *NativeView) SetPressedDownHandler(handler func()) {
 }
 
 func (v *NativeView) SetDoublePressedHandler(handler func()) {
+	// zlog.Info("SetDoublePressedHandler", v.Hierarchy(), zlog.CallingStackString())
 	v.SetListenerJSFunc("dblclick", func(this js.Value, args []js.Value) any {
 		handler()
 		return nil
@@ -1118,9 +1126,9 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 }
 
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
-	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
 	const minDiff = 10.0
 	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
+		// zlog.Info("NV.SetPressUpDownMovedHandler got:", v.Hierarchy())
 		var moveFunc, upFunc js.Func
 		we := v.GetWindowElement()
 		if we.IsUndefined() {
@@ -1137,6 +1145,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			upPos := getMousePosRelative(v, args[0])
 			movingPos = nil
+			// zlog.Info("NV.SetPressUpDownMovedHandler: upFunc at up:", upFunc.IsUndefined())
 			we.Call("removeEventListener", "mouseup", upFunc)
 			we.Call("removeEventListener", "mousemove", moveFunc)
 			// v.GetWindowElement().Set("onmouseup", nil)
@@ -1170,6 +1179,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	})
 }
 
+/*
 func (v *NativeView) SetPressUpDownMovedHandlerNew(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
 	const minDiff = 10.0
@@ -1219,6 +1229,7 @@ func (v *NativeView) SetPressUpDownMovedHandlerNew(handler func(pos zgeo.Pos, do
 		return nil
 	})
 }
+*/
 
 func (v *NativeView) MakeLink(surl, name string) {
 	stype := strings.ToLower(v.Element.Get("nodeName").String())
@@ -1342,7 +1353,7 @@ func (nv *NativeView) ShowBackface(visible bool) {
 }
 
 func (nv *NativeView) EnvokeFocusIn() {
-	zlog.Info("EnvokeFocusIn", nv.Hierarchy())
+	// zlog.Info("EnvokeFocusIn", nv.Hierarchy())
 	fin := js.Global().Get("Event").New("focusin")
 	nv.JSCall("dispatchEvent", fin)
 }
