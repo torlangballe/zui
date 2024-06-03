@@ -852,7 +852,7 @@ func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
 	})
 }
 
-func (v *NativeView) SetContentOffset(y float64) {
+func (v *NativeView) SetRootContentOffset(y float64) {
 	v.RootParent().JSSet("scrollTop", y)
 }
 
@@ -1240,7 +1240,6 @@ func (v *NativeView) SetTilePath(spath string) {
 // Note that it has to be called AFTER the window v will be in is opened, so v.GetWindow() gives correct window observe with.
 // If called twice. the js.Func will leak.
 func (v *NativeView) SetHandleExposed(handle func(intersectsViewport bool)) {
-	// zlog.Info("NV.SetHandleExposed", v.Hierarchy())
 	f := js.FuncOf(func(this js.Value, args []js.Value) any {
 		entries := args[0]
 		for i := 0; i < entries.Length(); i++ {

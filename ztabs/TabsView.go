@@ -205,7 +205,7 @@ func (v *TabsView) SelectItem(id string, done func()) {
 		done()
 	}
 	ztimer.StartIn(0.02, func() {
-		v.SetContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
+		v.SetRootContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
 	})
 }
 
