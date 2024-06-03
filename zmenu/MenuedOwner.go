@@ -144,11 +144,9 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		zlog.Fatal("MO Build with view==nil")
 	} else {
 		o.View = view
-		// nv := view.Native()
-		// zlog.Info("MO ADDStopper:", nv.Hierarchy(), zlog.GetCallingStackString())
-		// nv.AddOnRemoveFunc(o.Stop)
-		presser := view.(zview.DownPressable)
-		presser.SetPressedDownHandler(func() {
+		// presser := view.(zview.DownPressable)
+		presser := view.(zview.Pressable)
+		presser.SetPressedHandler(func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
 			o.MinWidth = view.Rect().Size.W
 			if o.CreateItemsFunc != nil {
 				o.items = o.CreateItemsFunc()
