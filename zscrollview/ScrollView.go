@@ -149,7 +149,7 @@ func (v *ScrollView) ScrollPage(up, animate bool) {
 	if up {
 		y -= window
 		y = math.Max(0, y)
-		zlog.Info("Up", animate, v.YOffset, y, window, v.child.Rect().Size.H)
+		// zlog.Info("Up", animate, v.YOffset, y, window, v.child.Rect().Size.H)
 	} else {
 		y += window
 		end := math.Max(0, v.child.Rect().Size.H-v.Rect().Size.H)
