@@ -19,7 +19,7 @@ import (
 type ScrollView struct {
 	zcustom.CustomView
 	YOffset                float64
-	ScrollHandler          func(pos zgeo.Pos, infiniteDir int)
+	ScrollHandler          func(pos zgeo.Pos, infiniteDir int, delta float64)
 	ExpandToChildHightUpTo float64
 	lastEdgeScroll         time.Time
 	ScrolledAt             time.Time
@@ -111,6 +111,7 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 }
 
 func (v *ScrollView) SetRectWithChildSize(rect zgeo.Rect, cs zgeo.Size) {
+	// zlog.Info("SV.SetRectWithChildSize", v.ObjectName(), rect, cs)
 	v.CustomView.SetRect(rect)
 	if rect.Size.W < 0 {
 		zlog.Info("ScrollStRectW:", v.Hierarchy(), rect, cs, zlog.CallingStackString())
@@ -142,7 +143,22 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 	v.SetContentOffset(0, animate)
 }
 
-func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int)) {
+func (v *ScrollView) ScrollPage(up, animate bool) {
+	y := v.YOffset
+	window := v.Rect().Size.H - 20
+	if up {
+		y -= window
+		y = math.Max(0, y)
+		zlog.Info("Up", animate, v.YOffset, y, window, v.child.Rect().Size.H)
+	} else {
+		y += window
+		end := math.Max(0, v.child.Rect().Size.H-v.Rect().Size.H)
+		y = min(y, end)
+	}
+	v.SetContentOffset(y, animate)
+}
+
+func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int, delta float64)) {
 	v.ScrollHandler = handler
 }
 

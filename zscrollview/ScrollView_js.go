@@ -14,33 +14,33 @@ var scrollOutsideDelta = 2.0
 
 func (v *ScrollView) Init(view zview.View, name string) {
 	v.CustomView.Init(view, name)
-	style := v.JSStyle()
-	style.Set("overflow-x", "hidden")
-	style.Set("overflow-y", "auto")
+	v.ShowScrollBars(false, true)
 	v.SetCanTabFocus(false)
-	style.Set("overscrollBehavior", "contain")
+	v.JSStyle().Set("overscrollBehavior", "contain")
 	v.SetMinSize(zgeo.SizeBoth(10))
 	v.ShowBar = true
 	v.NativeView.SetScrollHandler(func(pos zgeo.Pos) {
+		delta := pos.Y - v.YOffset
 		v.YOffset = pos.Y
 		if v.ScrollHandler != nil {
 			now := time.Now()
 			dir := 0
 			if time.Since(v.lastEdgeScroll) >= time.Second {
-				// zlog.Info("ScrollY:", pos.Y, scrollOutsideDelta, pos.Y < scrollOutsideDelta)
-				if pos.Y < scrollOutsideDelta {
+				if pos.Y < -scrollOutsideDelta {
 					dir = -1
-					// zlog.Info("Infin-scroll up:", pos.Y)
 					v.lastEdgeScroll = now
-				} else if v.child != nil && pos.Y > v.child.Rect().Size.H-v.Rect().Size.H-scrollOutsideDelta {
+				} else if v.child != nil && pos.Y > v.OffsetAtBottom()+scrollOutsideDelta {
 					dir = 1
-					// zlog.Info("Infin-scroll down:", pos.Y, v.child.Rect().Size.H, v.Rect().Size.H, scrollOutsideDelta)
 					v.lastEdgeScroll = now
 				}
 			}
-			v.ScrollHandler(pos, dir)
+			v.ScrollHandler(pos, dir, delta)
 		}
 	})
+}
+
+func (v *ScrollView) OffsetAtBottom() float64 {
+	return v.child.Rect().Size.H - v.Rect().Size.H
 }
 
 func (v *ScrollView) SetContentOffset(y float64, animated bool) {

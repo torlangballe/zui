@@ -492,7 +492,6 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	if update {
 		v.ForceUpdateSlice = false
 		*v.slicePtr = s
-		//remove non-selected :
 		v.updateView()
 	}
 }
