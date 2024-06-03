@@ -42,22 +42,22 @@ const (
 
 type TimeFieldView struct {
 	zcontainer.StackView
-	UseYear                bool
-	UseSeconds             bool
-	CallChangedOnUnfocus   bool
-	HandleValueChangedFunc func()
-	PreviousYearIfLessDays int
-	hourText               *TextView
-	minuteText             *TextView
-	secondsText            *TextView
-	dayText                *TextView
-	monthText              *TextView
-	yearText               *TextView
-	calendar               *zimageview.ImageView
-	location               *time.Location
-	flags                  TimeFieldFlags
-	ampmLabel              *zlabel.Label
-	currentUse24Clock      bool
+	UseYear                 bool
+	UseSeconds              bool
+	CallChangedOnTabPressed bool
+	HandleValueChangedFunc  func()
+	PreviousYearIfLessDays  int
+	hourText                *TextView
+	minuteText              *TextView
+	secondsText             *TextView
+	dayText                 *TextView
+	monthText               *TextView
+	yearText                *TextView
+	calendar                *zimageview.ImageView
+	location                *time.Location
+	flags                   TimeFieldFlags
+	ampmLabel               *zlabel.Label
+	currentUse24Clock       bool
 }
 
 func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
@@ -162,12 +162,6 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		index := zview.BaseZIndex
 		if focused {
 			index = zview.BaseZIndex + 2
-		} else if v.CallChangedOnUnfocus {
-			ztimer.StartIn(0.1, func() {
-				if v.GetFocusedChildView(false) == nil {
-					v.HandleValueChangedFunc()
-				}
-			})
 		}
 		tv.SetZIndex(index)
 	})
@@ -175,6 +169,19 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		clearColorTexts(v.hourText, v.minuteText, v.secondsText, v.dayText, v.monthText, v.yearText)
 		v.Value() // getting value will set error color
 	})
+	if v.CallChangedOnTabPressed {
+		tv.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+			if down {
+				return false
+			}
+			ztimer.StartIn(0.1, func() {
+				if v.GetFocusedChildView(false) == nil {
+					v.HandleValueChangedFunc()
+				}
+			})
+			return false
+		})
+	}
 	tv.SetTextAlignment(zgeo.Right)
 	v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-2, 2))
 	tv.SetKeyHandler(v.handleReturn)
