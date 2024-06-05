@@ -137,7 +137,11 @@ func (v *StackView) arrangeChildrenInGrid() {
 		rowView := vc.View
 		rowView.Native().SetRect(r)
 		rbox := r
+		mo, _ := rowView.(zview.MarginOwner)
 		rbox.Pos = zgeo.Pos{}
+		if mo != nil {
+			rbox.Add(mo.Margin())
+		}
 		rects := zgeo.LayoutCellsInStack(v.ObjectName(), rbox, false, v.spacing, row)
 		var maxHeight float64
 		for i := range row {
