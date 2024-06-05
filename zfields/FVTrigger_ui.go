@@ -65,14 +65,14 @@ func (v *FieldView) callTriggerHandler(ap ActionPack) bool {
 			}
 		}
 		for t, function := range v.params.triggerHandlers {
-			// zlog.Info(v.Hierarchy(), "callTrig2?", f.Name, t.action, t.id)
+			// zlog.Info(v.Hierarchy(), "callTrig2?", ap.Field.Name, t.action, t.id)
 			if ap.Action != NoAction && t.action != ap.Action || !strings.Contains(t.id, "*") {
 				continue
 			}
 			path := v.ID + "/" + ap.Field.FieldName
-			// zlog.Info("CallTrig:", t.id, path, f.FieldName, action, value)
+			// zlog.Info("CallTrig:", t.id, path, ap.Field.Name, ap.Action, ap.RVal.Interface())
 			if zstr.MatchWildcard(t.id, path) {
-				// zlog.Info("callTriggerHandler3", f.FieldName, t.action, t.id, path)
+				// zlog.Info("callTriggerHandler3", ap.Field.Name, t.action, t.id, path)
 				if function(ap) {
 					return true
 				}

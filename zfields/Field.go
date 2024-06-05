@@ -603,7 +603,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			} else {
 				_, got := fieldEnums[val]
 				if !got {
-					zlog.Error("no such enum:", val, fieldEnums)
+					zlog.Error("no such enum:", val, fieldEnums, f.FieldName)
 				}
 				f.Enum = val
 			}

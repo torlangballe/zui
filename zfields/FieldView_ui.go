@@ -34,6 +34,7 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zguiutil"
+	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
@@ -109,6 +110,9 @@ func init() {
 	RegisterTextFilter("$alpha", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlpha))
 	RegisterTextFilter("$num", zstr.CreateFilterFunc(zstr.IsRuneASCIINumeric))
 	RegisterTextFilter("$alphanum", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlphaNumeric))
+	RegisterTextFilter("$headerkey", zstr.CreateFilterFunc(zhttp.IsRuneValidForHeaderKey))
+	RegisterTextFilter("$ascii", zstr.CreateFilterFunc(zstr.IsRuneASCIIPrintable))
+
 }
 
 func RegisterTextFilter(name string, filter func(string) string) {
@@ -162,18 +166,18 @@ func (fv *FieldView) ClearEditedRecently() {
 	delete(fieldViewEdited, h)
 }
 
-func makeFrameIfFlag(f *Field, fv *FieldView) zview.View {
-	if f.Flags&FlagHasFrame == 0 {
-		return nil
+func makeFrameIfFlag(f *Field, fv *FieldView) (view zview.View, header *zcontainer.StackView) {
+	if !f.HasFlag(FlagHasFrame) {
+		return nil, nil
 	}
 	var title string
-	if f.Flags&FlagFrameIsTitled != 0 {
+	if f.HasFlag(FlagFrameIsTitled) {
 		title = f.TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
-	zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
-	frame.Add(fv, zgeo.TopLeft)
-	return frame
+	header = zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
+	frame.Add(fv, zgeo.TopLeft|zgeo.Expand)
+	return frame, header
 }
 
 func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters, marg zgeo.Size, parent *FieldView) *FieldView {
@@ -466,7 +470,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			label.SetText(strconv.Itoa(rval.Len()))
 			return true
 		} else {
-			v.updateMapList(rval, foundView)
+			v.updateMapList(f, rval, foundView)
 		}
 
 	case zreflect.KindSlice:
@@ -571,19 +575,128 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	return true
 }
 
+func makeTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
+	var style ztext.Style
+	tv := ztext.NewView(str, style, 20, 1)
+	tv.SetObjectName(name)
+	// f.SetFont(tv, nil)
+	tv.SetPlaceholder(name)
+	tv.UpdateSecs = 1.5
+	tv.SetValueHandler("", func(edited bool) {
+		if edited {
+			updateMap(fv, stackFV, f)
+		}
+	})
+	return tv
+}
+
+func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval reflect.Value, fixed bool, f *Field) (zview.View, Field) {
+	var mf Field
+	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
+	mf.FieldName = key
+	if fixed {
+		mf.SetFlag(FlagIsLabelize)
+		a := zgeo.Left
+		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
+		return view, mf
+	}
+	hor := zcontainer.StackViewHor("map-row")
+	hor.SetSpacing(14)
+	hor.SetMargin(zgeo.RectFromXY2(4, 0, 0, 0))
+	stackFV.Add(hor, zgeo.CenterLeft|zgeo.HorExpand)
+
+	vkey := makeTextView(v, stackFV, f, key, "key")
+	if len(f.Filters) >= 2 {
+		vkey.FilterFunc = getFilterFuncFromFilterNames(f.Filters[:1], f)
+	}
+	hor.Add(vkey, zgeo.CenterLeft, zgeo.SizeD(0, 0))
+
+	vval := makeTextView(v, stackFV, f, fmt.Sprint(mval.Interface()), "value")
+
+	if len(f.Filters) != 0 {
+		i := 0
+		if len(f.Filters) > 1 {
+			i = 1
+		}
+		vval.FilterFunc = getFilterFuncFromFilterNames(f.Filters[i:], f)
+	}
+	hor.Add(vval, zgeo.CenterRight|zgeo.HorExpand, zgeo.SizeD(8, 0))
+	return hor, mf
+}
+
+func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
+	data := fv.parentsDataForMe()
+	// zlog.Info("updateMap:", zlog.Pointer(data), zlog.Pointer(fv.data))
+
+	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, f.Index)
+	rval := finfo.ReflectValue
+	if rval.IsNil() {
+		m := reflect.MakeMap(rval.Type())
+		rval.Set(m)
+	} else {
+		for _, rkey := range rval.MapKeys() {
+			rval.SetMapIndex(rkey, reflect.Value{})
+		}
+	}
+	for _, row := range stackFV.GetChildren(false) {
+		vkey, _ := zcontainer.ContainerOwnerFindViewWithName(row, "key", false)
+		key := vkey.(*ztext.TextView).Text()
+		vvalue, _ := zcontainer.ContainerOwnerFindViewWithName(row, "value", false)
+		zlog.Assert(vkey != nil && vvalue != nil, vkey != nil, vvalue != nil)
+		value := vvalue.(*ztext.TextView).Text()
+		valType := rval.Type().Elem()
+		e := reflect.New(valType)
+		zreflect.SetStringToAny(e.Interface(), value)
+		rval.SetMapIndex(reflect.ValueOf(key), e.Elem())
+		// zlog.Info("map add:", rval.Interface())
+	}
+	var view zview.View = stackFV
+	ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view, FieldView: stackFV.ParentFV}
+	stackFV.callTriggerHandler(ap)
+	callActionHandlerFunc(ap)
+}
+
 func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
+	// zlog.Info("buildMapList", v.Hierarchy(), f.FieldName)
 	var outView zview.View
 	params := v.params
 	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
-	stackFV := fieldViewNew(f.FieldName, true, rval.Interface(), params, zgeo.Size{}, v)
+	stackFV := fieldViewNew(f.FieldName+".FV", true, rval.Interface(), params, zgeo.Size{}, v)
 	outView = stackFV
 	stackFV.GridVerticalSpace = math.Max(6, v.Spacing())
 	stackFV.SetSpacing(f.Styling.SpacingOrMax(12))
 	stackFV.params.SetFlag(FlagIsLabelize)
-	frame := makeFrameIfFlag(f, stackFV)
-	if frame != nil {
-		outView = frame
+
+	fixed := f.HasFlag(FlagIsFixed)
+	if !fixed && !f.HasFlag(FlagHasFrame) {
+		zlog.Error("non-fixed map is not framed")
+		return outView
 	}
+	frame, header := makeFrameIfFlag(f, stackFV)
+	if !fixed {
+		frameContainer := frame.(*zcontainer.StackView)
+		if frame != nil {
+			outView = frame
+		}
+		add := makeButton("plus", "gray")
+		if header != nil {
+			header.Add(add, zgeo.CenterRight)
+		} else {
+			m := stackFV.Margin()
+			m.SetMinY(m.Pos.Y + 7)
+			stackFV.SetMargin(m)
+			frameContainer.SetMinSize(zgeo.SizeD(200, 40))
+			frameContainer.Add(add, zgeo.TopRight, zgeo.SizeD(-5, -9)).Free = true
+		}
+		add.SetPressedHandler(func() {
+			i := rval.Len()
+			str := ""
+			mval := reflect.ValueOf(str)
+			buildMapRow(v, stackFV, i, "", mval, false, f)
+			zcontainer.ArrangeChildrenAtRootContainer(v)
+		})
+	}
+
 	var keys []reflect.Value
 	iter := rval.MapRange()
 	for iter.Next() {
@@ -597,31 +710,28 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 		mkey := _mkey
 		mval := rval.MapIndex(mkey)
 		key := fmt.Sprint(mkey)
-		var mf Field
-		mf.Kind = zreflect.KindMap
-		mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
-		mf.FieldName = key
-		mf.SetFlag(FlagIsLabelize)
-		a := zgeo.Left
-		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
-		check, _ := view.(*zcheckbox.CheckBox)
-		if check != nil {
-			check.SetValueHandler("zfields.mapCheck", func(edited bool) {
-				ron := reflect.ValueOf(check.On())
-				rval.SetMapIndex(mkey, ron)
-				var cview zview.View = check
-				ap := ActionPack{Field: &mf, Action: EditedAction, RVal: ron, View: &cview}
-				stackFV.callTriggerHandler(ap)
-				// zlog.Info("check in map:", key, check.On(), zlog.Full(rval.Interface()))
-			})
+		if key != "" {
+			view, mf := buildMapRow(v, stackFV, i, key, mval, fixed, f)
+			check, _ := view.(*zcheckbox.CheckBox)
+			if check != nil {
+				check.SetValueHandler("zfields.mapCheck", func(edited bool) {
+					ron := reflect.ValueOf(check.On())
+					rval.SetMapIndex(mkey, ron)
+					var cview zview.View = check
+					ap := ActionPack{Field: &mf, Action: EditedAction, RVal: ron, View: &cview}
+					stackFV.callTriggerHandler(ap)
+					// zlog.Info("check in map:", key, check.On(), zlog.Full(rval.Interface()))
+				})
+			}
+
 		}
 		i++
 	}
 	return outView
 }
 
-func (v *FieldView) updateMapList(rval reflect.Value, foundView zview.View) {
-
+func (v *FieldView) updateMapList(f *Field, rval reflect.Value, foundView zview.View) {
+	// zlog.Info("update map!")
 }
 
 func (v *FieldView) updateSeparatedStringWithSlice(f *Field, rval reflect.Value, foundView zview.View) {
@@ -1117,21 +1227,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		tv.UpdateSecs = 4
 	}
 	if len(f.Filters) > 0 {
-		var funcs []func(string) string
-		for _, fname := range f.Filters {
-			fn := GetTextFilter(fname)
-			if fn == nil {
-				zlog.Error("No registerd text filter for:", fname, f.FieldName)
-				continue
-			}
-			funcs = append(funcs, fn)
-		}
-		tv.FilterFunc = func(s string) string {
-			for _, fn := range funcs {
-				s = fn(s)
-			}
-			return s
-		}
+		tv.FilterFunc = getFilterFuncFromFilterNames(f.Filters, f)
 	}
 	tv.SetPlaceholder(f.Placeholder)
 	tv.SetValueHandler("zfields.Filter", func(edited bool) {
@@ -1139,6 +1235,24 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		v.fieldHandleValueChanged(f, edited, tv.View)
 	})
 	return tv
+}
+
+func getFilterFuncFromFilterNames(names []string, f *Field) func(string) string {
+	var funcs []func(string) string
+	for _, fname := range names {
+		fn := GetTextFilter(fname)
+		if fn == nil {
+			zlog.Error("No registerd text filter for:", fname, f.FieldName)
+			continue
+		}
+		funcs = append(funcs, fn)
+	}
+	return func(s string) string {
+		for _, fn := range funcs {
+			s = fn(s)
+		}
+		return s
+	}
 }
 
 func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.View) {
@@ -1433,7 +1547,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			params := v.params
 			params.Field.MergeInField(f)
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
-			view = makeFrameIfFlag(f, fieldView)
+			view, _ = makeFrameIfFlag(f, fieldView)
 			if view == nil {
 				view = fieldView
 			}
@@ -1748,16 +1862,26 @@ func (v *FieldView) ToData(showError bool) (err error) {
 	return
 }
 
+func (v *FieldView) parentsDataForMe() any {
+	if v.ParentFV == nil {
+		return v.data
+	}
+	data := v.ParentFV.parentsDataForMe()
+	if v.ParentFV.sliceItemIndex != -1 {
+		zlog.Assert(v.ParentFV.params.Kind == zreflect.KindSlice, v.ParentFV.params.Kind, v.ParentFV.ObjectName())
+		ritem := reflect.ValueOf(data).Elem().Index(v.sliceItemIndex)
+		data = ritem.Addr().Interface()
+		return data
+	}
+	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, v.params.Field.Index)
+	return finfo.ReflectValue.Addr().Interface()
+}
+
 func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Value, err error) {
 	if f.IsStatic() {
 		return
 	}
-	data := v.data
-	if v.sliceItemIndex != -1 {
-		zlog.Assert(v.params.Kind == zreflect.KindSlice)
-		ritem := reflect.ValueOf(v.ParentFV.data).Elem().Index(v.sliceItemIndex)
-		data = ritem.Addr().Interface()
-	}
+	data := v.parentsDataForMe()
 	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, f.Index)
 
 	if f.WidgetName != "" {
@@ -1915,9 +2039,9 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	case zreflect.KindMap:
-		fv := findSubFieldView(view, "")
-		zlog.Info("fieldToDataItem map:", view.Native().Hierarchy(), reflect.TypeOf(view), fv != nil, f.Name)
-		return
+		if !f.HasFlag(FlagIsFixed) {
+			return
+		}
 		// iter := rval.MapRange()
 		// for iter.Next() {
 		// 	mkey := iter.Key()
