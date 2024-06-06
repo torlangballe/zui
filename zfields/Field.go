@@ -120,6 +120,7 @@ const (
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
 	FlagShowPopup                                     // press to show a popup of contents
 	FlagLockable                                      // show a lock icon to right of item when labelized. Disables/Hides.
+	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
 )
 
 const (
@@ -225,6 +226,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
 	"Lockable":                 uint64(FlagLockable),
+	"FlagDontJustifyHeader":    uint64(FlagDontJustifyHeader),
 }
 
 var (
@@ -362,11 +364,14 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		// f.Flags |= flagAllowNil
 		case "brancher":
 			f.BrancherType = val
-		case "justify":
+		case "celljustify", "justify":
 			if val == "" {
 				f.Justify = f.Alignment
 			} else {
 				f.Justify = zgeo.AlignmentFromString(val)
+			}
+			if key == "celljustify" {
+				f.SetFlag(FlagDontJustifyHeader)
 			}
 		case "name":
 			f.Name = origVal
@@ -1083,7 +1088,17 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
-		if !(len(f.UseIn) == 0 || (zstr.SlicesIntersect(f.UseIn, params.UseInValues))) { //} || (isInRow && !wantsDialog))) {
+		useIs, useNot := zslice.SplitFunc(f.UseIn, func(s string) bool {
+			return strings.HasPrefix(s, "$")
+		})
+		hasIs, hasNot := zslice.SplitFunc(params.UseInValues, func(s string) bool {
+			return strings.HasPrefix(s, "$")
+		})
+		zlog.Info("UZE:", f.Name, f.UseIn, params.UseInValues)
+		if len(useIs) != 0 && !zstr.SlicesIntersect(useIs, hasIs) {
+			return true
+		}
+		if len(useNot) != 0 && !zstr.SlicesIntersect(useNot, hasNot) {
 			return true
 		}
 		var finfo FieldInfo

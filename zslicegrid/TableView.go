@@ -190,7 +190,9 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 		var h zheader.Header
 		h.FieldName = f.FieldName
 		h.Align = zgeo.Left | zgeo.VertCenter
-		h.Justify = f.Justify
+		if !f.HasFlag(zfields.FlagDontJustifyHeader) {
+			h.Justify = f.Justify
+		}
 		if f.Kind == zreflect.KindString && f.Enum == "" {
 			h.Align |= zgeo.HorExpand
 		}
