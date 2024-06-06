@@ -1088,10 +1088,10 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
 			return true
 		}
-		useIs, useNot := zslice.SplitFunc(f.UseIn, func(s string) bool {
+		useIs, useNot := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
 			return strings.HasPrefix(s, "$")
 		})
-		hasIs, hasNot := zslice.SplitFunc(params.UseInValues, func(s string) bool {
+		hasIs, hasNot := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
 			return strings.HasPrefix(s, "$")
 		})
 		zlog.Info("UZE:", f.Name, f.UseIn, params.UseInValues)
