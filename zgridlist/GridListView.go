@@ -212,6 +212,14 @@ func (v *GridListView) SelectedIDsOrHoverID() []string {
 	return ids
 }
 
+func (v *GridListView) SelectedIDsOrHoverIDOrAll() []string {
+	ids := v.SelectedIDsOrHoverID()
+	if len(ids) == 0 {
+		ids = v.AllIDs()
+	}
+	return ids
+}
+
 func (v *GridListView) SelectedIDInt64() int64 {
 	str := v.SelectedID()
 	if str == "" {

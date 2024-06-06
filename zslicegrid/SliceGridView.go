@@ -226,6 +226,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 				return `"` + ng.GetName() + `"`
 			}
 		}
+		if len(ids) == v.Grid.CellCountFunc() {
+			return "all " + zwords.PluralizeWord(v.StructName, float64(len(ids)), "", "")
+		}
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
 	v.UpdateViewFunc = func() {
@@ -680,10 +683,9 @@ func addHierarchy(stack *zcontainer.StackView) {
 }
 */
 
-func (v *SliceGridView[S]) CreateDefaultMenuItems(forSingleCell bool) []zmenu.MenuedOItem {
+func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
-	ids := v.Grid.SelectedIDsOrHoverID()
 	if v.options&AllowNew != 0 && !forSingleCell {
 		del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, del)
