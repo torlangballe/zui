@@ -57,6 +57,7 @@ type FieldView struct {
 	dataHash       int64
 	params         FieldViewParameters
 	sliceItemIndex int
+	lastCheckered  bool // toggled during build for each column
 }
 
 type FieldViewParameters struct {
@@ -490,7 +491,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
-			zlog.Error("UpdateSlice: not a *FieldSliceView:", f.Name, v.Hierarchy(), reflect.TypeOf(foundView))
 			return false
 		}
 		hash := zreflect.HashAnyToInt64(rval.Interface(), "")
@@ -706,7 +706,6 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 			frameContainer.Add(add, zgeo.TopRight, zgeo.SizeD(-5, -9)).Free = true
 		}
 		add.SetPressedHandler(func() {
-			zlog.Info("Add")
 			i := rval.Len()
 			str := ""
 			mval := reflect.ValueOf(str)
@@ -797,6 +796,10 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 	v := fieldViewNew(id, true, data, params, zgeo.SizeD(10, 10), nil)
 	return v
 }
+
+// func (v *FieldView) ArrangeChildren() {
+// 	v.StackView.ArrangeChildren()
+// }
 
 func (v *FieldView) Rebuild() {
 	// zlog.Info("FV.Rebuild:", v.data != nil, reflect.ValueOf(v.data).Kind())
@@ -1529,6 +1532,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 	}
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, reflect.ValueOf(v.data).Kind())
 
+	v.lastCheckered = false
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
 		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
 		return true
@@ -1726,6 +1730,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		view.SetBGColor(f.Styling.BGColor)
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
 		view.SetBGColor(zstyle.DebugBackgroundColor)
+	} else if f.HasFlag(FlagCheckerCell) {
+		if !v.lastCheckered {
+			view.SetBGColor(zgeo.ColorNewGray(0, 0.05))
+		}
+		v.lastCheckered = !v.lastCheckered
 	}
 	if rval.CanAddr() {
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})

@@ -121,6 +121,7 @@ const (
 	FlagShowPopup                                     // press to show a popup of contents
 	FlagLockable                                      // show a lock icon to right of item when labelized. Disables/Hides.
 	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
+	FlagCheckerCell                                   // Ever other column with this is darkened a bit.
 )
 
 const (
@@ -227,6 +228,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
 	"Lockable":                 uint64(FlagLockable),
 	"FlagDontJustifyHeader":    uint64(FlagDontJustifyHeader),
+	"FlagCheckerCell":          uint64(FlagCheckerCell),
 }
 
 var (
@@ -624,6 +626,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if floatErr == nil && n > 0 {
 				f.UpdateSecs = n
 			}
+		case "checker":
+			f.SetFlag(FlagCheckerCell)
 		case "2clip":
 			f.Flags |= FlagToClipboard
 		// case "nolabel":
@@ -1094,7 +1098,6 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		hasIs, hasNot := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
 			return strings.HasPrefix(s, "$")
 		})
-		zlog.Info("UZE:", f.Name, f.UseIn, params.UseInValues)
 		if len(useIs) != 0 && !zstr.SlicesIntersect(useIs, hasIs) {
 			return true
 		}
