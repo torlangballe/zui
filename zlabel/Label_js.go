@@ -83,13 +83,13 @@ func setPadding(v *Label) {
 }
 
 func (v *Label) SetBGColor(c zgeo.Color) {
-	x := 0.0
-	if c.Valid && c.Opacity() != 0 {
-		x = 4
-	}
-	v.padding.SetMinX(x)
-	v.padding.SetMaxX(-x)
-	setPadding(v)
+	// x := 0.0   this padding stuff messes with layout in table
+	// if c.Valid && c.Opacity() != 0 {
+	// 	x = 4
+	// }
+	// v.padding.SetMinX(x)
+	// v.padding.SetMaxX(-x)
+	// setPadding(v)
 	v.NativeView.SetBGColor(c)
 }
 
