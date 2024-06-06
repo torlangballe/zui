@@ -214,7 +214,7 @@ func (v *HeaderView) Populate(headers []Header) {
 	}
 }
 
-func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rightStackMargin, headerIncX float64) {
+func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 	var cells []zcontainer.Cell
 	for _, c := range stack.Cells {
 		if !c.Collapsed && !c.Free {
@@ -227,29 +227,25 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, gap float64, rig
 			hviews = append(hviews, c.View)
 		}
 	}
+	xdiff := stack.AbsoluteRect().Pos.X - v.AbsoluteRect().Pos.X
+
 	zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
-	x := 0.0
-	w := stack.Rect().Size.W
-	// zlog.Info("HeaderFit", v.ObjectName())
+
+	hr := v.Rect()
+	x := hr.Pos.X
 	for i := range cells {
-		var e float64
-		if i < len(cells)-1 {
-			e = cells[i+1].View.Rect().Pos.X
-			e -= gap
+		cr := cells[i].View.Rect()
+		o := cr
+		o.Pos.X = x
+		if i == len(cells)-1 {
+			x = hr.Max().X
 		} else {
-			e = w + 2 + rightStackMargin
-			e = v.LocalRect().Max().X
+			x = (cr.Max().X+cells[i+1].View.Rect().Min().X)/2 + xdiff
 		}
-		hv := hviews[i]
-		hr := hv.Rect()
-		hr.Pos.X = x
-		if i != 0 {
-			hr.Pos.X -= headerIncX
-		}
-		hr.SetMaxX(e - headerIncX)
-		x = e
-		hr.Size.H--
-		hv.SetRect(hr)
+		o.SetMaxX(x)
+		o.Pos.Y = 0
+		o.Size.H = hr.Size.H
+		hviews[i].SetRect(o)
 	}
 }
 
