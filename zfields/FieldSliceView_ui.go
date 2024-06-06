@@ -61,6 +61,7 @@ func (v *FieldSliceView) build(addItems bool) {
 	var index int
 	// zlog.Info("FieldSliceView build:", v.Hierarchy(), v.data != nil, reflect.ValueOf(v.data).Kind())
 	sliceRval := reflect.ValueOf(v.data).Elem()
+
 	if v.field.Flags&FlagHasFrame != 0 {
 		var title string
 		if v.field.Flags&FlagFrameIsTitled != 0 {
@@ -72,6 +73,7 @@ func (v *FieldSliceView) build(addItems bool) {
 		header = zcontainer.StackViewHor("header")
 		v.Add(header, zgeo.TopLeft|zgeo.HorExpand)
 	}
+	maybeAddDocToHeader(v.field, header)
 	if v.field.IsStatic() {
 		v.stack = &v.StackView
 	} else {
@@ -167,7 +169,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	}
 	itemStack := v.stack
 	if !v.field.IsStatic() {
-		itemStack = zcontainer.StackViewNew(!v.Vertical, "zitem-stack")
+		itemStack = zcontainer.StackViewNew(!v.Vertical, fmt.Sprint("zitem-stack", i))
 		v.stack.Add(itemStack, zgeo.TopLeft|exp).Collapsed = collapse
 		collapse = false
 	}
@@ -179,7 +181,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		fv := FieldViewNew(id, rval.Addr().Interface(), copyParams)
 		fv.sliceItemIndex = i
 		fv.Vertical = !v.Vertical || v.field.HasFlag(FlagIsLabelize)
-		// zlog.Info("FieldSliceView:AddItem", fv.Vertical)
+		// zlog.Info("FieldSliceView:AddItem", v.Hierarchy(), id)
 		fv.SetMargin(zgeo.RectFromXY2(4, 4, -4, -4))
 		fv.ParentFV = &v.FieldView
 		if v.field.Flags&FlagGroupSingle == 0 || v.field.IsStatic() {

@@ -212,7 +212,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 }
 
 func (v *StackView) ArrangeChildren() {
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), v.GridVerticalSpace)
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v), v.CalculatedSize(zgeo.SizeBoth(2000)))
 	// zlog.PushProfile(v.ObjectName())
 	rm := v.LocalRect().Plus(v.Margin())
 	if v.GridVerticalSpace != 0 {
@@ -223,9 +223,9 @@ func (v *StackView) ArrangeChildren() {
 				co, _ := c.View.(CellsOwner)
 				ca, _ := c.View.(Arranger)
 				if co != nil && ca != nil {
-					// zlog.Info("CV ArrangeChild1:", len(*co.GetCells()))
+					// zlog.Info(Debug, "SV ArrangeChild1:", len(*co.GetCells()))
 					for _, c := range *co.GetCells() {
-						// zlog.Info("CV ArrangeChild:", c.View.Native().ObjectName(), c.Free)
+						// zlog.Info(Debug, "SV ArrangeChild:", c.View.Native().ObjectName(), c.Free)
 						if c.Free && c.View != nil && !c.Collapsed {
 							ca.ArrangeChild(c, rm)
 						}

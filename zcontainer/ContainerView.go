@@ -358,7 +358,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 	}
 	changed = (cell.Collapsed != collapse)
 	// if cell.View.ObjectName() == "xxx" {
-	// zlog.Info("COLLAPSE:", cell.Collapsed, collapse, changed, v.Hierarchy(), view.ObjectName(), cell.View.ObjectName())
+	// zlog.Info("COLLAPSE:", collapse, "changed:", changed, "arrange:", arrange, v.Hierarchy(), view.ObjectName())
 	// }
 	if collapse {
 		cell.View.Show(false)
@@ -655,4 +655,23 @@ func init() {
 		ViewRangeChildren(root, recursive, includeCollapsed, got)
 	}
 	zview.ChildOfViewFunc = ChildView
+}
+
+func DumpHierarchy(view zview.View, add string) {
+	fmt.Println(add+view.ObjectName(), reflect.TypeOf(view), view.Rect().Size)
+	co, _ := view.(CellsOwner)
+	if co == nil {
+		return
+	}
+	add += "  "
+	for _, cell := range *co.GetCells() {
+		if cell.View == nil {
+			fmt.Println(add + "nil")
+			continue
+		}
+		if cell.Collapsed {
+			fmt.Print("collapsed: ")
+		}
+		DumpHierarchy(cell.View, add)
+	}
 }
