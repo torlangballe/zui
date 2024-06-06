@@ -146,7 +146,6 @@ func setFieldViewEdited(fv *FieldView) {
 func FieldViewParametersDefault() (f FieldViewParameters) {
 	f.ImmediateEdit = true
 	f.Styling = zstyle.EmptyStyling
-	f.Styling.Spacing = 2
 	return f
 }
 
@@ -192,8 +191,6 @@ func makeFrameIfFlag(f *Field, fv *FieldView) (view zview.View, header *zcontain
 func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters, marg zgeo.Size, parent *FieldView) *FieldView {
 	v := &FieldView{}
 	v.StackView.Init(v, vertical, id)
-
-	v.SetSpacing(params.Styling.Spacing)
 
 	v.data = data
 	v.sliceItemIndex = -1
@@ -1525,9 +1522,11 @@ func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
-	// zlog.Info("FV BuildStack:", name, v.Hierarchy())
+	if v.params.Styling.Spacing != zgeo.UndefValue {
+		v.SetSpacing(v.params.Styling.Spacing)
+	}
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		v.GridVerticalSpace = math.Max(1, v.Spacing())
+		v.GridVerticalSpace = v.Spacing()
 		v.SetSpacing(math.Max(12, v.Spacing()))
 	}
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, reflect.ValueOf(v.data).Kind())

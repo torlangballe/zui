@@ -164,7 +164,6 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 	params.MultiSliceEditInProgress = (sliceLength > 1)
 	params.UseInValues = []string{DialogUseInSpecialName}
 	fview := FieldViewNew("OkCancel", editStruct, params)
-	fview.SetSpacing(0)
 	update := true
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {

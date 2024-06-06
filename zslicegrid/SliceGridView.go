@@ -539,7 +539,9 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
 	params := v.EditParameters
 	params.Field.Flags |= zfields.FlagIsLabelize
-	params.Styling.Spacing = 10
+	if params.Styling.Spacing == zgeo.UndefValue {
+		params.Styling.Spacing = 10
+	}
 	params.IsEditOnNewStruct = isEditOnNewStruct
 	if isEditOnNewStruct {
 		params.HideStatic = true

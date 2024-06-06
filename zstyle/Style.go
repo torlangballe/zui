@@ -42,8 +42,6 @@ type DropShadow struct {
 	Color zgeo.Color
 }
 
-const UndefinedFloat32 = math.MaxFloat32
-
 var (
 	DropShadowDefault = DropShadow{Delta: zgeo.SizeBoth(3), Blur: 3, Color: zgeo.ColorBlack}
 	DropShadowUndef   = DropShadow{Delta: zgeo.SizeUndef, Blur: -1}
@@ -56,7 +54,7 @@ var (
 		OutlineWidth:  -1,
 		OutlineOffset: -1,
 		Margin:        zgeo.RectUndef,
-		Spacing:       UndefinedFloat32,
+		Spacing:       zgeo.UndefValue,
 	}
 )
 
@@ -149,7 +147,7 @@ func (s Styling) MergeWith(m Styling) Styling {
 	if !m.Margin.IsUndef() {
 		s.Margin = m.Margin
 	}
-	if m.Spacing != UndefinedFloat32 {
+	if m.Spacing != zgeo.UndefValue {
 		s.Spacing = m.Spacing
 	}
 	return s
@@ -157,7 +155,7 @@ func (s Styling) MergeWith(m Styling) Styling {
 
 // SpacingOrMax returns s's spacing if defined, or max
 func (s Styling) SpacingOrMax(max float64) float64 {
-	if s.Spacing == UndefinedFloat32 {
+	if s.Spacing == zgeo.UndefValue {
 		return max
 	}
 	return math.Max(max, s.Spacing)

@@ -33,7 +33,7 @@ func NewSetImagesView(name, imagePathPrefix string, imageSize zgeo.Size, styling
 	v.imageSize = imageSize
 
 	spacing := 2.0
-	if styling != nil && styling.Spacing != zstyle.UndefinedFloat32 {
+	if styling != nil && styling.Spacing != zgeo.UndefValue {
 		spacing = styling.Spacing
 	}
 	v.SetSpacing(spacing)
