@@ -166,16 +166,24 @@ func (fv *FieldView) ClearEditedRecently() {
 	delete(fieldViewEdited, h)
 }
 
+func maybeAddDocToHeader(f *Field, header *zcontainer.StackView) {
+	if header != nil && f.HasFlag(FlagIsDocumentation) && f.Path != "" {
+		help := zwidgets.DocumentationIconViewNew(f.Path)
+		header.Add(help, zgeo.CenterRight)
+	}
+}
+
 func makeFrameIfFlag(f *Field, fv *FieldView) (view zview.View, header *zcontainer.StackView) {
 	if !f.HasFlag(FlagHasFrame) {
 		return nil, nil
 	}
 	var title string
 	if f.HasFlag(FlagFrameIsTitled) {
-		title = f.TitleOrName()
+		title = f.Name //TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
 	header = zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
+	maybeAddDocToHeader(f, header)
 	frame.Add(fv, zgeo.TopLeft|zgeo.Expand)
 	return frame, header
 }
@@ -465,9 +473,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	switch f.Kind {
 	case zreflect.KindMap:
-		if f.HasFlag(FlagShowSliceCount) {
-			label, _ := foundView.(*zlabel.Label)
-			label.SetText(strconv.Itoa(rval.Len()))
+		if setCountString(f, foundView, rval) {
 			return true
 		} else {
 			v.updateMapList(f, rval, foundView)
@@ -478,12 +484,9 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			v.updateSeparatedStringWithSlice(f, rval, foundView)
 			break
 		}
-		if f.HasFlag(FlagShowSliceCount) {
-			label, _ := foundView.(*zlabel.Label)
-			label.SetText(strconv.Itoa(rval.Len()))
+		if setCountString(f, foundView, rval) {
 			return true
 		}
-
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
 		sv, _ := foundView.(*FieldSliceView)
 		if sv == nil {
@@ -575,6 +578,19 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	return true
 }
 
+func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
+	if f.HasFlag(FlagShowSliceCount) {
+		label, _ := foundView.(*zlabel.Label)
+		str := strconv.Itoa(rval.Len())
+		if str == "0" && f.HasFlag(FlagAllowEmptyAsZero) {
+			str = ""
+		}
+		label.SetText(str)
+		return true
+	}
+	return false
+}
+
 func makeTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
 	var style ztext.Style
 	tv := ztext.NewView(str, style, 20, 1)
@@ -626,8 +642,6 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 
 func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 	data := fv.parentsDataForMe()
-	// zlog.Info("updateMap:", zlog.Pointer(data), zlog.Pointer(fv.data))
-
 	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, f.Index)
 	rval := finfo.ReflectValue
 	if rval.IsNil() {
@@ -644,11 +658,14 @@ func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 		vvalue, _ := zcontainer.ContainerOwnerFindViewWithName(row, "value", false)
 		zlog.Assert(vkey != nil && vvalue != nil, vkey != nil, vvalue != nil)
 		value := vvalue.(*ztext.TextView).Text()
+		if key == "" && value == "" {
+			continue
+		}
 		valType := rval.Type().Elem()
 		e := reflect.New(valType)
 		zreflect.SetStringToAny(e.Interface(), value)
 		rval.SetMapIndex(reflect.ValueOf(key), e.Elem())
-		// zlog.Info("map add:", rval.Interface())
+		zlog.Info("map add:", rval.Interface())
 	}
 	var view zview.View = stackFV
 	ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view, FieldView: stackFV.ParentFV}
@@ -689,6 +706,7 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 			frameContainer.Add(add, zgeo.TopRight, zgeo.SizeD(-5, -9)).Free = true
 		}
 		add.SetPressedHandler(func() {
+			zlog.Info("Add")
 			i := rval.Len()
 			str := ""
 			mval := reflect.ValueOf(str)
@@ -710,20 +728,19 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 		mkey := _mkey
 		mval := rval.MapIndex(mkey)
 		key := fmt.Sprint(mkey)
-		if key != "" {
-			view, mf := buildMapRow(v, stackFV, i, key, mval, fixed, f)
-			check, _ := view.(*zcheckbox.CheckBox)
-			if check != nil {
-				check.SetValueHandler("zfields.mapCheck", func(edited bool) {
-					ron := reflect.ValueOf(check.On())
-					rval.SetMapIndex(mkey, ron)
-					var cview zview.View = check
-					ap := ActionPack{Field: &mf, Action: EditedAction, RVal: ron, View: &cview}
-					stackFV.callTriggerHandler(ap)
-					// zlog.Info("check in map:", key, check.On(), zlog.Full(rval.Interface()))
-				})
-			}
-
+		// if key != "" {
+		view, mf := buildMapRow(v, stackFV, i, key, mval, fixed, f)
+		check, _ := view.(*zcheckbox.CheckBox)
+		if check != nil {
+			check.SetValueHandler("zfields.mapCheck", func(edited bool) {
+				ron := reflect.ValueOf(check.On())
+				rval.SetMapIndex(mkey, ron)
+				var cview zview.View = check
+				ap := ActionPack{Field: &mf, Action: EditedAction, RVal: ron, View: &cview}
+				stackFV.callTriggerHandler(ap)
+				// zlog.Info("check in map:", key, check.On(), zlog.Full(rval.Interface()))
+			})
+			// }
 		}
 		i++
 	}
@@ -1289,7 +1306,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: val, View: &view})
 	})
 	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-		title := f.TitleOrName()
+		title := f.Name //TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
 		}
@@ -1507,7 +1524,7 @@ func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	// zlog.Info("FV BuildStack:", name, v.Hierarchy())
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		v.GridVerticalSpace = math.Max(6, v.Spacing())
+		v.GridVerticalSpace = math.Max(1, v.Spacing())
 		v.SetSpacing(math.Max(12, v.Spacing()))
 	}
 	zlog.Assert(reflect.ValueOf(v.data).Kind() == reflect.Ptr, name, reflect.ValueOf(v.data).Kind())
@@ -1738,7 +1755,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		title := f.TitleOrName()
+		title := f.Name // f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
 		}
