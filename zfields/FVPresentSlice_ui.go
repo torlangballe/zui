@@ -176,7 +176,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 
 	var wildCards zview.View
 	if sliceLength > 1 {
-		wild := zlabel.New("Use *x*->*y* to replace x with y,\nreplacing wildcards with their matches")
+		wild := zlabel.New("Use *x*->*y* to replace x in each item with y,\nreplacing wildcards with their matches")
 		wild.SetMaxLines(2)
 		wildCards = wild // We need to
 		tv := getFocusedEmptyTextView(&fview.NativeView)
@@ -193,8 +193,11 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 		})
 		att.PresentedFunc = func(win *zwindow.Window) {
 			fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {
+				fvp := ParentFieldView(view)
+				zlog.Info("FOC FV:", fvp.Hierarchy(), fview.Hierarchy())
+				focusInTopFV := (fvp == fview)
 				tv, _ := view.(*ztext.TextView)
-				wild.Show(tv != nil && tv.Text() == "")
+				wild.Show(focusInTopFV && tv != nil && tv.Text() == "")
 			})
 		}
 	}
