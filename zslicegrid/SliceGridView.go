@@ -218,6 +218,14 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.UpdateWidgets()
 	}
 	v.NameOfXItemsFunc = func(ids []string, singleSpecial bool) string {
+		if singleSpecial && len(ids) == 1 {
+			s := v.StructForID(ids[0])
+			var a any = s
+			ng, _ := a.(zstr.NameGetter)
+			if ng != nil {
+				return `"` + ng.GetName() + `"`
+			}
+		}
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
 	v.UpdateViewFunc = func() {
