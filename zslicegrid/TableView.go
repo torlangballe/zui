@@ -203,9 +203,10 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 			h.ImagePath = f.HeaderImageFixedPath
 		}
 		if f.Flags&(zfields.FlagHasHeaderImage|zfields.FlagNoTitle) == 0 {
-			h.Title = f.Title
-			if h.Title == "" {
-				h.Title = f.Name
+			if f.Header != "" {
+				h.Title = f.Header
+			} else {
+				h.Title = f.TitleOrName()
 			}
 		}
 		if f.Tooltip != "" && !strings.HasPrefix(f.Tooltip, ".") {

@@ -136,7 +136,7 @@ type Field struct {
 	FieldName            string            // The FieldName is the exact name of the struct field.
 	PackageName          string            // The name of the package struct the field variable type is in.
 	Name                 string            // zui:"name". Name is generated from the struct fields name, but can be overridden with the name tag.
-	Title                string            // zui:"title". Name of item in row, and header if no title.
+	Title                string            // zui:"title". Uses instead of Name of item in label in list, and in header if Header not set
 	MaxWidth             float64           // zui:"width/maxwidth"
 	MinWidth             float64           // zui:"width/minwidth"
 	Kind                 zreflect.TypeKind // Kind stores the general kind of value the field is.
@@ -148,6 +148,7 @@ type Field struct {
 	ImageFixedPath       string            // zui:"".
 	OffImagePath         string            // zui:"".
 	HeaderImageFixedPath string            // zui:"".
+	Header               string            // zui:"header". Uses as header column name, overriding of title/name.
 	Path                 string            // zui:"".
 	Height               float64           // zui:"".
 	Enum                 string            // zui:"".
@@ -336,7 +337,6 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	for _, kv := range keyVals {
 		key := kv.Key
 		val := kv.Value
-		origVal := val
 		barParts := strings.Split(val, "|")
 		if key == "IN" {
 			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
@@ -376,9 +376,11 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.SetFlag(FlagDontJustifyHeader)
 			}
 		case "name":
-			f.Name = origVal
+			f.Name = val
 		case "title":
-			f.Title = origVal
+			f.Title = val
+		case "header":
+			f.Header = val
 		case "url":
 			f.Path = val
 			f.Flags |= FlagIsURL

@@ -179,7 +179,7 @@ func makeFrameIfFlag(f *Field, fv *FieldView) (view zview.View, header *zcontain
 	}
 	var title string
 	if f.HasFlag(FlagFrameIsTitled) {
-		title = f.Name //TitleOrName()
+		title = f.TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
 	header = zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
@@ -1306,7 +1306,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: val, View: &view})
 	})
 	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-		title := f.Name //TitleOrName()
+		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
 		}
@@ -1763,7 +1763,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView
 	if v.params.Field.HasFlag(FlagIsLabelize) {
-		title := f.Name // f.TitleOrName()
+		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
 		}
