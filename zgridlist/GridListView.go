@@ -1006,7 +1006,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 		v.SelectCells(selected, false)
 	}
 	v.RestoreOffsetOnNextLayout = false
-	if oy != 0 {
+	if topID != "" {
 		// zlog.Info("GridListView.LayoutCells: set offset to old set:", oy)
 		// v.SetScrollHandler(old)
 		v.SetContentOffset(oy, false)
