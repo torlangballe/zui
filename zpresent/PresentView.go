@@ -108,6 +108,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		s = zscreen.GetMain().UsableRect.ExpandedD(-10).Size
 	}
 	size := v.CalculatedSize(s)
+	size.MultiplyD(win.Scale)
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
@@ -190,7 +191,14 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			}
 		}
 		win.ResizeHandlingView = v
-		r := zgeo.Rect{Size: win.ContentRect().Size}
+		s := win.ContentRect().Size
+		if s.IsNull() {
+			s = size
+		}
+		// r := zgeo.Rect{Size: }
+		r := zgeo.Rect{Size: s}
+		r.Size.W--
+		r.Size.H--
 		v.SetRect(r)
 	}
 	FirstPresented = true

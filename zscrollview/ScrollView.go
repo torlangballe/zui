@@ -28,11 +28,11 @@ type ScrollView struct {
 	overflow               bool
 }
 
-var DefaultBarSize = 17.0 //16.0 // 22?
+var DefaultBarSize = 12.0 // 17.0
 
 func init() {
 	if zdevice.OS() == zdevice.MacOSType {
-		DefaultBarSize = 15 // 15
+		DefaultBarSize = 12 // 15
 	}
 }
 
@@ -44,7 +44,11 @@ func New() *ScrollView {
 
 func (v *ScrollView) BarSize() float64 {
 	if v.overflow && v.ShowBar {
-		return DefaultBarSize
+		s := DefaultBarSize
+		if zdevice.OS() == zdevice.WindowsType {
+			// s /= zwindow.FromNativeView(v.Native()).Scale
+		}
+		return s
 	}
 	return 0
 }

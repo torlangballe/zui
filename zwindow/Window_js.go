@@ -2,6 +2,7 @@ package zwindow
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"syscall/js"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -39,6 +41,7 @@ func init() {
 	winMain = New()
 	winMain.Element = zdom.WindowJS
 	windows[winMain] = true
+	winMain.updateScale()
 
 	zview.RemoveKeyPressHandlerViewsFunc = func(v zview.View) {
 		win := FromNativeView(v.Native())
@@ -90,6 +93,7 @@ func Open(o Options) *Window {
 		zlog.Error("open window failed", o.URL)
 		return nil
 	}
+	win.updateScale()
 	ztimer.StartIn(0.2, func() { // This is a hack as we don't know browser title bar height. It waits until window is placed, then calculates what title bar height should be, stores and changes for this window.
 		if !barCalculated {
 			barCalculated = true
@@ -125,15 +129,21 @@ func Open(o Options) *Window {
 	return win
 }
 
+func (win *Window) updateScale() {
+	win.Scale = win.Element.Get("outerWidth").Float() / win.Element.Get("innerWidth").Float()
+}
+
 func (win *Window) SetOnResizeHandling() {
 	win.resizeTimer = ztimer.TimerNew()
 	// zlog.Info("Set Resize0", win.ProgrammaticView.ObjectName(), win.Element.IsUndefined())
 	win.Element.Set("onresize", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
+		win.updateScale()
 		// if !win.hasResized { // removing this so we can get first resize... what was it for?
 		// 	win.hasResized = true
 		// 	return nil
 		// }
 		// zlog.Info("Resize0", win.ProgrammaticView.ObjectName())
+
 		win.resizeTimer.StartIn(0.2, func() {
 			r := win.ContentRect()
 			// zlog.Info("On Resize1", win.ProgrammaticView.ObjectName(), r)
@@ -144,6 +154,7 @@ func (win *Window) SetOnResizeHandling() {
 			if win.ResizeHandlingView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				// zlog.Info("On Resize", win.ResizeHandlingView.Native().Hierarchy(), r)
+				r.Size.SubtractD(1)
 				win.ResizeHandlingView.SetRect(r)
 				win.ResizeHandlingView.Show(true)
 				zview.ExposeView(win.ResizeHandlingView)
@@ -396,4 +407,46 @@ func (win *Window) AddScript(scriptURL string) {
 	scriptTag.Set("type", "text/javascript")
 	scriptTag.Set("src", scriptURL)
 	doc.Call("getElementsByTagName", "head").Index(0).Call("appendChild", scriptTag)
+}
+
+func getRectFromOptions(o Options) (rect zgeo.Rect, gotPos, gotSize bool) {
+	size := o.Size
+	if zdevice.OS() == zdevice.WindowsType {
+		size.MultiplyD(winMain.Scale)
+	}
+	if o.Alignment != zgeo.AlignmentNone {
+		zlog.Assert(!o.Size.IsNull())
+		// wrects := []zgeo.Rect{GetMain().Rect()}
+		srect := zscreen.GetMain().Rect
+		wrects := []zgeo.Rect{srect}
+		var minSum float64
+		for _, ai := range o.Alignment.SplitIntoIndividual() {
+			for _, wr := range wrects {
+				b4 := wr.Align(size, ai, zgeo.SizeNull)
+				r := b4.MovedInto(srect)
+				var sumArea float64
+				for _, or := range wrects {
+					s := math.Max(0, or.Intersected(r).Size.Area())
+					sumArea += s
+				}
+				if rect.IsNull() || sumArea < minSum {
+					minSum = sumArea
+					rect = r
+				}
+				if sumArea <= 0 {
+					break
+				}
+			}
+		}
+		gotPos = true
+		gotSize = true
+	} else {
+		if o.Pos != nil {
+			rect.Pos = *o.Pos
+		}
+		rect.Size = o.Size
+		gotPos = (o.Pos != nil)
+		gotSize = !o.Size.IsNull()
+	}
+	return
 }

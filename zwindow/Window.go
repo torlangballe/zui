@@ -3,7 +3,6 @@
 package zwindow
 
 import (
-	"math"
 	"net/url"
 
 	"github.com/torlangballe/zui/zkeyboard"
@@ -12,7 +11,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -36,6 +34,7 @@ type Window struct {
 	resizeTimer        *ztimer.Timer
 	dismissed          bool // this stores if window is dismissed or closed for other reasons, used by present close functions
 	keyHandlers        []keyHandler
+	Scale              float64
 }
 
 type Options struct {
@@ -120,45 +119,6 @@ func (win *Window) SetPathAndArgs(path string, args zdict.Dict) {
 
 func (win *Window) GetScreen() {
 
-}
-
-func getRectFromOptions(o Options) (rect zgeo.Rect, gotPos, gotSize bool) {
-	size := o.Size
-	if o.Alignment != zgeo.AlignmentNone {
-		zlog.Assert(!o.Size.IsNull())
-		// wrects := []zgeo.Rect{GetMain().Rect()}
-		srect := zscreen.GetMain().Rect
-		wrects := []zgeo.Rect{srect}
-		var minSum float64
-		for _, ai := range o.Alignment.SplitIntoIndividual() {
-			for _, wr := range wrects {
-				b4 := wr.Align(size, ai, zgeo.SizeNull)
-				r := b4.MovedInto(srect)
-				var sumArea float64
-				for _, or := range wrects {
-					s := math.Max(0, or.Intersected(r).Size.Area())
-					sumArea += s
-				}
-				if rect.IsNull() || sumArea < minSum {
-					minSum = sumArea
-					rect = r
-				}
-				if sumArea <= 0 {
-					break
-				}
-			}
-		}
-		gotPos = true
-		gotSize = true
-	} else {
-		if o.Pos != nil {
-			rect.Pos = *o.Pos
-		}
-		rect.Size = o.Size
-		gotPos = (o.Pos != nil)
-		gotSize = !o.Size.IsNull()
-	}
-	return
 }
 
 func (win *Window) SetAddressBarPathAndArgs(spath string, args zdict.Dict) {
