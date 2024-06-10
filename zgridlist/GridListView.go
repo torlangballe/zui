@@ -883,6 +883,10 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
+	if rect.Size.W == 0 {
+		zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
+		return
+	}
 	is := rect.ExpandedD(-v.FocusWidth).Size
 	s := v.CalculatedGridSize(is)
 	w := is.W - v.BarSize()
