@@ -1739,9 +1739,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
 	}
 	if f.Path != "" {
-		path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
 		p := view.(zview.Pressable)
 		if p != nil {
+			path := f.Path
+			zstr.HasPrefix(path, "./", &path)
+			path = replaceDoubleSquiggliesWithFields(v, f, path)
 			if f.HasFlag(FlagIsDownload) {
 				if !f.HasFlag(FlagIsAudio) {
 					p.SetPressedHandler(func() {

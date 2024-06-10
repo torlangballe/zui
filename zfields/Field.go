@@ -415,6 +415,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Styling.BGColor.SetFromString(val)
 		case "download":
 			f.Flags |= FlagIsDownload
+			f.Path = val
 		case "zrpc":
 			f.RPCCall = val
 		case "zdebug":
