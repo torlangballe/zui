@@ -163,6 +163,8 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 			ids[i] = zsql.QuoteString(ids[i])
 		}
 	}
+	zrpc.MainClient.Call(v.Owner.rpcCallerName+".PreDeleteRows", ids, nil)
+
 	query := "DELETE FROM " + v.Owner.TableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
 	err := zrpc.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
 	if err != nil {
