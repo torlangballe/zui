@@ -216,7 +216,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		deleteButton := makeButton("minus", "red")
-		itemStack.Add(deleteButton, zgeo.CenterRight)
+		itemStack.Add(deleteButton, zgeo.CenterRight, zgeo.SizeD(3, 0))
 		deleteButton.SetPressedHandler(func() {
 			findView := add
 			if itemStack != v.stack {
