@@ -12,6 +12,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 // URL returns the url that invoked this app
@@ -46,8 +47,6 @@ func URLStub() string {
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
 func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	url := URL()
-	url.Path = ""
-	host := url.Host
 	args = map[string]string{}
 	for k, v := range url.Query() {
 		if k == "zdev" && v[0] == "1" {
@@ -55,13 +54,13 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 		}
 		args[k] = v[0]
 	}
-	DownloadPathPrefix = url.Scheme + "://" + host + zrest.AppURLPrefix
+	url.RawQuery = ""
+	DownloadPathPrefix = url.String()
 	zwidgets.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
-	// zlog.Info("zapp: DocumentationPathPrefix", zwidgets.DocumentationPathPrefix)
 	if useRPC {
-		url.RawQuery = ""
-		url.Path = ""
-		zrpc.MainClient = zrpc.NewClient(url.String(), "")
+		surl := url.String()
+		zstr.HasSuffix(surl, zrest.AppURLPrefix, &surl)
+		zrpc.MainClient = zrpc.NewClient(surl, "")
 	}
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
