@@ -756,7 +756,7 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 		v.jsFuncs = map[string]js.Func{}
 		v.AddOnRemoveFunc(func() {
 			for _, f := range v.jsFuncs {
-				// zlog.Info("NV: Release func:", n)
+				// zlog.Info("NV: Release func:", v.Native(), name)
 				f.Release()
 			}
 		})
