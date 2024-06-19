@@ -368,10 +368,10 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 		maxHour = 23
 		minHour = 0
 	}
-	getInt(v.hourText, &hour, minHour, maxHour, &err, false)
+	getInt(v.hourText, &hour, minHour, maxHour, &err, true)
 	hour, _ = get24Hour(v, hour)
-	getInt(v.minuteText, &min, 0, 60, &err, false)
-	getInt(v.secondsText, &sec, 0, 60, &err, false)
+	getInt(v.minuteText, &min, 0, 60, &err, true)
+	getInt(v.secondsText, &sec, 0, 60, &err, true)
 	v.calendar.SetUsable(err == nil)
 	getInt(v.monthText, &month, 1, 12, &err, true)
 	days := ztime.DaysInMonth(time.Month(month), year)
