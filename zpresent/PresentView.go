@@ -108,10 +108,11 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		s = zscreen.GetMain().UsableRect.ExpandedD(-10).Size
 	}
 	size := v.CalculatedSize(s)
-	size.MultiplyD(win.Scale)
+	// size.MultiplyD(win.Scale)
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
+	// zlog.Info("Present:", s, size, win.Scale, rect)
 	nv := v.Native()
 	if attributes.Modal {
 		if nv != nil {
