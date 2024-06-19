@@ -841,7 +841,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		}
 		marg := zgeo.RectFromXY2(minx, miny, maxx, maxy).ExpandedToInt()
 		// r.Size.Add(marg.Size.Negative()) // expand r's size to include margins
-		// r = r.ExpandedToInt()
+		r = r.ExpandedToInt()
 		cr := r.Plus(marg)
 		visible := (r.Max().Y >= v.YOffset && r.Min().Y <= v.YOffset+v.innerRect().Size.H)
 		r2 := r
@@ -978,9 +978,8 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				ms.SetMargin(marg)
 			}
 			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
-			o := outer.Plus(zgeo.RectFromXY2(0, 0, 0, 0))
-			if dirty || !child.Native().HasSize() || child.Rect() != o {
-				child.SetRect(o)
+			if dirty || !child.Native().HasSize() || child.Rect() != outer {
+				child.SetRect(outer)
 			}
 			// prof.Log("After Set Rect")
 			v.updateCellBackground(cid, x, y, child)
