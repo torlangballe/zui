@@ -960,13 +960,13 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), len(v.DirtyIDs), "y:", v.YOffset)
 	// start := time.Now()
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
+		if zstr.StringsContain(oldSelected, cid) {
+			selected = append(selected, cid)
+		}
 		if visible {
 			// prof := zlog.NewProfile(0.001, "GV.Layout", v.ObjectName(), cid)
 			if v.CurrentHoverID == cid {
 				hoverOK = true
-			}
-			if zstr.StringsContain(oldSelected, cid) {
-				selected = append(selected, cid)
 			}
 			child, _ := v.makeOrGetChild(cid)
 			//TODO: exit when !visible after visible
@@ -998,7 +998,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	v.DirtyIDs = nil
 	for cid, view := range v.children {
 		if !placed[cid] {
-			delete(v.selectedIDs, cid)
+			// delete(v.selectedIDs, cid)
 			v.cellsView.RemoveChild(view)
 			delete(v.children, cid)
 		}
@@ -1006,7 +1006,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	if !hoverOK {
 		v.SetHoverID("")
 	}
-	if !zstr.SlicesAreEqual(v.SelectedIDs(), selected) {
+	if !zstr.SlicesAreEqual(oldSelected, selected) {
 		v.SelectCells(selected, false)
 	}
 	v.RestoreOffsetOnNextLayout = false
