@@ -18,9 +18,9 @@ import (
 type Type string
 
 const (
-	Normal = ""
-	Search = "search"
-	Date   = "date"
+	Normal Type = ""
+	Search Type = "search"
+	Date   Type = "date"
 )
 
 type Style struct {
@@ -39,18 +39,14 @@ type TextView struct {
 	alignment     zgeo.Alignment
 	changed       zview.ValueHandlers
 	pushedBGColor zgeo.Color
-	//	keyPressed    func(km zkeyboard.KeyMod, down bool) bool
-	updateTimer *ztimer.Timer
-	Columns     int
-	rows        int
-	textStyle   Style
-	//	isSearch      bool
-	//	updated       bool
-
-	margin     zgeo.Rect
-	UpdateSecs float64
-	FilterFunc func(str string) string // Filter changes text before .SetText() and .Text(). Also called on each key input. return 0 means no rune
-	editDone   func(canceled bool)
+	updateTimer   *ztimer.Timer
+	Columns       int
+	rows          int
+	textStyle     Style
+	margin        zgeo.Rect
+	UpdateSecs    float64
+	FilterFunc    func(str string) string // Filter changes text before .SetText() and .Text(). Also called on each key input. return 0 means no rune
+	editDone      func(canceled bool)
 }
 
 var (
