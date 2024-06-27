@@ -158,6 +158,7 @@ func (c *Canvas) DrawPath(path *zgeo.Path, strokeColor zgeo.Color, width float64
 	c.PushState()
 	c.setColor(strokeColor, true)
 	c.setLineType(ltype)
+	c.setLineWidth(width)
 	c.context.Call("stroke")
 	c.PopState()
 }
