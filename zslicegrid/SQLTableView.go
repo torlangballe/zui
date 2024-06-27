@@ -171,7 +171,7 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 		zalert.ShowError(err, "updating")
 	}
 	v.RemoveItemsFromSlice(ids)
-	v.updateView()
+	v.UpdateViewFunc()
 }
 
 func (o *SQLOwner[S]) createConstraints() string {

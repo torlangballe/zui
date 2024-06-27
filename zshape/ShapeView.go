@@ -32,7 +32,7 @@ const (
 )
 
 type ShapeView struct {
-	zcontainer.ContainerView
+	zcontainer.StackView
 	Type         Type
 	StrokeWidth  float64
 	StrokeColor  zgeo.Color // = ZColor.White()
@@ -65,7 +65,7 @@ func NewView(shapeType Type, minSize zgeo.Size) *ShapeView {
 }
 
 func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, name string) {
-	v.CustomView.Init(view, name)
+	v.StackView.Init(view, false, name)
 	v.textInfo = *ztextinfo.New()
 	v.Type = shapeType
 	v.ImageMargin = zgeo.SizeD(4, 1).TimesD(zscreen.MainSoftScale())

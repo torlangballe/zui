@@ -120,13 +120,17 @@ const (
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
 	FlagShowPopup                                     // press to show a popup of contents
 	FlagLockable                                      // show a lock icon to right of item when labelized. Disables/Hides.
+	FlagHeaderLockable                                // show a lock icon on header, for locking selected rows.
+	FlagIsStart                                       // This field represents a start value, probably a time, and so far for if FlagHeaderLockable.
+	FlagIsEnd                                         // This field represents an end value, probably a time, and so far for if FlagHeaderLockable.
 	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
 	FlagCheckerCell                                   // Ever other column with this is darkened a bit.
 )
 
 const (
-	flagTimeFlags = FlagHasSeconds | FlagHasMinutes | FlagHasHours
-	flagDateFlags = FlagHasDays | FlagHasMonths | FlagHasYears
+	flagTimeFlags     = FlagHasSeconds | FlagHasMinutes | FlagHasHours
+	flagDateFlags     = FlagHasDays | FlagHasMonths | FlagHasYears
+	FlagIsTimeBoundry = FlagIsStart | FlagIsEnd
 )
 
 // The Field struct stores information about a struct field, based on zui:"" tags, used for displaying it.
@@ -228,6 +232,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
 	"Lockable":                 uint64(FlagLockable),
+	"HeaderLockable":           uint64(FlagHeaderLockable),
 	"FlagDontJustifyHeader":    uint64(FlagDontJustifyHeader),
 	"FlagCheckerCell":          uint64(FlagCheckerCell),
 }
@@ -395,6 +400,13 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.StringSep = val
 			if val == "" {
 				f.StringSep = " "
+			}
+		case "hlockable":
+			f.SetFlag(FlagHeaderLockable)
+			if val == "start" {
+				f.SetFlag(FlagIsStart)
+			} else if val == "end" {
+				f.SetFlag(FlagIsEnd)
 			}
 		case "lockable":
 			f.SetFlag(FlagLockable)

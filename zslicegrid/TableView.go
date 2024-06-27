@@ -3,22 +3,24 @@
 package zslicegrid
 
 import (
+	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zheader"
+	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
-)
-
-const (
-	AddHeader      OptionType = LastBaseOption
-	AddBarInHeader OptionType = LastBaseOption << 1
+	"github.com/torlangballe/zutil/ztime"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
@@ -26,16 +28,19 @@ const (
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
-	Header          *zheader.HeaderView // Optional header based on S struct
-	ColumnMargin    float64             // Margin between columns
-	RowInset        float64             // inset on far left and right
-	FieldParameters zfields.FieldViewParameters
-	fields          []zfields.Field // the fields in an S struct used to generate columns for the table
+	Header               *zheader.HeaderView // Optional header based on S struct
+	ColumnMargin         float64             // Margin between columns
+	RowInset             float64             // inset on far left and right
+	FieldParameters      zfields.FieldViewParameters
+	AfterLockPressedFunc func(fieldName string, didLock bool)
+	fields               []zfields.Field // the fields in an S struct used to generate columns for the table
+	lockedFieldValues    map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
+	hasFitHeaderToRows   bool
 }
 
-func TableViewNew[S zstr.StrIDer](s *[]S, name string, options OptionType) *TableView[S] {
+func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) *TableView[S] {
 	v := &TableView[S]{}
-	v.Init(v, s, name, options)
+	v.Init(v, s, storeName, options)
 	return v
 }
 
@@ -45,6 +50,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	v.Grid.SetMargin(zgeo.Rect{})
 	v.ColumnMargin = 5
 	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
+	v.lockedFieldValues = map[string]any{}
 	// v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
@@ -57,7 +63,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	})
 
 	cell, _ := v.FindCellWithView(v.Grid)
-	cell.Margin.H = -1 // this seems to make no 1-space beteen header and table
+	cell.Margin.H = 1 // this seems to make no 1-space beteen header and table
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
@@ -69,47 +75,67 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		if v.options&AddBar != 0 && v.options&AddBarInHeader == 0 {
 			index = 1
 		}
-		if v.options&AddBarInHeader != 0 {
-			v.RemoveChild(v.Bar)
-			v.Bar.SetMargin(zgeo.RectFromXY2(6, 2, -6, -3))
-		}
 		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.SizeNull, zgeo.SizeNull, index, false)
-		if v.Bar != nil && options&AddBarInHeader != 0 {
-			v.Header.Add(v.Bar, zgeo.CenterRight).Free = true
-			v.Bar.SetZIndex(200)
+	}
+	v.Grid.HandleSelectionChangedFunc = func() {
+		v.UpdateWidgets()
+		selCount := len(v.Grid.SelectedIDs())
+		for _, c := range v.Header.GetChildren(false) {
+			h, _ := c.(*zshape.ImageButtonView)
+			if h == nil {
+				continue
+			}
+			fieldName := h.ObjectName()
+			_, isLocked := v.lockedFieldValues[fieldName]
+			// zlog.Info("HandleSelectionChangedFunc show:", h.ObjectName(), hasSelected, isLocked)
+			canLock := selCount > 0
+			if !isLocked {
+				f, _ := v.findField(fieldName)
+				if f.HasFlag(zfields.FlagIsTimeBoundry) {
+					canLock = (selCount == 1)
+				}
+			}
+			zheader.ShowLock(h, canLock || isLocked)
 		}
 	}
-	// zlog.Info("TableInit", v.ObjectName(), v.SliceGridView.Grid.CreateCellFunc != nil)
+}
+
+func (v *TableView[S]) findField(fieldName string) (*zfields.Field, int) {
+	for i, f := range v.fields {
+		if f.FieldName == fieldName {
+			return &v.fields[i], i
+		}
+	}
+	return nil, -1
 }
 
 func (v *TableView[S]) ArrangeChildren() {
 	// zlog.Info("TV ArrangeChildren", v.Hierarchy(), v.Rect())
 	// defer zlog.Info("TV ArrangeChildren Done", v.Hierarchy(), v.Rect())
+	sw := v.Grid.Rect().Size.W
 	v.SliceGridView.ArrangeChildren()
-	if v.Header == nil {
+	if v.Header == nil || v.Grid.Rect().Size.W == sw {
 		return
 	}
 	freeOnly := true
 	v.Header.ArrangeAdvanced(freeOnly)
-	if v.Header != nil {
-		// zlog.Info("TV: ArrangeChildren", v.Header != nil, v.Grid.CellCount())
-		var fv *zfields.FieldView
-		if v.Grid.CellCountFunc() > 0 {
-			view := v.Grid.AnyChildView()
-			if view != nil {
-				// zlog.Info("TV: ArrangeChildren FitHEader")
-				fv = view.(*zfields.FieldView)
-			}
-		} else { // no rows, make an empty one to fit header with
-			var s S
-			view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
+	var fv *zfields.FieldView
+	if v.Grid.CellCountFunc() > 0 {
+		view := v.Grid.AnyChildView()
+		if view != nil {
+			// zlog.Info("TV: ArrangeChildren FitHEader")
 			fv = view.(*zfields.FieldView)
-			fv.SetRect(v.LocalRect())
-			fv.ArrangeChildren()
 		}
-		if fv != nil {
-			v.Header.FitToRowStack(&fv.StackView)
-		}
+	} else { // no rows, make an empty one to fit header with
+		var s S
+		view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
+		fv = view.(*zfields.FieldView)
+		fv.SetRect(v.LocalRect())
+		fv.ArrangeChildren()
+	}
+	if fv != nil {
+		v.hasFitHeaderToRows = true
+		v.Header.FitToRowStack(&fv.StackView)
 	}
 }
 
@@ -140,6 +166,11 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
+		if v.options&AddBarInHeader != 0 {
+			right := v.Header.RightColumn()
+			zlog.Assert(right != nil)
+			right.Add(v.Bar, zgeo.CenterRight)
+		}
 	}
 	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
 		fv := grid.CellView(id).(*zfields.FieldView)
@@ -192,6 +223,10 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 		if !f.HasFlag(zfields.FlagDontJustifyHeader) {
 			h.Justify = f.Justify
 		}
+		// zlog.Info("makeHeaderFields:", h.FieldName, f.HasFlag(zfields.FlagHeaderLockable))
+		if f.HasFlag(zfields.FlagHeaderLockable) {
+			h.Lockable = true
+		}
 		if f.Kind == zreflect.KindString && f.Enum == "" {
 			h.Align |= zgeo.HorExpand
 		}
@@ -217,4 +252,156 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 		headers = append(headers, h)
 	}
 	return headers
+}
+
+func (v *TableView[S]) FilterRowWithZFields(row *S, fieldNames []string) bool {
+	var all []string
+	for _, fieldName := range fieldNames {
+		f, _ := v.findField(fieldName)
+		if zlog.ErrorIf(f == nil, fieldName, all) {
+			continue
+		}
+		var rowFieldVal string
+		canLock := f.HasFlag(zfields.FlagHeaderLockable)
+		finfo, found := zreflect.FieldForName(row, zfields.FlattenIfAnonymousOrZUITag, fieldName)
+		if canLock || v.currentLowerCaseSearchText != "" {
+			zlog.Assert(found, fieldName)
+			rowFieldVal = fmt.Sprint(finfo.ReflectValue.Interface())
+		}
+		if canLock {
+			val, has := v.lockedFieldValues[fieldName]
+			// if fieldName == "End" {
+			// 	zlog.Info("Filter:", has, val, finfo.ReflectValue.Interface())
+			// }
+			if has {
+				// zlog.Info("FilterRowWithZFieldInfo has:", fieldName)
+				if f.HasFlag(zfields.FlagIsTimeBoundry) {
+					filterTime := val.(time.Time)
+					rowTime, gotTime := finfo.ReflectValue.Interface().(time.Time)
+					// zlog.Info("Has Time Filter:", filterTime, rowTime, gotTime, filterTime.Sub(rowTime))
+					if gotTime {
+						if f.HasFlag(zfields.FlagIsStart) && rowTime.Before(filterTime) {
+							return false
+						}
+						if f.HasFlag(zfields.FlagIsEnd) && rowTime.After(filterTime) {
+							return false
+						}
+						// zlog.Info("OK Time:", filterTime, rowTime, filterTime.Sub(rowTime))
+					}
+					continue
+				}
+				strVals, got := val.([]string)
+				if zlog.ErrorIf(!got, reflect.TypeOf(val)) {
+					continue
+				}
+				equal := zstr.StringsContain(strVals, rowFieldVal)
+				// zlog.Info("FilterRowWithZFieldInfo lock:", fieldName, rowFieldVal, strVals, equal)
+				if !equal {
+					return false
+				}
+			}
+		}
+		if v.currentLowerCaseSearchText != "" {
+			if !strings.Contains(strings.ToLower(rowFieldVal), v.currentLowerCaseSearchText) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// LockColumn sets or clears the lock value for a field.
+// Set clearSkipCache to call ClearFilterSkipCache() on first field locked to clear the filter skip cache.
+// Set updateTable to call UpdateViewFunc() on last field locked.
+func (v *TableView[S]) LockColumn(fieldName string, setLocked bool, lockVal any, clearSkipCache, updateTable bool) {
+	if clearSkipCache {
+		v.ClearFilterSkipCache()
+	}
+	v.Grid.RestoreTopSelectedRowOnNextLayout = true
+	headerButton := v.Header.ColumnView(fieldName)
+	label, lock := zheader.GetLockViews(headerButton)
+	defer func() {
+		lock.Expose()
+		headerButton.ArrangeChildren()
+		if updateTable {
+			ztimer.StartIn(0.1, func() {
+				v.UpdateViewFunc()
+			})
+		}
+	}()
+	if !setLocked {
+		delete(v.lockedFieldValues, fieldName)
+		label.SetText("")
+		label.SetToolTip("")
+		lock.TintColor.Valid = false
+		lock.SetToolTip("press to lock on selected rows")
+		v.Grid.HandleSelectionChangedFunc()
+		return
+	}
+	lock.TintColor = zgeo.ColorYellow.WithOpacity(0.2)
+	v.lockedFieldValues[fieldName] = lockVal
+	f, _ := v.findField(fieldName)
+	zlog.Assert(f != nil, fieldName)
+	t, _ := lockVal.(time.Time)
+	// zlog.Info("LockColumn:", fieldName, t)
+	label.Show(true)
+	lock.Show(true)
+	lock.SetToolTip("press to unlock this field")
+	if !t.IsZero() {
+		t = t.Local()
+		emojii := ztime.TimeToNearestEmojii(t)
+		tip := ">="
+		if f.HasFlag(zfields.FlagIsEnd) {
+			tip = "<="
+		}
+		tip += " " + ztime.GetNice(t, false)
+		label.SetText(string(emojii))
+		label.SetToolTip(tip)
+		return
+	}
+	uniqueVals, _ := lockVal.([]string)
+	var tip string
+	for i, u := range uniqueVals {
+		if i != 0 {
+			tip += "\n"
+		}
+		tip += zstr.TruncatedFromEnd(u, 60, "…")
+	}
+	label.SetText(strconv.Itoa(len(uniqueVals)))
+	label.SetToolTip(tip)
+}
+
+func (v *TableView[S]) HandleLockPressedWithZField(fieldName string) {
+	var uniqueVals []string
+	clearCache := true
+	updateTable := true
+	_, has := v.lockedFieldValues[fieldName]
+	if has {
+		v.LockColumn(fieldName, false, nil, clearCache, updateTable)
+		if v.AfterLockPressedFunc != nil {
+			v.AfterLockPressedFunc(fieldName, false)
+		}
+		return
+	}
+	f, _ := v.findField(fieldName)
+	zlog.Assert(f != nil, fieldName)
+	for _, sid := range v.Grid.SelectedIDs() {
+		s := v.StructForID(sid)
+		finfo, found := zreflect.FieldForName(s, zfields.FlattenIfAnonymousOrZUITag, fieldName)
+		zlog.Assert(found, fieldName)
+		if f.HasFlag(zfields.FlagIsTimeBoundry) {
+			t, _ := finfo.ReflectValue.Interface().(time.Time)
+			v.LockColumn(fieldName, true, t, clearCache, updateTable)
+			if v.AfterLockPressedFunc != nil {
+				v.AfterLockPressedFunc(fieldName, true)
+			}
+			return
+		}
+		str := fmt.Sprint(finfo.ReflectValue.Interface())
+		zstr.AddToSet(&uniqueVals, str)
+	}
+	v.LockColumn(fieldName, true, uniqueVals, clearCache, updateTable)
+	if v.AfterLockPressedFunc != nil {
+		v.AfterLockPressedFunc(fieldName, true)
+	}
 }

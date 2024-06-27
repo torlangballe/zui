@@ -38,30 +38,30 @@ import (
 
 type GridListView struct {
 	zscrollview.ScrollView
-	Spacing                   zgeo.Size
-	Selectable                bool
-	MultiSelectable           bool
-	MakeFullSize              bool
-	RecreateCells             bool // RecreateCells forces creation of new cells on next layout
-	MaxColumns                int
-	MinColumns                int
-	MinRowsForFullSize        int
-	MaxRowsForFullSize        int
-	BorderColor               zgeo.Color
-	CellColor                 zgeo.Color
-	CellColorFunc             func(id string) zgeo.Color // Always set
-	MultiplyColorAlternate    float32
-	PressedColor              zgeo.Color
-	SelectColor               zgeo.Color
-	HoverColor                zgeo.Color
-	BranchToggleType          zwidgets.BranchToggleType
-	OpenBranches              map[string]bool
-	CurrentHoverID            string
-	FocusWidth                float64
-	HorizontalFirst           bool // HorizontalFirst means 1 2 3 on first row, not down first
-	RestoreOffsetOnNextLayout bool
-
-	UpdateOnceOnSetRect bool
+	Spacing                           zgeo.Size
+	Selectable                        bool
+	MultiSelectable                   bool
+	MakeFullSize                      bool
+	RecreateCells                     bool // RecreateCells forces creation of new cells on next layout
+	MaxColumns                        int
+	MinColumns                        int
+	MinRowsForFullSize                int
+	MaxRowsForFullSize                int
+	BorderColor                       zgeo.Color
+	CellColor                         zgeo.Color
+	CellColorFunc                     func(id string) zgeo.Color // Always set
+	MultiplyColorAlternate            float32
+	PressedColor                      zgeo.Color
+	SelectColor                       zgeo.Color
+	HoverColor                        zgeo.Color
+	BranchToggleType                  zwidgets.BranchToggleType
+	OpenBranches                      map[string]bool
+	CurrentHoverID                    string
+	FocusWidth                        float64
+	HorizontalFirst                   bool // HorizontalFirst means 1 2 3 on first row, not down first
+	RestoreOffsetOnNextLayout         bool
+	RestoreTopSelectedRowOnNextLayout bool
+	UpdateOnceOnSetRect               bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -912,11 +912,10 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
-	// old := v.ScrollHandler
+	// zlog.Info("GridListView.LayoutCells", v.ObjectName(), v.RestoreTopSelectedRowOnNextLayout)
 	var oy float64
 	var topID string
-	if v.RestoreOffsetOnNextLayout {
-		// zlog.Info("GridListView.LayoutCells with RestoreOffsetOnNextLayout")
+	if v.RestoreOffsetOnNextLayout || v.RestoreTopSelectedRowOnNextLayout {
 		var top float64
 		for id, child := range v.children {
 			y := child.Rect().Pos.Y
@@ -928,7 +927,8 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 		}
 		if topID != "" {
 			v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
-				if cid == topID {
+				if cid == topID || v.RestoreTopSelectedRowOnNextLayout && v.selectedIDs[cid] {
+					v.RestoreTopSelectedRowOnNextLayout = false
 					// v.SetScrollHandler(nil)
 					oy = outer.Pos.Y
 					v.ShowScrollBars(false, false)
