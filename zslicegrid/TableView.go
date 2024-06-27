@@ -110,13 +110,17 @@ func (v *TableView[S]) findField(fieldName string) (*zfields.Field, int) {
 }
 
 func (v *TableView[S]) ArrangeChildren() {
-	// zlog.Info("TV ArrangeChildren", v.Hierarchy(), v.Rect())
+	zlog.Info("TV ArrangeChildren1", v.Hierarchy(), v.Rect())
 	// defer zlog.Info("TV ArrangeChildren Done", v.Hierarchy(), v.Rect())
-	sw := v.Grid.Rect().Size.W
+	var sw float64
+	if v.Grid.HasSize() {
+		sw = v.Grid.Rect().Size.W
+	}
 	v.SliceGridView.ArrangeChildren()
-	if v.Header == nil || v.Grid.Rect().Size.W == sw {
+	if v.Header == nil || (v.Grid.HasSize() && v.Grid.Rect().Size.W == sw) {
 		return
 	}
+	zlog.Info("TV ArrangeChildren", v.ObjectName(), v.Rect(), v.Grid.CellCountFunc())
 	freeOnly := true
 	v.Header.ArrangeAdvanced(freeOnly)
 	var fv *zfields.FieldView
@@ -140,7 +144,6 @@ func (v *TableView[S]) ArrangeChildren() {
 }
 
 func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
-	v.SliceGridView.ReadyToShow(beforeWindow)
 	if !beforeWindow {
 		// for i, c := range v.Cells {
 		// 	zlog.Info("Table", i, c.View.ObjectName(), c.Alignment, c.Margin)
@@ -178,6 +181,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		fv.Update(v.StructForID(id), true, false)
 		// fv.ArrangeChildren()
 	}
+	v.SliceGridView.ReadyToShow(beforeWindow)
 }
 
 func (v *TableView[S]) createRow(id string) zview.View {
@@ -256,6 +260,7 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 
 func (v *TableView[S]) FilterRowWithZFields(row *S, fieldNames []string) bool {
 	var all []string
+	zlog.Assert(len(v.fields) != 0)
 	for _, fieldName := range fieldNames {
 		f, _ := v.findField(fieldName)
 		if zlog.ErrorIf(f == nil, fieldName, all) {
