@@ -34,6 +34,7 @@ type ImageView struct {
 	UseDownsampleCache bool
 	CapInsetCorner     zgeo.Size
 	EmptyColor         zgeo.Color
+	TintColor          zgeo.Color
 	KeyboardShortcut   zkeyboard.KeyMod
 }
 
@@ -202,8 +203,12 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	canvas.DownsampleImages = v.DownsampleImages
 	// zlog.Info("DrawImage:", v.Hierarchy(), v.Path(), rect, v.UseDownsampleCache)
 	if v.image != nil {
+		col := v.TintColor
 		if v.IsHighlighted() {
-			v.image.TintedWithColor(zgeo.ColorNewGray(0.2, 1), 1, func(ti *zimage.Image) {
+			col = zgeo.ColorNewGray(0.2, 1).Mixed(col, 0.5)
+		}
+		if col.Valid {
+			v.image.TintedWithColor(col, 1, func(ti *zimage.Image) { // we tint with 1 because we assume amount is in alpha of col
 				v.drawImage(canvas, ti, rect)
 			})
 		} else {
