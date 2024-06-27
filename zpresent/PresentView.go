@@ -198,8 +198,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		// r := zgeo.Rect{Size: }
 		r := zgeo.Rect{Size: s}
-		r.Size.W--
-		r.Size.H--
+		// r.Size.W--
+		// r.Size.H--
 		v.SetRect(r)
 	}
 	FirstPresented = true

@@ -154,7 +154,7 @@ func (win *Window) SetOnResizeHandling() {
 			if win.ResizeHandlingView != nil {
 				// zlog.Info("On Resized: to", win.ProgrammaticView.ObjectName(), r.Size, reflect.ValueOf(win.ProgrammaticView).Type(), "from:", win.ProgrammaticView.Rect().Size)
 				// zlog.Info("On Resize", win.ResizeHandlingView.Native().Hierarchy(), r)
-				r.Size.SubtractD(1)
+				// r.Size.SubtractD(1)
 				win.ResizeHandlingView.SetRect(r)
 				win.ResizeHandlingView.Show(true)
 				zview.ExposeView(win.ResizeHandlingView)
