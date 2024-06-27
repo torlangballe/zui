@@ -91,7 +91,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 			canLock := selCount > 0
 			if !isLocked {
 				f, _ := v.findField(fieldName)
-				if f.HasFlag(zfields.FlagIsTimeBoundry) {
+				if f.HasFlag(zfields.FlagIsTimeBoundary) {
 					canLock = (selCount == 1)
 				}
 			}
@@ -279,7 +279,7 @@ func (v *TableView[S]) FilterRowWithZFields(row *S, fieldNames []string) bool {
 			// }
 			if has {
 				// zlog.Info("FilterRowWithZFieldInfo has:", fieldName)
-				if f.HasFlag(zfields.FlagIsTimeBoundry) {
+				if f.HasFlag(zfields.FlagIsTimeBoundary) {
 					filterTime := val.(time.Time)
 					rowTime, gotTime := finfo.ReflectValue.Interface().(time.Time)
 					// zlog.Info("Has Time Filter:", filterTime, rowTime, gotTime, filterTime.Sub(rowTime))
@@ -393,7 +393,7 @@ func (v *TableView[S]) HandleLockPressedWithZField(fieldName string) {
 		s := v.StructForID(sid)
 		finfo, found := zreflect.FieldForName(s, zfields.FlattenIfAnonymousOrZUITag, fieldName)
 		zlog.Assert(found, fieldName)
-		if f.HasFlag(zfields.FlagIsTimeBoundry) {
+		if f.HasFlag(zfields.FlagIsTimeBoundary) {
 			t, _ := finfo.ReflectValue.Interface().(time.Time)
 			v.LockColumn(fieldName, true, t, clearCache, updateTable)
 			if v.AfterLockPressedFunc != nil {

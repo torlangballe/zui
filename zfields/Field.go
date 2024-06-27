@@ -128,9 +128,9 @@ const (
 )
 
 const (
-	flagTimeFlags     = FlagHasSeconds | FlagHasMinutes | FlagHasHours
-	flagDateFlags     = FlagHasDays | FlagHasMonths | FlagHasYears
-	FlagIsTimeBoundry = FlagIsStart | FlagIsEnd
+	flagTimeFlags      = FlagHasSeconds | FlagHasMinutes | FlagHasHours
+	flagDateFlags      = FlagHasDays | FlagHasMonths | FlagHasYears
+	FlagIsTimeBoundary = FlagIsStart | FlagIsEnd
 )
 
 // The Field struct stores information about a struct field, based on zui:"" tags, used for displaying it.
