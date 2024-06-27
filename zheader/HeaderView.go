@@ -102,7 +102,6 @@ func (v *HeaderView) findSortInfo(sortOrderID string) int {
 }
 
 func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Header) {
-	zlog.Info("HeaderColumnPressed", h.FieldName)
 	if h.SortSmallFirst != zbool.Unknown {
 		si := v.findSortInfo(h.FieldName)
 		sorting := v.SortOrder[si]
@@ -259,6 +258,7 @@ func ShowLock(headerButton *zshape.ImageButtonView, show bool) {
 
 func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 	var cells []zcontainer.Cell
+
 	for _, c := range stack.Cells {
 		if !c.Collapsed && !c.Free {
 			cells = append(cells, c)
