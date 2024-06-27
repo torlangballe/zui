@@ -454,7 +454,7 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 	}
 }
 
-func (v *ContainerView) FindViewWithName(name string, recursive bool) (zview.View, int) {
+func (v *ContainerView) 	FindViewWithName(name string, recursive bool) (zview.View, int) {
 	return ContainerOwnerFindViewWithName(v, name, recursive)
 }
 

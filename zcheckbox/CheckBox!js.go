@@ -13,7 +13,7 @@ func New(on zbool.BoolInd) *CheckBox {
 	return c
 }
 
-func (c *CheckBox) SetValue(b zbool.BoolInd)                  {}
-func (s *CheckBox) SetValueHandler(handler func())            {}
-func (v *CheckBox) Press()                                    {}
-func NewWithStore(defaultVal bool, storeKey string) *CheckBox { return nil }
+func (c *CheckBox) SetValue(b zbool.BoolInd)                             {}
+func (s *CheckBox) SetValueHandler(id string, handler func(edited bool)) {}
+func (v *CheckBox) Press()                                               {}
+func NewWithStore(defaultVal bool, storeKey string) *CheckBox            { return nil }

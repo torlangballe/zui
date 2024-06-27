@@ -127,6 +127,3 @@ func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
 }
 
-// func (v *TextView) ChangedHandler() func(edited bool) {
-// 	return v.changed
-// }

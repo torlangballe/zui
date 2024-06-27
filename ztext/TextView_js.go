@@ -207,7 +207,6 @@ func (v *TextView) startUpdate() {
 }
 
 func (v *TextView) SetValueHandler(id string, handler func(edited bool)) {
-	// zlog.Info("SetValHandler:", id)
 	v.changed.Add(id, handler)
 }
 
@@ -223,7 +222,6 @@ func (v *TextView) setHandlers() {
 				v.Select(i, i)
 			}
 		}
-		// zlog.Info("OnInput")
 		if v.UpdateSecs < 0 {
 			return nil
 		}
