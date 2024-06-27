@@ -32,7 +32,7 @@ var DefaultBarSize = 12.0 // 17.0
 
 func init() {
 	if zdevice.OS() == zdevice.MacOSType {
-		DefaultBarSize = 12 // 15
+		DefaultBarSize = 15 // 15
 	}
 }
 

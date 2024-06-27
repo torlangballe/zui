@@ -110,7 +110,7 @@ func (v *TableView[S]) findField(fieldName string) (*zfields.Field, int) {
 }
 
 func (v *TableView[S]) ArrangeChildren() {
-	zlog.Info("TV ArrangeChildren1", v.Hierarchy(), v.Rect())
+	// zlog.Info("TV ArrangeChildren1", v.Hierarchy(), v.Rect())
 	// defer zlog.Info("TV ArrangeChildren Done", v.Hierarchy(), v.Rect())
 	var sw float64
 	if v.Grid.HasSize() {
@@ -120,7 +120,6 @@ func (v *TableView[S]) ArrangeChildren() {
 	if v.Header == nil || (v.Grid.HasSize() && v.Grid.Rect().Size.W == sw) {
 		return
 	}
-	zlog.Info("TV ArrangeChildren", v.ObjectName(), v.Rect(), v.Grid.CellCountFunc())
 	freeOnly := true
 	v.Header.ArrangeAdvanced(freeOnly)
 	var fv *zfields.FieldView
