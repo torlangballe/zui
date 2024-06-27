@@ -45,6 +45,7 @@ func (c *Canvas) SetSize(size zgeo.Size) {
 	c.size = size
 	c.context = gg.NewContext(int(size.W), int(size.H))
 	c.Clear()
+	zlog.Assert(c.context != nil)
 }
 
 func (c *Canvas) SetRect(rect zgeo.Rect) {
@@ -71,6 +72,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 var fontMutex sync.Mutex
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
+	zlog.Assert(c.context != nil, zlog.Pointer(c))
 	if *font == c.setFont {
 		return nil
 	}

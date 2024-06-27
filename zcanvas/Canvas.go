@@ -3,6 +3,7 @@ package zcanvas
 import (
 	"math"
 	"strconv"
+	"sync"
 
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zcache"
@@ -28,6 +29,7 @@ type measurement struct {
 
 var measuredTexts = zcache.NewWithExpiry(60*60, false)
 var measureCanvas *Canvas
+var measureLock sync.Mutex
 
 func (c *Canvas) Size() zgeo.Size {
 	return c.size
@@ -118,12 +120,14 @@ func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 	if got {
 		return s
 	}
+	measureLock.Lock()
 	if measureCanvas == nil {
 		measureCanvas = New()
 		measureCanvas.SetSize(zgeo.SizeD(800, 100))
 	}
 	s = measureCanvas.MeasureText(text, font)
 	measuredTexts.Put(key, s)
+	measureLock.Unlock()
 	return s
 }
 
