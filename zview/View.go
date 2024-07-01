@@ -111,6 +111,10 @@ type ValueHandlers struct {
 	handlers map[string]func(edited bool)
 }
 
+type MaxSizeInTotaler interface {
+	MaxSizeInTotal(total zgeo.Size) zgeo.Size
+}
+
 func (vh *ValueHandlers) Add(id string, f func(edited bool)) {
 	if f == nil {
 		delete(vh.handlers, id)
