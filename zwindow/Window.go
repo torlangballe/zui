@@ -84,6 +84,16 @@ func ExistsActivate(winID string) bool {
 	return false
 }
 
+func FindWithID(winID string) *Window {
+	for w := range windows {
+		// zlog.Info("ExistsActivate:", w.ID, "==", winID)
+		if w.ID == winID {
+			return w
+		}
+	}
+	return nil
+}
+
 func setValues(v url.Values, add url.Values) {
 	for k, ss := range add {
 		for _, s := range ss {
@@ -115,10 +125,6 @@ func (win *Window) GetURLWithNewPathAndArgs(spath string, args zdict.Dict) strin
 func (win *Window) SetPathAndArgs(path string, args zdict.Dict) {
 	surl := win.GetURLWithNewPathAndArgs(path, args)
 	win.SetLocation(surl)
-}
-
-func (win *Window) GetScreen() {
-
 }
 
 func (win *Window) SetAddressBarPathAndArgs(spath string, args zdict.Dict) {
