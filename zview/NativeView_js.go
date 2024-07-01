@@ -85,7 +85,7 @@ func (v *NativeView) Native() *NativeView {
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
 	if rect.Pos.Y < -10 {
-		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zlog.CallingStackString())
+		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}
 	rect = rect.ExpandedToInt()
 	SetElementRect(v.Element, rect)
@@ -147,7 +147,7 @@ func (v *NativeView) LocalRect() zgeo.Rect {
 		h = v.parseElementCoord(sh)
 		w = v.parseElementCoord(sw)
 	} else if v.IsPresented() {
-		zlog.Error("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zlog.CallingStackString())
+		zlog.Error("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zdebug.CallingStackString())
 	}
 
 	return zgeo.RectMake(0, 0, w, h)

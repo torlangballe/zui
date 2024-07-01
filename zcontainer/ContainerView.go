@@ -12,6 +12,7 @@ import (
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
@@ -534,7 +535,7 @@ func (v *ContainerView) ReplaceChild(child, with zview.View) {
 	// zlog.Info("CV ReplaceChild:", v.Hierarchy())
 	c, _ := v.FindCellWithView(child)
 	if c == nil {
-		zlog.Error("CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zlog.CallingStackString())
+		zlog.Error("CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zdebug.CallingStackString())
 		for _, c := range v.GetChildren(true) {
 			fmt.Printf("Children: %s %p != %p %v\n", c.ObjectName(), c, child, c == child)
 		}
