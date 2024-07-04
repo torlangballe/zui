@@ -359,7 +359,6 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlic
 		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedActionPre, View: &sview})
 	}
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
-		// zlog.Info(EnableLog, "FV Update field:", each.Field.Name, recentEdit, each.Field.IsStatic(), each.StructField.Type.Kind()) // EnableLog,
 		if !recentEdit || each.Field.IsStatic() || each.StructField.Type.Kind() == reflect.Slice {
 			v.updateField(each.FieldIndex, each.ReflectValue, each.StructField, dontOverwriteEdited, forceUpdateOnFieldSlice)
 		}
@@ -1782,7 +1781,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		// zlog.Info("LAB:", title, view.ObjectName(), f.FieldName)
 		var label *zlabel.Label
 		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
-		if f.HasFlag(FlagLockable) {
+		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
 				lstack.AddAdvanced(lock, zgeo.CenterRight, zgeo.SizeD(-7, 7), zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()

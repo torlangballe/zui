@@ -119,8 +119,8 @@ const (
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
 	FlagShowPopup                                     // press to show a popup of contents
-	FlagLockable                                      // show a lock icon to right of item when labelized. Disables/Hides.
-	FlagHeaderLockable                                // show a lock icon on header, for locking selected rows.
+	FlagIsLockable                                    // Show a lock icon to right of item when labelized. Disables/Hides.
+	FlagHeaderLockable                                // Show a lock icon on header, for locking selected rows.
 	FlagIsStart                                       // This field represents a start value, probably a time, and so far for if FlagHeaderLockable.
 	FlagIsEnd                                         // This field represents an end value, probably a time, and so far for if FlagHeaderLockable.
 	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
@@ -231,10 +231,10 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsEdit":                   uint64(FlagIsEdit),
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
-	"Lockable":                 uint64(FlagLockable),
+	"IsLockable":               uint64(FlagIsLockable),
 	"HeaderLockable":           uint64(FlagHeaderLockable),
-	"FlagDontJustifyHeader":    uint64(FlagDontJustifyHeader),
-	"FlagCheckerCell":          uint64(FlagCheckerCell),
+	"DontJustifyHeader":        uint64(FlagDontJustifyHeader),
+	"CheckerCell":              uint64(FlagCheckerCell),
 }
 
 var (
@@ -409,7 +409,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.SetFlag(FlagIsEnd)
 			}
 		case "lockable":
-			f.SetFlag(FlagLockable)
+			f.SetFlag(FlagIsLockable)
 		case "filter":
 			f.Filters = barParts
 		case "count":
