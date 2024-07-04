@@ -35,7 +35,7 @@ func newDiv(storeKey string) *DividerView {
 	v.SetDrawHandler(v.draw)
 	v.storeKey = storeKey
 	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) bool {
-		abs := v.AbsoluteRect().Pos.Vertice(v.Vertical) + pos.Vertice(v.Vertical)
+		abs := v.AbsoluteRect().Pos.Element(v.Vertical) + pos.Element(v.Vertical)
 		switch down {
 		case zbool.False:
 			zview.SkipEnterHandler = false
@@ -65,9 +65,9 @@ func newDiv(storeKey string) *DividerView {
 			if v.doubleClicking {
 				break
 			}
-			zfloat.Maximize(&abs, v.Parent().AbsoluteRect().Pos.Vertice(v.Vertical))
+			zfloat.Maximize(&abs, v.Parent().AbsoluteRect().Pos.Element(v.Vertical))
 			v.Delta = v.startDelta + abs
-			// zlog.Info("DivDelta:", v.startDelta, pos.Vertice(v.Vertical), v.Delta)
+			// zlog.Info("DivDelta:", v.startDelta, pos.Element(v.Vertical), v.Delta)
 			v.storeDelta()
 			at, _ := v.Parent().View.(Arranger)
 			at.ArrangeChildren()
@@ -84,8 +84,6 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 			delta, got := zkeyvalue.DefaultSessionStore.GetDouble(v.storeKey, 0)
 			if got {
 				v.Delta = delta
-				// ArrangeChildrenAtRootContainer(v)
-				// v.Expose()
 			}
 		}
 	}
