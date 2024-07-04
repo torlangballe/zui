@@ -147,8 +147,8 @@ func (v *ShapeView) GetImage() *zimage.Image {
 	return v.image
 }
 
-func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	s := v.MinSize()
+func (v *ShapeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	s = v.MinSize()
 	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
 		ts, _, _ := v.textInfo.GetBounds()
 		// zlog.Info("ShapeView.CalculatedSize:", v.ObjectName(), v.textInfo.Text, s, ts)
@@ -204,7 +204,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// }
 	// zlog.Info("ShapeView CalcSize:", v.ObjectName(), v.textInfo.Text, s, v.MinSize(), v.MaxSize.H)
 	s = s.Ceil()
-	return s
+	return s, v.MaxSize
 }
 
 func (v *ShapeView) SetImage(image *zimage.Image, useCache bool, spath string, done func(i *zimage.Image)) {

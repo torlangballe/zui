@@ -35,8 +35,7 @@ func (v *Button) GetTextInfo() ztextinfo.Info {
 	return *t
 }
 
-func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *Button) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
 	s, _, _ = ti.GetBounds()
@@ -47,7 +46,7 @@ func (v *Button) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s = s.Ceil()
 	// zlog.Info("Button CS:", v.ObjectName(), s)
-	return s
+	return s, zgeo.SizeD(0, s.H)
 }
 
 func (v *Button) MinWidth() float64 {

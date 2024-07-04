@@ -43,12 +43,6 @@ func (v *SearchField) SetValueHandler(id string, handler func(edited bool)) {
 	v.TextView.SetValueHandler(id, handler)
 }
 
-// func (v *SearchField) CalculatedSize(total zgeo.Size) zgeo.Size {
-// 	s := v.TextView.CalculatedSize(total)
-// 	s.H = v.MinSize().H
-// 	return s
-// }
-
 func (v *SearchField) Text() string {
 	return v.TextView.Text()
 }

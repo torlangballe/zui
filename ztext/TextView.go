@@ -71,7 +71,7 @@ func (v *TextView) IsEditing() bool {
 	return v.updateTimer != nil
 }
 
-func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *TextView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	ti := ztextinfo.New()
 	ti.Alignment = v.alignment
 	ti.IsMinimumOneLineHight = true
@@ -80,15 +80,17 @@ func (v *TextView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if v.maxWidth != 0 {
 		ti.SetWidthFreeHight(v.maxWidth + v.margin.Size.W*2)
 	}
-
-	s := ti.GetColumnsSize(v.Columns)
+	s = ti.GetColumnsSize(v.Columns)
 	s.Add(v.margin.Size.Negative())
 	s = s.Ceil()
 	s.W += 6
 	s.H -= 2
 	zfloat.Maximize(&s.H, 34)
 	// zlog.Info("TextView size:", v.Columns, v.Hierarchy(), s, v.margin.Size, v.Hierarchy()) //, zlog.GetCallingStackString())
-	return s
+	if v.maxWidth != 0 {
+		max.W = s.W
+	}
+	return s, max
 }
 
 func (v *TextView) Margin() zgeo.Rect {
@@ -126,4 +128,3 @@ func (v *TextView) SetMaxLines(max int) {
 func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
 }
-

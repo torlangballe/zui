@@ -26,6 +26,3 @@ func NewEditorView(text string, cols, rows int) *CodeEditorView {
 	return v
 }
 
-// func (v *CodeEditorView) CalculatedSize(total zgeo.Size) zgeo.Size {
-// 	return v.MinSize
-// }

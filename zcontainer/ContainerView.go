@@ -235,8 +235,9 @@ func (v *ContainerView) SetRect(rect zgeo.Rect) {
 	// }
 }
 
-func (v *ContainerView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.MinSize()
+func (v *ContainerView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	s = v.MinSize()
+	return s, zgeo.Size{}
 }
 
 // func (v *ContainerView) SetAsFullView(useableArea bool) {
@@ -258,7 +259,7 @@ func (v *ContainerView) ArrangeChildrenAnimated() {
 func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
 		ir := r.Expanded(c.Margin.MinusD(2.0))
-		s := c.View.CalculatedSize(ir.Size)
+		s, _ := c.View.CalculatedSize(ir.Size)
 		if c.RelativeToName != "" {
 			rv, _ := v.FindCellWithName(c.RelativeToName)
 			// zlog.Info("CV Arrange relname:", c.View.Native().Hierarchy(), c.RelativeToName, rv != nil)

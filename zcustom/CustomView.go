@@ -53,8 +53,8 @@ func (v *CustomView) Canvas() *zcanvas.Canvas {
 	return v.canvas
 }
 
-func (v *CustomView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.MinSize()
+func (v *CustomView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	return v.MinSize(), zgeo.Size{}
 }
 
 func (v *CustomView) SetHighlighted(h bool) {

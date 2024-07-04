@@ -107,12 +107,11 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	} else {
 		s = zscreen.GetMain().UsableRect.ExpandedD(-10).Size
 	}
-	size := v.CalculatedSize(s)
+	size, _ := v.CalculatedSize(s)
 	// size.MultiplyD(win.Scale)
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
-	// zlog.Info("Present:", s, size, win.Scale, rect)
 	nv := v.Native()
 	if attributes.Modal {
 		if nv != nil {
@@ -468,12 +467,11 @@ func MakeBar(stitle string, titleAlign zgeo.Alignment) (*zcontainer.StackView, *
 		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 	})
-
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
 	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
 	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
-	bar.Add(titleLabel, titleAlign|zgeo.VertCenter)
+	bar.Add(titleLabel, titleAlign|zgeo.VertCenter|zgeo.HorExpand)
 
 	return bar, titleLabel
 }

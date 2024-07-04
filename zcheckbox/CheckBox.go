@@ -18,8 +18,8 @@ type CheckBox struct {
 
 var checkboxSize = zgeo.SizeBoth(20)
 
-func (c *CheckBox) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return checkboxSize
+func (c *CheckBox) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	return checkboxSize, checkboxSize
 }
 
 func (c *CheckBox) On() bool {

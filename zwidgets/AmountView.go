@@ -47,8 +47,8 @@ func (v *AmountView) ValueAsAny() any {
 	return v.Value()
 }
 
-func (v *AmountView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return v.MinSize()
+func (v *AmountView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	return v.MinSize(), v.MinSize()
 }
 
 func (v *AmountView) getColorForValue() zgeo.Color {

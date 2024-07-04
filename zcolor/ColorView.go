@@ -13,8 +13,9 @@ type ColorView struct {
 	valueChangedHandlerFunc func(edited bool)
 }
 
-func (v *ColorView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.SizeD(30, 20)
+func (v *ColorView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	s = zgeo.SizeD(30, 20)
+	return s, s
 }
 
 func (v *ColorView) SetValueWithAny(col any) {

@@ -231,7 +231,8 @@ func (v *HeaderView) Populate(headers []Header) {
 			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(2, 3))
 			v.updateTriangle(triangle, h.FieldName)
 		}
-		zfloat.Maximize(&h.MinWidth, button.CalculatedSize(zgeo.SizeNull).W)
+		bcs, _ := button.CalculatedSize(zgeo.SizeNull)
+		zfloat.Maximize(&h.MinWidth, bcs.W)
 		if h.MaxWidth != 0 {
 			zfloat.Maximize(&cell.MaxSize.W, math.Max(h.MaxWidth, h.MinWidth))
 		}
@@ -257,6 +258,7 @@ func ShowLock(headerButton *zshape.ImageButtonView, show bool) {
 }
 
 func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
+	// zlog.Info("Hv.Fit2RowStart:", zdebug.CallingStackString())
 	var cells []zcontainer.Cell
 
 	for _, c := range stack.Cells {
@@ -285,6 +287,7 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 		} else {
 			x = (cr.Max().X+cells[i+1].View.Rect().Min().X)/2 + xdiff
 		}
+		zfloat.Maximize(&x, o.Pos.X+cr.Size.W) // Hack on initial setup where no data in table yet
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H

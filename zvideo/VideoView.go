@@ -37,7 +37,7 @@ func (v *VideoView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		s := v.StreamSize.ShrunkInto(v.maxSize)
 		return s
 	}
-	return v.maxSize
+	return v.maxSize, v.maxSize
 }
 
 func (v *VideoView) SetMaxSize(max zgeo.Size) {

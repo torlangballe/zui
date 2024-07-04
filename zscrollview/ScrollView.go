@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -88,10 +89,10 @@ func (v *ScrollView) Update() {
 	v.Expose()
 }
 
-func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	s := v.MinSize()
+func (v *ScrollView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	s = v.MinSize()
 	if v.child != nil {
-		cs := v.child.CalculatedSize(total)
+		cs, _ := v.child.CalculatedSize(total)
 		if v.ExpandToChildHightUpTo != 0 {
 			s.H = math.Min(total.H, math.Max(s.H, cs.H))
 			zlog.Info("ScrollView.ExpandToChildHight:", v.Hierarchy(), total.H, s.H)
@@ -99,7 +100,7 @@ func (v *ScrollView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		s.W = cs.W
 		s.W += 16
 	}
-	return s
+	return s, zgeo.Size{}
 }
 
 func (v *ScrollView) SetRect(rect zgeo.Rect) {
@@ -107,7 +108,7 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 	if v.child != nil {
 		ls := rect.Size
 		ls.H = 20000
-		cs = v.child.CalculatedSize(ls)
+		cs, _ = v.child.CalculatedSize(ls)
 		// zlog.Info("SV SetRect:", v.Hierarchy(), v.child != nil, "content:", cs.H, rect)
 		cs.W = ls.W - 16
 	}
@@ -118,7 +119,7 @@ func (v *ScrollView) SetRectWithChildSize(rect zgeo.Rect, cs zgeo.Size) {
 	// zlog.Info("SV.SetRectWithChildSize", v.ObjectName(), rect, cs)
 	v.CustomView.SetRect(rect)
 	if rect.Size.W < 0 {
-		zlog.Info("ScrollStRectW:", v.Hierarchy(), rect, cs, zlog.CallingStackString())
+		zlog.Info("ScrollStRectW:", v.Hierarchy(), rect, cs, zdebug.CallingStackString())
 	}
 	if v.child != nil {
 		v.child.SetRect(zgeo.Rect{Size: cs})

@@ -45,14 +45,14 @@ func (v *MenuView) getNumberOfItemsString() string {
 	return zwords.PluralWordWithCount("item", float64(v.items.Count()), "", "", 0)
 }
 
-func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var max string
+func (v *MenuView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	var maxStr string
 	for _, item := range v.items {
-		if len(item.Name) > len(max) {
-			max = item.Name
+		if len(item.Name) > len(maxStr) {
+			maxStr = item.Name
 		}
 	}
-	w := ztextinfo.WidthOfString(max, v.Font())
+	w := ztextinfo.WidthOfString(maxStr, v.Font())
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&w, v.maxWidth)
 	}
@@ -60,9 +60,14 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	if zdevice.OS() != zdevice.MacOSType {
 		w += 5
 	}
-	s := zgeo.SizeD(w, menuViewHeight)
+	s = zgeo.SizeD(w, menuViewHeight)
 	s.H += 4 // 8
-	return s
+	max = s
+	if v.maxWidth == 0 || len(v.items) == 0 {
+		max.W = 0
+	}
+	// zlog.Info("MV.CalculatedSize:", s, max, maxStr, len(v.items))
+	return s, max
 }
 
 func (v *MenuView) MaxWidth() float64 {

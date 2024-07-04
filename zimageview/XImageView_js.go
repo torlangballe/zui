@@ -64,8 +64,7 @@ func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSiz
 // 	v.Expose()
 // }
 
-func (v *XImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *XImageView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	// zlog.Info("IV CS", v.Hierarchy(), s, p, v.image != nil, zlog.GetCallingStackString())
 	// margSize := v.Margin().Size
 	if !v.fitSize.IsNull() {
@@ -82,7 +81,7 @@ func (v *XImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	// }
 	// s.Add(margSize.Negative())
 	s.Maximize(zgeo.SizeD(2, 2))
-	return s
+	return s, s
 }
 
 func (v *XImageView) FitSize() zgeo.Size {

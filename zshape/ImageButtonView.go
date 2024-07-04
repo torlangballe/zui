@@ -6,7 +6,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 )
 
-//  Created by Tor Langballe on /14/12/17.
+// Originally created by Tor Langballe on /14/12/17.
 
 var (
 	ImageButtonViewDefaultName = "gray"
@@ -46,10 +46,9 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.ImageMargin = zgeo.SizeNull
 }
 
-func (v *ImageButtonView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	s := v.ShapeView.CalculatedSize(total)
-	// zlog.Info("ButtonCalc:", s, v.ObjectName(), v.textInfo.Text, v.image.Path, v.image.Size())
-	return s
+func (v *ImageButtonView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	s, _ = v.ShapeView.CalculatedSize(total)
+	return s, zgeo.SizeD(0, s.H)
 }
 
 func (v *ImageButtonView) SetImageName(name string, insets zgeo.Size) {

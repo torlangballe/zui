@@ -132,10 +132,11 @@ func (v *CalendarView) Init(view zview.View) {
 	})
 }
 
-func (v *CalendarView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *CalendarView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	marg := zgeo.SizeD(6, 6)
-	s := v.StackView.CalculatedSize(total)
-	return s.Plus(marg)
+	s, _ = v.StackView.CalculatedSize(total)
+	s.Add(marg)
+	return s, s
 }
 
 func (v *CalendarView) SetRect(r zgeo.Rect) {

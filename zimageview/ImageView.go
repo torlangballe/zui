@@ -124,8 +124,7 @@ func (v *ImageView) SetRect(rect zgeo.Rect) {
 	}
 }
 
-func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *ImageView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	if v.image != nil {
 		s = v.image.Size()
 	}
@@ -136,7 +135,7 @@ func (v *ImageView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	s.Add(margSize.Negative())
 	s.Maximize(zgeo.SizeD(2, 2))
 	// zlog.Info("IV CalcS:", v.Hierarchy(), total, s, v.fitSize, margSize)
-	return s
+	return s, s
 }
 
 func (v *ImageView) FitSize() zgeo.Size {

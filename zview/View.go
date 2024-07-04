@@ -11,7 +11,7 @@ import (
 )
 
 type View interface {
-	CalculatedSize(total zgeo.Size) zgeo.Size
+	CalculatedSize(total zgeo.Size) (s, max zgeo.Size)
 	SetObjectName(name string)
 	ObjectName() string
 	SetUsable(usable bool)
@@ -109,10 +109,6 @@ type ValueHandler interface {
 
 type ValueHandlers struct {
 	handlers map[string]func(edited bool)
-}
-
-type MaxSizeInTotaler interface {
-	MaxSizeInTotal(total zgeo.Size) zgeo.Size
 }
 
 func (vh *ValueHandlers) Add(id string, f func(edited bool)) {

@@ -56,8 +56,7 @@ func (v *Label) GetTextInfo() ztextinfo.Info {
 	return *t
 }
 
-func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var widths []float64
 	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
@@ -77,7 +76,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s = s.Ceil()
 	s.W += 1
-	return s
+	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
 }
 
 func (v *Label) Text() string {

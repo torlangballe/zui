@@ -116,6 +116,7 @@ func (v *DividerView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	canvas.FillPath(path)
 }
 
-func (v *DividerView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.SizeD(10, 10)
+func (v *DividerView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	const h = 10
+	return zgeo.SizeD(10, h), zgeo.SizeD(0, h)
 }

@@ -48,11 +48,10 @@ func (v *GridView) SetColumnToAddTo(c int) {
 	}
 }
 
-func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *GridView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	rows := v.getLayoutRows(zgeo.Rect{Size: total})
 	for j := 0; j < len(rows); j++ {
-		rowSize := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, rows[j])
+		rowSize, _ := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, rows[j])
 		zfloat.Maximize(&s.W, rowSize.W)
 		s.H += rowSize.H
 		if j != 0 {
@@ -61,7 +60,7 @@ func (v *GridView) CalculatedSize(total zgeo.Size) zgeo.Size {
 	}
 	s.Maximize(v.MinSize())
 	s.Subtract(v.Margin().Size)
-	return s
+	return s, zgeo.Size{}
 }
 
 func (v *GridView) GetCell(x, y int) *Cell {
@@ -105,7 +104,7 @@ func (v *GridView) addCell(rect zgeo.Rect, rows *[][]zgeo.LayoutCell, i, j int) 
 	var l zgeo.LayoutCell
 	if cell != nil {
 		l = cell.LayoutCell
-		l.OriginalSize = cell.View.CalculatedSize(rect.Size)
+		l.OriginalSize, l.MaxSize = cell.View.CalculatedSize(rect.Size)
 		// zlog.Info("Size:", i, j, cell.View.ObjectName(), l.OriginalSize)
 		l.Name = cell.View.ObjectName()
 	}
@@ -168,7 +167,8 @@ func (v *GridView) ArrangeChildren() {
 	rows := v.getLayoutRows(rect)
 	for j, row := range rows {
 		r := rect
-		r.Size.H = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, row).H
+		s, _ := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), false, v.Spacing.W, row)
+		r.Size.H = s.H
 		rects := zgeo.LayoutCellsInStack(v.ObjectName(), r, false, v.Spacing.W, row)
 		y := rect.Min().Y
 		// zlog.Info("Layout1:", r)

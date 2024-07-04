@@ -134,8 +134,8 @@ func SetElementRect(e js.Value, rect zgeo.Rect) {
 	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
 }
 
-func (v *NativeView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	return zgeo.SizeD(10, 10)
+func (v *NativeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
+	return zgeo.SizeD(10, 10), zgeo.Size{}
 }
 
 func (v *NativeView) LocalRect() zgeo.Rect {
@@ -440,6 +440,7 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 }
 
 func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {
+	zlog.Info("Set HandleFocusInChildren", in, root.Hierarchy())
 	if in {
 		// zlog.Info("Set HandleFocusInChildren", root.Hierarchy())
 		handleFocusInChildren(root, "focusin", true, handle)
@@ -1020,7 +1021,7 @@ func (v *NativeView) HasPressedDownHandler() bool {
 }
 
 func (v *NativeView) SetPressedDownHandler(handler func()) {
-	zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
+	// zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
 	v.SetListenerJSFunc("mousedown:pressed-down", func(this js.Value, args []js.Value) any {
 		zlog.Info("DOWN:", v.Hierarchy())
