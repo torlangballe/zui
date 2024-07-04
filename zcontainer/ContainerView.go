@@ -116,11 +116,11 @@ func FindAncestorArranger(view zview.View) Arranger {
 		if nv.Parent() == nil {
 			return nil
 		}
+		nv = nv.Parent()
 		a, _ := nv.View.(Arranger)
 		if a != nil {
 			return a
 		}
-		nv = nv.Parent()
 	}
 }
 
