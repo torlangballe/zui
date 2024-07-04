@@ -34,8 +34,12 @@ type TableView[S zstr.StrIDer] struct {
 	FieldParameters      zfields.FieldViewParameters
 	AfterLockPressedFunc func(fieldName string, didLock bool)
 	fields               []zfields.Field // the fields in an S struct used to generate columns for the table
-	lockedFieldValues    map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
+	LockedFieldValues    map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
 	hasFitHeaderToRows   bool
+}
+
+type TableViewGetter[S zstr.StrIDer] interface {
+	GetTableView() *TableView[S]
 }
 
 func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) *TableView[S] {
@@ -50,7 +54,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	v.Grid.SetMargin(zgeo.Rect{})
 	v.ColumnMargin = 5
 	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
-	v.lockedFieldValues = map[string]any{}
+	v.LockedFieldValues = map[string]any{}
 	// v.HeaderHeight = 28
 	v.FieldParameters = zfields.FieldViewParametersDefault()
 	v.FieldParameters.AllStatic = true
@@ -86,7 +90,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 				continue
 			}
 			fieldName := h.ObjectName()
-			_, isLocked := v.lockedFieldValues[fieldName]
+			_, isLocked := v.LockedFieldValues[fieldName]
 			// zlog.Info("HandleSelectionChangedFunc show:", h.ObjectName(), hasSelected, isLocked)
 			canLock := selCount > 0
 			if !isLocked {
@@ -98,6 +102,10 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 			zheader.ShowLock(h, canLock || isLocked)
 		}
 	}
+}
+
+func (v *TableView[S]) GetTableView() *TableView[S] {
+	return v
 }
 
 func (v *TableView[S]) findField(fieldName string) (*zfields.Field, int) {
@@ -161,7 +169,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 		v.Header.SortingPressedFunc = func() {
 			v.SortFunc(*v.slicePtr)
-			v.UpdateViewFunc()
+			v.UpdateViewFunc(true)
 			// for i, s := range *v.slice {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
@@ -257,27 +265,69 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 	return headers
 }
 
-func (v *TableView[S]) FilterRowWithZFields(row *S, fieldNames []string) bool {
-	var all []string
+// FilterTime returns false if t is before/after the field's locked value.
+// This is a convenience method for when doing your own filtering and not using FilterRowWithZFields.
+func (v *TableView[S]) FilterTime(t time.Time, isStart bool, fieldName string) bool {
+	val, has := v.LockedFieldValues[fieldName]
+	if !has {
+		return true
+	}
+	if isStart {
+		return !t.Before(val.(time.Time))
+	}
+	return !t.After(val.(time.Time))
+}
+
+// FilterString returns false if the string isn't in the locked set in v.LockedFieldValues
+// It sets contains if v.currentLowerCaseSearchText is set and is contained in str.
+// This is a convenience method for when doing your own filtering and not using FilterRowWithZFields.
+func (v *TableView[S]) FilterString(str string, fieldName string, contains *bool) bool {
+	if v.currentLowerCaseSearchText != "" {
+		if strings.Contains(strings.ToLower(str), v.currentLowerCaseSearchText) {
+			zlog.Info("Filter:", str, "==", v.currentLowerCaseSearchText)
+			*contains = true
+		}
+	} else {
+		*contains = true
+	}
+	val, has := v.LockedFieldValues[fieldName]
+	if !has {
+		return true
+	}
+	all := val.([]string)
+	if !zstr.StringsContain(all, str) {
+		return false
+	}
+	return true
+}
+
+// FilterRowWithZFields returns false for a row that should be filtered out of the table.
+// Typically used with underlying SliceGridView's FilterFunc.
+// For fields with FlagIsSearchable, is
+func (v *TableView[S]) FilterRowWithZFields(row *S) bool {
 	zlog.Assert(len(v.fields) != 0)
-	for _, fieldName := range fieldNames {
-		f, _ := v.findField(fieldName)
-		if zlog.ErrorIf(f == nil, fieldName, all) {
-			continue
-		}
+	var hasSearchable, searchMatch bool
+	for _, f := range v.fields {
 		var rowFieldVal string
+		var hasLock bool
+		var val any
 		canLock := f.HasFlag(zfields.FlagHeaderLockable)
-		finfo, found := zreflect.FieldForName(row, zfields.FlattenIfAnonymousOrZUITag, fieldName)
-		if canLock || v.currentLowerCaseSearchText != "" {
-			zlog.Assert(found, fieldName)
-			rowFieldVal = fmt.Sprint(finfo.ReflectValue.Interface())
-		}
 		if canLock {
-			val, has := v.lockedFieldValues[fieldName]
-			// if fieldName == "End" {
-			// 	zlog.Info("Filter:", has, val, finfo.ReflectValue.Interface())
-			// }
-			if has {
+			val, hasLock = v.LockedFieldValues[f.FieldName]
+
+		}
+		search := (v.currentLowerCaseSearchText != "" && f.HasFlag(zfields.FlagIsSearchable))
+		if hasLock || search {
+			finfo, found := zreflect.FieldForName(row, zfields.FlattenIfAnonymousOrZUITag, f.FieldName)
+			zlog.Assert(found, f.FieldName)
+			rowFieldVal = fmt.Sprint(finfo.ReflectValue.Interface())
+			if search {
+				hasSearchable = true
+				if strings.Contains(strings.ToLower(rowFieldVal), v.currentLowerCaseSearchText) {
+					searchMatch = true
+				}
+			}
+			if hasLock {
 				// zlog.Info("FilterRowWithZFieldInfo has:", fieldName)
 				if f.HasFlag(zfields.FlagIsTimeBoundary) {
 					filterTime := val.(time.Time)
@@ -305,11 +355,9 @@ func (v *TableView[S]) FilterRowWithZFields(row *S, fieldNames []string) bool {
 				}
 			}
 		}
-		if v.currentLowerCaseSearchText != "" {
-			if !strings.Contains(strings.ToLower(rowFieldVal), v.currentLowerCaseSearchText) {
-				return false
-			}
-		}
+	}
+	if hasSearchable {
+		return searchMatch
 	}
 	return true
 }
@@ -329,12 +377,12 @@ func (v *TableView[S]) LockColumn(fieldName string, setLocked bool, lockVal any,
 		headerButton.ArrangeChildren()
 		if updateTable {
 			ztimer.StartIn(0.1, func() {
-				v.UpdateViewFunc()
+				v.UpdateViewFunc(true)
 			})
 		}
 	}()
 	if !setLocked {
-		delete(v.lockedFieldValues, fieldName)
+		delete(v.LockedFieldValues, fieldName)
 		label.SetText("")
 		label.SetToolTip("")
 		lock.TintColor.Valid = false
@@ -343,7 +391,7 @@ func (v *TableView[S]) LockColumn(fieldName string, setLocked bool, lockVal any,
 		return
 	}
 	lock.TintColor = zgeo.ColorYellow.WithOpacity(0.2)
-	v.lockedFieldValues[fieldName] = lockVal
+	v.LockedFieldValues[fieldName] = lockVal
 	f, _ := v.findField(fieldName)
 	zlog.Assert(f != nil, fieldName)
 	t, _ := lockVal.(time.Time)
@@ -379,7 +427,7 @@ func (v *TableView[S]) HandleLockPressedWithZField(fieldName string) {
 	var uniqueVals []string
 	clearCache := true
 	updateTable := true
-	_, has := v.lockedFieldValues[fieldName]
+	_, has := v.LockedFieldValues[fieldName]
 	if has {
 		v.LockColumn(fieldName, false, nil, clearCache, updateTable)
 		if v.AfterLockPressedFunc != nil {

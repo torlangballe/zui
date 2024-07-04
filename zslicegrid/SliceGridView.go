@@ -52,7 +52,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	ForceUpdateSlice      bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
 	NameOfXItemsFunc      func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc  func(ids []string) string
-	UpdateViewFunc        func()
+	UpdateViewFunc        func(arrange bool)
 	SortFunc              func(s []S)                                     // SortFunc is called to sort the slice after any updates.
 	FilterFunc            func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
 	StoreChangedItemsFunc func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
@@ -137,6 +137,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.options = options
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
+		v.Bar.NoCalculatedMaxSize = true
 		v.Bar.SetSpacing(8)
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
 		if options&AddBarInHeader == 0 {
@@ -147,12 +148,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
 		v.SearchField.SetValueHandler("zslicegrid.Search", func(edited bool) {
 			v.currentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
-			// zlog.Info("Search Changed")
-			t, _ := v.View.(*TableView[S])
-			if t != nil {
-				t.ClearFilterSkipCache()
+			tvg, _ := v.View.(TableViewGetter[S])
+			if tvg != nil {
+				table := tvg.GetTableView()
+				table.ClearFilterSkipCache()
 			}
-			v.UpdateViewFunc()
+			v.UpdateViewFunc(true)
 		})
 		v.Bar.Add(v.SearchField, zgeo.TopRight, zgeo.SizeD(0, -8))
 	}
@@ -244,12 +245,18 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
-	v.UpdateViewFunc = func() {
+	v.UpdateViewFunc = func(arrange bool) {
+		// prof := zlog.NewProfile(0.05, "UpdateViewFunc", v.ObjectName())
 		v.doFilterAndSort(*v.slicePtr)
 		a := v.View.(zcontainer.Arranger)
 		// v.Grid.UpdateOnceOnSetRect = updateAllRows
-		a.ArrangeChildren() // We might be a table or other derivative, so need to do it this way
+		// prof.Log("After Filter")
+		if arrange {
+			a.ArrangeChildren() // We might be a table or other derivative, so need to do it this way
+		}
+		// prof.Log("After Arrange")
 		v.UpdateWidgets()
+		// prof.End("After UpdateWidgets")
 	}
 	if hasHierarchy {
 		v.Grid.HierarchyLevelFunc = v.calculateHierarchy
@@ -257,7 +264,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
-	v.Add(v.Grid, zgeo.TopCenter|zgeo.Expand)
+	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand)
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
@@ -284,7 +291,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
-		v.UpdateViewFunc()
+		v.UpdateViewFunc(true)
 		// zlog.Info("StoreChangedItemsFunc done")
 	}
 
@@ -307,7 +314,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.RemoveItemsFromSlice(deleteIDs)
-		v.UpdateViewFunc()
+		v.UpdateViewFunc(true)
 	}
 	return
 }
@@ -486,7 +493,6 @@ func (v *SliceGridView[S]) doFilterAndSort(slice []S) {
 	v.doFilter(slice)
 	if v.SortFunc != nil {
 		v.SortFunc(v.filteredSlice) // Do this beforeWindow shown, as the sorted cells get placed correctly then
-		// v.UpdateViewFunc()
 	}
 }
 
@@ -514,11 +520,11 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 	}
 	sgv.insertItemsIntoASlice(rows, orSlice)
 	if sgv != nil && len(sgv.Grid.DirtyIDs) != 0 {
-		sgv.UpdateViewFunc()
+		sgv.UpdateViewFunc(true)
 	}
 }
 
-func (v *SliceGridView[S]) UpdateSlice(s []S) {
+func (v *SliceGridView[S]) UpdateSlice(s []S, arrange bool) {
 	update := v.ForceUpdateSlice
 	if !update {
 		update = (len(s) != len(*v.slicePtr) || zreflect.HashAnyToInt64(s, "") != zreflect.HashAnyToInt64(*v.slicePtr, ""))
@@ -531,13 +537,13 @@ func (v *SliceGridView[S]) UpdateSlice(s []S) {
 	if update {
 		v.ForceUpdateSlice = false
 		*v.slicePtr = s
-		v.UpdateViewFunc()
+		v.UpdateViewFunc(arrange)
 	}
 }
 
-func (v *SliceGridView[S]) UpdateSliceWithSelf() {
-	v.UpdateSlice(*v.slicePtr)
-}
+// func (v *SliceGridView[S]) UpdateSliceWithSelf() {
+// 	v.UpdateSlice(*v.slicePtr)
+// }
 
 func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	var items []S

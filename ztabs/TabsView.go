@@ -190,13 +190,12 @@ func (v *TabsView) SelectItem(id string, done func()) {
 	if item.create != nil {
 		v.currentChild = item.create(id, false)
 	}
-	v.Add(v.currentChild, zgeo.Center|zgeo.Expand)
+	v.Add(v.currentChild, zgeo.TopLeft|zgeo.Expand)
 	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
 	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 	if v.IsPresented() {
-		// zcontainer.ArrangeChildrenAtRootContainer(v)
-		v.ArrangeChildren()
+		zcontainer.ArrangeAncestorContainer(v)
 	}
 	if v.ChangedHandlerFunc != nil {
 		v.ChangedHandlerFunc(id)

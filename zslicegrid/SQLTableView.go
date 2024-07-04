@@ -171,7 +171,7 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 		zalert.ShowError(err, "updating")
 	}
 	v.RemoveItemsFromSlice(ids)
-	v.UpdateViewFunc()
+	v.UpdateViewFunc(true)
 }
 
 func (o *SQLOwner[S]) createConstraints() string {
@@ -236,7 +236,7 @@ func (o *SQLOwner[S]) GetAndUpdate() {
 		return
 	}
 	if o.Grid != nil {
-		o.Grid.UpdateSlice(slice)
+		o.Grid.UpdateSlice(slice, true)
 	} else {
 		*o.slicePage = slice
 	}

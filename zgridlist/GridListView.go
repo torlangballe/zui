@@ -541,7 +541,6 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	v.ExposeIn(0.0001)
 	// zlog.Info("GL pressed with selection:", down, selectionChanged, v.selectedIDs)
 	if selectionChanged && v.HandleSelectionChangedFunc != nil {
-		// zlog.Info("GL pressed with selection:", down)
 		v.HandleSelectionChangedFunc()
 	}
 	return eventHandled
@@ -638,20 +637,22 @@ func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (
 	return
 }
 
-func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *GridListView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	focusMarg := zgeo.SizeD(6, 6)
 	v.cachedChildSize = zgeo.SizeNull
-	s := v.MinSize()
+	s = v.MinSize()
 	// zlog.Info("GLV CalculatedSize:", v.Hierarchy(), total, s, v.MakeFullSize)
 	if v.CellCountFunc() == 0 {
-		return s.Plus(focusMarg)
+		return s.Plus(focusMarg), s.Plus(focusMarg)
 	}
 	childSize := v.getAChildSize(total)
-	max := math.Max(1, float64(v.MinColumns))
-	w := childSize.W*max + v.Spacing.W*(max-1) - v.margin.Size.W
+	maxCols := math.Max(1, float64(v.MinColumns))
+	w := childSize.W*maxCols + v.Spacing.W*(maxCols-1) - v.margin.Size.W
 	zfloat.Maximize(&s.W, w)
+	max = v.CalculatedGridSize(total)
 	if v.MakeFullSize {
-		s = v.CalculatedGridSize(total)
+		s = max
+		// zlog.Info("CalcGridSizeAllRows", total, v.ObjectName(), s)
 		// if v.CellHeightFunc != nil {
 		// 	for y := 0; y < int(max) && y < v.CellCountFunc(); y++ {
 		// 		s.H += CellHeightFunc()
@@ -661,8 +662,11 @@ func (v *GridListView) CalculatedSize(total zgeo.Size) zgeo.Size {
 		// 	s.H = childSize.H*my + v.Spacing.H*(my-1) - v.margin.Size.H
 		// }
 	}
-	// zlog.Info("GLV CalculatedSize2:", childSize.H, v.Hierarchy(), s, v.MinSize(), v.CellCountFunc(), max)
-	return s.Plus(focusMarg)
+	max.W = 0
+	max.H += focusMarg.H
+	s = s.Plus(focusMarg)
+	// zlog.Info("GLV CalculatedSize2:", total, childSize.H, v.ObjectName(), s, v.MinSize(), v.CellCountFunc(), max)
+	return s, max
 }
 
 func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
@@ -711,7 +715,7 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 	}
 	cid := v.IDAtIndexFunc(0)
 	child := v.CreateCellFunc(v, cid)
-	s := child.CalculatedSize(total)
+	s, _ := child.CalculatedSize(total)
 	if v.CellHeightFunc != nil {
 		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
 	}
@@ -887,12 +891,11 @@ func (v *GridListView) SetRect(rect zgeo.Rect) {
 		zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
 		return
 	}
-	is := rect.ExpandedD(-v.FocusWidth).Size
-	s := v.CalculatedGridSize(is)
-	w := is.W - v.BarSize()
+	r := rect.ExpandedD(-v.FocusWidth)
+	s := v.CalculatedGridSize(r.Size)
+	w := r.Size.W - v.BarSize()
 	cs := zgeo.SizeD(w, s.H)
-	// zlog.Info("GLV:SetRect:", v.Hierarchy(), cs, rect.Size.W, is.W)
-	v.ScrollView.SetRectWithChildSize(rect.ExpandedD(-v.FocusWidth), cs)
+	v.ScrollView.SetRectWithChildSize(r, cs)
 	v.LayoutCells(v.UpdateOnceOnSetRect)
 	v.UpdateOnceOnSetRect = false
 }
@@ -959,11 +962,13 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	var updateCount int
 	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), len(v.DirtyIDs), "y:", v.YOffset)
 	// start := time.Now()
+	var count int
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if zstr.StringsContain(oldSelected, cid) {
 			selected = append(selected, cid)
 		}
 		if visible {
+			count++
 			// prof := zlog.NewProfile(0.001, "GV.Layout", v.ObjectName(), cid)
 			if v.CurrentHoverID == cid {
 				hoverOK = true
@@ -1015,6 +1020,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 		v.SetContentOffset(oy, false)
 		v.ShowScrollBars(false, true)
 	}
+	// zlog.Info("GLV.Layout:", v.ObjectName(), time.Since(start), count)
 }
 
 func (v *GridListView) ScrollToCell(cellID string, animate bool) {

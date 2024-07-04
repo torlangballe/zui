@@ -16,9 +16,10 @@ import (
 
 type StackView struct {
 	ContainerView
-	spacing           float64
-	Vertical          bool
-	GridVerticalSpace float64
+	spacing             float64
+	Vertical            bool
+	GridVerticalSpace   float64
+	NoCalculatedMaxSize bool
 }
 
 func StackViewNew(vertical bool, name string) *StackView {
@@ -56,7 +57,8 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 	row, heights := v.getGridLayoutRow(total)
 	// zlog.Info("calculateGridSize grid1:", v.Hierarchy(), row)
 	vertical := false
-	s.W = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), vertical, v.spacing, row).W
+	sl, _ := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), vertical, v.spacing, row)
+	s.W = sl.W
 	j := 0
 	for _, vc := range v.Cells {
 		if vc.Collapsed || vc.View == nil || vc.Free {
@@ -76,48 +78,80 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 	return s
 }
 
-func (v *StackView) CalculatedSize(total zgeo.Size) zgeo.Size {
-	var s zgeo.Size
+func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var ws float64
 	if len(v.Cells) != 0 {
 		if v.GridVerticalSpace != zgeo.UndefValue {
-			return v.calculateGridSize(total)
+			s := v.calculateGridSize(total)
+			return s, s
 		}
 		lays := v.getLayoutCells(total)
 		spacing := v.Spacing()
 		if v.GridVerticalSpace != zgeo.UndefValue {
 			spacing = v.GridVerticalSpace
 		}
-		s = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
-		zfloat.Maximize(&s.W, ws)
+		s, max = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
+		// if v.ObjectName() == "zheader" {
+		// 	zlog.Info("sv.CalculatedSize:", s, max)
+		// }
+		zfloat.Maximize(&s.W, ws) // why for W only?
 	}
-	s.Subtract(v.Margin().Size)
+	ms := v.Margin().Size.Negative()
+	s.Add(ms)
+	if v.NoCalculatedMaxSize {
+		max.SetElement(v.Vertical, 0)
+	}
+	if max.W != 0 {
+		max.W += ms.W
+	}
+	if max.H != 0 {
+		max.H += ms.H
+	}
 	s.Maximize(v.MinSize())
-	return s
+	return s, max
 }
 
 func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
-	// zlog.Info("Layout Stack getCells start", v.ObjectName())
+	// if v.ObjectName() == "zheader" {
+	// 	zlog.Info("getLayoutCells", v.ObjectName(), total)
+	// }
+	// var nonMax bool
 	for _, c := range v.Cells {
 		if c.Free || c.View == nil {
 			continue
 		}
 		l := c.LayoutCell
 		// zlog.Info("StackView getLayoutCells:", v.Hierarchy(), c.Collapsed, c.Name, c.View != nil)
-		l.OriginalSize = c.View.CalculatedSize(total)
-		// zlog.Info("StackView getLayoutCells:", v.ObjectName(), c.View.ObjectName(), l.OriginalSize)
+		var max zgeo.Size
+		l.OriginalSize, max = c.View.CalculatedSize(total)
+		// if v.ObjectName() == "zheader" {
+		// 	zlog.Info("StackView getLayoutCells:", c.View.ObjectName(), l.OriginalSize, max, l.MaxSize)
+		// }
+		l.MaxSize.MinimizeNonZero(max)
 		l.Name = c.View.ObjectName()
+		// if l.MaxSize.H == 0 {
+		// 	nonMax = true
+		// }
+		// if l.MaxSize.H != 0 {
+		// zlog.Info("StackView getLayoutCells:", v.ObjectName(), c.View.ObjectName(), l.OriginalSize)
 		div, _ := c.View.(*DividerView)
 		if div != nil {
 			l.Divider = div.Delta
 		}
 		lays = append(lays, l)
 	}
+	// if v.ObjectName() == "zheader" {
+	// 	zlog.Info("getLayoutCells end", v.ObjectName(), "nonMax:", nonMax)
+	// }
+	// zlog.Info("Layout Stack getCells end", v.ObjectName(), zlog.Full(lays))
 	return
 }
 
 func (v *StackView) arrangeChildrenInGrid() {
 	rect := v.LocalRect().Plus(v.margin)
+	// if v.ObjectName() == "License" {
+	// 	zlog.Info("arrangeChildrenInGrid:", v.ObjectName(), rect)
+	// }
 	row, heights := v.getGridLayoutRow(rect.Size)
 	j := 0
 	r := rect
@@ -144,18 +178,17 @@ func (v *StackView) arrangeChildrenInGrid() {
 			rbox.Add(mo.Margin())
 		}
 		rects := zgeo.LayoutCellsInStack(v.ObjectName(), rbox, false, v.spacing, row)
-		var maxHeight float64
 		for i := range row {
 			box := rects[i]
 			if box.IsNull() {
 				continue
 			}
-			zfloat.Maximize(&maxHeight, box.Size.H)
+			zfloat.Maximize(&box.Size.H, heights[j])
 			if i >= len(rowCells) {
 				continue
 			}
 			cell := (rowCells)[i]
-			s := cell.View.CalculatedSize(box.Size)
+			s, _ := cell.View.CalculatedSize(box.Size)
 			ar := box.AlignPro(s, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
 			ar = ar.Intersected(box)
 			cell.View.SetRect(ar)
@@ -184,11 +217,12 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 		// zlog.Info("getGridLayoutRow:", v.Hierarchy(), j, vc.View.ObjectName(), i, len(rowCells), len(row))
 		for _, rc := range rowCells {
 			l := rc.LayoutCell
-			l.OriginalSize = rc.View.CalculatedSize(total)
+			var max zgeo.Size
+			l.OriginalSize, max = rc.View.CalculatedSize(total)
 			if firstRow {
 				l.Alignment = rc.Alignment
 				l.Name = rc.View.ObjectName()
-				l.MaxSize = rc.MaxSize
+				l.MaxSize = max
 				l.MinSize = rc.MinSize
 				row = append(row, l)
 				// zlog.Info("getGridLayoutRow:", j, i, l.OriginalSize.H)
@@ -213,7 +247,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 }
 
 func (v *StackView) ArrangeChildren() {
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v), v.CalculatedSize(zgeo.SizeBoth(2000)))
+	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v))
 	// zlog.PushProfile(v.ObjectName())
 	rm := v.LocalRect().Plus(v.Margin())
 	if v.GridVerticalSpace != zgeo.UndefValue {
@@ -240,8 +274,19 @@ func (v *StackView) ArrangeChildren() {
 	if layouter != nil {
 		layouter.HandleBeforeLayout()
 	}
+	// if v.ObjectName() == "bar"  {
+	// 	zlog.Info("stack get layout", v.Hierarchy(), rm)
+	// }
 	lays := v.getLayoutCells(rm.Size)
+	if v.ObjectName() == "MainTabs" {
+		for i, l := range lays {
+			zlog.Info("stack layout:", v.ObjectName(), i, l.Name, l.OriginalSize, l.MaxSize, l.Alignment)
+		}
+	}
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
+	// if v.ObjectName() == "zheader" {
+	// 	zlog.Info("StackView ArrangeChildren:", v.ObjectName(), rm, rects)
+	// }
 	// zlog.ProfileLog("did layout")
 	j := 0
 	for _, c := range v.Cells {
@@ -255,6 +300,9 @@ func (v *StackView) ArrangeChildren() {
 		r := rects[j]
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
+			// if v.ObjectName() == "streamgrid" {
+			// 	zlog.Info("arrangeChildren:", rm, v.ObjectName(), c.View.ObjectName(), r)
+			// }
 			c.View.SetRect(r)
 			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
 				c.View.Show(true)
