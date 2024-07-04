@@ -76,9 +76,9 @@ func (n *ChildFocusNavigator) HandleKey(km zkeyboard.KeyMod, down bool) bool {
 				continue
 			}
 			r := v.Rect()
-			if r.Max().Vertice(vertical) >= rect.Min().Vertice(vertical) && r.Min().Vertice(vertical) <= rect.Max().Vertice(vertical) {
-				dist := r.Min().Vertice(!vertical) - rect.Center().Vertice(!vertical)
-				if dir.Vertice(!vertical)*dist > 0 {
+			if r.Max().Element(vertical) >= rect.Min().Element(vertical) && r.Min().Element(vertical) <= rect.Max().Element(vertical) {
+				dist := r.Min().Element(!vertical) - rect.Center().Element(!vertical)
+				if dir.Element(!vertical)*dist > 0 {
 					// zlog.Info("arrow", r.Max().Y >= rect.Min().Y && r.Min().Y <= rect.Max().Y, dist, "'"+v.ObjectName()+"'", "MM", r.Max().Y, rect.Min().Y, r.Min().Y, rect.Max().Y)
 					dist = math.Abs(dist)
 					if minDist == -1 || dist < minDist { // minDist only -1 at start, otherwise absolute value
