@@ -45,20 +45,21 @@ type ChildrenOwner interface {
 // id-at-index etc based on open branch toggles.
 type SliceGridView[S zstr.StrIDer] struct {
 	zcontainer.StackView
-	Grid                  *zgridlist.GridListView
-	Bar                   *zcontainer.StackView
-	EditParameters        zfields.FieldViewParameters
-	StructName            string
-	ForceUpdateSlice      bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
-	NameOfXItemsFunc      func(ids []string, singleSpecial bool) string
-	DeleteAskSubTextFunc  func(ids []string) string
-	UpdateViewFunc        func(arrange bool)
-	SortFunc              func(s []S)                                     // SortFunc is called to sort the slice after any updates.
-	FilterFunc            func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
-	StoreChangedItemsFunc func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
-	StoreChangedItemFunc  func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
-	DeleteItemsFunc       func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
-	CallDeleteItemFunc    func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
+	Grid                    *zgridlist.GridListView
+	Bar                     *zcontainer.StackView
+	EditParameters          zfields.FieldViewParameters
+	StructName              string
+	ForceUpdateSlice        bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
+	NameOfXItemsFunc        func(ids []string, singleSpecial bool) string
+	DeleteAskSubTextFunc    func(ids []string) string
+	UpdateViewFunc          func(arrange bool)
+	SortFunc                func(s []S)                                     // SortFunc is called to sort the slice after any updates.
+	FilterFunc              func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
+	StoreChangedItemsFunc   func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
+	StoreChangedItemFunc    func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	DeleteItemsFunc         func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
+	HandleShortCutInRowFunc func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
+	CallDeleteItemFunc      func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 
 	slicePtr                   *[]S
 	filteredSlice              []S
@@ -116,6 +117,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.StructName = "item"
 	v.slicePtr = slice
 	v.FilterSkipCache = map[string]bool{}
+	v.NoCalculatedMaxSize.W = true
 
 	v.EditParameters = zfields.FieldViewParametersDefault()
 	v.EditParameters.Field.Flags |= zfields.FlagIsLabelize
@@ -137,7 +139,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.options = options
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
-		v.Bar.NoCalculatedMaxSize = true
+		v.Bar.NoCalculatedMaxSize.W = true
 		v.Bar.SetSpacing(8)
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
 		if options&AddBarInHeader == 0 {
@@ -210,10 +212,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
 	v.Grid.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
-		var oneID string
-		ids := v.Grid.SelectedIDsOrHoverID()
-		if len(ids) == 1 {
-			oneID = ids[0]
+		if !down {
+			return false
+		}
+		oneID := v.Grid.CurrentHoverID
+		if oneID == "" {
+			oneID = v.Grid.SelectedID()
 		}
 		// zlog.Info("SG:Key:", oneID)
 		if oneID != "" {
@@ -223,7 +227,14 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			}
 		}
 		if v.ActionMenu != nil {
-			return v.ActionMenu.HandleOutsideShortcut(km)
+			if v.ActionMenu.HandleOutsideShortcut(km) {
+				return true
+			}
+		}
+		if oneID != "" && v.HandleShortCutInRowFunc != nil {
+			if v.HandleShortCutInRowFunc(oneID, km) {
+				return true
+			}
 		}
 		return false
 	}
@@ -235,8 +246,8 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if singleSpecial && ilen == 1 {
 			s := v.StructForID(ids[0])
 			var a any = s
-			ng, _ := a.(zstr.NameGetter)
-			if ng != nil {
+			ng, got := a.(zstr.NameGetter)
+			if got && ng != nil {
 				return `"` + ng.GetName() + `"`
 			}
 		}
@@ -457,7 +468,6 @@ func (v *SliceGridView[S]) StructForID(id string) *S {
 
 func (v *SliceGridView[S]) doFilter(slice []S) {
 	// start := time.Now()
-	// zlog.Info("doFilter start:", v.ObjectName(), len(v.FilterSkipCache))
 	if v.FilterFunc != nil {
 		sids := v.Grid.SelectedIDs()
 		length := len(sids)

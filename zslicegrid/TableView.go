@@ -28,14 +28,15 @@ import (
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
 type TableView[S zstr.StrIDer] struct {
 	SliceGridView[S]
-	Header               *zheader.HeaderView // Optional header based on S struct
-	ColumnMargin         float64             // Margin between columns
-	RowInset             float64             // inset on far left and right
-	FieldParameters      zfields.FieldViewParameters
-	AfterLockPressedFunc func(fieldName string, didLock bool)
-	fields               []zfields.Field // the fields in an S struct used to generate columns for the table
-	LockedFieldValues    map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
-	hasFitHeaderToRows   bool
+	Header                     *zheader.HeaderView // Optional header based on S struct
+	ColumnMargin               float64             // Margin between columns
+	RowInset                   float64             // inset on far left and right
+	FieldParameters            zfields.FieldViewParameters
+	AfterLockPressedFunc       func(fieldName string, didLock bool)
+	ReadToShowBeforeWindowFunc func()          // Is called at end of Table's ReadyToShow, but before it calls SliceGridView's ReadyToShow
+	fields                     []zfields.Field // the fields in an S struct used to generate columns for the table
+	LockedFieldValues          map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
+	hasFitHeaderToRows         bool
 }
 
 type TableViewGetter[S zstr.StrIDer] interface {
@@ -159,6 +160,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	}
 	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
 	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
+		// zlog.Info("addField:", v.ObjectName(), each.Field.Name)
 		v.fields = append(v.fields, *each.Field)
 		return true
 	})
@@ -187,6 +189,9 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		zlog.Assert(fv != nil)
 		fv.Update(v.StructForID(id), true, false)
 		// fv.ArrangeChildren()
+	}
+	if v.ReadToShowBeforeWindowFunc != nil {
+		v.ReadToShowBeforeWindowFunc()
 	}
 	v.SliceGridView.ReadyToShow(beforeWindow)
 }
@@ -284,7 +289,7 @@ func (v *TableView[S]) FilterTime(t time.Time, isStart bool, fieldName string) b
 func (v *TableView[S]) FilterString(str string, fieldName string, contains *bool) bool {
 	if v.currentLowerCaseSearchText != "" {
 		if strings.Contains(strings.ToLower(str), v.currentLowerCaseSearchText) {
-			zlog.Info("Filter:", str, "==", v.currentLowerCaseSearchText)
+			// zlog.Info("Filter:", str, "==", v.currentLowerCaseSearchText)
 			*contains = true
 		}
 	} else {

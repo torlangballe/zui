@@ -258,7 +258,6 @@ func ShowLock(headerButton *zshape.ImageButtonView, show bool) {
 }
 
 func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
-	// zlog.Info("Hv.Fit2RowStart:", zdebug.CallingStackString())
 	var cells []zcontainer.Cell
 
 	for _, c := range stack.Cells {
@@ -284,10 +283,12 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 		o.Pos.X = x
 		if i == len(cells)-1 {
 			x = hr.Max().X
+			// zlog.Info("Hv.Fit2RowStart:", stack.Rect().Size.W, "x:", x, o.Pos.X, cr.Size.W)
 		} else {
 			x = (cr.Max().X+cells[i+1].View.Rect().Min().X)/2 + xdiff
 		}
 		zfloat.Maximize(&x, o.Pos.X+cr.Size.W) // Hack on initial setup where no data in table yet
+		zfloat.Minimize(&x, hr.Max().X) // It can get too wide, so limit to max. cells in each row should probably be clipped instead.
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H
