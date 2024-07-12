@@ -33,6 +33,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -67,7 +68,7 @@ type GridListView struct {
 	IDAtIndexFunc              func(i int) string
 	CreateCellFunc             func(grid *GridListView, id string) zview.View
 	UpdateCellFunc             func(grid *GridListView, id string)
-	UpdateSelectionFunc        func(grid *GridListView, id string)
+	UpdateCellSelectionFunc    func(grid *GridListView, id string)
 	CellHeightFunc             func(id string) float64 // only needed to have variable-height
 	HandleSelectionChangedFunc func()
 	HandleRowPressedFunc       func(id string) bool // this only gets called for non-selectable grids. Return if it eats press
@@ -205,11 +206,19 @@ func (v *GridListView) saveOpenBranches() {
 }
 
 func (v *GridListView) SelectedIDsOrHoverID() []string {
-	ids := v.SelectedIDs()
-	if len(ids) == 0 && v.CurrentHoverID != "" {
-		ids = []string{v.CurrentHoverID}
+	if len(v.selectedIDs) == 0 { // if no selected, return hover-id if any
+		if v.CurrentHoverID != "" {
+			return []string{v.CurrentHoverID}
+		}
+		return nil
 	}
-	return ids
+	if v.selectedIDs[v.CurrentHoverID] { // if hover on top of selected, return all selected
+		return v.SelectedIDs()
+	}
+	if v.CurrentHoverID != "" { // if hover-id, return it
+		return []string{v.CurrentHoverID}
+	}
+	return v.SelectedIDs() // else return all selected, if any
 }
 
 func (v *GridListView) SelectedIDsOrHoverIDOrAll() []string {
@@ -218,6 +227,26 @@ func (v *GridListView) SelectedIDsOrHoverIDOrAll() []string {
 		ids = v.AllIDs()
 	}
 	return ids
+}
+
+func (v *GridListView) SelectNextRow(up bool) (newID string) {
+	index := 0
+	ids := v.SelectedIDsOrHoverID()
+	if len(ids) != 0 {
+		index = v.IndexOfID(ids[0])
+	}
+	if up && index == 0 || !up && index == v.CellCountFunc()-1 {
+		return ""
+	}
+	if up {
+		index--
+	} else {
+		index++
+	}
+	id := v.IDAtIndexFunc(index)
+	v.SelectCell(id, false)
+	v.SetHoverID(id)
+	return id
 }
 
 func (v *GridListView) SelectedIDInt64() int64 {
@@ -229,8 +258,8 @@ func (v *GridListView) SelectedIDInt64() int64 {
 	return n
 }
 
+// SelectedID returns "" if nothing selected, or a random id if more than one selected.
 func (v *GridListView) SelectedID() string {
-	zlog.Assert(!v.MultiSelectable)
 	if len(v.selectedIDs) == 0 {
 		return ""
 	}
@@ -252,22 +281,31 @@ func (v *GridListView) SelectCell(id string, animateScroll bool) {
 }
 
 func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
+	changedIDs := zslice.Exclusion(v.SelectedIDs(), ids)
 	v.selectedIDs = map[string]bool{}
 	for _, id := range ids {
 		v.selectedIDs[id] = true
 	}
 	v.layoutDirty = true
-	if animateScroll {
-		for i := 0; i < v.CellCountFunc(); i++ {
-			sid := v.IDAtIndexFunc(i)
-			if v.selectedIDs[sid] {
-				v.ScrollToCell(sid, animateScroll)
-				break
-			}
+	for i := 0; i < v.CellCountFunc(); i++ {
+		sid := v.IDAtIndexFunc(i)
+		if v.selectedIDs[sid] {
+			v.ScrollToCell(sid, animateScroll)
+			break
 		}
 	}
 	if v.layoutDirty { // this is to avoid layout if scroll did it
 		v.LayoutCells(true)
+	} else {
+		v.updateCellBackgrounds(changedIDs) // this calls UpdateCellSelectionFunc also
+		for _, id := range changedIDs {
+			if v.children[id] == nil {
+				continue
+			}
+			if v.UpdateCellFunc != nil {
+				v.UpdateCellFunc(v, id)
+			}
+		}
 	}
 	if v.HandleSelectionChangedFunc != nil {
 		v.HandleSelectionChangedFunc()
@@ -351,8 +389,8 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 	if v.BorderColor.Valid {
 		child.Native().SetStrokeSide(1, v.BorderColor, zgeo.BottomRight, true) // we set if for non also, in case it moved
 	}
-	if v.UpdateSelectionFunc != nil {
-		v.UpdateSelectionFunc(v, cid)
+	if v.UpdateCellSelectionFunc != nil {
+		v.UpdateCellSelectionFunc(v, cid)
 	}
 }
 
@@ -481,7 +519,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		// 	zlog.Info("NOT INTERACTIVE gridlistpress!!??!?!")
 		// 	return false
 		// }
-		if zkeyboard.ModifiersAtPress&zkeyboard.MetaModifierMultiSelect != 0 {
+		if zkeyboard.ModifiersAtPress&zkeyboard.MetaModifier != 0 {
 			v.ignoreMouseEvent = true
 			if v.selectedIDs[id] {
 				delete(v.selectedIDs, id)
@@ -915,7 +953,6 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
-	// zlog.Info("GridListView.LayoutCells", v.ObjectName(), v.RestoreTopSelectedRowOnNextLayout)
 	var oy float64
 	var topID string
 	if v.RestoreOffsetOnNextLayout || v.RestoreTopSelectedRowOnNextLayout {
@@ -960,9 +997,10 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	}
 	v.updateBorder()
 	var updateCount int
-	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), len(v.DirtyIDs), "y:", v.YOffset)
+	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), v.Rect())
 	// start := time.Now()
 	var count int
+	// zlog.Info("GridListView.LayoutCells", v.ObjectName(), v.CellCountFunc(), v.RestoreOffsetOnNextLayout, v.RestoreTopSelectedRowOnNextLayout, v.cellsView.Rect())
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if zstr.StringsContain(oldSelected, cid) {
 			selected = append(selected, cid)
@@ -984,6 +1022,9 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			}
 			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
 			if dirty || !child.Native().HasSize() || child.Rect() != outer {
+				// if count == 1 {
+				// zlog.Info("GridListView.LayoutCells first visible", v.ObjectName(), outer, cid)
+				// }
 				child.SetRect(outer)
 			}
 			// prof.Log("After Set Rect")
@@ -1135,7 +1176,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 		}
 		if id != "" {
 			v.selectedIndex = v.IndexOfID(id)
-			if km.Modifier&zkeyboard.MetaModifierMultiSelect != 0 {
+			if km.Modifier&zkeyboard.MetaModifier != 0 {
 				clear := v.selectedIDs[id]
 				if clear {
 					delete(v.selectedIDs, id)
