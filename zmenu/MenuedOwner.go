@@ -444,7 +444,7 @@ func (o *MenuedOwner) popup() {
 	list.IDAtIndexFunc = func(i int) string {
 		return strconv.Itoa(i)
 	}
-	list.UpdateSelectionFunc = o.updateCellSelection
+	list.UpdateCellSelectionFunc = o.updateCellSelection
 	rm := float64(rightMarg)
 	if o.HasLabelColor {
 		rm += 24
@@ -531,7 +531,7 @@ func (o *MenuedOwner) popup() {
 			oldSelected[id] = true
 		}
 		for id := range oldSelected {
-			list.UpdateSelectionFunc(list, id)
+			list.UpdateCellSelectionFunc(list, id)
 		}
 		if !o.IsMultiple { // && fromPressed {
 			// list.HandleSelectionChangedFunc = nil // we do this so we don't get any mouse-up extra events
