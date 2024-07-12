@@ -19,7 +19,7 @@ type StackView struct {
 	spacing             float64
 	Vertical            bool
 	GridVerticalSpace   float64
-	NoCalculatedMaxSize bool
+	NoCalculatedMaxSize zgeo.BoolSize
 }
 
 func StackViewNew(vertical bool, name string) *StackView {
@@ -98,8 +98,11 @@ func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	ms := v.Margin().Size.Negative()
 	s.Add(ms)
-	if v.NoCalculatedMaxSize {
-		max.SetElement(v.Vertical, 0)
+	if v.NoCalculatedMaxSize.W {
+		max.W = 0
+	}
+	if v.NoCalculatedMaxSize.H {
+		max.H = 0
 	}
 	if max.W != 0 {
 		max.W += ms.W
@@ -124,10 +127,15 @@ func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
 		// zlog.Info("StackView getLayoutCells:", v.Hierarchy(), c.Collapsed, c.Name, c.View != nil)
 		var max zgeo.Size
 		l.OriginalSize, max = c.View.CalculatedSize(total)
-		// if v.ObjectName() == "zheader" {
+		// if v.ObjectName() == "eventgrid" {
 		// 	zlog.Info("StackView getLayoutCells:", c.View.ObjectName(), l.OriginalSize, max, l.MaxSize)
 		// }
-		l.MaxSize.MinimizeNonZero(max)
+		if !v.NoCalculatedMaxSize.W && max.W > 0 {
+			zfloat.Minimize(&l.MaxSize.W, max.W)
+		}
+		if !v.NoCalculatedMaxSize.H && max.H > 0 {
+			zfloat.Minimize(&l.MaxSize.H, max.H)
+		}
 		l.Name = c.View.ObjectName()
 		// if l.MaxSize.H == 0 {
 		// 	nonMax = true
@@ -274,15 +282,13 @@ func (v *StackView) ArrangeChildren() {
 	if layouter != nil {
 		layouter.HandleBeforeLayout()
 	}
-	// if v.ObjectName() == "bar"  {
-	// 	zlog.Info("stack get layout", v.Hierarchy(), rm)
-	// }
 	lays := v.getLayoutCells(rm.Size)
-	if v.ObjectName() == "MainTabs" {
-		for i, l := range lays {
-			zlog.Info("stack layout:", v.ObjectName(), i, l.Name, l.OriginalSize, l.MaxSize, l.Alignment)
-		}
-	}
+	// if v.ObjectName() == "eventgrid" {
+	// 	zlog.Info("stack get layout", v.Hierarchy(), rm)
+	// 	for i, l := range lays {
+	// 		zlog.Info("stack layout:", v.ObjectName(), i, l.Name, l.OriginalSize, l.MaxSize, l.Alignment)
+	// 	}
+	// }
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
 	// if v.ObjectName() == "zheader" {
 	// 	zlog.Info("StackView ArrangeChildren:", v.ObjectName(), rm, rects)
@@ -300,7 +306,7 @@ func (v *StackView) ArrangeChildren() {
 		r := rects[j]
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
-			// if v.ObjectName() == "streamgrid" {
+			// if v.ObjectName() == "eventgrid" {
 			// 	zlog.Info("arrangeChildren:", rm, v.ObjectName(), c.View.ObjectName(), r)
 			// }
 			c.View.SetRect(r)
