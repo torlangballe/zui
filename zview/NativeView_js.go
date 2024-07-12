@@ -84,6 +84,9 @@ func (v *NativeView) Native() *NativeView {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
+	// if v.ObjectName() == "67353" {
+	// 	zlog.Info("NV.SetRect:", rect, zdebug.CallingStackString())
+	// }
 	if rect.Pos.Y < -10 {
 		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}

@@ -367,26 +367,26 @@ func Current() *Window {
 
 func (win *Window) AddStyle() {
 	styleStr := `
-input.rounded:focus { border: 2px solid rgb(147,180,248); }
-.zfocus:focus { outline: solid 4px rgb(147,180,248); }
-.znofocus:focus { outline: none; }
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
-input[type=number] { -moz-appearance: textfield; }
-input.rounded {
-	border: 1px solid #666;
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
-	border-radius: 10px;
-	box-sizing: content-box;
-	outline: 0;
-	-webkit-appearance: none;
-}
-.znoscrollbar::-webkit-scrollbar { display: none; }  
+	input.rounded:focus { border: 2px solid rgb(147,180,248); }
+	.zfocus:focus { outline: solid 4px rgb(147,180,248); }
+	.znofocus:focus { outline: none; }
+	input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; } 
+	input[type=number] { -moz-appearance: textfield; }
+	input.rounded {
+		border: 1px solid #666;
+		-moz-border-radius: 10px;
+		-webkit-border-radius: 10px;
+		border-radius: 10px;
+		box-sizing: content-box;
+		outline: 0;
+		-webkit-appearance: none;
+	}
+	.znoscrollbar::-webkit-scrollbar { display: none; }
 `
 	if zdevice.WasmBrowser() == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
-input[type=number]:focus { border: 2px solid rgb(147,180,248); }
-input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
+		input[type=number]:focus { border: 2px solid rgb(147,180,248); }
+		input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 `
 	}
 	doc := win.Element.Get("document")
