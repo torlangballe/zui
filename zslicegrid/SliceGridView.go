@@ -65,7 +65,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	filteredSlice              []S
 	options                    OptionType
 	layedOut                   bool
-	currentLowerCaseSearchText string
+	CurrentLowerCaseSearchText string
 	FilterSkipCache            map[string]bool
 
 	SearchField *ztext.SearchField
@@ -149,12 +149,8 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
 		v.SearchField.SetValueHandler("zslicegrid.Search", func(edited bool) {
-			v.currentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
-			tvg, _ := v.View.(TableViewGetter[S])
-			if tvg != nil {
-				table := tvg.GetTableView()
-				table.ClearFilterSkipCache()
-			}
+			v.CurrentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
+			v.ClearFilterSkipCache()
 			v.UpdateViewFunc(true)
 		})
 		v.Bar.Add(v.SearchField, zgeo.TopRight, zgeo.SizeD(0, -8))

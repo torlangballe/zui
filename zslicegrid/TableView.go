@@ -39,10 +39,6 @@ type TableView[S zstr.StrIDer] struct {
 	hasFitHeaderToRows         bool
 }
 
-type TableViewGetter[S zstr.StrIDer] interface {
-	GetTableView() *TableView[S]
-}
-
 func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) *TableView[S] {
 	v := &TableView[S]{}
 	v.Init(v, s, storeName, options)
@@ -284,12 +280,12 @@ func (v *TableView[S]) FilterTime(t time.Time, isStart bool, fieldName string) b
 }
 
 // FilterString returns false if the string isn't in the locked set in v.LockedFieldValues
-// It sets contains if v.currentLowerCaseSearchText is set and is contained in str.
+// It sets contains if v.CurrentLowerCaseSearchText is set and is contained in str.
 // This is a convenience method for when doing your own filtering and not using FilterRowWithZFields.
 func (v *TableView[S]) FilterString(str string, fieldName string, contains *bool) bool {
-	if v.currentLowerCaseSearchText != "" {
-		if strings.Contains(strings.ToLower(str), v.currentLowerCaseSearchText) {
-			// zlog.Info("Filter:", str, "==", v.currentLowerCaseSearchText)
+	if v.CurrentLowerCaseSearchText != "" {
+		if strings.Contains(strings.ToLower(str), v.CurrentLowerCaseSearchText) {
+			// zlog.Info("Filter:", str, "==", v.CurrentLowerCaseSearchText)
 			*contains = true
 		}
 	} else {
@@ -321,14 +317,14 @@ func (v *TableView[S]) FilterRowWithZFields(row *S) bool {
 			val, hasLock = v.LockedFieldValues[f.FieldName]
 
 		}
-		search := (v.currentLowerCaseSearchText != "" && f.HasFlag(zfields.FlagIsSearchable))
+		search := (v.CurrentLowerCaseSearchText != "" && f.HasFlag(zfields.FlagIsSearchable))
 		if hasLock || search {
 			finfo, found := zreflect.FieldForName(row, zfields.FlattenIfAnonymousOrZUITag, f.FieldName)
 			zlog.Assert(found, f.FieldName)
 			rowFieldVal = fmt.Sprint(finfo.ReflectValue.Interface())
 			if search {
 				hasSearchable = true
-				if strings.Contains(strings.ToLower(rowFieldVal), v.currentLowerCaseSearchText) {
+				if strings.Contains(strings.ToLower(rowFieldVal), v.CurrentLowerCaseSearchText) {
 					searchMatch = true
 				}
 			}
