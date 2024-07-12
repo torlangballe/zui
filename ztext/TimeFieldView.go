@@ -69,6 +69,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	v.SetMargin(zgeo.RectFromXY2(6, -4, -8, 8))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.7, 1))
+
 	if zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
 		style := Style{KeyboardType: zkeyboard.TypeInteger}
 		tv := NewView("", style, 1, 1)
@@ -120,6 +121,10 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			v.Add(spacing, zgeo.CenterLeft)
 		}
 	}
+	clear := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(12, 14))
+	clear.SetPressedHandler(func() {
+		v.Clear()
+	})
 	if flags&TimeFieldTimeOnly == 0 {
 		v.dayText = addText(v, 2, "D", "")
 		v.monthText = addText(v, 2, "M", "/")
@@ -131,12 +136,15 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 			}
 			v.yearText = addText(v, cols, "Y", "/")
 		}
+		v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(0, 0))
 		if flags&TimeFieldNoCalendar == 0 {
 			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
 			v.calendar.SetUsable(false)
 			v.calendar.SetPressedHandler(v.popCalendar)
-			v.Add(v.calendar, zgeo.CenterLeft, zgeo.SizeD(1, 0))
+			v.Add(v.calendar, zgeo.CenterLeft, zgeo.SizeD(11, 0))
 		}
+	} else {
+		v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(0, 0))
 	}
 	flipDayMonth(v, false)
 	return v
@@ -273,10 +281,13 @@ func (v *TimeFieldView) Clear() {
 	clearField(v.dayText)
 	clearField(v.monthText)
 	clearField(v.yearText)
-	v.location = nil
+	if v.HandleValueChangedFunc != nil {
+		v.HandleValueChangedFunc()
+	}
+	// v.location = nil
 }
 
-func getInt(v *TextView, i *int, min, max int, err *error, ignoreEmpty bool) {
+func getInt(v *TextView, i *int, min, max int, err *error, ignoreEmpty bool, set *bool) {
 	if v == nil {
 		return
 	}
@@ -303,6 +314,7 @@ func getInt(v *TextView, i *int, min, max int, err *error, ignoreEmpty bool) {
 		return
 	}
 	*i = n
+	*set = true
 }
 
 func setInt(v *TextView, i int, format string) {
@@ -355,6 +367,7 @@ func get24Hour(v *TimeFieldView, hour int) (h int, pm bool) {
 
 func (v *TimeFieldView) Value() (time.Time, error) {
 	var hour, min, sec int
+	var set bool
 
 	var err error
 	now := time.Now().In(v.location)
@@ -368,23 +381,26 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 		maxHour = 23
 		minHour = 0
 	}
-	getInt(v.hourText, &hour, minHour, maxHour, &err, true)
+	getInt(v.hourText, &hour, minHour, maxHour, &err, true, &set)
 	hour, _ = get24Hour(v, hour)
-	getInt(v.minuteText, &min, 0, 60, &err, true)
-	getInt(v.secondsText, &sec, 0, 60, &err, true)
+	getInt(v.minuteText, &min, 0, 60, &err, true, &set)
+	getInt(v.secondsText, &sec, 0, 60, &err, true, &set)
 	v.calendar.SetUsable(err == nil)
-	getInt(v.monthText, &month, 1, 12, &err, true)
+	getInt(v.monthText, &month, 1, 12, &err, true, &set)
 	days := ztime.DaysInMonth(time.Month(month), year)
 	if v.flags&TimeFieldYears != 0 {
-		getInt(v.yearText, &year, 0, 0, &err, true)
+		getInt(v.yearText, &year, 0, 0, &err, true, &set)
 		if year < 100 {
 			year += 2000
 		}
 	}
-	getInt(v.dayText, &day, 1, days, &err, true)
+	getInt(v.dayText, &day, 1, days, &err, true, &set)
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	if err != nil {
 		return time.Time{}, err
+	}
+	if !set {
+		return time.Time{}, nil
 	}
 	t := time.Date(year, time.Month(month), day, hour, min, sec, 0, v.location)
 	if v.flags&TimeFieldYears == 0 && v.flags&TimeFieldPreviousYear30 != 0 {
