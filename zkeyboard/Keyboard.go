@@ -88,21 +88,42 @@ const (
 )
 
 var (
-	ModifiersAtPress        Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
-	MetaModifier            = ModifierControl
-	MetaModifierMultiSelect = ModifierControl // set to ModifierCommand on mac
-	AltModifierName         = "Alt"
-	CommandModifierName     = "Meta"
+	ModifiersAtPress    Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
+	MetaModifier        = ModifierControl
+	AltModifierName     = "Alt"
+	CommandModifierName = "Meta"
 )
 
 func init() {
-	if zdevice.OS() == zdevice.MacOSType {
-		MetaModifierMultiSelect = ModifierCommand
+	if zdevice.OS() == zdevice.MacOSType || zdevice.OS() == zdevice.IOSType {
 		MetaModifier = ModifierCommand
 		AltModifierName = "Option"
 		CommandModifierName = "Command"
 	}
 }
+
+// type Modifiers struct {
+// 	AltName    string
+// 	AltSymbol  string
+// 	MetaName   string
+// 	MetaSymbol string
+// }
+// func ModifiersForOS(os zdevice.OSType) Modifiers {
+// 	if os == zdevice.MacOSType || os == zdevice.IOSType {
+// 		return Modifiers{
+// 			AltName:    "Option",
+// 			AltSymbol:  "⎇",
+// 			MetaName:   "Command",
+// 			MetaSymbol: "⌘",
+// 		}
+// 	}
+// 	return Modifiers{
+// 		AltName:    "Alt",
+// 		AltSymbol:  "alt-",
+// 		MetaName:   "Control",
+// 		MetaSymbol: "ctrl-",
+// 	}
+// }
 
 // Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType
 

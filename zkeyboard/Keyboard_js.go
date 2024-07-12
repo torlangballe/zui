@@ -19,7 +19,7 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 		km.Modifier |= ModifierControl
 	}
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
-		km.Modifier |= MetaModifierMultiSelect
+		km.Modifier |= MetaModifier
 	}
 	if zdom.GetBoolIfDefined(event, "shiftKey") {
 		km.Modifier |= ModifierShift
