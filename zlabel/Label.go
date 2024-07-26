@@ -23,6 +23,7 @@ type Label struct {
 	padding     zgeo.Rect
 	alignment   zgeo.Alignment
 	text        string // we need to store the text as NativeView's Text() doesn't work right away
+	wrap        ztextinfo.WrapType
 	pressed     func()
 	longPressed func()
 
@@ -46,6 +47,7 @@ func (v *Label) GetTextInfo() ztextinfo.Info {
 	t := ztextinfo.New()
 	t.Alignment = v.alignment
 	t.Font = v.Font()
+	t.Wrap = v.wrap
 	if v.Columns == 0 {
 		t.Text = v.Text()
 	}
@@ -53,6 +55,7 @@ func (v *Label) GetTextInfo() ztextinfo.Info {
 		t.SetWidthFreeHight(v.maxWidth)
 	}
 	t.MaxLines = v.maxLines
+	// t.MinLines = v.maxLines
 	return *t
 }
 
@@ -76,6 +79,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	s = s.Ceil()
 	s.W += 1
+	// zlog.Info("LabelCalcSize:", v.ObjectName(), s, zlog.Full(ti))
 	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
 }
 

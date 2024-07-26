@@ -39,6 +39,7 @@ func (label *Label) init(text string) {
 	label.SetColor(zstyle.DefaultFGColor())
 	// zlog.Info("LABCOL:", zstyle.DefaultFGColor)
 	//	label.SetColor(zgeo.ColorRed)
+	label.wrap = ztextinfo.WrapNone
 	label.SetObjectName(text)
 	label.SetMaxLines(1)
 	label.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
@@ -102,6 +103,7 @@ func (v *Label) SetFont(font *zgeo.Font) {
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
 	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
 	style := v.JSStyle()
+	v.wrap = wrap
 	if wrap == ztextinfo.WrapTailTruncate {
 		style.Set("textOverflow", "ellipsis")
 	}
