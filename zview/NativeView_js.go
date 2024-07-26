@@ -1183,58 +1183,6 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	})
 }
 
-/*
-func (v *NativeView) SetPressUpDownMovedHandlerNew(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
-	// zlog.Info("NV.SetPressUpDownMovedHandler:", v.Hierarchy())
-	const minDiff = 10.0
-	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
-		// we := v.GetWindowElement()
-		// if we.IsUndefined() {
-		// 	return nil
-		// }
-		e := args[0]
-		target := e.Get("target")
-		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
-			e.Call("stopPropagation")
-			return false
-		}
-		pos := getMousePosRelative(v, e)
-		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
-		v.SetListenerJSFunc("mouseup:updown", func(this js.Value, args []js.Value) any {
-			// v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) any {
-			upPos := getMousePosRelative(v, args[0])
-			movingPos = nil
-			v.SetListenerJSFunc("mousemove:updown", nil)
-			v.SetListenerJSFunc("mouseup:updown", nil)
-			if handler(upPos, zbool.False) {
-				// e.Call("stopPropagation")
-				e.Call("preventDefault")
-				// }
-			}
-			return nil
-		})
-		v.SetStateOnDownPress(e)
-		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
-		movingPos = &pos
-		if handler(*movingPos, zbool.True) {
-			// e.Call("preventDefault")
-		}
-		// oldMouseMove = v.GetWindowElement().Get("onmousemove")
-		v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
-			if movingPos != nil {
-				pos := getMousePosRelative(v, args[0])
-				// zlog.Info("MM:", pos)
-				if handler(pos, zbool.Unknown) {
-					e.Call("preventDefault")
-				}
-			}
-			return nil
-		})
-		return nil
-	})
-}
-*/
-
 func (v *NativeView) MakeLink(surl, name string) {
 	stype := strings.ToLower(v.Element.Get("nodeName").String())
 	zlog.Assert(stype == "a", stype)
@@ -1384,5 +1332,5 @@ func DownloadURI(uri, name string) {
 	zdom.DocumentJS.Get("body").Call("appendChild", link)
 	link.Call("click")
 	zdom.DocumentJS.Get("body").Call("removeChild", link)
-	// link.Delete()
+	// link.Delete() // What is this?
 }
