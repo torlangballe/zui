@@ -1545,6 +1545,9 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 
 	v.lastCheckered = false
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
+		if !each.ReflectValue.IsValid() {
+			return true
+		}
 		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
 		return true
 	})
