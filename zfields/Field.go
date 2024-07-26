@@ -180,7 +180,6 @@ type Field struct {
 	Disabled             bool              // zui:"".
 	SetEdited            bool              // zui:"".
 	WidgetName           string            // zui:"".
-	BrancherType         string            // zui:"".
 	UseIn                []string          // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
 	Styling              zstyle.Styling    // zui:"".
 	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
@@ -369,8 +368,6 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			// zlog.Info("ALIGN:", f.Name, val, a)
 		// case "cannil"
 		// f.Flags |= flagAllowNil
-		case "brancher":
-			f.BrancherType = val
 		case "celljustify", "justify":
 			if val == "" {
 				f.Justify = f.Alignment
