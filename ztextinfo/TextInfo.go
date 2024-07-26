@@ -155,12 +155,16 @@ func (ti *Info) SetWidthFreeHight(w float64) {
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
 func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
 	// zlog.PushTimingLog()
+	maxLines := ti.MaxLines
+	if ti.Wrap != WrapNone {
+		maxLines = 1
+	}
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := zcanvas.GetTextSize(str, ti.Font)
 		// zlog.Info("TI GetBounds:", str, ti.Font, s)
 		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
-		if ti.MaxLines != 1 && ti.Rect.Size.W != 0 {
+		if maxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
 			if split > 1 {
 				rlen := utf8.RuneCountInString(str)
@@ -183,18 +187,18 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 		// zlog.Info("TI GetBounds:", str, size.W, s.W)
 	}
 	// zlog.PrintTimingLog("ti bounds looped")
-	if ti.MaxLines == 1 { //|| ti.Rect.Size.W == 0 {
+	if maxLines == 1 { //|| ti.Rect.Size.W == 0 {
 		allLines = []string{ti.Text}
 		widths = []float64{size.W}
 	} else {
 		count := len(allLines)
-		if ti.MaxLines != 0 {
-			zint.Minimize(&count, ti.MaxLines)
+		if maxLines != 0 {
+			zint.Minimize(&count, maxLines)
 		}
 		if ti.MinLines != 0 {
 			zint.Maximize(&count, ti.MinLines)
 		}
-		//	count = ti.MaxLines
+		//	count = maxLines
 		if count > 1 || ti.IsMinimumOneLineHight {
 			size.H = float64(ti.Font.LineHeight()*1.2) * float64(zint.Max(count, 1))
 		}
@@ -250,7 +254,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	ti := *tin
 	w := 0.0
 	if ti.Text == "" {
-		return zgeo.Rect{Pos:ti.Rect.Pos, Size:zgeo.SizeNull}
+		return zgeo.Rect{Pos: ti.Rect.Pos, Size: zgeo.SizeNull}
 	}
 	canvas.SetColor(ti.Color)
 	if ti.Type == Stroke {
