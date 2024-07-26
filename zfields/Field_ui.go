@@ -12,7 +12,7 @@ func init() {
 	callSetupWidgeter = setupWidgeter
 }
 
-// Widgeter is an interface to make a type create its own view when build with zfields package.
+// Widgeter is an interface to make a type create its own view when built with zfields package.
 // It is registered with the RegisterWidgeter function, and specified with the zui:"widget:xxx" tag.
 type Widgeter interface {
 	Create(f *Field) zview.View
@@ -33,10 +33,17 @@ type SetupWidgeter interface {
 // 	SetChangeHandler(func())
 // }
 
-var widgeters = map[string]Widgeter{}
+var (
+	widgeters = map[string]Widgeter{}
+	creators  = map[string]func(in *FieldView, f *Field, val any) zview.View{}
+)
 
 func RegisterWidgeter(name string, w Widgeter) {
 	widgeters[name] = w
+}
+
+func RegisterCreator(typeName string, create func(in *FieldView, f *Field, val any) zview.View) {
+	creators[typeName] = create
 }
 
 func (f *Field) SetFont(view zview.View, from *zgeo.Font) {

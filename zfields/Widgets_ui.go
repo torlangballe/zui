@@ -3,9 +3,13 @@
 package zfields
 
 import (
+	"reflect"
+
 	"github.com/torlangballe/zui/zcolor"
+	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zutil/zerrors"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -23,6 +27,7 @@ func init() {
 	RegisterWidgeter("set-images", SetImagesWidgeter{})
 	RegisterWidgeter("zcolor", ColorWidgeter{})
 	RegisterWidgeter("zscreens", ScreensViewWidgeter{})
+	RegisterCreator("zerrors.ContextError", buildContextError)
 }
 
 func (a AmountBarWidgeter) Create(f *Field) zview.View {
@@ -102,4 +107,16 @@ func (s ScreensViewWidgeter) Create(f *Field) zview.View {
 		minSize = f.Size
 	}
 	return zwidgets.NewScreensView(minSize)
+}
+
+func buildContextError(in *FieldView, f *Field, val any) zview.View {
+	// zlog.Info("buildContextError:", f.Name)
+	e := val.(zerrors.ContextError)
+	frame := in.BuildMapList(reflect.ValueOf(e.KeyValues), f, e.Title)
+	if e.SubError != nil {
+		sub := buildContextError(in, f, *e.SubError)
+		adder := frame.(zcontainer.AdvancedAdder)
+		adder.AddAdvanced(sub, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, -1, false)
+	}
+	return frame
 }
