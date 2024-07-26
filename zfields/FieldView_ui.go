@@ -136,7 +136,11 @@ func (v *FieldView) Data() any {
 }
 
 func (v *FieldView) IsSlice() bool {
-	return reflect.ValueOf(v.data).Elem().Kind() == reflect.Slice
+	rval := reflect.ValueOf(v.data)
+	if rval.Kind() == reflect.Map {
+		return false
+	}
+	return rval.Elem().Kind() == reflect.Slice
 }
 
 func setFieldViewEdited(fv *FieldView) {
