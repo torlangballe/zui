@@ -192,6 +192,7 @@ func (v *StackView) arrangeChildrenInGrid() {
 				continue
 			}
 			zfloat.Maximize(&box.Size.H, heights[j])
+			box = box.MovedInto(rbox) // TODO: Why do we need to do this? Cause must be in  LayoutCellsInStack?
 			if i >= len(rowCells) {
 				continue
 			}
