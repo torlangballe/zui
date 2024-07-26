@@ -130,10 +130,10 @@ func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
 		// if v.ObjectName() == "eventgrid" {
 		// 	zlog.Info("StackView getLayoutCells:", c.View.ObjectName(), l.OriginalSize, max, l.MaxSize)
 		// }
-		if !v.NoCalculatedMaxSize.W && max.W > 0 {
+		if c.MaxSize.W == 0 && !v.NoCalculatedMaxSize.W && max.W > 0 {
 			zfloat.Minimize(&l.MaxSize.W, max.W)
 		}
-		if !v.NoCalculatedMaxSize.H && max.H > 0 {
+		if c.MaxSize.H == 0 && !v.NoCalculatedMaxSize.H && max.H > 0 {
 			zfloat.Minimize(&l.MaxSize.H, max.H)
 		}
 		l.Name = c.View.ObjectName()
@@ -267,9 +267,7 @@ func (v *StackView) ArrangeChildren() {
 				co, _ := c.View.(CellsOwner)
 				ca, _ := c.View.(Arranger)
 				if co != nil && ca != nil {
-					// zlog.Info(Debug, "SV ArrangeChild1:", len(*co.GetCells()))
 					for _, c := range *co.GetCells() {
-						// zlog.Info(Debug, "SV ArrangeChild:", c.View.Native().ObjectName(), c.Free)
 						if c.Free && c.View != nil && !c.Collapsed {
 							ca.ArrangeChild(c, rm)
 						}
@@ -284,17 +282,7 @@ func (v *StackView) ArrangeChildren() {
 		layouter.HandleBeforeLayout()
 	}
 	lays := v.getLayoutCells(rm.Size)
-	// if v.ObjectName() == "eventgrid" {
-	// 	zlog.Info("stack get layout", v.Hierarchy(), rm)
-	// 	for i, l := range lays {
-	// 		zlog.Info("stack layout:", v.ObjectName(), i, l.Name, l.OriginalSize, l.MaxSize, l.Alignment)
-	// 	}
-	// }
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
-	// if v.ObjectName() == "zheader" {
-	// 	zlog.Info("StackView ArrangeChildren:", v.ObjectName(), rm, rects)
-	// }
-	// zlog.ProfileLog("did layout")
 	j := 0
 	for _, c := range v.Cells {
 		if c.View == nil {
