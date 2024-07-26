@@ -1202,7 +1202,12 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 				})
 			}
 		}
-		label.SetMaxLines(f.Rows)
+		label.Columns = f.Columns
+		// zlog.Info("LABEL:", f.FieldName, v.params.UseInValues, f.Rows)
+		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+			label.SetMaxLines(f.Rows)
+		}
+		// zlog.Info("LABEL:", f.FieldName, label.Columns, f.Rows)
 		if f.MaxWidth != 0 {
 			label.SetMaxWidth(f.MaxWidth)
 		}
