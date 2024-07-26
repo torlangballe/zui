@@ -177,12 +177,12 @@ func maybeAddDocToHeader(f *Field, header *zcontainer.StackView) {
 	}
 }
 
-func makeFrameIfFlag(f *Field, fv *FieldView) (view zview.View, header *zcontainer.StackView) {
+func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string) (view zview.View, header *zcontainer.StackView) {
 	if !f.HasFlag(FlagHasFrame) {
 		return nil, nil
 	}
-	var title string
-	if f.HasFlag(FlagFrameIsTitled) {
+	title := overrideTitle
+	if title == "" && f.HasFlag(FlagFrameIsTitled) {
 		title = f.TitleOrName()
 	}
 	frame := zcontainer.StackViewVert("frame")
@@ -591,7 +591,7 @@ func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 	return false
 }
 
-func makeTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
+func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
 	var style ztext.Style
 	tv := ztext.NewView(str, style, 20, 1)
 	tv.SetObjectName(name)
@@ -610,9 +610,17 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 	var mf Field
 	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
 	mf.FieldName = key
+	mf.Alignment = zgeo.CenterLeft
+	if f.HasFlag(FlagToClipboard) {
+		mf.SetFlag(FlagToClipboard)
+	}
+	mf.MaxWidth = 600
 	if fixed {
+		if f.IsStatic() {
+			mf.SetFlag(FlagIsStatic)
+		}
 		mf.SetFlag(FlagIsLabelize)
-		a := zgeo.Left
+		a := zgeo.CenterLeft
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		return view, mf
 	}
@@ -621,13 +629,13 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 	hor.SetMargin(zgeo.RectFromXY2(4, 0, 0, 0))
 	stackFV.Add(hor, zgeo.CenterLeft|zgeo.HorExpand)
 
-	vkey := makeTextView(v, stackFV, f, key, "key")
+	vkey := makeMapTextView(v, stackFV, f, key, "key")
 	if len(f.Filters) >= 2 {
 		vkey.FilterFunc = getFilterFuncFromFilterNames(f.Filters[:1], f)
 	}
 	hor.Add(vkey, zgeo.CenterLeft, zgeo.SizeD(0, 0))
 
-	vval := makeTextView(v, stackFV, f, fmt.Sprint(mval.Interface()), "value")
+	vval := makeMapTextView(v, stackFV, f, fmt.Sprint(mval.Interface()), "value")
 
 	if len(f.Filters) != 0 {
 		i := 0
@@ -673,8 +681,8 @@ func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 	callActionHandlerFunc(ap)
 }
 
-func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
-	// zlog.Info("buildMapList", v.Hierarchy(), f.FieldName)
+func (v *FieldView) BuildMapList(rval reflect.Value, f *Field, frameTitle string) zview.View {
+	zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, rval.Len(), f.HasFlag(FlagHasFrame))
 	var outView zview.View
 	params := v.params
 	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
@@ -686,15 +694,15 @@ func (v *FieldView) buildMapList(rval reflect.Value, f *Field) zview.View {
 
 	fixed := f.HasFlag(FlagIsFixed)
 	if !fixed && !f.HasFlag(FlagHasFrame) {
-		zlog.Error("non-fixed map is not framed")
+		zlog.Error("non-fixed map is not framed", f.FieldName)
 		return outView
 	}
-	frame, header := makeFrameIfFlag(f, stackFV)
+	frame, header := makeFrameIfFlag(f, stackFV, frameTitle)
+	if frame != nil {
+		outView = frame
+	}
 	if !fixed {
 		frameContainer := frame.(*zcontainer.StackView)
-		if frame != nil {
-			outView = frame
-		}
 		add := makeButton("plus", "gray")
 		if header != nil {
 			header.Add(add, zgeo.CenterRight)
@@ -884,7 +892,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 			}
 			if !changed {
 				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil)
-				zlog.Fatal("Not CHANGED!", ap.Field.FN())
+				// zlog.Fatal("Not CHANGED!", ap.Field.FN())
 			}
 		}
 		aih, _ := ap.RVal.Interface().(ActionHandler)
@@ -1183,11 +1191,11 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	if f.IsStatic() || v.params.AllStatic {
 		var label *zlabel.Label
 		isLink := f.HasFlag(FlagIsURL)
+		str, _ := getTextFromNumberishItem(rval, f)
 		if !isLink {
-			label = zlabel.New("")
+			label = zlabel.New(str)
 		}
 		if isLink || f.HasFlag(FlagIsDocumentation) {
-			str, _ := getTextFromNumberishItem(rval, f)
 			surl := str
 			if f.Path != "" {
 				surl = f.Path
@@ -1223,7 +1231,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 		f.SetFont(label, nil)
 		label.SetTextAlignment(j)
-		label.SetWrap(ztextinfo.WrapTailTruncate)
+		if f.Rows <= 1 {
+			label.SetWrap(ztextinfo.WrapTailTruncate)
+		}
 		if f.Flags&FlagToClipboard != 0 {
 			ztext.MakeViewPressToClipboard(label)
 		}
@@ -1454,6 +1464,20 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		return v.makeButton(rval, f), false
 	}
+	if !rval.IsValid() {
+		// zlog.Info("createSpecialView: not valid", f.FieldName)
+		return nil, true
+	}
+	// zlog.Info("createSpecialView:", f.FieldName, rval.IsZero(), rval.Type())
+
+	// if !rval.IsZero() {
+	stype := rval.Type().String()
+	fcreate := creators[stype]
+	if fcreate != nil {
+		view = fcreate(v, f, rval.Interface())
+		return view, false
+	}
+	// }
 	if f.WidgetName != "" && rval.Kind() != reflect.Slice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
@@ -1554,7 +1578,10 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
-	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index)
+	if rval.Kind() == reflect.Interface {
+		rval = rval.Elem()
+	}
+	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index, rval.Interface(), rval.Kind())
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
@@ -1582,7 +1609,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			params := v.params
 			params.Field.MergeInField(f)
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
-			view, _ = makeFrameIfFlag(f, fieldView)
+			view, _ = makeFrameIfFlag(f, fieldView, "")
 			if view == nil {
 				view = fieldView
 			}
@@ -1632,7 +1659,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 
 		case zreflect.KindMap:
-			view = v.buildMapList(rval, f)
+			view = v.BuildMapList(rval, f, "")
 
 		case zreflect.KindSlice:
 			if !f.HasFlag(FlagIsGroup) || zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
@@ -1702,8 +1729,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				}
 			}
 
+		case zreflect.KindInterface:
+			zlog.Info("buildItem interface:", rval.Elem().Type())
 		default:
-			panic(fmt.Sprintln("buildStack bad type:", f.Name, kind))
+			panic(fmt.Sprintln("buildItem bad type:", f.Name, kind))
 		}
 	}
 	zlog.Assert(view != nil)
