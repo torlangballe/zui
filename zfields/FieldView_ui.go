@@ -1545,16 +1545,16 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 
 	v.lastCheckered = false
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
+		if !each.ReflectValue.IsValid() {
+			return true
+		}
 		v.buildItem(each.Field, each.ReflectValue, each.FieldIndex, defaultAlign, cellMargin, useMinWidth)
 		return true
 	})
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
-	if rval.Kind() == reflect.Interface {
-		rval = rval.Elem()
-	}
-	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index, rval.Interface(), rval.Kind())
+	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index)
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
@@ -1794,9 +1794,15 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if view.ObjectName() == "" {
 			view.SetObjectName(title)
 		}
-		// zlog.Info("LAB:", title, view.ObjectName(), f.FieldName)
 		var label *zlabel.Label
-		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, cell.Alignment, desc)
+		a := cell.Alignment
+		a &= ^zgeo.Vertical
+		a |= (f.Alignment & zgeo.Vertical)
+		if a&zgeo.Vertical == 0 {
+			a |= zgeo.VertCenter
+		}
+		// zlog.Info("FV Labelzie:", f.Name, a)
+		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, a, desc)
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
