@@ -1101,7 +1101,11 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		format += " 02-Jan-06"
 	}
 	if format == "nice" {
-		str = ztime.GetNice(t, f.Flags&FlagHasSeconds != 0)
+		if f.FractionDecimals != 0 {
+			str = ztime.GetNiceSubSecs(t, true, f.FractionDecimals)
+		} else {
+			str = ztime.GetNice(t, f.Flags&FlagHasSeconds != 0)
+		}
 	} else {
 		t = ztime.GetTimeWithServerLocation(t)
 		str = t.Format(format)
