@@ -275,7 +275,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
-		zlog.Assert(v.StoreChangedItemFunc != nil)
+		if v.StoreChangedItemFunc == nil {
+			return
+		}
 		showErr := true
 		var storeItems []S
 		var wg sync.WaitGroup
@@ -638,7 +640,7 @@ func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
 	if ask {
 		v.DeleteItemsAsk(ids)
 	} else {
-		v.DeleteItemsFunc(ids)
+		go v.DeleteItemsFunc(ids)
 	}
 }
 
