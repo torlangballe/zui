@@ -642,8 +642,6 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.SetFlag(FlagCheckerCell)
 		case "2clip":
 			f.Flags |= FlagToClipboard
-		// case "nolabel":
-		// 	f.Flags |= FlagNoLabel
 		case "labelize":
 			f.Flags |= FlagIsLabelize
 			if val == "withdesc" {
