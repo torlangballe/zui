@@ -682,7 +682,8 @@ func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 }
 
 func (v *FieldView) BuildMapList(rval reflect.Value, f *Field, frameTitle string) zview.View {
-	zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, rval.Len(), f.HasFlag(FlagHasFrame))
+	//	zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, rval.Len())
+	// zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, zlog.Full(rval.Interface()))
 	var outView zview.View
 	params := v.params
 	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
@@ -2182,9 +2183,17 @@ func ParentFieldView(view zview.View) *FieldView {
 	return got
 }
 
-func PresentOKCancelStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+func EditStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStruct(structPtr, false, params, title, att, done)
+}
+
+func ViewStruct[S any](structPtr *S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStruct(structPtr, true, params, title, att, done)
+}
+
+func EditOrViewStruct[S any](structPtr *S, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	slice := []S{*structPtr}
-	PresentOKCancelStructSlice(&slice, params, title, att, func(ok bool) (close bool) {
+	EditOrViewStructSlice(&slice, isReadOnly, params, title, att, func(ok bool) (close bool) {
 		// zlog.Info("PresentOKCancelStruct:", ok, slice[0])
 		if ok {
 			*structPtr = slice[0]

@@ -385,7 +385,7 @@ const (
 	colorWidth    = 20
 	imageWidth    = 40
 	checkWidth    = 14
-	shortcutWidth = 22
+	shortcutWidth = 28
 	topMarg       = 6
 	bottomMarg    = 2
 	rightMarg     = 4

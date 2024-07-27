@@ -37,7 +37,7 @@ type ChildrenOwner interface {
 // The struct must confirm to zstr.StrIDer, returning a unique string id for each item.
 // It has options to add a bar on top, and add edit and delete buttons.
 //
-// Editing will actually open multiple cells in a dialog with zfields.PresentOKCancelStructSlice then call StoreChangedItemsFunc.
+// Editing will actually open multiple cells in a dialog with zfields.PresentEditOrViewStructSlice then call StoreChangedItemsFunc.
 // Deleting will remove cells from the slice, then call DeleteItemsFunc.
 // It sets up its GridListViews HandleKeyFunc to edit and delete with return/backspace.
 // If its struct type confirms to ChildrenOwner (has GetChildren()), it will show child-slices
@@ -93,7 +93,8 @@ const (
 	AllowNew                                    // There is a Add New item menu
 	AllowDuplicate                              // There is a Add Duplicate item menu
 	AllowDelete                                 // It is deletable, and allows keyboard/menu delete
-	AllowEdit                                   // Allows selected cell(s) to be edited with menu or return key.
+	AllowEdit                                   // Allows selected cell(s) to be edited with menu or E key.
+	AllowView                                   // Allows selected cell(s) to be viewed (like edit) with menu.
 	AddDocumentationIcon                        // Adds a icon to press to show doc/name.md file where name is in init
 	AddHeader                                   // Adds a Header to the top of table. Currenty used by TableView
 	AddBarInHeader                              // Sets the bar inside the Header, in right-most column. Sets  AddHeader and AddBar
@@ -211,15 +212,18 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if !down {
 			return false
 		}
-		oneID := v.Grid.CurrentHoverID
-		if oneID == "" {
-			oneID = v.Grid.SelectedID()
-		}
-		// zlog.Info("SG:Key:", oneID)
-		if oneID != "" {
-			cell := v.Grid.CellView(oneID)
-			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
-				return true
+		var oneID string
+		if len(v.Grid.SelectedIDs()) == 1 {
+			oneID = v.Grid.CurrentHoverID
+			if oneID == "" {
+				oneID = v.Grid.SelectedID()
+			}
+			// zlog.Info("SG:Key:", oneID)
+			if oneID != "" {
+				cell := v.Grid.CellView(oneID)
+				if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
+					return true
+				}
 			}
 		}
 		if v.ActionMenu != nil {
@@ -565,13 +569,25 @@ func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 }
 
 func (v *SliceGridView[S]) EditItemIDs(ids []string, isEditOnNewStruct bool, after func(ok bool)) {
+	v.editOrViewItemIDs(ids, v.EditParameters.IsEditOnNewStruct, false, after)
+}
+
+func (v *SliceGridView[S]) ViewItemIDs(ids []string, isEditOnNewStruct bool, after func(ok bool)) {
+	v.editOrViewItemIDs(ids, v.EditParameters.IsEditOnNewStruct, true, after)
+}
+
+func (v *SliceGridView[S]) editOrViewItemIDs(ids []string, isEditOnNewStruct, isReadOnly bool, after func(ok bool)) {
 	items := v.getItemsFromIDs(ids)
 	if len(items) == 0 {
 		zlog.Fatal("SGV EditItemIDs: no items. ids:", ids, v.Hierarchy())
 	}
-	title := "Edit " + v.NameOfXItemsFunc(ids, true)
-	// zlog.Info("EditItemIDs", v.Hierarchy(), zlog.CallingStackString())
-	v.EditItems(items, title, isEditOnNewStruct, false, after)
+	title := "Edit"
+	if isReadOnly {
+		title = "View"
+	}
+	title += " " + v.NameOfXItemsFunc(ids, true)
+	// zlog.Info("editOrViewItemIDs", title, isReadOnly, v.Hierarchy(), zdebug.CallingStackString())
+	v.editOrViewItems(items, isReadOnly, title, isEditOnNewStruct, false, after)
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
@@ -579,6 +595,14 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 }
 
 func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
+	v.editOrViewItems(ns, true, title, isEditOnNewStruct, selectAfterEditing, after)
+}
+
+func (v *SliceGridView[S]) ViewItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
+	v.editOrViewItems(ns, true, title, isEditOnNewStruct, selectAfterEditing, after)
+}
+
+func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
 	params := v.EditParameters
 	params.Field.Flags |= zfields.FlagIsLabelize
 	if params.Styling.Spacing == zgeo.UndefValue {
@@ -588,7 +612,11 @@ func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, se
 	if isEditOnNewStruct {
 		params.HideStatic = true
 	}
-	zfields.PresentOKCancelStructSlice(&ns, params, title, zpresent.AttributesNew(), func(ok bool) bool {
+	att := zpresent.AttributesNew()
+	if isReadOnly {
+		att = zpresent.ModalDialogAttributes
+	}
+	zfields.EditOrViewStructSlice(&ns, isReadOnly, params, title, att, func(ok bool) bool {
 		if !ok {
 			if after != nil {
 				after(false)
@@ -731,8 +759,8 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
 	if v.options&AllowNew != 0 && !forSingleCell {
-		del := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
-		items = append(items, del)
+		add := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
+		items = append(items, add)
 	}
 	if v.Grid.CellCountFunc() > 0 {
 		if v.Grid.MultiSelectable && !forSingleCell {
@@ -756,8 +784,14 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				items = append(items, del)
 			}
 			if v.options&AllowEdit != 0 {
-				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, 'E', 0, func() {
+				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, ' ', 0, func() {
 					v.EditItemIDs(ids, false, nil)
+				})
+				items = append(items, edit)
+			}
+			if v.options&AllowView != 0 {
+				edit := zmenu.MenuedSCFuncAction("View "+nitems, ' ', 0, func() {
+					v.ViewItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}

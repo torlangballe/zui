@@ -100,9 +100,17 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 	}
 }
 
-func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+func EditStructAnySlice(structSlicePtr any, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStructAnySlice(structSlicePtr, false, params, title, att, done)
+}
+
+func ViewStructAnySlice(structSlicePtr any, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStructAnySlice(structSlicePtr, true, params, title, att, done)
+}
+
+func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr)
-	// zlog.Info("PresentOKCancelStructAnySlice:", sliceVal.Type())
+	// zlog.Info("PresentEditOrViewStructAnySlice:", sliceVal.Type())
 	if sliceVal.Kind() == reflect.Pointer {
 		sliceVal = sliceVal.Elem()
 	}
@@ -112,10 +120,10 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 	sliceLength := sliceVal.Len()
 	unknownBoolViewIDs := map[string]bool{}
 
-	// zlog.Info("PresentOKCancelStructAnySlice:", zlog.Full(editStruct))
+	// zlog.Info("PresentEditOrViewStructAnySlice:", zlog.Full(editStruct))
 	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 		var notEqual bool
-		// zlog.Info("before PresentOKCancelStructAnySlice.ForEachField:", each.Field.Name, sliceLength)
+		// zlog.Info("before PresentEditOrViewStructAnySlice.ForEachField:", each.Field.Name, sliceLength)
 		for i := 0; i < sliceLength; i++ {
 			finfo := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 			sliceField := finfo.ReflectValue
@@ -202,6 +210,10 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 		}
 	}
 	originalStruct := zreflect.CopyAny(editStruct)
+	if isReadOnly {
+		zpresent.PresentTitledView(fview, title, att, nil, nil)
+		return
+	}
 	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
 		if ok {
 			err := fview.ToData(true)
@@ -252,7 +264,7 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 						sliceField := finfo.ReflectValue
 						replaced, err := wildTransformer.Transform(sliceField.String())
 						if err != nil {
-							zlog.Error(err)
+							zlog.Error("transform", err)
 						} else {
 							sliceField.SetString(replaced)
 						}
@@ -277,8 +289,16 @@ func PresentOKCancelStructAnySlice(structSlicePtr any, params FieldViewParameter
 	})
 }
 
-func PresentOKCancelStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
-	PresentOKCancelStructAnySlice(structSlicePtr, params, title, att, done)
+func EditStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStructSlice(structSlicePtr, false, params, title, att, done)
+}
+
+func ViewStructSlice[S any](structSlicePtr *[]S, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStructSlice(structSlicePtr, true, params, title, att, done)
+}
+
+func EditOrViewStructSlice[S any](structSlicePtr *[]S, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	EditOrViewStructAnySlice(structSlicePtr, isReadOnly, params, title, att, done)
 }
 
 func getFocusedEmptyTextView(parent *zview.NativeView) *ztext.TextView {

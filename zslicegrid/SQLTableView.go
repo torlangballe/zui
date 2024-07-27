@@ -98,7 +98,7 @@ func (v *SQLTableView[S]) addActionButton() {
 				items = append(items, idup)
 			}
 			if v.options&AllowEdit != 0 {
-				iedit := zmenu.MenuedSCFuncAction("Edit "+noItems, 'E', 0, func() {
+				iedit := zmenu.MenuedSCFuncAction("Edit "+noItems, ' ', 0, func() {
 					v.doEdit(ids, false, false, false)
 				})
 				items = append(items, iedit)
@@ -135,7 +135,7 @@ func (v *SQLTableView[S]) doEdit(ids []string, clearPrimary, initStruct, insert 
 }
 
 func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
-	zfields.PresentOKCancelStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
+	zfields.EditStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
 		if !ok {
 			return true
 		}
@@ -232,7 +232,7 @@ func (o *SQLOwner[S]) GetAndUpdate() {
 	q.Constraints = o.createConstraints()
 	err := zrpc.MainClient.Call(o.rpcCallerName+".Select", q, &slice)
 	if err != nil {
-		zlog.Error(err, "select", q.Constraints, o.limit, o.offset)
+		zlog.Error("select", q.Constraints, o.limit, o.offset, err)
 		return
 	}
 	if o.Grid != nil {

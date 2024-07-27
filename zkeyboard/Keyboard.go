@@ -180,6 +180,8 @@ func GetModifiersSymbol(m Modifier) string {
 
 func GetStringForKey(key Key) string {
 	switch key {
+	case ' ':
+		return "space"
 	case KeyReturn, KeyEnter:
 		return "⏎"
 	case KeyEscape:
