@@ -106,7 +106,7 @@ func ShowError(err error, items ...interface{}) {
 	}
 	a := New(str)
 	a.Show(nil)
-	zlog.Error(err, str)
+	zlog.Error(str, err)
 }
 
 func (a *Alert) ShowOK(handle func()) {

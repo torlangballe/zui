@@ -61,7 +61,7 @@ func fetchTimeInfo() bool {
 	}
 	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
 	if err != nil {
-		zlog.Error(err, "parse")
+		zlog.Error("parse", err)
 		return false
 	}
 	mid := start.Add(since / 2)

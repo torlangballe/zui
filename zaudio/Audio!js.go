@@ -13,7 +13,7 @@ func MP4DurationSecs(reader io.ReadSeeker, size int64) (float64, error) {
 	return float64(size*8) / float64(128000), nil
 	// meta, err := audiotag.ReadFrom(reader)
 	// if err != nil {
-	// 	zlog.Error(err, "read audio tag")
+	// 	zlog.Error("read audio tag", err)
 	// 	return 0, err
 	// }
 	// return float64(meta.Duration()), nil

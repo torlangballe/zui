@@ -140,7 +140,7 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) (
 			err = rez.Convert(newImage, goImage, biLin)
 		}
 		if err != nil {
-			return nil, zlog.Error(err, "rez resize")
+			return nil, zlog.Error("rez resize", err)
 		}
 	} else {
 		newImage = imaging.Resize(goImage, width, height, imaging.Lanczos)
@@ -162,7 +162,7 @@ func GoImageFromURL(path string) (img image.Image, format string, err error) {
 	params.Method = http.MethodGet
 	resp, err := zhttp.GetResponse(path, params)
 	if err != nil {
-		zlog.Error(err, path)
+		zlog.Error(path, err)
 		return nil, "", err
 	}
 	return image.Decode(resp.Body)
@@ -172,7 +172,7 @@ func GoImagePNGData(goImage image.Image) ([]byte, error) {
 	out := bytes.NewBuffer([]byte{})
 	err := png.Encode(out, goImage)
 	if err != nil {
-		err = zlog.Error(err, "encode")
+		err = zlog.Error("encode", err)
 		return []byte{}, err
 	}
 	return out.Bytes(), nil
@@ -183,7 +183,7 @@ func GoImageJPEGData(goImage image.Image, qualityPercent int) ([]byte, error) {
 	options := jpeg.Options{Quality: qualityPercent}
 	err := jpeg.Encode(out, goImage, &options)
 	if err != nil {
-		err = zlog.Error(err, "encode")
+		err = zlog.Error("encode", err)
 		return []byte{}, err
 	}
 	return out.Bytes(), nil
@@ -192,13 +192,13 @@ func GoImageJPEGData(goImage image.Image, qualityPercent int) ([]byte, error) {
 func GoImageToJPEGFile(img image.Image, filepath string, qualityPercent int) error {
 	out, err := os.Create(filepath)
 	if err != nil {
-		return zlog.Error(err, "os.create", filepath)
+		return zlog.Error("os.create", filepath, err)
 	}
 	defer out.Close()
 	options := jpeg.Options{Quality: qualityPercent}
 	err = jpeg.Encode(out, img, &options)
 	if err != nil {
-		return zlog.Error(err, "encode")
+		return zlog.Error("encode", err)
 	}
 	return nil
 }
@@ -206,12 +206,12 @@ func GoImageToJPEGFile(img image.Image, filepath string, qualityPercent int) err
 func GoImageToPNGFile(img image.Image, filepath string) error {
 	out, err := os.Create(filepath)
 	if err != nil {
-		return zlog.Error(err, zlog.StackAdjust(1), "os.create", filepath)
+		return zlog.Error(zlog.StackAdjust(1), "os.create", filepath, err)
 	}
 	defer out.Close()
 	err = png.Encode(out, img)
 	if err != nil {
-		return zlog.Error(err, "encode", filepath)
+		return zlog.Error("encode", filepath, err)
 	}
 	return nil
 }

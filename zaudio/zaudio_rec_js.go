@@ -54,7 +54,7 @@ func NewAudioRecording(opts RecOptions, w io.Writer) *Recording {
 	streamCall := mediaDevs.Call("getUserMedia", constraints)
 	zdom.Resolve(streamCall, func(stream js.Value, err error) {
 		if err != nil {
-			zlog.Error(err, "getUserMedia")
+			zlog.Error("getUserMedia", err)
 			return
 		}
 		options := map[string]any{

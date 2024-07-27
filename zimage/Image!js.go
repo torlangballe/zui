@@ -108,12 +108,12 @@ func (i *Image) HasAlpha() bool {
 func (i *Image) SaveToPNG(filepath string) error {
 	out, err := os.Create(filepath)
 	if err != nil {
-		return zlog.Error(err, "os.create", filepath)
+		return zlog.Error("os.create", filepath, err)
 	}
 	defer out.Close()
 	err = png.Encode(out, i.GoImage)
 	if err != nil {
-		return zlog.Error(err, "encode")
+		return zlog.Error("encode", err)
 	}
 	return nil
 }

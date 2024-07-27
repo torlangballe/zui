@@ -211,7 +211,7 @@ func (i *Image) FixedOrientation() *Image {
 func FromGo(img image.Image, got func(image *Image)) {
 	data, err := GoImagePNGData(img)
 	if err != nil {
-		zlog.Error(err)
+		zlog.Error("to-png", err)
 		got(nil)
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")

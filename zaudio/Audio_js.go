@@ -23,7 +23,7 @@ func (a *Audio) Play(fail func(err error)) {
 	promise := a.audio.Call("play")
 	zdom.Resolve(promise, func(resolved js.Value, err error) {
 		if err != nil {
-			zlog.Error(err, "play")
+			zlog.Error("play", err)
 			if fail != nil {
 				fail(err)
 			}

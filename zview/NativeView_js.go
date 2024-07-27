@@ -110,7 +110,7 @@ func (v *NativeView) parseElementCoord(value js.Value) float64 {
 	if zstr.HasSuffix(str, "px", &s) {
 		n, err := strconv.ParseFloat(s, 32)
 		if err != nil {
-			zlog.Error(err, "not number", v.ObjectName())
+			zlog.Error("not number", v.ObjectName(), err)
 			return 0
 		}
 		return n
@@ -443,7 +443,7 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 }
 
 func (root *NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {
-	zlog.Info("Set HandleFocusInChildren", in, root.Hierarchy())
+	// zlog.Info("Set HandleFocusInChildren", in, root.Hierarchy())
 	if in {
 		// zlog.Info("Set HandleFocusInChildren", root.Hierarchy())
 		handleFocusInChildren(root, "focusin", true, handle)
