@@ -110,11 +110,12 @@ func (s ScreensViewWidgeter) Create(f *Field) zview.View {
 }
 
 func buildContextError(in *FieldView, f *Field, val any) zview.View {
-	// zlog.Info("buildContextError:", f.Name)
 	e := val.(zerrors.ContextError)
+	// zlog.Info("buildContextError:", f.Name, e.Title, len(e.KeyValues), e.SubContextError != nil)
 	frame := in.BuildMapList(reflect.ValueOf(e.KeyValues), f, e.Title)
-	if e.SubError != nil {
-		sub := buildContextError(in, f, *e.SubError)
+	if e.SubContextError != nil {
+		// zlog.Info("buildContextError sub:", f.Name, e.SubContextError.Title)
+		sub := buildContextError(in, f, *e.SubContextError)
 		adder := frame.(zcontainer.AdvancedAdder)
 		adder.AddAdvanced(sub, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, -1, false)
 	}
