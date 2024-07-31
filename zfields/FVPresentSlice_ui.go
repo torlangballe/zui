@@ -211,6 +211,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	}
 	originalStruct := zreflect.CopyAny(editStruct)
 	if isReadOnly {
+		att.FocusView = fview
 		zpresent.PresentTitledView(fview, title, att, nil, nil)
 		return
 	}
