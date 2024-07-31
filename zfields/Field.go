@@ -125,6 +125,8 @@ const (
 	FlagIsEnd                                         // This field represents an end value, probably a time, and so far for if FlagHeaderLockable.
 	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
 	FlagCheckerCell                                   // Ever other column with this is darkened a bit.
+	FlagFutureInvalid                                 // For time, show red if time is future.
+	FlagPastInvalid                                   // For time, show red if time is future.
 )
 
 const (
@@ -186,6 +188,7 @@ type Field struct {
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
 	RPCCall              string            // an RPC method to Call, typically on press of a button
 	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum
+	ZeroText             string            // Text to replace a zero value with set with "allowempty" tag.
 }
 
 var EmptyField = Field{
@@ -486,6 +489,17 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.ValueStoreKey = val
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
+		case "zerotext":
+			f.ZeroText = val
+		case "invalid":
+			switch val {
+			case "past":
+				f.SetFlag(FlagPastInvalid)
+			case "future":
+				f.SetFlag(FlagFutureInvalid)
+			default:
+				zlog.Error("invalid: bad val:", val)
+			}
 		case "edit":
 			f.Flags |= FlagIsEdit
 		case "static":
@@ -899,7 +913,7 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice any, f Fiel
 	}
 	for i := 0; i < slen; i++ {
 		fi := val.Index(i).Addr().Interface()
-		ic, ierr := zreflect.ItterateStruct(fi, zreflect.Options{UnnestAnonymous: true})
+		ic, ierr := zreflect.IterateStruct(fi, zreflect.Options{UnnestAnonymous: true})
 		zlog.Assert(ierr == nil)
 		item := ic.Children[f.Index]
 		di := enum.FindValue(item.Interface)
@@ -951,8 +965,8 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 		// count++
 		ei := val.Index(i).Addr().Interface()
 		ej := val.Index(j).Addr().Interface()
-		// ic, ierr := zreflect.ItterateStruct(ei, zreflect.Options{UnnestAnonymous: true})
-		// jc, jerr := zreflect.ItterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
+		// ic, ierr := zreflect.IterateStruct(ei, zreflect.Options{UnnestAnonymous: true})
+		// jc, jerr := zreflect.IterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
 		// zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 		for _, s := range sortOrder {
 			f := fieldMap[s.FieldName]

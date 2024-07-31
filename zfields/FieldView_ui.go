@@ -511,6 +511,16 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			break
 		}
 		valStr = getTimeString(rval, f)
+		t := rval.Interface().(time.Time)
+		if !t.IsZero() && f.HasFlag(FlagPastInvalid|FlagFutureInvalid) {
+			since := time.Since(t)
+			if f.HasFlag(FlagPastInvalid) && since > 0 || f.HasFlag(FlagFutureInvalid) && since < 0 {
+				// zlog.Info("INVALID:", valStr, f.FieldName, t, since, f.HasFlag(FlagPastInvalid), f.HasFlag(FlagFutureInvalid))
+				foundView.SetColor(zgeo.ColorRed)
+			} else {
+				foundView.SetColor(zgeo.ColorBlack)
+			}
+		}
 		to := foundView.(ztext.TextOwner)
 		to.SetText(valStr)
 
@@ -583,7 +593,7 @@ func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 		label, _ := foundView.(*zlabel.Label)
 		str := strconv.Itoa(rval.Len())
 		if str == "0" && f.HasFlag(FlagAllowEmptyAsZero) {
-			str = ""
+			str = f.ZeroText
 		}
 		label.SetText(str)
 		return true
@@ -1095,7 +1105,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 	var str string
 	t := rval.Interface().(time.Time)
 	if t.IsZero() {
-		return ""
+		return f.ZeroText
 	}
 	format := f.Format
 	secs := (f.Flags&FlagHasSeconds != 0)
@@ -1125,7 +1135,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Duration) {
 	if f.Flags&FlagAllowEmptyAsZero != 0 {
 		if rval.IsZero() {
-			return "", 0
+			return f.ZeroText, 0
 		}
 	}
 	stringer, got := rval.Interface().(UIStringer)
@@ -1161,7 +1171,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return "", 0
+				return f.ZeroText, 0
 			}
 			return zwords.GetMemoryString(b, "", significant), 0
 		}
@@ -1169,7 +1179,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return "", 0
+				return f.ZeroText, 0
 			}
 			return zwords.GetStorageSizeString(b, "", significant), 0
 		}
@@ -1177,7 +1187,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 		b, err := zint.GetAny(rval.Interface())
 		if err == nil {
 			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return "", 0
+				return f.ZeroText, 0
 			}
 			return zwords.GetBandwidthString(b, "", significant), 0
 		}
@@ -1514,7 +1524,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		for i := range enum {
 			if f.Flags&FlagAllowEmptyAsZero != 0 {
 				if enum[i].Value != nil && reflect.ValueOf(enum[i].Value).IsZero() {
-					enum[i].Name = ""
+					enum[i].Name = f.ZeroText
 				}
 			}
 		}
