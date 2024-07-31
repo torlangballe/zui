@@ -130,7 +130,14 @@ func Open(o Options) *Window {
 }
 
 func (win *Window) updateScale() {
-	win.Scale = win.Element.Get("outerWidth").Float() / win.Element.Get("innerWidth").Float()
+	iwidth := win.Element.Get("innerWidth").Float()
+	if iwidth == 0 {
+		zlog.Info("updateScale def:", win.Scale)
+		win.Scale = 1
+		return
+	}
+	win.Scale = win.Element.Get("outerWidth").Float() / iwidth
+	// zlog.Info("updateScale:", win.Scale)
 }
 
 func (win *Window) SetOnResizeHandling() {
