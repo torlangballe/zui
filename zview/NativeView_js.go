@@ -403,7 +403,11 @@ func (v *NativeView) IsFocused() bool {
 func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
 	// zlog.Info("NV FOcus:", v.Hierarchy(), focus, zlog.CallingStackString())
-	v.JSCall("focus")
+	if focus {
+		v.JSCall("focus")
+	} else {
+		v.JSCall("blur")
+	}
 	// ztimer.StartIn(2, func() {
 	// 	v.EnvokeFocusIn()
 	// })
