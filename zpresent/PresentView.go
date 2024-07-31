@@ -114,6 +114,10 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	nv := v.Native()
 	if attributes.Modal {
+		old := getCurrentFocus(win.ViewsStack)
+		if old != nil {
+			old.Native().Focus(false)
+		}
 		if nv != nil {
 			r := rect
 			if attributes.PlaceOverView != nil {
