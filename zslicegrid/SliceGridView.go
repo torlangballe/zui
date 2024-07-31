@@ -148,7 +148,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 	}
 	if options&AddSearch != 0 {
-		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 14)
+		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 12)
 		v.SearchField.SetValueHandler("zslicegrid.Search", func(edited bool) {
 			v.CurrentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
 			v.ClearFilterSkipCache()
@@ -595,7 +595,7 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 }
 
 func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
-	v.editOrViewItems(ns, true, title, isEditOnNewStruct, selectAfterEditing, after)
+	v.editOrViewItems(ns, false, title, isEditOnNewStruct, selectAfterEditing, after)
 }
 
 func (v *SliceGridView[S]) ViewItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
