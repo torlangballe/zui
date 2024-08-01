@@ -970,13 +970,12 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 		// zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 		for _, s := range sortOrder {
 			f := fieldMap[s.FieldName]
-			// zlog.Info("SORTING:", i, j, s.FieldName, f != nil)
 			iitem := zreflect.FieldForIndex(ei, zreflect.FlattenIfAnonymous, f.Index).ReflectValue
 			jitem := zreflect.FieldForIndex(ej, zreflect.FlattenIfAnonymous, f.Index).ReflectValue
 			sliceEnumNames := enumTitles[f.FieldName]
 			if sliceEnumNames != nil {
-				ni := sliceEnumNames[iitem.Interface]
-				nj := sliceEnumNames[jitem.Interface]
+				ni := sliceEnumNames[iitem.Interface()]
+				nj := sliceEnumNames[jitem.Interface()]
 				r := (zstr.CaselessCompare(ni, nj) < 0) == s.SmallFirst
 				if ni == nj {
 					// zlog.Info("sliceEnumNames same:", r, s.FieldName, i, ni, j, nj)
