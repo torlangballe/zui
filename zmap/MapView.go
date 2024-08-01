@@ -27,7 +27,7 @@ func MapViewNew(center zgeo.Pos, zoom int) *MapView {
 	return v
 }
 
-func (v *MapView) CalculatedSize(total zgeo.Size) zgeo.Size {
+func (v *MapView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	zlog.Info("mapview cs:", v.minSize)
 	return v.minSize, zgeo.Size{}
 }
