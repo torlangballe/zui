@@ -415,7 +415,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			return true
 		}
 	}
-	if f.Enum != "" && (f.IsStatic() || v.params.AllStatic) {
+	if f.StringSep == "" && f.Enum != "" && (f.IsStatic() || v.params.AllStatic) {
 		enum := GetEnum(f.Enum)
 		str := findNameOfEnumForRVal(rval, enum)
 		foundView.(*zlabel.Label).SetText(str)
@@ -772,6 +772,7 @@ func (v *FieldView) updateMapList(f *Field, rval reflect.Value, foundView zview.
 func (v *FieldView) updateSeparatedStringWithSlice(f *Field, rval reflect.Value, foundView zview.View) {
 	var parts []string
 
+	zlog.Info("FV.updateSeparatedStringWithSlice:", f.Name, f.StringSep)
 	for i := 0; i < rval.Len(); i++ {
 		v := rval.Index(i).Interface()
 		parts = append(parts, fmt.Sprint(v))
