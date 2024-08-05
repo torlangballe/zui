@@ -239,7 +239,11 @@ func (v *TextView) setHandlers() {
 			return nil
 		}
 		event := vs[0]
-		key := event.Get("which").Int()
+		which := event.Get("which")
+		if which.IsUndefined() {
+			return nil
+		}
+		key := which.Int()
 		// zlog.Info("OnKeyDown", key)
 		if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
 			if v.editDone != nil {
