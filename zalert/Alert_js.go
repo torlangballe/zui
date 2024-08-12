@@ -4,7 +4,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zwindow"
-	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zdebug"
 )
 
 func (a *Alert) showNative(handle func(result Result)) {
@@ -24,7 +24,7 @@ func (a *Alert) showNative(handle func(result Result)) {
 		alert.Invoke(str)
 	}
 	go func() {
-		defer zlog.HandlePanic(true)
+		defer zdebug.RecoverFromPanic(true)
 		if handle != nil {
 			if r {
 				handle(OK)
