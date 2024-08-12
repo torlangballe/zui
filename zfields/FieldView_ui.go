@@ -1083,6 +1083,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 			name = "key:" + f.ValueStoreKey
 		}
 		menu := zmenu.NewView(name, items, rval.Interface())
+		menu.RowFormat = f.Format
 		menu.SetMaxWidth(f.MaxWidth)
 		view = menu
 		menu.SetSelectedHandler(func() {

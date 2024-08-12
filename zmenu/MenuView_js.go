@@ -122,11 +122,12 @@ func (v *MenuView) RemoveItemByValue(value any) {
 }
 
 func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
-	// zlog.Info("MV SetValues1", v.ObjectName(), len(items), len(v.items), items.Equal(v.items), value)
+	// zlog.Info("MV UpdateItems", v.ObjectName(), len(items), v.RowFormat)
 	v.items = items // must be before v.getNumberOfItemsString
 	var str string
 	for _, item := range v.items {
-		str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(item.Name))
+		rowStr := getRowString(v.RowFormat, item)
+		str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(rowStr))
 	}
 	// We use HTML here to add all at once, or slow.
 	// zlog.Info(v.ObjectName(), "menu updateitems:", str)

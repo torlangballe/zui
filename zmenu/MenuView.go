@@ -4,6 +4,7 @@ package zmenu
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -24,6 +25,7 @@ type MenuType interface {
 type MenuView struct {
 	zview.NativeView
 	StoreKey        string
+	RowFormat       string
 	maxWidth        float64
 	selectedHandler func()
 	items           zdict.Items
@@ -45,11 +47,21 @@ func (v *MenuView) getNumberOfItemsString() string {
 	return zwords.PluralWordWithCount("item", float64(v.items.Count()), "", "", 0)
 }
 
+func getRowString(format string, item zdict.Item) string {
+	if format == "" {
+		return item.Name
+	}
+	str := strings.Replace(format, "$N", item.Name, -1)
+	str = strings.Replace(str, "$V", fmt.Sprint(item.Value), -1)
+	return str
+}
+
 func (v *MenuView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var maxStr string
 	for _, item := range v.items {
-		if len(item.Name) > len(maxStr) {
-			maxStr = item.Name
+		rowStr := getRowString(v.RowFormat, item)
+		if len(rowStr) > len(maxStr) {
+			maxStr = rowStr
 		}
 	}
 	w := ztextinfo.WidthOfString(maxStr, v.Font())
