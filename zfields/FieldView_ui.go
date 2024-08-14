@@ -692,8 +692,6 @@ func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 }
 
 func (v *FieldView) BuildMapList(rval reflect.Value, f *Field, frameTitle string) zview.View {
-	//	zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, rval.Len())
-	// zlog.Info("BuildMapList", v.Hierarchy(), f.FieldName, zlog.Full(rval.Interface()))
 	var outView zview.View
 	params := v.params
 	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
@@ -1175,7 +1173,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 	//TODO: Handle float
 	b, err := zint.GetAny(rval.Interface())
 	if err != nil {
-		return "", 0
+		return fmt.Sprint(rval.Interface()), 0
 	}
 	if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
 		return f.ZeroText, 0
