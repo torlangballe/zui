@@ -771,8 +771,6 @@ func (v *FieldView) updateMapList(f *Field, rval reflect.Value, foundView zview.
 
 func (v *FieldView) updateSeparatedStringWithSlice(f *Field, rval reflect.Value, foundView zview.View) {
 	var parts []string
-
-	zlog.Info("FV.updateSeparatedStringWithSlice:", f.Name, f.StringSep)
 	for i := 0; i < rval.Len(); i++ {
 		v := rval.Index(i).Interface()
 		parts = append(parts, fmt.Sprint(v))
