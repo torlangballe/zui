@@ -189,6 +189,7 @@ type Field struct {
 	RPCCall              string            // an RPC method to Call, typically on press of a button
 	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum
 	ZeroText             string            // Text to replace a zero value with set with "allowempty" tag.
+	MaxText              string            // Text to replace a "maximum" value with set with "allowempty" tag.
 }
 
 var EmptyField = Field{
@@ -491,6 +492,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Flags |= FlagAllowEmptyAsZero
 		case "zerotext":
 			f.ZeroText = val
+		case "maxtext":
+			f.MaxText = val
 		case "invalid":
 			switch val {
 			case "past":

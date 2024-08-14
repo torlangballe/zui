@@ -1106,8 +1106,13 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 func getTimeString(rval reflect.Value, f *Field) string {
 	var str string
 	t := rval.Interface().(time.Time)
-	if t.IsZero() {
-		return f.ZeroText
+	if f.Flags&FlagAllowEmptyAsZero != 0 {
+		if t.IsZero() {
+			return f.ZeroText
+		}
+	}
+	if t == ztime.BigTime {
+		return f.MaxText
 	}
 	format := f.Format
 	secs := (f.Flags&FlagHasSeconds != 0)
@@ -1168,32 +1173,27 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 	}
 	format := f.Format
 	significant := f.Columns
+
+	//TODO: Handle float
+	b, err := zint.GetAny(rval.Interface())
+	if err != nil {
+		return "", 0
+	}
+	if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+		return f.ZeroText, 0
+	}
+	if f.MaxText != "" && b == math.MaxInt64 {
+		return f.MaxText, 0
+	}
 	switch format {
 	case "memory":
-		b, err := zint.GetAny(rval.Interface())
-		if err == nil {
-			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return f.ZeroText, 0
-			}
-			return zwords.GetMemoryString(b, "", significant), 0
-		}
+		return zwords.GetMemoryString(b, "", significant), 0
 	case "storage":
-		b, err := zint.GetAny(rval.Interface())
-		if err == nil {
-			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return f.ZeroText, 0
-			}
-			return zwords.GetStorageSizeString(b, "", significant), 0
-		}
+		return zwords.GetStorageSizeString(b, "", significant), 0
 	case "bps":
-		b, err := zint.GetAny(rval.Interface())
-		if err == nil {
-			if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-				return f.ZeroText, 0
-			}
-			return zwords.GetBandwidthString(b, "", significant), 0
-		}
-	case "":
+		return zwords.GetBandwidthString(b, "", significant), 0
+	}
+	if format == "" {
 		format = "%v"
 	}
 	return fmt.Sprintf(format, rval.Interface()), 0
