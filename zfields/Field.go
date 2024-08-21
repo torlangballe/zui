@@ -18,6 +18,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -102,6 +103,7 @@ const (
 	FlagFrameIsTitled                                 // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
 	FlagFrameTitledOnFrame                            // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
 	FlagSkipIndicator                                 // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
+	FlagPress                                         // If FlagLongPress is set this button/image etc handles press
 	FlagLongPress                                     // If FlagLongPress is set this button/image etc handles long-press
 	FlagDisableAutofill                               // FlagDisableAutofill if set makes a text field not autofill
 	FlagIsSearchable                                  // This field can be used to search in tables etc
@@ -190,6 +192,7 @@ type Field struct {
 	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum
 	ZeroText             string            // Text to replace a zero value with set with "allowempty" tag.
 	MaxText              string            // Text to replace a "maximum" value with set with "allowempty" tag.
+	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String()
 }
 
 var EmptyField = Field{
@@ -220,6 +223,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"HasFrame":                 uint64(FlagHasFrame),
 	"SkipIndicator":            uint64(FlagSkipIndicator),
 	"LongPress":                uint64(FlagLongPress),
+	"Press":                    uint64(FlagPress),
 	"DisableAutofill":          uint64(FlagDisableAutofill),
 	"IsSearchable":             uint64(FlagIsSearchable),
 	"IsUseInValue":             uint64(FlagIsUseInValue),
@@ -381,6 +385,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if key == "celljustify" {
 				f.SetFlag(FlagDontJustifyHeader)
 			}
+		case "wrap":
+			f.Wrap = val
 		case "name":
 			f.Name = val
 		case "title":
@@ -523,6 +529,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if floatErr == nil {
 				f.MaxWidth = n
 			}
+		case "press":
+			f.Flags |= FlagPress
 		case "longpress":
 			f.Flags |= FlagLongPress
 		case "group":
@@ -639,7 +647,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			} else {
 				_, got := fieldEnums[val]
 				if !got {
-					zlog.Error("no such enum:", val, fieldEnums, f.FieldName)
+					zlog.Error("no such enum:", val, fieldEnums, f.FieldName, zdebug.CallingStackString())
 				}
 				f.Enum = val
 			}
@@ -665,7 +673,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				f.Flags |= FlagLabelizeWithDescriptions
 			}
 		case "button":
-			f.Flags |= FlagIsButton
+			f.Flags |= FlagIsButton | FlagPress
 		case "enable":
 			f.LocalEnable = val
 		case "disable":
@@ -708,9 +716,6 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	}
 	if f.HeaderImageFixedPath == "" && f.Flags&FlagHasHeaderImage != 0 {
 		f.HeaderImageFixedPath = f.ImageFixedPath
-	}
-	if f.Flags&FlagToClipboard != 0 && f.Tooltip == "" {
-		f.Tooltip = "press to copy to Clipboard"
 	}
 	// zfloat.Maximize(&f.MaxWidth, f.MinWidth)
 	if f.MaxWidth != 0 {

@@ -621,6 +621,8 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
 	mf.FieldName = key
 	mf.Alignment = zgeo.CenterLeft
+	mf.Wrap = ztextinfo.WrapTailTruncate.String()
+
 	if f.HasFlag(FlagToClipboard) {
 		mf.SetFlag(FlagToClipboard)
 	}
@@ -1123,11 +1125,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 		format += " 02-Jan-06"
 	}
 	if format == "nice" {
-		if f.FractionDecimals != 0 {
-			str = ztime.GetNiceSubSecs(t, true, f.FractionDecimals)
-		} else {
-			str = ztime.GetNice(t, f.Flags&FlagHasSeconds != 0)
-		}
+		str = ztime.GetNiceSubSecs(t, f.Flags&FlagHasSeconds != 0, f.FractionDecimals)
 	} else {
 		t = ztime.GetTimeWithServerLocation(t)
 		str = t.Format(format)
@@ -1214,10 +1212,13 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			} else {
 				// zlog.Info("DOC:", surl, ztextinfo.DecorationUnderlined)
 				ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
-				label.SetPressedHandler(func() {
+				label.SetPressedHandler("zfield.DocPressed", zkeyboard.ModifierNone, func() {
 					go zwidgets.DocumentationViewPresent(surl, false)
 				})
 			}
+		}
+		if f.Wrap == ztextinfo.WrapTailTruncate.String() {
+			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
 		// zlog.Info("LABEL:", f.FieldName, v.params.UseInValues, f.Rows)
@@ -1790,17 +1791,14 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: CreatedViewAction, RVal: rval.Addr(), View: &view})
 	}
 	if f.Path != "" {
-		p := view.(zview.Pressable)
-		if p != nil {
-			path := f.Path
-			zstr.HasPrefix(path, "./", &path)
-			path = replaceDoubleSquiggliesWithFields(v, f, path)
-			if f.HasFlag(FlagIsDownload) {
-				if !f.HasFlag(FlagIsAudio) {
-					p.SetPressedHandler(func() {
-						zview.DownloadURI(path, "")
-					})
-				}
+		path := f.Path
+		zstr.HasPrefix(path, "./", &path)
+		path = replaceDoubleSquiggliesWithFields(v, f, path)
+		if f.HasFlag(FlagIsDownload) {
+			if !f.HasFlag(FlagIsAudio) {
+				view.Native().SetPressedHandler("zfield.Download", zkeyboard.ModifierNone, func() {
+					zview.DownloadURI(path, "")
+				})
 			}
 		}
 	}
