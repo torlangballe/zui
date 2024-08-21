@@ -265,7 +265,7 @@ func setOnKeyEvent(win *Window, down bool) {
 	}
 	doc := win.Element.Get("document")
 	doc.Set(eventName, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
-		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
+		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), eventName, down, win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
 		if !win.Element.Get("document").Call("hasFocus").Bool() {
 			return nil
 		}

@@ -89,6 +89,24 @@ var DecorationUnderlined = Decoration{
 	Width:   1,
 }
 
+func (w WrapType) String() string {
+	switch w {
+	case WrapWord:
+		return "word"
+	case WrapChar:
+		return "char"
+	case WrapClip:
+		return "clip"
+	case WrapHeadTruncate:
+		return "headtrunc"
+	case WrapTailTruncate:
+		return "tailtrunc"
+	case WrapMiddleTruncate:
+		return "midtrunc"
+	}
+	return ""
+}
+
 func New() *Info {
 	t := &Info{}
 	t.Type = Fill
