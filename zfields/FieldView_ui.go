@@ -1244,12 +1244,10 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if f.Rows <= 1 {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
-		if f.Flags&FlagToClipboard != 0 {
+		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) && f.Flags&FlagToClipboard != 0 {
 			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
 		}
-		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-			label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
-		}
+		label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
 		return label
 	}
 	var style ztext.Style
