@@ -612,9 +612,10 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 	if isEditOnNewStruct {
 		params.HideStatic = true
 	}
-	att := zpresent.AttributesNew()
+	att := zpresent.ModalConfirmAttributes
 	if isReadOnly {
-		att = zpresent.ModalDialogAttributes
+		att = zpresent.ModalPopupAttributes
+		att.ModalDimBackground = true
 	}
 	zfields.EditOrViewStructSlice(&ns, isReadOnly, params, title, att, func(ok bool) bool {
 		if !ok {
