@@ -22,6 +22,8 @@ import (
 	"github.com/gorilla/mux"
 	ua "github.com/mileusna/useragent"
 	"github.com/torlangballe/zutil/zbuild"
+	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zerrors"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -48,9 +50,10 @@ type filesRedirector struct {
 var wwwFS embed.FS
 
 var (
-	AllWebFS          zfile.MultiFS
-	RequestRedirector *filesRedirector
-	CanBrotlyFunc     func(req *http.Request) bool
+	AllWebFS           zfile.MultiFS
+	RequestRedirector  *filesRedirector
+	CanBrotlyFunc      func(req *http.Request) bool
+	HandleGUIErrorFunc func(ci *zrpc.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
 )
 
 func Init(executor *zrpc.Executor) {
@@ -225,6 +228,21 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 }
 
 func appNew(a *App) {
+}
+
+func (AppCalls) SetGUIError(ci *zrpc.ClientInfo, ce zerrors.ContextError) error {
+	zlog.Info("Got gui error:", zlog.Full(ce), ci.IPAddress)
+	if HandleGUIErrorFunc != nil {
+		dict := zdict.Dict{
+			"Browser IP": ci.IPAddress,
+			"UserAgent":  ci.UserAgent,
+		}
+		if ci.UserID != 0 {
+			dict["UserID"] = ci.UserID
+		}
+		HandleGUIErrorFunc(ci, ce, dict)
+	}
+	return nil
 }
 
 // CheckServeFilesExists sees if paths exists in AllWebFS embeded and dir.

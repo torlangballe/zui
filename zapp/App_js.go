@@ -9,6 +9,8 @@ import (
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
+	"github.com/torlangballe/zutil/zdict"
+	"github.com/torlangballe/zutil/zerrors"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zrpc"
@@ -44,6 +46,13 @@ func URLStub() string {
 	return u.String()
 }
 
+func guiRestartHandler(err error) {
+	dict := zdict.Dict{}
+	ce := zerrors.MakeContextError(dict, "GUI Restart", err)
+	callErr := zrpc.MainClient.Call("AppCalls.SetGUIError", ce, nil)
+	zlog.OnError(callErr)
+}
+
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
 func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	url := URL()
@@ -57,17 +66,18 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	url.RawQuery = ""
 	DownloadPathPrefix = url.String()
 	zwidgets.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
-	if useRPC {
-		surl := url.String()
-		zstr.HasSuffix(surl, zrest.AppURLPrefix, &surl)
-		zrpc.MainClient = zrpc.NewClient(surl, "")
-	}
 	path, args = MainArgs()
 	if zbool.FromString(args["zdebug"], false) {
 		zui.DebugMode = true
 	}
 	if zbool.FromString(args["ztest"], false) {
 		zdebug.IsInTests = true // for testing gui
+	}
+	if useRPC {
+		surl := url.String()
+		zstr.HasSuffix(surl, zrest.AppURLPrefix, &surl)
+		zrpc.MainClient = zrpc.NewClient(surl, "")
+		zdebug.HandleRestartFunc = guiRestartHandler
 	}
 	return
 }
