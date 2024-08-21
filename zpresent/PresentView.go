@@ -59,10 +59,16 @@ var (
 	ShowErrorFunc      func(title, subTitle string)
 )
 
-var ModalDialogAttributes = Attributes{
+var ModalConfirmAttributes = Attributes{
+	Modal:              true,
+	ModalDimBackground: true,
+	ModalDropShadow:    zstyle.DropShadowDefault,
+	// ModalDismissOnEscapeKey: true, // The view needs to have a special escape key do dismiss on escape
+}
+
+var ModalPopupAttributes = Attributes{
 	Modal:                    true,
 	ModalCloseOnOutsidePress: true,
-	ModalDimBackground:       true,
 	ModalDropShadow:          zstyle.DropShadowDefault,
 	ModalDismissOnEscapeKey:  true,
 }
@@ -418,11 +424,13 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		}
 		blocker.Add(v, attributes.Alignment) // |zgeo.Shrink
 		if attributes.ModalCloseOnOutsidePress {
-			blocker.SetPressedHandler(func() {
+			blocker.SetPressedHandler("$blocker.click.away", zkeyboard.ModifierNone, func() {
+				zlog.Info("Blocker clicked")
 				dismissed := true
 				Close(v, dismissed, attributes.ClosedFunc)
 			})
 		}
+		v.Native().SetPressedHandler("$modal.click.eater", zkeyboard.ModifierNone, func() {}) // so it doesn't propagate to blocker
 		blocker.JSSet("className", "znoscrollbar")
 		blocker.SetJSStyle("overflow", "scroll")
 	}
