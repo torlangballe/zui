@@ -1,6 +1,8 @@
 package zkeyboard
 
 import (
+	"strings"
+
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -135,6 +137,23 @@ func (k KeyMod) IsNull() bool {
 	return k.Key == 0 && k.Modifier == 0
 }
 
+func (m Modifier) String() string {
+	var parts []string
+	if m&ModifierShift != 0 {
+		parts = append(parts, "shift")
+	}
+	if m&ModifierControl != 0 {
+		parts = append(parts, "control")
+	}
+	if m&ModifierAlt != 0 {
+		parts = append(parts, "alt")
+	}
+	if m&ModifierCommand != 0 {
+		parts = append(parts, "command")
+	}
+	return strings.Join(parts, "|")
+}
+
 func GetModifiersString(m Modifier) string {
 	switch m {
 	case ModifierAlt:
@@ -149,7 +168,7 @@ func GetModifiersString(m Modifier) string {
 	return ""
 }
 
-func GetModifiersSymbol(m Modifier) string {
+func GetModifiersSymbols(m Modifier) string {
 	var str string
 	if m&ModifierShift != 0 {
 		str += "⇧"
