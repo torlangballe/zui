@@ -23,8 +23,9 @@ func (a *Alert) showNative(handle func(result Result)) {
 		alert := e.Get("alert")
 		alert.Invoke(str)
 	}
+	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
 	go func() {
-		defer zdebug.RecoverFromPanic(true)
+		defer zdebug.RecoverFromPanic(true, invokeFunc)
 		if handle != nil {
 			if r {
 				handle(OK)
