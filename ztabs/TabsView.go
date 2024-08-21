@@ -6,6 +6,7 @@ import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -151,7 +152,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	if imagePath != "" {
 		button.SetImage(nil, true, imagePath, nil)
 	}
-	button.SetPressedHandler(func() {
+	button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		go v.SelectItem(id, nil)
 	})
 	v.header.Add(view, zgeo.BottomLeft)

@@ -5,6 +5,7 @@ package zaudio
 import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
@@ -39,10 +40,10 @@ func NewAudioIconView(size zgeo.Size, path string) *AudioIconView {
 	v.imageView.SetObjectName("image")
 	v.Add(v.imageView, zgeo.Center)
 
-	v.imageView.SetLongPressedHandler(func() {
+	v.imageView.SetLongPressedHandler("", zkeyboard.ModifierNone, func() {
 		zview.DownloadURI(v.path, "")
 	})
-	v.imageView.SetPressedHandler(func() {
+	v.imageView.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		zlog.Info("Pressed", v.path)
 		if v.audio == nil {
 			v.audio = AudioNew(v.path)
@@ -57,7 +58,7 @@ func NewAudioIconView(size zgeo.Size, path string) *AudioIconView {
 			})
 		}
 	})
-	v.activity.SetPressedHandler(func() {
+	v.activity.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.stop()
 	})
 	return v

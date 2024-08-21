@@ -44,16 +44,8 @@ type ReadyToShowType interface {
 	ReadyToShow(beforeWindow bool)
 }
 
-type Pressable interface {
-	SetPressedHandler(handler func())
-	SetPressedDownHandler(handler func())
-	SetLongPressedHandler(handler func())
-	PressedHandler() func()
-	LongPressedHandler() func()
-}
-
 type DownPressable interface {
-	SetPressedDownHandler(handler func())
+	SetPressedDownHandler(id string, handler func())
 }
 
 // Layouter ...not really using this yet left over from iOS stuff
@@ -69,6 +61,10 @@ type Layouter interface {
 
 type MinSizeGettable interface {
 	GetMinSize(s zgeo.Size)
+}
+
+type ToolTipAdder interface {
+	GetToolTipAddition() string
 }
 
 type MaxSizeGettable interface {

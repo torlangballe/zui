@@ -12,8 +12,6 @@ import (
 
 type CustomView struct {
 	zview.NativeView
-	zview.LongPresser
-
 	OpaqueDraw       bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
 	DownsampleImages bool
 	canvas           *zcanvas.Canvas

@@ -87,7 +87,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.ampmLabel.View.SetObjectName("ampm")
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
 		v.ampmLabel.SetColor(zgeo.ColorNewGray(0.5, 1))
-		v.ampmLabel.SetPressedHandler(v.toggleAMPM)
+		v.ampmLabel.SetPressedHandler("", zkeyboard.ModifierNone, v.toggleAMPM)
 		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(-8, 0))
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 		zlocale.IsUse24HourClock.AddChangedHandler(func() {
@@ -122,7 +122,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		}
 	}
 	clear := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(12, 14))
-	clear.SetPressedHandler(func() {
+	clear.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Clear()
 	})
 	if flags&TimeFieldTimeOnly == 0 {
@@ -140,7 +140,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		if flags&TimeFieldNoCalendar == 0 {
 			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
 			v.calendar.SetUsable(false)
-			v.calendar.SetPressedHandler(v.popCalendar)
+			v.calendar.SetPressedHandler("", zkeyboard.ModifierNone, v.popCalendar)
 			v.Add(v.calendar, zgeo.CenterLeft, zgeo.SizeD(11, 0))
 		}
 	} else {

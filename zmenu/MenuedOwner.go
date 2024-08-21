@@ -144,9 +144,7 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		zlog.Fatal("MO Build with view==nil")
 	} else {
 		o.View = view
-		// presser := view.(zview.DownPressable)
-		presser := view.(zview.Pressable)
-		presser.SetPressedHandler(func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
+		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
 			o.MinWidth = view.Rect().Size.W
 			if o.CreateItemsFunc != nil {
 				o.items = o.CreateItemsFunc()
@@ -726,7 +724,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		marg.W += gap + colorWidth
 	}
 	if o.hasShortcut {
-		str := zkeyboard.GetModifiersSymbol(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
+		str := zkeyboard.GetModifiersSymbols(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
 		keyLabel := zlabel.New(str)
 		title.SetObjectName("shortcut")
 		font := o.Font

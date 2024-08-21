@@ -3,6 +3,7 @@
 package zbutton
 
 import (
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -11,12 +12,6 @@ func New(text string) *Button {
 }
 
 func (v *Button) MakeReturnKeyDefault() {
-}
-
-func (v *Button) SetPressedHandler(handler func()) {
-}
-
-func (v *Button) SetLongPressedHandler(handler func()) {
 }
 
 func (v *Button) SetMargin(m zgeo.Rect) {

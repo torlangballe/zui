@@ -105,7 +105,7 @@ func (nv *NativeView) SetNativePadding(m zgeo.Rect)                             
 func (nv *NativeView) SetNativeMargin(m zgeo.Rect)                                           {}
 func (nv *NativeView) ShowBackface(visible bool)                                             {}
 func (v *NativeView) SetTilePath(spath string)                                               {}
-func (v *NativeView) Press()                                                                 {}
+func (v *NativeView) Click()                                                                 {}
 func (v *NativeView) RootParent() *NativeView                                                { return nil }
 func (v *NativeView) SetFocusHandler(focused func(focus bool))                               {}
 func (*NativeView) HandleFocusInChildren(in, out bool, handle func(view View, focused bool)) {}

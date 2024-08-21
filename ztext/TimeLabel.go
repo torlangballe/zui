@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zstyle"
@@ -26,7 +27,7 @@ func TimeLabelNew(name string, flags TimeFieldFlags) *TimeLabel {
 	col := zstyle.DefaultFGColor()
 	if flags&TimeFieldStatic == 0 {
 		col = zgeo.ColorBlue
-		tl.SetPressedHandler(func() {
+		tl.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			tf := TimeFieldNew(name, flags)
 			tf.HandleValueChangedFunc = func() {
 				t, err := tf.Value()

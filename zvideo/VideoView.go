@@ -12,8 +12,7 @@ import (
 type VideoView struct {
 	zview.NativeView
 	baseVideoView
-	Out *zimageview.ImageView
-	zview.LongPresser
+	Out              *zimageview.ImageView
 	streaming        bool
 	StreamSize       zgeo.Size
 	renderCanvas     *zcanvas.Canvas

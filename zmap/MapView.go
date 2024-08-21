@@ -12,7 +12,6 @@ import (
 type MapView struct {
 	zview.NativeView
 	baseMapView
-	zview.LongPresser
 	canvas      *zcanvas.Canvas
 	minSize     zgeo.Size
 	pressed     func()

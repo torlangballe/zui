@@ -70,7 +70,7 @@ func (v *CalendarView) Init(view zview.View) {
 	v.monthLabel = makeHeaderLabel("", zgeo.HorCenter)
 	v.monthLabel.SetObjectName("header-title")
 	v.header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
-	v.monthLabel.SetPressedHandler(func() {
+	v.monthLabel.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		t := time.Now()
 		zlog.Info("pressed", zkeyboard.ModifiersAtPress, v.value)
 		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierShift && !v.value.IsZero() {
@@ -83,31 +83,31 @@ func (v *CalendarView) Init(view zview.View) {
 	// monthAdd.SetObjectName("month-add")
 	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.SizeD(30, 0)).Free = true
 	monthAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
-	monthAdd.SetPressedHandler(func() {
+	monthAdd.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(1, 0)
 	})
 	yearAdd := makeHeaderLabel("⏵⏵", zgeo.Right)
 	yearAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
 	v.header.Add(yearAdd, zgeo.CenterRight, zgeo.SizeD(4, 0)).Free = true
-	yearAdd.SetPressedHandler(func() {
+	yearAdd.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(0, 1)
 	})
 	monthSub := makeHeaderLabel("▲", zgeo.Left)
 	monthSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
 	v.header.Add(monthSub, zgeo.CenterLeft, zgeo.SizeD(30, 0)).Free = true
-	monthSub.SetPressedHandler(func() {
+	monthSub.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(-1, 0)
 	})
 	yearSub := makeHeaderLabel("⏴⏴", zgeo.Left)
 	yearSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
 	v.header.Add(yearSub, zgeo.CenterLeft, zgeo.SizeD(4, 0)).Free = true
-	yearSub.SetPressedHandler(func() {
+	yearSub.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(0, -1)
 	})
 	v.settingsGear = zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.SizeD(18, 18))
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
-	v.settingsGear.SetPressedHandler(v.handleSettingsPressed)
+	v.settingsGear.SetPressedHandler("", zkeyboard.ModifierNone, v.handleSettingsPressed)
 	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.SizeF(6, 6)).Free = true
 
 	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
@@ -244,7 +244,7 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
 	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(20, 20))
 	s.Add(close, zgeo.BottomRight, zgeo.SizeD(4, 4))
-	close.SetPressedHandler(func() {
+	close.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.daysGrid.SetJSStyle("filter", "none")
 		zanimation.Translate(s, zgeo.PosD(0, -v.settingsSlider.OriginalRect.Size.H), 0.5, func() {
 			v.settingsGear.Show(true)
@@ -399,7 +399,7 @@ func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any)
 		}
 		v.setColors(box, label, t)
 	})
-	box.SetPressedDownHandler(func() {
+	box.SetPressedDownHandler("", func() {
 		if !v.CanTabFocus() || v.IsFocused() {
 			handleSelect(v, t)
 		}

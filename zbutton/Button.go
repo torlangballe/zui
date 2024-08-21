@@ -13,14 +13,9 @@ import (
 
 type Button struct {
 	zview.NativeView
-	zview.LongPresser
-
 	minWidth float64
 	maxWidth float64
 	margin   zgeo.Rect
-
-	pressed     func()
-	longPressed func()
 }
 
 func (v *Button) GetTextInfo() ztextinfo.Info {
@@ -63,12 +58,4 @@ func (v *Button) SetMinWidth(min float64) {
 
 func (v *Button) SetMaxWidth(max float64) {
 	v.maxWidth = max
-}
-
-func (v *Button) PressedHandler() func() {
-	return v.pressed
-}
-
-func (v *Button) LongPressedHandler() func() {
-	return v.longPressed
 }

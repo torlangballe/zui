@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui/zbutton"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zshape"
@@ -161,7 +162,7 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 		} else {
 			button := zbutton.New(text)
 			bar.Add(button, zgeo.CenterRight)
-			button.SetPressedHandler(func() {
+			button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 				// zlog.Info("Button pressed!")
 				zpresent.Close(stack, result == Cancel, func(dismissed bool) {
 					if handle != nil {
@@ -219,7 +220,7 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 	button := zbutton.New(title)
 	button.SetMinWidth(80)
 	bar.Add(button, zgeo.TopRight)
-	button.SetPressedHandler(func() {
+	button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		parent := view.Native().Parent()
 		go func() {
 			close := done(isOKButton)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zstyle"
@@ -97,7 +98,7 @@ func (v *FieldSliceView) build(addItems bool) {
 		if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 			v.globalDeleteButton = makeButton("minus", "red")
 			header.Add(v.globalDeleteButton, zgeo.CenterRight)
-			v.globalDeleteButton.SetPressedHandler(func() {
+			v.globalDeleteButton.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 				v.handleDeleteItem(v.currentIndex)
 			})
 		}
@@ -109,7 +110,7 @@ func (v *FieldSliceView) build(addItems bool) {
 	if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		v.addButton = makeButton("plus", "gray")
 		header.Add(v.addButton, zgeo.CenterRight)
-		v.addButton.SetPressedHandler(v.handleAddItem)
+		v.addButton.SetPressedHandler("", zkeyboard.ModifierNone, v.handleAddItem)
 	}
 	if addItems {
 		for i := 0; i < sliceRval.Len(); i++ {
@@ -217,7 +218,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		deleteButton := makeButton("minus", "red")
 		itemStack.Add(deleteButton, zgeo.CenterRight, zgeo.SizeD(3, 0))
-		deleteButton.SetPressedHandler(func() {
+		deleteButton.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			findView := add
 			if itemStack != v.stack {
 				findView = itemStack

@@ -76,7 +76,3 @@ func (v *CheckBox) SetValue(b zbool.BoolInd) {
 	v.JSSet("indeterminate", b.IsUnknown())
 	v.JSSet("checked", b.Bool())
 }
-
-func (v *CheckBox) Press() {
-	v.JSCall("click")
-}

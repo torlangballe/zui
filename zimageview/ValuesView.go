@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
@@ -32,7 +33,7 @@ type variant struct {
 func (v *ValuesView) Init(view zview.View, fitSize zgeo.Size, key string) {
 	v.storeKey = key
 	v.ImageView.Init(view, true, nil, "", fitSize)
-	v.SetPressedHandler(v.pressed)
+	v.SetPressedHandler("$pressed", zkeyboard.ModifierNone, v.pressed)
 	v.SetObjectName("ValuesView")
 	ztimer.StartIn(0.1, func() {
 		if !v.updated {

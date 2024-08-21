@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zview"
@@ -196,10 +197,10 @@ func (v *HeaderView) Populate(headers []Header) {
 		}
 		cell.View = button
 
-		button.SetPressedHandler(func() {
+		button.SetPressedHandler("zheader.Pressed", zkeyboard.ModifierNone, func() {
 			v.handleButtonPressed(button, header)
 		})
-		button.SetLongPressedHandler(func() {
+		button.SetLongPressedHandler("zheader.Long", zkeyboard.ModifierNone, func() {
 			if v.HeaderLongPressedFunc != nil {
 				v.HeaderLongPressedFunc(button.ObjectName())
 			}
@@ -217,7 +218,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			lock.SetObjectName("lock")
 			lock.Show(false)
 			button.Add(lock, zgeo.CenterRight, zgeo.SizeD(2, 0))
-			lock.SetPressedHandler(func() {
+			lock.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 				if zlog.ErrorIf(v.LockPressedFunc == nil, h.FieldName) {
 					return
 				}
@@ -288,7 +289,7 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 			x = (cr.Max().X+cells[i+1].View.Rect().Min().X)/2 + xdiff
 		}
 		zfloat.Maximize(&x, o.Pos.X+cr.Size.W) // Hack on initial setup where no data in table yet
-		zfloat.Minimize(&x, hr.Max().X) // It can get too wide, so limit to max. cells in each row should probably be clipped instead.
+		zfloat.Minimize(&x, hr.Max().X)        // It can get too wide, so limit to max. cells in each row should probably be clipped instead.
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H

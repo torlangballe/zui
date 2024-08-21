@@ -69,8 +69,9 @@ func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, im
 }
 
 func (v *ImageView) SetPressToShowImage(on bool) {
+	const id = "$press.to.show"
 	if on {
-		v.SetPressedHandler(func() {
+		v.SetPressedHandler(id, zkeyboard.ModifierNone, func() {
 			if v.image != nil {
 				path := v.image.Path
 				if !zhttp.StringStartsWithHTTPX(path) {
@@ -84,7 +85,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 			}
 		})
 	} else {
-		v.SetPressedHandler(nil)
+		v.SetPressedHandler(id, zkeyboard.ModifierNone, nil)
 	}
 }
 

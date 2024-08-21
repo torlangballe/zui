@@ -1,8 +1,6 @@
 package zlabel
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
@@ -36,6 +34,7 @@ func (label *Label) init(text string) {
 	//	white-space: pre-wrap for multi-lines
 	//	style.Set("padding-top", "3px")
 
+	label.pressWithModifierToClipboard = -1
 	label.SetColor(zstyle.DefaultFGColor())
 	// zlog.Info("LABCOL:", zstyle.DefaultFGColor)
 	//	label.SetColor(zgeo.ColorRed)
@@ -137,47 +136,19 @@ func (v *Label) SetRect(r zgeo.Rect) {
 	v.NativeView.SetRect(r)
 }
 
-func (v *Label) SetPressedHandler(handler func()) {
-	v.pressed = handler
-	// zlog.Info("label.SetPressedHandler:", v.Hierarchy())
-	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("label.Pressed:", v.Hierarchy())
-		e := args[0]
-		v.SetStateOnDownPress(e)
-		(&v.LongPresser).HandleOnClick(v)
-		return nil
-	}))
-	v.JSSet("class", "widget")
-}
-
-func (v *Label) SetPressedDownHandler(handler func()) {
-	v.pressed = handler
-	// zlog.Info("label.SetPressedDownHandler:", zlog.CallingStackString())
-	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		e := args[0]
-		v.SetStateOnDownPress(e)
-		handler()
-		e.Call("preventDefault")
-		e.Call("stopPropagation")
-		return nil
-	}))
-	v.JSSet("class", "widget")
-}
-
-func (v *Label) SetLongPressedHandler(handler func()) {
-	// zlog.Info("Label.SetLongPressedHandler:", v.ObjectName())
-	v.longPressed = handler
-	v.JSSet("className", "widget")
-	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		(&v.LongPresser).HandleOnMouseDown(v)
-		return nil
-	}))
-	v.JSSet("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		// fmt.Println("MOUSEUP")
-		(&v.LongPresser).HandleOnMouseUp(v)
-		return nil
-	}))
-}
+// func (v *Label) SetPressedDownHandler(handler func()) {
+// 	v.pressed = handler
+// 	// zlog.Info("label.SetPressedDownHandler:", zlog.CallingStackString())
+// 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+// 		e := args[0]
+// 		v.SetStateOnDownPress(e)
+// 		handler()
+// 		e.Call("preventDefault")
+// 		e.Call("stopPropagation")
+// 		return nil
+// 	}))
+// 	v.JSSet("class", "widget")
+// }
 
 func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 	str := "left"

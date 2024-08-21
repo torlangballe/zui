@@ -4,6 +4,7 @@ package zcheckbox
 
 import (
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
@@ -33,8 +34,8 @@ func (c *CheckBox) SetOn(on bool) {
 func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) {
 	label := zlabel.New(title)
 	label.SetObjectName("$checkBoxLabel:[" + title + "]")
-	label.SetPressedHandler(func() {
-		c.Press()
+	label.SetPressedHandler("$press.label", zkeyboard.ModifierNone, func() {
+		c.Click()
 	})
 	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
 	stack.SetMargin(zgeo.RectFromXY2(0, 3, 0, -3))

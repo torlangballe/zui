@@ -3,19 +3,21 @@
 package zlabel
 
 import (
+	"strings"
+
+	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 //  Created by Tor Langballe on /2/11/15.
 
 type Label struct {
 	zview.NativeView
-	zview.LongPresser
-
 	minWidth    float64
 	maxWidth    float64
 	maxLines    int
@@ -27,8 +29,9 @@ type Label struct {
 	pressed     func()
 	longPressed func()
 
-	Columns          int
-	KeyboardShortcut zkeyboard.KeyMod
+	Columns                      int
+	KeyboardShortcut             zkeyboard.KeyMod
+	pressWithModifierToClipboard zkeyboard.Modifier
 }
 
 func New(text string) *Label {
@@ -41,6 +44,39 @@ func NewLink(name, surl string) *Label {
 	v := &Label{}
 	v.InitAsLink(v, name, surl)
 	return v
+}
+
+func (v *Label) GetToolTipAddition() string {
+	if v.pressWithModifierToClipboard == -1 {
+		return ""
+	}
+	var str string
+	if v.pressWithModifierToClipboard != zkeyboard.ModifierNone {
+		str += zkeyboard.GetModifiersSymbols(zkeyboard.ModifierAlt) + "-"
+	}
+	str += "press to copy to clipboard"
+	return str
+}
+
+func (v *Label) SetPressWithModifierToClipboard(mod zkeyboard.Modifier) {
+	// zlog.Info("Set LABEL PRESSED2Clip:", zkeyboard.ModifiersAtPress)
+	if v.pressWithModifierToClipboard == -1 {
+		v.pressWithModifierToClipboard = mod
+		tip := v.ToolTip()
+		v.SetToolTip(tip) // will add key-press tip even if tip is empty
+	}
+	v.SetPressedHandler("$copy2clip", mod, func() {
+		// zlog.Info("LABEL PRESSED:", zkeyboard.ModifiersAtPress)
+		text := v.Text()
+		if strings.HasPrefix(text, "📋 ") {
+			return
+		}
+		zclipboard.SetString(text)
+		v.SetText("📋 " + text)
+		ztimer.StartIn(0.6, func() {
+			v.SetText(text)
+		})
+	})
 }
 
 func (v *Label) GetTextInfo() ztextinfo.Info {

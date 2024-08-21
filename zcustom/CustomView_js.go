@@ -1,12 +1,9 @@
 package zcustom
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
@@ -26,41 +23,6 @@ func (v *CustomView) Init(view zview.View, name string) {
 	v.SetSelectable(false)
 	v.exposeTimer = ztimer.TimerNew()
 	v.exposed = true
-}
-
-// SetPressedHandler is not in NativeView, as it needs to work with LongPresser struct storing when pressed etc to generate a long pressed action
-func (v *CustomView) SetPressedHandler(handler func()) {
-	v.pressed = handler
-	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		// zlog.Info("Pressed:", v.Hierarchy(), v.Usable())
-		if !v.Usable() {
-			return nil
-		}
-		zlog.Assert(len(args) > 0)
-		event := args[0]
-		event.Call("stopPropagation")
-		if !event.Get("target").Equal(v.Element) {
-			return nil
-		}
-		v.SetStateOnDownPress(event)
-		(&v.LongPresser).HandleOnClick(v)
-		return nil
-	}))
-}
-
-func (v *CustomView) SetLongPressedHandler(handler func()) {
-	v.longPressed = handler
-	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		v.SetStateOnDownPress(args[0])
-		(&v.LongPresser).HandleOnMouseDown(v)
-		args[0].Call("preventDefault")
-		return nil
-	}))
-	v.JSSet("onmouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		(&v.LongPresser).HandleOnMouseUp(v)
-		args[0].Call("preventDefault")
-		return nil
-	}))
 }
 
 func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {

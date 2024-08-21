@@ -93,7 +93,7 @@ func (v *WebView) MakeBar() *zcontainer.StackView {
 
 	if zui.DebugOwnerMode {
 		v.Refresh = zimageview.NewWithCachedPath("images/zcore/refresh.png", zgeo.SizeBoth(DefaultBarIconSize))
-		v.Refresh.SetPressedHandler(func() {
+		v.Refresh.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			v.SetURL(v.url)
 		})
 		v.Refresh.DownsampleImages = true

@@ -30,7 +30,7 @@ func NewCurrentTimeLabel() *zlabel.Label {
 	label.SetColor(zgeo.ColorNewGray(0.3, 1))
 	label.SetMinWidth(145)
 	label.SetTextAlignment(zgeo.Right)
-	label.SetPressedDownHandler(func() {
+	label.SetPressedDownHandler("", func() {
 		toggleTimeZoneMode(label)
 	})
 	ztimer.RepeatForeverNow(1, func() {

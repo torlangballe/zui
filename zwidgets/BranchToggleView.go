@@ -4,6 +4,7 @@ package zwidgets
 
 import (
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -42,7 +43,7 @@ func (v *BranchToggleView) Init(view zview.View, btype BranchToggleType, id stri
 	v.ImageView.Init(v, true, nil, "", zgeo.SizeD(16, 16))
 	v.SetObjectName(id)
 	v.SetOpen(open, false)
-	v.SetPressedHandler(func() {
+	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.SetOpen(!v.isOpen, true)
 	})
 }

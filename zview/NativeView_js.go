@@ -687,7 +687,16 @@ func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow) {
 }
 
 func (v *NativeView) SetToolTip(str string) {
+	tta, _ := v.View.(ToolTipAdder)
+	if tta != nil {
+		add := tta.GetToolTipAddition()
+		str = zstr.Concat("\n", str, add)
+	}
 	v.JSSet("title", str)
+}
+
+func (v *NativeView) ToolTip() string {
+	return v.JSGet("title").String()
 }
 
 func (v *NativeView) AbsoluteRect() zgeo.Rect {
@@ -699,42 +708,93 @@ func (v *NativeView) AbsoluteRect() zgeo.Rect {
 	return zgeo.RectFromXYWH(x, y, w, h)
 }
 
-type LongPresser struct {
-	cancelClick     bool
-	downClickedTime time.Time
-	longTimer       *ztimer.Timer
-}
+var globalForceClick bool
 
-func (lp *LongPresser) HandleOnClick(view View) {
-	if lp.longTimer != nil {
-		lp.longTimer.Stop()
-	}
-	p, _ := view.(Pressable)
-	if p != nil && !lp.cancelClick && p.PressedHandler() != nil && view.Usable() {
-		// zlog.Info("HANDLE ONCLICK!")
-		p.PressedHandler()()
-	}
-	lp.cancelClick = false
-}
+const pressMouseDownPrefix = "mousedown:$press-"
 
-func (lp *LongPresser) HandleOnMouseDown(view View) {
-	// fmt.Println("MOUSEDOWN")
-	lp.downClickedTime = time.Now()
-	lp.longTimer = ztimer.StartIn(0.5, func() {
-		p, _ := view.(Pressable)
-		if p != nil && p.LongPressedHandler() != nil && view.Usable() {
-			// fmt.Println("TIMER:", p != nil, p.LongPressedHandler() != nil, view.Usable())
-			p.LongPressedHandler()()
+func (v *NativeView) Click() {
+	//	v.Element.Call("click")
+	globalForceClick = true
+	for n, f := range v.jsFuncs {
+		if strings.HasPrefix(n, pressMouseDownPrefix) {
+			f.Value.Invoke(f.Value)
 		}
-		lp.longTimer = nil
-		lp.cancelClick = true
+	}
+	globalForceClick = false
+}
+
+func (v *NativeView) SetPressedHandler(id string, mods zkeyboard.Modifier, handler func()) {
+	v.setMouseDownForPress(id, mods, handler, nil)
+}
+
+func (v *NativeView) SetLongPressedHandler(id string, mods zkeyboard.Modifier, handler func()) {
+	v.setMouseDownForPress(id, mods, nil, handler)
+}
+
+func (v *NativeView) CallPressHandlers() {
+}
+
+func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
+	// if v.Hierarchy() == "/" {
+	// 	zlog.Info("setMouseDownForPress", zdebug.CallingStackString())
+	// }
+	v.JSSet("className", "widget")
+	if id == "" {
+		id = "$general"
+	}
+	_, got := v.jsFuncs[id]
+	if got {
+		return
+	}
+	lp := longPresser{}
+	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
+	// zlog.Info("setMouseDownForPress", invokeFunc)
+	mid := fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
+	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
+		if globalForceClick {
+			press()
+			return nil
+		}
+		v.SetStateOnDownPress(args[0])
+		if zkeyboard.ModifiersAtPress != mods {
+			return nil // don't call stopPropagation, we aren't handling it
+		}
+		lp.downPressedTime = time.Now()
+		lp.longTimer = ztimer.StartIn(0.5, func() {
+			if long != nil {
+				if v.Usable() {
+					long()
+				}
+				lp.cancelPress = true
+			}
+			lp.longTimer = nil
+		})
+		var fup js.Func
+		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
+			if !lp.cancelPress && press != nil && v.Usable() {
+				defer zdebug.RecoverFromPanic(true, invokeFunc)
+				press()
+				args[0].Call("stopPropagation")
+			}
+			if lp.longTimer != nil {
+				lp.longTimer.Stop()
+				lp.longTimer = nil
+			}
+			lp.cancelPress = false
+			v.JSCall("removeEventListener", "mouseup", fup)
+			fup.Release()
+			return nil
+		})
+		v.JSCall("addEventListener", "mouseup", fup)
+		args[0].Call("stopPropagation")
+		return nil
 	})
 }
 
-func (lp *LongPresser) HandleOnMouseUp(view View) {
-	if lp.longTimer != nil {
-		lp.longTimer.Stop()
-	}
+type longPresser struct {
+	cancelPress     bool
+	downPressedTime time.Time
+	longTimer       *ztimer.Timer
 }
 
 func getMousePos(e js.Value) (pos zgeo.Pos) {
@@ -759,7 +819,7 @@ func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args 
 // anything after : in the name is removed first, to allow multiple listeners with same name to co-exist.
 func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) js.Func {
 	var outFunc js.Func
-	nameMainPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
+	nameEventPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
 	if v.jsFuncs == nil {
 		v.jsFuncs = map[string]js.Func{}
 		v.AddOnRemoveFunc(func() {
@@ -773,7 +833,7 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 		if got {
 			outFunc = f
 			if isListener {
-				v.JSCall("removeEventListener", nameMainPart, f)
+				v.JSCall("removeEventListener", nameEventPart, f)
 			}
 			f.Release()
 		}
@@ -788,7 +848,7 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 		outFunc = js.FuncOf(fn)
 		if isListener {
 			// zlog.Info("addEventListener", name, v.Hierarchy())
-			v.JSCall("addEventListener", nameMainPart, outFunc)
+			v.JSCall("addEventListener", nameEventPart, outFunc)
 		}
 		v.jsFuncs[name] = outFunc
 	}
@@ -1019,18 +1079,17 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 	v.JSCall("appendChild", e)
 }
 
-func (v *NativeView) Press() {
-	v.Element.Call("click")
-}
-
 func (v *NativeView) HasPressedDownHandler() bool {
 	return v.JSGet("onmousedown").IsNull()
 }
 
-func (v *NativeView) SetPressedDownHandler(handler func()) {
+func (v *NativeView) SetPressedDownHandler(id string, handler func()) {
 	// zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
-	v.SetListenerJSFunc("mousedown:pressed-down", func(this js.Value, args []js.Value) any {
+	if id == "" {
+		id = "$pressed-down"
+	}
+	v.SetListenerJSFunc("mousedown:"+id, func(this js.Value, args []js.Value) any {
 		zlog.Info("DOWN:", v.Hierarchy())
 		e := args[0]
 		v.SetStateOnDownPress(e)
@@ -1135,7 +1194,7 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 	const minDiff = 10.0
-	v.SetListenerJSFunc("mousedown:updown", func(this js.Value, args []js.Value) any {
+	v.SetListenerJSFunc("mousedown:$updown", func(this js.Value, args []js.Value) any {
 		// zlog.Info("NV.SetPressUpDownMovedHandler got:", v.Hierarchy())
 		var moveFunc, upFunc js.Func
 		we := v.GetWindowElement()
@@ -1156,7 +1215,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			// zlog.Info("NV.SetPressUpDownMovedHandler: upFunc at up:", upFunc.IsUndefined())
 			we.Call("removeEventListener", "mouseup", upFunc)
 			we.Call("removeEventListener", "mousemove", moveFunc)
-			// v.GetWindowElement().Set("onmouseup", nil)
+			upFunc.Release()
+			moveFunc.Release()
 			if handler(upPos, zbool.False) {
 				// e.Call("stopPropagation")
 				e.Call("preventDefault")

@@ -6,6 +6,7 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
@@ -40,7 +41,7 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
 	v.StrokeWidth = 2
 	v.Modal = DocumentationViewDefaultModal
-	v.SetPressedHandler(func() {
+	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		// editor := CodeEditorViewNew("editor")
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {

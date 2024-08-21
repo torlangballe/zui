@@ -1,8 +1,6 @@
 package zbutton
 
 import (
-	"syscall/js"
-
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zwindow"
@@ -68,7 +66,7 @@ func (v *Button) MakeReturnKeyDefault() {
 			if down && km.Key == zkeyboard.KeyReturn && km.Modifier == zkeyboard.ModifierNone {
 				// zlog.Info("Default click")
 				// v.Element.Call("click")
-				v.Press()
+				v.Click()
 				return true
 			}
 			return false
@@ -81,39 +79,12 @@ func (v *Button) MakeEscapeCanceler() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
 			if down && km.Key == zkeyboard.KeyEscape && km.Modifier == zkeyboard.ModifierNone {
-				// v.Element.Call("click")
-				v.Press()
+				v.Click()
 				return true
 			}
 			return false
 		})
 	})
-}
-
-func (v *Button) SetPressedHandler(handler func()) {
-	v.pressed = handler
-	v.JSSet("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		e := args[0]
-		v.SetStateOnDownPress(e)
-		(&v.LongPresser).HandleOnClick(v)
-		return nil
-	}))
-	v.JSSet("className", "widget")
-}
-
-func (v *Button) SetLongPressedHandler(handler func()) {
-	// zlog.Info("Button.SetLongPressedHandler:", v.ObjectName())
-	v.longPressed = handler
-	v.JSSet("className", "widget")
-	v.JSSet("onmousedown", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		(&v.LongPresser).HandleOnMouseDown(v)
-		return nil
-	}))
-	v.JSSet("onmouseup", js.FuncOf(func(js.Value, []js.Value) interface{} {
-		// fmt.Println("MOUSEUP")
-		(&v.LongPresser).HandleOnMouseUp(v)
-		return nil
-	}))
 }
 
 func (v *Button) SetMargin(m zgeo.Rect) {

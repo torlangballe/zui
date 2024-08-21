@@ -722,7 +722,7 @@ func (v *FieldView) BuildMapList(rval reflect.Value, f *Field, frameTitle string
 			frameContainer.SetMinSize(zgeo.SizeD(200, 40))
 			frameContainer.Add(add, zgeo.TopRight, zgeo.SizeD(-5, -9)).Free = true
 		}
-		add.SetPressedHandler(func() {
+		add.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			i := rval.Len()
 			str := ""
 			mval := reflect.ValueOf(str)
@@ -956,13 +956,13 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	button.SetTextColor(textCol)
 	button.TextXMargin = 0
 	if f.HasFlag(FlagIsURL) {
-		button.SetPressedHandler(func() {
+		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			surl := replaceDoubleSquiggliesWithFields(fv, f, f.Path)
 			zwindow.GetMain().SetLocation(surl)
 		})
 	}
 	if f.RPCCall != "" {
-		button.SetPressedHandler(func() {
+		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			go func() {
 				var reply string
 				a := reflect.ValueOf(fv.data).Elem().Interface()
@@ -1244,7 +1244,10 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		if f.Flags&FlagToClipboard != 0 {
-			ztext.MakeViewPressToClipboard(label)
+			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
+		}
+		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+			label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
 		}
 		return label
 	}
@@ -1360,14 +1363,14 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		iv.EmptyColor = f.Styling.FGColor
 	}
 	if f.HasFlag(FlagIsURL) {
-		iv.SetPressedHandler(func() {
+		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			surl := replaceDoubleSquiggliesWithFields(v, f, f.Path)
 			zwindow.GetMain().SetLocation(surl)
 		})
 		return iv
 	}
 	if f.IsImageToggle() && rval.Kind() == reflect.Bool {
-		iv.SetPressedHandler(func() {
+		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			val, _ := v.fieldToDataItem(f, iv)
 			on := val.Bool()
 			on = !on
@@ -1379,7 +1382,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		})
 		return iv
 	}
-	iv.SetPressedHandler(func() {
+	iv.SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
 		ap := ActionPack{Field: f, Action: PressedAction, RVal: reflect.ValueOf(f.FieldName), View: &iv.View}
 		v.callTriggerHandler(ap)
 	})
@@ -1745,28 +1748,23 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		}
 	}
 	zlog.Assert(view != nil)
-	pt, _ := view.(zview.Pressable)
-	if pt != nil {
-		nowItem := rval           // store item in nowItem so closures below uses right item
-		ph := pt.PressedHandler() // get old handler before we set it to override
+	if f.HasFlag(f.Flags&FlagLongPress | FlagPress | FlagShowPopup) {
+		nowItem := rval // store item in nowItem so closures below uses right item
 		if f.HasFlag(FlagShowPopup) {
-			pt.SetPressedDownHandler(func() {
+			view.Native().SetPressedDownHandler("zfields.ShowPopup", func() {
 				v.popupContent(view, f)
 			})
 		} else {
-			pt.SetPressedHandler(func() {
-				if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view}) && ph != nil {
-					ph()
-				}
-			})
-		}
-		if f.Flags&FlagLongPress != 0 {
-			lph := pt.LongPressedHandler() // get old handler before we set it to override
-			pt.SetLongPressedHandler(func() {
-				if !callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view}) && lph != nil {
-					lph()
-				}
-			})
+			if f.Flags&FlagPress != 0 {
+				view.Native().SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
+					callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view})
+				})
+			}
+			if f.Flags&FlagLongPress != 0 {
+				view.Native().SetLongPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
+					callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view})
+				})
+			}
 		}
 	}
 	updateItemLocalToolTip(f, v.data, view)
