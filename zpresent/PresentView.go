@@ -425,7 +425,6 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		blocker.Add(v, attributes.Alignment) // |zgeo.Shrink
 		if attributes.ModalCloseOnOutsidePress {
 			blocker.SetPressedHandler("$blocker.click.away", zkeyboard.ModifierNone, func() {
-				zlog.Info("Blocker clicked")
 				dismissed := true
 				Close(v, dismissed, attributes.ClosedFunc)
 			})
