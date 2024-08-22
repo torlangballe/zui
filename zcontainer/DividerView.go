@@ -67,7 +67,6 @@ func newDiv(storeKey string) *DividerView {
 			}
 			zfloat.Maximize(&abs, v.Parent().AbsoluteRect().Pos.Element(v.Vertical))
 			v.Delta = v.startDelta + abs
-			// zlog.Info("DivDelta:", v.startDelta, pos.Element(v.Vertical), v.Delta)
 			v.storeDelta()
 			at, _ := v.Parent().View.(Arranger)
 			at.ArrangeChildren()
