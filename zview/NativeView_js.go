@@ -734,21 +734,29 @@ func (v *NativeView) SetLongPressedHandler(id string, mods zkeyboard.Modifier, h
 func (v *NativeView) CallPressHandlers() {
 }
 
+type longPresser struct {
+	cancelPress     bool
+	downPressedTime time.Time
+	longTimer       *ztimer.Timer
+}
+
+var globalLongPressState longPresser
+
 func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
-	// if v.Hierarchy() == "/" {
-	// 	zlog.Info("setMouseDownForPress", zdebug.CallingStackString())
-	// }
 	v.JSSet("className", "widget")
 	if id == "" {
 		id = "$general"
+	}
+	if long != nil {
+		id += ".$long"
+	} else {
+		id += ".$short"
 	}
 	_, got := v.jsFuncs[id]
 	if got {
 		return
 	}
-	lp := longPresser{}
 	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
-	// zlog.Info("setMouseDownForPress", invokeFunc)
 	mid := fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
 	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
 		if globalForceClick {
@@ -759,28 +767,32 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
-		lp.downPressedTime = time.Now()
-		lp.longTimer = ztimer.StartIn(0.5, func() {
-			if long != nil {
-				if v.Usable() {
-					long()
+		if long != nil {
+			globalLongPressState = longPresser{}
+			globalLongPressState.downPressedTime = time.Now()
+			globalLongPressState.longTimer = ztimer.StartIn(0.5, func() {
+				if long != nil {
+					if v.Usable() {
+						defer zdebug.RecoverFromPanic(true, invokeFunc)
+						long()
+					}
+					globalLongPressState.cancelPress = true
 				}
-				lp.cancelPress = true
-			}
-			lp.longTimer = nil
-		})
+				globalLongPressState.longTimer = nil
+			})
+		}
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
-			if !lp.cancelPress && press != nil && v.Usable() {
+			if !globalLongPressState.cancelPress && press != nil && v.Usable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
+				// args[0].Call("stopPropagation") // this one canceled up-listener in SetPressUpDownMovedHandler for some reason
 				press()
-				args[0].Call("stopPropagation")
 			}
-			if lp.longTimer != nil {
-				lp.longTimer.Stop()
-				lp.longTimer = nil
+			if globalLongPressState.longTimer != nil {
+				globalLongPressState.longTimer.Stop()
+				globalLongPressState.longTimer = nil
 			}
-			lp.cancelPress = false
+			globalLongPressState.cancelPress = false
 			v.JSCall("removeEventListener", "mouseup", fup)
 			fup.Release()
 			return nil
@@ -789,12 +801,6 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		args[0].Call("stopPropagation")
 		return nil
 	})
-}
-
-type longPresser struct {
-	cancelPress     bool
-	downPressedTime time.Time
-	longTimer       *ztimer.Timer
 }
 
 func getMousePos(e js.Value) (pos zgeo.Pos) {
@@ -1195,12 +1201,12 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
 	const minDiff = 10.0
 	v.SetListenerJSFunc("mousedown:$updown", func(this js.Value, args []js.Value) any {
-		// zlog.Info("NV.SetPressUpDownMovedHandler got:", v.Hierarchy())
 		var moveFunc, upFunc js.Func
-		we := v.GetWindowElement()
-		if we.IsUndefined() {
-			return nil
-		}
+		// we := v.GetWindowElement()
+		we := v.Element
+		// if we.IsUndefined() {
+		// 	return nil
+		// }
 		e := args[0]
 		target := e.Get("target")
 		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
@@ -1208,36 +1214,35 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			return false
 		}
 		pos := getMousePosRelative(v, e)
-		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
-		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
-			upPos := getMousePosRelative(v, args[0])
-			movingPos = nil
-			// zlog.Info("NV.SetPressUpDownMovedHandler: upFunc at up:", upFunc.IsUndefined())
-			we.Call("removeEventListener", "mouseup", upFunc)
-			we.Call("removeEventListener", "mousemove", moveFunc)
-			upFunc.Release()
-			moveFunc.Release()
-			if handler(upPos, zbool.False) {
-				// e.Call("stopPropagation")
-				e.Call("preventDefault")
-				// }
-			}
-			return nil
-		})
-		we.Call("addEventListener", "mouseup", upFunc)
 		v.SetStateOnDownPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		if handler(*movingPos, zbool.True) {
 			// e.Call("preventDefault")
 		}
+		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
+		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+			upPos := getMousePosRelative(v, args[0])
+			movingPos = nil
+			we.Call("removeEventListener", "mouseup", upFunc)
+			we.Call("removeEventListener", "mousemove", moveFunc)
+			upFunc.Release()
+			moveFunc.Release()
+			if handler(upPos, zbool.False) {
+				// e.Call("stopPropagation")
+				// e.Call("preventDefault")
+				// }
+			}
+			return nil
+		})
+		we.Call("addEventListener", "mouseup", upFunc)
 		moveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			// v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
 			if movingPos != nil {
 				pos := getMousePosRelative(v, args[0])
 				// zlog.Info("MM:", pos)
 				if handler(pos, zbool.Unknown) {
-					e.Call("preventDefault")
+					args[0].Call("preventDefault")
 				}
 			}
 			return nil
@@ -1397,4 +1402,24 @@ func DownloadURI(uri, name string) {
 	link.Call("click")
 	zdom.DocumentJS.Get("body").Call("removeChild", link)
 	// link.Delete() // What is this?
+}
+
+func (v *NativeView) AddTest() {
+	fdown := js.FuncOf(func(this js.Value, args []js.Value) any {
+		zlog.Info("DAUWN!")
+		fup := js.FuncOf(func(this js.Value, args []js.Value) any {
+			zlog.Info("UP1!")
+			return nil
+		})
+		v.JSCall("addEventListener", "mouseup", fup)
+		return nil
+	})
+	fup2 := js.FuncOf(func(this js.Value, args []js.Value) any {
+		zlog.Info("UP2!")
+		args[0].Call("stopPropagation")
+		return nil
+	})
+
+	v.JSCall("addEventListener", "mousedown", fdown)
+	v.JSCall("addEventListener", "mouseup", fup2)
 }
