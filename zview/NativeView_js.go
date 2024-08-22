@@ -1202,11 +1202,11 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	const minDiff = 10.0
 	v.SetListenerJSFunc("mousedown:$updown", func(this js.Value, args []js.Value) any {
 		var moveFunc, upFunc js.Func
-		// we := v.GetWindowElement()
-		we := v.Element
-		// if we.IsUndefined() {
-		// 	return nil
-		// }
+		we := v.GetWindowElement()
+		// we := v.Element
+		if we.IsUndefined() {
+			return nil
+		}
 		e := args[0]
 		target := e.Get("target")
 		if !target.Equal(v.Element) && target.Get("tagName").String() == "INPUT" {
@@ -1222,6 +1222,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		}
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+			// zlog.Info("SetPressUpDownMovedHandler up")
 			upPos := getMousePosRelative(v, args[0])
 			movingPos = nil
 			we.Call("removeEventListener", "mouseup", upFunc)
