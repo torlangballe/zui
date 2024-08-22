@@ -578,7 +578,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	v.updateCellBackgrounds(nil)
 	v.ExposeIn(0.0001)
 	// zlog.Info("GL pressed with selection:", down, selectionChanged, v.selectedIDs)
-	if selectionChanged && v.HandleSelectionChangedFunc != nil {
+	if down.IsFalse() && selectionChanged && v.HandleSelectionChangedFunc != nil {
 		v.HandleSelectionChangedFunc()
 	}
 	return eventHandled
