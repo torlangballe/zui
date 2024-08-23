@@ -6,6 +6,7 @@
 package zslicegrid
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -252,7 +253,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			}
 		}
 		if ilen > 1 && ilen == v.Grid.CellCountFunc() {
-			return "all " + zwords.PluralizeWord(v.StructName, float64(len(ids)), "", "")
+			ilen := len(ids)
+			word := zwords.PluralizeWord(v.StructName, float64(ilen), "", "")
+			return fmt.Sprintf("all %d %s", ilen, word)
 		}
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
