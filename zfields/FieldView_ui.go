@@ -1197,24 +1197,30 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	var str string
 	if f.IsStatic() || v.params.AllStatic {
 		var label *zlabel.Label
-		isLink := f.HasFlag(FlagIsURL)
+		surl := f.Path
 		str, _ := getTextFromNumberishItem(rval, f)
-		if !isLink {
+		if f.HasFlag(FlagIsDocumentation) {
 			label = zlabel.New(str)
-		}
-		if isLink || f.HasFlag(FlagIsDocumentation) {
-			surl := str
-			if f.Path != "" {
-				surl = f.Path
+			ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
+			label.SetPressedHandler("zfield.DocPressed", zkeyboard.ModifierNone, func() {
+				go zwidgets.DocumentationViewPresent(surl, false)
+			})
+		} else {
+			isLink := f.HasFlag(FlagIsURL)
+			if isLink {
+				surl = rval.String()
+			} else {
+				ug, is := rval.Interface().(zstr.URLGetter)
+				if is {
+					isLink = true
+					surl = ug.GetURL()
+				}
 			}
+			// zlog.Info("LINK:", f.Name, rval.Type(), rval.Interface(), isLink, str, surl)
 			if isLink {
 				label = zlabel.NewLink(str, surl)
 			} else {
-				// zlog.Info("DOC:", surl, ztextinfo.DecorationUnderlined)
-				ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
-				label.SetPressedHandler("zfield.DocPressed", zkeyboard.ModifierNone, func() {
-					go zwidgets.DocumentationViewPresent(surl, false)
-				})
+				label = zlabel.New(str)
 			}
 		}
 		if f.Wrap == ztextinfo.WrapTailTruncate.String() {
