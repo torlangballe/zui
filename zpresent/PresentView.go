@@ -119,10 +119,11 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
 	nv := v.Native()
+	oldFocus := getCurrentFocus(win.ViewsStack)
+	previousFocusViews = append(previousFocusViews, oldFocus)
 	if attributes.Modal {
-		old := getCurrentFocus(win.ViewsStack)
-		if old != nil {
-			old.Native().Focus(false)
+		if oldFocus != nil {
+			oldFocus.Native().Focus(false)
 		}
 		if nv != nil {
 			r := rect
@@ -213,8 +214,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	FirstPresented = true
 	win.SetOnKeyEvents()
-	oldFocus := getCurrentFocus(win.ViewsStack)
-	previousFocusViews = append(previousFocusViews, oldFocus)
 	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false
