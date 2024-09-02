@@ -132,7 +132,6 @@ func (v *Label) SetMaxLines(max int) {
 
 func (v *Label) SetRect(r zgeo.Rect) {
 	r.Add(v.margin) // we need to inset margin, as padding (which margin is set as) is outside of this rect.
-	r.Pos.Y -= 1
 	v.NativeView.SetRect(r)
 }
 
