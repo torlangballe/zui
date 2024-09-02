@@ -183,6 +183,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		if j == zgeo.AlignmentNone {
 			j = zgeo.Left
 		}
+		button.SetMarginS(zgeo.SizeD(6, 0))
 		button.SetTextAlignment(j)
 		if h.ImagePath != "" {
 			iv := zimageview.NewWithCachedPath(h.ImagePath, h.ImageSize)
