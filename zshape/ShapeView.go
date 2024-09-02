@@ -12,6 +12,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -54,8 +55,9 @@ type ShapeView struct {
 	//	Proportional bool
 	DropShadow zstyle.DropShadow
 
-	image   *zimage.Image
-	loading bool
+	image     *zimage.Image
+	textLabel *zlabel.Label
+	loading   bool
 }
 
 func NewView(shapeType Type, minSize zgeo.Size) *ShapeView {
@@ -78,6 +80,7 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 	v.TextXMargin = 8
 	v.SetColor(zgeo.ColorGray)
 	v.SetTextColor(zstyle.DefaultFGColor())
+	v.textInfo.Alignment = zgeo.Center
 
 	switch shapeType {
 	case TypeRoundRect:
@@ -100,12 +103,13 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 		}
 		return false
 	})
+	v.updateText()
 }
 
 // Text sets the ShapeView's textInfo.Text string, and exposes. This is also here to avoid underlying NativeView SetText() method being used
 func (v *ShapeView) SetText(text string) {
 	v.textInfo.Text = text
-	v.Expose()
+	v.updateText()
 }
 
 func (v *ShapeView) Text() string {
@@ -122,7 +126,7 @@ func (v *ShapeView) SetTextWrap(w ztextinfo.WrapType) {
 
 func (v *ShapeView) SetTextColor(col zgeo.Color) {
 	v.textInfo.Color = col
-	v.Expose()
+	v.updateText()
 }
 
 func (v *ShapeView) MinWidth() float64 {
@@ -300,32 +304,41 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 			v.drawImage(canvas, v.image, path, rect, &textRect)
 		}
 	}
-	if v.textInfo.Text != "" && v.textInfo.Alignment != zgeo.AlignmentNone {
-		t := v.textInfo // .Copy()
-		t.Color = v.GetStateColor(t.Color)
-		exp := zgeo.SizeD(-v.TextXMargin*zscreen.MainSoftScale(), 0)
-		t.Rect = textRect.Expanded(exp)
-		t.Rect.Pos.Y += 3
-		t.Font = v.Font()
-		t.Wrap = ztextinfo.WrapNone
-		if v.IsImageFill {
-			canvas.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // why do we do this????
-		}
-		// if v.textInfotextInfo.Text == "On" {
-		// zlog.Info("ShapeView draw text:", rect, textRect, t.Rect, v.TextXMargin, t.Text)
-		// }
-
-		// canvas.SetColor(zgeo.ColorGreen)
-		// canvas.FillRect(t.Rect)
-		// zlog.Info("shapeViewDraw text:", v.Margin(), view.ObjectName(), rect, t.Rect, v.TextXMargin)
-		t.Draw(canvas)
-		if v.IsImageFill {
-			canvas.ClearDropShadow()
-		}
-	}
 	// if v.IsFocused() {
 	// 	zfocus.Draw(canvas, rect, 15, 0, 1)
 	// }
+}
+
+// func (v *ShapeView) ArrangeChildren() {
+// 	v.ContainerView.ArrangeChildren()
+// 	if v.ObjectName() == "network" {
+// 		for _, c := range *v.GetCells() {
+// 			zlog.Info("SV.Arrange:", v.Hierarchy(), v.Rect(), c.View.Rect(), c.Alignment, c.Margin, c.View.ObjectName())
+// 		}
+// 	}
+// }
+
+func (v *ShapeView) updateText() {
+	if (v.textInfo.Text != "" || v.textLabel != nil) && v.textInfo.Alignment != zgeo.AlignmentNone {
+		if v.textLabel == nil {
+			v.textLabel = zlabel.New("")
+			v.textLabel.SetObjectName("title")
+			a := v.textInfo.Alignment
+			if v.textInfo.Alignment&zgeo.Vertical == 0 {
+				a |= zgeo.VertCenter
+			}
+			if v.IsImageFill {
+				v.textLabel.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // Sp visible on top of noisy image
+			}
+			m := v.Margin().Size.DividedByD(2)
+			m.W += v.TextXMargin
+			v.Add(v.textLabel, a, m)
+		}
+		v.textLabel.SetTextAlignment(v.textInfo.Alignment)
+		v.textLabel.SetFont(v.Font())
+		v.textLabel.SetColor(v.GetStateColor(v.textInfo.Color))
+		v.textLabel.SetText(v.textInfo.Text)
+	}
 }
 
 func (v *ShapeView) Font() *zgeo.Font {
@@ -384,5 +397,4 @@ func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePa
 func (v *ShapeView) SetColor(c zgeo.Color) {
 	v.NativeView.SetColor(c)
 	// zlog.Info("SV.SetColor:", v.Hierarchy(), c, v.Color())
-	v.Expose()
 }
