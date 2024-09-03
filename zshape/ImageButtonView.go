@@ -40,9 +40,8 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	v.SetImageName(imageName, insets)
 	v.textInfo.Text = title
 	v.textInfo.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
-	// zlog.Info("ImGButton:", v.Hierarchy(), v.textInfo.Font)
-	v.textInfo.Color = zgeo.ColorBlack //White
-	v.textInfo.MaxLines = 1
+	v.textInfo.Color = zgeo.ColorBlack
+	v.SetMaxLines(1) // we force label update here
 	v.ImageMargin = zgeo.SizeNull
 }
 
