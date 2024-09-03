@@ -261,7 +261,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	v.UpdateViewFunc = func(arrange bool) {
 		// prof := zlog.NewProfile(0.05, "UpdateViewFunc", v.ObjectName())
-		v.doFilterAndSort(*v.slicePtr)
+		newSids := v.doFilterAndSort(*v.slicePtr)
 		a := v.View.(zcontainer.Arranger)
 		// v.Grid.UpdateOnceOnSetRect = updateAllRows
 		// prof.Log("After Filter")
@@ -270,6 +270,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		// prof.Log("After Arrange")
 		v.UpdateWidgets()
+		v.Grid.SelectCells(newSids, false)
 		// prof.End("After UpdateWidgets")
 	}
 	if hasHierarchy {
@@ -471,11 +472,11 @@ func (v *SliceGridView[S]) StructForID(id string) *S {
 	return v.structForID(v.slicePtr, id)
 }
 
-func (v *SliceGridView[S]) doFilter(slice []S) {
+func (v *SliceGridView[S]) doFilter(slice []S) (selectedAfter []string) {
 	// start := time.Now()
+	sids := v.Grid.SelectedIDs()
+	length := len(sids)
 	if v.FilterFunc != nil {
-		sids := v.Grid.SelectedIDs()
-		length := len(sids)
 		var f []S
 		var skipCount, keepCount int
 		for _, s := range slice {
@@ -502,13 +503,15 @@ func (v *SliceGridView[S]) doFilter(slice []S) {
 	} else {
 		v.filteredSlice = slice
 	}
+	return sids
 }
 
-func (v *SliceGridView[S]) doFilterAndSort(slice []S) {
-	v.doFilter(slice)
+func (v *SliceGridView[S]) doFilterAndSort(slice []S) (newSelected []string) {
+	sids := v.doFilter(slice)
 	if v.SortFunc != nil {
 		v.SortFunc(v.filteredSlice) // Do this beforeWindow shown, as the sorted cells get placed correctly then
 	}
+	return sids
 }
 
 func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
