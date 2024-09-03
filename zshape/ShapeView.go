@@ -145,6 +145,7 @@ func (v *ShapeView) SetMinWidth(min float64) {
 
 func (v *ShapeView) SetMaxLines(max int) {
 	v.textInfo.MaxLines = max
+	v.updateText()
 }
 
 func (v *ShapeView) GetImage() *zimage.Image {
@@ -331,7 +332,9 @@ func (v *ShapeView) updateText() {
 				v.textLabel.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // Sp visible on top of noisy image
 			}
 			m := v.Margin().Size.DividedByD(2)
-			m.W += v.TextXMargin
+			if a&(zgeo.Left|zgeo.Right) != 0 {
+				m.W += v.TextXMargin
+			}
 			v.Add(v.textLabel, a, m)
 		}
 		v.textLabel.SetTextAlignment(v.textInfo.Alignment)
@@ -349,6 +352,7 @@ func (v *ShapeView) SetFont(font *zgeo.Font) {
 	// zlog.Info("SH SetFont:", v.Hierarchy(), v.textInfo.Text, *font)
 	v.textInfo.Font = font
 	v.NativeView.SetFont(font)
+	v.updateText()
 }
 
 func (v *ShapeView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, shapePath *zgeo.Path, rect zgeo.Rect, textRect *zgeo.Rect) {
