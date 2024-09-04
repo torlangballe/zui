@@ -184,7 +184,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddDocumentationIcon != 0 {
 		doc := zwidgets.DocumentationIconViewNew(storeName)
 		doc.SetZIndex(200)
-		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeNull)
+		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeBoth(-5))
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
