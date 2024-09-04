@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
-	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
@@ -138,22 +137,11 @@ func ShowStatus(secs float64, parts ...interface{}) {
 	}
 }
 
-func makeUploadButton() *zshape.ShapeView {
-	v := zshape.NewView(zshape.TypeRoundRect, zgeo.SizeD(68, 22))
-	v.SetColor(zgeo.ColorWhite)
-	v.StrokeColor = zgeo.ColorNew(0, 0.6, 0, 1)
-	v.StrokeWidth = 2
-	v.Ratio = 0.3
-	v.SetBGColor(zgeo.ColorClear)
-	v.SetText("Upload")
-	return v
-}
-
 func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text string, handle func(result Result), result Result) {
 	if text != "" {
 		if result == Upload {
 			zlog.Assert(a.HandleUpload != nil)
-			button := makeUploadButton()
+			button := zbutton.New(text)
 			button.SetUploader(func(data []byte, filename string) {
 				a.HandleUpload(data, filename)
 				zpresent.Close(a.DialogView, false, nil)
@@ -163,7 +151,6 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 			button := zbutton.New(text)
 			bar.Add(button, zgeo.CenterRight)
 			button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-				// zlog.Info("Button pressed!")
 				zpresent.Close(stack, result == Cancel, func(dismissed bool) {
 					if handle != nil {
 						handle(result)
