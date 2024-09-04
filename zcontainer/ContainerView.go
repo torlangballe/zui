@@ -660,7 +660,8 @@ func init() {
 }
 
 func DumpHierarchy(view zview.View, add string) {
-	fmt.Println(add+view.ObjectName(), reflect.TypeOf(view), view.Rect().Size)
+	s, _ := view.CalculatedSize(zgeo.SizeD(4000, 4000))
+	fmt.Println(add+view.ObjectName(), reflect.TypeOf(view), view.Rect().Size, s)
 	co, _ := view.(CellsOwner)
 	if co == nil {
 		return
