@@ -1055,7 +1055,6 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 
 	var changeFunc js.Func
 	changeFunc = js.FuncOf(func(this js.Value, args []js.Value) any { // was onchange????
-		// zlog.Info("uploader on change")
 		files := e.Get("files")
 		if files.Length() > 0 {
 			file := files.Index(0)
@@ -1070,11 +1069,9 @@ func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(n
 	})
 	e.Set("onchange", changeFunc)
 
-	// zlog.Info("NV SetUploader", v.ObjectName())
 	v.SetListenerJSFunc("click", func(this js.Value, args []js.Value) any {
 		if time.Since(lastUploadClick) < time.Millisecond*100 { // e.Call("click") below causes v onclick to be re-called, bail + preventDefault important or it doesn't work (error started on Tor's M1 Mac Pro)
 			args[0].Call("preventDefault")
-			// zlog.Info("cancel clickthru")
 			return nil
 		}
 		lastUploadClick = time.Now()
