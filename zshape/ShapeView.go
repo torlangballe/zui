@@ -324,18 +324,20 @@ func (v *ShapeView) updateText() {
 		if v.textLabel == nil {
 			v.textLabel = zlabel.New("")
 			v.textLabel.SetObjectName("title")
-			a := v.textInfo.Alignment
-			if v.textInfo.Alignment&zgeo.Vertical == 0 {
-				a |= zgeo.VertCenter
-			}
 			if v.IsImageFill {
 				v.textLabel.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // Sp visible on top of noisy image
 			}
-			m := v.Margin().Size.DividedByD(2)
-			if a&(zgeo.Left|zgeo.Right) != 0 {
-				m.W += v.TextXMargin
-			}
-			v.Add(v.textLabel, a, m)
+			v.Add(v.textLabel, zgeo.Center)
+			// zlog.Info("SV.updateText add:", v.Hierarchy(), v.textInfo.Alignment, v.textInfo.Text)
+		}
+		c, _ := v.FindCellWithName("title")
+		c.Alignment = v.textInfo.Alignment
+		if v.textInfo.Alignment&zgeo.Vertical == 0 {
+			c.Alignment |= zgeo.VertCenter
+		}
+		c.Margin = v.Margin().Size.DividedByD(2)
+		if c.Alignment&(zgeo.Left|zgeo.Right) != 0 {
+			c.Margin.W += v.TextXMargin
 		}
 		v.textLabel.SetTextAlignment(v.textInfo.Alignment)
 		v.textLabel.SetFont(v.Font())
