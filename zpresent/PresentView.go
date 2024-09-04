@@ -95,7 +95,6 @@ func PresentView(v zview.View, attributes Attributes) {
 	ct, _ := v.(zcontainer.ChildrenOwner)
 	if ct != nil {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
-			// zlog.Info("PresentView2:", v.Native().Hierarchy(), attributes.Alignment)
 			presentLoaded(win, v, outer, attributes)
 		})
 	} else {
@@ -115,6 +114,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 	}
 	size, _ := v.CalculatedSize(s)
 	// size.MultiplyD(win.Scale)
+
 	if attributes.Modal || FirstPresented {
 		rect = rect.Align(size, attributes.Alignment, zgeo.SizeNull)
 	}
