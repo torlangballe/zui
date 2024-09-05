@@ -294,7 +294,7 @@ func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attribute
 		cf(dismissed)
 		// })
 	}
-	nv.RemoveFromParent()
+	nv.RemoveFromParent(true)
 }
 
 func CurrentIsParent(v zview.View) bool {

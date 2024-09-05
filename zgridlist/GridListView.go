@@ -740,7 +740,7 @@ func (v *GridListView) CalculatedGridSize(total zgeo.Size) zgeo.Size {
 func (v *GridListView) RemoveCell(id string) bool {
 	child := v.children[id]
 	if child != nil {
-		v.cellsView.RemoveChild(child)
+		v.cellsView.RemoveChild(child, true)
 		delete(v.children, id)
 		return true
 	}
@@ -989,7 +989,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	placed := map[string]bool{}
 	if v.RecreateCells {
 		for cid, view := range v.children {
-			v.cellsView.RemoveChild(view)
+			v.cellsView.RemoveChild(view, true)
 			delete(v.children, cid)
 		}
 		v.children = map[string]zview.View{}
@@ -1044,7 +1044,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	for cid, view := range v.children {
 		if !placed[cid] {
 			// delete(v.selectedIDs, cid)
-			v.cellsView.RemoveChild(view)
+			v.cellsView.RemoveChild(view, true)
 			delete(v.children, cid)
 		}
 	}

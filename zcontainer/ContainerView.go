@@ -371,7 +371,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 		cell.Collapsed = collapse
 		if collapse {
 			//detachFromContainer := false
-			v.CustomView.RemoveChild(view)
+			v.CustomView.RemoveChild(view, false)
 			// if view.ObjectName() == "SL01@dash" {
 			// 	zlog.Info("Collapse:", view.ObjectName())
 			// }
@@ -435,7 +435,7 @@ func ViewRangeChildren(view zview.View, subViews, includeCollapsed bool, foreach
 	return true
 }
 
-func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
+func (v *ContainerView) RemoveNamedChild(name string, all, callRemoveFuncs bool) bool {
 	for {
 		removed := false
 		for _, c := range v.Cells {
@@ -443,7 +443,7 @@ func (v *ContainerView) RemoveNamedChild(name string, all bool) bool {
 				continue
 			}
 			if c.View.ObjectName() == name {
-				v.RemoveChild(c.View)
+				v.RemoveChild(c.View, callRemoveFuncs)
 				removed = true
 				if !all {
 					return true
@@ -508,9 +508,9 @@ func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
 	return nil, -1
 }
 
-func (v *ContainerView) RemoveChild(subView zview.View) {
+func (v *ContainerView) RemoveChild(subView zview.View, callRemoveFuncs bool) {
 	v.DetachChild(subView)
-	v.CustomView.RemoveChild(subView)
+	v.CustomView.RemoveChild(subView, callRemoveFuncs)
 }
 
 func (v *ContainerView) RemoveAllChildren() {
@@ -518,7 +518,7 @@ func (v *ContainerView) RemoveAllChildren() {
 		if c.View == nil {
 			continue
 		}
-		v.CustomView.RemoveChild(c.View)
+		v.CustomView.RemoveChild(c.View, true)
 	}
 	v.Cells = v.Cells[:0]
 }

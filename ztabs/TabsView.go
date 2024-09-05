@@ -175,7 +175,7 @@ func (v *TabsView) SelectItem(id string, done func()) {
 		item.create(v.CurrentID, true)
 	}
 	if v.currentChild != nil {
-		v.RemoveChild(v.currentChild)
+		v.RemoveChild(v.currentChild, true)
 		v.currentChild = nil
 	}
 	if v.CurrentID != "" {
@@ -217,7 +217,7 @@ func (v *TabsView) RemoveItem(id string) {
 		item.create(id, true)
 	}
 	if v.currentChild != nil {
-		v.RemoveChild(v.currentChild)
+		v.RemoveChild(v.currentChild, true)
 		v.currentChild = nil
 	}
 }

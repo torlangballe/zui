@@ -244,7 +244,7 @@ func (v *FieldSliceView) handleDeleteItem(i int) {
 	zlog.Assert(i >= 0 && i < len(v.stack.Cells), i, len(v.stack.Cells))
 	zslice.RemoveAt(v.data, i)
 	cell := v.stack.Cells[i]
-	v.stack.RemoveChild(cell.View)
+	v.stack.RemoveChild(cell.View, true)
 	v.currentIndex = -1
 	v.selectItem(0)
 	v.callEditedAction()

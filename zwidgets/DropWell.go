@@ -10,6 +10,7 @@ import (
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 type DropWell struct {
@@ -41,7 +42,7 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Activity = NewActivityView(zgeo.SizeD(12, 12))
 	v.Add(v.Activity, zgeo.CenterRight, zgeo.SizeD(4, 0))
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
-		// zlog.Info("HandleDropish:", name, dtype)
+		zlog.Info("Well HandleDropish:", name, dtype)
 		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
 			r := v.HandleDropPreflight(name)
 			// zlog.Info("HandleDropPreflight:", name, r)

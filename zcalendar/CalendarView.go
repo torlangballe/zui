@@ -248,7 +248,7 @@ func (v *CalendarView) handleSettingsPressed() {
 		v.daysGrid.SetJSStyle("filter", "none")
 		zanimation.Translate(s, zgeo.PosD(0, -v.settingsSlider.OriginalRect.Size.H), 0.5, func() {
 			v.settingsGear.Show(true)
-			v.RemoveChild(s)
+			v.RemoveChild(s, true)
 			v.header.SetUsable(true)
 			if v.updateAfterSettings {
 				v.updateAfterSettings = false
@@ -497,7 +497,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 	} else {
 		old := v.daysGrid
 		v.daysSlider.SlideViewInOldOut(v, v.daysGrid, grid, dir, 0.4, func() {
-			v.RemoveChild(old)
+			v.RemoveChild(old, true)
 		})
 		//		tranformGrid(v, grid, dir)
 	}

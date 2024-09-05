@@ -530,10 +530,10 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 	return str
 }
 
-func (v *NativeView) RemoveFromParent() {
+func (v *NativeView) RemoveFromParent(callRemoveFuncs bool) {
 	zlog.Assert(v.parent != nil, v.Hierarchy())
 	// zlog.Info("NV.RemoveFromParent:", v.Hierarchy())
-	v.parent.RemoveChild(v.View)
+	v.parent.RemoveChild(v.View, callRemoveFuncs)
 	v.parent = nil
 }
 
@@ -642,7 +642,7 @@ func (v *NativeView) ReplaceChild(child, with View) {
 	}
 	v.AddChild(with, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	with.SetRect(child.Rect())
-	v.RemoveChild(child)
+	v.RemoveChild(child, true)
 	if focusedPath != "" {
 		f := ChildOfViewFunc(with, focusedPath)
 		if f != nil {
@@ -665,14 +665,16 @@ func (v *NativeView) SetZIndex(index int) {
 	v.JSStyle().Set("zIndex", index)
 }
 
-func (v *NativeView) RemoveChild(child View) {
+func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 	// zlog.Info("RemoveChild:", child.Native().Hierarchy(), len(v.DoOnRemove))
 	nv := child.Native()
 	if nv == nil {
 		panic("NativeView AddChild child not native")
 	}
-	RemoveKeyPressHandlerViewsFunc(child)
-	nv.PerformAddRemoveFuncs(false)
+	if callRemoveFuncs {
+		RemoveKeyPressHandlerViewsFunc(child)
+		nv.PerformAddRemoveFuncs(false)
+	}
 	nv.Element = v.JSCall("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
