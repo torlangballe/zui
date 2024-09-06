@@ -202,7 +202,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 		att.PresentedFunc = func(win *zwindow.Window) {
 			fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {
 				fvp := ParentFieldView(view)
-				zlog.Info("FOC FV:", fvp.Hierarchy(), fview.Hierarchy())
+				// zlog.Info("FOC FV:", fvp.Hierarchy(), fview.Hierarchy())
 				focusInTopFV := (fvp == fview)
 				tv, _ := view.(*ztext.TextView)
 				wild.Show(focusInTopFV && tv != nil && tv.Text() == "")
@@ -247,8 +247,8 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					}
 				}
 				var wildTransformer *zstr.WildCardTransformer
-				if !origFieldReflectValue.IsZero() && sliceLength > 1 && origFieldReflectValue.Kind() == reflect.String {
-					var wildFrom, wildTo string
+				var wildFrom, wildTo string
+				if sliceLength > 1 && origFieldReflectValue.Kind() == reflect.String { // !origFieldReflectValue.IsZero() &&
 					if zstr.SplitN(each.ReflectValue.String(), "->", &wildFrom, &wildTo) && strings.Contains(wildFrom, "*") && strings.Contains(wildTo, "*") {
 						tv, _ := view.(*ztext.TextView)
 						if tv != nil {
