@@ -1264,6 +1264,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	if f.Flags&FlagIsPassword != 0 {
 		style.KeyboardType = zkeyboard.TypePassword
+		if f.HasFlag(FlagIsFixed) {
+			style.IsExistingPassword = true
+		}
 	} else if zkind == zreflect.KindInt {
 		style.KeyboardType = zkeyboard.TypeInteger
 	} else if zkind == zreflect.KindFloat {

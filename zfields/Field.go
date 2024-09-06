@@ -88,12 +88,12 @@ const (
 	FlagHasMonths                                     // FlagHasMinutes is the same but for months
 	FlagHasYears                                      // FlagHasMinutes is the same but for years
 	FlagIsImage                                       // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
-	FlagIsFixed                                       // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from.
+	FlagIsFixed                                       // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from. Or it can mean an existing password.
 	FlagIsButton                                      // FlagIsButton means the field is actually a button. its type is irrelevant. Will call the PressedAction
 	FlagHasHeaderImage                                // FlagHasHeaderImage is true true if it has a an image for showing in header
 	FlagNoTitle                                       // FlagNoTitle i set when we don't use FieldName as a title, show nothing
 	FlagToClipboard                                   // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
-	FlagIsPassword                                    // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc
+	FlagIsPassword                                    // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc. password:existing sets FlagIsFixed, is's an existing password.
 	FlagIsDuration                                    // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
 	FlagIsOpaque                                      // FlagIsOpaque means entire view will be covered when drawn
 	FlagIsActions                                     // FlagIsActions means a menu created from an enum is actions and not a value to set
@@ -363,6 +363,9 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Flags |= FlagIsSearchable
 		case "password":
 			f.Flags |= FlagIsPassword
+			if val == "existing" {
+				f.Flags |= FlagIsFixed
+			}
 		case "setedited":
 			f.SetEdited = flag
 		case "format":

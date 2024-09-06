@@ -24,6 +24,11 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 		switch textStyle.KeyboardType {
 		case zkeyboard.TypePassword:
 			stype = "password"
+			str := "new-password"
+			if textStyle.IsExistingPassword {
+				str = "current-password"
+			}
+			v.JSSet("autocomplete", str)
 		case zkeyboard.TypeEmailAddress:
 			stype = "email"
 		case zkeyboard.TypeFloat:

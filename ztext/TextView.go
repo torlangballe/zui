@@ -30,6 +30,7 @@ type Style struct {
 	ReturnKeyType       zkeyboard.ReturnKeyType
 	IsAutoCorrect       bool
 	DisableAutoComplete bool
+	IsExistingPassword  bool // password type, it's an existing password
 }
 
 type TextView struct {
