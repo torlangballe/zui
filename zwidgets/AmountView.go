@@ -4,6 +4,7 @@ package zwidgets
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcustom"
@@ -27,7 +28,7 @@ type AmountView struct {
 
 func (v *AmountView) SetValue(value float64) {
 	v.value = value
-	v.SetToolTip(fmt.Sprint(value))
+	v.SetToolTip(fmt.Sprintf("%d%%", int(math.Ceil(value*100))))
 	v.Expose()
 }
 
