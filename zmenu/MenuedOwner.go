@@ -473,12 +473,12 @@ func (o *MenuedOwner) popup() {
 
 	list.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
 		if list.CurrentHoverID != "" && km.Key.IsReturnish() {
-			list.SelectCell(list.CurrentHoverID, false)
+			list.SelectCell(list.CurrentHoverID, true, false)
 			return true
 		}
 		for i, item := range o.items {
 			if item.Shortcut.Key == km.Key && item.Shortcut.Modifier == km.Modifier {
-				list.SelectCell(strconv.Itoa(i), false)
+				list.SelectCell(strconv.Itoa(i), true, false)
 				return true
 			}
 		}

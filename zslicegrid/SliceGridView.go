@@ -53,7 +53,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	ForceUpdateSlice        bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
 	NameOfXItemsFunc        func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc    func(ids []string) string
-	UpdateViewFunc          func(arrange bool)
+	UpdateViewFunc          func(arrange, restoreSelectionScroll bool)
 	SortFunc                func(s []S)                                     // SortFunc is called to sort the slice after any updates.
 	FilterFunc              func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
 	StoreChangedItemsFunc   func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
@@ -153,7 +153,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.SearchField.SetValueHandler("zslicegrid.Search", func(edited bool) {
 			v.CurrentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
 			v.ClearFilterSkipCache()
-			v.UpdateViewFunc(true)
+			v.UpdateViewFunc(true, false)
 		})
 		v.Bar.Add(v.SearchField, zgeo.TopRight, zgeo.SizeD(0, -8))
 	}
@@ -259,18 +259,20 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		return zwords.PluralWordWithCount(v.StructName, float64(len(ids)), "", "", 0)
 	}
-	v.UpdateViewFunc = func(arrange bool) {
+	v.UpdateViewFunc = func(arrange, restoreSelectionScroll bool) {
 		// prof := zlog.NewProfile(0.05, "UpdateViewFunc", v.ObjectName())
-		newSids := v.doFilterAndSort(*v.slicePtr)
+		newSIDs := v.doFilterAndSort(*v.slicePtr)
 		a := v.View.(zcontainer.Arranger)
 		// v.Grid.UpdateOnceOnSetRect = updateAllRows
 		// prof.Log("After Filter")
 		if arrange {
-			a.ArrangeChildren() // We might be a table or other derivative, so need to do it this way
+			a.ArrangeChildren() // We might be a table or other derivative, so need to do it with an arranger
 		}
 		// prof.Log("After Arrange")
 		v.UpdateWidgets()
-		v.Grid.SelectCells(newSids, false)
+		if len(newSIDs) != 0 {
+			v.Grid.SelectCells(newSIDs, restoreSelectionScroll, false)
+		}
 		// prof.End("After UpdateWidgets")
 	}
 	if hasHierarchy {
@@ -308,7 +310,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.SetItemsInSlice(storeItems)
-		v.UpdateViewFunc(true)
+		v.UpdateViewFunc(true, false)
 		// zlog.Info("StoreChangedItemsFunc done")
 	}
 
@@ -331,7 +333,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		wg.Wait()
 		v.RemoveItemsFromSlice(deleteIDs)
-		v.UpdateViewFunc(true)
+		v.UpdateViewFunc(true, false)
 	}
 	return
 }
@@ -475,7 +477,7 @@ func (v *SliceGridView[S]) StructForID(id string) *S {
 func (v *SliceGridView[S]) doFilter(slice []S) (selectedAfter []string) {
 	// start := time.Now()
 	sids := v.Grid.SelectedIDs()
-	length := len(sids)
+	// length := len(sids)
 	if v.FilterFunc != nil {
 		var f []S
 		var skipCount, keepCount int
@@ -496,9 +498,9 @@ func (v *SliceGridView[S]) doFilter(slice []S) (selectedAfter []string) {
 			}
 		}
 		v.filteredSlice = f
-		if len(sids) != length {
-			v.Grid.SelectCells(sids, false)
-		}
+		// if len(sids) != length {
+		// 	v.Grid.SelectCells(sids, false)
+		// }
 		// zlog.Info("doFilter filterd:", v.ObjectName(), time.Since(start), skipCount, keepCount)
 	} else {
 		v.filteredSlice = slice
@@ -538,7 +540,7 @@ func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
 	}
 	sgv.insertItemsIntoASlice(rows, orSlice)
 	if sgv != nil && len(sgv.Grid.DirtyIDs) != 0 {
-		sgv.UpdateViewFunc(true)
+		sgv.UpdateViewFunc(true, false)
 	}
 }
 
@@ -555,7 +557,7 @@ func (v *SliceGridView[S]) UpdateSlice(s []S, arrange bool) {
 	if update {
 		v.ForceUpdateSlice = false
 		*v.slicePtr = s
-		v.UpdateViewFunc(arrange)
+		v.UpdateViewFunc(arrange, false)
 	}
 }
 
@@ -638,7 +640,7 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 			for _, n := range ns {
 				ids = append(ids, n.GetStrID())
 			}
-			v.Grid.SelectCells(ids, true)
+			v.Grid.SelectCells(ids, true, true)
 		}
 		if after != nil {
 			after(true)

@@ -244,7 +244,7 @@ func (v *GridListView) SelectNextRow(up bool) (newID string) {
 		index++
 	}
 	id := v.IDAtIndexFunc(index)
-	v.SelectCell(id, false)
+	v.SelectCell(id, false, false)
 	v.SetHoverID(id)
 	return id
 }
@@ -276,22 +276,24 @@ func (v *GridListView) SelectedIDs() []string {
 	return ids
 }
 
-func (v *GridListView) SelectCell(id string, animateScroll bool) {
-	v.SelectCells([]string{id}, animateScroll)
+func (v *GridListView) SelectCell(id string, scrollToSelected, animateScroll bool) {
+	v.SelectCells([]string{id}, scrollToSelected, animateScroll)
 }
 
-func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
+func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll bool) {
 	changedIDs := zslice.Exclusion(v.SelectedIDs(), ids)
 	v.selectedIDs = map[string]bool{}
 	for _, id := range ids {
 		v.selectedIDs[id] = true
 	}
 	v.layoutDirty = true
-	for i := 0; i < v.CellCountFunc(); i++ {
-		sid := v.IDAtIndexFunc(i)
-		if v.selectedIDs[sid] {
-			v.ScrollToCell(sid, animateScroll)
-			break
+	if scrollToSelected {
+		for i := 0; i < v.CellCountFunc(); i++ {
+			sid := v.IDAtIndexFunc(i)
+			if v.selectedIDs[sid] {
+				v.ScrollToCell(sid, animateScroll)
+				break
+			}
 		}
 	}
 	if v.layoutDirty { // this is to avoid layout if scroll did it
@@ -314,7 +316,7 @@ func (v *GridListView) SelectCells(ids []string, animateScroll bool) {
 
 func (v *GridListView) UnselectAll(callHandlers bool) {
 	if callHandlers {
-		v.SelectCells([]string{}, false)
+		v.SelectCells([]string{}, false, false)
 		return
 	}
 	v.selectedIDs = map[string]bool{}
@@ -329,7 +331,7 @@ func (v *GridListView) SelectAll(callHandlers bool) {
 		all = append(all, id)
 	}
 	if callHandlers {
-		v.SelectCells(all, false)
+		v.SelectCells(all, false, false)
 		return
 	}
 }
@@ -845,7 +847,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 	zlog.Assert(v.MaxColumns <= 1)
 	v.Columns, v.Rows = v.CalculateColumnsAndRows(childSize.W, lrect.Size.W)
 	width -= (float64(v.Columns) - 1) * v.Spacing.W
-	// zlog.Info("ForEachCell childsize2:", v.Spacing.W, childSize, "width:", width, width/float64(v.Columns), v.Columns, v.Rows, lrect, v.LocalRect().Size.W)
+	zlog.Info("ForEachCell:", v.ObjectName(), v.YOffset)
 	var x, y int
 	v.VisibleRows = 0
 	for i := 0; i < v.CellCountFunc(); i++ {
@@ -1051,9 +1053,9 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	if !hoverOK {
 		v.SetHoverID("")
 	}
-	if !zstr.SlicesAreEqual(oldSelected, selected) {
-		v.SelectCells(selected, false)
-	}
+	// if !zstr.SlicesAreEqual(oldSelected, selected) {
+	// 	v.SelectCells(selected, false, false)
+	// }
 	v.RestoreOffsetOnNextLayout = false
 	if topID != "" {
 		// zlog.Info("GridListView.LayoutCells: set offset to old set:", oy)

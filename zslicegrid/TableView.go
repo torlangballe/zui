@@ -167,7 +167,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 		v.Header.SortingPressedFunc = func() {
 			v.SortFunc(*v.slicePtr)
-			v.UpdateViewFunc(true)
+			v.UpdateViewFunc(true, true)
 			// for i, s := range *v.slice {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
@@ -378,7 +378,7 @@ func (v *TableView[S]) LockColumn(fieldName string, setLocked bool, lockVal any,
 		headerButton.ArrangeChildren()
 		if updateTable {
 			ztimer.StartIn(0.1, func() {
-				v.UpdateViewFunc(true)
+				v.UpdateViewFunc(true, true)
 			})
 		}
 	}()
