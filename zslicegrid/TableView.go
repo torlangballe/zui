@@ -370,7 +370,7 @@ func (v *TableView[S]) LockColumn(fieldName string, setLocked bool, lockVal any,
 	if clearSkipCache {
 		v.ClearFilterSkipCache()
 	}
-	v.Grid.RestoreTopSelectedRowOnNextLayout = true
+	// v.Grid.RestoreTopSelectedRowOnNextLayout = true
 	headerButton := v.Header.ColumnView(fieldName)
 	label, lock := zheader.GetLockViews(headerButton)
 	defer func() {
