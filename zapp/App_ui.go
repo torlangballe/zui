@@ -55,7 +55,7 @@ func fetchTimeInfo() bool {
 	}
 	since := time.Since(start)
 	ServerTimezoneName = info.ZoneName
-	// zlog.Info("fetchTimeInfo:", ServerTimezoneName)
+	ztime.ServerTimezoneOffsetSecs = info.ZoneOffsetSeconds
 	if since > time.Second {
 		return false
 	}
