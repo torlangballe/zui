@@ -3,9 +3,7 @@
 package ztext
 
 import (
-	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"time"
 
@@ -22,22 +20,9 @@ import (
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
-)
-
-type TimeFieldFlags int
-
-const (
-	TimeFieldNone TimeFieldFlags = 1 << iota
-	TimeFieldSecs
-	TimeFieldYears
-	TimeFieldDateOnly
-	TimeFieldTimeOnly
-	TimeFieldNoCalendar
-	TimeFieldShortYear
-	TimeFieldStatic
-	TimeFieldPreviousYear30 // If !TimeFieldYears, use previous year date is then less than 30 days from now
 )
 
 type TimeFieldView struct {
@@ -55,12 +40,12 @@ type TimeFieldView struct {
 	yearText                *TextView
 	calendar                *zimageview.ImageView
 	location                *time.Location
-	flags                   TimeFieldFlags
+	flags                   ztime.TimeFieldFlags
 	ampmLabel               *zlabel.Label
 	currentUse24Clock       bool
 }
 
-func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
+func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v := &TimeFieldView{}
 	v.flags = flags
 	v.location = time.Local
@@ -76,10 +61,10 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		tv.Show(false)
 		v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-15, 0))
 	}
-	if flags&TimeFieldDateOnly == 0 {
+	if flags&ztime.TimeFieldDateOnly == 0 {
 		v.hourText = addText(v, 2, "H", "")
 		v.minuteText = addText(v, 2, "M", ":")
-		if flags&TimeFieldSecs != 0 {
+		if flags&ztime.TimeFieldSecs != 0 {
 			v.secondsText = addText(v, 2, "S", ":")
 		}
 		v.ampmLabel = zlabel.New("AM")
@@ -115,7 +100,7 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 		v.AddOnRemoveFunc(func() {
 			zlocale.IsUse24HourClock.AddChangedHandler(nil)
 		})
-		if flags&TimeFieldTimeOnly == 0 {
+		if flags&ztime.TimeFieldTimeOnly == 0 {
 			spacing := zcustom.NewView("spacing")
 			spacing.SetMinSize(zgeo.SizeD(23, 6))
 			v.Add(spacing, zgeo.CenterLeft)
@@ -125,19 +110,18 @@ func TimeFieldNew(name string, flags TimeFieldFlags) *TimeFieldView {
 	clear.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Clear()
 	})
-	if flags&TimeFieldTimeOnly == 0 {
+	if flags&ztime.TimeFieldTimeOnly == 0 {
 		v.dayText = addText(v, 2, "D", "")
 		v.monthText = addText(v, 2, "M", "/")
-		v.monthText.SetColor(zgeo.ColorNew(0, 0, 0.8, 1))
-		if flags&TimeFieldYears != 0 {
+		if flags&ztime.TimeFieldYears != 0 {
 			cols := 4
-			if flags&TimeFieldShortYear != 0 {
+			if flags&ztime.TimeFieldShortYear != 0 {
 				cols = 2
 			}
 			v.yearText = addText(v, cols, "Y", "/")
 		}
 		v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(0, 0))
-		if flags&TimeFieldNoCalendar == 0 {
+		if flags&ztime.TimeFieldNoCalendar == 0 {
 			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
 			v.calendar.SetUsable(false)
 			v.calendar.SetPressedHandler("", zkeyboard.ModifierNone, v.popCalendar)
@@ -218,7 +202,7 @@ func setPM(v *TimeFieldView, pm bool) {
 }
 
 func flipDayMonth(v *TimeFieldView, arrange bool) {
-	if v.flags&TimeFieldTimeOnly != 0 {
+	if v.flags&ztime.TimeFieldTimeOnly != 0 {
 		return
 	}
 	_, di := v.FindCellWithView(v.dayText)
@@ -245,6 +229,7 @@ func (v *TimeFieldView) popCalendar() {
 	if err != nil {
 		return
 	}
+	// zlog.Info("CalPop:", val, err)
 	cal.SetValue(val)
 	cal.HandleValueChangedFunc = func() {
 		ct := cal.Value()
@@ -287,36 +272,6 @@ func (v *TimeFieldView) Clear() {
 	// v.location = nil
 }
 
-func getInt(v *TextView, i *int, min, max int, err *error, ignoreEmpty bool, set *bool) {
-	if v == nil {
-		return
-	}
-	text := v.Text()
-	if ignoreEmpty && text == "" {
-		return
-	}
-	n, cerr := strconv.Atoi(text)
-	if cerr != nil {
-		*err = cerr
-		return
-	}
-	pink := zgeo.ColorNew(1, 0.7, 0.7, 1)
-	// zlog.Info("getInt:", v.ObjectName(), n, max)
-	if max != 0 && n > max {
-		// zlog.Info("MAX>", v.ObjectName(), n, max)
-		v.SetBGColor(pink)
-		*err = errors.New("big")
-		return
-	}
-	if n < min {
-		*err = errors.New("small")
-		v.SetBGColor(pink)
-		return
-	}
-	*i = n
-	*set = true
-}
-
 func setInt(v *TextView, i int, format string) {
 	if v == nil {
 		return
@@ -341,7 +296,7 @@ func (v *TimeFieldView) SetValue(t time.Time) {
 	setInt(v.dayText, t.Day(), "%d")
 	setInt(v.monthText, int(t.Month()), "%d")
 	year := t.Year()
-	if v.flags&TimeFieldShortYear != 0 {
+	if v.flags&ztime.TimeFieldShortYear != 0 {
 		year %= 100
 
 	}
@@ -365,51 +320,61 @@ func get24Hour(v *TimeFieldView, hour int) (h int, pm bool) {
 	return hour, pm
 }
 
+func getNumString(v *TextView, str *string, def string) {
+	if v == nil {
+		return
+	}
+	text := v.Text()
+	if text == "" {
+		*str = def
+		return
+	}
+	*str = text
+}
+
 func (v *TimeFieldView) Value() (time.Time, error) {
-	var hour, min, sec int
-	var set bool
+	var shour, smin, ssec string
+	var syear, smonth, sday string
 
 	var err error
-	now := time.Now().In(v.location)
-	month := int(now.Month())
-	year := now.Year()
-	day := now.Day()
-
-	maxHour := 12
-	minHour := 1
-	if v.currentUse24Clock {
-		maxHour = 23
-		minHour = 0
-	}
-	getInt(v.hourText, &hour, minHour, maxHour, &err, true, &set)
-	hour, _ = get24Hour(v, hour)
-	getInt(v.minuteText, &min, 0, 60, &err, true, &set)
-	getInt(v.secondsText, &sec, 0, 60, &err, true, &set)
+	getNumString(v.hourText, &shour, "0")
+	getNumString(v.minuteText, &smin, "0")
+	getNumString(v.secondsText, &ssec, "0")
 	v.calendar.SetUsable(err == nil)
-	getInt(v.monthText, &month, 1, 12, &err, true, &set)
-	days := ztime.DaysInMonth(time.Month(month), year)
-	if v.flags&TimeFieldYears != 0 {
-		getInt(v.yearText, &year, 0, 0, &err, true, &set)
-		if year < 100 {
-			year += 2000
-		}
-	}
-	getInt(v.dayText, &day, 1, days, &err, true, &set)
+	getNumString(v.monthText, &smonth, "")
+	getNumString(v.yearText, &syear, "")
+	// days := ztime.DaysInMonth(time.Month(month), year)
+	// if v.flags&TimeFieldYears != 0 {
+	// 	getNumString(v.yearText, &year, 0, 0, &err, true, &set)
+	// 	if year < 100 {
+	// 		year += 2000
+	// 	}
+	// }
+	getNumString(v.dayText, &sday, "")
+
+	stime := zstr.Concat(":", shour, smin, ssec)
+	sdate := zstr.Concat("-", sday, smonth, syear)
+	str := zstr.Concat(" ", stime, sdate)
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
-	if err != nil {
-		return time.Time{}, err
+	fieldToView := map[ztime.TimeFieldFlags]zview.View{
+		ztime.TimeFieldHours:  v.hourText,
+		ztime.TimeFieldMins:   v.minuteText,
+		ztime.TimeFieldSecs:   v.secondsText,
+		ztime.TimeFieldDays:   v.dayText,
+		ztime.TimeFieldMonths: v.monthText,
+		ztime.TimeFieldYears:  v.yearText,
+		ztime.TimeFieldAMPM:   v.ampmLabel,
 	}
-	if !set {
-		return time.Time{}, nil
-	}
-	t := time.Date(year, time.Month(month), day, hour, min, sec, 0, v.location)
-	if v.flags&TimeFieldYears == 0 && v.flags&TimeFieldPreviousYear30 != 0 {
-		prev := time.Date(year-1, time.Month(month), day, hour, min, sec, 0, v.location)
-		psince := time.Since(prev)
-		if psince < ztime.Day*30 && math.Abs(ztime.DurSeconds(psince)) < math.Abs(ztime.Since(t)) {
-			t = prev
+	t, faults, err := ztime.ParseDate(str, v.location, v.currentUse24Clock)
+	// zlog.Info("ParseDate:", str, t, faults, err)
+	pink := zgeo.ColorNew(1, 0.7, 0.7, 1)
+	for _, f := range faults {
+		v := fieldToView[f]
+		if v != nil {
+			v.SetBGColor(pink)
+		} else {
+			v.SetBGColor(zgeo.ColorBlack)
 		}
 	}
-	// zlog.Info("VAL:", t.Year())
-	return t, nil
+	return t, err
 }
