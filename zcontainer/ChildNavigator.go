@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type ChildFocusNavigator struct {
@@ -27,7 +26,7 @@ func (n *ChildFocusNavigator) FocusNext() {
 			minView = v
 		}
 	}
-	zlog.Info("Nav Foc:", minView != nil)
+	// zlog.Info("Nav Foc:", minView != nil)
 	if minView != nil {
 		n.CurrentFocused = minView
 		n.HandleSelect(minView, zgeo.AlignmentNone)
