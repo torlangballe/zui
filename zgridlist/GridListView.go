@@ -199,7 +199,7 @@ func (v *GridListView) loadOpenBranches() {
 }
 
 func (v *GridListView) saveOpenBranches() {
-	ids := zmap.GetKeysAsStrings(v.OpenBranches)
+	ids := zmap.KeysAsStrings(v.OpenBranches)
 	str := strings.Join(ids, ",")
 	zkeyvalue.DefaultStore.SetString(str, v.makeOpenBranchesKey(), true)
 }
