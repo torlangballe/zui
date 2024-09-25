@@ -38,10 +38,16 @@ func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 				arg.Key = "[" + arg.Key + "]"
 			}
 		}
-		arg.Value = each.Field.Description
-		if arg.Value == "" {
-			arg.Value = each.Field.Tooltip
+		var info string
+		info = each.Field.Description
+		if info == "" {
+			info = each.Field.Tooltip
 		}
+		if each.Field.Default != "" {
+			info = zstr.Concat(".", info, " default: "+each.Field.Default)
+			arg.Key = "[" + arg.Key + "]"
+		}
+		arg.Value = info
 		args = append(args, arg)
 		return true
 	})
@@ -85,17 +91,23 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 			}
 			return true
 		}
+		var arg string
 		if len(args) == 0 {
-			if each.Field.Flags&FlagAllowEmptyAsZero != 0 {
-				if !hasAllowEmpty {
-					return true
+			if each.Field.Default != "" {
+				arg = each.Field.Default
+			} else {
+				if each.Field.Flags&FlagAllowEmptyAsZero != 0 {
+					if !hasAllowEmpty {
+						return true
+					}
+					hasAllowEmpty = true
 				}
-				hasAllowEmpty = true
+				err = zlog.NewError("no argument for", name)
+				return false
 			}
-			err = zlog.NewError("no argument for", name)
-			return false
+		} else {
+			arg = zstr.ExtractFirstString(&args)
 		}
-		arg := zstr.ExtractFirstString(&args)
 		// zlog.Info("setStr2Val", arg, kind, each.ReflectValue.Type(), name)
 		err = setStrToRVal(arg, each.Field, each.ReflectValue, name)
 		if err != nil {
