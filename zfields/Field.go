@@ -193,6 +193,7 @@ type Field struct {
 	ZeroText             string            // Text to replace a zero value with set with "allowempty" tag.
 	MaxText              string            // Text to replace a "maximum" value with set with "allowempty" tag.
 	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String()
+	Default              string            // Default value for field. May be numbers or strings.
 }
 
 var EmptyField = Field{
@@ -497,6 +498,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "storekey":
 			f.ValueStoreKey = val
+		case "default":
+			f.Default = val
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
 		case "zerotext":
