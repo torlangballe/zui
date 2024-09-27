@@ -215,16 +215,14 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		var oneID string
 		if len(v.Grid.SelectedIDs()) == 1 {
+			oneID = v.Grid.SelectedID()
+		} else {
 			oneID = v.Grid.CurrentHoverID
-			if oneID == "" {
-				oneID = v.Grid.SelectedID()
-			}
-			// zlog.Info("SG:Key:", oneID)
-			if oneID != "" {
-				cell := v.Grid.CellView(oneID)
-				if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
-					return true
-				}
+		}
+		if oneID != "" {
+			cell := v.Grid.CellView(oneID)
+			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
+				return true
 			}
 		}
 		if v.ActionMenu != nil {
@@ -794,6 +792,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 			}
 			if v.options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, ' ', 0, func() {
+					// zlog.Info("SGV.Edit")
 					v.EditItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
