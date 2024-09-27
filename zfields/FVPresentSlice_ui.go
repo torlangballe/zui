@@ -42,6 +42,7 @@ func reduceLocalEnumField(editStructPtr any, enumField reflect.Value, index int,
 	if zlog.ErrorIf(findex == -1, f.Name, f.LocalEnum) {
 		return
 	}
+	zslice.CopyTo(ei.Addr().Interface(), ei.Interface())
 	zlog.Assert(ei.Kind() == reflect.Slice)
 	field := zreflect.FieldForIndex(fromStruct.Interface(), FlattenIfAnonymousOrZUITag, findex)
 	fromVal := field.ReflectValue
@@ -71,8 +72,8 @@ func reduceLocalEnumField(editStructPtr any, enumField reflect.Value, index int,
 	}
 	// zlog.Info("REDUCE?", f.Name, reduce, hasZero)
 	if reduce && !hasZero {
-		zslice.AddEmptyElementAtEnd(ei.Addr().Interface())
-		// enumField.Set(reflect.Zero(enumField.Type()))
+		//!! zslice.AddEmptyElementAtEnd(ei.Addr().Interface())
+		//? enumField.Set(reflect.Zero(enumField.Type()))
 	}
 }
 
@@ -146,6 +147,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					// reduceEnumField(val, sliceField, f.Enum)
 					// } else
 					if each.Field.LocalEnum != "" {
+						// zlog.Info("reduceLocalEnumField:", each.StructField.Name, sliceField.Interface(), each.ReflectValue.Interface())
 						reduceLocalEnumField(editStruct, each.ReflectValue, each.FieldIndex, sliceVal.Index(i), each.Field)
 					} else if each.ReflectValue.Kind() == reflect.Slice {
 						// zlog.Info("IsEq Reduce:", each.StructField.Name, sliceField.Interface(), each.ReflectValue.Interface())
@@ -209,12 +211,13 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 			})
 		}
 	}
-	originalStruct := zreflect.CopyAny(editStruct)
+	// originalStruct := zreflect.CopyAny(editStruct)
 	if isReadOnly {
 		att.FocusView = fview
 		zpresent.PresentTitledView(fview, title, att, nil, nil)
 		return
 	}
+	// zlog.Info("EDIT Struct:", zlog.Full(originalStruct))
 	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
 		if ok {
 			err := fview.ToData(true)
@@ -237,8 +240,8 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				if f.IsStatic() {
 					return true // means continue
 				}
-				finfo, _ := zreflect.FieldForName(originalStruct, FlattenIfAnonymousOrZUITag, each.StructField.Name)
-				origFieldReflectValue := finfo.ReflectValue
+				//! finfo, _ := zreflect.FieldForName(originalStruct, FlattenIfAnonymousOrZUITag, each.StructField.Name)
+				//! origFieldReflectValue := finfo.ReflectValue
 				// zlog.Info("origFieldReflectValue:", each.Field.Name, origFieldReflectValue.Interface())
 				if params.MultiSliceEditInProgress && each.ReflectValue.Kind() == reflect.Slice {
 					if f.Enum == "" && f.StringSep == "" { // todo: let it through if its a UISetStringer
@@ -248,7 +251,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				}
 				var wildTransformer *zstr.WildCardTransformer
 				var wildFrom, wildTo string
-				if sliceLength > 1 && origFieldReflectValue.Kind() == reflect.String { // !origFieldReflectValue.IsZero() &&
+				if sliceLength > 1 && each.ReflectValue.Kind() == reflect.String { // !origFieldReflectValue.IsZero() &&
 					if zstr.SplitN(each.ReflectValue.String(), "->", &wildFrom, &wildTo) && strings.Contains(wildFrom, "*") && strings.Contains(wildTo, "*") {
 						tv, _ := view.(*ztext.TextView)
 						if tv != nil {
@@ -272,7 +275,9 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					}
 					return true
 				}
-				if !(origFieldReflectValue.IsZero() && each.ReflectValue.IsZero()) || sliceLength == 1 || isCheck {
+				// zlog.Info("each.ReflectValue:", each.Field.Name, each.ReflectValue.Interface())
+				//				if !(origFieldReflectValue.IsZero() && each.ReflectValue.IsZero()) || sliceLength == 1 || isCheck {
+				if !each.ReflectValue.IsZero() || sliceLength == 1 || isCheck {
 					for i := 0; i < sliceLength; i++ {
 						itemRVal := sliceVal.Index(i)
 						if itemRVal.Kind() != reflect.Pointer {
