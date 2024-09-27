@@ -615,10 +615,9 @@ func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	for i, item := range o.getItems() {
 		if item.Shortcut == sc {
 			if o.CreateItemsFunc != nil {
-				o.items = o.CreateItemsFunc() // we need to re-generate menu items
+				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above
 				item = o.items[i]
 				if item.Function != nil {
-					// zlog.Info("MO HandleOutsideShortcut:", item.Name)
 					go item.Function()
 					return true
 				}
