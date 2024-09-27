@@ -433,6 +433,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
+			zslice.CopyTo(&enum, enum) // we make a copy of enum, or else global one is messed up
 			// zlog.Info("updateMenu2:", v.Hierarchy(), sf.Name, enum)
 		} else {
 			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
@@ -444,20 +445,21 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			}
 		}
 		if v.params.MultiSliceEditInProgress {
-			var rtype reflect.Type
 			var hasZero bool
-			for _, item := range enum {
-				if item.Value != nil {
-					rval := reflect.ValueOf(item)
-					rtype = rval.Type()
-					if rval.IsZero() {
-						hasZero = true
-						break
-					}
+			for _, item := range enum { // find if items has a zero item already:
+				if item.Value == nil {
+					hasZero = true
+					break
+				}
+				rval := reflect.ValueOf(item)
+				if rval.IsZero() {
+					hasZero = true
+					break
 				}
 			}
-			if !hasZero && rtype != nil && rtype.Kind() != reflect.Invalid {
-				item := zdict.Item{Name: "", Value: reflect.Zero(rtype)}
+			// if no zero item, add one:
+			if !hasZero {
+				var item zdict.Item
 				enum = append(zdict.Items{item}, enum...)
 			}
 		}
