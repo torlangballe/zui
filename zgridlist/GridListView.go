@@ -211,12 +211,6 @@ func (v *GridListView) SelectedIDsOrHoverID() []string {
 		}
 		return nil
 	}
-	if v.selectedIDs[v.CurrentHoverID] { // if hover on top of selected, return all selected
-		return v.SelectedIDs()
-	}
-	if v.CurrentHoverID != "" { // if hover-id, return it
-		return []string{v.CurrentHoverID}
-	}
 	return v.SelectedIDs() // else return all selected, if any
 }
 
