@@ -1118,7 +1118,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f == nil {
 			return true
 		}
-		if f.Flags&FlagIsUseInValue != 0 {
+		if f.HasFlag(FlagIsUseInValue) {
 			zstr.AddToSet(&params.UseInValues, fmt.Sprint(each.ReflectValue.Interface()))
 		}
 		return true
@@ -1131,7 +1131,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f == nil {
 			return true
 		}
-		if f.Flags&FlagIsForZDebugOnly != 0 && !zui.DebugOwnerMode {
+		if f.HasFlag(FlagIsForZDebugOnly) && !zui.DebugOwnerMode {
 			return true
 		}
 		useIs, useNot := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
