@@ -53,7 +53,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	ForceUpdateSlice        bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
 	NameOfXItemsFunc        func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc    func(ids []string) string
-	UpdateViewFunc          func(arrange, restoreSelectionScroll bool)
+	UpdateViewFunc          func(arrange, restoreSelectionScroll bool)      // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
 	SortFunc                func(s []S)                                     // SortFunc is called to sort the slice after any updates.
 	FilterFunc              func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
 	StoreChangedItemsFunc   func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
