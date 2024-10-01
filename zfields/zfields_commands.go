@@ -43,7 +43,7 @@ func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 		if info == "" {
 			info = each.Field.Tooltip
 		}
-		if each.Field.Default != "" {
+		if each.Field.HasFlag(FlagHasDefault) {
 			info = zstr.Concat(".", info, " default: "+each.Field.Default)
 			arg.Key = "[" + arg.Key + "]"
 		}
@@ -93,7 +93,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 		}
 		var arg string
 		if len(args) == 0 {
-			if each.Field.Default != "" {
+			if each.Field.HasFlag(FlagHasDefault) {
 				arg = each.Field.Default
 			} else {
 				if each.Field.Flags&FlagAllowEmptyAsZero != 0 {

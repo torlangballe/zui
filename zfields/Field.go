@@ -129,6 +129,7 @@ const (
 	FlagCheckerCell                                   // Ever other column with this is darkened a bit.
 	FlagFutureInvalid                                 // For time, show red if time is future.
 	FlagPastInvalid                                   // For time, show red if time is future.
+	FlagHasDefault                                    // If true Field.Default string is used for default value of field. Can be parsed to numbers too.
 )
 
 const (
@@ -243,6 +244,9 @@ var flagsNameMap = zbits.NamedBitMap{
 	"HeaderLockable":           uint64(FlagHeaderLockable),
 	"DontJustifyHeader":        uint64(FlagDontJustifyHeader),
 	"CheckerCell":              uint64(FlagCheckerCell),
+	"FutureInvalid":            uint64(FlagFutureInvalid),
+	"PastInvalid":              uint64(FlagPastInvalid),
+	"HasDefault":               uint64(FlagHasDefault),
 }
 
 var (
@@ -500,6 +504,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.ValueStoreKey = val
 		case "default":
 			f.Default = val
+			f.SetFlag(FlagHasDefault)
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
 		case "zerotext":
