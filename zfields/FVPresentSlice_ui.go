@@ -120,11 +120,12 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	editStruct := editStructRVal.Addr().Interface()
 	sliceLength := sliceVal.Len()
 	unknownBoolViewIDs := map[string]bool{}
+	params.FieldParameters.UseInValues = []string{DialogUseInSpecialName}
+	params.MultiSliceEditInProgress = (sliceLength > 1)
 
 	// zlog.Info("PresentEditOrViewStructAnySlice:", zlog.Full(editStruct))
-	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
+	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {	
 		var notEqual bool
-		// zlog.Info("before PresentEditOrViewStructAnySlice.ForEachField:", each.Field.Name, sliceLength)
 		for i := 0; i < sliceLength; i++ {
 			finfo := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 			sliceField := finfo.ReflectValue
@@ -161,7 +162,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				break
 			}
 		}
-		// zlog.Info("ForEach:", f.Name, val.Type(), val.Interface(), notEqual, f.Enum)
+		// zlog.Info("ForEach:", each.Field.Name, each.ReflectValue.Type(), each.ReflectValue.Interface(), notEqual, each.Field.Enum)
 		if notEqual {
 			if each.ReflectValue.Kind() == reflect.Bool {
 				unknownBoolViewIDs[each.StructField.Name] = true
@@ -171,8 +172,6 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 		return true
 	})
 
-	params.MultiSliceEditInProgress = (sliceLength > 1)
-	params.UseInValues = []string{DialogUseInSpecialName}
 	fview := FieldViewNew("OkCancel", editStruct, params)
 	update := true
 	fview.Build(update)
