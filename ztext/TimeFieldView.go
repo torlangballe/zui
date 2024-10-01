@@ -365,7 +365,11 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 		ztime.TimeFieldYears:  v.yearText,
 		ztime.TimeFieldAMPM:   v.ampmLabel,
 	}
-	t, faults, err := ztime.ParseDate(str, v.location, v.currentUse24Clock)
+	flags := ztime.TimeFieldNotFutureIfAmbiguous
+	if !v.currentUse24Clock {
+		flags |= ztime.TimeFieldAMPM
+	}
+	t, faults, err := ztime.ParseDate(str, v.location, flags)
 	// zlog.Info("ParseDate:", str, t, faults, err)
 	pink := zgeo.ColorNew(1, 0.7, 0.7, 1)
 	for _, f := range faults {
