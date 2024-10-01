@@ -63,8 +63,8 @@ func createBitmapContext(width int, height int, data *C.uint32_t, bytesPerRow in
 		C.kCGImageAlphaNoneSkipFirst)
 }
 
-func CGImageToGoImage(imagePtr unsafe.Pointer, inRect zgeo.Rect, scale float64) (image.Image, error) {
-	cgimage := C.CGImageRef(imagePtr)
+func CGImageToGoImage(imageRef unsafe.Pointer, inRect zgeo.Rect, scale float64) (image.Image, error) {
+	cgimage := C.CGImageRef(imageRef)
 
 	iw := int(C.CGImageGetWidth(cgimage))
 	ih := int(C.CGImageGetHeight(cgimage))
@@ -75,6 +75,8 @@ func CGImageToGoImage(imagePtr unsafe.Pointer, inRect zgeo.Rect, scale float64) 
 	inRect.Pos.MultiplyD(scale)
 	sw := int(inRect.Size.W * scale)
 	sh := int(inRect.Size.H * scale)
+
+	// zlog.Info("CGImageToGoImage:", zlog.Pointer(imageRef), inRect, iw, ih)
 	img := image.NewNRGBA(image.Rect(0, 0, sw, sh))
 	if img == nil {
 		return nil, zlog.Error("NewRGBA returned nil", sw, sh)
