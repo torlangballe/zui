@@ -1290,7 +1290,11 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	if len(f.Filters) > 0 {
 		tv.FilterFunc = getFilterFuncFromFilterNames(f.Filters, f)
 	}
-	tv.SetPlaceholder(f.Placeholder)
+	placeHolder := f.Placeholder
+	if v.params.MultiSliceEditInProgress {
+		placeHolder = "<multiple. edit to change all.>"
+	}
+	tv.SetPlaceholder(placeHolder)
 	tv.SetValueHandler("zfields.Filter", func(edited bool) {
 		// zlog.Info("Changed:", tv.Text())
 		v.fieldHandleValueChanged(f, edited, tv.View)
