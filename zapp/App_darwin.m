@@ -9,6 +9,7 @@ void *SharedApplication(void) {
 	return [NSApplication sharedApplication];
 }
 
+/*
 // Run starts the app in the background, but on main thread
 void Run() {
     static bool running = false;
@@ -28,5 +29,9 @@ void Run() {
        NSLog(@"Dispatch Run exited\n");
 	}
 }
+*/
 
+void RunLoopRun() {
+    CFRunLoopRun();
+}
 

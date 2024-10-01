@@ -1,17 +1,12 @@
-//go:build !js && !windows && catalyst
+//go:build !js && !windows
 
+// && catalyst
 package zapp
 
-// #cgo CFLAGS: -x objective-c
-// #cgo LDFLAGS: -framework Cocoa
-// void* SharedApplication(void);
-// void Run(void *app);
+// void RunLoopRun();
 import "C"
-import (
-	"net/url"
-	"unsafe"
-)
 
+/*
 type nativeApp struct {
 	sharedPtr unsafe.Pointer
 }
@@ -31,3 +26,13 @@ func URLStub() string {
 func URL() *url.URL {
 	return nil
 }
+*/
+
+func RunLoopRun() {
+	// C.RunLoopRun()
+}
+
+// #cgo CFLAGS: -x objective-c
+// #cgo LDFLAGS: -framework Cocoa
+// void* SharedApplication(void);
+// void Run(void *app);
