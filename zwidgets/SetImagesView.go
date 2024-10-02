@@ -8,6 +8,7 @@ package zwidgets
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/torlangballe/zui/zcontainer"
@@ -44,6 +45,7 @@ func (v *ImagesSetView) SetValueWithAny(bitset any) {
 	v.RemoveAllChildren()
 	stringer := bitset.(fmt.Stringer)
 	parts := strings.Split(stringer.String(), "|")
+	sort.Strings(parts)
 	for _, part := range parts {
 		path := zstr.Concat("/", "images/flags", v.prefix, part) + ".png"
 		iv := zimageview.New(nil, true, path, v.imageSize)
