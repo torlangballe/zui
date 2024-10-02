@@ -16,7 +16,7 @@ import (
 type AmountBarWidgeter struct{}
 type AmountCircleWidgeter struct{}
 type ActivityWidgeter struct{}
-type SetImagesWidgeter struct{}
+type ImagesSetWidgeter struct{}
 type ColorWidgeter struct{}
 type ScreensViewWidgeter struct{}
 
@@ -24,7 +24,7 @@ func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
 	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
-	RegisterWidgeter("set-images", SetImagesWidgeter{})
+	RegisterWidgeter("images-set", ImagesSetWidgeter{})
 	RegisterWidgeter("zcolor", ColorWidgeter{})
 	RegisterWidgeter("zscreens", ScreensViewWidgeter{})
 	RegisterCreator("zerrors.ContextError", buildContextError)
@@ -86,13 +86,13 @@ func (a ActivityWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a SetImagesWidgeter) SetupField(f *Field) {
+func (a ImagesSetWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a SetImagesWidgeter) Create(f *Field) zview.View {
+func (a ImagesSetWidgeter) Create(f *Field) zview.View {
 	f.Flags |= FlagIsStatic
-	v := zwidgets.NewSetImagesView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
+	v := zwidgets.NewImagesSetView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
 	v.SetStyling(f.Styling)
 	return v
 }

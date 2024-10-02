@@ -2,7 +2,7 @@
 
 package zwidgets
 
-// SetImagesView uses a value that can give a String() as a|b|c, and shows it as a row of images,
+// ImagesSetView uses a value that can give a String() as a|b|c, and shows it as a row of images,
 // where each image is found in images/flags/<prefix>/a.png etc.
 // It is typically used with zbits.NamedBit
 
@@ -17,17 +17,17 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-type SetImagesView struct {
+type ImagesSetView struct {
 	zcontainer.StackView
 	prefix    string
 	imageSize zgeo.Size
 }
 
-func NewSetImagesView(name, imagePathPrefix string, imageSize zgeo.Size, styling *zstyle.Styling) *SetImagesView {
+func NewImagesSetView(name, imagePathPrefix string, imageSize zgeo.Size, styling *zstyle.Styling) *ImagesSetView {
 	if imageSize.IsNull() {
 		imageSize = zgeo.SizeBoth(16)
 	}
-	v := &SetImagesView{}
+	v := &ImagesSetView{}
 	v.Init(v, false, name)
 	v.prefix = imagePathPrefix
 	v.imageSize = imageSize
@@ -40,7 +40,7 @@ func NewSetImagesView(name, imagePathPrefix string, imageSize zgeo.Size, styling
 	return v
 }
 
-func (v *SetImagesView) SetValueWithAny(bitset any) {
+func (v *ImagesSetView) SetValueWithAny(bitset any) {
 	v.RemoveAllChildren()
 	stringer := bitset.(fmt.Stringer)
 	parts := strings.Split(stringer.String(), "|")
