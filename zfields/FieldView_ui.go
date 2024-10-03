@@ -1164,7 +1164,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 		} else {
 			str = ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
 		}
-		// zlog.Info("DurTime", dur, t, f.HasFlag(FlagHasHours))
+		// zlog.Info("DurTime", dur, str, f.HasFlag(FlagHasHours))
 		return str, dur
 	}
 	format := f.Format
@@ -1292,7 +1292,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	}
 	placeHolder := f.Placeholder
 	if v.params.MultiSliceEditInProgress {
-		placeHolder = "<multiple. edit to change all.>"
+		placeHolder = "multiple, edit to change all"
 	}
 	tv.SetPlaceholder(placeHolder)
 	tv.SetValueHandler("zfields.Filter", func(edited bool) {
