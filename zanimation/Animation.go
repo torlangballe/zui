@@ -8,6 +8,7 @@ package zanimation
 import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type Transition int
@@ -94,14 +95,15 @@ func translateViews(s *Swapper, moveOld bool, parent, oldView, newView zview.Vie
 	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	dirPos := dir.Vector()
 	move := dirPos.Times(r.Size.Pos())
-	newView.SetRect(r.Translated(move))
 	r.Pos.Subtract(move)
 	newView.SetRect(r)
 	newView.Native().SetAlpha(1)
-	Translate(newView, move, secs, nil)
-	if moveOld {
-		delta := move.Plus(s.LastTransform)
-		Translate(oldView, delta, secs, done)
-	}
-	s.LastTransform = move
+	ztimer.StartIn(0.01, func() { // without this it does the first translate in 0 time.
+		Translate(newView, move, secs, nil)
+		if moveOld {
+			delta := move.Plus(s.LastTransform)
+			Translate(oldView, delta, secs, done)
+		}
+		s.LastTransform = move
+	})
 }
