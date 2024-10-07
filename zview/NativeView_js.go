@@ -402,7 +402,7 @@ func (v *NativeView) IsFocused() bool {
 
 func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
-	// zlog.Info("NV FOcus:", v.Hierarchy(), focus, zlog.CallingStackString())
+	// zlog.Info("NV Focus:", v.Hierarchy(), focus, zdebug.CallingStackString())
 	if focus {
 		v.JSCall("focus")
 	} else {
@@ -424,11 +424,24 @@ func (v *NativeView) CanTabFocus() bool {
 	return true
 }
 
+func (v *NativeView) SetKeepFocusOnOutsideClick() {
+	v.SetListenerJSFunc("blur:$refocus", func(this js.Value, args []js.Value) any { // if user clicks elsewhere, let's re-set focus if not a focusable relTarget
+		rel := args[0].Get("relatedTarget")
+		if rel.IsNull() {
+			v.Element.Call("focus")
+		}
+		return nil
+	})
+}
+
 func (v *NativeView) SetCanTabFocus(can bool) {
-	// zlog.Info("SetCanFocus:", v.Hierarchy(), f, zlog.CallingStackString())
+	// if v.ObjectName() == "layout" {
+	// 	zlog.Info("SetCanFocus:", can, v.Hierarchy(), zdebug.CallingStackString())
+	// }
 	if can {
 		v.JSSet("tabIndex", "0") // Note the capital I in tabIndex !!!!!!
 		v.JSSet("className", "zfocus")
+		v.SetKeepFocusOnOutsideClick()
 		return
 	}
 	v.JSSet("tabIndex", "-1")
@@ -441,6 +454,8 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 		return nil
 	})
 	v.SetListenerJSFunc("blur", func(this js.Value, args []js.Value) any {
+		e := args[0]
+		zlog.Info("blur from:", e.Get("relatedTarget"))
 		focused(false)
 		return nil
 	})
