@@ -220,6 +220,10 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	return v
 }
 
+func (v *FieldView) Parameters() FieldViewParameters {
+	return v.params
+}
+
 func (v *FieldView) Build(update bool) {
 	a := zgeo.Left
 	if v.Vertical {
@@ -1321,6 +1325,9 @@ func getFilterFuncFromFilterNames(names []string, f *Field) func(string) string 
 }
 
 func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.View) {
+	if !edited {
+		return
+	}
 	rval, err := v.fieldToDataItem(f, view)
 	if zlog.OnError(err) {
 		return
