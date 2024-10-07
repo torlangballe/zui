@@ -150,6 +150,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	if options&AddSearch != 0 {
 		v.SearchField = ztext.SearchFieldNew(ztext.Style{}, 12)
+		v.SearchField.TextView.SetKeepFocusOnOutsideClick()
 		v.SearchField.SetValueHandler("zslicegrid.Search", func(edited bool) {
 			v.CurrentLowerCaseSearchText = strings.ToLower(v.SearchField.Text())
 			v.ClearFilterSkipCache()
@@ -282,7 +283,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand)
 
 	v.StoreChangedItemsFunc = func(items []S) {
-		// zlog.Info("StoreChangedItemsFunc", len(items), v.StoreChangedItemFunc != nil)
+		// zlog.Info("StoreChangedItemsFunc", len(items), v.ObjectName(), zdebug.CallingStackString())
 		if v.StoreChangedItemFunc == nil {
 			return
 		}
