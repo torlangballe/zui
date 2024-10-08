@@ -303,31 +303,11 @@ func FindLocalFieldWithFieldName(structure any, name string) (reflect.Value, int
 // 	return zstr.FirstToLowerWithAcronyms(name)
 // }
 
-var colonReplacer = strings.NewReplacer("::", "•°©")
-var colonReReplacer = strings.NewReplacer("•°©", ":")
+// var colonReplacer = strings.NewReplacer("::", "•°©")
+// var colonReReplacer = strings.NewReplacer("•°©", ":")
 
 func GetZUITags(tagMap map[string][]string) (keyVals []zstr.KeyValue, skip bool) {
-	zuiParts, got := tagMap["zui"]
-	if !got {
-		return nil, false
-	}
-	for _, part := range zuiParts {
-		if part == "-" {
-			return nil, true
-		}
-		var key, val string
-		parts := zstr.SplitStringWithDoubleAsEscape(part, ":")
-		if len(parts) == 2 {
-			key = parts[0]
-			val = parts[1]
-		} else {
-			key = part
-		}
-		key = strings.TrimSpace(key)
-		val = strings.TrimSpace(val)
-		keyVals = append(keyVals, zstr.KeyValue{Key: key, Value: val})
-	}
-	return keyVals, false
+	return zreflect.GetZTags(tagMap, "zui")
 }
 
 func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
