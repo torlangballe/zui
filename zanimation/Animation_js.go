@@ -66,6 +66,18 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 	}
 }
 
+func CallDrawFuncAtRenderTime(inView zview.View, f func()) {
+	jsFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		f()
+		return nil
+	})
+	win := zwindow.FromNativeView(inView.Native())
+	win.Element.Call("requestAnimationFrame", jsFunc).Int()
+	ztimer.StartIn(1, func() {
+		jsFunc.Release()
+	})
+}
+
 func doDone(done func(), nv *zview.NativeView, secs float64) {
 	if done != nil {
 		ztimer.StartIn(secs+0.01, func() {
