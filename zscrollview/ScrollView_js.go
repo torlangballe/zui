@@ -56,6 +56,6 @@ func (v *ScrollView) SetContentOffset(y float64, animated bool) {
 	}
 	v.YOffset = y
 	if v.child != nil {
-		v.JSSet("scrollTop", y)
+		v.SetYContentOffset(y)
 	}
 }
