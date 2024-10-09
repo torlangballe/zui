@@ -941,12 +941,16 @@ func (v *NativeView) JSGet(property string) js.Value {
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos)) {
 	v.SetListenerJSFunc("scroll", func(js.Value, []js.Value) any {
 		if handler != nil {
-			x := v.JSGet("scrollLeft").Float()
-			y := v.JSGet("scrollTop").Float()
-			handler(zgeo.PosD(x, y))
+			handler(v.ContentOffset())
 		}
 		return nil
 	})
+}
+
+func (v *NativeView) ContentOffset() zgeo.Pos {
+	x := v.JSGet("scrollLeft").Float()
+	y := v.JSGet("scrollTop").Float()
+	return zgeo.PosD(x, y)
 }
 
 func (v *NativeView) SetXContentOffset(x float64) {
