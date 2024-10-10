@@ -173,7 +173,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if smime != "" {
 		w.Header().Set("Content-Type", smime)
 	}
-	_, err := io.Copy(w, f)
+	_, err = io.Copy(w, f)
 	zlog.OnError(err, spath, fpath)
 }
 
