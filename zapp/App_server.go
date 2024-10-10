@@ -159,23 +159,22 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Last-Modified", zbuild.Build.At.Format(time.RFC1123))
 		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
 	}
-	//f, err := AllWebFS.Open("www/" + spath)
-	f, len, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
-	// if strings.Contains(spath, "edit-dark-gray.png") || strings.Contains(spath, "head-dark.png") {
-	// zlog.Info("FilesRedir2:", spath, err, len, req.URL)
-	// }
-	if len != 0 {
-		w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
-		// zlog.Info("FilesRedir2:", spath, smime)
-		if smime != "" {
-			w.Header().Set("Content-Type", smime)
+	f, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
+	if zlog.OnError(err, fpath) {
+		return
+	}
+	info, _, err := AllWebFS.Stat(fpath)
+	if err == nil {
+		len := info.Size()
+		if len != 0 {
+			w.Header().Set("Content-Length", strconv.FormatInt(len, 10))
 		}
 	}
-	// zlog.Info("FilesRedir2:", spath, err)
-	if !zlog.OnError(err, spath, req.URL) {
-		_, err := io.Copy(w, f)
-		zlog.OnError(err, spath, fpath)
+	if smime != "" {
+		w.Header().Set("Content-Type", smime)
 	}
+	_, err := io.Copy(w, f)
+	zlog.OnError(err, spath, fpath)
 }
 
 // localRedirect redirects empty path to directory (I think)
