@@ -56,6 +56,7 @@ func (label *Label) init(text string) {
 	label.SetText(text)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	label.SetFont(f)
+	setPadding(label)
 }
 
 func (label *Label) SetURL(surl string, newWindow bool) {
@@ -79,7 +80,10 @@ func (v *Label) SetText(text string) {
 }
 
 func setPadding(v *Label) {
-	v.SetNativePadding(v.padding)
+	pad := v.margin
+	pad.Pos.Y += v.Font().Size / 8
+
+	v.SetNativePadding(pad)
 }
 
 func (v *Label) SetBGColor(c zgeo.Color) {
@@ -95,7 +99,6 @@ func (v *Label) SetBGColor(c zgeo.Color) {
 
 func (v *Label) SetFont(font *zgeo.Font) {
 	v.NativeView.SetFont(font)
-	v.padding.SetMinY(font.Size / 8)
 	setPadding(v)
 }
 
@@ -131,7 +134,6 @@ func (v *Label) SetMaxLines(max int) {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
-	r.Add(v.margin) // we need to inset margin, as padding (which margin is set as) is outside of this rect.
 	v.NativeView.SetRect(r)
 }
 
@@ -168,4 +170,5 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
+	setPadding(v)
 }
