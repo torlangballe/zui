@@ -1377,12 +1377,12 @@ func (v *NativeView) SetStyling(style zstyle.Styling) {
 	}
 }
 
-func (nv *NativeView) SetNativePadding(m zgeo.Rect) {
+func (nv *NativeView) SetNativePadding(p zgeo.Rect) {
 	style := nv.JSStyle()
-	style.Set("padding-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
-	style.Set("padding-left", fmt.Sprintf("%dpx", int(m.Min().X)))
-	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
-	style.Set("padding-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
+	style.Set("padding-top", fmt.Sprintf("%dpx", int(p.Min().Y)))
+	style.Set("padding-left", fmt.Sprintf("%dpx", int(p.Min().X)))
+	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(p.Max().Y))) // trying remove minus
+	style.Set("padding-right", fmt.Sprintf("%dpx", -int(p.Max().X)))  // trying remove minus
 }
 
 func (nv *NativeView) SetNativeMargin(m zgeo.Rect) {
