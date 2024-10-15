@@ -208,7 +208,6 @@ func flipDayMonth(v *TimeFieldView, arrange bool) {
 	_, di := v.FindCellWithView(v.dayText)
 	_, mi := v.FindCellWithView(v.monthText)
 	if mi < di != zlocale.IsShowMonthBeforeDay.Get() {
-		// zlog.Info("FLIP!", di, mi, zlocale.IsShowMonthBeforeDay.Get(), arrange)
 		min, max := zint.MinMax(di, mi)
 		v.Cells[max].View.Native().InsertBefore(v.Cells[min].View.Native())
 		zslice.Swap(v.Cells, di, mi)
