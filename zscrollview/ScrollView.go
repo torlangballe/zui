@@ -170,13 +170,15 @@ func (v *ScrollView) SetScrollHandler(handler func(pos zgeo.Pos, infiniteDir int
 func (v *ScrollView) MakeRectVisible(rect zgeo.Rect, animate bool) {
 	var y float64
 	h := v.LocalRect().Size.H
-	if rect.Min().Y < v.YOffset {
+	yOffset := v.ContentOffset().Y
+	if rect.Min().Y < yOffset {
 		y = rect.Min().Y
-	} else if rect.Max().Y > v.YOffset+h {
+	} else if rect.Max().Y > yOffset+h {
 		y = rect.Max().Y - h
 	} else {
 		return
 	}
+	// zlog.Info("MakeRectVisible:", rect, y, animate)
 	v.SetContentOffset(y, false)
 }
 
