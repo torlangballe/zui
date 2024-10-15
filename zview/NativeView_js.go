@@ -83,6 +83,12 @@ func (v *NativeView) Native() *NativeView {
 	return v
 }
 
+func (v *NativeView) SetPos(pos zgeo.Pos) {
+	style := v.JSGet("style")
+	style.Set("left", fmt.Sprintf("%fpx", pos.X))
+	style.Set("top", fmt.Sprintf("%fpx", pos.Y))
+}
+
 func (v *NativeView) SetRect(rect zgeo.Rect) {
 	// if v.ObjectName() == "67353" {
 	// 	zlog.Info("NV.SetRect:", rect, zdebug.CallingStackString())
