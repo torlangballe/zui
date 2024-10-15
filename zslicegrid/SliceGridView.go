@@ -215,9 +215,10 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			return false
 		}
 		var oneID string
-		if len(v.Grid.SelectedIDs()) == 1 {
+		slen := len(v.Grid.SelectedIDs())
+		if slen == 1 {
 			oneID = v.Grid.SelectedID()
-		} else {
+		} else if slen == 0 {
 			oneID = v.Grid.CurrentHoverID
 		}
 		if oneID != "" {
