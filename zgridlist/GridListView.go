@@ -269,11 +269,11 @@ func (v *GridListView) SelectedIDs() []string {
 	return ids
 }
 
-func (v *GridListView) SelectCell(id string, scrollToSelected, animateScroll bool) {
-	v.SelectCells([]string{id}, scrollToSelected, animateScroll)
+func (v *GridListView) SelectCell(id string, scrollToSelected, animateScroll bool) (scrolledTo bool) {
+	return v.SelectCells([]string{id}, scrollToSelected, animateScroll)
 }
 
-func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll bool) {
+func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll bool) (scrolledTo bool) {
 	changedIDs := zslice.Exclusion(v.SelectedIDs(), ids)
 	v.selectedIDs = map[string]bool{}
 	for _, id := range ids {
@@ -284,6 +284,7 @@ func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll
 		for i := 0; i < v.CellCountFunc(); i++ {
 			sid := v.IDAtIndexFunc(i)
 			if v.selectedIDs[sid] {
+				scrolledTo = true
 				v.ScrollToCell(sid, animateScroll)
 				break
 			}
@@ -305,6 +306,7 @@ func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll
 	if v.HandleSelectionChangedFunc != nil {
 		v.HandleSelectionChangedFunc()
 	}
+	return scrolledTo
 }
 
 func (v *GridListView) UnselectAll(callHandlers bool) {
