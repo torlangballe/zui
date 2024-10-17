@@ -389,7 +389,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	if foundView == nil {
 		return true
 	}
-	// zlog.Info("updateField2:", v.Hierarchy(), sf.Name)
 	v.updateShowEnableOnView(flabelized, true, foundView.ObjectName())
 	v.updateShowEnableOnView(flabelized, false, foundView.ObjectName())
 	var called bool
