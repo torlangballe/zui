@@ -613,7 +613,7 @@ func (o *MenuedOwner) tryEditActions(item MenuedOItem, selected map[string]bool)
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	for i, item := range o.getItems() {
-		if item.Shortcut == sc {
+		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {
 				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above
 				item = o.items[i]
@@ -723,7 +723,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		marg.W += gap + colorWidth
 	}
 	if o.hasShortcut {
-		str := zkeyboard.GetModifiersSymbols(item.Shortcut.Modifier) + zkeyboard.GetStringForKey(item.Shortcut.Key)
+		str := item.Shortcut.Modifier.AsSymbols() + item.Shortcut.Key.AsString()
 		keyLabel := zlabel.New(str)
 		title.SetObjectName("shortcut")
 		font := o.Font

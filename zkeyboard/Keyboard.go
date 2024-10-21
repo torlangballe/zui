@@ -15,6 +15,7 @@ type ReturnKeyType string
 
 type KeyMod struct {
 	Key      Key
+	Char     string
 	Modifier Modifier
 }
 
@@ -94,6 +95,7 @@ var (
 	MetaModifier        = ModifierControl
 	AltModifierName     = "Alt"
 	CommandModifierName = "Meta"
+	CurrentKeyDown      KeyMod
 )
 
 func init() {
@@ -137,6 +139,20 @@ func (k KeyMod) IsNull() bool {
 	return k.Key == 0 && k.Modifier == 0
 }
 
+func (k KeyMod) Matches(m KeyMod) bool {
+	if k.Char != "" {
+		return k.Char == m.Char
+	}
+	if k.Modifier != m.Modifier {
+		return false
+	}
+	return k.Key == m.Key
+}
+
+func (m Modifier) IsNull() bool {
+	return m == ModifierNone
+}
+
 func (m Modifier) String() string {
 	var parts []string
 	if m&ModifierShift != 0 {
@@ -154,7 +170,7 @@ func (m Modifier) String() string {
 	return strings.Join(parts, "|")
 }
 
-func GetModifiersString(m Modifier) string {
+func (m Modifier) HumanString() string {
 	switch m {
 	case ModifierAlt:
 		return AltModifierName
@@ -168,7 +184,7 @@ func GetModifiersString(m Modifier) string {
 	return ""
 }
 
-func GetModifiersSymbols(m Modifier) string {
+func (m Modifier) AsSymbols() string {
 	var str string
 	if m&ModifierShift != 0 {
 		str += "⇧"
@@ -197,7 +213,7 @@ func GetModifiersSymbols(m Modifier) string {
 	return str
 }
 
-func GetStringForKey(key Key) string {
+func (key Key) AsString() string {
 	switch key {
 	case ' ':
 		return "space"
@@ -239,4 +255,14 @@ func ArrowKeyToDirection(key Key) zgeo.Alignment {
 
 func (k Key) IsReturnish() bool {
 	return k == KeyReturn || k == KeyEnter
+}
+
+func (km KeyMod) AsString() string {
+	str := km.Modifier.AsSymbols()
+	if km.Key != 0 {
+		str += km.Key.AsString()
+	} else {
+		str += km.Char
+	}
+	return str
 }

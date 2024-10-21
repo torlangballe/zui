@@ -4,7 +4,9 @@ package zview
 
 import (
 	"github.com/torlangballe/zui/zcursor"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type FocusType int
@@ -118,4 +120,48 @@ func (v *NativeView) SetResizeCursorFromAlignment(a zgeo.Alignment) bool {
 	}
 	v.SetCursor(cursor)
 	return true
+}
+
+type viewMod struct {
+	view View
+	mod  zkeyboard.KeyMod
+}
+
+var shortCutTimers = map[viewMod]*ztimer.Repeater{}
+
+func (v *NativeView) StrokeViewToShowShortcutHandling(viewKM zkeyboard.KeyMod, scut zkeyboard.KeyMod) bool {
+	// zlog.Info("StrokeViewToShowShortcutHandling", scut, viewKM.Matches(scut), viewKM.Key)
+	var col zgeo.Color
+	var o float32
+	if scut.Key == 0 && scut.Char == "" && scut.Modifier&viewKM.Modifier != 0 {
+		col = zgeo.ColorYellow
+		o = 0.3
+		if scut.Modifier == viewKM.Modifier {
+			o = 1
+		}
+	}
+	if viewKM.Matches(scut) {
+		col = zgeo.ColorBlue
+		o = 1
+	} else if o == 0 {
+		return false
+	}
+	v.SetCorner(3)
+	v.SetBGColor(col.WithOpacity(o))
+	vm := viewMod{v.View, scut}
+	timer := shortCutTimers[vm]
+	if timer == nil {
+		timer = ztimer.RepeaterNew()
+		shortCutTimers[vm] = timer
+	}
+	timer.Set(0.7, false, func() bool {
+		// zlog.Info("Timed:", zkeyboard.CurrentKeyDown, "==", viewKM)
+		if viewKM.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier != viewKM.Modifier {
+			v.SetCorner(0)
+			v.SetBGColor(zgeo.ColorClear)
+			return false
+		}
+		return true
+	})
+	return false
 }
