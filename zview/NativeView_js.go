@@ -460,8 +460,6 @@ func (v *NativeView) SetFocusHandler(focused func(focus bool)) {
 		return nil
 	})
 	v.SetListenerJSFunc("blur", func(this js.Value, args []js.Value) any {
-		e := args[0]
-		zlog.Info("blur from:", e.Get("relatedTarget"))
 		focused(false)
 		return nil
 	})
@@ -806,6 +804,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		}
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
+			v.ClearStateOnUpPress()
 			if !globalLongPressState.cancelPress && press != nil && v.Usable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
 				// args[0].Call("stopPropagation") // this one canceled up-listener in SetPressUpDownMovedHandler for some reason
@@ -1201,6 +1200,11 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 		if handler != nil {
 			event := args[0]
 			km := zkeyboard.GetKeyModFromEvent(event)
+			if down {
+				zkeyboard.CurrentKeyDown = km
+			} else {
+				zkeyboard.CurrentKeyDown = zkeyboard.KeyMod{}
+			}
 			if handler(km, down) {
 				event.Call("preventDefault")
 				event.Call("stopPropagation")
@@ -1227,8 +1231,12 @@ func (v *NativeView) SetStateOnDownPress(event js.Value) {
 	pos.X = event.Get("offsetX").Float()
 	pos.Y = event.Get("offsetY").Float()
 	LastPressedPos = pos //.Minus(v.AbsoluteRect().Pos)
-	// zlog.Info("SetStateOnDownPress", v.Hierarchy(), pos.X, v.AbsoluteRect().Pos.X)
 	zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(event).Modifier
+}
+
+func (v *NativeView) ClearStateOnUpPress() {
+	LastPressedPos = zgeo.Pos{}
+	zkeyboard.ModifiersAtPress = zkeyboard.ModifierNone
 }
 
 func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down zbool.BoolInd) bool) {
@@ -1258,6 +1266,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			// zlog.Info("SetPressUpDownMovedHandler up")
 			upPos := getMousePosRelative(v, args[0])
 			movingPos = nil
+			v.ClearStateOnUpPress()
 			we.Call("removeEventListener", "mouseup", upFunc)
 			we.Call("removeEventListener", "mousemove", moveFunc)
 			upFunc.Release()
