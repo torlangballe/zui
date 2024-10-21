@@ -147,6 +147,7 @@ func (v *TimeFieldView) handleReturn(km zkeyboard.KeyMod, down bool) bool {
 func addText(v *TimeFieldView, columns int, placeholder string, pre string) *TextView {
 	style := Style{KeyboardType: zkeyboard.TypeInteger}
 	tv := NewView("", style, columns, 1)
+	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	tv.UpdateSecs = 0
 	tv.SetPlaceholder(placeholder)
 	tv.SetZIndex(zview.BaseZIndex)
@@ -354,6 +355,7 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 	stime := zstr.Concat(":", shour, smin, ssec)
 	sdate := zstr.Concat("-", sday, smonth, syear)
 	str := zstr.Concat(" ", stime, sdate)
+	// zlog.Info("PARSE:", str)
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	fieldToView := map[ztime.TimeFieldFlags]zview.View{
 		ztime.TimeFieldHours:  v.hourText,
