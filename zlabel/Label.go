@@ -51,7 +51,7 @@ func (v *Label) GetToolTipAddition() string {
 	}
 	var str string
 	if v.pressWithModifierToClipboard != zkeyboard.ModifierNone {
-		str += zkeyboard.GetModifiersSymbols(zkeyboard.ModifierAlt) + "-"
+		str += zkeyboard.ModifierAlt.AsSymbols() + "-"
 	}
 	str += "press to copy to clipboard"
 	return str

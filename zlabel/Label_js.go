@@ -137,20 +137,6 @@ func (v *Label) SetRect(r zgeo.Rect) {
 	v.NativeView.SetRect(r)
 }
 
-// func (v *Label) SetPressedDownHandler(handler func()) {
-// 	v.pressed = handler
-// 	// zlog.Info("label.SetPressedDownHandler:", zlog.CallingStackString())
-// 	v.JSSet("onmousedown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-// 		e := args[0]
-// 		v.SetStateOnDownPress(e)
-// 		handler()
-// 		e.Call("preventDefault")
-// 		e.Call("stopPropagation")
-// 		return nil
-// 	}))
-// 	v.JSSet("class", "widget")
-// }
-
 func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 	str := "left"
 	if a&zgeo.Right != 0 {
