@@ -191,7 +191,12 @@ func (v *TabsView) SelectItem(id string, done func()) {
 	if item.create != nil {
 		v.currentChild = item.create(id, false)
 	}
-	v.Add(v.currentChild, zgeo.TopLeft|zgeo.Expand)
+	//	v.Add(v.currentChild, zgeo.TopLeft|zgeo.Expand)
+	marg := zgeo.Size{}
+	if v.currentChild.Native().CanTabFocus() {
+		marg = zgeo.SizeBoth(3)
+	}
+	v.Add(v.currentChild, zgeo.Center|zgeo.Expand, marg)
 	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
 	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
 	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
