@@ -56,7 +56,9 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	css := v.JSStyle()
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
-	// css.Set("boxSizing", "border-box")  // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	// if zwindow.FromNativeView(&v.NativeView) == zwindow.GetMain() {
+	css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	// }
 	css.Set("-webkitBoxShadow", "none") // doesn't work
 	// css.Set("outlineOffset", "-2px")
 	css.Set("overflow", "visible")
