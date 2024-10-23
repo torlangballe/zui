@@ -46,10 +46,14 @@ func NewLink(name, surl string) *Label {
 }
 
 func (v *Label) GetToolTipAddition() string {
-	if v.pressWithModifierToClipboard == -1 {
-		return ""
-	}
 	var str string
+	if !v.KeyboardShortcut.IsNull() {
+		str = zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
+	}
+	if v.pressWithModifierToClipboard == -1 {
+		return str
+	}
+	str += "\n"
 	if v.pressWithModifierToClipboard != zkeyboard.ModifierNone {
 		str += zkeyboard.ModifierAlt.AsSymbols() + "-"
 	}
