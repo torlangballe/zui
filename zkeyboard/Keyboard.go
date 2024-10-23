@@ -140,7 +140,7 @@ func (k KeyMod) IsNull() bool {
 }
 
 func (k KeyMod) Matches(m KeyMod) bool {
-	if k.Char != "" {
+	if k.Char != "" && m.Char != "" {
 		return k.Char == m.Char
 	}
 	if k.Modifier != m.Modifier {
