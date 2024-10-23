@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -34,7 +35,7 @@ func NewImagesSetView(name, imagePathPrefix string, imageSize zgeo.Size, styling
 	v.imageSize = imageSize
 
 	spacing := 2.0
-	if styling != nil && styling.Spacing != zgeo.UndefValue {
+	if styling != nil && styling.Spacing != zfloat.Undefined {
 		spacing = styling.Spacing
 	}
 	v.SetSpacing(spacing)

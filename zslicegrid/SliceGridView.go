@@ -21,6 +21,7 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
@@ -613,7 +614,7 @@ func (v *SliceGridView[S]) ViewItems(ns []S, title string, isEditOnNewStruct, se
 func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
 	params := v.EditParameters
 	params.Field.Flags |= zfields.FlagIsLabelize
-	if params.Styling.Spacing == zgeo.UndefValue {
+	if params.Styling.Spacing == zfloat.Undefined	{
 		params.Styling.Spacing = 10
 	}
 	params.IsEditOnNewStruct = isEditOnNewStruct

@@ -1597,7 +1597,7 @@ func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
-	if v.params.Styling.Spacing != zgeo.UndefValue {
+	if v.params.Styling.Spacing != zfloat.Undefined {
 		v.SetSpacing(v.params.Styling.Spacing)
 	}
 	if v.params.Field.HasFlag(FlagIsLabelize) {

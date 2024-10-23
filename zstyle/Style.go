@@ -6,6 +6,7 @@ import (
 
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfile"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -54,7 +55,7 @@ var (
 		OutlineWidth:  -1,
 		OutlineOffset: -1,
 		Margin:        zgeo.RectUndef,
-		Spacing:       zgeo.UndefValue,
+		Spacing:       zfloat.Undefined,
 	}
 )
 
@@ -147,7 +148,7 @@ func (s Styling) MergeWith(m Styling) Styling {
 	if !m.Margin.IsUndef() {
 		s.Margin = m.Margin
 	}
-	if m.Spacing != zgeo.UndefValue {
+	if m.Spacing != zfloat.Undefined {
 		s.Spacing = m.Spacing
 	}
 	return s
@@ -155,7 +156,7 @@ func (s Styling) MergeWith(m Styling) Styling {
 
 // SpacingOrMax returns s's spacing if defined, or max
 func (s Styling) SpacingOrMax(max float64) float64 {
-	if s.Spacing == zgeo.UndefValue {
+	if s.Spacing == zfloat.Undefined {
 		return max
 	}
 	return math.Max(max, s.Spacing)
