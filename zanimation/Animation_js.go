@@ -97,6 +97,7 @@ func Translate(v zview.View, dir zgeo.Pos, secs float64, done func()) {
 }
 
 func SetAlpha(v zview.View, alpha, secs float64, done func()) {
+	doDone(done, v.Native(), secs)
 	v.Native().SetJSStyle("transition", fmt.Sprintf("opacity, %fs ease-in-out", secs))
 	v.Native().SetJSStyle("opacity", fmt.Sprint(alpha))
 }
@@ -115,7 +116,7 @@ func (s *Swapper) FlipSwapViews(parent, oldView, newView zview.View, dir zgeo.Al
 	r := s.OriginalRect
 	newView.Native().SetJSStyle("transform", "rotateY(180deg)")
 	newView.Native().ShowBackface(false)
-	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	parent.Native().AddChild(newView, nil) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	newView.SetRect(r)
 	// newView.Native().SetAlpha(1)
 	// oldView.Native().ShowBackface(false)
