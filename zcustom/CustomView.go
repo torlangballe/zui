@@ -64,6 +64,10 @@ func (v *CustomView) IsHighlighted() bool {
 	return v.isHighlighted
 }
 
+func (v *CustomView) StorePressedHandler(h func()) {
+	v.pressed = h
+}
+
 func (v *CustomView) PressedHandler() func() {
 	// zlog.Info("cv.PressedHandler:", v != nil)
 	return v.pressed
@@ -71,6 +75,10 @@ func (v *CustomView) PressedHandler() func() {
 
 func (v *CustomView) LongPressedHandler() func() {
 	return v.longPressed
+}
+
+func (v *CustomView) StoreLongPressedHandler(h func()) {
+	v.longPressed = h
 }
 
 func (v *CustomView) SetColor(c zgeo.Color) {
