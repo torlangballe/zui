@@ -54,9 +54,9 @@ func (v *ScrollView) BarSize() float64 {
 	return 0
 }
 
-func (v *ScrollView) AddChild(child zview.View, index int) {
+func (v *ScrollView) AddChild(child, before zview.View) {
 	v.child = child
-	v.CustomView.AddChild(child, index)
+	v.CustomView.AddChild(child, before)
 }
 
 func (v *ScrollView) GetChildren(includeCollapsed bool) []zview.View {

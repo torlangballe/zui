@@ -117,7 +117,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.selectedIDs = map[string]bool{}
 	v.SetObjectName(storeName)
 	v.cellsView = zcustom.NewView("GridListView.cells")
-	v.AddChild(v.cellsView, -1)
+	v.AddChild(v.cellsView, nil)
 	v.cellsView.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 	v.cellsView.SetPointerEnterHandler(true, v.handleHover)
 	v.CellColor = DefaultCellColor
@@ -802,7 +802,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	}
 	v.children[id] = child
 	// child.Show(false)
-	v.cellsView.AddChild(child, -1)
+	v.cellsView.AddChild(child, nil)
 	child.Native().SetJSStyle("userSelect", "none")
 	zpresent.CallReady(child, true)
 	zpresent.CallReady(child, false)

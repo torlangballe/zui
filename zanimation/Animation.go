@@ -92,7 +92,7 @@ func (s *Swapper) SlideViewInOldOut(parent, oldView, newView zview.View, dir zge
 func translateViews(s *Swapper, moveOld bool, parent, oldView, newView zview.View, dir zgeo.Alignment, secs float64, done func()) {
 	// newView.Native().SetAlpha(0.1)
 	r := s.OriginalRect
-	parent.Native().AddChild(newView, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	parent.Native().AddChild(newView, nil) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	dirPos := dir.Vector()
 	move := dirPos.Times(r.Size.Pos())
 	r.Pos.Subtract(move)

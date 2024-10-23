@@ -611,7 +611,7 @@ func (v *NativeView) InsertBefore(before View) {
 	v.Element.Get("parentNode").Call("insertBefore", v.Element, before.Native().Element)
 }
 
-func (v *NativeView) AddChild(child View, index int) {
+func (v *NativeView) AddChild(child, before View) {
 	n := child.Native()
 	if n == nil {
 		zlog.Fatal("NativeView AddChild child not native", v.Hierarchy(), child.ObjectName())
@@ -621,14 +621,9 @@ func (v *NativeView) AddChild(child View, index int) {
 	// 	zlog.Info("Call On Add:", n.Hierarchy(), len(n.DoOnAdd))
 	// }
 	n.PerformAddRemoveFuncs(true)
-	if index != -1 {
-		nodes := n.parent.JSGet("childNodes").Length()
-		// zlog.Info("NS InsertChild:", v.ObjectName(), child.ObjectName(), index, nodes)
-		if nodes == 0 {
-			v.JSCall("appendChild", n.Element)
-		} else {
-			v.JSCall("insertBefore", n.Element, v.JSGet("firstChild"))
-		}
+	if before != nil {
+		// zlog.Info("AddBefore:", v.ObjectName(), child.ObjectName(), "before:", before.ObjectName())
+		v.JSCall("insertBefore", n.Element, before.Native().Element)
 	} else {
 		v.JSCall("appendChild", n.Element)
 	}
@@ -659,7 +654,7 @@ func (v *NativeView) ReplaceChild(child, with View) {
 		// focused.HierarchyToRoot(child.Native())
 		// zstr.HeadUntilWithRest(focusedPath, "/", &focusedPath) // remove first path component, which is v's
 	}
-	v.AddChild(with, -1) // needs to preserve index, which isn't really supported in AddChild yet anyway
+	v.AddChild(with, nil) // needs to preserve index, which isn't really supported in AddChild yet anyway
 	with.SetRect(child.Rect())
 	v.RemoveChild(child, true)
 	if focusedPath != "" {

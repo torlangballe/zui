@@ -134,6 +134,10 @@ func (v *ContainerView) addCellWithAdder(cell Cell, index int) *Cell {
 }
 
 func (v *ContainerView) Add(view zview.View, align zgeo.Alignment, sizes ...zgeo.Size) (first *Cell) {
+	return v.AddBefore(view, nil, align, sizes...)
+}
+
+func (v *ContainerView) AddBefore(view, before zview.View, align zgeo.Alignment, sizes ...zgeo.Size) (first *Cell) {
 	var marg, maxSize zgeo.Size
 	if len(sizes) > 0 {
 		marg = sizes[0]
@@ -141,7 +145,11 @@ func (v *ContainerView) Add(view zview.View, align zgeo.Alignment, sizes ...zgeo
 	if len(sizes) > 1 {
 		maxSize = sizes[1]
 	}
-	return v.AddAdvanced(view, align, marg, maxSize, -1, false)
+	i := -1
+	if before != nil {
+		_, i = v.FindCellWithView(before)
+	}
+	return v.AddAdvanced(view, align, marg, maxSize, i, false)
 }
 
 func (v *ContainerView) AddAlertButton(button zview.View) {
@@ -176,17 +184,18 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 	if index < 0 || index >= len(v.Cells) {
 		v.Cells = append(v.Cells, cell)
 		if cell.View != nil {
-			v.AddChild(cell.View, -1)
+			v.AddChild(cell.View, nil)
 		}
 		return &v.Cells[len(v.Cells)-1]
 	}
+	before := v.Cells[index].View
 	n := append(append([]Cell{}, v.Cells[:index]...), cell) // convoluted way of doing it due to append altering first argument
 	v.Cells = append(n, v.Cells[index:]...)
 	// for i, c := range v.Cells {
 	// 	zlog.Info("AddCell insert:", v.ObjectName(), i, c.View.ObjectName())
 	// }
 	if cell.View != nil {
-		v.AddChild(cell.View, -1)
+		v.AddChild(cell.View, before)
 	}
 	return &v.Cells[index]
 }
@@ -382,7 +391,7 @@ func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bo
 			if nc != nil {
 				nc.SetVisible(true)
 			}
-			v.AddChild(cell.View, -1)
+			v.AddChild(cell.View, nil)
 		}
 	}
 	if arrange && v.IsPresented() {

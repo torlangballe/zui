@@ -221,7 +221,7 @@ func (w *Window) AddView(v zview.View) {
 	wn.View = wn
 	wn.SetObjectName("window")
 	// v.Native().JSStyle().Set("overflow", "hidden")
-	wn.AddChild(v, -1)
+	wn.AddChild(v, nil)
 }
 
 func (w *Window) Reload() {
