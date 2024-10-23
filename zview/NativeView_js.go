@@ -89,10 +89,13 @@ func (v *NativeView) SetPos(pos zgeo.Pos) {
 	style.Set("top", fmt.Sprintf("%fpx", pos.Y))
 }
 
+func (v *NativeView) SetSize(size zgeo.Size) {
+	style := v.JSGet("style")
+	style.Set("width", fmt.Sprintf("%fpx", size.W))
+	style.Set("height", fmt.Sprintf("%fpx", size.H))
+}
+
 func (v *NativeView) SetRect(rect zgeo.Rect) {
-	// if v.ObjectName() == "67353" {
-	// 	zlog.Info("NV.SetRect:", rect, zdebug.CallingStackString())
-	// }
 	if rect.Pos.Y < -10 {
 		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}
