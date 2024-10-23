@@ -32,7 +32,7 @@ func (v *StackView) Init(view zview.View, vertical bool, name string) {
 	v.ContainerView.Init(view, name)
 	v.Vertical = vertical
 	v.spacing = 6
-	v.GridVerticalSpace = zgeo.UndefValue
+	v.GridVerticalSpace = zfloat.Undefined
 }
 
 func StackViewVert(name string) *StackView {
@@ -81,13 +81,13 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var ws float64
 	if len(v.Cells) != 0 {
-		if v.GridVerticalSpace != zgeo.UndefValue {
+		if v.GridVerticalSpace != zfloat.Undefined {
 			s := v.calculateGridSize(total)
 			return s, s
 		}
 		lays := v.getLayoutCells(total)
 		spacing := v.Spacing()
-		if v.GridVerticalSpace != zgeo.UndefValue {
+		if v.GridVerticalSpace != zfloat.Undefined {
 			spacing = v.GridVerticalSpace
 		}
 		s, max = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
@@ -259,7 +259,7 @@ func (v *StackView) ArrangeChildren() {
 	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v))
 	// zlog.PushProfile(v.ObjectName())
 	rm := v.LocalRect().Plus(v.Margin())
-	if v.GridVerticalSpace != zgeo.UndefValue {
+	if v.GridVerticalSpace != zfloat.Undefined {
 		zlog.Assert(v.Vertical, v.Hierarchy(), v.GridVerticalSpace)
 		v.arrangeChildrenInGrid()
 		for _, c := range v.Cells {
