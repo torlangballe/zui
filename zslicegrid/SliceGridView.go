@@ -122,7 +122,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.FilterSkipCache = map[string]bool{}
 	v.NoCalculatedMaxSize.W = true
 
-	v.EditParameters = zfields.FieldViewParametersDefault()
+	v.EditParameters = zfields.DefaultFieldViewParameters
 	v.EditParameters.Field.Flags |= zfields.FlagIsLabelize
 	v.EditParameters.EditWithoutCallbacks = true
 
@@ -614,7 +614,7 @@ func (v *SliceGridView[S]) ViewItems(ns []S, title string, isEditOnNewStruct, se
 func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
 	params := v.EditParameters
 	params.Field.Flags |= zfields.FlagIsLabelize
-	if params.Styling.Spacing == zfloat.Undefined	{
+	if params.Styling.Spacing == zfloat.Undefined {
 		params.Styling.Spacing = 10
 	}
 	params.IsEditOnNewStruct = isEditOnNewStruct

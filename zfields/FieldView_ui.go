@@ -98,6 +98,13 @@ var (
 	EnableLog       zlog.Enabler
 )
 
+var DefaultFieldViewParameters = FieldViewParameters{
+	ImmediateEdit: true,
+	Field: Field{
+		Styling: zstyle.EmptyStyling,
+	},
+}
+
 func init() {
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
 
@@ -145,12 +152,6 @@ func (v *FieldView) IsSlice() bool {
 
 func setFieldViewEdited(fv *FieldView) {
 	fieldViewEdited[fv.Hierarchy()] = time.Now()
-}
-
-func FieldViewParametersDefault() (f FieldViewParameters) {
-	f.ImmediateEdit = true
-	f.Styling = zstyle.EmptyStyling
-	return f
 }
 
 func (fv *FieldView) IsEditedRecently() bool {

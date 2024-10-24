@@ -53,7 +53,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
 	v.LockedFieldValues = map[string]any{}
 	// v.HeaderHeight = 28
-	v.FieldParameters = zfields.FieldViewParametersDefault()
+	v.FieldParameters = zfields.DefaultFieldViewParameters
 	v.FieldParameters.AllStatic = true
 	v.FieldParameters.UseInValues = []string{zfields.RowUseInSpecialName}
 	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(ap zfields.ActionPack) bool {
