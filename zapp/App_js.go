@@ -47,6 +47,9 @@ func URLStub() string {
 }
 
 func guiRestartHandler(err error) {
+	if err == nil {
+		return
+	}
 	dict := zdict.Dict{}
 	ce := zerrors.MakeContextError(dict, "GUI Restart", err)
 	callErr := zrpc.MainClient.Call("AppCalls.SetGUIError", ce, nil)
