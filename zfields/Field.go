@@ -324,7 +324,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
 	f.PackageName = rval.Type().PkgPath()
-	// var skipping bool
+	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
 	keyVals, skip := GetZUITags(zreflect.GetTagAsMap(string(sf.Tag)))
@@ -335,12 +335,13 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		key := kv.Key
 		val := kv.Value
 		barParts := strings.Split(val, "|")
-		// if key == "IN" {
-		// 	skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
-		// }
-		// if skipping {
-		// 	// continue
-		// }
+		if key == "IN" {
+			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
+			continue
+		}
+		if skipping {
+			continue
+		}
 		n, floatErr := strconv.ParseFloat(val, 32)
 		flag := zbool.FromString(val, false)
 		switch key {
