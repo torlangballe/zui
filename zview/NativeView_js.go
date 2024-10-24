@@ -818,7 +818,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		})
 		v.JSCall("addEventListener", "mouseup", fup)
-		args[0].Call("stopPropagation")
+		// args[0].Call("stopPropagation")  a simple press handler shouldn't stop propagation
 		return nil
 	})
 }
@@ -1126,7 +1126,6 @@ func (v *NativeView) SetPressedDownHandler(id string, handler func()) {
 		id = "$pressed-down"
 	}
 	v.SetListenerJSFunc("mousedown:"+id, func(this js.Value, args []js.Value) any {
-		zlog.Info("DOWN:", v.Hierarchy())
 		e := args[0]
 		v.SetStateOnDownPress(e)
 		e.Call("stopPropagation")
