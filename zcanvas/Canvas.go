@@ -83,6 +83,7 @@ func (c *Canvas) drawInsetRow(image *zimage.Image, inset, dest zgeo.Rect, sy, sh
 
 func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opacity float32) {
 	// if v.ObjectName() == "workers" {
+	// zlog.Info("Canvas.drawInsetImage", image.Size(), image.Scale, image.Path, inset, dest)
 	size := image.Size()
 	insetMid := size.Minus(inset.Size.Negative())
 	diff := dest.Size.Minus(size).Plus(insetMid)

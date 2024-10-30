@@ -217,20 +217,20 @@ func (c *Canvas) drawPlainImage(image *zimage.Image, useDownsampleCache bool, de
 	ds := destRect.Size
 	drawnNow := true
 	// if strings.Contains(image.Path, "edit-dark-gray.png") {
-	// 	zlog.Info("drawPlainImage2:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
+	// zlog.Info("drawPlainImage2:", image.Size(), destRect, image.Path, c.DownsampleImages, ss.Area() < 1000000, ss == image.Size(), sourceRect.Pos.IsNull(), ds.W/ss.W < 0.95, ds.H/ss.H < 0.95)
 	// 	zlog.Info("drawPlainImage3:", image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95))
 	// }
 	if image.Path != "" && c.DownsampleImages && ss.Area() < 1000000 && ss == image.Size() && sourceRect.Pos.IsNull() && (ds.W/ss.W < 0.95 || ds.H/ss.H < 0.95) {
 		drawnNow = c.drawCachedScaledImage(image, useDownsampleCache, destRect, opacity, sourceRect)
 		// if strings.Contains(image.Path, "edit-dark-gray.png") {
-		// 	zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
+		// zlog.Info("drawPlainImage draw-cache:", image.Size(), destRect, image.Path)
 		// }
 		if drawnNow {
 			return true
 		}
 		// if it returns false, it wasn't in cache, so we draw unscaled below
 	}
-	// zlog.Info("drawPlain:", image.Path, destRect, sourceRect, opacity)
+	// zlog.Info("drawPlain:", image.Path, destRect, sourceRect, image.Scale)
 	c.rawDrawPlainImage(image, destRect, opacity, sourceRect)
 	return drawnNow
 }
