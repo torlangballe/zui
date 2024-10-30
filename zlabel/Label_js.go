@@ -5,6 +5,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -81,8 +82,11 @@ func (v *Label) SetText(text string) {
 
 func setPadding(v *Label) {
 	pad := v.margin
-	pad.Pos.Y += v.Font().Size / 8
-
+	div := 8.0
+	if zdevice.CurrentWasmBrowser == zdevice.Firefox {
+		div = 4
+	}
+	pad.Pos.Y += v.Font().Size / div
 	v.SetNativePadding(pad)
 }
 
@@ -145,13 +149,20 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 		str = "center"
 	}
 	v.JSStyle().Set("textAlign", str)
-	str = "middle"
+	str = ""
 	if a&zgeo.Top != 0 {
 		str = "top"
 	} else if a&zgeo.Bottom != 0 {
 		str = "bottom"
 	}
-	v.JSStyle().Set("verticalAlign", str)
+	if str == "" {
+		style := v.JSStyle()
+		style.Set("display", "flex")
+		style.Set("flexDirection", "column")
+		style.Set("alignItems", "center")
+	} else {
+		v.JSStyle().Set("verticalAlign", str)
+	}
 }
 
 func (v *Label) SetMargin(m zgeo.Rect) {
