@@ -18,6 +18,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
@@ -143,8 +144,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.NoCalculatedMaxSize.W = true
-		v.Bar.SetSpacing(8)
-		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, -6, -3))
+		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, 0, -3))
 		if options&AddBarInHeader == 0 {
 			v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 		}
@@ -157,7 +157,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			v.ClearFilterSkipCache()
 			v.UpdateViewFunc(true, false)
 		})
-		v.Bar.Add(v.SearchField, zgeo.TopRight, zgeo.SizeD(0, -8))
+		v.Bar.Add(v.SearchField, zgeo.CenterRight)
 	}
 	horFirst := true
 	if options&AddChangeLayout != 0 {
@@ -186,7 +186,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddDocumentationIcon != 0 {
 		doc := zwidgets.DocumentationIconViewNew(storeName)
 		doc.SetZIndex(200)
-		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeBoth(-5))
+		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeD(zstyle.DefaultRowRightMargin, 0))
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
