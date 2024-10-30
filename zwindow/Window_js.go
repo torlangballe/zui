@@ -390,7 +390,7 @@ func (win *Window) AddStyle() {
 	}
 	.znoscrollbar::-webkit-scrollbar { display: none; }
 `
-	if zdevice.WasmBrowser() == zdevice.Chrome {
+	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
 		input[type=number]:focus { border: 2px solid rgb(147,180,248); }
 		input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
