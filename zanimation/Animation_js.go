@@ -35,7 +35,7 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 
 	randomID := int(rand.Int31())
 	win := zwindow.FromNativeView(view.Native())
-	animationFunc = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	animationFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 		// zlog.Info("Ani")
 		posJS := args[0]
 		if startJS.IsUndefined() {
@@ -53,6 +53,7 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 			}
 			*aniFrameID = win.Element.Call("requestAnimationFrame", animationFunc).Int()
 			addAnimationToWindow(win, *aniFrameID, randomID)
+			return nil
 		}
 		handler(-1)
 		if *aniFrameID != -1 {
@@ -67,7 +68,7 @@ func Animate(view zview.View, secs float64, handler func(t float64) bool) {
 }
 
 func CallDrawFuncAtRenderTime(inView zview.View, f func()) {
-	jsFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	jsFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
 		f()
 		return nil
 	})
