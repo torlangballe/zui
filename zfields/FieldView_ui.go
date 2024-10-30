@@ -1835,8 +1835,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.Alignment&all != 0 {
 		def &= ^all
 	}
-	cell.Margin = cellMargin
 	cell.Alignment = def | exp | f.Alignment
+	cell.Margin = zgeo.RectMarginForSizeAndAlign(cellMargin, cell.Alignment)
 	// doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView

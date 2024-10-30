@@ -117,7 +117,7 @@ func buildContextError(in *FieldView, f *Field, val any) zview.View {
 		// zlog.Info("buildContextError sub:", f.Name, e.SubContextError.Title)
 		sub := buildContextError(in, f, *e.SubContextError)
 		adder := frame.(zcontainer.AdvancedAdder)
-		adder.AddAdvanced(sub, zgeo.TopLeft|zgeo.Expand, zgeo.Size{}, zgeo.Size{}, -1, false)
+		adder.AddAdvanced(sub, zgeo.TopLeft|zgeo.Expand, zgeo.RectNull, zgeo.Size{}, -1, false)
 	}
 	return frame
 }

@@ -76,7 +76,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		if v.options&AddBar != 0 && v.options&AddBarInHeader == 0 {
 			index = 1
 		}
-		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.SizeNull, zgeo.SizeNull, index, false)
+		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.RectNull, zgeo.SizeNull, index, false)
 	}
 	v.Grid.HandleSelectionChangedFunc = func() {
 		v.UpdateWidgets()

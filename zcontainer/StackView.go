@@ -64,10 +64,7 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 		if vc.Collapsed || vc.View == nil || vc.Free {
 			continue
 		}
-		s.H += vc.Margin.H
-		if vc.Alignment&zgeo.VertCenter != 0 {
-			s.H += vc.Margin.H
-		}
+		s.H += vc.Margin.Size.H
 		s.H += v.GridVerticalSpace
 		j++
 	}
@@ -167,8 +164,8 @@ func (v *StackView) arrangeChildrenInGrid() {
 		if vc.Collapsed || vc.View == nil || vc.Free {
 			continue
 		}
-		if vc.Alignment&(zgeo.Top+zgeo.VertCenter) != 0 {
-			r.Pos.Y += vc.Margin.H
+		if vc.Alignment&(zgeo.Top|zgeo.VertCenter) != 0 {
+			r.Pos.Y += vc.Margin.Min().Y
 		}
 		r.Size.H = heights[j]
 		cellsOwner, _ := vc.View.(CellsOwner)
@@ -282,6 +279,9 @@ func (v *StackView) ArrangeChildren() {
 		layouter.HandleBeforeLayout()
 	}
 	lays := v.getLayoutCells(rm.Size)
+	// if v.ObjectName() == "bar" {
+	// 	zlog.Info("arrangeChildren1:", rm, v.Margin(), v.ObjectName())
+	// }
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
 	j := 0
 	for _, c := range v.Cells {
@@ -295,7 +295,7 @@ func (v *StackView) ArrangeChildren() {
 		r := rects[j]
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
-			// if v.ObjectName() == "eventgrid" {
+			// if v.ObjectName() == "bar" {
 			// 	zlog.Info("arrangeChildren:", rm, v.ObjectName(), c.View.ObjectName(), r)
 			// }
 			c.View.SetRect(r)

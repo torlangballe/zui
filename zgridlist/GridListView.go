@@ -269,11 +269,11 @@ func (v *GridListView) SelectedIDs() []string {
 	return ids
 }
 
-func (v *GridListView) SelectCell(id string, scrollToSelected, animateScroll bool) (scrolledTo bool) {
-	return v.SelectCells([]string{id}, scrollToSelected, animateScroll)
+func (v *GridListView) SelectCell(id string, scrollToSelected bool, animate bool) (scrolledTo bool) {
+	return v.SelectCells([]string{id}, scrollToSelected, animate)
 }
 
-func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll bool) (scrolledTo bool) {
+func (v *GridListView) SelectCells(ids []string, scrollToSelected bool, animate bool) (scrolledTo bool) {
 	changedIDs := zslice.Exclusion(v.SelectedIDs(), ids)
 	v.selectedIDs = map[string]bool{}
 	for _, id := range ids {
@@ -285,7 +285,7 @@ func (v *GridListView) SelectCells(ids []string, scrollToSelected, animateScroll
 			sid := v.IDAtIndexFunc(i)
 			if v.selectedIDs[sid] {
 				scrolledTo = true
-				v.ScrollToCell(sid, animateScroll)
+				v.ScrollToCell(sid, animate)
 				break
 			}
 		}
@@ -775,12 +775,12 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 		if v.BranchToggleType != zwidgets.BranchToggleNone {
 			if !leaf {
 				bt := zwidgets.BranchToggleViewNew(v.BranchToggleType, id, v.OpenBranches[id])
-				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.Size{}, zgeo.SizeNull, 0, false)
+				aa.AddAdvanced(bt, zgeo.CenterLeft, zgeo.RectNull, zgeo.SizeNull, 0, false)
 			}
 			w += 24
 		}
 		cells := co.GetCells()
-		(*cells)[0].Margin.W += w
+		(*cells)[0].Margin.Pos.X += w
 		// zlog.Info("insertBranch:", (*cells)[0].View.ObjectName(), (*cells)[0].Margin.W)
 		// (*cells)[0].MinSize.W -= w
 		// (*cells)[0].MaxSize.W -= w

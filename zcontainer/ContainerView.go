@@ -46,7 +46,7 @@ type CellAdder interface {
 }
 
 type AdvancedAdder interface {
-	AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell
+	AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Rect, maxSize zgeo.Size, index int, free bool) *Cell
 }
 
 type ChildrenOwner interface {
@@ -69,6 +69,26 @@ var (
 	GroupingMargin       = 10.0
 	AlertButtonsOnRight  = true
 )
+
+func init() {
+	zview.RangeChildrenFunc = func(root zview.View, recursive, includeCollapsed bool, got func(zview.View) bool) {
+		// ct, _ := root.(ContainerOwner)
+		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
+		ViewRangeChildren(root, recursive, includeCollapsed, got)
+	}
+	zview.ChildOfViewFunc = ChildView
+	zview.FindLayoutCellForView = func(view zview.View) *zgeo.LayoutCell {
+		co, _ := view.Native().Parent().View.(CellsOwner)
+		if co != nil {
+			for _, c := range *(co.GetCells()) {
+				if c.View == view {
+					return &c.LayoutCell
+				}
+			}
+		}
+		return nil
+	}
+}
 
 func New(name string) *ContainerView {
 	v := &ContainerView{}
@@ -133,17 +153,23 @@ func (v *ContainerView) addCellWithAdder(cell Cell, index int) *Cell {
 	return a.AddCell(cell, index)
 }
 
-func (v *ContainerView) Add(view zview.View, align zgeo.Alignment, sizes ...zgeo.Size) (first *Cell) {
-	return v.AddBefore(view, nil, align, sizes...)
+func (v *ContainerView) Add(view zview.View, align zgeo.Alignment, params ...any) (first *Cell) {
+	return v.AddBefore(view, nil, align, params...)
 }
 
-func (v *ContainerView) AddBefore(view, before zview.View, align zgeo.Alignment, sizes ...zgeo.Size) (first *Cell) {
-	var marg, maxSize zgeo.Size
-	if len(sizes) > 0 {
-		marg = sizes[0]
+func (v *ContainerView) AddBefore(view, before zview.View, align zgeo.Alignment, params ...any) (first *Cell) {
+	var maxSize zgeo.Size
+	var marg zgeo.Rect
+	var got bool
+	if len(params) > 0 {
+		marg, got = params[0].(zgeo.Rect)
+		if !got {
+			m := params[0].(zgeo.Size)
+			marg = zgeo.RectMarginForSizeAndAlign(m, align)
+		}
 	}
-	if len(sizes) > 1 {
-		maxSize = sizes[1]
+	if len(params) > 1 {
+		maxSize = params[1].(zgeo.Size)
 	}
 	i := -1
 	if before != nil {
@@ -204,7 +230,7 @@ func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
 // 	return v.AddAdvanced(view, align, zgeo.SizeNull, zgeo.SizeNull, -1, false)
 // }
 
-func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Size, maxSize zgeo.Size, index int, free bool) *Cell {
+func (v *ContainerView) AddAdvanced(view zview.View, align zgeo.Alignment, marg zgeo.Rect, maxSize zgeo.Size, index int, free bool) *Cell {
 	collapsed := false
 	// zlog.Info("CV AddAdvancedView:", view != nil, view.Native() != nil)
 	name := "nil"
@@ -267,7 +293,7 @@ func (v *ContainerView) ArrangeChildrenAnimated() {
 
 func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 	if c.Alignment != zgeo.AlignmentNone {
-		ir := r.Expanded(c.Margin.MinusD(2.0))
+		ir := r.ExpandedD(-1) // -2?
 		s, _ := c.View.CalculatedSize(ir.Size)
 		if c.RelativeToName != "" {
 			rv, _ := v.FindCellWithName(c.RelativeToName)
@@ -657,15 +683,6 @@ func FocusNext(view zview.View, recursive, loop bool) {
 	if loop && first != nil {
 		first.Focus(true)
 	}
-}
-
-func init() {
-	zview.RangeChildrenFunc = func(root zview.View, recursive, includeCollapsed bool, got func(zview.View) bool) {
-		// ct, _ := root.(ContainerOwner)
-		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
-		ViewRangeChildren(root, recursive, includeCollapsed, got)
-	}
-	zview.ChildOfViewFunc = ChildView
 }
 
 func DumpHierarchy(view zview.View, add string) {

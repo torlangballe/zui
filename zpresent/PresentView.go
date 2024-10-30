@@ -453,12 +453,13 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	m := zgeo.SizeD(att.TitledMargin.W, 0)
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
 
-	xmargin := 0.0 //10.0
+	xmargin := zstyle.DefaultRowRightMargin
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.Vertical
 		}
-		bar.AddAdvanced(v, a, zgeo.SizeD(xmargin, 0), zgeo.SizeNull, 0, false)
+		mr := zgeo.RectMarginForSizeAndAlign(zgeo.SizeD(xmargin, 0), a)
+		bar.AddAdvanced(v, a, mr, zgeo.SizeNull, 0, false)
 		xmargin = 0
 	}
 	if ready != nil {
