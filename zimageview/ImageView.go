@@ -192,18 +192,19 @@ func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimag
 }
 
 func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
-	a := v.alignment | zgeo.Scale | zgeo.Proportional
+	a := v.alignment | zgeo.Scale //| zgeo.Proportional
 	// if v.IsFillBox {
 	// 	a = AlignmentNone
 	// }
 	r := inRect.Plus(v.Margin())
 	ir := r.Align(v.image.Size(), a, zgeo.SizeNull)
+	// zlog.Info(zgeo.RectMarginForSizeAndAlign(zgeo.SizeNull, a), "GetImageRect:", v.Hierarchy(), v.Path(), v.Margin(), a, inRect, "->", r, ir)
+	// zlog.Info("IV ImageRect:", v.Rect().Size, inRect, v.Hierarchy(), v.Path, ir, a)
 	return ir
 }
 
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 	canvas.DownsampleImages = v.DownsampleImages
-	// zlog.Info("DrawImage:", v.Hierarchy(), v.Path(), rect, v.UseDownsampleCache)
 	if v.image != nil {
 		col := v.TintColor
 		if v.IsHighlighted() {
