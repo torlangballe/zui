@@ -86,7 +86,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	s = s.Ceil()
 	s.W += 6
 	// s.H -= 2
-	zfloat.Maximize(&s.H, 34)
+	zfloat.Maximize(&s.H, 22)
 	if v.maxWidth != 0 {
 		max.W = s.W
 	}
