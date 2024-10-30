@@ -64,7 +64,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	})
 
 	cell, _ := v.FindCellWithView(v.Grid)
-	cell.Margin.H = 1 // this seems to make no 1-space beteen header and table
+	cell.Margin.SetMinX(1) // this seems to make no 1-space beteen header and table
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
@@ -176,6 +176,9 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		v.Header.Populate(headers)
 		if v.options&AddBarInHeader != 0 {
 			right := v.Header.RightColumn()
+			m := right.Margin()
+			m.Size.W += 1 // this is only done since we in particular place headers so right bezel is shown, but place one pixel too far to right on all other views. Should really fix the latter instead.
+			right.SetMargin(m)
 			zlog.Assert(right != nil)
 			right.Add(v.Bar, zgeo.CenterRight)
 		}
