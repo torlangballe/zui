@@ -148,7 +148,7 @@ func (v *ScrollView) ScrollToTop(animate bool) {
 	v.SetContentOffset(0, animate)
 }
 
-func (v *ScrollView) ScrollPage(up, animate bool) {
+func (v *ScrollView) ScrollPage(up bool, animate bool) {
 	y := v.YOffset
 	window := v.Rect().Size.H - 20
 	if up {
@@ -179,7 +179,7 @@ func (v *ScrollView) MakeRectVisible(rect zgeo.Rect, animate bool) {
 		return
 	}
 	// zlog.Info("MakeRectVisible:", rect, y, animate)
-	v.SetContentOffset(y, false)
+	v.SetContentOffset(y, animate)
 }
 
 func (v *ScrollView) MakeOffspringVisible(offspring zview.View, animate bool) {

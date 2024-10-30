@@ -5,7 +5,6 @@ package zscrollview
 import (
 	"time"
 
-	"github.com/torlangballe/zui/zanimation"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -43,19 +42,12 @@ func (v *ScrollView) OffsetAtBottom() float64 {
 	return v.child.Rect().Size.H - v.Rect().Size.H
 }
 
-func (v *ScrollView) SetContentOffset(y float64, animated bool) {
+func (v *ScrollView) SetContentOffset(y float64, animate bool) {
 	v.ScrolledAt = time.Now()
-	if animated {
-		zanimation.Animate(v, 0.5, func(t float64) bool {
-			ay := v.YOffset + (y-v.YOffset)*t
-			// zlog.Info("Animate:", t, v.YOffset, y, ay)
-			v.SetContentOffset(ay, false)
-			return true
-		})
+	v.YOffset = y
+	if animate {
+		v.SetYContentOffsetAnimated(y, nil)
 		return
 	}
-	v.YOffset = y
-	if v.child != nil {
-		v.SetYContentOffset(y)
-	}
+	v.SetYContentOffset(y)
 }

@@ -61,7 +61,7 @@ func (v *NativeView) AddChild(child View, index int)                         {}
 func (v *NativeView) RemoveChild(child View)                                 {}
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                 {}
 func (v *NativeView) SetToolTip(str string)                                  {}
-func (v *NativeView) SetAboveParent(above bool)                              {}
+func (v *NativeView) SetChildrenAboveParent(above bool)                              {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))            {}
 func (v *NativeView) JSSet(property string, value interface{})               {}
 func (v *NativeView) JSGet(property string) any                              { return nil }

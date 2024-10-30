@@ -44,6 +44,7 @@ var (
 
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
+	FindLayoutCellForView          func(v View) *zgeo.LayoutCell
 )
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
@@ -51,6 +52,14 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element.Set("style", "position:absolute")
 	v.JSStyle().Set("zIndex", BaseZIndex)
 	v.View = view
+	v.SetPressedHandler("$zdebug", zkeyboard.MetaModifier|zkeyboard.ModifierAlt|zkeyboard.ModifierShift, func() {
+		var str string
+		cell := FindLayoutCellForView(v.View)
+		if cell != nil {
+			str = zstr.Spaced(cell.Alignment, "marg:", cell.Margin, "min:", cell.MinSize, "max:", cell.MaxSize)
+		}
+		zlog.Info("NativeView:", v.Hierarchy(), v.Rect(), str)
+	})
 }
 
 func (v *NativeView) Parent() *NativeView {
@@ -920,8 +929,8 @@ func (v *NativeView) SetSwipeHandler(handler func(pos, dir zgeo.Pos)) {
 	})
 }
 
-func (v *NativeView) SetAboveParent(above bool) {
-	// zlog.Info("SetAboveParent:", v.ObjectName(), above)
+func (v *NativeView) SetChildrenAboveParent(above bool) {
+	// zlog.Info("SetChildrenAboveParent:", v.ObjectName(), above)
 	str := "hidden"
 	if above {
 		str = "visible"
@@ -956,6 +965,14 @@ func (v *NativeView) ContentOffset() zgeo.Pos {
 	return zgeo.PosD(x, y)
 }
 
+func (v *NativeView) SetXContentOffsetAnimated(x float64, done func()) {
+	setContentOffsetAnimated(v, false, x, done)
+}
+
+func (v *NativeView) SetYContentOffsetAnimated(x float64, done func()) {
+	setContentOffsetAnimated(v, true, x, done)
+}
+
 func (v *NativeView) SetXContentOffset(x float64) {
 	v.JSSet("scrollLeft", x)
 }
@@ -964,7 +981,24 @@ func (v *NativeView) SetYContentOffset(y float64) {
 	v.JSSet("scrollTop", y)
 }
 
-func (v *NativeView) SetRootContentOffset(y float64) {
+func setContentOffsetAnimated(v *NativeView, vertical bool, n float64, animateDone func()) {
+	o := v.ContentOffset()
+	args := map[string]any{
+		"behavior": "smooth",
+	}
+	if vertical {
+		args["top"] = n - o.Y
+	} else {
+		args["left"] = n - o.X
+	}
+	if animateDone != nil {
+		ztimer.StartIn(0.55, animateDone)
+	}
+	v.JSCall("scrollBy", args)
+	return
+}
+
+func (v *NativeView) SetRootYContentOffset(y float64) {
 	v.RootParent().SetYContentOffset(y)
 }
 
