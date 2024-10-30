@@ -375,7 +375,7 @@ func addLabel(v *CalendarView, grid *zcontainer.GridView, a any) (label *zlabel.
 	label.SetTextAlignment(zgeo.CenterRight)
 
 	box.Add(label, zgeo.CenterLeft|zgeo.Expand)
-	box.SetAboveParent(true)
+	box.SetChildrenAboveParent(true)
 	cell = grid.Add(box, zgeo.TopLeft)
 	// label.SetMargin(zgeo.RectFromXY2(2, 2, -4, -2))
 	return
