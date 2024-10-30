@@ -196,6 +196,7 @@ func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string) (view zview.
 func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters, marg zgeo.Size, parent *FieldView) *FieldView {
 	v := &FieldView{}
 	v.StackView.Init(v, vertical, id)
+	v.SetChildrenAboveParent(true)
 
 	v.data = data
 	v.sliceItemIndex = -1
@@ -962,7 +963,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	}
 	button := zshape.ImageButtonViewNew(name, color, s, zgeo.SizeNull)
 	button.SetTextColor(textCol)
-	button.TextXMargin = 0
+	button.SetSpacing(0)
 	if f.HasFlag(FlagIsURL) {
 		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			surl := replaceDoubleSquiggliesWithFields(fv, f, f.Path)
@@ -1032,8 +1033,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 
 		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
 		if isImage {
-			menu.SetImage(nil, true, f.ImageFixedPath, nil)
-			menu.ImageMaxSize = f.Size
+			menu.SetImage(nil, true, f.Size, f.ImageFixedPath, zgeo.SizeNull, nil)
 		} else {
 			if len(f.Colors) != 0 {
 				menu.SetColor(zgeo.ColorFromString(f.Colors[0]))
@@ -1867,7 +1867,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
-				lstack.AddAdvanced(lock, zgeo.CenterRight, zgeo.SizeD(-7, 7), zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
+				mr := zgeo.Rect{} //FromXY2(0, 7, -7, -7)
+				lstack.AddAdvanced(lock, zgeo.CenterRight, mr, zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
 				// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
 			}
 		}

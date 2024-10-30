@@ -178,12 +178,13 @@ func (v *HeaderView) Populate(headers []Header) {
 		header := h
 		s := zgeo.SizeD(h.MinWidth, 26)
 		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets)
+		button.TextMargin = zgeo.RectFromXY2(5, 0, 0, 0)
 		// zlog.Info("HEADER:", h.Title, h.Justify)
 		j := h.Justify
 		if j == zgeo.AlignmentNone {
 			j = zgeo.Left
 		}
-		button.SetMarginS(zgeo.SizeD(6, 0))
+		button.SetMarginS(zgeo.SizeD(1, 0))
 		button.SetTextAlignment(j)
 		if h.ImagePath != "" {
 			iv := zimageview.NewWithCachedPath(h.ImagePath, h.ImageSize)
@@ -230,7 +231,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle := zimageview.NewWithCachedPath("", zgeo.SizeD(6, 5))
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
-			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(2, 3))
+			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(1, 3))
 			v.updateTriangle(triangle, h.FieldName)
 		}
 		bcs, _ := button.CalculatedSize(zgeo.SizeNull)

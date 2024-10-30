@@ -144,13 +144,13 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	} else {
 		button = zshape.NewView(zshape.TypeNone, minSize)
 		button.MaxSize = v.MaxImageSize
-		button.ImageMargin = zgeo.SizeNull
+		button.ImageMargin = zgeo.RectNull
 		view = button
 	}
 	button.MaxSize.H = 26
 	button.SetObjectName(id)
 	if imagePath != "" {
-		button.SetImage(nil, true, imagePath, nil)
+		button.SetImage(nil, true, zgeo.SizeNull, imagePath, zgeo.SizeNull, nil)
 	}
 	button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		go v.SelectItem(id, nil)
@@ -210,7 +210,7 @@ func (v *TabsView) SelectItem(id string, done func()) {
 		done()
 	}
 	ztimer.StartIn(0.02, func() {
-		v.SetRootContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
+		v.SetRootYContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
 	})
 }
 
