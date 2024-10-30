@@ -18,7 +18,9 @@ var (
 	DefaultHoverColor = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
 	DefaultFocusColor = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
 
-	DebugBackgroundColor = zgeo.ColorNew(1, 0.9, 0.9, 1)
+	DebugBackgroundColor  = zgeo.ColorNew(1, 0.9, 0.9, 1)
+	DefaultRowRightMargin = 6.0
+	DefaultRowLeftMargin  = 6.0
 )
 
 type Styling struct {
