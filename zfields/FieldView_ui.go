@@ -1906,6 +1906,11 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	if zs != nil {
 		str = zs.ZUIString()
 	}
+	d, _ := a.(zstr.Describer)
+	if d != nil {
+		desc := d.GetDescription()
+		str = zstr.Concat("\n", str, desc)
+	}
 	// zlog.Info("popupContent:", str)
 	if str == "" {
 		return
@@ -1917,6 +1922,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	stack.SetMarginS(zgeo.SizeD(14, 10))
 	stack.SetBGColor(zgeo.ColorWhite)
 	label := zlabel.New(str)
+	label.SetMaxLines(0)
 	label.SetColor(target.Native().Color())
 	stack.Add(label, zgeo.Center|zgeo.Expand)
 	zpresent.PopupView(stack, target, att)
