@@ -44,7 +44,7 @@ type Attributes struct {
 	ModalDismissOnEscapeKey  bool
 	NoMessageOnOpenFail      bool
 	PlaceOverMargin          zgeo.Size
-	TitledMargin             zgeo.Size
+	TitledMargin             zgeo.Rect
 	PlaceOverView            zview.View
 	FocusView                zview.View
 	PresentedFunc            func(win *zwindow.Window)
@@ -440,27 +440,32 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.SetBGColor(zstyle.DefaultBGColor())
-	if att.TitledMargin.H != 0 {
-		stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
-	}
+	//!! if att.TitledMargin.H != 0 {
+	// 	stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
+	// }
 
 	a := zgeo.Left
 	if len(barViews) == 0 {
 		a = zgeo.HorCenter
 	}
 	bar, titleLabel := MakeBar(stitle, a)
+	m := bar.Margin()
+	if m.Pos.X == 0 {
+		m.SetMinX(att.TitledMargin.Pos.X)
+		bar.SetMargin(m)
+	}
 	stack.Add(bar, zgeo.TopCenter|zgeo.HorExpand)
-	m := zgeo.SizeD(att.TitledMargin.W, 0)
-	stack.Add(view, zgeo.TopCenter|zgeo.Expand, m)
+	//	m := zgeo.SizeD(att.TitledMargin.W, 0)
+	stack.Add(view, zgeo.TopCenter|zgeo.Expand, zgeo.SizeNull)
 
-	xmargin := zstyle.DefaultRowRightMargin
+	// xmargin := zstyle.DefaultRowRightMargin
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.Vertical
 		}
-		mr := zgeo.RectMarginForSizeAndAlign(zgeo.SizeD(xmargin, 0), a)
-		bar.AddAdvanced(v, a, mr, zgeo.SizeNull, 0, false)
-		xmargin = 0
+		// mr := zgeo.RectMarginForSizeAndAlign(zgeo.SizeD(xmargin, 0), a)
+		bar.AddAdvanced(v, a, zgeo.RectNull, zgeo.SizeNull, 0, false)
+		// xmargin = 0
 	}
 	if ready != nil {
 		ready(stack, bar, titleLabel)

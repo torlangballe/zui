@@ -626,6 +626,7 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 		att = zpresent.ModalPopupAttributes
 		att.ModalDimBackground = true
 	}
+	att.TitledMargin = zgeo.RectFromXY2(zstyle.DefaultRowLeftMargin, 0, 0, 0)
 	zfields.EditOrViewStructSlice(&ns, isReadOnly, params, title, att, func(ok bool) bool {
 		if !ok {
 			if after != nil {
