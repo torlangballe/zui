@@ -376,6 +376,9 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "wrap":
 			f.Wrap = val
+			if val == "" {
+				f.Wrap = "tailtrunc"
+			}
 		case "name":
 			f.Name = val
 		case "title":
