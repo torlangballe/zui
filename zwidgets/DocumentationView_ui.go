@@ -32,16 +32,16 @@ var (
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(20, 20), "documentation:"+path)
+	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(22, 22), "documentation:"+path)
 	v.MaxSize = v.MinSize()
 	v.SetText("?")
 	v.SetColor(DocumentationDefaultIconColor())
 	m := v.Margin()
-	m.Pos.X += 1
-	m.Pos.Y -= 1
+	// m.Pos.X += 1
+	// m.Pos.Y -= 0
 	v.SetMargin(m)
 	v.SetTextAlignment(zgeo.Center)
-	v.SetFont(zgeo.FontNice(16, zgeo.FontStyleNormal))
+	v.SetFont(zgeo.FontNice(15, zgeo.FontStyleNormal))
 	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
 	v.StrokeWidth = 2
 	v.Modal = DocumentationViewDefaultModal
