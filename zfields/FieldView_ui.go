@@ -111,6 +111,7 @@ func init() {
 	RegisterTextFilter("$nowhite", func(s string) string {
 		return zstr.WhitespaceRemover.Replace(s)
 	})
+	RegisterTextFilter("$trim", strings.TrimSpace)
 	RegisterTextFilter("$lower", strings.ToLower)
 	RegisterTextFilter("$upper", strings.ToLower)
 	RegisterTextFilter("$uuid", zstr.CreateFilterFunc(zstr.IsRuneValidInUUID))
@@ -1039,7 +1040,6 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 				menu.SetColor(zgeo.ColorFromString(f.Colors[0]))
 			}
 		}
-		menu.Ratio = 0.3
 		view = menu
 		menuOwner.SelectedHandlerFunc = func() {
 			sel := menuOwner.SelectedItem()
@@ -1307,7 +1307,6 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	}
 	tv.SetPlaceholder(placeHolder)
 	tv.SetValueHandler("zfields.Filter", func(edited bool) {
-		// zlog.Info("Changed:", tv.Text())
 		v.fieldHandleValueChanged(f, edited, tv.View)
 	})
 	return tv
@@ -1318,7 +1317,7 @@ func getFilterFuncFromFilterNames(names []string, f *Field) func(string) string 
 	for _, fname := range names {
 		fn := GetTextFilter(fname)
 		if fn == nil {
-			zlog.Error("No registerd text filter for:", fname, f.FieldName)
+			zlog.Error("No registered text filter for:", fname, f.FieldName)
 			continue
 		}
 		funcs = append(funcs, fn)
@@ -1867,7 +1866,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
-				mr := zgeo.Rect{} //FromXY2(0, 7, -7, -7)
+				mr := zgeo.RectFromXY2(0, 2, 2, 0)
 				lstack.AddAdvanced(lock, zgeo.CenterRight, mr, zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
 				// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
 			}
