@@ -1,6 +1,7 @@
 package zcanvas
 
 import (
+	"math"
 	"strings"
 
 	"github.com/torlangballe/zui/zdom"
@@ -353,13 +354,21 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 }
 
 func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
-	var s zgeo.Size
+	var size zgeo.Size
 	c.SetFont(font, nil)
 	var metrics = c.context.Call("measureText", text)
-	s.W = metrics.Get("width").Float()
-	//	zlog.Info("c measure:", text)
-	s.H = font.LineHeight() * 1.1
-	return s
+	size.W = math.Ceil(metrics.Get("width").Float())
+	size.H = font.LineHeight() * 1.1
+	// if zdevice.CurrentWasmBrowser != zdevice.Chrome {
+	// 	emTopDiff = metrics.Get("emHeightAscent").Float() - abba
+	// }
+	// if text == "Workers ⓦ" || text == "Network" {
+	// 	zlog.Info("FONT:", text, font.Size,
+	// 		metrics.Get("actualBoundingBoxDescent").Float(),
+	// 		abba,
+	// 		emTopDiff)
+	// }
+	return size
 }
 
 func (c *Canvas) GoImage(cut zgeo.Rect) image.Image {
@@ -391,11 +400,6 @@ func (c *Canvas) SetGoImage(img image.Image, pos zgeo.Pos) {
 }
 
 func (c *Canvas) ZImage(ensureCopy bool, got func(img *zimage.Image)) {
-	// gi := c.GoImage(cut)
-	// if gi == nil {
-	// 	return nil
-	// }
-	// return ImageFromGo(gi)
 	surl := c.element.Call("toDataURL").String()
 	zimage.FromPath(surl, false, got)
 }

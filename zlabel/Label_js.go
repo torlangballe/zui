@@ -25,20 +25,10 @@ func (label *Label) init(text string) {
 	// zlog.Info("Label New:", label.textInfo.SplitItems, text)
 	style := label.JSStyle()
 	style.Set("textAlign", "left")
-	style.Set("display", "block")
-	// style.Set("verticalAlign", "middle")
+	style.Set("lineHeight", "1")
 	style.Set("whiteSpace", "preWrap")
-	// style.Set("white-space", "pre-wrap")
-	//	style.Set("overflow", "hidden")
-	//	style.Set("textOverflow", "clip")
-	// style.Set("wordWrap", "break-word")
-	//	white-space: pre-wrap for multi-lines
-	//	style.Set("padding-top", "3px")
-
 	label.pressWithModifierToClipboard = -1
 	label.SetColor(zstyle.DefaultFGColor())
-	// zlog.Info("LABCOL:", zstyle.DefaultFGColor)
-	//	label.SetColor(zgeo.ColorRed)
 	label.wrap = ztextinfo.WrapNone
 	label.SetObjectName(text)
 	label.SetMaxLines(1)
@@ -52,8 +42,6 @@ func (label *Label) init(text string) {
 		}
 		return false
 	})
-	// textNode := zdom.DocumentJS.Call("createTextNode", "")
-	// label.JSCall("appendChild", textNode)
 	label.SetText(text)
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	label.SetFont(f)
@@ -78,26 +66,20 @@ func (v *Label) SetText(text string) {
 	}
 	v.text = text
 	v.NativeView.SetText(text)
+	setPadding(v)
 }
 
 func setPadding(v *Label) {
 	pad := v.margin
-	div := 8.0
-	if zdevice.CurrentWasmBrowser == zdevice.Firefox {
-		div = 4
+
+	pad.Pos.Y++
+	if zdevice.CurrentWasmBrowser != zdevice.Safari {
+		pad.Pos.Y++
 	}
-	pad.Pos.Y += v.Font().Size / div
 	v.SetNativePadding(pad)
 }
 
 func (v *Label) SetBGColor(c zgeo.Color) {
-	// x := 0.0   this padding stuff messes with layout in table
-	// if c.Valid && c.Opacity() != 0 {
-	// 	x = 4
-	// }
-	// v.padding.SetMinX(x)
-	// v.padding.SetMaxX(-x)
-	// setPadding(v)
 	v.NativeView.SetBGColor(c)
 }
 
@@ -138,6 +120,7 @@ func (v *Label) SetMaxLines(max int) {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
+
 	v.NativeView.SetRect(r)
 }
 
@@ -149,20 +132,6 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 		str = "center"
 	}
 	v.JSStyle().Set("textAlign", str)
-	str = ""
-	if a&zgeo.Top != 0 {
-		str = "top"
-	} else if a&zgeo.Bottom != 0 {
-		str = "bottom"
-	}
-	if str == "" {
-		style := v.JSStyle()
-		style.Set("display", "flex")
-		style.Set("flexDirection", "column")
-		style.Set("alignItems", "center")
-	} else {
-		v.JSStyle().Set("verticalAlign", str)
-	}
 }
 
 func (v *Label) SetMargin(m zgeo.Rect) {

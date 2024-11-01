@@ -107,7 +107,6 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	} else {
 		s, _, widths = ti.GetBounds()
 	}
-	// zlog.Info("LabelCalcSize1:", v.ObjectName(), v.Text(), s)
 	s.Add(v.margin.Size.Negative())
 	// zlog.Info("LabelCalcSize2:", v.ObjectName(), v.Text(), s)
 
@@ -117,7 +116,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	if len(widths) == 1 {
 		// zlog.Info("LABELINC:", v.Text(), ti.Font.Size/5)
-		s.H += ti.Font.Size / 5
+		//!!!! s.H += ti.Font.Size / 5
 	}
 	s = s.Ceil()
 	s.W += 1

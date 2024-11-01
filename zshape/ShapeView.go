@@ -97,6 +97,10 @@ func (v *ShapeView) Init(view zview.View, shapeType Type, minSize zgeo.Size, nam
 		}
 		return false
 	})
+	// style := v.JSStyle()
+	// style.Set("display", "flex")
+	// style.Set("flexDirection", "column")
+	// style.Set("alignItems", "center")
 	v.UpdateText()
 }
 
@@ -233,8 +237,8 @@ func (v *ShapeView) UpdateText() {
 	if (v.textInfo.Text != "" || v.TextLabel != nil) && v.textInfo.Alignment != zgeo.AlignmentNone {
 		if v.TextLabel == nil {
 			v.TextLabel = zlabel.New("")
-			v.TextLabel.SetTextAlignment(zgeo.Center)
 			v.TextLabel.SetObjectName("title")
+			// v.TextLabel.JSStyle().Set("position", "relative")
 			// if v.IsImageFill {
 			// 	v.TextLabel.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // Sp visible on top of noisy image
 			// }
@@ -247,13 +251,18 @@ func (v *ShapeView) UpdateText() {
 			c.Alignment |= zgeo.VertCenter
 		}
 		c.Margin = v.TextMargin
+		c.Margin.IncMin(1, 2) //3)
 		if zdevice.CurrentWasmBrowser == zdevice.Firefox {
-			c.Margin.Pos.X -= 1
+			c.Margin.IncMin(0, 0) //3)
 		}
-		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
+		//		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
+		v.TextLabel.SetTextAlignment(zgeo.TopLeft)
 		v.TextLabel.SetFont(v.Font())
 		v.TextLabel.SetColor(v.GetStateColor(v.textInfo.Color))
 		v.TextLabel.SetText(v.textInfo.Text)
+		if v.IsPresented() {
+			v.ArrangeChildren()
+		}
 	}
 }
 

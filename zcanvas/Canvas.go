@@ -1,15 +1,15 @@
 package zcanvas
 
 import (
+	"fmt"
 	"math"
-	"strconv"
 	"sync"
 
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zreflect"
 )
 
 //	Created by Tor Langballe on /21/10/15.
@@ -22,14 +22,15 @@ type Canvas struct {
 	DownsampleImages bool
 }
 
-type measurement struct {
-	Font zgeo.Font
-	Text string
-}
-
-var measuredTexts = zcache.NewWithExpiry(60*60, false)
+var measuredTexts = zcache.NewExpiringMap[int64, zgeo.Size](60 * 60)
 var measureCanvas *Canvas
 var measureLock sync.Mutex
+
+func DumpMeasurementCache() {
+	measuredTexts.ForAll(func(key int64, value zgeo.Size) {
+		zlog.Info("Measurement:", key, value)
+	})
+}
 
 func (c *Canvas) Size() zgeo.Size {
 	return c.size
@@ -113,11 +114,12 @@ func canvasCreateGradientLocations(colors int) []float64 {
 }
 
 func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
-	m := measurement{Font: *font, Text: text}
-	hash := zreflect.HashAnyToInt64(m, "")
-	key := strconv.FormatInt(hash, 16)
-	var s zgeo.Size
-	got := measuredTexts.Get(&s, key)
+	if text == "" {
+		return zgeo.SizeD(font.Size/2, font.Size*1.2)
+	}
+	str := fmt.Sprint(*font, "_", text)
+	hash := zint.HashTo64(str)
+	s, got := measuredTexts.Get(hash)
 	if got {
 		return s
 	}
@@ -127,7 +129,7 @@ func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 		measureCanvas.SetSize(zgeo.SizeD(800, 100))
 	}
 	s = measureCanvas.MeasureText(text, font)
-	measuredTexts.Put(key, s)
+	measuredTexts.Set(hash, s)
 	measureLock.Unlock()
 	return s
 }
