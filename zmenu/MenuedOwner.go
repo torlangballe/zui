@@ -613,6 +613,7 @@ func (o *MenuedOwner) tryEditActions(item MenuedOItem, selected map[string]bool)
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	for i, item := range o.getItems() {
+		// zlog.Info("MO HandleShortCut:", item.Name, sc, item.Shortcut, item.Shortcut.Matches(sc))
 		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {
 				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above
@@ -751,11 +752,13 @@ func (o *MenuedOwner) saveToStore() {
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
 	v := zshape.NewView(shape, zgeo.SizeD(60, 20))
-	v.ImageMargin = zgeo.RectFromXY2(0, 0, -3, 0)
+	v.ImageMargin = zgeo.RectFromXY2(0, 0, -4, 0)
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional // both must be before SetImage
+	v.Ratio = 0.3
 	v.SetImage(nil, true, zgeo.SizeBoth(12), "images/zcore/zmenu-arrows.png", zgeo.SizeNull, nil)
 	v.SetTextAlignment(zgeo.CenterLeft)
 	v.SetSpacing(4)
+	v.SetMinSize(zgeo.SizeD(20, 22))
 	v.TextMargin = zgeo.RectFromXY2(8, 0, -20, 0)
 	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorWhite, 0.2))
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.5)
