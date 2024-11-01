@@ -4,6 +4,7 @@ package zview
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -56,9 +57,13 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 		var str string
 		cell := FindLayoutCellForView(v.View)
 		if cell != nil {
-			str = zstr.Spaced(cell.Alignment, "marg:", cell.Margin, "min:", cell.MinSize, "max:", cell.MaxSize)
+			str = zstr.Spaced(cell.Alignment, "cmarg:", cell.Margin, "cmin:", cell.MinSize, "cmax:", cell.MaxSize)
 		}
-		zlog.Info("NativeView:", v.Hierarchy(), v.Rect(), str)
+		mo, _ := view.(MarginOwner)
+		if mo != nil {
+			str += fmt.Sprint(" vmarg: ", mo.Margin())
+		}
+		zlog.Info("NativeView:", v.Hierarchy(), zlog.Pointer(view), reflect.TypeOf(view), v.Rect(), str)
 	})
 }
 
