@@ -50,8 +50,9 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v.flags = flags
 	v.location = time.Local
 	v.Init(v, false, name)
-	v.SetSpacing(-8)
-	v.SetMargin(zgeo.RectFromXY2(6, -4, -8, 8))
+	v.SetSpacing(0)
+	v.SetMinSize(zgeo.SizeD(20, 30))
+	v.SetMargin(zgeo.RectFromXY2(4, 2, -2, -2))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.7, 1))
 
@@ -106,10 +107,6 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 			v.Add(spacing, zgeo.CenterLeft)
 		}
 	}
-	clear := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(12, 14))
-	clear.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-		v.Clear()
-	})
 	if flags&ztime.TimeFieldTimeOnly == 0 {
 		v.dayText = addText(v, 2, "D", "")
 		v.monthText = addText(v, 2, "M", "/")
@@ -120,16 +117,18 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 			}
 			v.yearText = addText(v, cols, "Y", "/")
 		}
-		v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(0, 0))
 		if flags&ztime.TimeFieldNoCalendar == 0 {
 			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
 			v.calendar.SetUsable(false)
 			v.calendar.SetPressedHandler("", zkeyboard.ModifierNone, v.popCalendar)
 			v.Add(v.calendar, zgeo.CenterLeft, zgeo.SizeD(11, 0))
 		}
-	} else {
-		v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(0, 0))
 	}
+	clear := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(12, 14))
+	clear.SetPressedHandler("", zkeyboard.ModifierNone, func() {
+		v.Clear()
+	})
+	v.Add(clear, zgeo.CenterLeft, zgeo.SizeD(2, 0))
 	flipDayMonth(v, false)
 	return v
 }
@@ -176,7 +175,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string) *Tex
 		})
 	}
 	tv.SetTextAlignment(zgeo.Right)
-	v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-2, 2))
+	v.Add(tv, zgeo.TopLeft, zgeo.SizeD(2, 2))
 	tv.SetKeyHandler(v.handleReturn)
 	return tv
 }
