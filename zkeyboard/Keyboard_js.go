@@ -4,17 +4,33 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
-	"github.com/torlangballe/zutil/zstr"
 )
 
 func GetKeyModFromEvent(event js.Value) KeyMod {
 	var km KeyMod
-	gkey := event.Get("which")
-	km.Char = event.Get("key").String()
-	if !gkey.IsUndefined() {
-		km.Key = Key(gkey.Int())
+	which := event.Get("which")
+	if !which.IsUndefined() {
+		km.Key = Key(which.Int())
 	}
-	if zstr.StringsContain([]string{"Control", "Shift", "Meta", "Alt"}, km.Char) {
+	key := event.Get("key")
+	if !key.IsUndefined() {
+		km.Char = key.String()
+	}
+	switch km.Char {
+	case "Control":
+		km.Modifier = ModifierControl
+		km.Key = KeyNone
+		km.Char = ""
+	case "Shift":
+		km.Modifier = ModifierShift
+		km.Key = KeyNone
+		km.Char = ""
+	case "Meta":
+		km.Modifier = ModifierCommand
+		km.Key = KeyNone
+		km.Char = ""
+	case "Alt":
+		km.Modifier = ModifierAlt
 		km.Key = KeyNone
 		km.Char = ""
 	}
@@ -24,6 +40,7 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 	if zdom.GetBoolIfDefined(event, "ctrlKey") {
 		km.Modifier |= ModifierControl
 	}
+	// zlog.Info("KM:", km.Char, "key:", km.Key, "mod1:", km.Modifier)
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
 		km.Modifier |= MetaModifier
 	}
