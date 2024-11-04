@@ -46,6 +46,7 @@ var (
 	SetPresentReadyFunc            func(v View, beforeWindow bool)
 	RemoveKeyPressHandlerViewsFunc func(v View)
 	FindLayoutCellForView          func(v View) *zgeo.LayoutCell
+	customStylePrefixes            = []string{"-moz-", "-webkit-", ""}
 )
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
@@ -242,6 +243,9 @@ func (v *NativeView) SetBGColor(c zgeo.Color) {
 
 func (v *NativeView) BGColor() zgeo.Color {
 	str := v.JSStyle().Get("backgroundColor").String()
+	if str == "" {
+		return zgeo.ColorClear
+	}
 	return zgeo.ColorFromString(str)
 }
 
@@ -253,9 +257,9 @@ func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
 		}
 		srad := fmt.Sprintf("%dpx", int(radius))
 		pos := "border-" + strings.Replace(a.String(), "|", "-", -1) + "-radius"
-		style.Set("-moz-"+pos, srad)
-		style.Set("-webkit-"+pos, srad)
-		style.Set(pos, srad)
+		for _, pre := range customStylePrefixes {
+			style.Set(pre+pos, srad)
+		}
 	}
 }
 
@@ -275,9 +279,20 @@ func (v *NativeView) SetSelectable(on bool) {
 func (v *NativeView) SetCorner(radius float64) {
 	style := v.JSStyle()
 	s := fmt.Sprintf("%dpx", int(radius))
-	style.Set("-moz-border-radius", s)
-	style.Set("-webkit-border-radius", s)
-	style.Set("border-radius", s)
+	for _, pre := range customStylePrefixes {
+		style.Set(pre+"border-radius", s)
+	}
+}
+
+func (v *NativeView) Corner() float64 {
+	var corner float64
+	style := v.JSStyle()
+	for _, pre := range customStylePrefixes {
+		if zdom.GetIfFloat(style, pre+"border-radius", &corner) {
+			return corner
+		}
+	}
+	return 0
 }
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
@@ -997,7 +1012,7 @@ func setContentOffsetAnimated(v *NativeView, vertical bool, n float64, animateDo
 		args["left"] = n - o.X
 	}
 	if animateDone != nil {
-		ztimer.StartIn(0.55, animateDone)
+		ztimer.StartIn(0.6, animateDone) // this is a hack, should test when not changing anymore?
 	}
 	v.JSCall("scrollBy", args)
 	return
