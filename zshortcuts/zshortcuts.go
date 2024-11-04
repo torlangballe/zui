@@ -29,6 +29,9 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	nv := view.Native()
 	var col zgeo.Color
 	var o float32
+	oldBG := view.Native().BGColor()
+	// zlog.Info("StrokeViewToShowShortcutHandling", oldBG)
+	oldCorner := view.Native().Corner()
 	if scut.Key == 0 && scut.Char == "" && scut.Modifier&viewKM.Modifier != 0 {
 		col = zgeo.ColorYellow
 		o = 0.3
@@ -52,8 +55,8 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	}
 	timer.Set(0.7, false, func() bool {
 		if viewKM.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier != viewKM.Modifier {
-			nv.SetCorner(0)
-			nv.SetBGColor(zgeo.ColorClear)
+			nv.SetCorner(oldCorner)
+			nv.SetBGColor(oldBG)
 			return false
 		}
 		return true
