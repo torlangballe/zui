@@ -3,6 +3,7 @@ package zdom
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"syscall/js"
 
@@ -42,8 +43,21 @@ func GetFontStyle(font *zgeo.Font) string {
 // 	}
 // }
 
-func GetBoolIfDefined(e js.Value, get string) bool {
-	v := e.Get(get)
+func GetIfFloat(e js.Value, name string, f *float64) bool {
+	v := e.Get(name)
+	if v.IsUndefined() {
+		return false
+	}
+	n, err := strconv.ParseFloat(v.String(), 64)
+	if err != nil {
+		return false
+	}
+	*f = n
+	return true
+}
+
+func GetBoolIfDefined(e js.Value, name string) bool {
+	v := e.Get(name)
 	if v.IsUndefined() {
 		return false
 	}
