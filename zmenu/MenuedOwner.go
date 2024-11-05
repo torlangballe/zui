@@ -522,10 +522,12 @@ func (o *MenuedOwner) popup() {
 				zpresent.Close(stack, false, nil)
 				o.saveToStore()
 				return
-			} else {
-				// zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
-				list.LayoutCells(true)
 			}
+			list.LayoutCells(true)
+			if !o.IsMultiple {
+				zpresent.Close(stack, false, nil)
+			}
+			// zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
 		}
 		o.updateTitleAndImage()
 		for _, id := range ids {
@@ -537,7 +539,7 @@ func (o *MenuedOwner) popup() {
 		//!!! if !o.IsMultiple { // && fromPressed {
 		// 	// list.HandleSelectionChangedFunc = nil // we do this so we don't get any mouse-up extra events
 		// 	// zlog.Info("MenuPopup close", zlog.CallingStackString())
-		// 	zpresent.Close(stack, false, nil)
+		// zpresent.Close(stack, false, nil)
 		// }
 		if o.SelectedHandlerFunc != nil {
 			o.SelectedHandlerFunc()

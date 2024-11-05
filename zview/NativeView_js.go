@@ -1310,7 +1310,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		if handler(*movingPos, zbool.True) {
-			// e.Call("preventDefault")
+			e.Call("stopPropagation")
+			e.Call("preventDefault")
 		}
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -1334,8 +1335,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			// v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
 			if movingPos != nil {
 				pos := getMousePosRelative(v, args[0])
-				// zlog.Info("MM:", pos)
 				if handler(pos, zbool.Unknown) {
+					args[0].Call("stopPropagation")
 					args[0].Call("preventDefault")
 				}
 			}
