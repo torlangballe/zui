@@ -154,16 +154,17 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 			}
 		})
 	}
+	if items == nil && o.CreateItemsFunc != nil {
+		items = o.CreateItemsFunc()
+	}
 	if o.StoreKey != "" {
 		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
+		// zlog.Info("MO.Build:", o.StoreKey, dict, got, len(items))
 		if got {
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
+				// zlog.Info("MO.Build2:", o.StoreKey, i, item, str)
 				_, items[i].Selected = dict[str]
-			}
-		} else {
-			if o.CreateItemsFunc != nil {
-				items = o.CreateItemsFunc()
 			}
 		}
 	}
@@ -400,6 +401,7 @@ func (o *MenuedOwner) popup() {
 			o.hasShortcut = true
 		}
 	}
+	o.getItems()
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := zgridlist.NewView("menu-list")
@@ -518,6 +520,7 @@ func (o *MenuedOwner) popup() {
 					o.updateTitleAndImage()
 				}
 				zpresent.Close(stack, false, nil)
+				o.saveToStore()
 				return
 			} else {
 				// zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
@@ -531,15 +534,16 @@ func (o *MenuedOwner) popup() {
 		for id := range oldSelected {
 			list.UpdateCellSelectionFunc(list, id)
 		}
-		if !o.IsMultiple { // && fromPressed {
-			// list.HandleSelectionChangedFunc = nil // we do this so we don't get any mouse-up extra events
-			// zlog.Info("MenuPopup close", zlog.CallingStackString())
-			zpresent.Close(stack, false, nil)
-		}
+		//!!! if !o.IsMultiple { // && fromPressed {
+		// 	// list.HandleSelectionChangedFunc = nil // we do this so we don't get any mouse-up extra events
+		// 	// zlog.Info("MenuPopup close", zlog.CallingStackString())
+		// 	zpresent.Close(stack, false, nil)
+		// }
 		if o.SelectedHandlerFunc != nil {
 			o.SelectedHandlerFunc()
 		}
 		list.UnselectAll(false)
+		o.saveToStore()
 	}
 	att := zpresent.AttributesNew()
 	att.Modal = true
@@ -738,6 +742,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 }
 
 func (o *MenuedOwner) saveToStore() {
+	// zlog.Info("MO SAVE", o.StoreKey, len(o.items))
 	if o.StoreKey != "" {
 		dict := zdict.Dict{}
 		for _, item := range o.items {
@@ -746,6 +751,7 @@ func (o *MenuedOwner) saveToStore() {
 				dict[str] = true
 			}
 		}
+		// zlog.Info("MO SAVE2", dict)
 		zkeyvalue.DefaultStore.SetDict(dict, o.StoreKey, true)
 	}
 }

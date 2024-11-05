@@ -43,10 +43,10 @@ var (
 	lastUploadClick time.Time
 	movingPos       *zgeo.Pos
 
-	SetPresentReadyFunc            func(v View, beforeWindow bool)
-	RemoveKeyPressHandlerViewsFunc func(v View)
-	FindLayoutCellForView          func(v View) *zgeo.LayoutCell
-	customStylePrefixes            = []string{"-moz-", "-webkit-", ""}
+	SetPresentReadyFunc func(v View, beforeWindow bool)
+	// RemoveKeyPressHandlerViewsFunc func(v View)
+	FindLayoutCellForView func(v View) *zgeo.LayoutCell
+	customStylePrefixes   = []string{"-moz-", "-webkit-", ""}
 )
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
@@ -718,7 +718,7 @@ func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 		panic("NativeView AddChild child not native")
 	}
 	if callRemoveFuncs {
-		RemoveKeyPressHandlerViewsFunc(child)
+		// RemoveKeyPressHandlerViewsFunc(child)
 		nv.PerformAddRemoveFuncs(false)
 	}
 	nv.Element = v.JSCall("removeChild", nv.Element) // we need to set it since  it might be accessed for ObjectName etc still in collapsed containers

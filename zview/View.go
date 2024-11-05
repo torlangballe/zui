@@ -8,6 +8,7 @@ package zview
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zslice"
 )
 
 type View interface {
@@ -60,7 +61,7 @@ type Layouter interface {
 }
 
 type MinSizeGettable interface {
-	GetMinSize(s zgeo.Size)
+	MinSize() zgeo.Size
 }
 
 type ToolTipAdder interface {
@@ -73,6 +74,69 @@ type MaxSizeGettable interface {
 
 type ChildReplacer interface {
 	ReplaceChild(child, with View)
+}
+
+type callback struct {
+	id     int64
+	delete func()
+}
+
+// viewCallbacks are arbitrary items associated with a view.
+// They are given an id on add, and have a delete function.
+// On view removal the function is called and the attachment removed.
+// They are actually used to associate an event callback function to a view,
+// removing it if the view or its window is deleted.
+
+var viewCallbacks = map[View][]callback{}
+
+func RegisterViewCallback(view View, id int64, del func()) {
+	viewCallbacks[view] = append(viewCallbacks[view], callback{id, del})
+	view.Native().AddOnRemoveFunc(func() {
+		RemoveAViewCallback(view, id)
+	})
+}
+
+func HasViewCallback(view View, id int64) bool {
+	for _, c := range viewCallbacks[view] {
+		if c.id == id {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveACallback(id int64) {
+	for v := range viewCallbacks {
+		if RemoveAViewCallback(v, id) {
+			return
+		}
+	}
+}
+
+func RemoveAViewCallback(view View, id int64) bool {
+	s, has := viewCallbacks[view]
+	if has {
+		for i, c := range viewCallbacks[view] {
+			if c.id == id {
+				if c.delete != nil {
+					c.delete()
+				}
+				zslice.RemoveAt(&s, i)
+				viewCallbacks[view] = s
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func RemoveViewCallbacks(view View) {
+	for _, c := range viewCallbacks[view] {
+		if c.delete != nil {
+			c.delete()
+		}
+	}
+	delete(viewCallbacks, view)
 }
 
 // ReplaceChild(child, with zview.View)

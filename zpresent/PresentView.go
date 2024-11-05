@@ -146,12 +146,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.FromNativeView(nv)
-			w.AddKeypressHandler(v, func(km zkeyboard.KeyMod, down bool) bool {
-				if km.Modifier == zkeyboard.ModifierNone && km.Key == zkeyboard.KeyEscape && down {
-					Close(v, true, nil)
-					return true
-				}
-				return false
+			w.AddKeyPressHandler(v, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() {
+				Close(v, true, nil)
 			})
 		}
 	} else {
@@ -213,7 +209,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		v.SetRect(r)
 	}
 	FirstPresented = true
-	win.SetOnKeyEvents()
 	win.ViewsStack = append(win.ViewsStack, v)
 
 	Presenting = false

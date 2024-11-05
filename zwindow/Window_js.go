@@ -3,10 +3,10 @@ package zwindow
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"strings"
 	"syscall/js"
 
-	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
@@ -15,7 +15,6 @@ import (
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
-	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -42,11 +41,6 @@ func init() {
 	winMain.Element = zdom.WindowJS
 	windows[winMain] = true
 	winMain.updateScale()
-
-	zview.RemoveKeyPressHandlerViewsFunc = func(v zview.View) {
-		win := FromNativeView(v.Native())
-		win.removeKeyPressHandlerViews(v)
-	}
 }
 
 func (w *Window) Rect() zgeo.Rect {
@@ -112,9 +106,11 @@ func Open(o Options) *Window {
 	win.ID = o.ID
 	windows[win] = true
 
-	// zlog.Info("OPENEDWIN:", o.URL, specs, win.Element, len(windows))
 	win.Element.Set("onbeforeunload", js.FuncOf(func(a js.Value, array []js.Value) interface{} {
 		// zlog.Info("Other window closed or refreshed")
+		for _, id := range win.callbackIDs {
+			zview.RemoveACallback(id)
+		}
 		if win.ProgrammaticView != nil {
 			pnv := win.ProgrammaticView.Native()
 			pnv.PerformAddRemoveFuncs(true)
@@ -253,104 +249,55 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.Element.Get("history").Call("pushState", "", "", surl)
 }
 
-func (win *Window) SetOnKeyEvents() {
-	setOnKeyEvent(win, true)
-	setOnKeyEvent(win, false)
-}
-
-func setOnKeyEvent(win *Window, down bool) {
-	eventName := "onkeyup"
+func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down bool, handler func()) (id int64) {
+	name := "keyup"
 	if down {
-		eventName = "onkeydown"
+		name = "keydown"
 	}
 	doc := win.Element.Get("document")
-	doc.Set(eventName, js.FuncOf(func(val js.Value, args []js.Value) interface{} {
+	id = rand.Int63()
+	win.callbackIDs = append(win.callbackIDs, id)
+	jfunc := js.FuncOf(func(val js.Value, args []js.Value) any { // TODO: release function
+		if !zview.HasViewCallback(view, id) {
+			return nil
+		}
 		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), eventName, down, win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
 		if !win.Element.Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
-		km := zkeyboard.GetKeyModFromEvent(args[0])
-		// zlog.Info("LEN:", len(win.ViewsStack), zlog.CallingStackString())
-		top := TopView(win).Native()
-		if len(win.keyHandlers) != 0 {
-			var used bool
-			// zlog.Info("win key handlers:", km.Key, len(win.keyHandlers), top.Hierarchy())
-			for _, h := range win.keyHandlers {
-				// zlog.Info("win key2:", down, km.Key, h.view.Native().Hierarchy(), top.Hierarchy())
-				if top == h.view.Native() || top.IsParentOf(h.view.Native()) {
-					focused := top.Native().GetFocusedChildView(true)
-					// zlog.Info("win key3:", km.Key, h.view.Native().Hierarchy(), top.Hierarchy(), focused != nil)
-					// if focused != nil {
-					// 	zlog.Info("win key1: foc:", focused.Native().Hierarchy())
-					// }
-					// zlog.Info("win key2:", key, view.Native().Hierarchy(), top.Hierarchy())
-					if focused != nil { //&& focused != view.Native() {
-						kc, _ := focused.(zkeyboard.KeyConsumer)
-						if kc == nil {
-							// if km.Key != zkeyboard.KeyEscape && !km.Key.IsReturnish() {
-							// 	continue
-							// }
-						} else if kc.ConsumesKey(km) {
-							continue
-						}
-					}
-					if h.handler(km, down) {
-						used = true
-						break
-					}
-				}
-			}
-			if used {
-				event := args[0]
-				event.Call("preventDefault") // so they don't scroll scrollview with other stuff on top of it
-			}
+		ekm := zkeyboard.GetKeyModFromEvent(args[0])
+		if !ekm.Matches(km) {
+			return nil
 		}
+		handler()
 		return nil
-	}))
-}
-
-func deleteKeyHandlers(win *Window, delView zview.View) {
-	for i := 0; i < len(win.keyHandlers); {
-
-		if win.keyHandlers[i].view == delView {
-			zslice.RemoveAt(&win.keyHandlers, i)
-		} else {
-			i++
-		}
-	}
-}
-
-func (win *Window) removeKeyPressHandlerViews(root zview.View) {
-	// fmt.Printf("removeKeyPressHandlerViews1: %+v\n", root)
-	// zlog.Info("removeKeyPressHandlerViews:", root.ObjectName(), reflect.ValueOf(root).Type())
-	includeCollapsed := false
-	zcontainer.ViewRangeChildren(root, true, includeCollapsed, func(view zview.View) bool {
-		// zlog.Info("removeKeyPressHandlerView try:", view.ObjectName(), win != nil)
-		if win != nil && win.keyHandlers != nil {
-			deleteKeyHandlers(win, view)
-		}
-		return true
 	})
+	doc.Call("addEventListener", name, jfunc)
+	zview.RegisterViewCallback(view, id, func() {
+		doc.Call("removeEventListener", name, jfunc)
+	})
+	return id
 }
 
-func (win *Window) AddKeypressHandler(v zview.View, handler func(km zkeyboard.KeyMod, down bool) bool) {
-	if handler == nil {
-		deleteKeyHandlers(win, v)
-		return
+func (win *Window) AddFocusHandler(view zview.View, focus bool, handler func()) (id int64) {
+	name := "blur"
+	if focus {
+		name = "focus"
 	}
-	v.Native().AddOnRemoveFunc(func() {
-		deleteKeyHandlers(win, v)
-	})
-	win.keyHandlers = append(win.keyHandlers, keyHandler{v, handler})
-	if v.Native().IsPresented() {
-		win.SetOnKeyEvents()
-	}
-	// zlog.Info("Window AddKeypressHandler", v.ObjectName(), len(win.keyHandlers))
-	doc := win.Element.Get("document")
-	doc.Set("onvisibilitychange", js.FuncOf(func(val js.Value, vs []js.Value) interface{} {
-		win.SetOnKeyEvents()
+	id = rand.Int63()
+	win.callbackIDs = append(win.callbackIDs, id)
+	jfunc := js.FuncOf(func(val js.Value, args []js.Value) any {
+		if !zview.HasViewCallback(view, id) {
+			return nil
+		}
+		handler()
 		return nil
-	}))
+	})
+	win.Element.Call("addEventListener", name, jfunc)
+	zview.RegisterViewCallback(view, id, func() {
+		win.Element.Call("removeEventListener", name, jfunc)
+	})
+	return id
 }
 
 func FromNativeView(v *zview.NativeView) *Window {
@@ -423,7 +370,6 @@ func getRectFromOptions(o Options) (rect zgeo.Rect, gotPos, gotSize bool) {
 	}
 	if o.Alignment != zgeo.AlignmentNone {
 		zlog.Assert(!o.Size.IsNull())
-		// wrects := []zgeo.Rect{GetMain().Rect()}
 		srect := zscreen.GetMain().Rect
 		wrects := []zgeo.Rect{srect}
 		var minSum float64

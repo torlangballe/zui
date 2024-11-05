@@ -574,7 +574,6 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	}
 	v.updateCellBackgrounds(nil)
 	v.ExposeIn(0.0001)
-	// zlog.Info("GL pressed with selection:", down, selectionChanged, v.selectedIDs)
 	if down.IsFalse() && selectionChanged && v.HandleSelectionChangedFunc != nil {
 		v.HandleSelectionChangedFunc()
 	}
@@ -1237,12 +1236,8 @@ func (v *GridListView) updateBorder() {
 }
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	v.updateBorder()
-	// zlog.Info("List ReadyToShow:", v.ObjectName(), v.CreateCellFunc != nil)
 	if beforeWindow && v.BorderColor.Valid {
 	}
-	// if !beforeWindow && (v.Selectable || v.MultiSelectable) {
-	// 	zwindow.FromNativeView(&v.NativeView).AddKeypressHandler(v.View, v.handleKeyPressed)
-	// }
 }
 
 func (v *GridListView) SetMargin(m zgeo.Rect) {

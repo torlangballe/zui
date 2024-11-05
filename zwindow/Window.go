@@ -5,7 +5,6 @@ package zwindow
 import (
 	"net/url"
 
-	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
@@ -13,12 +12,6 @@ import (
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
-)
-
-var (
-	winMain       *Window
-	barCalculated bool
-	// RemovePresentedWindowFunc func(view zview.View)
 )
 
 type Window struct {
@@ -29,12 +22,12 @@ type Window struct {
 	ID                  string
 	ProgrammaticView    zview.View // this is set if the window has zui views added to it. If from URL, it is nil
 	ViewsStack          []zview.View
+	Scale               float64
 
 	ResizeHandlingView zview.View
 	resizeTimer        *ztimer.Timer
 	dismissed          bool // this stores if window is dismissed or closed for other reasons, used by present close functions
-	keyHandlers        []keyHandler
-	Scale              float64
+	callbackIDs        []int64
 }
 
 type Options struct {
@@ -46,15 +39,12 @@ type Options struct {
 	FullScreenID int64 // screen id to go full screen on. -1 is use main. 0 is ignore.
 }
 
-type keyHandler struct {
-	view    zview.View
-	handler func(km zkeyboard.KeyMod, down bool) bool
-}
-
 var (
 	windows                          = map[*Window]bool{}
 	PresentedViewCurrentIsParentFunc func(v zview.View) bool
 	barHeight                        = 28.0
+	winMain                          *Window
+	barCalculated                    bool
 )
 
 func GetMain() *Window {

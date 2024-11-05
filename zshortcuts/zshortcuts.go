@@ -15,15 +15,15 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-type viewMod struct {
-	view zview.View
-	mod  zkeyboard.KeyMod
-}
+// type viewMod struct {
+// 	view zview.View
+// 	mod  zkeyboard.KeyMod
+// }
 
 var (
-	helpStacks       = map[*zwindow.Window]*zcontainer.StackView{}
-	hightlightTimers = map[viewMod]*ztimer.Repeater{}
-	showing          bool
+	helpStacks      = map[*zwindow.Window]*zcontainer.StackView{}
+	highlightTimers = map[zview.View]*ztimer.Repeater{}
+	showing         bool
 )
 
 func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zkeyboard.KeyMod) bool {
@@ -31,9 +31,6 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	nv := view.Native()
 	var col zgeo.Color
 	var o float32
-	oldBG := view.Native().BGColor()
-	// zlog.Info("StrokeViewToShowShortcutHandling", oldBG)
-	oldCorner := view.Native().Corner()
 	if scut.Key == 0 && scut.Char == "" && scut.Modifier&viewKM.Modifier != 0 {
 		col = zgeo.ColorYellow
 		o = 0.3
@@ -49,16 +46,20 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	}
 	nv.SetCorner(3)
 	nv.SetBGColor(col.WithOpacity(o))
-	vm := viewMod{nv.View, scut}
-	timer := hightlightTimers[vm]
+	// vm := viewMod{nv.View, scut}
+	timer := highlightTimers[nv.View]
 	if timer == nil {
 		timer = ztimer.RepeaterNew()
-		hightlightTimers[vm] = timer
+		highlightTimers[nv.View] = timer
 	}
+	id := zwindow.FromNativeView(nv).AddFocusHandler(nv, false, func() {
+		nv.SetBGColor(zgeo.ColorClear)
+	})
+
 	timer.Set(0.7, false, func() bool {
 		if viewKM.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier == zkeyboard.ModifierNone || zkeyboard.CurrentKeyDown.Modifier != viewKM.Modifier {
-			nv.SetCorner(oldCorner)
-			nv.SetBGColor(oldBG)
+			zview.RemoveACallback(id)
+			nv.SetBGColor(zgeo.ColorClear)
 			return false
 		}
 		return true
@@ -66,8 +67,8 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	return false
 }
 
-func RegisterShortCutHelperAreaForWindow(w *zwindow.Window, stack *zcontainer.StackView) {
-	helpStacks[w] = stack
+func RegisterShortCutHelperAreaForWindow(win *zwindow.Window, stack *zcontainer.StackView) {
+	helpStacks[win] = stack
 }
 
 func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {

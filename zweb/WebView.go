@@ -51,13 +51,10 @@ func (v *WebView) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	win := zwindow.FromNativeView(&v.NativeView)
-	win.AddKeypressHandler(v.View, func(km zkeyboard.KeyMod, down bool) bool {
+	km := zkeyboard.KeyMod{Key: 'R', Modifier: zkeyboard.ModifierControl}
+	win.AddKeyPressHandler(v.View, km, true, func() {
 		// Note: You have to click in the title bar or something of the window, as the WebView itself is in an iframe and doesn't respond
-		if down && km.Key == 'R' && km.Modifier == zkeyboard.ModifierControl {
-			v.SetURL(v.url)
-			return true
-		}
-		return false
+		v.SetURL(v.url)
 	})
 }
 
