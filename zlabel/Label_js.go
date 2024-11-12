@@ -1,6 +1,10 @@
 package zlabel
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
@@ -137,4 +141,24 @@ func (v *Label) SetTextAlignment(a zgeo.Alignment) {
 func (v *Label) SetMargin(m zgeo.Rect) {
 	v.margin = m
 	setPadding(v)
+}
+
+func (v *Label) SetDropShadow(shadow ...zstyle.DropShadow) {
+	var parts []string
+	for _, s := range shadow {
+		str := fmt.Sprintf("%dpx %dpx %dpx %s ", int(s.Delta.W), int(s.Delta.H), int(s.Blur), zdom.MakeRGBAString(s.Color))
+		parts = append(parts, str)
+	}
+	v.SetJSStyle("textShadow", strings.Join(parts, ", "))
+}
+
+func (v *Label) OutsideDropStroke(delta float64, col zgeo.Color) {
+	var drops []zstyle.DropShadow
+	for _, x := range []float64{-1, 1} {
+		for _, y := range []float64{-1, 1} {
+			drop := zstyle.MakeDropShadow(x*delta, y*delta, 0, col)
+			drops = append(drops, drop)
+		}
+	}
+	v.SetDropShadow(drops...)
 }
