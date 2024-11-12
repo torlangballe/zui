@@ -163,3 +163,7 @@ func (s Styling) SpacingOrMax(max float64) float64 {
 	}
 	return math.Max(max, s.Spacing)
 }
+
+func MakeDropShadow(dx, dy float64, blur float32, col zgeo.Color) DropShadow {
+	return DropShadow{Delta: zgeo.SizeD(dx, dy), Blur: blur, Color: col}
+}
