@@ -157,10 +157,12 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	if items == nil && o.CreateItemsFunc != nil {
 		items = o.CreateItemsFunc()
 	}
+	var readKeyStore bool
 	if o.StoreKey != "" {
 		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
 		// zlog.Info("MO.Build:", o.StoreKey, dict, got, len(items))
 		if got {
+			readKeyStore = true
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
 				// zlog.Info("MO.Build2:", o.StoreKey, i, item, str)
@@ -173,6 +175,10 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		delete(menuOwnersMap, view)
 	})
 	menuOwnersMap[view] = o
+	// zlog.Info("MO.Build:", o.StoreKey, readKeyStore, o.SelectedHandlerFunc != nil)
+	if readKeyStore && o.SelectedHandlerFunc != nil {
+		o.SelectedHandlerFunc()
+	}
 }
 
 func OwnerForView(view zview.View) *MenuedOwner {
