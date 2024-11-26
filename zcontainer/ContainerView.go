@@ -206,7 +206,6 @@ func (v *ContainerView) SetSingleOrientation(single bool) {
 }
 
 func (v *ContainerView) AddCell(cell Cell, index int) (cvs *Cell) {
-	// zlog.Info("AddCell:", v.ObjectName(), index)
 	if index < 0 || index >= len(v.Cells) {
 		v.Cells = append(v.Cells, cell)
 		if cell.View != nil {
