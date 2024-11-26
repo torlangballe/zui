@@ -16,7 +16,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zscreen"
 )
@@ -238,24 +237,8 @@ func (v *ShapeView) UpdateText() {
 		if v.TextLabel == nil {
 			v.TextLabel = zlabel.New("")
 			v.TextLabel.SetObjectName("title")
-			// v.TextLabel.JSStyle().Set("position", "relative")
-			// if v.IsImageFill {
-			// 	v.TextLabel.SetDropShadow(zstyle.DropShadow{Blur: 2, Color: zgeo.ColorBlack}) // Sp visible on top of noisy image
-			// }
-			v.Add(v.TextLabel, zgeo.Center|zgeo.MarginIsOffset, zgeo.SizeD(-1, 0))
-			// zlog.Info("SV.UpdateText add:", v.Hierarchy(), v.textInfo.Alignment, v.textInfo.Text)
+			v.AddAdvanced(v.TextLabel, zgeo.Center, v.TextMargin, zgeo.SizeNull, -1, false)
 		}
-		c, _ := v.FindCellWithName("title")
-		c.Alignment = v.textInfo.Alignment
-		if v.textInfo.Alignment&zgeo.Vertical == 0 {
-			c.Alignment |= zgeo.VertCenter
-		}
-		c.Margin = v.TextMargin
-		c.Margin.IncMin(1, 2) //3)
-		if zdevice.CurrentWasmBrowser == zdevice.Firefox {
-			c.Margin.IncMin(0, 0) //3)
-		}
-		//		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
 		v.TextLabel.SetTextAlignment(zgeo.TopLeft)
 		v.TextLabel.SetFont(v.Font())
 		v.TextLabel.SetColor(v.GetStateColor(v.textInfo.Color))
