@@ -217,7 +217,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	col := v.Color()
 	if col.Valid {
 		var o = col.Opacity()
-		if !v.Usable() {
+		if !v.IsUsable() {
 			o *= 0.6
 		}
 		canvas.SetColor(v.GetStateColor(col.WithOpacity(o)))
@@ -225,7 +225,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 	}
 	if v.StrokeWidth != 0 {
 		var o = v.StrokeColor.Opacity()
-		if !v.Usable() {
+		if !v.IsUsable() {
 			o *= 0.6
 		}
 		canvas.SetColor(v.GetStateColor(v.StrokeColor).WithOpacity(o))

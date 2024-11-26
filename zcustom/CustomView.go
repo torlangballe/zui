@@ -137,7 +137,7 @@ func (v *CustomView) GetStateColor(col zgeo.Color) zgeo.Color {
 			col = col.Mixed(zgeo.ColorBlack, 0.5)
 		}
 	}
-	if !v.Usable() {
+	if !v.IsUsable() {
 		col = col.WithOpacity(0.3)
 	}
 	return col

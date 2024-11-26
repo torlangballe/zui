@@ -1004,13 +1004,6 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 		menuOwner := zmenu.NewMenuedOwner()
 		menuOwner.IsStatic = static
 		menuOwner.IsMultiple = isSlice
-		if f.HasFlag(FlagIsEdit) {
-			menuOwner.AddValueFunc = func() any {
-				zlog.Assert(isSlice)
-				e := zslice.MakeAnElementOfSliceRValType(rval)
-				return e
-			}
-		}
 		if v.params.IsEditOnNewStruct {
 			menuOwner.StoreKey = f.ValueStoreKey
 		}
@@ -1041,7 +1034,7 @@ func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zv
 			}
 		}
 		view = menu
-		menuOwner.SelectedHandlerFunc = func() {
+		menuOwner.SelectedHandlerFunc = func(edited bool) {
 			sel := menuOwner.SelectedItem()
 			if sel != nil {
 				kind := reflect.ValueOf(sel.Value).Kind()

@@ -5,6 +5,7 @@ package zview
 import (
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zgeo"
 )
 
@@ -32,8 +33,9 @@ const (
 
 	BaseZIndex = 100
 
-	ViewPresentedFlag = 1
-	ViewUsableFlag    = 2
+	ViewPresentedFlag   = 1
+	ViewUsableFlag      = 2
+	ViewNoDimUsableFlag = 4
 )
 
 var (
@@ -47,8 +49,8 @@ func (v *NativeView) IsPresented() bool {
 	return v.Flags&ViewPresentedFlag != 0
 }
 
-func (v *NativeView) IsUsable() bool {
-	return v.Flags&ViewUsableFlag != 0
+func (v *NativeView) SetDimUsable(dim bool) {
+	zbits.ChangeBit((*int64)(&v.Flags), ViewNoDimUsableFlag, !dim)
 }
 
 // AddOnRemoveFunc adds a function to call when the v is removed from its parent.

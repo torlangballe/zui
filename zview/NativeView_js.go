@@ -17,7 +17,6 @@ import (
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
-	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
@@ -226,11 +225,11 @@ func (v *NativeView) SetJSStyle(key, value string) {
 
 func (v *NativeView) SetAlpha(alpha float32) {
 	a := alpha
-	if v.IsUsable() {
-		zfloat.Minimize32(&a, 0.4)
+	if !v.IsUsable() {
+		a *= 0.4
 	}
 	v.transparency = 1 - alpha
-	v.JSStyle().Set("opacity", alpha)
+	v.JSStyle().Set("opacity", a)
 }
 
 func (v *NativeView) Alpha() float32 {
@@ -263,17 +262,14 @@ func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
 	}
 }
 
-func SetUserSelect(v *NativeView, val string) {
-	v.JSStyle().Set("user-select", val)
-	v.JSStyle().Set("-webkit-user-select", val)
-}
-
 func (v *NativeView) SetSelectable(on bool) {
 	val := "none" // https://stackoverflow.com/questions/3779534/how-do-i-disable-text-selection-with-css-or-javascript
 	if on {
 		val = "all"
 	}
-	SetUserSelect(v, val)
+	for _, pre := range customStylePrefixes {
+		v.JSStyle().Set(pre+"user-select", val)
+	}
 }
 
 func (v *NativeView) SetCorner(radius float64) {
@@ -375,7 +371,7 @@ func (v *NativeView) IsShown() bool {
 	return v.JSStyle().Get("visibility").String() != "hidden"
 }
 
-func (v *NativeView) Usable() bool {
+func (v *NativeView) IsUsable() bool {
 	dis := v.Element.Get("disabled")
 	// zlog.Info("Usable:", v.ObjectName(), dis)
 	if dis.IsUndefined() {
@@ -395,11 +391,11 @@ func (v *NativeView) SetUsable(usable bool) {
 }
 
 func (v *NativeView) setUsableAttributes(usable bool) {
-	u := usable && v.IsUsable()
+	u := usable //&& v.IsUsable()
 	v.JSSet("disabled", !u)
 	style := v.JSStyle()
 	var alpha float32 = 0.4
-	if u {
+	if u || v.Flags&ViewNoDimUsableFlag != 0 {
 		alpha = 1 - v.transparency
 	}
 	str := "none"
@@ -816,7 +812,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			globalLongPressState.downPressedTime = time.Now()
 			globalLongPressState.longTimer = ztimer.StartIn(0.5, func() {
 				if long != nil {
-					if v.Usable() {
+					if v.IsUsable() {
 						defer zdebug.RecoverFromPanic(true, invokeFunc)
 						long()
 					}
@@ -828,7 +824,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
 			v.ClearStateOnUpPress()
-			if !globalLongPressState.cancelPress && press != nil && v.Usable() {
+			if !globalLongPressState.cancelPress && press != nil && v.IsUsable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
 				// args[0].Call("stopPropagation") // this one canceled up-listener in SetPressUpDownMovedHandler for some reason
 				press()
@@ -843,7 +839,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		})
 		v.JSCall("addEventListener", "mouseup", fup)
-		// args[0].Call("stopPropagation")  a simple press handler shouldn't stop propagation
+		args[0].Call("stopPropagation")
 		return nil
 	})
 }
