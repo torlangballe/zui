@@ -36,16 +36,16 @@ import (
 
 type MenuedOwner struct {
 	View                zview.View
+	Name                string   // Name is just used for setting View Object Name for debugging
 	PopPos              zgeo.Pos // either View or PopPos
-	SelectedHandlerFunc func()
+	SelectedHandlerFunc func(edited bool)
 	GetTitleFunc        func(itemCount int) string
 	ActionHandlerFunc   func(id string)
 	CreateItemsFunc     func() []MenuedOItem
 	ClosedFunc          func()
-	AddValueFunc        func() any // if AddValueFunc != nil add/delete actions are added to menu, delete works on selected item
-	PluralableWord      string     // if set, used instead of GetTitle, and pluralized
-	TitleIsValueIfOne   bool       // if set and IsMultiple, name of value used as title if only one set
-	TitleIsAll          string     // if != "", all items are listed in title, separated by TitleIsAll string
+	PluralableWord      string // if set, used instead of GetTitle, and pluralized
+	TitleIsValueIfOne   bool   // if set and IsMultiple, name of value used as title if only one set
+	TitleIsAll          string // if != "", all items are listed in title, separated by TitleIsAll string
 	Font                *zgeo.Font
 	ImagePath           string
 	IsStatic            bool // if set, user can't set a different value, but can press and see them. Shows number of items
@@ -57,9 +57,9 @@ type MenuedOwner struct {
 	TextColor           zgeo.Color
 	HoverColor          zgeo.Color
 	MinWidth            float64
-
-	items       []MenuedOItem
-	hasShortcut bool
+	DefaultSelected     any
+	items               []MenuedOItem
+	hasShortcut         bool
 }
 
 type MenuedOItem struct {
@@ -75,11 +75,6 @@ type MenuedOItem struct {
 	Function    func()
 }
 
-const (
-	deleteValue = "$delete"
-	addValue    = "$add"
-)
-
 var (
 	MenuedOItemSeparator        = MenuedOItem{IsSeparator: true}
 	MenuedOwnerDefaultBGColor   = zstyle.ColF(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
@@ -91,11 +86,15 @@ var (
 
 func NewMenuedOwner() *MenuedOwner {
 	o := &MenuedOwner{}
+	o.Init()
+	return o
+}
+
+func (o *MenuedOwner) Init() {
 	o.Font = zgeo.FontNice(zgeo.FontDefaultSize-1, zgeo.FontStyleNormal)
 	o.HoverColor = MenuedOwnerDefaultHightlightColor()
 	o.BGColor = MenuedOwnerDefaultBGColor()
 	o.TextColor = MenuedOwnerDefaultTextColor()
-	return o
 }
 
 func MenuedAction(name string, val interface{}) MenuedOItem {
@@ -140,6 +139,7 @@ func (o *MenuedOwner) IsKeyStored() bool {
 }
 
 func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
+	var isSet bool
 	if view == nil {
 		zlog.Fatal("MO Build with view==nil")
 	} else {
@@ -154,20 +154,41 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 			}
 		})
 	}
-	if items == nil && o.CreateItemsFunc != nil {
-		items = o.CreateItemsFunc()
+	// zlog.Info("Build", o.View.ObjectName(), items == nil)
+	isFirst := (items == nil)
+	if isFirst {
+		if o.CreateItemsFunc != nil {
+			items = o.CreateItemsFunc()
+			isSet = true
+		}
 	}
-	var readKeyStore bool
 	if o.StoreKey != "" {
 		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
-		// zlog.Info("MO.Build:", o.StoreKey, dict, got, len(items))
 		if got {
-			readKeyStore = true
+			isSet = true
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
-				// zlog.Info("MO.Build2:", o.StoreKey, i, item, str)
 				_, items[i].Selected = dict[str]
 			}
+		}
+	}
+	// zlog.Info("MO.Build:", o.Name, isFirst, o.DefaultSelected != nil)
+	if isFirst && o.DefaultSelected != nil {
+		var selected bool
+		var def *MenuedOItem
+		for i, item := range items {
+			if item.Selected {
+				selected = true
+				break
+			}
+			// zlog.Info("MO.Build eq:", item.Value, o.DefaultSelected)
+			if reflect.DeepEqual(item.Value, o.DefaultSelected) {
+				def = &items[i]
+			}
+		}
+		if !selected && def != nil {
+			selected = true
+			def.Selected = true
 		}
 	}
 	o.UpdateMenuedItems(items)
@@ -175,9 +196,9 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		delete(menuOwnersMap, view)
 	})
 	menuOwnersMap[view] = o
-	// zlog.Info("MO.Build:", o.StoreKey, readKeyStore, o.SelectedHandlerFunc != nil)
-	if readKeyStore && o.SelectedHandlerFunc != nil {
-		o.SelectedHandlerFunc()
+	// zlog.Info("MO.Build done:", o.StoreKey, isSet, o.SelectedHandlerFunc != nil)
+	if isSet && o.SelectedHandlerFunc != nil {
+		o.SelectedHandlerFunc(false)
 	}
 }
 
@@ -192,6 +213,14 @@ func (o *MenuedOwner) SelectedItem() *zdict.Item {
 	}
 	si := sitems[0]
 	return &si
+}
+
+func (o *MenuedOwner) SelectedValue() any {
+	item := o.SelectedItem()
+	if item == nil {
+		return nil
+	}
+	return item.Value
 }
 
 func (o *MenuedOwner) SelectedItems() (sitems zdict.Items) {
@@ -218,13 +247,13 @@ func (o *MenuedOwner) SetTitleText(text string) {
 	}
 }
 
-func (o *MenuedOwner) updateTitleAndImage() {
+func (o *MenuedOwner) UpdateTitleAndImage() {
 	var nstr string
 	if o.IsMultiple && !o.IsStatic {
 		if o.TitleIsAll != "" {
 			var s []string
 			for _, i := range o.items {
-				// zlog.Info("updateTitleAndImage?", i.Name, i.IsAction, i.IsSeparator, i.Selected)
+				// zlog.Info("UpdateTitleAndImage?", i.Name, i.IsAction, i.IsSeparator, i.Selected)
 				if !i.IsAction && !i.IsSeparator && i.Selected {
 					s = append(s, i.Name)
 				}
@@ -236,13 +265,13 @@ func (o *MenuedOwner) updateTitleAndImage() {
 		for _, i := range o.items {
 			if !i.IsAction && !i.IsSeparator {
 				if i.Selected {
-					// zlog.Info("Menued updateTitleAndImage add", i.Name)
+					// zlog.Info("Menued UpdateTitleAndImage add", i.Name)
 					count++
 				}
 				total++
 			}
 		}
-		// zlog.Info("MO updateTitleAndImage:", len(o.items), o.TitleIsValueIfOne, count)
+		// zlog.Info("MO UpdateTitleAndImage:", len(o.items), o.TitleIsValueIfOne, count)
 		if !(o.TitleIsValueIfOne && count == 1) {
 			if o.PluralableWord != "" {
 				if count > 0 {
@@ -332,18 +361,8 @@ func (o *MenuedOwner) AddSeparator(item MenuedOItem) {
 
 func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 	// zlog.Info("Update:", zlog.Full(items), zlog.CallingStackString())
-	if o.AddValueFunc != nil && !o.IsStatic {
-		empty := (len(items) == 0)
-		if !empty {
-			items = append(items, MenuedOItemSeparator)
-		}
-		items = append(items, MenuedAction("Add", addValue))
-		if !empty {
-			items = append(items, MenuedAction("Delete", deleteValue))
-		}
-	}
 	o.items = items
-	o.updateTitleAndImage()
+	o.UpdateTitleAndImage()
 }
 
 func (o *MenuedOwner) SetSelectedValues(vals []interface{}) {
@@ -358,11 +377,15 @@ outer:
 		}
 		o.items[i].Selected = false
 	}
-	o.updateTitleAndImage()
+	o.UpdateTitleAndImage()
 }
 
 func (o *MenuedOwner) SetSelectedValue(val interface{}) {
 	o.SetSelectedValues([]interface{}{val})
+}
+
+func (o *MenuedOwner) RegenerateItems() {
+	o.getItems()
 }
 
 func (o *MenuedOwner) getItems() []MenuedOItem {
@@ -512,18 +535,17 @@ func (o *MenuedOwner) popup() {
 			o.items[i].Selected = !item.Selected
 			if item.IsAction {
 				o.items[i].Selected = false
-				if o.tryEditActions(item, oldSelected) {
-				} else if item.Function != nil {
+				if item.Function != nil {
 					go func() {
 						item.Function()
-						// o.getItems() // getItems+updateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
-						// o.updateTitleAndImage()
+						// o.getItems() // getItems+UpdateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
+						// o.UpdateTitleAndImage()
 					}()
 				} else if o.ActionHandlerFunc != nil {
 					id := item.Value.(string)
 					o.ActionHandlerFunc(id)
 					o.getItems()
-					o.updateTitleAndImage()
+					o.UpdateTitleAndImage()
 				}
 				zpresent.Close(stack, false, nil)
 				o.saveToStore()
@@ -533,9 +555,8 @@ func (o *MenuedOwner) popup() {
 			if !o.IsMultiple {
 				zpresent.Close(stack, false, nil)
 			}
-			// zlog.Info("list.HandleSelectionChangedFunc:", o.IsMultiple, ids, list != nil)
 		}
-		o.updateTitleAndImage()
+		o.UpdateTitleAndImage()
 		for _, id := range ids {
 			oldSelected[id] = true
 		}
@@ -548,7 +569,8 @@ func (o *MenuedOwner) popup() {
 		// zpresent.Close(stack, false, nil)
 		// }
 		if o.SelectedHandlerFunc != nil {
-			o.SelectedHandlerFunc()
+			// zlog.Info("Menu edited???")
+			o.SelectedHandlerFunc(true)
 		}
 		list.UnselectAll(false)
 		o.saveToStore()
@@ -580,7 +602,7 @@ func (o *MenuedOwner) popup() {
 	att.ClosedFunc = func(dismissed bool) {
 		// zlog.Info("menued closed", dismissed, o.IsMultiple)
 		if !dismissed || o.IsMultiple { // if multiple, we handle any select/deselect done
-			o.updateTitleAndImage()
+			o.UpdateTitleAndImage()
 			if o.ClosedFunc != nil {
 				o.ClosedFunc()
 			}
@@ -589,38 +611,10 @@ func (o *MenuedOwner) popup() {
 				// 	o.items[i].Selected = false
 				// }
 			}
-			o.updateTitleAndImage()
+			o.UpdateTitleAndImage()
 		}
 	}
 	zpresent.PresentView(stack, att)
-}
-
-func (o *MenuedOwner) tryEditActions(item MenuedOItem, selected map[string]bool) bool {
-	str, is := item.Value.(string)
-	if !is {
-		return false
-	}
-	if str == deleteValue {
-
-		return true
-	}
-	if str == addValue {
-		val := o.AddValueFunc()
-		var sep bool
-		for _, item := range o.items {
-			if item.IsSeparator {
-				sep = true
-				break
-			}
-		}
-		if !sep {
-			o.items = append([]MenuedOItem{MenuedOItemSeparator}, o.items...)
-		}
-		mo := MenuedOItem{Name: "New Item", Value: val, Selected: true}
-		o.items = append([]MenuedOItem{mo}, o.items...)
-		return true
-	}
-	return false
 }
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
@@ -766,6 +760,11 @@ func (o *MenuedOwner) saveToStore() {
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
 	v := zshape.NewView(shape, zgeo.SizeD(60, 20))
+	name := menu.Name
+	if name == "" {
+		name = "menu"
+	}
+	v.SetObjectName(name)
 	v.ImageMargin = zgeo.RectFromXY2(0, 0, -4, 0)
 	v.ImageAlign = zgeo.CenterRight | zgeo.Proportional // both must be before SetImage
 	v.Ratio = 0.3
