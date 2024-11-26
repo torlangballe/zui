@@ -34,7 +34,7 @@ func init() {
 			zlog.Info("onbeforeunload w:", w.ID)
 			w.Close()
 		}
-		windows = map[*Window]bool{} // this might not be necessary, as we're shutting down?
+		// windows = map[*Window]bool{} // this might not be necessary, as we're shutting down? This is trigger when adding things to document like temporary link
 		return nil
 	}))
 	winMain = New()
@@ -237,7 +237,6 @@ func (w *Window) SetScrollHandler(handler func(pos zgeo.Pos)) {
 
 func findForElement(e js.Value) *Window {
 	for w, _ := range windows {
-		// zlog.Info("win findForElement:", e, w.Element)
 		if w.Element.Equal(e) {
 			return w
 		}
@@ -336,6 +335,10 @@ func (win *Window) AddStyle() {
 		-webkit-appearance: none;
 	}
 	.znoscrollbar::-webkit-scrollbar { display: none; }
+	.zdarkscroll::-webkit-scrollbar { background-color: #555; }
+	.zdarkscroll::-webkit-scrollbar-thumb { background-color: #888; }
+}
+
 `
 	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
