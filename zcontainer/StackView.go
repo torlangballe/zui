@@ -306,7 +306,8 @@ func (v *StackView) ArrangeChildren() {
 				c.View.Show(true)
 			}
 		} else {
-			if c.View != nil {
+			if c.View != nil && !c.Collapsed {
+				zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
 				c.View.Show(false)
 			}
 		}
