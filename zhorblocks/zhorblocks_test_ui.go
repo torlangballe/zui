@@ -3,21 +3,51 @@
 package zhorblocks
 
 import (
+	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/ztime"
 )
+
+type Event struct {
+	ID        int64
+	Start     time.Time
+	End       time.Time
+	LaneID    int64
+	LaneRowID int64
+}
+
+const (
+	dogRowType = 55
+	dogLaneID  = 512
+)
+
+var testLanes = []Lane{
+	Lane{ID: dogLaneID, Name: "Dog",
+		Rows: []Row{
+			Row{Name: "German Shepard", Height: 22},
+			Row{Name: "Poodle", Height: 40},
+			Row{Name: "Snauzer", Height: 50},
+			Row{Name: "Dashund", Height: 30},
+		},
+	},
+}
+var testEvents = makeEvents()
 
 func MakeHorBlocksTestView(id string, delete bool) zview.View {
 	if delete {
 		return nil
 	}
-	scroller := NewHorBlocksView(3, 14)
-	scroller.GetViewFunc = func(index int) zview.View {
+	v := NewHorBlocksView(3, 14)
+	v.SetContentHeight(2200)
+	v.GetViewFunc = func(index int) zview.View {
 		c := zcontainer.New(strconv.Itoa(index))
 		label := zlabel.New(strconv.Itoa(index))
 		label.SetTextAlignment(zgeo.Center)
@@ -32,50 +62,56 @@ func MakeHorBlocksTestView(id string, delete bool) zview.View {
 		c.SetLongPressedHandler("jump", 0, func() {
 			d := 20.0
 			x := zview.LastPressedPos.X
-			if x < scroller.viewSize.W/2 {
+			if x < v.viewSize.W/2 {
 				d = -33
 			}
-			index := scroller.CurrentIndex()
-			scroller.SetCurrentIndex(index - d)
+			index := v.CurrentIndex()
+			v.SetCurrentIndex(index - d)
 		})
 		return c
 	}
-	return scroller
+	for _, a := range []zgeo.Alignment{zgeo.Right} { //, zgeo.Right} {
+		name := a.String()
+		pole := zcontainer.StackViewVert(name + "-pole")
+		pole.SetMinSize(zgeo.SizeD(10, 200))
+		pole.SetBGColor(zgeo.ColorBlue)
+		pole.SetZIndex(5555)
+		v.Overlay.Add(pole, zgeo.Top|a).Free = true // |zgeo.VertExpand
+	}
+	return v
 }
-
-/*
-var lanes = []Lane{
-	Lane{ID: "dog", Name: "Dog",
-		Rows: []Row{
-			Row{Name: "German Shepard", Height: 22},
-			Row{Name: "Poodle", Height: 40},
-			Row{Name: "Snauzer", Height: 50},
-			Row{Name: "Dashund", Height: 30},
-		},
-	},
-}
-var events = makeEvents()
 
 func MakeHorEventsTestView(id string, delete bool) zview.View {
 	if delete {
 		return nil
 	}
-	v := NewEventsView(nil, "test-horevents-store", time.Now(), 3, 10, time.Second*20)
-	v.TimeAxisHeight = 22
-	v.GetEventViewsFunc = func(blockIndex int, start, end time.Time, got func(childView zview.View, x float64, laneID, rowID string)) {
+	opts := Options{
+		StoreKey:             "test-horevents-store",
+		BlocksIndexGetWidth:  3,
+		BlockIndexCacheDelta: 10,
+		BlockDuration:        time.Second * 20,
+		StartTime:            time.Now(),
+		ShowNowPole:          true,
+		TimeAxisHeight:       30,
+	}
+	v := NewEventsView(nil, opts)
+	v.GetEventViewsFunc = func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64)) {
 		// si := -1
-		for _, e := range events {
+		start := v.IndexToTime(float64(blockIndex))
+		end := start.Add(v.BlockDuration)
+		for _, e := range testEvents {
 			if !e.Start.Before(end) {
 				break
 			}
 			if e.End.After(start) {
 				view := makeEventView(v, e)
 				x := v.TimeToXInCorrectBlock(e.Start)
-				got(view, x, e.LaneID, e.LaneRowID)
+				cellBox := zgeo.SizeD(40, 30)
+				got(view, int(x), cellBox, e.LaneID, dogRowType)
 			}
 		}
 	}
-	v.SetLanes(lanes)
+	v.SetLanes(testLanes)
 	return v
 }
 
@@ -101,7 +137,7 @@ func makeEvents() []Event {
 	var es []Event
 	now := time.Now()
 	for t := now.Add(-time.Hour); t.Before(now.Add(time.Hour * 2)); t = t.Add(time.Second * 3) {
-		for _, lane := range lanes {
+		for _, lane := range testLanes {
 			if rand.Int31n(10) == 5 {
 				continue
 			}
@@ -121,4 +157,3 @@ func makeEvents() []Event {
 	}
 	return es
 }
-*/
