@@ -302,6 +302,9 @@ func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
 			}
 		}
 		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.SizeNull)
+		// if c.View != nil && c.View.ObjectName() == "left-pole" {
+		// 	zlog.Info("ALIGN:", r, s, c.Alignment, c.Margin, "->", rv)
+		// }
 		c.View.SetRect(rv)
 	}
 }
@@ -545,6 +548,17 @@ func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
 func (v *ContainerView) RemoveChild(subView zview.View, callRemoveFuncs bool) {
 	v.DetachChild(subView)
 	v.CustomView.RemoveChild(subView, callRemoveFuncs)
+}
+
+func (v *ContainerView) RemoveChildrenFunc(remove func(cell Cell) bool) {
+	for i := 0; i < len(v.Cells); i++ {
+		c := v.Cells[i]
+		if remove(c) {
+			v.CustomView.RemoveChild(c.View, true)
+			zslice.RemoveAt(&v.Cells, i)
+			i--
+		}
+	}
 }
 
 func (v *ContainerView) RemoveAllChildren() {
