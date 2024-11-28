@@ -97,6 +97,14 @@ func (v *NativeView) Native() *NativeView {
 	return v
 }
 
+func (v *NativeView) SetWidth(w float64) {
+	v.SetJSStyle("width", fmt.Sprintf("%fpx", w))
+}
+
+func (v *NativeView) SetHeight(h float64) {
+	v.SetJSStyle("height", fmt.Sprintf("%fpx", h))
+}
+
 func (v *NativeView) SetPos(pos zgeo.Pos) {
 	style := v.JSGet("style")
 	style.Set("left", fmt.Sprintf("%fpx", pos.X))
