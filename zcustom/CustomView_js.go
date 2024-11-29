@@ -136,3 +136,7 @@ func (v *CustomView) ExposeIn(secs float64) {
 func (v *CustomView) Expose() {
 	v.ExposeIn(0.1)
 }
+
+func (v *CustomView) ForceDrawSelf() {
+	v.drawSelf()
+}
