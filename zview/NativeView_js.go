@@ -97,6 +97,14 @@ func (v *NativeView) Native() *NativeView {
 	return v
 }
 
+func (v *NativeView) SetTop(top float64) {
+	v.SetJSStyle("top", fmt.Sprintf("%fpx", top))
+}
+
+func (v *NativeView) SetLeft(left float64) {
+	v.SetJSStyle("left", fmt.Sprintf("%fpx", left))
+}
+
 func (v *NativeView) SetWidth(w float64) {
 	v.SetJSStyle("width", fmt.Sprintf("%fpx", w))
 }
