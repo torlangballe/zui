@@ -298,15 +298,15 @@ func (v *StackView) ArrangeChildren() {
 		r := rects[j]
 		// 	zlog.Info("Stack.ArrangeChild:", v.Hierarchy(), c.View.ObjectName(), r)
 		if !r.IsNull() {
-			// if v.ObjectName() == "bar" {
-			// 	zlog.Info("arrangeChildren:", rm, v.ObjectName(), c.View.ObjectName(), r)
+			// if v.ObjectName() == "hor-inf" {
+			// 	zlog.Info("arrangeChildren:", rm, v.ObjectName(), c.View.ObjectName(), r, lays[j])
 			// }
 			c.View.SetRect(r)
 			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
 				c.View.Show(true)
 			}
 		} else {
-			if c.View != nil && !c.Collapsed {
+			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
 				zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
 				c.View.Show(false)
 			}
