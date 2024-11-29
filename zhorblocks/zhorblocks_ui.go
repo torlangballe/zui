@@ -88,7 +88,7 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	v.VertStack.SetSpacing(0)
 	v.VertStack.SetMinSize(zgeo.SizeBoth(40))
 	v.VertStack.ShowScrollBars(true, true)
-	v.VertStack.SetBGColor(zgeo.ColorRed)
+	// v.VertStack.SetBGColor(zgeo.ColorRed)
 	v.VertStack.SetScrollHandler(v.handleScroll)
 	v.VertStack.JSSet("className", "zdarkscroll")
 	v.Add(v.VertStack, zgeo.TopLeft|zgeo.Expand)

@@ -112,7 +112,7 @@ func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
 	v.SetBGColor(opts.BGColor)
 	v.SetCanTabFocus(true)
 	v.Updater = v
-	v.TestMode = true
+	// v.TestMode = true
 	v.gutterWidth = opts.GutterWidth
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
@@ -175,21 +175,6 @@ func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
 		box := v.makeAxisRow(blockIndex)
 		return box
 	}
-	// v.horInfinite.CreateHeaderBlockView = func(blockIndex int, w float64) zview.View {
-	// 	si := strconv.Itoa(blockIndex)
-	// 	v := zcontainer.StackViewHor(si)
-	// 	label := zlabel.New(si)
-	// 	label.SetTextAlignment(zgeo.Center)
-	// 	label.SetColor(zgeo.ColorWhite)
-	// 	label.SetFont(zgeo.FontNice(16, zgeo.FontStyleBold))
-	// 	col := zgeo.ColorPurple
-	// 	if zint.Abs(blockIndex)%2 == 1 {
-	// 		col = zgeo.ColorBlue
-	// 	}
-	// 	v.SetBGColor(col)
-	// 	v.Add(label, zgeo.Center)
-	// 	return v
-	// }
 
 	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
 		if !down {
@@ -534,7 +519,7 @@ func (v *HorEventsView) Update() {
 }
 
 func (v *HorEventsView) SetLanes(lanes []Lane) {
-	zlog.Info("HV.SetLaneRow:", len(lanes))
+	// zlog.Info("HV.SetLaneRow:", len(lanes))
 	for _, lane := range v.lanes {
 		for _, view := range lane.views {
 			v.horInfinite.VertOverlay.RemoveChild(view, true)
@@ -616,12 +601,12 @@ func (v *HorEventsView) createLanes() {
 }
 
 func (v *HorEventsView) SetRect(r zgeo.Rect) {
-	zlog.Info("HV SetRect", r.Size, v.ViewWidth)
+	// zlog.Info("HV SetRect", r.Size, v.ViewWidth)
 	v.StackView.SetRect(r)
 	oldWidth := v.ViewWidth
 	v.ViewWidth = r.Size.W - zscrollview.DefaultBarSize
 	if oldWidth != 0 && v.IsPresented() {
-		zlog.Info("HV SetRect Update", r.Size, v.ViewWidth)
+		// zlog.Info("HV SetRect Update", r.Size, v.ViewWidth)
 		v.Updater.Update()
 	}
 }
