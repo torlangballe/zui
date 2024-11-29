@@ -37,7 +37,7 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 	v.SetText("?")
 	v.SetColor(DocumentationDefaultIconColor())
 	m := v.Margin()
-	// m.Pos.X += 1
+	m.Pos.X += 1
 	// m.Pos.Y -= 0
 	v.SetMargin(m)
 	v.SetTextAlignment(zgeo.Center)
