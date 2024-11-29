@@ -70,14 +70,31 @@ func MakeHorBlocksTestView(id string, delete bool) zview.View {
 		})
 		return c
 	}
-	for _, a := range []zgeo.Alignment{zgeo.Right} { //, zgeo.Right} {
-		name := a.String()
-		pole := zcontainer.StackViewVert(name + "-pole")
-		pole.SetMinSize(zgeo.SizeD(10, 200))
-		pole.SetBGColor(zgeo.ColorBlue)
-		pole.SetZIndex(5555)
-		v.Overlay.Add(pole, zgeo.Top|a).Free = true // |zgeo.VertExpand
+	// for _, a := range []zgeo.Alignment{zgeo.Left, zgeo.Right} {
+	// 	name := a.String()
+	// 	pole := zcontainer.StackViewVert(name + "-pole")
+	// 	pole.SetMinSize(zgeo.SizeD(10, 200))
+	// 	pole.SetBGColor(zgeo.ColorBlue)
+	// 	pole.SetZIndex(5555)
+	// 	v.VertOverlay.Add(pole, zgeo.Top|a|zgeo.VertExpand).Free = true
+	// }
+
+	v.CreateHeaderBlockView = func(blockIndex int, w float64) zview.View {
+		si := strconv.Itoa(blockIndex)
+		v := zcontainer.StackViewHor(si)
+		label := zlabel.New(si)
+		label.SetTextAlignment(zgeo.Center)
+		label.SetColor(zgeo.ColorWhite)
+		label.SetFont(zgeo.FontNice(16, zgeo.FontStyleBold))
+		col := zgeo.ColorPurple
+		if zint.Abs(blockIndex)%2 == 1 {
+			col = zgeo.ColorBlue
+		}
+		v.SetBGColor(col)
+		v.Add(label, zgeo.Center)
+		return v
 	}
+
 	return v
 }
 
@@ -93,6 +110,8 @@ func MakeHorEventsTestView(id string, delete bool) zview.View {
 		StartTime:            time.Now(),
 		ShowNowPole:          true,
 		TimeAxisHeight:       30,
+		BGColor:              zgeo.ColorNewGray(0.3, 1),
+		GutterWidth:          16,
 	}
 	v := NewEventsView(nil, opts)
 	v.GetEventViewsFunc = func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64)) {

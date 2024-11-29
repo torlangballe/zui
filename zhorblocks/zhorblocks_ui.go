@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
@@ -23,15 +24,17 @@ import (
 
 type HorBlocksView struct {
 	zcontainer.StackView
-	CacheDelta      int // CacheDelta is how many more than center view to cache on each side
-	IndexWindow     int // IndexWindow is how many more than center view to get
-	GetViewFunc     func(index int) zview.View
-	ReleaseViewFunc func(index int)
-	PanHandler      PanHandler
-	IgnoreScroll    bool
-	Overlay         *zcontainer.StackView
-	Scroller        *zcontainer.StackView
+	CacheDelta            int // CacheDelta is how many more than center view to cache on each side
+	IndexWindow           int // IndexWindow is how many more than center view to get
+	GetViewFunc           func(blockIndex int) zview.View
+	CreateHeaderBlockView func(blockIndex int, w float64) zview.View
+	PanHandler            PanHandler
+	IgnoreScroll          bool
+	VertOverlay           *zcontainer.StackView
+	Scroller              *zcontainer.StackView
+	HorScrollHeaderHeight float64
 
+	VertStack                    *zcontainer.StackView
 	currentIndex                 int
 	maxIndex                     int // this can change over time
 	updating                     bool
@@ -47,6 +50,8 @@ type HorBlocksView struct {
 	queuedGetViews               map[int]bool
 	queLock                      sync.Mutex
 	scrollToIndexAfterAllUpdates float64
+	horScrollHeader              *zcontainer.StackView
+	horHeader                    *zcontainer.StackView
 }
 
 type PanHandler interface {
@@ -56,27 +61,50 @@ type PanHandler interface {
 func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	v.CacheDelta = cacheDelta
 	v.IndexWindow = indexWindow
-	v.StackView.Init(v, false, "hor-inf")
+	v.StackView.Init(v, true, "hor-inf")
 	// v.SetMargin(zgeo.RectFromXY2(0, 0, 0, -1))
 	v.SetPressUpDownMovedHandler(v.handleDrag)
+	v.SetSpacing(0)
 
 	// v.gutter = gutter
-	v.Scroller = zcontainer.StackViewHor("scroller")
-	v.ShowScrollBars(true, true)
-	v.Scroller.SetJSStyle("display", "flex")
-	v.SetScrollHandler(v.handleScroll)
-	v.Add(v.Scroller, zgeo.TopLeft|zgeo.Expand).Free = true
 
-	v.Overlay = zcontainer.StackViewHor("overlay")
-	v.Overlay.SetJSStyle("position", "sticky")
-	// v.Overlay.SetStroke(2, zgeo.ColorBlack, true)
-	v.Add(v.Overlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
+	v.HorScrollHeaderHeight = 20
+
+	v.horHeader = zcontainer.StackViewHor("hor-header")
+	v.horHeader.ShowScrollBars(true, false)
+	v.horHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
+	v.horHeader.JSSet("className", "znoscrollbar")
+	// v.horHeader.SetScrollHandler(func(pos zgeo.Pos) { // this makes things sluggish, must be some kind of feedback loop
+	// 	v.VertStack.SetXContentOffset(pos.X)
+	// })
+	v.Add(v.horHeader, zgeo.TopLeft|zgeo.HorExpand)
+
+	v.horScrollHeader = zcontainer.StackViewHor("hor-scroll-header")
+	v.horScrollHeader.SetJSStyle("display", "flex")
+	v.horScrollHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
+	v.horHeader.Add(v.horScrollHeader, zgeo.TopLeft|zgeo.HorExpand)
+
+	v.VertStack = zcontainer.StackViewVert("vstack")
+	v.VertStack.SetSpacing(0)
+	v.VertStack.SetMinSize(zgeo.SizeBoth(40))
+	v.VertStack.ShowScrollBars(true, true)
+	v.VertStack.SetBGColor(zgeo.ColorRed)
+	v.VertStack.SetScrollHandler(v.handleScroll)
+	v.VertStack.JSSet("className", "zdarkscroll")
+	v.Add(v.VertStack, zgeo.TopLeft|zgeo.Expand)
+
+	v.Scroller = zcontainer.StackViewHor("scroller")
+	v.Scroller.SetJSStyle("display", "flex")
+	v.VertStack.Add(v.Scroller, zgeo.TopLeft|zgeo.Expand).Free = true
+
+	v.VertOverlay = zcontainer.StackViewHor("vert-overlay")
+	v.VertOverlay.SetJSStyle("position", "sticky")
+	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
 
 	v.oldScrollX = zfloat.Undefined
 	v.queuedGetViews = map[int]bool{}
 	v.maxIndex = math.MaxInt
 	v.scrollToIndexAfterAllUpdates = zfloat.Undefined
-	v.JSSet("className", "zdarkscroll")
 	ztimer.RepeatForever(0.05, func() {
 		v.createNextViewInQue()
 	})
@@ -127,10 +155,10 @@ func (v *HorBlocksView) SetCurrentIndex(fi float64) {
 func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
 	switch down {
 	case zbool.True:
-		v.dragXStart = v.ContentOffset().X + pos.X
+		v.dragXStart = v.VertStack.ContentOffset().X + pos.X
 	case zbool.Unknown:
 		x := v.dragXStart - pos.X
-		v.SetXContentOffset(x)
+		v.VertStack.SetXContentOffset(x)
 		v.handleScroll(zgeo.PosD(x, 0))
 	case zbool.False:
 		v.dragXStart = 0
@@ -139,6 +167,7 @@ func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
 }
 
 func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
+	v.horHeader.SetXContentOffset(pos.X)
 	if v.IgnoreScroll {
 		return
 	}
@@ -219,7 +248,7 @@ func (v *HorBlocksView) createNextViewInQue() {
 		i := int(fi)
 		newCurX := v.indexToOffset(i)
 		newCurXF := v.floatingIndexToOffset(fi)
-		v.SetXContentOffset(newCurX)
+		v.VertStack.SetXContentOffset(newCurX)
 		zlog.Info("set scrollToIndexAfterAllUpdates", v.scrollToIndexAfterAllUpdates, newCurX, newCurXF)
 	}
 }
@@ -238,47 +267,59 @@ func (v *HorBlocksView) createAndSetView(i int) {
 		// zlog.Info("getAndSetView view == nil:", i)
 		return
 	}
-	next, _ := v.Scroller.FindViewWithName(strconv.Itoa(i+1), false)
+	si1 := strconv.Itoa(i + 1)
+	next, _ := v.Scroller.FindViewWithName(si1, false)
 	view.SetRect(zgeo.Rect{Size: s})
 	// zlog.Info("getAndSetView", i, next != nil, s, view.Rect().Size)
 	v.Scroller.AddBefore(view, next, zgeo.TopLeft).Alignment = zgeo.AlignmentNone // Set alignment to none, since we set it on add only
 	if next != nil && v.scrollToIndexAfterAllUpdates == zfloat.Undefined {        //!!
-		x := v.ContentOffset().X
-		v.SetXContentOffset(x + v.viewSize.W)
+		x := v.VertStack.ContentOffset().X
+		v.VertStack.SetXContentOffset(x + v.viewSize.W)
 		v.dragXStart += v.viewSize.W
+	}
+	if v.CreateHeaderBlockView != nil {
+		next, _ := v.horScrollHeader.FindViewWithName(si1, false)
+		over := v.CreateHeaderBlockView(i, v.viewSize.W)
+		nv := over.Native()
+		nv.SetJSStyle("position", "relative")
+		nv.SetObjectName(si)
+		nv.SetZIndex(92999)
+		nv.SetTop(0)
+		nv.SetSize(zgeo.SizeD(v.viewSize.W, v.HorScrollHeaderHeight))
+		v.horScrollHeader.AddBefore(nv, next, zgeo.AlignmentNone)
+		cv, _ := over.(*zcustom.CustomView)
+		if cv != nil {
+			cv.ForceDrawSelf()
+		}
 	}
 	v.setSizes()
 }
 
 func (v *HorBlocksView) SetRect(r zgeo.Rect) {
-	// zlog.Info("HB.SetRect:", r, v.oldRect)
-	if v.oldRect == r {
-		return
-	}
-	// if v.IsPresented() && v.presented {
-	zlog.Info("HB SetRect", r)
-	v.Scroller.RemoveAllChildren()
+	// if v.oldRect == r {
+	// 	return
 	// }
-	// v.NativeView.SetRect(r) // sets rect so it at least is set
+	// // if v.IsPresented() && v.presented {
+	v.Scroller.RemoveAllChildren()
+	v.horScrollHeader.RemoveAllChildren()
+	// old := v.viewSize.W
 	v.viewSize.W = r.Size.W - zscrollview.DefaultBarSize // 2*v.gutter.Size.W -
 	if v.fixedHeight == 0 {
 		v.viewSize.H = r.Size.H
 	}
+	// zlog.Info("HB.SetRect1:", r, old, v.viewSize.W)
 
-	// v.viewSize.H -= zscrollview.DefaultBarSize
-	// if v.oldRect.Size.W != 0 {
 	v.StackView.SetRect(r) // sets rect as stack, so all parts set
-	// v.Overlay.SetRect(v.Scroller.Rect())
+	// zlog.Info("HB SetRect", r, v.VertStack.Rect())
 	v.update(0)
-	// }
-	v.oldRect = r
-	// zlog.Info("HB.SetRect:", r, v.Scroller.Rect)
+	// v.oldRect = r
 }
 
 func (v *HorBlocksView) Reset(update bool) {
 	// zlog.Info("HB ReSet:", update, zdebug.CallingStackString())
 	// zlog.Info("HB Reset")
 	v.Scroller.RemoveAllChildren()
+	v.horScrollHeader.RemoveAllChildren()
 	v.oldRect = zgeo.Rect{}
 	if update {
 		v.update(0)
@@ -290,7 +331,7 @@ func (v *HorBlocksView) indexToX(i int) float64 {
 }
 
 func (v *HorBlocksView) ScrollOffsetFromCurrent() float64 {
-	return v.ContentOffset().X - v.indexToOffset(v.currentIndex)
+	return v.VertStack.ContentOffset().X - v.indexToOffset(v.currentIndex)
 }
 
 func (v *HorBlocksView) indexToOffset(index int) float64 {
@@ -319,10 +360,16 @@ func (v *HorBlocksView) setSizes() {
 	s := zgeo.SizeD(w, v.viewSize.H)
 	v.Scroller.SetMinSize(s)
 	v.Scroller.SetSize(s)
+
+	s = zgeo.SizeD(5000, v.HorScrollHeaderHeight)
+	// v.horScrollHeader.SetMinSize(s)
+	v.horScrollHeader.SetWidth(w)
+	// v.horScrollHeader.SetTop(v.AbsoluteRect().Pos.Y)
 	// zlog.Info("setSizes:", s)
+
 	s = zgeo.SizeD(10, v.viewSize.H)
-	v.Overlay.SetMinSize(s)
-	v.Overlay.SetHeight(s.H)
+	v.VertOverlay.SetMinSize(s)
+	v.VertOverlay.SetHeight(s.H)
 }
 
 func (v *HorBlocksView) update(alterContentOffsetX float64) {
@@ -342,8 +389,9 @@ func (v *HorBlocksView) update(alterContentOffsetX float64) {
 		view := c.View
 		index, _ := strconv.Atoi(view.ObjectName())
 		if !c.Free && (index < v.currentIndex-v.CacheDelta || index > v.currentIndex+v.CacheDelta) {
-			zlog.Info("Remove:", index)
+			// zlog.Info("Remove:", index)
 			v.Scroller.RemoveChild(c.View, true)
+			v.horScrollHeader.RemoveNamedChild(c.View.ObjectName(), false, true)
 			i--
 			continue
 		}
@@ -365,7 +413,7 @@ func (v *HorBlocksView) update(alterContentOffsetX float64) {
 	newCurX := v.indexToOffset(v.currentIndex) + alterContentOffsetX
 	// zlog.Info("Update2:", v.currentIndex, alterContentOffsetX, "->", newCurX, v.ScrollOffsetFromCurrent(), v.scrollToIndexAfterAllUpdates, len(v.queuedGetViews))
 	if v.scrollToIndexAfterAllUpdates == zfloat.Undefined {
-		v.SetXContentOffset(newCurX)
+		v.VertStack.SetXContentOffset(newCurX)
 	}
 	if !v.hasUpdated {
 		v.hasUpdated = true
