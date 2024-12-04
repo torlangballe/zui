@@ -154,9 +154,9 @@ func (v *Label) SetDropShadow(shadow ...zstyle.DropShadow) {
 
 func (v *Label) OutsideDropStroke(delta float64, col zgeo.Color) {
 	var drops []zstyle.DropShadow
-	for _, x := range []float64{-1, 1} {
-		for _, y := range []float64{-1, 1} {
-			drop := zstyle.MakeDropShadow(x*delta, y*delta, 0, col)
+	for x := -delta; x <= delta; x++ {
+		for y := -delta; y <= delta; y++ {
+			drop := zstyle.MakeDropShadow(x, y, 0, col)
 			drops = append(drops, drop)
 		}
 	}
