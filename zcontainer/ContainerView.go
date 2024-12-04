@@ -499,24 +499,25 @@ func (v *ContainerView) FindViewWithName(name string, recursive bool) (zview.Vie
 
 func ContainerOwnerFindViewWithName(view zview.View, name string, recursive bool) (zview.View, int) {
 	var found zview.View
-
 	ct, _ := view.(ChildrenOwner)
 	if ct == nil {
 		zlog.Fatal("view is not container")
 		return nil, -1
 	}
+	fi := -1
 	i := 0
 	includeCollapsed := true
 	ViewRangeChildren(view, recursive, includeCollapsed, func(view zview.View) bool {
 		// zlog.Info("FindViewWithName:", name, "==", view.ObjectName())
 		if view.ObjectName() == name {
 			found = view
+			fi = i
 			return false
 		}
 		i++
 		return true
 	})
-	return found, i
+	return found, fi
 }
 
 func (v *ContainerView) FindCellWithName(name string) (*Cell, int) {
