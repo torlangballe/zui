@@ -65,6 +65,7 @@ func MakeHorBlocksTestView(id string, delete bool) zview.View {
 			if x < v.viewSize.W/2 {
 				d = -33
 			}
+			// zlog.Info("Jump:", d)
 			index := v.CurrentIndex()
 			v.SetCurrentIndex(index - d)
 		})
