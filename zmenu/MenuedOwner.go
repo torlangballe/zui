@@ -140,10 +140,8 @@ func (o *MenuedOwner) IsKeyStored() bool {
 
 func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	var isSet bool
-	if view == nil {
-		zlog.Fatal("MO Build with view==nil")
-	} else {
-		o.View = view
+	o.View = view
+	if view != nil {
 		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
 			o.MinWidth = view.Rect().Size.W
 			if o.CreateItemsFunc != nil {
@@ -192,10 +190,12 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		}
 	}
 	o.UpdateMenuedItems(items)
-	view.Native().AddOnRemoveFunc(func() {
-		delete(menuOwnersMap, view)
-	})
-	menuOwnersMap[view] = o
+	if view != nil {
+		view.Native().AddOnRemoveFunc(func() {
+			delete(menuOwnersMap, view)
+		})
+		menuOwnersMap[view] = o
+	}
 	// zlog.Info("MO.Build done:", o.StoreKey, isSet, o.SelectedHandlerFunc != nil)
 	if isSet && o.SelectedHandlerFunc != nil {
 		o.SelectedHandlerFunc(false)
