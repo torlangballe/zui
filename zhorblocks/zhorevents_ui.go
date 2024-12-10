@@ -259,19 +259,24 @@ func (v *HorEventsView) updateNowPole() {
 }
 
 func (v *HorEventsView) SetBlockDuration(d time.Duration) {
-	nowLineRatioTime := v.currentTime.Add(v.calcDurationToNowLineRatio())
-	// zlog.Info("*************** SetBlockDuration 1:", v.currentTime, "->", nowLineRatioTime)
+	t := v.currentTime.Add(v.calcDurationToNowLineRatio())
+	// ztime.Minimize(&nowLineRatioTime, time.Now())
+	// zlog.Info("*************** SetBlockDuration 1:", v.currentTime, "->", t, v.horInfinite.DebugPrintList())
 	v.BlockDuration = d
+	// t := nowLineRatioTime.Add(-v.calcDurationToNowLineRatio())
+	ztime.Minimize(&t, time.Now())
+	v.startTime = v.calcTimePosToShowTime(t).Add(time.Second * 3)
+	v.currentTime = v.startTime
+	v.horInfinite.SetFloatingCurrentIndex(0)
 	v.Updater.Update()
-	t := nowLineRatioTime.Add(-v.calcDurationToNowLineRatio())
 	// zlog.Info("*************** SetBlockDuration 2:", v.currentTime, "->", t)
-	v.GotoTime(t)
+	// v.GotoTime(t)
 }
 
 func (v *HorEventsView) Reset() {
 	v.LastEventTimeForBlock = map[int]time.Time{}
 	v.updateBlocks = map[int]time.Time{}
-	zlog.Info("HEV.Reset")
+	// zlog.Info("HEV.Reset")
 	v.horInfinite.SetMaxIndex(1)
 	v.horInfinite.Reset(v.ViewWidth != 0)
 }
@@ -519,7 +524,8 @@ func (v *HorEventsView) panPressed(left bool, id int) {
 func (v *HorEventsView) GotoTime(t time.Time) {
 	i := v.timeToFractionalBlockIndex(t)
 	i = min(i, float64(v.horInfinite.maxIndex))
-	zlog.Info("GotoTime:", t, "index:", i, v.BlockDuration, i)
+	// zlog.Info("GotoTime:", t, "index:", i, v.BlockDuration, v.horInfinite.DebugPrintList(), "cur:", v.horInfinite.CurrentIndex())
+	v.currentTime = t
 	v.horInfinite.SetFloatingCurrentIndex(i)
 }
 
@@ -743,7 +749,7 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 	}
 	endTimeOfBlock := v.IndexToTime(float64(blockIndex) + 1)
 	if !isNew && time.Since(endTimeOfBlock) > time.Second*10 { // if it's an old block, and last events written to db and gotten, don't update anymore.
-		zlog.Info("updateBlockView1 delete:", blockIndex)
+		// zlog.Info("updateBlockView1 delete:", blockIndex)
 		delete(v.updateBlocks, blockIndex)
 		return
 	}
