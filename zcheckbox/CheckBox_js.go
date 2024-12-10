@@ -76,3 +76,12 @@ func (v *CheckBox) SetValue(b zbool.BoolInd) {
 	v.JSSet("indeterminate", b.IsUnknown())
 	v.JSSet("checked", b.Bool())
 }
+
+func (v *CheckBox) SetInteractive(interactive bool) {
+	v.NativeView.SetInteractive(interactive)
+	if interactive {
+		v.JSSet("inert", nil)
+		return
+	}
+	v.JSSet("inert", "true")
+}
