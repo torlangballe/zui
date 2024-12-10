@@ -629,7 +629,6 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
 	mf.FieldName = key
 	mf.Alignment = zgeo.CenterLeft
-	mf.Wrap = ztextinfo.WrapTailTruncate.String()
 
 	if f.HasFlag(FlagToClipboard) {
 		mf.SetFlag(FlagToClipboard)
@@ -641,7 +640,22 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 		}
 		mf.SetFlag(FlagIsLabelize)
 		a := zgeo.CenterLeft
+		text := fmt.Sprint(mval.Interface())
+		lineFeeds := strings.Count(text, "\n")
+		if lineFeeds > 0 {
+			// zlog.Info("MAP:", key, lineFeeds, mval.Type(), text)
+			mf.Rows = lineFeeds + 1
+		} else {
+			mf.Wrap = ztextinfo.WrapTailTruncate.String()
+		}
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
+		if f.IsStatic() {
+			view.Native().SetUsable(true)
+			is, _ := view.(zview.InteractiveSetter)
+			if is != nil {
+				is.SetInteractive(false)
+			}
+		}
 		return view, mf
 	}
 	hor := zcontainer.StackViewHor("map-row")
@@ -1205,6 +1219,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		var label *zlabel.Label
 		surl := f.Path
 		str, _ := getTextFromNumberishItem(rval, f)
+		// zlog.Info("LABEL1:", f.FieldName, f.Rows, str)
 		if f.HasFlag(FlagIsDocumentation) {
 			label = zlabel.New(str)
 			ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
@@ -1233,8 +1248,8 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
-		// zlog.Info("LABEL:", f.FieldName, v.params.UseInValues, f.Rows)
 		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+			// zlog.Info("LABEL:", f.Wrap, f.FieldName, v.params.UseInValues, f.Rows)
 			label.SetMaxLines(f.Rows)
 		}
 		// zlog.Info("LABEL:", f.FieldName, label.Columns, f.Rows)
