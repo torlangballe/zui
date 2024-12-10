@@ -18,7 +18,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zmath"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 type HorBlocksView struct {
@@ -35,7 +35,7 @@ type HorBlocksView struct {
 	HorScrollHeaderHeight float64
 
 	VertStack    *zcontainer.StackView
-	currentIndex float64
+	currentIndex int
 	maxIndex     int // this can change over time
 	Updating     bool
 	viewSize     zgeo.Size
@@ -52,6 +52,7 @@ type HorBlocksView struct {
 	scrollToIndexAfterAllUpdates float64
 	horScrollHeader              *zcontainer.StackView
 	horHeader                    *zcontainer.StackView
+	horHeaderScrollerRepeater    *ztimer.Repeater
 }
 
 type PanHandler interface {
@@ -100,13 +101,15 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	v.VertOverlay = zcontainer.StackViewHor("vert-overlay")
 	v.VertOverlay.SetJSStyle("position", "sticky")
 	v.VertOverlay.SetDimUsable(false)
-	v.VertOverlay.SetUsable(false)
+	//	v.VertOverlay.SetUsable(false)
+	// v.VertOverlay.SetInteractive(false)
 	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
 
 	v.oldScrollX = zfloat.Undefined
 	v.queuedGetViews = map[int]bool{}
 	v.maxIndex = math.MaxInt
 	v.scrollToIndexAfterAllUpdates = zfloat.Undefined
+	v.horHeaderScrollerRepeater = ztimer.RepeatForever(0.02, v.scrollHorHeader)
 }
 
 func (v *HorBlocksView) SetContentHeight(h float64) {
@@ -131,25 +134,28 @@ func (v *HorBlocksView) ReadyToShow(beforeWindow bool) {
 	}
 }
 
-func (v *HorBlocksView) CurrentIndex() float64 {
-	// x := v.ScrollOffsetFromCurrent()
-	return float64(v.currentIndex) // + x/v.viewSize.W
+func (v *HorBlocksView) CurrentFloatingIndex() float64 {
+	x := v.ScrollOffsetInBlock()
+	return float64(v.currentIndex) + x/v.viewSize.W
 }
 
-// func (v *HorBlocksView) ArrangeChildren() {
-// 	zlog.Info("HB Arrange:", v.Rect())
-// 	v.StackView.ArrangeChildren()
-// }
+func (v *HorBlocksView) CurrentIndex() int {
+	return v.currentIndex
+}
 
-func (v *HorBlocksView) SetCurrentIndex(fi float64) {
-	// i := int(fi)
-	if math.Abs(fi-v.currentIndex) > float64(v.IndexWindow) {
-		v.scrollToIndexAfterAllUpdates = fi
+func (v *HorBlocksView) SetFloatingCurrentIndex(fi float64) {
+	ni := int(fi)
+	sci := strconv.Itoa(ni)
+	_, i := v.Scroller.FindViewWithName(sci, true)
+	_, fract := math.Modf(fi)
+	var o float64
+	if i != -1 {
+		o = (float64(i) + fract) * v.viewSize.W
 	}
-	// zlog.Info("SetCurIndex:", v.currentIndex, "=>", i, fi)
-	v.currentIndex = fi
-	// _, fract := math.Modf(v.currentIndex)
-	v.update(true) // fract * v.viewSize.W)
+	zlog.Info("SetFloatingCurrentIndex", fi, "->", ni, o)
+	v.currentIndex = int(fi)
+	v.VertStack.SetXContentOffset(o)
+	v.update(false) // fract * v.viewSize.W)
 }
 
 func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
@@ -166,9 +172,13 @@ func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
 	return true
 }
 
+func (v *HorBlocksView) scrollHorHeader() {
+	x := v.VertStack.ContentOffset().X
+	v.horHeader.SetXContentOffset(x)
+}
+
 func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
 	// zlog.Info("Scroll:", pos.X)
-	v.horHeader.SetXContentOffset(pos.X)
 	if v.IgnoreScroll {
 		return
 	}
@@ -178,7 +188,7 @@ func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
 		return
 	}
 	if v.PanHandler != nil {
-		v.PanHandler.HandlePan(v.CurrentIndex())
+		v.PanHandler.HandlePan(v.CurrentFloatingIndex())
 	}
 }
 
@@ -211,11 +221,11 @@ func (v *HorBlocksView) createAndSetView(i int) {
 	view.SetRect(zgeo.Rect{Size: s})
 	// zlog.Info("getAndSetView", i, next != nil, s, view.Rect().Size)
 	v.Scroller.AddBefore(view, next, zgeo.TopLeft).Alignment = zgeo.AlignmentNone // Set alignment to none, since we set it on add only
-	if next != nil && v.scrollToIndexAfterAllUpdates == zfloat.Undefined {        //!!
-		// x := v.VertStack.ContentOffset().X
-		// v.VertStack.SetXContentOffset(x + v.viewSize.W)
-		v.dragXStart += v.viewSize.W
-	}
+	// if next != nil && v.scrollToIndexAfterAllUpdates == zfloat.Undefined {        //!!
+	// 	// x := v.VertStack.ContentOffset().X
+	// 	// v.VertStack.SetXContentOffset(x + v.viewSize.W)
+	// 	v.dragXStart += v.viewSize.W
+	// }
 	if v.CreateHeaderBlockView != nil {
 		next, _ := v.horScrollHeader.FindViewWithName(si1, false)
 		over := v.CreateHeaderBlockView(i, v.viewSize.W)
@@ -255,6 +265,8 @@ func (v *HorBlocksView) SetRect(r zgeo.Rect) {
 
 func (v *HorBlocksView) Reset(update bool) {
 	// zlog.Info("HB ReSet:", update, zdebug.CallingStackString())
+	// v.currentIndex = 0
+	// v.VertStack.SetXContentOffset(0)
 	zlog.Info("HB Reset")
 	v.Scroller.RemoveAllChildren()
 	v.horScrollHeader.RemoveAllChildren()
@@ -268,8 +280,8 @@ func (v *HorBlocksView) Reset(update bool) {
 // 	return float64(i) * v.viewSize.W
 // }
 
-func (v *HorBlocksView) ScrollOffsetFromCurrent() float64 {
-	return v.VertStack.ContentOffset().X - v.indexToOffset(int(v.currentIndex))
+func (v *HorBlocksView) ScrollOffsetInBlock() float64 {
+	return v.VertStack.ContentOffset().X - v.indexToOffset(v.currentIndex)
 }
 
 func (v *HorBlocksView) indexToOffset(index int) float64 {
@@ -277,9 +289,8 @@ func (v *HorBlocksView) indexToOffset(index int) float64 {
 }
 
 func (v *HorBlocksView) floatingIndexToOffset(index float64) float64 {
-	ii := int(index)
-	si := strconv.Itoa(ii)
-	fract := index - float64(ii)
+	si := strconv.Itoa(v.currentIndex)
+	fract := index - float64(v.currentIndex)
 	for i, c := range v.Scroller.Cells {
 		if si == c.View.ObjectName() {
 			// zlog.Info("floatingIndexToOffset", i, fract, zdebug.CallingStackString())
@@ -318,21 +329,26 @@ func (v *HorBlocksView) iList() string {
 	return str
 }
 
+// func intCurrentIndex(ci float64) int {
+// 	return int(math.Floor(ci))
+// }
+
 func (v *HorBlocksView) update(offsetChangedInFract bool) {
 	if v.Updating {
 		return
 	}
-	var adjustedOffset bool
+	// var adjustedOffset, flipped bool
 	// s := time.Now()
 	v.Updating = true
+	// zlog.Info("update1:", "cur:", v.currentIndex, v.iList())
 fullLoop:
 	for {
 		for i := 0; i < len(v.Scroller.Cells); i++ {
 			c := v.Scroller.Cells[i]
 			view := c.View
 			index, _ := strconv.Atoi(view.ObjectName())
-			if !c.Free && zint.Abs(index-int(v.currentIndex)) > v.IndexWindow {
-				zlog.Info("Remove:", index)
+			if !c.Free && zint.Abs(index-v.currentIndex) > v.IndexWindow {
+				// zlog.Info("Remove:", index, v.currentIndex, v.currentIndex)
 				v.Scroller.RemoveChild(c.View, true)
 				v.horScrollHeader.RemoveNamedChild(c.View.ObjectName(), false, true)
 				v.setSizes()
@@ -343,64 +359,72 @@ fullLoop:
 			}
 		}
 		if time.Since(v.flippedAt) > time.Second {
-			sci := strconv.Itoa(int(v.currentIndex))
+			sci := strconv.Itoa(v.currentIndex)
 			_, i := v.Scroller.FindViewWithName(sci, true)
 			if i != -1 {
 				w := float64(i) * v.viewSize.W
 				o := v.VertStack.ContentOffset().X
-				blocksDiff := math.Ceil((w - o) / v.viewSize.W)
-				// zlog.Info("update:", "cur:", sci, "bdiff:", blocksDiff, v.iList(), "max:", v.maxIndex)
-				// zlog.Info("update:", blocksDiff, "cur:", sci, "cix:", i, "vw:", v.viewSize.W, "cells:", v.iList())
+				blocksDiff := int((w - o) / v.viewSize.W)
 				if blocksDiff != 0 {
-					if math.Abs(blocksDiff) == 1 && i < len(v.Scroller.Cells)-1 && i > 0 {
-						newOffset := o + blocksDiff*v.viewSize.W
+					// zlog.Info("update:", "cur:", v.currentIndex, sci, "bdiff:", blocksDiff, v.iList(), "max:", v.maxIndex, o, o/v.viewSize.W)
+					if zint.Abs(blocksDiff) == 1 && i < len(v.Scroller.Cells)-1 && i > 0 {
+						newOffset := o + float64(blocksDiff)*v.viewSize.W
+						// flipped = true
 						v.flippedAt = time.Now()
 						v.currentIndex = v.currentIndex - blocksDiff
-						zlog.Info("ChangeCur:", v.currentIndex)
+						// zlog.Info("ChangeCur:", v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
-						adjustedOffset = true
+						// adjustedOffset = true
 						continue fullLoop
 					}
-					// ni := max(0, i-v.IndexWindow) // ni will be index of first view
-					// v.currentIndex, _ = strconv.ParseFloat(v.Scroller.Cells[ni].View.ObjectName(), 64)
-					if v.currentIndex < float64(v.maxIndex) || blocksDiff < 0 {
-						_, fract := math.Modf(v.currentIndex)
+					// v.currentIndex, _ = strconv.Atoi(v.Scroller.Cells[ni].View.ObjectName())
+					if v.currentIndex < v.maxIndex || blocksDiff < 0 {
+						_, fract := math.Modf(o / v.viewSize.W)
 						newOffset := (float64(i) + fract) * v.viewSize.W
-						zlog.Info("moreInc:", v.maxIndex, w, o, blocksDiff, i, v.currentIndex, newOffset)
+						// zlog.Info("moreInc:", v.maxIndex, w, o, blocksDiff, i, v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
-						adjustedOffset = true
+						// 	adjustedOffset = true
 					}
 				}
 			}
 		}
-		iMax := min(v.maxIndex, int(v.currentIndex)+v.IndexWindow)
-		// zlog.Info("Add?:", int(v.currentIndex)-v.IndexWindow, "to", iMax)
-		for ji := int(v.currentIndex) - v.IndexWindow; ji <= iMax; ji++ {
+		iMax := min(v.maxIndex, v.currentIndex) + v.IndexWindow
+		// zlog.Info("Add?:", intCurrentIndex(v.currentIndex)-v.IndexWindow, "to", iMax)
+		for ji := v.currentIndex - v.IndexWindow; ji <= iMax; ji++ {
 			view, _ := v.FindViewForIndex(ji)
 			if view != nil {
 				continue
 			}
-			zlog.Info("Create:", ji, v.maxIndex)
+			// zlog.Info("Create:", ji, v.currentIndex)
 			v.createAndSetView(ji)
 			v.setSizes()
 			continue fullLoop
 		}
 		break
 	}
-	if offsetChangedInFract && !adjustedOffset {
-		sci := strconv.Itoa(int(v.currentIndex))
-		_, i := v.Scroller.FindViewWithName(sci, true)
-		// zlog.Info("Adjust1", i, v.currentIndex)
-		// zlog.Info("update:", "cur:", sci, "cix:", i, "vw:", v.viewSize.W, "cells:", v.iList())
-		if i != -1 {
-			_, fract := math.Modf(v.currentIndex)
-			fract *= v.viewSize.W
-			// w := float64(i) * v.viewSize.W
-			obase := zmath.RoundToModF64(v.VertStack.ContentOffset().X, v.viewSize.W)
-			v.VertStack.SetXContentOffset(obase + fract)
-			zlog.Info("Adjust?", fract, "of", v.VertStack.ContentOffset().X, v.viewSize.W)
-		}
-
-	}
+	// if offsetChangedInFract && !adjustedOffset {
+	// 	sci := strconv.Itoa(v.currentIndex)
+	// 	_, i := v.Scroller.FindViewWithName(sci, true)
+	// 	// zlog.Info("Adjust1", i, v.currentIndex)
+	// 	// zlog.Info("update:", "cur:", sci, "cix:", i, "vw:", v.viewSize.W, "cells:", v.iList())
+	// 	if i != -1 {
+	// 		_, fract := math.Modf(v.currentIndex)
+	// 		fract *= v.viewSize.W
+	// 		// w := float64(i) * v.viewSize.W
+	// 		obase := zmath.RoundToModF64(v.VertStack.ContentOffset().X, v.viewSize.W)
+	// 		v.VertStack.SetXContentOffset(obase + fract)
+	// 		zlog.Info("Adjust?", fract, "of", v.VertStack.ContentOffset().X, v.viewSize.W)
+	// 	}
+	// }
+	// if !offsetChangedInFract && !adjustedOffset && !flipped {
+	// 	oci := v.currentIndex
+	// 	o := v.VertStack.ContentOffset().X
+	// 	fract := math.Mod(o, v.viewSize.W) / v.viewSize.W
+	// 	b4 := fract
+	// 	fract = 1 - fract
+	// 	whole, _ := math.Modf(v.currentIndex)
+	// 	v.currentIndex = whole + fract
+	// 	zlog.Info("Adjust Fract:", oci, fract, b4, whole, "->", v.currentIndex, o)
+	// }
 	v.Updating = false
 }

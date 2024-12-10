@@ -62,7 +62,7 @@ type HorEventsView struct {
 	lastScrollToX         int
 	updateNowRepeater     *ztimer.Repeater
 	updatingBlock         bool
-	gutterWidth           float64
+	GutterWidth           float64
 	timeAxisHeight        float64
 }
 
@@ -101,8 +101,9 @@ type Options struct {
 }
 
 const (
-	zoomIndexKey  = ".horblock.Events.zoom"
-	dividerHeight = 2
+	zoomIndexKey        = ".horblock.Events.zoom"
+	dividerHeight       = 2
+	widthRatioToNowLine = 0.8
 )
 
 func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
@@ -114,7 +115,7 @@ func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
 	v.SetCanTabFocus(true)
 	v.Updater = v
 	v.TestMode = true
-	v.gutterWidth = opts.GutterWidth
+	v.GutterWidth = opts.GutterWidth
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
 	v.zoomLevels = []zoomLevel{
@@ -207,15 +208,16 @@ func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
 	v.updateWidgets()
 	lineRepeater := ztimer.RepeatForever(0.1, v.updateNowScrollAndPole)
 	v.AddOnRemoveFunc(lineRepeater.Stop)
-	ztimer.RepeatForever(0.01, func() {
+	updateRepeater := ztimer.RepeatForever(0.01, func() {
 		v.updateCurrentBlockViews()
 	})
+	v.AddOnRemoveFunc(updateRepeater.Stop)
 	return v
 }
 
 func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 	pole := zcontainer.StackViewVert(a.String() + "-pole")
-	pole.SetMinSize(zgeo.SizeD(v.gutterWidth, 10))
+	pole.SetMinSize(zgeo.SizeD(v.GutterWidth, 10))
 	pole.SetBGColor(v.BGColor().WithOpacity(0.8))
 	// pole.SetBGColor(zgeo.ColorBlue)
 	pole.SetPressedHandler("pole-click", 0, func() {
@@ -228,6 +230,7 @@ func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 func (v *HorEventsView) handlePolePress(left bool) {
 	y := zview.LastPressedPos.Y
 	zlog.Info("handlePolePress:", left, y, v.horInfinite.VertStack.ContentOffset().Y)
+
 }
 
 // func rescaleGraph(rt *row, laneID int64, view zview.View) {
@@ -244,22 +247,24 @@ func (v *HorEventsView) updateNowPole() {
 	show := (zint.Abs(diff) <= 1)
 	v.nowLine.Show(show)
 	x := v.TimeToXInCorrectBlock(now)
-	ox := v.horInfinite.ScrollOffsetFromCurrent()
-	// x += v.gutterWidth
+	ox := v.horInfinite.ScrollOffsetInBlock()
+	// x += v.GutterWidth
 	x -= ox
 	x += float64(diff) * v.ViewWidth
 	x = math.Ceil(x)
 	y := v.horInfinite.Rect().Pos.Y
 	v.nowLine.Native().SetZIndex(911000)
-	zlog.Info("NowPole:", diff, x, now, show, nowBlockIndex, v.horInfinite.currentIndex, "y:", y, v.horInfinite.Rect().Size.H)
+	// zlog.Info("NowPole:", diff, x, now, show, nowBlockIndex, v.horInfinite.currentIndex, "y:", y, v.horInfinite.Rect().Size.H)
 	v.nowLine.Native().SetRect(zgeo.RectFromXYWH(x, y, 10, v.horInfinite.Rect().Size.H))
 }
 
 func (v *HorEventsView) SetBlockDuration(d time.Duration) {
-	t := v.calcTimePosToShowTime(time.Now())
+	nowLineRatioTime := v.currentTime.Add(v.calcDurationToNowLineRatio())
+	// zlog.Info("*************** SetBlockDuration 1:", v.currentTime, "->", nowLineRatioTime)
 	v.BlockDuration = d
 	v.Updater.Update()
-	t = v.calcTimePosToShowTime(time.Now())
+	t := nowLineRatioTime.Add(-v.calcDurationToNowLineRatio())
+	// zlog.Info("*************** SetBlockDuration 2:", v.currentTime, "->", t)
 	v.GotoTime(t)
 }
 
@@ -280,7 +285,7 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 	var bestIndex int
 	var bestTime time.Time
 	secs := min(5, max(1, ztime.DurSeconds(v.BlockDuration)/30))
-	ci := int(v.horInfinite.CurrentIndex())
+	ci := v.horInfinite.CurrentIndex()
 	for bi, t := range v.updateBlocks {
 		if ztime.Since(t) < secs {
 			continue
@@ -376,8 +381,12 @@ func (v *HorEventsView) setScrollToNowOn(on bool) {
 	v.Bar.ArrangeChildren()
 }
 
+func (v *HorEventsView) calcDurationToNowLineRatio() time.Duration {
+	return time.Duration(float64(v.BlockDuration) * widthRatioToNowLine)
+}
+
 func (v *HorEventsView) calcTimePosToShowTime(t time.Time) time.Time {
-	return t.Add(-(v.BlockDuration * 8) / 10)
+	return t.Add(-v.calcDurationToNowLineRatio())
 }
 func (v *HorEventsView) gotoNowScrollTime() {
 	t := v.calcTimePosToShowTime(time.Now())
@@ -509,8 +518,9 @@ func (v *HorEventsView) panPressed(left bool, id int) {
 
 func (v *HorEventsView) GotoTime(t time.Time) {
 	i := v.timeToFractionalBlockIndex(t)
-	// zlog.Info("GotoTime:", t, "index:", i, v.BlockDuration)
-	v.horInfinite.SetCurrentIndex(i)
+	i = min(i, float64(v.horInfinite.maxIndex))
+	zlog.Info("GotoTime:", t, "index:", i, v.BlockDuration, i)
+	v.horInfinite.SetFloatingCurrentIndex(i)
 }
 
 func (v *HorEventsView) DurationToWidth(d time.Duration) float64 {
@@ -581,6 +591,20 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 	}
 }
 
+func (v *HorEventsView) ForLaneViews(each func(view zview.View, laneID, rowID int64)) {
+	for _, lane := range v.lanes {
+		for _, view := range lane.views {
+			each(view, lane.ID, 0)
+		}
+		for _, r := range lane.Rows {
+			for _, view := range r.views {
+				each(view, lane.ID, r.ID)
+			}
+		}
+
+	}
+}
+
 func (v *HorEventsView) createLanes() {
 	// zlog.Info("HEV setLanes:", len(lanes), v.blockStack.Rect())
 
@@ -591,7 +615,7 @@ func (v *HorEventsView) createLanes() {
 	for i, lane := range v.lanes {
 		title := makeTextTitle(lane.Name, 2, lane.TextColor)
 		zslice.Add(&v.lanes[i].views, title)
-		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.gutterWidth+2, lane.y)).Free = true
+		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, lane.y)).Free = true
 		if v.MakeLaneActionIconFunc != nil {
 			view := v.MakeLaneActionIconFunc(lane.ID)
 			zslice.Add(&v.lanes[i].views, view)
@@ -605,12 +629,12 @@ func (v *HorEventsView) createLanes() {
 				bgView := v.MakeRowBackgroundViewFunc(lane.ID, &r, zgeo.SizeD(bgWidth, r.Height))
 				if bgView != nil {
 					bgView.Native().SetDimUsable(false)
-					bgView.Native().SetUsable(false)
+					// bgView.Native().SetUsable(false)
 					zslice.Add(&v.lanes[i].Rows[j].views, bgView)
 					v.horInfinite.VertOverlay.Add(bgView, zgeo.TopLeft, zgeo.SizeD(0, r.y+1)).Free = true
 				}
 			}
-			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopRight, zgeo.SizeD(v.gutterWidth+2, r.y)).Free = true
+			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopRight, zgeo.SizeD(v.GutterWidth+2, r.y)).Free = true
 			y = r.y + r.Height
 			// zlog.Info("SetLaneRowY:", lane.Name, r.Name, r.Height, y)
 		}
@@ -677,14 +701,14 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 		// zlog.Info("Axis draw:", blockIndex)
 		beyond := true
 		dark := true
-		zdraw.DrawHorTimeAxis(canvas, rect, start, end, false, beyond, dark)
+		zdraw.DrawHorTimeAxis(canvas, rect, start, end, beyond, dark)
 	})
 	axis.ExposeIn(0.1)
 	return axis
 }
 
 func (v *HorEventsView) handleBlockViewRemoved(blockIndex int) {
-	zlog.Info("handleBlockViewRemoved:", blockIndex)
+	// zlog.Info("handleBlockViewRemoved:", blockIndex)
 	delete(v.updateBlocks, blockIndex)
 }
 
@@ -768,8 +792,8 @@ func (v *HorEventsView) releaseViewForIndex(blockIndex int) {
 }
 
 func (v *HorEventsView) HandlePan(blockIndex float64) {
-	// zlog.Info("HandlePan", blockIndex, zdebug.CallingStackString())
 	t := v.IndexToTime(blockIndex)
+	// zlog.Info("HandlePan", blockIndex, t)
 	v.currentTime = t
 	v.timeField.SetValue(t)
 	v.updateNowPole()

@@ -60,14 +60,14 @@ func MakeHorBlocksTestView(id string, delete bool) zview.View {
 		c.SetBGColor(col)
 		c.Add(label, zgeo.Center)
 		c.SetLongPressedHandler("jump", 0, func() {
-			d := 20.0
+			d := 20
 			x := zview.LastPressedPos.X
 			if x < v.viewSize.W/2 {
 				d = -33
 			}
 			// zlog.Info("Jump:", d)
 			index := v.CurrentIndex()
-			v.SetCurrentIndex(index - d)
+			v.SetFloatingCurrentIndex(float64(index - d))
 		})
 		return c
 	}
