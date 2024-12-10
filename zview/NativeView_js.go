@@ -414,23 +414,20 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 	if u || v.Flags&ViewNoDimUsableFlag != 0 {
 		alpha = 1 - v.transparency
 	}
-	str := "none"
-	if usable {
-		str = "auto"
-	}
-	style.Set("pointer-events", str)
+	// str := "none"
+	// if usable {
+	// 	str = "auto"
+	// }
+	// style.Set("pointer-events", str)
 	style.Set("opacity", alpha)
 }
 
 func (v *NativeView) SetInteractive(interactive bool) {
 	if interactive {
 		v.JSSet("pointer-events", "auto")
-		// v.JSSet("inert", "")
-		// v.Element.Delete("inert")
 		return
 	}
 	v.JSSet("pointer-events", "none")
-	// v.JSSet("inert", "true") // need this on for checkbox...
 }
 
 // func (v *NativeView) Interactive() bool {
@@ -1317,6 +1314,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		v.SetStateOnDownPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
+		zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
 		if handler(*movingPos, zbool.True) {
 			e.Call("stopPropagation")
 			e.Call("preventDefault")
@@ -1324,13 +1322,15 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		// pos := getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			// zlog.Info("SetPressUpDownMovedHandler up")
-			upPos := getMousePosRelative(v, args[0])
+			e := args[0]
+			upPos := getMousePosRelative(v, e)
 			movingPos = nil
 			v.ClearStateOnUpPress()
 			we.Call("removeEventListener", "mouseup", upFunc)
 			we.Call("removeEventListener", "mousemove", moveFunc)
 			upFunc.Release()
 			moveFunc.Release()
+			zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
 			if handler(upPos, zbool.False) {
 				// e.Call("stopPropagation")
 				// e.Call("preventDefault")
@@ -1342,10 +1342,12 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		moveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			// v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
 			if movingPos != nil {
-				pos := getMousePosRelative(v, args[0])
+				e := args[0]
+				pos := getMousePosRelative(v, e)
+				zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
 				if handler(pos, zbool.Unknown) {
-					args[0].Call("stopPropagation")
-					args[0].Call("preventDefault")
+					e.Call("stopPropagation")
+					e.Call("preventDefault")
 				}
 			}
 			return nil
