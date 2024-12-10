@@ -49,6 +49,10 @@ type DownPressable interface {
 	SetPressedDownHandler(id string, handler func())
 }
 
+type InteractiveSetter interface {
+	SetInteractive(interactive bool)
+}
+
 // Layouter ...not really using this yet left over from iOS stuff
 type Layouter interface {
 	HandleBeforeLayout()
