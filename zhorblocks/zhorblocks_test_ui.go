@@ -103,7 +103,7 @@ func MakeHorEventsTestView(id string, delete bool) zview.View {
 	if delete {
 		return nil
 	}
-	opts := Options{
+	opts := EventOptions{
 		StoreKey:             "test-horevents-store",
 		BlocksIndexGetWidth:  3,
 		BlockIndexCacheDelta: 10,

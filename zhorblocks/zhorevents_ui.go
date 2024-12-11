@@ -88,7 +88,7 @@ type Row struct {
 	views  []zview.View
 }
 
-type Options struct {
+type EventOptions struct {
 	StoreKey             string
 	BlocksIndexGetWidth  int
 	BlockIndexCacheDelta int
@@ -98,6 +98,7 @@ type Options struct {
 	GutterWidth          float64
 	TimeAxisHeight       float64
 	BGColor              zgeo.Color
+	SelectedEventID      int64
 }
 
 const (
@@ -106,7 +107,7 @@ const (
 	widthRatioToNowLine = 0.8
 )
 
-func NewEventsView(v *HorEventsView, opts Options) *HorEventsView {
+func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	if v == nil {
 		v = &HorEventsView{}
 	}
