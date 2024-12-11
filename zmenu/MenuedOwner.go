@@ -60,6 +60,8 @@ type MenuedOwner struct {
 	DefaultSelected     any
 	items               []MenuedOItem
 	hasShortcut         bool
+	currentPopupStack   *zcontainer.StackView
+	needsSave           bool
 }
 
 type MenuedOItem struct {
@@ -160,12 +162,13 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 			isSet = true
 		}
 	}
-	if o.StoreKey != "" {
+	if !o.needsSave && o.StoreKey != "" {
 		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
 		if got {
 			isSet = true
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
+				// zlog.Info("MO.Build Select:", o.Name, item.Name, dict[str])
 				_, items[i].Selected = dict[str]
 			}
 		}
@@ -238,8 +241,7 @@ func (o *MenuedOwner) Empty() {
 
 func (o *MenuedOwner) SetTitleText(text string) {
 	// zlog.Info("MO.SetTitleText3:", text, len(o.items), o.SetTitle, o.TitleIsValueIfOne, o.TitleIsAll, o.PluralableWord, o.GetTitleFunc != nil) //, zlog.CallingStackString())
-	if o.SetTitle || o.TitleIsValueIfOne || o.TitleIsAll != "" || o.PluralableWord != "" || o.GetTitleFunc != nil {
-		zlog.Assert(o.View != nil)
+	if o.View != nil && o.SetTitle || o.TitleIsValueIfOne || o.TitleIsAll != "" || o.PluralableWord != "" || o.GetTitleFunc != nil {
 		ts, got := o.View.(ztextinfo.TextSetter)
 		if got {
 			ts.SetText(text)
@@ -366,18 +368,24 @@ func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 }
 
 func (o *MenuedOwner) SetSelectedValues(vals []interface{}) {
+	// zlog.Info("SetSelectedValues1", vals, o.Name)
 outer:
 	for i, item := range o.getItems() {
 		for j, v := range vals {
+			// zlog.Info("SetSelectedValues?", o.Name, item.Name, item.Value, "==", v, reflect.DeepEqual(item.Value, v))
 			if reflect.DeepEqual(item.Value, v) {
 				o.items[i].Selected = true
 				zslice.RemoveAt(&vals, j)
+				continue outer
 			}
-			continue outer
 		}
 		o.items[i].Selected = false
 	}
+	// zlog.Info("SetSelectedValues", vals, o.Name, zlog.Full(o.items), o.SelectedItem())
 	o.UpdateTitleAndImage()
+	if o.SelectedHandlerFunc != nil {
+		o.SelectedHandlerFunc(false)
+	}
 }
 
 func (o *MenuedOwner) SetSelectedValue(val interface{}) {
@@ -432,6 +440,7 @@ func (o *MenuedOwner) popup() {
 	}
 	o.getItems()
 	stack := zcontainer.StackViewVert("menued-pop-stack")
+	o.currentPopupStack = stack
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
 	list := zgridlist.NewView("menu-list")
 	list.SetMargin(zgeo.RectFromXY2(0, 0, -8, 0))
@@ -519,6 +528,32 @@ func (o *MenuedOwner) popup() {
 		if o.IsStatic {
 			return
 		}
+		ids := list.SelectedIDs()
+		if len(ids) == 1 {
+			i, _ := strconv.Atoi(ids[0])
+			item := o.items[i]
+			if item.IsSeparator {
+				zpresent.Close(stack, false, nil)
+				return
+			}
+			if item.IsAction {
+				// o.items[i].Selected = false
+				if item.Function != nil {
+					item.Function()
+					// o.getItems() // getItems+UpdateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
+					// o.UpdateTitleAndImage()
+					o.getItems()
+					o.UpdateTitleAndImage()
+				} else if o.ActionHandlerFunc != nil {
+					id := item.Value.(string)
+					o.ActionHandlerFunc(id)
+					o.getItems()
+					o.UpdateTitleAndImage()
+				}
+				zpresent.Close(stack, false, nil)
+				return
+			}
+		}
 		oldSelected := map[string]bool{}
 		if !o.IsMultiple {
 			for i := range o.items {
@@ -528,29 +563,10 @@ func (o *MenuedOwner) popup() {
 				o.items[i].Selected = false
 			}
 		}
-		ids := list.SelectedIDs()
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
 			item := o.items[i]
 			o.items[i].Selected = !item.Selected
-			if item.IsAction {
-				o.items[i].Selected = false
-				if item.Function != nil {
-					go func() {
-						item.Function()
-						// o.getItems() // getItems+UpdateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
-						// o.UpdateTitleAndImage()
-					}()
-				} else if o.ActionHandlerFunc != nil {
-					id := item.Value.(string)
-					o.ActionHandlerFunc(id)
-					o.getItems()
-					o.UpdateTitleAndImage()
-				}
-				zpresent.Close(stack, false, nil)
-				o.saveToStore()
-				return
-			}
 			list.LayoutCells(true)
 			if !o.IsMultiple {
 				zpresent.Close(stack, false, nil)
@@ -615,6 +631,12 @@ func (o *MenuedOwner) popup() {
 		}
 	}
 	zpresent.PresentView(stack, att)
+}
+
+func (o *MenuedOwner) ClosePopup() {
+	if o.currentPopupStack != nil {
+		zpresent.Close(o.currentPopupStack, false, nil)
+	}
 }
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
@@ -744,7 +766,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 }
 
 func (o *MenuedOwner) saveToStore() {
-	// zlog.Info("MO SAVE", o.StoreKey, len(o.items))
+	// zlog.Info("MO SAVE", o.StoreKey, o.items)
 	if o.StoreKey != "" {
 		dict := zdict.Dict{}
 		for _, item := range o.items {
@@ -756,6 +778,7 @@ func (o *MenuedOwner) saveToStore() {
 		// zlog.Info("MO SAVE2", dict)
 		zkeyvalue.DefaultStore.SetDict(dict, o.StoreKey, true)
 	}
+	o.needsSave = false
 }
 
 func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape.Type) *zshape.ShapeView {
