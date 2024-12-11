@@ -48,6 +48,11 @@ func (o *MenuedSetOwner[A]) SetAndSelectStoredValue(id int64, vals A) {
 	o.SetSelectedValue(id)
 }
 
+func (o *MenuedSetOwner[A]) GetStoredValue(id int64) (A, bool) {
+	s, got := o.values[id]
+	return s.Value, got
+}
+
 func (o *MenuedSetOwner[A]) Init(storeKey string) {
 	// zlog.Info("MSO.Init:")
 	o.MenuedOwner.Init()
