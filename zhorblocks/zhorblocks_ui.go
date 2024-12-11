@@ -154,12 +154,11 @@ func (v *HorBlocksView) SetFloatingCurrentIndex(fi float64) {
 	if fract != 0 {
 		_, i := v.Scroller.FindViewWithName(sci, true)
 		var o float64
-		oi := i
 		if i == -1 {
 			i = 0
 		}
 		o = (float64(i) + fract) * v.viewSize.W
-		zlog.Info("SetFloatingCurrentIndex", ni, fi, v.VertStack.ContentOffset().X, "->", oi, o)
+		// zlog.Info("SetFloatingCurrentIndex", ni, fi, v.VertStack.ContentOffset().X, "->", oi, o)
 		v.VertStack.SetXContentOffset(o)
 	}
 }
