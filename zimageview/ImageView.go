@@ -11,14 +11,12 @@ import (
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
-	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
-	"github.com/torlangballe/zutil/ztimer"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -37,7 +35,6 @@ type ImageView struct {
 	CapInsetCorner     zgeo.Size
 	EmptyColor         zgeo.Color
 	TintColor          zgeo.Color
-	KeyboardShortcut   zkeyboard.KeyMod
 }
 
 func NewWithCachedPath(imagePath string, fitSize zgeo.Size) *ImageView {
@@ -254,36 +251,4 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 	if v.IsFocused() {
 		zfocus.Draw(canvas, rect, 15, 0, 1)
 	}
-}
-
-func (v *ImageView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-	if !v.KeyboardShortcut.IsNull() && v.PressedHandler() != nil {
-		zshortcuts.StrokeViewToShowHandling(v, v.KeyboardShortcut, sc)
-		if sc.Matches(v.KeyboardShortcut) {
-			v.PressedHandler()()
-			return true
-		}
-	}
-	return false
-}
-
-func (v *ImageView) SetPressedHandler(id string, mods zkeyboard.Modifier, handler func()) {
-	v.StorePressedHandler(handler)
-	v.NativeView.SetPressedHandler(id, mods, func() {
-		if !v.KeyboardShortcut.IsNull() {
-			zshortcuts.ShowShortCutHelperForView(v, v.KeyboardShortcut)
-			ztimer.StartIn(0.1, func() { // otherwise it does handler that might block shortcut animation
-				handler()
-			})
-			return
-		}
-		handler()
-	})
-}
-
-func (v *ImageView) GetToolTipAddition() string {
-	if !v.KeyboardShortcut.IsNull() {
-		return zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
-	}
-	return ""
 }

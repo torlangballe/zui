@@ -18,6 +18,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
@@ -518,6 +519,7 @@ func (v *SliceGridView[S]) doFilterAndSort(slice []S) (newSelected []string) {
 }
 
 func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
+	v.StackView.ReadyToShow(beforeWindow)
 	if beforeWindow {
 		v.doFilterAndSort(*v.slicePtr)
 		return

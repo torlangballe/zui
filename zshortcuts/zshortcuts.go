@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui/zanimation"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
@@ -25,6 +26,11 @@ var (
 	highlightTimers = map[zview.View]*ztimer.Repeater{}
 	showing         bool
 )
+
+func init() {
+	zcustom.HandleOutsideShortcutFunc = HandleShortcut
+	zcustom.ShowShortCutHelperForViewFunc = ShowShortCutHelperForView
+}
 
 func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zkeyboard.KeyMod) bool {
 	// zlog.Info("StrokeViewToShowShortcutHandling", scut, viewKM.Matches(scut), viewKM.Key)
@@ -82,12 +88,13 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 	}
 	showing = true
 	stack.SetAlpha(0.01)
-	str := scut.AsString()
 	stack.SetSpacing(2)
-	for _, s := range str {
-		label := zlabel.New(string(s))
+	singleLetterKey := true
+	for _, part := range scut.SymbolParts(singleLetterKey) {
+		label := zlabel.New(part)
 		label.SetTextAlignment(zgeo.Center)
 		label.SetMinWidth(18)
+		label.SetStroke(1, zgeo.ColorBlack, true)
 		label.SetBGColor(zgeo.ColorNew(1, 1, 0.3, 1))
 		label.SetCorner(3)
 		stack.Add(label, zgeo.CenterLeft)
@@ -106,4 +113,44 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 			})
 		})
 	})
+}
+
+func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool {
+	var handled bool
+	sh, _ := view.(zkeyboard.ShortcutHandler)
+	if sh != nil && sh.HandleOutsideShortcut(sc) {
+		return true
+	}
+	zcontainer.ViewRangeChildren(view, true, false, func(v zview.View) bool {
+		sh, _ := v.(zkeyboard.ShortcutHandler)
+		if sh != nil {
+			if sh.HandleOutsideShortcut(sc) {
+				handled = true
+				return false
+			}
+		}
+		return true
+	})
+	return handled
+}
+
+func HandleShortcut(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool {
+	if viewSC.IsNull() {
+		return false
+	}
+	pfo, has := view.(zview.PressedFuncOwner)
+	if !has {
+		return false
+	}
+	f := pfo.PressedHandler()
+	// zlog.Info("HandleShortcut", view.Native().Hierarchy(), viewSC, zlog.Full(pressedSC), f != nil)
+	if f == nil {
+		return false
+	}
+	StrokeViewToShowHandling(view, viewSC, pressedSC)
+	if !pressedSC.Matches(viewSC) {
+		return false
+	}
+	f()
+	return true
 }

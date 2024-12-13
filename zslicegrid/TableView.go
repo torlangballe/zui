@@ -149,6 +149,7 @@ func (v *TableView[S]) ArrangeChildren() {
 
 func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	if !beforeWindow {
+		v.SliceGridView.ReadyToShow(beforeWindow)
 		// for i, c := range v.Cells {
 		// 	zlog.Info("Table", i, c.View.ObjectName(), c.Alignment, c.Margin)
 		// }

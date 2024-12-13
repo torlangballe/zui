@@ -4,6 +4,7 @@ package zcustom
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zstr"
@@ -14,6 +15,7 @@ type CustomView struct {
 	zview.NativeView
 	OpaqueDraw       bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
 	DownsampleImages bool
+	KeyboardShortcut zkeyboard.KeyMod
 	canvas           *zcanvas.Canvas
 	minSize          zgeo.Size
 	pressed          func()
@@ -27,6 +29,11 @@ type CustomView struct {
 	isSetup          bool
 	isHighlighted    bool
 }
+
+var (
+	HandleOutsideShortcutFunc     func(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool
+	ShowShortCutHelperForViewFunc func(view zview.View, sc zkeyboard.KeyMod)
+)
 
 func NewView(name string) *CustomView {
 	c := &CustomView{}
@@ -66,6 +73,33 @@ func (v *CustomView) IsHighlighted() bool {
 
 func (v *CustomView) StorePressedHandler(h func()) {
 	v.pressed = h
+}
+
+func (v *CustomView) SetPressedHandler(id string, mods zkeyboard.Modifier, handler func()) {
+	v.StorePressedHandler(handler)
+	v.NativeView.SetPressedHandler(id, mods, func() {
+		// f := v.PressedHandler()
+		// zlog.Info("IV Pressed", v.KeyboardShortcut.IsNull(), f != nil)
+		if !v.KeyboardShortcut.IsNull() {
+			ShowShortCutHelperForViewFunc(v, v.KeyboardShortcut)
+			ztimer.StartIn(0.1, func() { // otherwise it does handler that might block shortcut animation
+				handler()
+			})
+			return
+		}
+		handler()
+	})
+}
+
+func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	return HandleOutsideShortcutFunc(v, v.KeyboardShortcut, sc)
+}
+
+func (v *CustomView) GetToolTipAddition() string {
+	if !v.KeyboardShortcut.IsNull() {
+		return zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
+	}
+	return ""
 }
 
 func (v *CustomView) PressedHandler() func() {
