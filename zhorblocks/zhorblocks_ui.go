@@ -17,7 +17,6 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -378,7 +377,7 @@ fullLoop:
 						// flipped = true
 						v.flippedAt = time.Now()
 						v.currentIndex = v.currentIndex - blocksDiff
-						zlog.Info("ChangeCur:", v.currentIndex, newOffset)
+						// zlog.Info("ChangeCur:", v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
 						// adjustedOffset = true
 						continue fullLoop
@@ -408,29 +407,9 @@ fullLoop:
 		}
 		break
 	}
-	// if offsetChangedInFract && !adjustedOffset {
-	// 	sci := strconv.Itoa(v.currentIndex)
-	// 	_, i := v.Scroller.FindViewWithName(sci, true)
-	// 	// zlog.Info("Adjust1", i, v.currentIndex)
-	// 	// zlog.Info("update:", "cur:", sci, "cix:", i, "vw:", v.viewSize.W, "cells:", v.DebugPrintList())
-	// 	if i != -1 {
-	// 		_, fract := math.Modf(v.currentIndex)
-	// 		fract *= v.viewSize.W
-	// 		// w := float64(i) * v.viewSize.W
-	// 		obase := zmath.RoundToModF64(v.VertStack.ContentOffset().X, v.viewSize.W)
-	// 		v.VertStack.SetXContentOffset(obase + fract)
-	// 		zlog.Info("Adjust?", fract, "of", v.VertStack.ContentOffset().X, v.viewSize.W)
-	// 	}
-	// }
-	// if !offsetChangedInFract && !adjustedOffset && !flipped {
-	// 	oci := v.currentIndex
-	// 	o := v.VertStack.ContentOffset().X
-	// 	fract := math.Mod(o, v.viewSize.W) / v.viewSize.W
-	// 	b4 := fract
-	// 	fract = 1 - fract
-	// 	whole, _ := math.Modf(v.currentIndex)
-	// 	v.currentIndex = whole + fract
-	// 	zlog.Info("Adjust Fract:", oci, fract, b4, whole, "->", v.currentIndex, o)
-	// }
 	v.Updating = false
+}
+
+func (v *HorBlocksView) IsBlockInWindow(blockIndex int) bool {
+	return blockIndex >= v.currentIndex-v.IndexWindow && blockIndex <= v.currentIndex+v.IndexWindow
 }

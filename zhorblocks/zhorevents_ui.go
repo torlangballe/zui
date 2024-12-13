@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zshape"
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdraw"
@@ -33,7 +34,7 @@ type HorEventsView struct {
 	zcontainer.StackView
 	BlockDuration             time.Duration
 	Bar                       *zcontainer.StackView
-	GetEventViewsFunc         func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64))
+	GetEventViewsFunc         func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool))
 	MakeRowBackgroundViewFunc func(laneID int64, row *Row, size zgeo.Size) zview.View
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
 	TestMode                  bool
@@ -187,7 +188,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		if !down {
 			return false
 		}
-		return zcontainer.HandleOutsideShortcutRecursively(v, km)
+		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
 	})
 
 	if opts.ShowNowPole {
@@ -311,11 +312,58 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 		v.updatingBlock = false
 		return
 	}
-	// zlog.Info("updateCurrentBlockViews:", secs, v.BlockDuration)
 	v.updateBlockView(bestIndex, bestTime.IsZero()) // do outgoing one one last time in a bit, when we hope last events are in
-	v.updatingBlock = false
 	ni := v.TimeToBlockIndex(time.Now())
 	v.horInfinite.SetMaxIndex(ni + 1)
+}
+
+func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
+	if v.ViewWidth == 0 || len(v.lanes) == 0 {
+		v.updatingBlock = false
+		return
+	}
+	endTimeOfBlock := v.IndexToTime(float64(blockIndex) + 1)
+	if !isNew && time.Since(endTimeOfBlock) > time.Second*10 { // if it's an old block, and last events written to db and gotten, don't update anymore.
+		// zlog.Info("updateBlockView1 delete:", blockIndex)
+		delete(v.updateBlocks, blockIndex)
+		v.updatingBlock = false
+		return
+	}
+	start := time.Now()
+	zlog.Info("updateBlockView:", blockIndex)
+	v.updateBlocks[blockIndex] = time.Now()
+	view, _ := v.horInfinite.FindViewForIndex(blockIndex)
+	if view == nil {
+		v.updatingBlock = false
+		zlog.Info("updateBlockView no view:", blockIndex)
+		return // we haven't created it yet, or it's now being updated with repeater, when that block is outside index window
+	}
+	blockView := view.(*zcontainer.ContainerView)
+	go v.GetEventViewsFunc(blockIndex, isNew, func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) {
+		if blockDone {
+			zlog.Info("updateBlockView done:", blockIndex, time.Since(start))
+			v.updatingBlock = false
+			return
+		}
+		_, row := v.FindLaneAndRow(laneID, rowType)
+		zlog.Assert(row != nil, "FindLR:", laneID, rowType, len(v.lanes))
+		posMarg := zgeo.SizeD(float64(x), row.y)
+		mg := childView.(zview.MinSizeGettable) // let's let this panic if not available, not sure what to do yet if so.
+		size := mg.MinSize()
+		size.H--
+		cellRect := blockView.LocalRect().Align(cellBox, zgeo.TopLeft, posMarg)
+		y := int(posMarg.H)
+		pos := zgeo.PosI(x, y)
+		for _, c := range blockView.Cells {
+			if c.View.Rect().Pos == pos {
+				blockView.RemoveChild(c.View, true)
+				break
+			}
+		}
+		blockView.Add(childView, zgeo.TopLeft, cellRect.Pos.Size()).Free = true
+		childView.SetRect(cellRect)
+		v.updateBlocks[blockIndex] = time.Now() // set it to after event view gotten
+	})
 }
 
 func (v *HorEventsView) makeButtons() {
@@ -744,50 +792,8 @@ func (v *HorEventsView) makeBlockView(blockIndex int) zview.View {
 	return blockView
 }
 
-func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
-	if v.ViewWidth == 0 || len(v.lanes) == 0 {
-		return
-	}
-	endTimeOfBlock := v.IndexToTime(float64(blockIndex) + 1)
-	if !isNew && time.Since(endTimeOfBlock) > time.Second*10 { // if it's an old block, and last events written to db and gotten, don't update anymore.
-		// zlog.Info("updateBlockView1 delete:", blockIndex)
-		delete(v.updateBlocks, blockIndex)
-		return
-	}
-	// zlog.Info("updateBlockView1:", blockIndex)
-	v.updateBlocks[blockIndex] = time.Now()
-	view, _ := v.horInfinite.FindViewForIndex(blockIndex)
-	if view == nil {
-		zlog.Info("updateBlockView no view:", blockIndex)
-		return // we haven't created it yet, or it's now being updated with repeater, when that block is outside index window
-	}
-	blockView := view.(*zcontainer.ContainerView)
-	go v.GetEventViewsFunc(blockIndex, isNew, func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64) {
-		_, row := v.FindLaneAndRow(laneID, rowType)
-		zlog.Assert(row != nil, "FindLR:", laneID, rowType, len(v.lanes))
-		posMarg := zgeo.SizeD(float64(x), row.y)
-		mg := childView.(zview.MinSizeGettable) // let's let this panic if not available, not sure what to do yet if so.
-		size := mg.MinSize()
-		size.H--
-		cellRect := blockView.LocalRect().Align(cellBox, zgeo.TopLeft, posMarg)
-		y := int(posMarg.H)
-		pos := zgeo.PosI(x, y)
-		if true || blockIndex == 0 {
-			// zlog.Info("GetEventViewsFunc:", v.ViewWidth, blockIndex, x, laneID, cellRect)
-		}
-		for _, c := range blockView.Cells {
-			if c.View.Rect().Pos == pos {
-				blockView.RemoveChild(c.View, true)
-				break
-			}
-		}
-		// if blockIndex == 0 {
-		// 	zlog.Info("AddView:", childView.ObjectName(), cellRect)
-		// }
-		blockView.Add(childView, zgeo.TopLeft, cellRect.Pos.Size()).Free = true
-		childView.SetRect(cellRect)
-		v.updateBlocks[blockIndex] = time.Now() // set it to after event view gotten
-	})
+func (v *HorEventsView) IsBlockInWindow(blockIndex int) bool {
+	return v.horInfinite.IsBlockInWindow(blockIndex)
 }
 
 // updateCurrentBlock adds move events to the current block who's end might not be yet.
