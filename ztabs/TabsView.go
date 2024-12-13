@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zshape"
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
@@ -99,6 +100,12 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 			}
 		})
 	}
+	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if !down {
+			return false
+		}
+		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
+	})
 	return v
 }
 
@@ -157,6 +164,11 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	})
 	v.header.Add(view, zgeo.BottomLeft)
 	v.items = append(v.items, item{id: id, view: view, create: create})
+	ilen := len(v.items)
+	if ilen < 10 {
+		key := zkeyboard.Key('0' + ilen)
+		button.KeyboardShortcut = zkeyboard.KMod(key, 0)
+	}
 	if v.CurrentID == id {
 		v.SelectItem(id, nil)
 	}
