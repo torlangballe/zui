@@ -155,12 +155,38 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		// }
 		return
 	}
+	var setupOpen bool
 	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
 	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
-		// zlog.Info("addField:", v.ObjectName(), each.Field.Name)
+		if each.Field.HasFlag(zfields.FlagIsOpen) {
+			setupOpen = true
+			if each.Field.HasFlag(zfields.FlagIsOpener) {
+				var verb string
+				if v.options&AllowView != 0 {
+					each.Field.Size = zgeo.SizeD(16, 10)
+					each.Field.ImageFixedPath = "images/zcore/eye-dark-gray.png"
+					verb = "view"
+				} else {
+					each.Field.Size = zgeo.SizeD(16, 16)
+					each.Field.ImageFixedPath = "images/zcore/edit-dark-gray.png"
+					verb = "edit"
+				}
+				if each.Field.Tooltip == "" {
+					each.Field.Tooltip = "Press to " + verb + "     " + zstr.UTFPostModifierForRoundRect
+				}
+			}
+		}
 		v.fields = append(v.fields, *each.Field)
 		return true
 	})
+	if setupOpen {
+		v.FieldParameters.AddTrigger("*", zfields.PressedAction, func(ap zfields.ActionPack) bool {
+			if ap.Field.HasFlag(zfields.FlagIsOpen) {
+				v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.options&AllowView != 0, nil)
+			}
+			return true
+		})
+	}
 	if v.options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			// zlog.Info("SORT TABLE:", v.Hierarchy())
@@ -201,9 +227,9 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	s := v.StructForID(id)
 	view := v.createRowFromStruct(s, id)
 	view.Native().SetSelectable(false)
-	if v.options&AllowEdit != 0 {
+	if v.options&(AllowEdit|AllowView) != 0 {
 		view.Native().SetDoublePressedHandler(func() {
-			v.EditItemIDs([]string{id}, false, nil)
+			v.editOrViewItemIDs([]string{id}, false, v.options&AllowView != 0, nil)
 		})
 	}
 	return view
