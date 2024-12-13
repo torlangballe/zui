@@ -124,7 +124,7 @@ func (v *Label) SetMaxLines(max int) {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
-
+	r.Size.H--
 	v.NativeView.SetRect(r)
 }
 
