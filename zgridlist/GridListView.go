@@ -1235,6 +1235,7 @@ func (v *GridListView) updateBorder() {
 	}
 }
 func (v *GridListView) ReadyToShow(beforeWindow bool) {
+	v.ScrollView.ReadyToShow(beforeWindow)
 	v.updateBorder()
 	if beforeWindow && v.BorderColor.Valid {
 	}
