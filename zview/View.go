@@ -49,6 +49,10 @@ type DownPressable interface {
 	SetPressedDownHandler(id string, handler func())
 }
 
+type PressedFuncOwner interface {
+	PressedHandler() func()
+}
+
 type InteractiveSetter interface {
 	SetInteractive(interactive bool)
 }
