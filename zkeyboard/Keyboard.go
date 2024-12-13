@@ -41,6 +41,7 @@ const (
 	KeyEnter      = 131313 // not sure what it is elsewhere, doesn't exist in js/html
 	KeyTab        = 9
 	KeyBackspace  = 8
+	KeySpace      = 32
 	KeyDelete     = 127
 	KeyEscape     = 27
 	KeyLeftArrow  = 37
@@ -187,38 +188,56 @@ func (m Modifier) HumanString() string {
 	return ""
 }
 
-func (m Modifier) AsSymbols() string {
-	var str string
+func (m Modifier) AsSymbols() []string {
+	var parts []string
 	if m&ModifierShift != 0 {
-		str += "⇧"
+		parts = append(parts, "⇧")
 	}
 	if m&ModifierControl != 0 {
 		if zdevice.OS() == zdevice.MacOSType {
-			str += "^"
+			parts = append(parts, "^")
 		} else {
-			str += "ctrl-"
+			parts = append(parts, "ctrl")
 		}
 	}
 	if m&ModifierAlt != 0 {
 		if zdevice.OS() == zdevice.MacOSType {
-			str += "⎇"
+			parts = append(parts, "⎇")
 		} else {
-			str += "alt-"
+			parts = append(parts, "alt")
 		}
 	}
 	if m&ModifierCommand != 0 {
 		if zdevice.OS() == zdevice.MacOSType {
-			str += "⌘"
+			parts = append(parts, "⌘")
 		} else {
-			str += "ctrl-"
+			parts = append(parts, "ctrl")
+		}
+	}
+	return parts
+}
+
+func joinParts(parts []string) string {
+	var str string
+	for i, part := range parts {
+		str += part
+		if i < len(parts)-1 && len([]rune(part)) > 1 {
+			str += "-"
 		}
 	}
 	return str
 }
 
-func (key Key) AsString() string {
+func (m Modifier) AsSymbolsString() string {
+	return joinParts(m.AsSymbols())
+}
+
+func (key Key) AsString(singleLetterKey bool) string {
 	switch key {
 	case ' ':
+		if singleLetterKey {
+			return " "
+		}
 		return "space"
 	case KeyReturn, KeyEnter:
 		return "⏎"
@@ -260,12 +279,16 @@ func (k Key) IsReturnish() bool {
 	return k == KeyReturn || k == KeyEnter
 }
 
-func (km KeyMod) AsString() string {
-	str := km.Modifier.AsSymbols()
+func (km KeyMod) SymbolParts(singleLetterKey bool) []string {
+	parts := km.Modifier.AsSymbols()
 	if km.Key != 0 {
-		str += km.Key.AsString()
+		parts = append(parts, km.Key.AsString(singleLetterKey))
 	} else {
-		str += km.Char
+		parts = append(parts, km.Char)
 	}
-	return str
+	return parts
+}
+
+func (km KeyMod) AsString(singleLetterKey bool) string {
+	return joinParts(km.SymbolParts(singleLetterKey))
 }
