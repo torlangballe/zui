@@ -46,7 +46,7 @@ type Attributes struct {
 	PlaceOverMargin          zgeo.Size
 	TitledMargin             zgeo.Rect
 	PlaceOverView            zview.View
-	FocusView                zview.View
+	FocusView                zview.View // TODO: Use new zcontainer.InitialFocusedView instead?
 	PresentedFunc            func(win *zwindow.Window)
 	ClosedFunc               func(dismissed bool)
 }
