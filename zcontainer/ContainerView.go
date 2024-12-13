@@ -10,7 +10,6 @@ import (
 
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zimage"
-	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
@@ -22,9 +21,10 @@ import (
 // Original class created by Tor Langballe on 23-sept-2014.
 type ContainerView struct {
 	zcustom.CustomView
-	margin            zgeo.Rect
-	singleOrientation bool
-	Cells             []Cell
+	margin             zgeo.Rect
+	singleOrientation  bool
+	Cells              []Cell
+	InitialFocusedView zview.View
 }
 
 type Cell struct {
@@ -284,6 +284,30 @@ func (v *ContainerView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 // 	v.SetMinSize(r.Size)
 // }
 
+func (v *ContainerView) ReadyToShow(beforeWindow bool) {
+	v.CustomView.ReadyToShow(beforeWindow)
+	// zlog.Info("Container Ready0", v.Hierarchy(), beforeWindow, v.InitialFocusedView != nil)
+	if beforeWindow {
+		return
+	}
+	if v.InitialFocusedView == nil {
+		return
+	}
+	foc := v.Native().GetFocusedChildView(true)
+	// zlog.Info("Container Ready1", v.Hierarchy(), foc != nil)
+	if foc != nil {
+		return
+	}
+	has := (v.InitialFocusedView == v.View)
+	if !has {
+		has = v.HasViewRecursive(v.InitialFocusedView)
+	}
+	// zlog.Info("Container Ready", v.Hierarchy(), has, zlog.Pointer(v.InitialFocusedView), zlog.Pointer(v.View))
+	if has {
+		v.InitialFocusedView.Native().Focus(true)
+	}
+}
+
 func (v *ContainerView) ArrangeChildrenAnimated() {
 	//        ZAnimation.Do(duration 0.6, animations  { [weak self] () in
 	v.ArrangeChildren()
@@ -493,6 +517,26 @@ func (v *ContainerView) RemoveNamedChild(name string, all, callRemoveFuncs bool)
 	}
 }
 
+func (v *ContainerView) HasViewRecursive(view zview.View) bool {
+	var has bool
+	// zlog.Info("HasViewRecursive0:", reflect.TypeOf(v), reflect.TypeOf(v.View), ":", reflect.TypeOf(view))
+	if v.View == view {
+		return true
+	}
+	includeCollapsed := true
+	recursive := true
+	// zlog.Info("HasViewRecursive1:", zlog.Pointer(view), view.ObjectName())
+	ViewRangeChildren(v.View, recursive, includeCollapsed, func(child zview.View) bool {
+		// zlog.Info("HasViewRecursive:", view.ObjectName(), zlog.Pointer(view), "==", child.ObjectName(), zlog.Pointer(child))
+		if child == view {
+			has = true
+			return false
+		}
+		return true
+	})
+	return has
+}
+
 func (v *ContainerView) FindViewWithName(name string, recursive bool) (zview.View, int) {
 	return ContainerOwnerFindViewWithName(v, name, recursive)
 }
@@ -654,25 +698,6 @@ func ArrangeChildrenAtRootContainer(view zview.View) {
 			return
 		}
 	}
-}
-
-func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool {
-	var handled bool
-	sh, _ := view.(zkeyboard.ShortcutHandler)
-	if sh != nil && sh.HandleOutsideShortcut(sc) {
-		return true
-	}
-	ViewRangeChildren(view, true, false, func(v zview.View) bool {
-		sh, _ := v.(zkeyboard.ShortcutHandler)
-		if sh != nil {
-			if sh.HandleOutsideShortcut(sc) {
-				handled = true
-				return false
-			}
-		}
-		return true
-	})
-	return handled
 }
 
 func FocusNext(view zview.View, recursive, loop bool) {
