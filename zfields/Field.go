@@ -116,7 +116,6 @@ const (
 	FlagIsDocumentation                               // It is a .Path link to Documentation view.
 	FlagIsAudio                                       // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
 	FlagIsDownload                                    // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
-	FlagIsEdit                                        // If set things like slice-menus have an edit and delete option
 	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
 	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
@@ -130,6 +129,8 @@ const (
 	FlagFutureInvalid                                 // For time, show red if time is future.
 	FlagPastInvalid                                   // For time, show red if time is future.
 	FlagHasDefault                                    // If true Field.Default string is used for default value of field. Can be parsed to numbers too.
+	FlagIsOpen                                        // This field can open the struct if in a table or something else that handles it.
+	FlagIsOpener                                      // Flag IsOpen, and is set to a view or edit icon by table or something.
 )
 
 const (
@@ -237,7 +238,6 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsDocumentation":          uint64(FlagIsDocumentation),
 	"IsAudio":                  uint64(FlagIsAudio),
 	"IsDownload":               uint64(FlagIsDownload),
-	"IsEdit":                   uint64(FlagIsEdit),
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
 	"IsLockable":               uint64(FlagIsLockable),
@@ -247,6 +247,8 @@ var flagsNameMap = zbits.NamedBitMap{
 	"FutureInvalid":            uint64(FlagFutureInvalid),
 	"PastInvalid":              uint64(FlagPastInvalid),
 	"HasDefault":               uint64(FlagHasDefault),
+	"IsOpen":                   uint64(FlagIsOpen),
+	"FlagIsOpener":             uint64(FlagIsOpener),
 }
 
 var (
@@ -504,8 +506,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			default:
 				zlog.Error("invalid: bad val:", val)
 			}
-		case "edit":
-			f.Flags |= FlagIsEdit
+		case "open":
+			f.Flags |= FlagIsOpen
 		case "static":
 			if flag || val == "" {
 				f.Flags |= FlagIsStatic
@@ -615,6 +617,10 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			f.Flags |= FlagIsAudio
 		case "off":
 			f.OffImagePath = "images/" + val
+		case "opener":
+			f.Flags |= FlagIsOpen | FlagIsOpener | FlagNoTitle | FlagIsImage
+			f.MinWidth = 20
+			f.MaxWidth = 20
 		case "image", "himage":
 			var size zgeo.Size
 			var path string
