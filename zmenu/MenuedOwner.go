@@ -539,6 +539,7 @@ func (o *MenuedOwner) popup() {
 			if item.IsAction {
 				// o.items[i].Selected = false
 				if item.Function != nil {
+					zpresent.Close(stack, false, nil)
 					item.Function()
 					// o.getItems() // getItems+UpdateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
 					// o.UpdateTitleAndImage()
@@ -546,11 +547,11 @@ func (o *MenuedOwner) popup() {
 					o.UpdateTitleAndImage()
 				} else if o.ActionHandlerFunc != nil {
 					id := item.Value.(string)
+					zpresent.Close(stack, false, nil)
 					o.ActionHandlerFunc(id)
 					o.getItems()
 					o.UpdateTitleAndImage()
 				}
-				zpresent.Close(stack, false, nil)
 				return
 			}
 		}
@@ -752,7 +753,8 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		marg.W += gap + colorWidth
 	}
 	if o.hasShortcut {
-		str := item.Shortcut.Modifier.AsSymbols() + item.Shortcut.Key.AsString()
+		singleLetterKey := false
+		str := item.Shortcut.AsString(singleLetterKey)
 		keyLabel := zlabel.New(str)
 		title.SetObjectName("shortcut")
 		font := o.Font
