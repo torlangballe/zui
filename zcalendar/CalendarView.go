@@ -13,7 +13,7 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
@@ -128,7 +128,7 @@ func (v *CalendarView) Init(view zview.View) {
 		if v.navigator.HandleKey(km, down) {
 			return true
 		}
-		return zcontainer.HandleOutsideShortcutRecursively(v, km)
+		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
 	})
 }
 

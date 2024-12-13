@@ -224,7 +224,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		if oneID != "" {
 			cell := v.Grid.CellView(oneID)
-			if zcontainer.HandleOutsideShortcutRecursively(cell, km) {
+			if zshortcuts.HandleOutsideShortcutRecursively(cell, km) {
 				return true
 			}
 		}
