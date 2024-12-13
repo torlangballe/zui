@@ -836,11 +836,11 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		}
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
-			v.ClearStateOnUpPress()
 			if !globalLongPressState.cancelPress && press != nil && v.IsUsable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
 				// args[0].Call("stopPropagation") // this one canceled up-listener in SetPressUpDownMovedHandler for some reason
 				press()
+				v.ClearStateOnUpPress()
 			}
 			if globalLongPressState.longTimer != nil {
 				globalLongPressState.longTimer.Stop()
