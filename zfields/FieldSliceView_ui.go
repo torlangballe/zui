@@ -281,7 +281,6 @@ func (v *FieldSliceView) selectItem(i int) {
 			v.stack.CollapseChild(cell.View, false, false)
 			zkeyvalue.DefaultSessionStore.SetInt(v.currentIndex, v.storeKey, true)
 		}
-		zcontainer.FocusNext(cell.View, true, true)
 	}
 	v.updateMenu()
 	if v.IsPresented() {
@@ -301,9 +300,11 @@ func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
 	}
 	v.RemoveAllChildren()
 	v.build(true)
-	focused = zview.ChildOfViewFunc(v, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
-	if focused != nil {
-		focused.Native().Focus(true)
+	if focusedPath != "" {
+		focused = zview.ChildOfViewFunc(v, focusedPath) // use v.View here to get proper underlying container type in ChildOfViewFunc
+		if focused != nil {
+			focused.Native().Focus(true)
+		}
 	}
 }
 
