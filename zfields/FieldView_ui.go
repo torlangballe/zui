@@ -1628,7 +1628,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if rval.Kind() == reflect.Interface {
 		rval = rval.Elem()
 	}
-	// zlog.Info("BuildItem:", f.Name, rval.Interface(), index, rval.Interface(), rval.Kind())
+	// 	zlog.Info("BuildItem:", f.Name, f.Size, f.Flags, f.ImageFixedPath)
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
@@ -1960,6 +1960,11 @@ func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 		}
 	} else if f.Tooltip != "" {
 		tip = f.Tooltip
+		end := zstr.TailUntilWithRest(tip, "   ", &tip)
+		if zstr.HasPrefix(end, "[", &end) && zstr.HasSuffix(end, "]", &end) {
+			end = end + zstr.UTFPostModifierForRoundRect
+			tip = strings.TrimRight(tip, " ") + "    " + end
+		}
 	}
 	if tip != "" {
 		view.Native().SetToolTip(tip)
