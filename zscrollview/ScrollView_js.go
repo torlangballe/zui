@@ -42,6 +42,15 @@ func (v *ScrollView) OffsetAtBottom() float64 {
 	return v.child.Rect().Size.H - v.Rect().Size.H
 }
 
+func (v *ScrollView) ReadyToShow(beforeWindow bool) {
+	v.CustomView.ReadyToShow(beforeWindow)
+	rs, has := v.child.(zview.ReadyToShowType)
+	// zlog.Info("SV.Ready:", v.Hierarchy(), has)
+	if has {
+		rs.ReadyToShow(beforeWindow)
+	}
+}
+
 func (v *ScrollView) SetContentOffset(y float64, animate bool) {
 	v.ScrolledAt = time.Now()
 	v.YOffset = y
