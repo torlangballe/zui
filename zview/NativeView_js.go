@@ -742,8 +742,7 @@ func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow) {
 func (v *NativeView) SetToolTip(str string) {
 	tta, _ := v.View.(ToolTipAdder)
 	if tta != nil {
-		add := tta.GetToolTipAddition()
-		str = zstr.Concat("\n", str, add)
+		str += tta.GetToolTipAddition()
 	}
 	v.JSSet("title", str)
 }

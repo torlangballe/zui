@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 type FocusType int
@@ -124,5 +125,6 @@ func (v *NativeView) SetResizeCursorFromAlignment(a zgeo.Alignment) bool {
 }
 
 func GetShortCutTooltipAddition(sc zkeyboard.KeyMod) string {
-	return "keyboard shortcut: " + sc.AsString()
+	singleLetterKey := true
+	return "    " + sc.AsString(singleLetterKey) + zstr.UTFPostModifierForRoundRect
 }
