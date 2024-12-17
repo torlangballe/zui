@@ -241,17 +241,19 @@ func (v *TextView) setHandlers() {
 		return nil
 	}))
 	v.JSSet("onkeydown", js.FuncOf(func(val js.Value, vs []js.Value) any {
+		event := vs[0]
 		if v.changed.Count() == 0 && v.editDone == nil && v.FilterFunc == nil {
 			return nil
 		}
-		event := vs[0]
 		which := event.Get("which")
 		if which.IsUndefined() {
 			return nil
 		}
 		key := which.Int()
 		// zlog.Info("OnKeyDown", key)
+		propagate := false
 		if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
+			propagate = true
 			if v.editDone != nil {
 				v.editDone(false)
 			}
@@ -260,9 +262,13 @@ func (v *TextView) setHandlers() {
 			}
 		}
 		if key == zkeyboard.KeyEscape {
+			propagate = true
 			if v.editDone != nil {
 				v.editDone(true)
 			}
+		}
+		if !propagate {
+			event.Call("stopPropagation") // We'll be using the key, so don't allow other listeners to also react to it
 		}
 		return nil
 	}))
