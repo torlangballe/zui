@@ -307,7 +307,7 @@ func (v *StackView) ArrangeChildren() {
 			}
 		} else {
 			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
-				zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
+				// zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
 				c.View.Show(false)
 			}
 		}
