@@ -265,16 +265,20 @@ func (v *NativeView) BGColor() zgeo.Color {
 }
 
 func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
-	style := v.JSStyle()
 	for _, a := range []zgeo.Alignment{zgeo.TopLeft, zgeo.TopRight, zgeo.BottomLeft, zgeo.BottomRight} {
 		if align&a != a {
 			continue
 		}
 		srad := fmt.Sprintf("%dpx", int(radius))
 		pos := "border-" + strings.Replace(a.String(), "|", "-", -1) + "-radius"
-		for _, pre := range customStylePrefixes {
-			style.Set(pre+pos, srad)
-		}
+		v.SetStyleForAllPlatforms(pos, srad)
+	}
+}
+
+func (v *NativeView) SetStyleForAllPlatforms(key, value string) {
+	style := v.JSStyle()
+	for _, pre := range customStylePrefixes {
+		style.Set(pre+key, value)
 	}
 }
 
@@ -283,17 +287,12 @@ func (v *NativeView) SetSelectable(on bool) {
 	if on {
 		val = "all"
 	}
-	for _, pre := range customStylePrefixes {
-		v.JSStyle().Set(pre+"user-select", val)
-	}
+	v.SetStyleForAllPlatforms("user-select", val)
 }
 
 func (v *NativeView) SetCorner(radius float64) {
-	style := v.JSStyle()
 	s := fmt.Sprintf("%dpx", int(radius))
-	for _, pre := range customStylePrefixes {
-		style.Set(pre+"border-radius", s)
-	}
+	v.SetStyleForAllPlatforms("border-radius", s)
 }
 
 func (v *NativeView) Corner() float64 {
