@@ -643,8 +643,7 @@ func buildMapRow(v *FieldView, stackFV *FieldView, i int, key string, mval refle
 		text := fmt.Sprint(mval.Interface())
 		lineFeeds := strings.Count(text, "\n")
 		if lineFeeds > 0 {
-			// zlog.Info("MAP:", key, lineFeeds, mval.Type(), text)
-			mf.Rows = lineFeeds + 1
+			mf.Rows = min(4, lineFeeds+1)
 		} else {
 			mf.Wrap = ztextinfo.WrapTailTruncate.String()
 		}
