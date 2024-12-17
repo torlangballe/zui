@@ -118,9 +118,9 @@ func (v *Label) SetMaxLines(max int) {
 		// zlog.Info("Label.SetMaxLines here2!")
 		style.Set("text-overflow", "initial")
 		style.Set("whiteSpace", "pre-wrap")
+		style.Set("overflow", "hidden")
 	}
-	//	style.Set("textOverflow", "clip")
-	//	white-space: pre-wrap for multi-lines
+	// v.SetStyleForAllPlatforms("line-clamp", fmt.Sprint(max))
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
