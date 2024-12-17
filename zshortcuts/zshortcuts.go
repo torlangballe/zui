@@ -16,11 +16,6 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-// type viewMod struct {
-// 	view zview.View
-// 	mod  zkeyboard.KeyMod
-// }
-
 var (
 	helpStacks      = map[*zwindow.Window]*zcontainer.StackView{}
 	highlightTimers = map[zview.View]*ztimer.Repeater{}
@@ -74,6 +69,7 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 }
 
 func RegisterShortCutHelperAreaForWindow(win *zwindow.Window, stack *zcontainer.StackView) {
+	stack.SetChildrenAboveParent(true)
 	helpStacks[win] = stack
 }
 
@@ -94,10 +90,11 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 		label := zlabel.New(part)
 		label.SetTextAlignment(zgeo.Center)
 		label.SetMinWidth(18)
+		label.SetMargin(zgeo.RectFromXY2(3, 1, -3, -1))
 		label.SetStroke(1, zgeo.ColorBlack, true)
 		label.SetBGColor(zgeo.ColorNew(1, 1, 0.3, 1))
 		label.SetCorner(3)
-		stack.Add(label, zgeo.CenterLeft)
+		stack.Add(label, zgeo.CenterLeft, zgeo.SizeD(0, -2))
 	}
 	a := zcontainer.FindAncestorArranger(stack)
 	if a != nil {
