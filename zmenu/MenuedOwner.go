@@ -642,7 +642,6 @@ func (o *MenuedOwner) ClosePopup() {
 
 func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	for i, item := range o.getItems() {
-		// zlog.Info("MO HandleShortCut:", item.Name, sc, item.Shortcut, item.Shortcut.Matches(sc))
 		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {
 				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above
