@@ -131,6 +131,7 @@ const (
 	FlagHasDefault                                    // If true Field.Default string is used for default value of field. Can be parsed to numbers too.
 	FlagIsOpen                                        // This field can open the struct if in a table or something else that handles it.
 	FlagIsOpener                                      // Flag IsOpen, and is set to a view or edit icon by table or something.
+	FlagShowIfExtraSpace                              // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
 )
 
 const (
@@ -449,6 +450,11 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		case "rows":
 			if floatErr == nil {
 				f.Rows = int(n)
+			}
+		case "optional":
+			f.Flags |= FlagShowIfExtraSpace
+			if floatErr == nil && n > 0 {
+				f.MinWidth = n
 			}
 		case "widget":
 			f.WidgetName = val

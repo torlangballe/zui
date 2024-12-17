@@ -1843,6 +1843,17 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	cell.Alignment = def | exp | f.Alignment
 	cell.Margin = zgeo.RectMarginForSizeAndAlign(cellMargin, cell.Alignment)
+
+	var lastShowIfExtraSpace float64
+	if f.HasFlag(FlagShowIfExtraSpace) && f.MinWidth > 0 {
+		for _, c := range v.Cells {
+			if c.ShowIfExtraSpace != 0 {
+				lastShowIfExtraSpace = c.ShowIfExtraSpace
+			}
+		}
+		cell.ShowIfExtraSpace = lastShowIfExtraSpace + f.MinWidth
+		// zlog.Info("FlagShowIfExtraSpace:", v.ObjectName(), f.FieldName, cell.ShowIfExtraSpace, f.MinWidth)
+	}
 	// doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView

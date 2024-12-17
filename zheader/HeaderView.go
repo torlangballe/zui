@@ -34,14 +34,15 @@ type Header struct {
 	Align     zgeo.Alignment
 	Justify   zgeo.Alignment
 	// Height         float64
-	ImagePath      string
-	MinWidth       float64
-	MaxWidth       float64
-	ImageSize      zgeo.Size
-	Tip            string
-	SortSmallFirst zbool.BoolInd
-	SortPriority   int
-	Lockable       bool
+	ImagePath        string
+	MinWidth         float64
+	MaxWidth         float64
+	ImageSize        zgeo.Size
+	Tip              string
+	SortSmallFirst   zbool.BoolInd
+	ShowIfExtraSpace bool
+	SortPriority     int
+	Lockable         bool
 }
 
 type HeaderView struct {
@@ -266,11 +267,16 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 	for _, c := range stack.Cells {
 		if !c.Collapsed && !c.Free {
 			cells = append(cells, c)
+		} else if c.Collapsed {
+			zlog.Info("Collapsed:", c.View.ObjectName(), c.View.Rect().Size, c.ShowIfExtraSpace)
 		}
 	}
 	var hviews []zview.View
 	for _, c := range v.Cells {
 		if !c.Collapsed && !c.Free {
+			// if c.View.Rect().Size.W == 0 || c.View.ObjectName() == "CPU" {
+			// 	zlog.Info("!Add:", c.View.ObjectName(), c.View.Rect().Size, c.ShowIfExtraSpace)
+			// }
 			hviews = append(hviews, c.View)
 		}
 	}
@@ -295,7 +301,12 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H
-		hviews[i].SetRect(o)
+		if o.Size.W == 0 {
+			zlog.Info("Add Zero:", cells[i].View.ObjectName(), cr.Size)
+		}
+		if o.Size.W != 0 {
+			hviews[i].SetRect(o)
+		}
 	}
 }
 

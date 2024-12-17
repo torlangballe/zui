@@ -265,10 +265,7 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 		if !f.HasFlag(zfields.FlagDontJustifyHeader) {
 			h.Justify = f.Justify
 		}
-		// zlog.Info("makeHeaderFields:", h.FieldName, f.HasFlag(zfields.FlagHeaderLockable))
-		if f.HasFlag(zfields.FlagHeaderLockable) {
-			h.Lockable = true
-		}
+		h.Lockable = f.HasFlag(zfields.FlagHeaderLockable)
 		if f.Kind == zreflect.KindString && f.Enum == "" {
 			h.Align |= zgeo.HorExpand
 		}
