@@ -259,7 +259,7 @@ func (v *HorBlocksView) SetRect(r zgeo.Rect) {
 	if v.fixedHeight == 0 {
 		v.viewSize.H = r.Size.H
 	}
-	// zlog.Info("HB.SetRect1:", r, old, v.viewSize.W)
+	// zlog.Info("HB.SetRect1:", r, v.viewSize.W)
 
 	v.StackView.SetRect(r) // sets rect as stack, so all parts set
 	// zlog.Info("HB SetRect", r, v.VertStack.Rect())
@@ -271,7 +271,7 @@ func (v *HorBlocksView) Reset(update bool) {
 	// zlog.Info("HB ReSet:", update, zdebug.CallingStackString())
 	// v.currentIndex = 0
 	// v.VertStack.SetXContentOffset(0)
-	// zlog.Info("HB Reset")
+	// zlog.Info("HB Reset", zdebug.CallingStackString())
 	v.Scroller.RemoveAllChildren()
 	v.horScrollHeader.RemoveAllChildren()
 	v.oldRect = zgeo.Rect{}
@@ -325,7 +325,7 @@ func (v *HorBlocksView) setSizes() {
 	v.VertOverlay.SetHeight(s.H)
 }
 
-func (v *HorBlocksView) DebugPrintList() string {
+func (v *HorBlocksView) DebugPrintCells() string {
 	str := "[ "
 	for _, c := range v.Scroller.Cells {
 		str += c.View.ObjectName() + " "
@@ -341,12 +341,12 @@ func (v *HorBlocksView) update() {
 	if v.Updating {
 		return
 	}
-	// var adjustedOffset, flipped bool
 	// s := time.Now()
 	v.Updating = true
-	// zlog.Info("update1:", "cur:", v.currentIndex, v.DebugPrintList())
+	// zlog.Info("** update1: cur:", v.currentIndex)
 fullLoop:
 	for {
+		var adjustedOffset bool
 		for i := 0; i < len(v.Scroller.Cells); i++ {
 			c := v.Scroller.Cells[i]
 			view := c.View
@@ -369,9 +369,9 @@ fullLoop:
 				w := float64(i) * v.viewSize.W
 				o := v.VertStack.ContentOffset().X
 				blocksDiff := int((w - o) / v.viewSize.W)
-				// zlog.Info("update1?:", "cur:", v.currentIndex, sci, "bdiff:", blocksDiff, v.DebugPrintList(), "max:", v.maxIndex, o, o/v.viewSize.W)
+				// zlog.Info("update1?:", "cur:", v.currentIndex, sci, "bdiff:", blocksDiff, v.DebugPrintCells(), "max:", v.maxIndex, o, o/v.viewSize.W)
 				if blocksDiff != 0 {
-					// zlog.Info("update:", "cur:", v.currentIndex, sci, "bdiff:", blocksDiff, v.DebugPrintList(), "max:", v.maxIndex, o, o/v.viewSize.W, "i:", i)
+					// zlog.Info("update:", "cur:", v.currentIndex, sci, "bdiff:", blocksDiff, v.DebugPrintCells(), "max:", v.maxIndex, o, o/v.viewSize.W, "i:", i)
 					if blocksDiff == -1 && i < len(v.Scroller.Cells)-1 || blocksDiff == 1 && i > 0 {
 						newOffset := o + float64(blocksDiff)*v.viewSize.W
 						// flipped = true
@@ -379,7 +379,7 @@ fullLoop:
 						v.currentIndex = v.currentIndex - blocksDiff
 						// zlog.Info("ChangeCur:", v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
-						// adjustedOffset = true
+						adjustedOffset = true
 						continue fullLoop
 					}
 					// v.currentIndex, _ = strconv.Atoi(v.Scroller.Cells[ni].View.ObjectName())
@@ -388,7 +388,7 @@ fullLoop:
 						newOffset := (float64(i) + fract) * v.viewSize.W
 						// zlog.Info("moreInc:", v.maxIndex, w, o, blocksDiff, i, v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
-						// 	adjustedOffset = true
+						adjustedOffset = true
 					}
 				}
 			}
@@ -405,11 +405,28 @@ fullLoop:
 			v.setSizes()
 			continue fullLoop
 		}
+		if adjustedOffset {
+			continue
+		}
 		break
 	}
 	v.Updating = false
+	// for i, c := range v.Scroller.Cells {
+	// 	if c.View.ObjectName() != "0" {
+	// 		continue
+	// 	}
+	// 	cc := c.View.(zcontainer.CellsCounter)
+	// 	if cc != nil {
+	// 		view, _ := v.FindViewForIndex(0)
+	// 		zlog.Info(i, "Updated cur:", v.currentIndex, zlog.Pointer(c.View), cc.CountChildren(), zlog.Pointer(view))
+	// 	}
+	// }
 }
 
 func (v *HorBlocksView) IsBlockInWindow(blockIndex int) bool {
 	return blockIndex >= v.currentIndex-v.IndexWindow && blockIndex <= v.currentIndex+v.IndexWindow
+}
+
+func (v *HorBlocksView) BlockViews() []zview.View {
+	return v.Scroller.GetChildren(false)
 }

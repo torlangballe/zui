@@ -82,11 +82,12 @@ type Lane struct {
 }
 
 type Row struct {
-	ID     int64
-	Name   string
-	Height float64
-	y      float64 // accumulated from top
-	views  []zview.View
+	ID            int64
+	Name          string
+	Height        float64
+	y             float64 // accumulated from top
+	ForGlobalLane bool
+	views         []zview.View
 }
 
 type EventOptions struct {
@@ -312,7 +313,7 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 		v.updatingBlock = false
 		return
 	}
-	v.updateBlockView(bestIndex, bestTime.IsZero()) // do outgoing one one last time in a bit, when we hope last events are in
+	v.updateBlockView(bestIndex, bestTime.IsZero())
 	ni := v.TimeToBlockIndex(time.Now())
 	v.horInfinite.SetMaxIndex(ni + 1)
 }
@@ -329,19 +330,22 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 		v.updatingBlock = false
 		return
 	}
-	start := time.Now()
-	zlog.Info("updateBlockView:", blockIndex)
+	// zlog.Info("updateBlock", blockIndex)
+	// start := time.Now()
 	v.updateBlocks[blockIndex] = time.Now()
 	view, _ := v.horInfinite.FindViewForIndex(blockIndex)
+	// if blockIndex == 0 {
+	// 	zlog.Info("updateBlock", zlog.Pointer(view), blockIndex, len(v.lanes))
+	// }
 	if view == nil {
 		v.updatingBlock = false
 		zlog.Info("updateBlockView no view:", blockIndex)
 		return // we haven't created it yet, or it's now being updated with repeater, when that block is outside index window
 	}
+	// zlog.Info("updateBlock", blockIndex)
 	blockView := view.(*zcontainer.ContainerView)
 	go v.GetEventViewsFunc(blockIndex, isNew, func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) {
 		if blockDone {
-			zlog.Info("updateBlockView done:", blockIndex, time.Since(start))
 			v.updatingBlock = false
 			return
 		}
@@ -356,11 +360,18 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 		pos := zgeo.PosI(x, y)
 		for _, c := range blockView.Cells {
 			if c.View.Rect().Pos == pos {
+				// zlog.Info("Remove cell view in same spot")
 				blockView.RemoveChild(c.View, true)
 				break
 			}
 		}
+		// if blockIndex == 0 {
+		// 	zlog.Info("updateBlock AddChildView[0]:", zlog.Pointer(blockView), cellRect, laneID, rowType)
+		// }
 		blockView.Add(childView, zgeo.TopLeft, cellRect.Pos.Size()).Free = true
+		// if blockIndex == 0 && pressed {
+		// 	zlog.Info("updateBlockView got view:", zlog.Pointer(blockView), x, cellBox, laneID, rowType, blockDone, blockView.CountChildren())
+		// }
 		childView.SetRect(cellRect)
 		v.updateBlocks[blockIndex] = time.Now() // set it to after event view gotten
 	})
@@ -370,7 +381,7 @@ func (v *HorEventsView) makeButtons() {
 	v.timeField = ztext.TimeFieldNew("time", ztime.TimeFieldNotFutureIfAmbiguous|ztime.TimeFieldSecs)
 	v.timeField.CallChangedOnTabPressed = true
 	v.timeField.HandleValueChangedFunc = func() {
-		zlog.Info("Time Field changed")
+		// zlog.Info("Time Field changed")
 		t, err := v.timeField.Value()
 		if err != nil {
 			return
@@ -394,7 +405,7 @@ func (v *HorEventsView) makeButtons() {
 	}
 	leftKey := zkeyboard.KeyMod{Key: zkeyboard.KeyLeftArrow, Modifier: zkeyboard.ModifierShift}
 	rightKey := zkeyboard.KeyMod{Key: zkeyboard.KeyRightArrow, Modifier: zkeyboard.ModifierShift}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", leftKey, "zcore/zoom-in-gray", "zoom in", rightKey, "xxx2xxx", 4, 28, -1, v.zoomPressed)
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", leftKey, "zcore/zoom-in-gray", "zoom in", rightKey, "filler", 4, 28, -1, v.zoomPressed)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
 
 	v.nowButton = zshape.ImageButtonViewSimpleInsets("now", "lightGray")
@@ -488,7 +499,11 @@ func makeButtonPairInStack(id int, leftImageStub, leftTip string, leftKey zkeybo
 	return stack
 }
 
+var pressed = false
+
 func (v *HorEventsView) zoomPressed(left bool, id int) {
+	// zlog.Info("zoomPressed")
+	pressed = true
 	v.Bar.SetInteractive(false)
 	defer v.Bar.SetInteractive(true)
 	if left {
@@ -613,7 +628,7 @@ func (v *HorEventsView) Update() {
 }
 
 func (v *HorEventsView) SetLanes(lanes []Lane) {
-	// zlog.Info("HV.SetLaneRow:", len(lanes))
+	// zlog.Info("HV.SetLanes:", len(lanes))
 	for _, lane := range v.lanes {
 		for _, view := range lane.views {
 			v.horInfinite.VertOverlay.RemoveChild(view, true)
@@ -634,7 +649,7 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 		}
 		v.lanes[i].Rows = make([]Row, len(lane.Rows))
 		for j, r := range lane.Rows {
-			// zlog.Info("SetLaneRow:", lane.Name, r.Name, r.ID)
+			// zlog.Info("SetLaneRow:", lane.Name, r.Name, r.ID, r.Height)
 			r.y = y
 			v.lanes[i].Rows[j] = r
 			y += r.Height
@@ -768,20 +783,21 @@ func (v *HorEventsView) handleBlockViewRemoved(blockIndex int) {
 }
 
 func (v *HorEventsView) makeBlockView(blockIndex int) zview.View {
-	// if blockIndex == 0 {
-	// }
 	v.updateBlocks[blockIndex] = time.Time{}
-	// zlog.Info("MakeBlockView", blockIndex, v.ViewWidth == 0, len(v.lanes), v.updateBlocks, zlog.Pointer(v.updateBlocks))
 	blockView := zcontainer.New(strconv.Itoa(blockIndex))
-	start := v.IndexToTime(float64(blockIndex))
-	end := start.Add(v.BlockDuration)
+	// if blockIndex == 0 {
+	// 	fmt.Printf("MakeBlockView %d %p\n", blockIndex, blockView)
+	// }
+	// start := v.IndexToTime(float64(blockIndex))
+	// end := start.Add(v.BlockDuration)
 	col := v.BGColor()
 	if v.TestMode {
 		// col = zgeo.ColorGreen
 		// if zint.Abs(blockIndex)%2 == 1 {
 		// 	col = zgeo.ColorRed
 		// }
-		num := zlabel.New(fmt.Sprint(blockIndex, ": ", ztime.GetNiceSubSecs(start, 3), "-", end.Sub(start), 3))
+		// num := zlabel.New(fmt.Sprint(blockIndex, ": ", ztime.GetNiceSubSecs(start, 3), "-", end.Sub(start), 3))
+		num := zlabel.New(fmt.Sprint(blockIndex, ": ", zlog.Pointer(blockView)))
 		num.SetTextAlignment(zgeo.Center)
 		num.SetColor(zgeo.ColorWhite)
 		num.SetFont(zgeo.FontNice(25, zgeo.FontStyleBold))
@@ -811,6 +827,10 @@ func (v *HorEventsView) HandlePan(blockIndex float64) {
 	v.timeField.SetValue(t)
 	v.updateNowPole()
 	v.updateWidgets()
+}
+
+func (v *HorEventsView) BlockViews() []zview.View {
+	return v.horInfinite.BlockViews()
 }
 
 type panDuration struct {
