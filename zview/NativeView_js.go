@@ -850,7 +850,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		})
 		v.JSCall("addEventListener", "mouseup", fup)
-		args[0].Call("stopPropagation")
+		// args[0].Call("stopPropagation")
 		return nil
 	})
 }
@@ -1297,6 +1297,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 	const minDiff = 10.0
 	v.SetListenerJSFunc("mousedown:$updown", func(this js.Value, args []js.Value) any {
 		var moveFunc, upFunc js.Func
+		// zlog.Info("Mouse up/down down")
 		we := v.GetWindowElement()
 		// we := v.Element
 		if we.IsUndefined() {
@@ -1334,6 +1335,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 				// e.Call("preventDefault")
 				// }
 			}
+			e.Call("stopPropagation")
 			return nil
 		})
 		we.Call("addEventListener", "mouseup", upFunc)
@@ -1348,6 +1350,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 					e.Call("preventDefault")
 				}
 			}
+			//			e.Call("stopPropagation")
 			return nil
 		})
 		we.Call("addEventListener", "mousemove", moveFunc)
