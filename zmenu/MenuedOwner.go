@@ -276,9 +276,9 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 		// zlog.Info("MO UpdateTitleAndImage:", len(o.items), o.TitleIsValueIfOne, count)
 		if !(o.TitleIsValueIfOne && count == 1) {
 			if o.PluralableWord != "" {
-				if count > 0 {
-					nstr = zwords.Pluralize(o.PluralableWord, count)
-				}
+				// if count > 0 {
+				nstr = zwords.Pluralize(o.PluralableWord, count)
+				// }
 			} else if o.GetTitleFunc != nil {
 				nstr = o.GetTitleFunc(count)
 			} else {
@@ -367,7 +367,7 @@ func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 	o.UpdateTitleAndImage()
 }
 
-func (o *MenuedOwner) SetSelectedValues(vals []interface{}) {
+func (o *MenuedOwner) SetSelectedValuesAndEdited(vals []interface{}, edited bool) {
 	// zlog.Info("SetSelectedValues1", vals, o.Name)
 outer:
 	for i, item := range o.getItems() {
@@ -384,8 +384,12 @@ outer:
 	// zlog.Info("SetSelectedValues", vals, o.Name, zlog.Full(o.items), o.SelectedItem())
 	o.UpdateTitleAndImage()
 	if o.SelectedHandlerFunc != nil {
-		o.SelectedHandlerFunc(false)
+		o.SelectedHandlerFunc(edited)
 	}
+}
+
+func (o *MenuedOwner) SetSelectedValues(vals []interface{}) {
+	o.SetSelectedValuesAndEdited(vals, false)
 }
 
 func (o *MenuedOwner) SetSelectedValue(val interface{}) {
