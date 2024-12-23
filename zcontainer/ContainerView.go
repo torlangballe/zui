@@ -72,7 +72,7 @@ var (
 
 func init() {
 	zview.RangeChildrenFunc = func(root zview.View, recursive, includeCollapsed bool, got func(zview.View) bool) {
-		// ct, _ := root.(ContainerOwner)
+		// ct, _ := root.(ChildrenOwner)
 		// zlog.Info("RangeAllVisibleChildrenFunc:", ct != nil, reflect.TypeOf(root))
 		ViewRangeChildren(root, recursive, includeCollapsed, got)
 	}
