@@ -417,26 +417,27 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 	// if usable {
 	// 	str = "auto"
 	// }
-	// style.Set("pointer-events", str)
+	// style.Set("pointerEvents", str)
 	style.Set("opacity", alpha)
 }
 
 func (v *NativeView) SetInteractive(interactive bool) {
+	str := "none"
 	if interactive {
-		v.JSSet("pointer-events", "auto")
+		str = "auto"
 		return
 	}
-	v.JSSet("pointer-events", "none")
+	v.SetJSStyle("pointer-events", str)
 }
 
-// func (v *NativeView) Interactive() bool {
-// 	inter := v.JSStyle().Get("pointer-events")
-// 	// fmt.Printf("Inter? %p %s %v\n", v, v.ObjectName(), inter)
-// 	if inter.IsUndefined() || inter.String() != "none" {
-// 		return true
-// 	}
-// 	return false
-// }
+func (v *NativeView) IsInteractive() bool {
+	inter := v.JSStyle().Get("pointer-events")
+	// fmt.Printf("Inter? %p %s %v\n", v, v.ObjectName(), inter.String())
+	if inter.IsUndefined() || inter.String() != "none" {
+		return true
+	}
+	return false
+}
 
 func getActiveElement(v *NativeView) js.Value {
 	return v.Document().Get("activeElement")
@@ -814,10 +815,31 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			press()
 			return nil
 		}
-		v.SetStateOnDownPress(args[0])
+		event := args[0]
+		v.SetStateOnDownPress(event)
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
+		target := event.Get("target")
+		if !target.Equal(v.Element) {
+			// zlog.Info("Pressed Child:", v.Hierarchy(), mid, target.Get("id").String())
+			var found *NativeView
+			RangeChildrenFunc(v.View, true, false, func(view View) bool {
+				// zlog.Info("Pressed Child Find?:", view.Native().Hierarchy(), view.Native().Element.Get("id").String())
+				if view.Native().Element.Equal(target) {
+					found = view.Native()
+					return false
+				}
+				return true
+			})
+			if found != nil {
+				// zlog.Info("Pressed Child Found:", found.Hierarchy(), found.IsUsable(), found.IsInteractive())
+				if found.IsUsable() && found.IsInteractive() {
+					return nil
+				}
+			}
+		}
+		// zlog.Info("Pressed:", v.Hierarchy(), mid)
 		if long != nil {
 			globalLongPressState = longPresser{}
 			globalLongPressState.downPressedTime = time.Now()
