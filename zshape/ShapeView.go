@@ -154,6 +154,7 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 func (v *ShapeView) SetImage(image *zimage.Image, useCache bool, fitSize zgeo.Size, spath string, insets zgeo.Size, done func(i *zimage.Image)) {
 	if v.ImageView == nil {
 		v.ImageView = zimageview.New(nil, useCache, "", fitSize)
+		v.ImageView.SetInteractive(false)
 		v.ImageView.CapInsetCorner = insets
 		if v.IsImageFill {
 			v.ImageView.SetAlignment(zgeo.Expand | zgeo.Center)
@@ -236,6 +237,7 @@ func (v *ShapeView) UpdateText() {
 	if (v.textInfo.Text != "" || v.TextLabel != nil) && v.textInfo.Alignment != zgeo.AlignmentNone {
 		if v.TextLabel == nil {
 			v.TextLabel = zlabel.New("")
+			v.TextLabel.SetInteractive(false)
 			v.TextLabel.SetObjectName("title")
 			v.AddAdvanced(v.TextLabel, zgeo.Center, v.TextMargin, zgeo.SizeNull, -1, false)
 		}
