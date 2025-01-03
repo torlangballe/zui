@@ -425,8 +425,8 @@ func (v *NativeView) SetInteractive(interactive bool) {
 	str := "none"
 	if interactive {
 		str = "auto"
-		return
 	}
+	// zlog.Info("NV.SetInteractive", v.Hierarchy(), str)
 	v.SetJSStyle("pointer-events", str)
 }
 
