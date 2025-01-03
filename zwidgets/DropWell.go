@@ -39,7 +39,7 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.SetMinSize(size)
 	// v.SetCanTabFocus(true)
 
-	v.Activity = NewActivityView(zgeo.SizeD(12, 12))
+	v.Activity = NewActivityView(zgeo.SizeD(12, 12), zgeo.ColorBlack)
 	v.Add(v.Activity, zgeo.CenterRight, zgeo.SizeD(4, 0))
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
 		zlog.Info("Well HandleDropish:", name, dtype)

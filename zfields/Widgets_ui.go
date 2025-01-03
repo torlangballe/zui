@@ -77,7 +77,7 @@ func (a ActivityWidgeter) Create(f *Field) zview.View {
 		f.Size = zgeo.SizeBoth(20)
 	}
 	f.SetEdited = false
-	av := zwidgets.NewActivityView(f.Size)
+	av := zwidgets.NewActivityView(f.Size, f.Styling.FGColor)
 	av.AlwaysVisible = f.Visible
 	return av
 }

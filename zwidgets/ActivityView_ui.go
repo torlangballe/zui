@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -19,22 +20,44 @@ type ActivityView struct {
 	start         time.Time
 }
 
-func NewActivityView(size zgeo.Size) *ActivityView {
+func NewActivityView(size zgeo.Size, col zgeo.Color) *ActivityView {
+	var post string
+	if !col.Valid {
+		col = zgeo.ColorBlack
+		if zstyle.Dark {
+			col = zgeo.ColorWhite
+		}
+	}
+	if col != zgeo.ColorBlack {
+		post = "-white"
+	}
+	path := "images/zcore/activity" + post + ".png"
 	v := &ActivityView{}
-	v.Init(v, true, nil, "images/zcore/activity.png", size)
+	if col != zgeo.ColorBlack && col != zgeo.ColorWhite {
+		v.TintColor = col
+	}
+	v.Init(v, true, nil, path, size)
 	v.rotationSecs = 1.5
 	v.repeater = ztimer.RepeaterNew()
 	v.SetAlpha(0)
 	return v
 }
 
+func (v *ActivityView) StopOrStart(start bool) {
+	if start {
+		v.Start()
+	} else {
+		v.Stop()
+	}
+}
+
 func (v *ActivityView) Start() {
-	v.SetAlpha(1)
 	if !v.start.IsZero() {
 		return
 	}
 	v.start = time.Now()
 	v.repeater.Set(0.1, false, func() bool {
+		v.SetAlpha(1)
 		t := ztime.Since(v.start)
 		deg := 360 * (t / v.rotationSecs)
 		v.Rotate(deg)
