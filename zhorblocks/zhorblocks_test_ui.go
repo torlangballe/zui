@@ -115,7 +115,7 @@ func MakeHorEventsTestView(id string, delete bool) zview.View {
 		GutterWidth:          16,
 	}
 	v := NewEventsView(nil, opts)
-	v.GetEventViewsFunc = func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool)) {
+	v.GetEventViewsFunc = func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool) {
 		// si := -1
 		start := v.IndexToTime(float64(blockIndex))
 		end := start.Add(v.BlockDuration)

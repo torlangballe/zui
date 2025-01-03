@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -32,6 +33,7 @@ type HorBlocksView struct {
 	VertOverlay           *zcontainer.StackView
 	Scroller              *zcontainer.StackView
 	HorScrollHeaderHeight float64
+	CenterSpin            *zwidgets.ActivityView
 
 	VertStack    *zcontainer.StackView
 	currentIndex int
@@ -57,6 +59,8 @@ type HorBlocksView struct {
 type PanHandler interface {
 	HandlePan(index float64)
 }
+
+const spinnerName = "zhorblocks.CenterSpin"
 
 func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	v.CacheDelta = cacheDelta
@@ -196,7 +200,7 @@ func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
 	}
 }
 
-func (v *HorBlocksView) FindViewForIndex(index int) (zview.View, int) {
+func (v *HorBlocksView) FindViewForBlockIndex(index int) (zview.View, int) {
 	si := strconv.Itoa(index)
 	cell, i := v.Scroller.FindCellWithName(si)
 	if cell == nil {
@@ -210,6 +214,14 @@ func (v *HorBlocksView) createAndSetView(i int) {
 	si := strconv.Itoa(i)
 	view := v.GetViewFunc(i)
 	view.SetObjectName(si)
+
+	aa, _ := view.(zcontainer.AdvancedAdder)
+	if aa != nil {
+		centerSpin := zwidgets.NewActivityView(zgeo.SizeBoth(50), zgeo.ColorWhite)
+		centerSpin.SetObjectName(spinnerName)
+		centerSpin.SetZIndex(22000)
+		aa.AddAdvanced(centerSpin, zgeo.TopCenter, zgeo.RectFromMarginSize(zgeo.SizeD(0, 40)), zgeo.SizeNull, -1, true)
+	}
 	// zlog.Info("createAndSetView:", i, len(v.queuedGetViews))
 	s := v.viewSize
 	style := view.Native().JSStyle()
@@ -263,7 +275,9 @@ func (v *HorBlocksView) SetRect(r zgeo.Rect) {
 
 	v.StackView.SetRect(r) // sets rect as stack, so all parts set
 	// zlog.Info("HB SetRect", r, v.VertStack.Rect())
-	v.update()
+	if v.viewSize.W != 0 {
+		v.update()
+	}
 	// v.oldRect = r
 }
 
@@ -396,7 +410,7 @@ fullLoop:
 		iMax := min(v.maxIndex, v.currentIndex+v.IndexWindow)
 		// zlog.Info("Add?: start:", v.currentIndex-v.IndexWindow, "max", iMax, "ci", v.currentIndex)
 		for ji := v.currentIndex - v.IndexWindow; ji <= iMax; ji++ {
-			view, _ := v.FindViewForIndex(ji)
+			view, _ := v.FindViewForBlockIndex(ji)
 			if view != nil {
 				continue
 			}
@@ -417,7 +431,7 @@ fullLoop:
 	// 	}
 	// 	cc := c.View.(zcontainer.CellsCounter)
 	// 	if cc != nil {
-	// 		view, _ := v.FindViewForIndex(0)
+	// 		view, _ := v.FindViewForBlockIndex(0)
 	// 		zlog.Info(i, "Updated cur:", v.currentIndex, zlog.Pointer(c.View), cc.CountChildren(), zlog.Pointer(view))
 	// 	}
 	// }
@@ -429,4 +443,16 @@ func (v *HorBlocksView) IsBlockInWindow(blockIndex int) bool {
 
 func (v *HorBlocksView) BlockViews() []zview.View {
 	return v.Scroller.GetChildren(false)
+}
+
+func (v *HorBlocksView) SpinActivity(blockIndex int, spin bool) {
+	// zlog.Info("SPIN", blockIndex, spin)
+	sci := strconv.Itoa(blockIndex)
+	view, _ := v.Scroller.FindViewWithName(sci, true)
+	bv, _ := view.(*zcontainer.ContainerView)
+	if bv != nil {
+		view, _ := bv.FindViewWithName(spinnerName, true)
+		av := view.(*zwidgets.ActivityView)
+		av.StopOrStart(spin)
+	}
 }
