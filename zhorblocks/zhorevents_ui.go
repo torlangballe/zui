@@ -674,7 +674,7 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 			v.lanes[i].Rows[j] = r
 			y += r.Height
 		}
-		y += dividerHeight
+		y += dividerHeight+2
 	}
 	if v.IsPresented() {
 		v.createLanes()
