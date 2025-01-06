@@ -106,6 +106,7 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	// v.VertOverlay.SetDimUsable(false)
 	//	v.VertOverlay.SetUsable(false)
 	v.VertOverlay.SetInteractive(false)
+	v.VertOverlay.SetZIndex(500)
 	//	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
 	v.Add(v.VertOverlay, zgeo.TopLeft|zgeo.Expand).Free = true // huge hack whereby adding it to v, and not updating it's hight works. Changing hight disabled scrolling!!!
 
