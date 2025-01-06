@@ -53,7 +53,7 @@ type HorBlocksView struct {
 	scrollToIndexAfterAllUpdates float64
 	horScrollHeader              *zcontainer.StackView
 	horHeader                    *zcontainer.StackView
-	horHeaderScrollerRepeater    *ztimer.Repeater
+	subViewSlaveScrollerRepeater *ztimer.Repeater
 }
 
 type PanHandler interface {
@@ -102,22 +102,26 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	v.VertStack.Add(v.Scroller, zgeo.AlignmentNone) //.Free = true
 
 	v.VertOverlay = zcontainer.StackViewHor("vert-overlay")
-	v.VertOverlay.SetJSStyle("position", "sticky")
-	v.VertOverlay.SetDimUsable(false)
+	// v.VertOverlay.SetJSStyle("position", "sticky")
+	// v.VertOverlay.SetDimUsable(false)
 	//	v.VertOverlay.SetUsable(false)
-	// v.VertOverlay.SetInteractive(false)
-	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
+	v.VertOverlay.SetInteractive(false)
+	//	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
+	v.Add(v.VertOverlay, zgeo.TopLeft|zgeo.Expand).Free = true // huge hack whereby adding it to v, and not updating it's hight works. Changing hight disabled scrolling!!!
 
 	v.oldScrollX = zfloat.Undefined
 	v.queuedGetViews = map[int]bool{}
 	v.maxIndex = math.MaxInt
 	v.scrollToIndexAfterAllUpdates = zfloat.Undefined
-	v.horHeaderScrollerRepeater = ztimer.RepeatForever(0.02, v.scrollHorHeader)
+	v.subViewSlaveScrollerRepeater = ztimer.RepeatForever(0.02, v.scrollSubViews)
+	v.AddOnRemoveFunc(v.subViewSlaveScrollerRepeater.Stop)
 }
 
 func (v *HorBlocksView) SetContentHeight(h float64) {
+	// zlog.Info("SetContentHeight", h)
 	v.fixedHeight = h
 	v.viewSize.H = h
+	v.setSizes()
 }
 
 func (v *HorBlocksView) SetMaxIndex(max int) {
@@ -180,9 +184,11 @@ func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
 	return true
 }
 
-func (v *HorBlocksView) scrollHorHeader() {
-	x := v.VertStack.ContentOffset().X
-	v.horHeader.SetXContentOffset(x)
+func (v *HorBlocksView) scrollSubViews() {
+	pos := v.VertStack.ContentOffset()
+	v.horHeader.SetXContentOffset(pos.X)
+	v.VertOverlay.SetYContentOffset(pos.Y)
+	// zlog.Info("ScrollOffset:", pos, v.VertOverlay.ContentOffset().Y)
 }
 
 func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
@@ -274,7 +280,7 @@ func (v *HorBlocksView) SetRect(r zgeo.Rect) {
 	// zlog.Info("HB.SetRect1:", r, v.viewSize.W)
 
 	v.StackView.SetRect(r) // sets rect as stack, so all parts set
-	// zlog.Info("HB SetRect", r, v.VertStack.Rect())
+	// zlog.Info("HB SetRect", v.VertOverlay.Rect().Size.H)
 	if v.viewSize.W != 0 {
 		v.update()
 	}
@@ -325,18 +331,18 @@ func (v *HorBlocksView) getBlocksWidth() float64 {
 func (v *HorBlocksView) setSizes() {
 	w := v.getBlocksWidth()
 	s := zgeo.SizeD(w, v.viewSize.H)
+	// s.H -= zscrollview.DefaultBarSize
 	v.Scroller.SetMinSize(s)
 	v.Scroller.SetSize(s)
-	// zlog.Info("setSizes:", s)
 
-	s = zgeo.SizeD(5000, v.HorScrollHeaderHeight)
-	// v.horScrollHeader.SetMinSize(s)
 	v.horScrollHeader.SetWidth(w)
 	// v.horScrollHeader.SetTop(v.AbsoluteRect().Pos.Y)
 
-	s = zgeo.SizeD(10, v.viewSize.H)
+	s.W = 10
 	v.VertOverlay.SetMinSize(s)
-	v.VertOverlay.SetHeight(s.H)
+	// v.VertOverlay.SetHeight(s.H)
+	// zlog.Info("setSizes:", s.H)
+	// zlog.Info("setSizes2", v.VertOverlay.Rect().Size.H)
 }
 
 func (v *HorBlocksView) DebugPrintCells() string {
