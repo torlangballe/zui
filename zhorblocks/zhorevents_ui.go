@@ -660,25 +660,20 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 		}
 	}
 	v.lanes = make([]Lane, len(lanes))
-	y := v.timeAxisHeight
+	y := 0.0
 	for i, lane := range lanes {
 		v.lanes[i] = lane
 		v.lanes[i].y = y
-		// zlog.Info("SetLane:", lane.Name, y)
+		zlog.Info("SetLane:", lane.Name, y)
 		if len(lane.Rows) == 0 {
 			y += 22
-		} else {
-			y += laneTitleHeight
 		}
 		v.lanes[i].Rows = make([]Row, len(lane.Rows))
 		for j, r := range lane.Rows {
-			// zlog.Info("SetLaneRow:", lane.Name, r.Name, r.ID, r.Height)
+			zlog.Info("SetLaneRow:", y, lane.Name, r.Name, r.ID, r.Height)
 			r.y = y
 			v.lanes[i].Rows[j] = r
 			y += r.Height
-			if j == 0 {
-				y -= laneTitleHeight
-			}
 		}
 		y += dividerHeight
 	}
@@ -712,11 +707,11 @@ func (v *HorEventsView) createLanes() {
 	for i, lane := range v.lanes {
 		title := makeTextTitle(lane.Name, 2, lane.TextColor)
 		zslice.Add(&v.lanes[i].views, title)
-		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, lane.y)).Free = true
+		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, lane.y+v.timeAxisHeight)).Free = true
 		if v.MakeLaneActionIconFunc != nil {
 			view := v.MakeLaneActionIconFunc(lane.ID)
 			zslice.Add(&v.lanes[i].views, view)
-			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(2, lane.y+2)).Free = true
+			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(2, lane.y+2+v.timeAxisHeight)).Free = true
 		}
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
@@ -728,10 +723,10 @@ func (v *HorEventsView) createLanes() {
 					bgView.Native().SetDimUsable(false)
 					// bgView.Native().SetUsable(false)
 					zslice.Add(&v.lanes[i].Rows[j].views, bgView)
-					v.horInfinite.VertOverlay.Add(bgView, zgeo.TopLeft, zgeo.SizeD(0, r.y+1)).Free = true
+					v.horInfinite.VertOverlay.Add(bgView, zgeo.TopLeft, zgeo.SizeD(0, r.y+1+v.timeAxisHeight)).Free = true
 				}
 			}
-			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, r.y)).Free = true
+			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, r.y+laneTitleHeight+v.timeAxisHeight)).Free = true
 			y = r.y + r.Height
 			// zlog.Info("SetLaneRowY:", lane.Name, r.Name, r.Height, y)
 		}
@@ -739,7 +734,7 @@ func (v *HorEventsView) createLanes() {
 		div.SetBGColor(zgeo.ColorNewGray(0.1, 1))
 		div.SetMinSize(zgeo.SizeD(bgWidth, dividerHeight))
 		y += dividerHeight
-		v.horInfinite.VertOverlay.Add(div, zgeo.TopRight, zgeo.SizeD(0, y)).Free = true
+		v.horInfinite.VertOverlay.Add(div, zgeo.TopRight, zgeo.SizeD(0, y+v.timeAxisHeight)).Free = true
 		zslice.Add(&v.lanes[i].views, div.View)
 	}
 	h := max(v.Rect().Size.H-v.Bar.Rect().Size.H, y) // +zscrollview.DefaultBarSize
