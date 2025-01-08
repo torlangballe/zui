@@ -4,7 +4,6 @@ package zview
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -63,7 +62,7 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 		if mo != nil {
 			str += fmt.Sprint(" vmarg: ", mo.Margin())
 		}
-		zlog.Info("NativeView:", v.Hierarchy(), zlog.Pointer(view), reflect.TypeOf(view), v.Rect(), str)
+		// zlog.Info("NativeView:", v.Hierarchy(), zlog.Pointer(view), reflect.TypeOf(view), v.Rect(), str)
 	})
 }
 
@@ -811,6 +810,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
 	mid := fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
 	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
+		// zlog.Info("Pressed1:", v.Hierarchy(), mid)
 		if globalForceClick {
 			press()
 			return nil
@@ -820,6 +820,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
+		// zlog.Info("Pressed2:", v.Hierarchy(), mid)
 		target := event.Get("target")
 		if !target.Equal(v.Element) {
 			// zlog.Info("Pressed Child:", v.Hierarchy(), mid, target.Get("id").String())
@@ -1458,6 +1459,7 @@ func (v *NativeView) SetStyling(style zstyle.Styling) {
 		v.SetCorner(style.Corner)
 	}
 	if style.StrokeColor.Valid {
+		// zlog.Info("SetStyling:", v.Hierarchy(), style.StrokeWidth, style.StrokeColor)
 		v.SetStroke(style.StrokeWidth, style.StrokeColor, style.StrokeIsInset.IsTrue())
 	}
 	if style.OutlineColor.Valid {
