@@ -212,8 +212,13 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		var count int
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
 	}
+	old := v.Grid.HandleKeyFunc
 	v.Grid.HandleKeyFunc = func(km zkeyboard.KeyMod, down bool) bool {
+		// zlog.Info("SGV.KEY:", km, km.Modifier)
 		if !down {
+			if old != nil {
+				return old(km, down)
+			}
 			return false
 		}
 		var oneID string
@@ -238,6 +243,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			if v.HandleShortCutInRowFunc(oneID, km) {
 				return true
 			}
+		}
+		if old != nil {
+			return old(km, down)
 		}
 		return false
 	}
