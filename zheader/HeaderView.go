@@ -180,7 +180,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		s := zgeo.SizeD(h.MinWidth, 26)
 		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets)
 		button.TextMargin = zgeo.RectFromXY2(5, 0, 0, 0)
-		// zlog.Info("HEADER:", h.Title, h.Justify)
+		// zlog.Info("HEADER:", h.Title, h.Justify, h.Align)
 		j := h.Justify
 		if j == zgeo.AlignmentNone {
 			j = zgeo.Left

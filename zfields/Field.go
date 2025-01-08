@@ -199,6 +199,13 @@ type Field struct {
 	Default              string            // Default value for field. May be numbers or strings.
 }
 
+const (
+	MemoryFormat  = "memory"
+	StorageFormat = "storage"
+	BPSFormat     = "bps"   // bits or bytes pr sec
+	HumanFormat   = "human" // human-readable int
+)
+
 var EmptyField = Field{
 	Styling:      zstyle.EmptyStyling,
 	CustomFields: map[string]string{},
