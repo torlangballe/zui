@@ -235,13 +235,19 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 
 func (v *ShapeView) UpdateText() {
 	if (v.textInfo.Text != "" || v.TextLabel != nil) && v.textInfo.Alignment != zgeo.AlignmentNone {
+		a := zgeo.VertCenter | v.textInfo.Alignment
 		if v.TextLabel == nil {
 			v.TextLabel = zlabel.New("")
 			v.TextLabel.SetInteractive(false)
 			v.TextLabel.SetObjectName("title")
-			v.AddAdvanced(v.TextLabel, zgeo.Center, v.TextMargin, zgeo.SizeNull, -1, false)
+			v.AddAdvanced(v.TextLabel, a, v.TextMargin, zgeo.SizeNull, -1, false)
+		} else {
+			c, _ := v.FindCellWithView(v.TextLabel)
+			c.Alignment = a
+			c.Margin = v.TextMargin
 		}
-		v.TextLabel.SetTextAlignment(zgeo.TopLeft)
+		// zlog.Info("SV.SetTXT:", v.textInfo.Alignment, v.ObjectName(), v.textInfo.Text)
+		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
 		v.TextLabel.SetFont(v.Font())
 		v.TextLabel.SetColor(v.GetStateColor(v.textInfo.Color))
 		v.TextLabel.SetText(v.textInfo.Text)
