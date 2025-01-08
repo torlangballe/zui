@@ -118,7 +118,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.SetBGColor(opts.BGColor)
 	v.SetCanTabFocus(true)
 	v.Updater = v
-	v.TestMode = true
+	// v.TestMode = true
 	v.GutterWidth = opts.GutterWidth
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
@@ -674,7 +674,7 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 			v.lanes[i].Rows[j] = r
 			y += r.Height
 		}
-		y += dividerHeight+2
+		y += dividerHeight + 2
 	}
 	if v.IsPresented() {
 		v.createLanes()
