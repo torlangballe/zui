@@ -29,8 +29,9 @@ type ContainerView struct {
 
 type Cell struct {
 	zgeo.LayoutCell
-	View    zview.View
-	AnyInfo any
+	NotInGrid bool
+	View      zview.View
+	AnyInfo   any
 }
 
 type CellsCounter interface {
@@ -55,7 +56,7 @@ type ChildrenOwner interface {
 
 type Arranger interface {
 	ArrangeChildren()
-	ArrangeChild(Cell, zgeo.Rect)
+	ArrangeChild(Cell, zgeo.Rect) zgeo.Rect
 }
 
 type Collapser interface {
@@ -314,23 +315,25 @@ func (v *ContainerView) ArrangeChildrenAnimated() {
 	//        })
 }
 
-func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) {
-	if c.Alignment != zgeo.AlignmentNone {
-		ir := r.ExpandedD(-1) // -2?
-		s, _ := c.View.CalculatedSize(ir.Size)
-		if c.RelativeToName != "" {
-			rv, _ := v.FindCellWithName(c.RelativeToName)
-			// zlog.Info("CV Arrange relname:", c.View.Native().Hierarchy(), c.RelativeToName, rv != nil)
-			if rv != nil && rv.View != nil {
-				r = rv.View.Rect()
-			}
-		}
-		var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.SizeNull)
-		// if c.View != nil && c.View.ObjectName() == "left-pole" {
-		// 	zlog.Info("ALIGN:", r, s, c.Alignment, c.Margin, "->", rv)
-		// }
-		c.View.SetRect(rv)
+func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) zgeo.Rect {
+	if c.Alignment == zgeo.AlignmentNone {
+		return zgeo.RectNull
 	}
+	ir := r.ExpandedD(-1) // -2?
+	s, _ := c.View.CalculatedSize(ir.Size)
+	if c.RelativeToName != "" {
+		rv, _ := v.FindCellWithName(c.RelativeToName)
+		// zlog.Info("CV Arrange relname:", c.View.Native().Hierarchy(), c.RelativeToName, rv != nil)
+		if rv != nil && rv.View != nil {
+			r = rv.View.Rect()
+		}
+	}
+	var rv = r.AlignPro(s, c.Alignment, c.Margin, c.MaxSize, zgeo.SizeNull)
+	// if c.View != nil && c.View.ObjectName() == "left-pole" {
+	// 	zlog.Info("ALIGN:", r, s, c.Alignment, c.Margin, "->", rv)
+	// }
+	c.View.SetRect(rv)
+	return rv
 }
 
 func ContainerIsLoading(ct ChildrenOwner) bool {
