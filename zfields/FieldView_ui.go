@@ -736,6 +736,7 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 	stackFV.SetSpacing(f.Styling.SpacingOrMax(12))
 	stackFV.params.SetFlag(FlagIsLabelize)
 	fixed := f.HasFlag(FlagIsFixed)
+	f.SetFlag(FlagHasFrame)
 	frame, header := makeFrameIfFlag(f, stackFV, frameTitle)
 	if frame != nil {
 		outView = frame
@@ -769,12 +770,12 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 		return zstr.SmartCompare(fmt.Sprint(keys[i]), fmt.Sprint(keys[j]))
 	})
 	i := 0
-	zlog.Info("zfields.BuildMapList:", len(keys))
 	for _, _mkey := range keys {
 		mkey := _mkey
 		mval := rval.MapIndex(mkey)
 		key := fmt.Sprint(mkey)
 		// if key != "" {
+		zlog.Info("zfields.BuildMapList:", mkey)
 		view, mf := buildMapRow(parent, stackFV, i, key, mval, fixed, f)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
