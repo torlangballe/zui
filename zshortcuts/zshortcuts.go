@@ -40,7 +40,7 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 		}
 	}
 	if viewKM.Matches(scut) {
-		col = zgeo.ColorBlue
+		col = zgeo.ColorYellow
 		o = 1
 	} else if o == 0 {
 		return false
@@ -113,14 +113,19 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 }
 
 func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool {
+	// zlog.Info("HandleOutsideShortcutRecursively:", view.Native().ObjectName(), sc)
 	var handled bool
 	sh, _ := view.(zkeyboard.ShortcutHandler)
 	if sh != nil && sh.HandleOutsideShortcut(sc) {
 		return true
 	}
-	zcontainer.ViewRangeChildren(view, true, false, func(v zview.View) bool {
-		sh, _ := v.(zkeyboard.ShortcutHandler)
+	zcontainer.ViewRangeChildren(view, true, false, func(childView zview.View) bool {
+		sh, _ := childView.(zkeyboard.ShortcutHandler)
 		if sh != nil {
+			// zlog.Info("SC:", childView.ObjectName(), childView.IsUsable())
+			if !childView.IsUsable() {
+				return true
+			}
 			if sh.HandleOutsideShortcut(sc) {
 				handled = true
 				return false
