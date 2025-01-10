@@ -387,17 +387,17 @@ func (v *NativeView) IsShown() bool {
 
 func (v *NativeView) IsUsable() bool {
 	dis := v.Element.Get("disabled")
-	// zlog.Info("Usable:", v.ObjectName(), dis)
-	if dis.IsUndefined() {
+	// zlog.Info("Usable:", v.Hierarchy(), dis)
+	if dis.IsNull() || dis.IsUndefined() {
 		return true
 	}
-	return !dis.Bool()
+	return dis.String() != ""
 }
 
 func (v *NativeView) SetUsable(usable bool) {
-	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
 	zbits.ChangeBit((*int64)(&v.Flags), ViewUsableFlag, usable)
 	v.setUsableAttributes(usable)
+	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
 	RangeChildrenFunc(v, false, true, func(view View) bool {
 		view.Native().setUsableAttributes(usable)
 		return true
@@ -406,7 +406,11 @@ func (v *NativeView) SetUsable(usable bool) {
 
 func (v *NativeView) setUsableAttributes(usable bool) {
 	u := usable //&& v.IsUsable()
-	v.JSSet("disabled", !u)
+	if usable {
+		v.Element.Delete("disabled")
+	} else {
+		v.JSSet("disabled", "")
+	}
 	style := v.JSStyle()
 	var alpha float32 = 0.4
 	if u || v.Flags&ViewNoDimUsableFlag != 0 {
@@ -792,6 +796,7 @@ type longPresser struct {
 }
 
 var globalLongPressState longPresser
+var lastPressedEvent js.Value
 
 func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
 	v.JSSet("className", "widget")
@@ -816,7 +821,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		}
 		event := args[0]
-		v.SetStateOnDownPress(event)
+		v.SetStateOnPress(event)
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
@@ -857,10 +862,13 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		}
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
+			lastPressedEvent = args[0]
 			if !globalLongPressState.cancelPress && press != nil && v.IsUsable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
 				// args[0].Call("stopPropagation") // this one canceled up-listener in SetPressUpDownMovedHandler for some reason
+				v.SetStateOnPress(args[0])
 				press()
+				lastPressedEvent = js.Value{}
 				v.ClearStateOnUpPress()
 			}
 			if globalLongPressState.longTimer != nil {
@@ -876,6 +884,13 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		// args[0].Call("stopPropagation")
 		return nil
 	})
+}
+
+func StopPropagationOfLastPressedEvent() {
+	if lastPressedEvent.IsUndefined() {
+		return
+	}
+	lastPressedEvent.Call("stopPropagation")
 }
 
 func getMousePos(e js.Value) (pos zgeo.Pos) {
@@ -1207,7 +1222,7 @@ func (v *NativeView) SetPressedDownHandler(id string, handler func()) {
 	}
 	v.SetListenerJSFunc("mousedown:"+id, func(this js.Value, args []js.Value) any {
 		e := args[0]
-		v.SetStateOnDownPress(e)
+		v.SetStateOnPress(e)
 		e.Call("stopPropagation")
 		zlog.Assert(len(args) > 0)
 		handler()
@@ -1303,7 +1318,7 @@ func (v *NativeView) SetOnInputHandler(handler func()) {
 	})
 }
 
-func (v *NativeView) SetStateOnDownPress(event js.Value) {
+func (v *NativeView) SetStateOnPress(event js.Value) {
 	var pos zgeo.Pos
 	pos.X = event.Get("offsetX").Float()
 	pos.Y = event.Get("offsetY").Float()
@@ -1333,7 +1348,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			return false
 		}
 		pos := getMousePosRelative(v, e)
-		v.SetStateOnDownPress(e)
+		v.SetStateOnPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
 		zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
