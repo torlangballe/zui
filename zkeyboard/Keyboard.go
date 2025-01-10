@@ -36,26 +36,26 @@ const (
 )
 
 const (
-	KeyNone       = 0
-	KeyReturn     = 13
-	KeyEnter      = 131313 // not sure what it is elsewhere, doesn't exist in js/html
-	KeyTab        = 9
-	KeyBackspace  = 8
-	KeySpace      = 32
-	KeyDelete     = 127
-	KeyEscape     = 27
-	KeyLeftArrow  = 37
-	KeyRightArrow = 39
-	KeyUpArrow    = 38
-	KeyDownArrow  = 40
-	KeyShiftKey   = 16
-	KeyControlKey = 17
-	KeyAltKey     = 18
-	KeyCommandKey = 91
-	KeyPageUp     = 33
-	KeyPageDown   = 34
-	KeyEnd        = 35
-	KeyHome       = 36
+	KeyNone       Key = 0
+	KeyReturn     Key = 13
+	KeyEnter      Key = 131313 // not sure what it is elsewhere, doesn't exist in js/html
+	KeyTab        Key = 9
+	KeyBackspace  Key = 8
+	KeySpace      Key = 32
+	KeyDelete     Key = 127
+	KeyEscape     Key = 27
+	KeyLeftArrow  Key = 37
+	KeyRightArrow Key = 39
+	KeyUpArrow    Key = 38
+	KeyDownArrow  Key = 40
+	KeyShiftKey   Key = 16
+	KeyControlKey Key = 17
+	KeyAltKey     Key = 18
+	KeyCommandKey Key = 91
+	KeyPageUp     Key = 33
+	KeyPageDown   Key = 34
+	KeyEnd        Key = 35
+	KeyHome       Key = 36
 )
 
 const (
