@@ -342,7 +342,7 @@ func (v *HorBlocksView) setSizes() {
 	s.W = 10
 	v.VertOverlay.SetMinSize(s)
 	// v.VertOverlay.SetHeight(s.H)
-	// zlog.Info("setSizes:", s.H)
+	// zlog.Info("setSizes:", s.H, zdebug.CallingStackString())
 	// zlog.Info("setSizes2", v.VertOverlay.Rect().Size.H)
 }
 

@@ -279,12 +279,12 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 	// v.GotoTime(t)
 }
 
-func (v *HorEventsView) Reset() {
+func (v *HorEventsView) Reset(updateBlocks bool) {
 	v.LastEventTimeForBlock = map[int]time.Time{}
 	v.updateBlocks = map[int]time.Time{}
 	// zlog.Info("HEV.Reset")
 	v.horInfinite.SetMaxIndex(1)
-	v.horInfinite.Reset(v.ViewWidth != 0)
+	v.horInfinite.Reset(updateBlocks && v.ViewWidth != 0)
 }
 
 func (v *HorEventsView) updateCurrentBlockViews() {
@@ -643,7 +643,7 @@ func (v *HorEventsView) IndexToTime(i float64) time.Time {
 
 func (v *HorEventsView) Update() {
 	v.SetLanes(v.lanes)
-	v.Reset()
+	v.Reset(true)
 }
 
 func (v *HorEventsView) SetLanes(lanes []Lane) {
@@ -708,6 +708,7 @@ func (v *HorEventsView) createLanes() {
 		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, lane.y+v.timeAxisHeight)).Free = true
 		if v.MakeLaneActionIconFunc != nil {
 			view := v.MakeLaneActionIconFunc(lane.ID)
+			view.Native().SetInteractive(true)
 			zslice.Add(&v.lanes[i].views, view)
 			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(2, lane.y+2+v.timeAxisHeight)).Free = true
 		}
