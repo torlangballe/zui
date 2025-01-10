@@ -420,11 +420,19 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		blocker.Add(v, attributes.Alignment) // |zgeo.Shrink
 		if attributes.ModalCloseOnOutsidePress {
 			blocker.SetPressedHandler("$blocker.click.away", zkeyboard.ModifierNone, func() {
+				vr := v.Native().AbsoluteRect()
+				pos := zview.LastPressedPos.Plus(vr.Pos)
+				if vr.Contains(pos) {
+					return
+				}
 				dismissed := true
 				Close(v, dismissed, attributes.ClosedFunc)
 			})
 		}
-		v.Native().SetPressedHandler("$modal.click.eater", zkeyboard.ModifierNone, func() {}) // so it doesn't propagate to blocker
+		// v.Native().SetPressedHandler("$modal.click.eater", zkeyboard.ModifierNone, func() {
+		// 	zview.StopPropagationOfLastPressedEvent()
+		// 	zlog.Info("Blocker Eater Clicked")
+		// }) // so it doesn't propagate to blocker
 		blocker.JSSet("className", "znoscrollbar")
 		blocker.SetJSStyle("overflow", "scroll")
 	}
