@@ -168,42 +168,43 @@ func (v *StackView) arrangeChildrenInGrid() {
 			continue
 		}
 		r.Size.H = heights[j]
-		if vc.NotInGrid {
+		if !vc.NotInGrid {
+			if vc.Alignment&(zgeo.Top|zgeo.VertCenter) != 0 {
+				r.Pos.Y += vc.Margin.Min().Y
+				cellsOwner, _ := vc.View.(CellsOwner)
+				zlog.Assert(cellsOwner != nil, v.Hierarchy())
+				rowCells := slices.Clone(*cellsOwner.GetCells())
+				zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
+					return c.Collapsed || c.Free || c.View == nil
+				})
+				rowView := vc.View
+				rowView.Native().SetRect(r)
+				rbox := r
+				mo, _ := rowView.(zview.MarginOwner)
+				rbox.Pos = zgeo.Pos{}
+				if mo != nil {
+					rbox.Add(mo.Margin())
+				}
+				rects := zgeo.LayoutCellsInStack(v.ObjectName(), rbox, false, v.spacing, row)
+				for i := range row {
+					box := rects[i]
+					if box.IsNull() {
+						continue
+					}
+					zfloat.Maximize(&box.Size.H, heights[j])
+					box = box.MovedInto(rbox) // TODO: Why do we need to do this? Cause must be in  LayoutCellsInStack?
+					if i >= len(rowCells) {
+						continue
+					}
+					cell := (rowCells)[i]
+					s, _ := cell.View.CalculatedSize(box.Size)
+					ar := box.AlignPro(s, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
+					ar = ar.Intersected(box)
+					cell.View.SetRect(ar)
+				}
+			}
+		} else {
 			v.ArrangeChild(vc, r)
-		}
-		if vc.Alignment&(zgeo.Top|zgeo.VertCenter) != 0 {
-			r.Pos.Y += vc.Margin.Min().Y
-			cellsOwner, _ := vc.View.(CellsOwner)
-			zlog.Assert(cellsOwner != nil, v.Hierarchy())
-			rowCells := slices.Clone(*cellsOwner.GetCells())
-			zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
-				return c.Collapsed || c.Free || c.View == nil
-			})
-			rowView := vc.View
-			rowView.Native().SetRect(r)
-			rbox := r
-			mo, _ := rowView.(zview.MarginOwner)
-			rbox.Pos = zgeo.Pos{}
-			if mo != nil {
-				rbox.Add(mo.Margin())
-			}
-			rects := zgeo.LayoutCellsInStack(v.ObjectName(), rbox, false, v.spacing, row)
-			for i := range row {
-				box := rects[i]
-				if box.IsNull() {
-					continue
-				}
-				zfloat.Maximize(&box.Size.H, heights[j])
-				box = box.MovedInto(rbox) // TODO: Why do we need to do this? Cause must be in  LayoutCellsInStack?
-				if i >= len(rowCells) {
-					continue
-				}
-				cell := (rowCells)[i]
-				s, _ := cell.View.CalculatedSize(box.Size)
-				ar := box.AlignPro(s, cell.Alignment, cell.Margin, cell.MaxSize, cell.MinSize)
-				ar = ar.Intersected(box)
-				cell.View.SetRect(ar)
-			}
 		}
 		r.Pos.Y = r.Max().Y + v.GridVerticalSpace
 		j++
