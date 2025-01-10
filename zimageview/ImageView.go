@@ -35,6 +35,7 @@ type ImageView struct {
 	CapInsetCorner     zgeo.Size
 	EmptyColor         zgeo.Color
 	TintColor          zgeo.Color
+	LoadedFunc         func(img *zimage.Image)
 }
 
 func NewWithCachedPath(imagePath string, fitSize zgeo.Size) *ImageView {
@@ -61,7 +62,11 @@ func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, im
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetDrawHandler(v.Draw)
 	if imagePath != "" {
-		v.SetImage(image, imagePath, nil)
+		v.SetImage(image, imagePath, func(i *zimage.Image) {
+			if v.LoadedFunc != nil {
+				v.LoadedFunc(i)
+			}
+		})
 	} else {
 		v.Expose()
 	}
