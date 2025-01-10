@@ -694,12 +694,11 @@ func ChildView(v zview.View, path string) zview.View {
 }
 
 func ArrangeChildrenAtRootContainer(view zview.View) {
-	for _, p := range view.Native().AllParents() {
-		a, _ := p.View.(Arranger)
-		if a != nil {
-			a.ArrangeChildren()
-			return
-		}
+	root := view.Native().RootParent()
+	a, _ := root.View.(Arranger)
+	if a != nil {
+		a.ArrangeChildren()
+		return
 	}
 }
 
