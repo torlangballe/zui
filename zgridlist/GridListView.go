@@ -921,7 +921,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
 	if rect.Size.W == 0 {
-		zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
+		// zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
 		return
 	}
 	r := rect.ExpandedD(-v.FocusWidth)
@@ -965,7 +965,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				if cid == topID { // || v.RestoreTopSelectedRowOnNextLayout && v.selectedIDs[cid] {
 					oy = outer.Pos.Y
 					v.ShowScrollBars(false, false)
-					// zlog.Info("GridListView.LayoutCells: set offset to old id:", outer.Pos.Y, len(v.children), v.CellCountFunc())
+					// zlog.Info("GridListView.LayoutCells: set offset to old id:", y, outer.Pos.Y, len(v.children), v.CellCountFunc())
 					return false
 				}
 				return true
