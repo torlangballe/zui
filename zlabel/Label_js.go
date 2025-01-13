@@ -14,10 +14,10 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-func (label *Label) InitAsLink(view zview.View, title, surl string) {
+func (label *Label) InitAsLink(view zview.View, title, surl string, newWindow bool) {
 	label.MakeJSElement(view, "a")
 	label.init(title)
-	label.SetURL(surl, false)
+	label.SetURL(surl, newWindow)
 }
 
 func (label *Label) Init(view zview.View, text string) {

@@ -1255,7 +1255,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			}
 			// zlog.Info("LINK:", f.Name, rval.Type(), rval.Interface(), isLink, str, surl)
 			if isLink {
-				label = zlabel.NewLink(str, surl)
+				label = zlabel.NewLink(str, surl, true)
 			} else {
 				label = zlabel.New(str)
 			}

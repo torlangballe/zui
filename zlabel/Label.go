@@ -39,9 +39,9 @@ func New(text string) *Label {
 	return v
 }
 
-func NewLink(name, surl string) *Label {
+func NewLink(name, surl string, newWindow bool) *Label {
 	v := &Label{}
-	v.InitAsLink(v, name, surl)
+	v.InitAsLink(v, name, surl, newWindow)
 	return v
 }
 
