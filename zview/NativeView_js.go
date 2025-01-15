@@ -263,17 +263,6 @@ func (v *NativeView) BGColor() zgeo.Color {
 	return zgeo.ColorFromString(str)
 }
 
-func (v *NativeView) SetCorners(radius float64, align zgeo.Alignment) {
-	for _, a := range []zgeo.Alignment{zgeo.TopLeft, zgeo.TopRight, zgeo.BottomLeft, zgeo.BottomRight} {
-		if align&a != a {
-			continue
-		}
-		srad := fmt.Sprintf("%dpx", int(radius))
-		pos := "border-" + strings.Replace(a.String(), "|", "-", -1) + "-radius"
-		v.SetStyleForAllPlatforms(pos, srad)
-	}
-}
-
 func (v *NativeView) SetStyleForAllPlatforms(key, value string) {
 	style := v.JSStyle()
 	for _, pre := range customStylePrefixes {
@@ -292,6 +281,22 @@ func (v *NativeView) SetSelectable(on bool) {
 func (v *NativeView) SetCorner(radius float64) {
 	s := fmt.Sprintf("%dpx", int(radius))
 	v.SetStyleForAllPlatforms("border-radius", s)
+}
+
+func (v *NativeView) SetCorners(radius float64, cAlignment ...zgeo.Alignment) {
+	srad := fmt.Sprintf("%dpx", int(radius))
+	for a, s := range map[zgeo.Alignment]string{
+		zgeo.TopLeft:     "border-top-left-radius",
+		zgeo.TopRight:    "border-top-right-radius",
+		zgeo.BottomLeft:  "border-bottom-left-radius",
+		zgeo.BottomRight: "border-bottom-right-radius",
+	} {
+		for _, ca := range cAlignment {
+			if a == ca {
+				v.SetStyleForAllPlatforms(s, srad)
+			}
+		}
+	}
 }
 
 func (v *NativeView) Corner() float64 {
@@ -815,7 +820,6 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
 	mid := fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
 	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
-		// zlog.Info("Pressed1:", v.Hierarchy(), mid)
 		if globalForceClick {
 			press()
 			return nil
@@ -845,7 +849,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 				}
 			}
 		}
-		// zlog.Info("Pressed:", v.Hierarchy(), mid)
+		// zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
 		if long != nil {
 			globalLongPressState = longPresser{}
 			globalLongPressState.downPressedTime = time.Now()
