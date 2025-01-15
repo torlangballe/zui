@@ -775,7 +775,7 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 		mval := rval.MapIndex(mkey)
 		key := fmt.Sprint(mkey)
 		// if key != "" {
-		zlog.Info("zfields.BuildMapList:", mkey)
+		// zlog.Info("zfields.BuildMapList:", mkey)
 		view, mf := buildMapRow(parent, stackFV, i, key, mval, fixed, f)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
@@ -1219,16 +1219,14 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 	if format == "" {
 		format = "%v"
 	}
-	ni, err := zint.GetAny(rval.Interface())
+	ni, err := zint.FromAnyInt(rval.Interface())
+	// zlog.Info("FInt:", ni, err, f.FieldName, rval.Interface())
 	if err == nil {
 		return strconv.FormatInt(ni, 10), 0
 	}
 	n, err := zfloat.GetAny(rval.Interface())
 	if err == nil {
-		if significant != 0 {
-			return zwords.NiceFloat(n, significant), 0
-		}
-		return fmt.Sprintf("%f", n), 0
+		return zwords.NiceFloat(n, significant), 0
 	}
 	return fmt.Sprintf(format, rval.Interface()), 0
 }
