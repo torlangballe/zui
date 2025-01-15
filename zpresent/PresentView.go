@@ -37,6 +37,7 @@ type Attributes struct {
 	Modal                    bool
 	Title                    string
 	ModalCorner              float64
+	ModalCornerSides         []zgeo.Alignment
 	ModalCloseOnOutsidePress bool
 	ModalDimBackground       bool
 	ModalNoBlock             bool
@@ -127,22 +128,43 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		if nv != nil {
 			r := rect
+			full := fullRect
+			center := full.Center()
 			if attributes.PlaceOverView != nil {
 				zlog.Assert(attributes.Alignment != zgeo.AlignmentNone, v.Native().Hierarchy())
 				r = attributes.PlaceOverView.Native().AbsoluteRect().Align(size, attributes.Alignment, attributes.PlaceOverMargin)
 			} else if attributes.Pos != nil {
 				if attributes.Alignment == zgeo.AlignmentNone {
-					r.Pos = *attributes.Pos
-				} else {
-					r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.SizeNull).Pos
+					if attributes.Pos.X > center.X {
+						attributes.Alignment = zgeo.Left
+					} else {
+						attributes.Alignment = zgeo.Right
+					}
+					if attributes.Pos.Y > center.Y {
+						attributes.Alignment |= zgeo.Top
+					} else {
+						attributes.Alignment |= zgeo.Bottom
+					}
+				}
+				r.Pos = zgeo.Rect{Pos: *attributes.Pos}.Align(size, attributes.Alignment|zgeo.Out, zgeo.SizeNull).Pos
+				if len(attributes.ModalCornerSides) == 0 && attributes.ModalCorner != 0 {
+					ah := attributes.Alignment.FlippedHorizontal()
+					av := attributes.Alignment.FlippedVertical()
+					attributes.ModalCornerSides = []zgeo.Alignment{ah, av, attributes.Alignment}
 				}
 			}
-			full := fullRect
 			full.Size.W -= zscrollview.DefaultBarSize // scroll bare seems to be on top of everything, let's get out of the way
 			r = r.MovedInto(full)
 			zfloat.Maximize(&r.Pos.X, 0) // these are needed for overflow:scroll in blocker to work???
 			zfloat.Maximize(&r.Pos.Y, 0) // +
 			v.SetRect(r)
+			if attributes.ModalCorner != 0 {
+				if len(attributes.ModalCornerSides) != 0 {
+					nv.SetCorners(attributes.ModalCorner, attributes.ModalCornerSides...)
+				} else {
+					nv.SetCorner(attributes.ModalCorner)
+				}
+			}
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.FromNativeView(nv)
@@ -395,10 +417,6 @@ func PrintPresented(v zview.View, space string) {
 func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attributes Attributes) (outer zview.View) {
 	outer = v
 	nv := v.Native()
-	ct, _ := v.(zcontainer.ChildrenOwner)
-	if ct != nil && attributes.ModalCorner != 0 {
-		nv.SetCorner(attributes.ModalCorner)
-	}
 	zlog.Assert(nv != nil)
 	if !attributes.ModalDropShadow.Delta.IsNull() {
 		nv.SetDropShadow(attributes.ModalDropShadow)
@@ -421,7 +439,8 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 		if attributes.ModalCloseOnOutsidePress {
 			blocker.SetPressedHandler("$blocker.click.away", zkeyboard.ModifierNone, func() {
 				vr := v.Native().AbsoluteRect()
-				pos := zview.LastPressedPos.Plus(vr.Pos)
+				pos := zview.LastPressedPos.Plus(blocker.AbsoluteRect().Pos)
+				// zlog.Info("Blocker Eater Clicked", zview.LastPressedPos, pos, "r:", vr, vr.Contains(pos))
 				if vr.Contains(pos) {
 					return
 				}
@@ -489,6 +508,7 @@ func MakeBar(stitle string, titleAlign zgeo.Alignment) (*zcontainer.StackView, *
 	})
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
+	titleLabel.SetTextAlignment(titleAlign)
 	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
 	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
 	bar.Add(titleLabel, titleAlign|zgeo.VertCenter|zgeo.HorExpand)
