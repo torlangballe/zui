@@ -34,7 +34,7 @@ type HorEventsView struct {
 	zcontainer.StackView
 	BlockDuration             time.Duration
 	Bar                       *zcontainer.StackView
-	GetEventViewsFunc         func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
+	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(laneID int64, row *Row, size zgeo.Size) zview.View
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
 	TestMode                  bool
@@ -380,13 +380,13 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 		pos := zgeo.PosI(x, y)
 		for _, c := range blockView.Cells {
 			if c.View.Rect().Pos == pos {
-				// zlog.Info("Remove cell view in same spot")
+				// zlog.Info("Remove cell view in same spot", cellRect, zlog.Pointer(c.View))
 				blockView.RemoveChild(c.View, true)
 				break
 			}
 		}
 		// if blockIndex == 0 {
-		// 	zlog.Info("updateBlock AddChildView[0]:", zlog.Pointer(blockView), cellRect, laneID, rowType)
+		// zlog.Info("AddChildView:", cellRect)
 		// }
 		blockView.Add(childView, zgeo.TopLeft, cellRect.Pos.Size()).Free = true
 		// if blockIndex == 0 && pressed {
