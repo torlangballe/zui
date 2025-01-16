@@ -600,8 +600,8 @@ func (o *MenuedOwner) popup() {
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
-	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
-	att.ModalDropShadow.Blur = 2
+	att.ModalDropShadows[0].Delta = zgeo.SizeBoth(1)
+	att.ModalDropShadows[0].Blur = 2
 	att.ModalDismissOnEscapeKey = true
 	stack.SetStroke(1, zgeo.ColorNewGray(0.5, 1), false)
 	pos := o.PopPos

@@ -41,8 +41,10 @@ type Attributes struct {
 	ModalCloseOnOutsidePress bool
 	ModalDimBackground       bool
 	ModalNoBlock             bool
-	ModalDropShadow          zstyle.DropShadow
+	ModalDropShadows         []zstyle.DropShadow
 	ModalDismissOnEscapeKey  bool
+	ModalStrokeWidth         float64
+	ModalStrokeColor         zgeo.Color
 	NoMessageOnOpenFail      bool
 	PlaceOverMargin          zgeo.Size
 	TitledMargin             zgeo.Rect
@@ -63,15 +65,15 @@ var (
 var ModalConfirmAttributes = Attributes{
 	Modal:              true,
 	ModalDimBackground: true,
-	ModalDropShadow:    zstyle.DropShadowDefault,
+	ModalDropShadows:   []zstyle.DropShadow{zstyle.DropShadowDefault},
 	// ModalDismissOnEscapeKey: true, // The view needs to have a special escape key do dismiss on escape
 }
 
 var ModalPopupAttributes = Attributes{
 	Modal:                    true,
 	ModalCloseOnOutsidePress: true,
-	ModalDropShadow:          zstyle.DropShadowDefault,
 	ModalDismissOnEscapeKey:  true,
+	ModalDropShadows:         []zstyle.DropShadow{zstyle.DropShadowDefault},
 }
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
@@ -214,7 +216,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			if attributes.ClosedFunc != nil {
 				win.HandleClosed = func() {
 					CloseOverride(v, false, Attributes{}, func(dismissed bool) {})
-					attributes.ClosedFunc(true)
+					// attributes.ClosedFunc(true) // this is done in CloseOverride, it's set in presentCloseFuncs[]
 					delete(presentCloseFuncs, v)
 				}
 			}
@@ -365,10 +367,12 @@ func AttributesNew() Attributes {
 	a.MakeFull = false
 	a.PortraitOnly = false
 	a.ModalDimBackground = true
-	a.ModalDropShadow = zstyle.DropShadow{
-		Delta: zgeo.SizeD(4, 4),
-		Blur:  8,
-		Color: zgeo.ColorNewGray(0.2, 1),
+	a.ModalDropShadows = []zstyle.DropShadow{
+		zstyle.DropShadow{
+			Delta: zgeo.SizeD(4, 4),
+			Blur:  8,
+			Color: zgeo.ColorNewGray(0.2, 1),
+		},
 	}
 	a.ModalCorner = 5
 	return a
@@ -418,9 +422,10 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 	outer = v
 	nv := v.Native()
 	zlog.Assert(nv != nil)
-	if !attributes.ModalDropShadow.Delta.IsNull() {
-		nv.SetDropShadow(attributes.ModalDropShadow)
+	if attributes.ModalStrokeWidth != 0 {
+		nv.SetStroke(attributes.ModalStrokeWidth, attributes.ModalStrokeColor, false)
 	}
+	nv.SetDropShadow(attributes.ModalDropShadows...)
 	if !attributes.ModalNoBlock {
 		blocker := zcontainer.New("$blocker")
 		outer = blocker
@@ -525,8 +530,7 @@ func PopupView(view, over zview.View, att Attributes) {
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
-	att.ModalDropShadow.Delta = zgeo.SizeBoth(1)
-	att.ModalDropShadow.Blur = 2
+
 	att.ModalDismissOnEscapeKey = true
 	att.PlaceOverView = over
 	att.PresentedFunc = func(win *zwindow.Window) {
