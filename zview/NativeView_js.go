@@ -322,11 +322,13 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 	// 	str = "border-box"
 	// }
 	// style.Set("boxSizing", str)
-	str := fmt.Sprintf("0px 0px 0px %dpx %s", int(width), c.Hex())
+	// str := fmt.Sprintf("0px 0px 0px %dpx %s", int(width), c.Hex())
+	str := fmt.Sprintf("%dpx solid %s", int(width), c.Hex())
 	if inset {
 		str += " inset"
 	}
-	v.SetJSStyle("boxShadow", str)
+	// v.SetJSStyle("boxShadow", str)
+	v.SetJSStyle("border", str)
 }
 
 func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool) {
