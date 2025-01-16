@@ -744,9 +744,15 @@ func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
-func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow) {
-	str := fmt.Sprintf("%dpx %dpx %dpx %s", int(shadow.Delta.W), int(shadow.Delta.H), int(shadow.Blur), zdom.MakeRGBAString(shadow.Color))
-	v.SetJSStyle("boxShadow", str)
+func (v *NativeView) SetDropShadow(shadow ...zstyle.DropShadow) {
+	var parts []string
+	for _, d := range shadow {
+		str := fmt.Sprintf("%dpx %dpx %dpx %s", int(d.Delta.W), int(d.Delta.H), int(d.Blur), zdom.MakeRGBAString(d.Color))
+		parts = append(parts, str)
+	}
+	if len(parts) > 0 {
+		v.SetJSStyle("boxShadow", strings.Join(parts, ", "))
+	}
 }
 
 func (v *NativeView) SetToolTip(str string) {
