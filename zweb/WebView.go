@@ -109,7 +109,7 @@ func OpenFullScreenWebViewInScreenID(screenID int64, surl string) {
 	win.AddView(wv)
 	zlog.Info("Win:", win, size)
 	//	win.SetTitle("Full")
-	win.Activate()
+	win.Activate(true)
 	wv.SetURL(surl)
 }
 

@@ -67,7 +67,7 @@ func ExistsActivate(winID string) bool {
 	for w, _ := range windows {
 		// zlog.Info("ExistsActivate:", w.ID, "==", winID)
 		if w.ID == winID {
-			w.Activate()
+			w.Activate(true)
 			return true
 		}
 	}

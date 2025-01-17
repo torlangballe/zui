@@ -183,8 +183,12 @@ func (w *Window) Close() {
 	w.Element.Call("close")
 }
 
-func (w *Window) Activate() {
-	w.Element.Call("focus")
+func (w *Window) Activate(activate bool) {
+	str := "focus"
+	if !activate {
+		str = "blur"
+	}
+	w.Element.Call(str)
 }
 
 // func (w *Window) GetFocusedView() *zview.NativeView {
