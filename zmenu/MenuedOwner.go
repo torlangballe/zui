@@ -62,6 +62,7 @@ type MenuedOwner struct {
 	hasShortcut         bool
 	currentPopupStack   *zcontainer.StackView
 	needsSave           bool
+	isRemoved           bool
 }
 
 type MenuedOItem struct {
@@ -142,6 +143,11 @@ func (o *MenuedOwner) IsKeyStored() bool {
 
 func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	var isSet bool
+	if view != nil && o.View == nil {
+		view.Native().AddOnRemoveFunc(func() {
+			o.isRemoved = true
+		})
+	}
 	o.View = view
 	if view != nil {
 		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
@@ -547,14 +553,18 @@ func (o *MenuedOwner) popup() {
 					item.Function()
 					// o.getItems() // getItems+UpdateTitleAndImage assumes things; Entire view owning menu might be gone... removing to see what will happen
 					// o.UpdateTitleAndImage()
-					o.getItems()
-					o.UpdateTitleAndImage()
+					if !o.isRemoved {
+						o.getItems()
+						o.UpdateTitleAndImage()
+					}
 				} else if o.ActionHandlerFunc != nil {
 					id := item.Value.(string)
 					zpresent.Close(stack, false, nil)
 					o.ActionHandlerFunc(id)
-					o.getItems()
-					o.UpdateTitleAndImage()
+					if !o.isRemoved {
+						o.getItems()
+						o.UpdateTitleAndImage()
+					}
 				}
 				return
 			}
