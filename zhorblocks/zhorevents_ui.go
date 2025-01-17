@@ -97,11 +97,11 @@ type EventOptions struct {
 	BlockIndexCacheDelta int
 	BlockDuration        time.Duration
 	StartTime            time.Time
+	CenterOnStartTime    bool
 	ShowNowPole          bool
 	GutterWidth          float64
 	TimeAxisHeight       float64
 	BGColor              zgeo.Color
-	SelectedEventID      int64
 }
 
 const (
@@ -160,7 +160,11 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.LastEventTimeForBlock = map[int]time.Time{}
 	v.updateBlocks = map[int]time.Time{}
 	v.BlockDuration = blockDuration // must be before calculating startTime
-	v.startTime = v.calcTimePosToShowTime(opts.StartTime)
+	start := opts.StartTime
+	if opts.CenterOnStartTime {
+		start = start.Add(+v.BlockDuration / 2)
+	}
+	v.startTime = v.calcTimePosToShowTime(start)
 	v.currentTime = v.startTime
 	v.SetSpacing(0)
 	v.Bar = zcontainer.StackViewHor("bar")
