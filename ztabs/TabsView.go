@@ -175,7 +175,22 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 }
 
 func (v *TabsView) SelectItem(id string, done func()) {
+	v.SelectOrReloadItem(id, false, done)
+}
+
+func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) {
 	if v.CurrentID == id && v.findItem(id) != -1 && v.currentChild != nil {
+		if reloadIfAlreadySelected {
+			i := v.findItem(id)
+			item := v.items[i]
+			if item.create != nil {
+				item.create(id, true)
+			}
+			v.RemoveChild(v.currentChild, true)
+			v.currentChild = nil
+			v.SelectItem(id, done)
+			return
+		}
 		if done != nil {
 			done()
 		}
