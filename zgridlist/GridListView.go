@@ -521,7 +521,9 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 			if v.selectedIDs[id] {
 				delete(v.selectedIDs, id)
 			} else {
-				v.selectedIDs[id] = true
+				if len(v.selectedIDs) == 0 || v.MultiSelectable {
+					v.selectedIDs[id] = true
+				}
 			}
 			selectionChanged = true
 			v.SetHoverID("")
