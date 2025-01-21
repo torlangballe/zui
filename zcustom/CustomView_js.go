@@ -15,7 +15,7 @@ var IsPresentingFunc func() bool
 
 func (v *CustomView) Init(view zview.View, name string) {
 	stype := "div"
-	zstr.HasPrefix(name, "#type:", &stype)
+	zstr.SplitN(name, "#type:", &name, &stype)
 	v.MakeJSElement(view, stype)
 	v.SetObjectName(name)
 	v.SetJSStyle("overflow", "hidden")

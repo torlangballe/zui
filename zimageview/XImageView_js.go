@@ -10,7 +10,7 @@ import (
 //  Created by Tor Langballe on /20/10/15.
 
 type XImageView struct {
-	zview.NativeView
+	zcontainer.StackView
 	minSize   zgeo.Size
 	alignment zgeo.Alignment
 }
@@ -22,7 +22,8 @@ func XNew(name, imagePath string, fitSize zgeo.Size) *XImageView {
 }
 
 func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSize zgeo.Size) {
-	v.MakeJSElement(view, "img")
+	v.StackView.Init(view, false, name+"#type:img")
+	v.minSize = fitSize
 	v.SetCanTabFocus(false)
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetURL(imagePath)
