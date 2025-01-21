@@ -66,6 +66,7 @@ type HorEventsView struct {
 	GutterWidth           float64
 	timeAxisHeight        float64
 	lastBlockUpdateTime   time.Time
+	LockedTime            time.Time
 }
 
 type Updater interface {
@@ -269,7 +270,11 @@ func (v *HorEventsView) updateNowPole() {
 }
 
 func (v *HorEventsView) SetBlockDuration(d time.Duration) {
-	t := v.currentTime.Add(v.calcDurationToNowLineRatio())
+	t := v.LockedTime
+	if t.IsZero() {
+		t = v.currentTime
+		t = t.Add(v.calcDurationToNowLineRatio())
+	}
 	// ztime.Minimize(&nowLineRatioTime, time.Now())
 	// zlog.Info("*************** SetBlockDuration 1:", v.currentTime, "->", t, v.horInfinite.DebugPrintList())
 	v.BlockDuration = d
@@ -739,6 +744,7 @@ func (v *HorEventsView) createLanes() {
 		}
 		div := zcustom.NewView("divider")
 		div.SetBGColor(zgeo.ColorNewGray(0.1, 1))
+		div.SetZIndex(50)
 		div.SetMinSize(zgeo.SizeD(bgWidth, dividerHeight))
 		y += dividerHeight
 		v.horInfinite.VertOverlay.Add(div, zgeo.TopRight, zgeo.SizeD(0, y+v.timeAxisHeight)).Free = true
