@@ -84,6 +84,10 @@ type ChildReplacer interface {
 	ReplaceChild(child, with View)
 }
 
+type Stroker interface {
+	SetStroke(width float64, c zgeo.Color, inset bool)
+}
+
 type callback struct {
 	id     int64
 	delete func()
