@@ -3,6 +3,8 @@
 package zimageview
 
 import (
+	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -68,4 +70,18 @@ func (v *XImageView) SetMinSize(s zgeo.Size) {
 func (v *XImageView) SetURL(path string) {
 	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
 	v.JSSet("src", path)
+}
+
+func (v *XImageView) SetStroke(width float64, c zgeo.Color, inset bool) {
+	v.SetNativePadding(zgeo.RectFromMarginSize(zgeo.SizeBoth(width)))
+	d := zstyle.MakeDropShadow(0, 0, 0, c)
+	d.Inset = true
+	d.Spread = width
+	v.SetDropShadow(d)
+	// str := fmt.Sprintf("0px 0px 0px %dpx %s", int(width), c.Hex())
+	// // str := fmt.Sprintf("%dpx solid %s", int(width), c.Hex())
+	// if inset {
+	// 	str += " inset"
+	// }
+	// v.SetJSStyle("boxShadow", str)
 }

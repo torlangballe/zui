@@ -40,9 +40,11 @@ type Styling struct {
 }
 
 type DropShadow struct {
-	Delta zgeo.Size
-	Blur  float32
-	Color zgeo.Color
+	Delta  zgeo.Size
+	Blur   float64
+	Color  zgeo.Color
+	Inset  bool
+	Spread float64
 }
 
 var (
@@ -164,6 +166,6 @@ func (s Styling) SpacingOrMax(max float64) float64 {
 	return math.Max(max, s.Spacing)
 }
 
-func MakeDropShadow(dx, dy float64, blur float32, col zgeo.Color) DropShadow {
+func MakeDropShadow(dx, dy, blur float64, col zgeo.Color) DropShadow {
 	return DropShadow{Delta: zgeo.SizeD(dx, dy), Blur: blur, Color: col}
 }

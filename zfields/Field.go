@@ -591,7 +591,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 				if !got && f.Styling.DropShadow.Blur == 0 {
 					num, err := strconv.ParseFloat(part, 32)
 					if err != nil {
-						f.Styling.DropShadow.Blur = float32(num)
+						f.Styling.DropShadow.Blur = num
 						got = true
 					}
 				}

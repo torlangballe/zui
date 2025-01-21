@@ -311,18 +311,6 @@ func (v *NativeView) Corner() float64 {
 }
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
-	// str := "none"
-	// if width != 0 {
-	// 	str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
-	// }
-	// style := v.JSStyle()
-	// style.Set("border", str)
-	// str = "content-box"
-	// if inset {
-	// 	str = "border-box"
-	// }
-	// style.Set("boxSizing", str)
-	// str := fmt.Sprintf("0px 0px 0px %dpx %s", int(width), c.Hex())
 	str := fmt.Sprintf("%dpx solid %s", int(width), c.Hex())
 	if inset {
 		str += " inset"
@@ -746,8 +734,15 @@ func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 
 func (v *NativeView) SetDropShadow(shadow ...zstyle.DropShadow) {
 	var parts []string
+	var ss string
 	for _, d := range shadow {
-		str := fmt.Sprintf("%dpx %dpx %dpx %s", int(d.Delta.W), int(d.Delta.H), int(d.Blur), zdom.MakeRGBAString(d.Color))
+		if d.Spread != 0 {
+			ss = fmt.Sprintf("%dpx", int(d.Spread))
+		}
+		str := fmt.Sprintf("%dpx %dpx %dpx %s %s", int(d.Delta.W), int(d.Delta.H), int(d.Blur), ss, zdom.MakeRGBAString(d.Color))
+		if d.Inset {
+			str += " inset"
+		}
 		parts = append(parts, str)
 	}
 	if len(parts) > 0 {
