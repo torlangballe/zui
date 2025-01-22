@@ -63,6 +63,7 @@ type HorEventsView struct {
 	lastScrollToX         int
 	updateNowRepeater     *ztimer.Repeater
 	updatingBlock         bool
+	MixOddBlocksColor     zgeo.Color
 	GutterWidth           float64
 	timeAxisHeight        float64
 	lastBlockUpdateTime   time.Time
@@ -828,6 +829,9 @@ func (v *HorEventsView) makeBlockView(blockIndex int) zview.View {
 	// start := v.IndexToTime(float64(blockIndex))
 	// end := start.Add(v.BlockDuration)
 	col := v.BGColor()
+	if blockIndex%2 == 1 && v.MixOddBlocksColor.Valid {
+		col = col.Mixed(v.MixOddBlocksColor, 0.05)
+	}
 	if v.TestMode {
 		// col = zgeo.ColorGreen
 		// if zint.Abs(blockIndex)%2 == 1 {
