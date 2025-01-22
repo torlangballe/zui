@@ -39,7 +39,7 @@ func New(text string) *Button {
 func (v *Button) MakeReturnKeyDefault() {
 	v.SetStroke(2, zgeo.ColorNew(0.4, 0.4, 1, 1), true)
 	v.SetCorner(6)
-	v.SetJSStyle("border", "none")
+
 	// style := v.JSStyle()
 	// style.Set("boxSizing", "border-box")
 

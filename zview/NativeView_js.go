@@ -311,11 +311,18 @@ func (v *NativeView) Corner() float64 {
 }
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
+	if inset {
+		d := zstyle.MakeDropShadow(0, 0, 0, c)
+		d.Inset = true
+		d.Spread = width
+		v.SetDropShadow(d)
+		v.SetJSStyle("border", "none")
+		return
+	}
 	str := fmt.Sprintf("%dpx solid %s", int(width), c.Hex())
 	if inset {
 		str += " inset"
 	}
-	// v.SetJSStyle("boxShadow", str)
 	v.SetJSStyle("border", str)
 }
 
