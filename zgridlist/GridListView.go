@@ -139,7 +139,6 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 		return v.CellColor
 	}
 	v.IDAtIndexFunc = strconv.Itoa
-	v.SetStroke(1, v.BorderColor, true)
 }
 
 func (v *GridListView) SetDirtyRow(id string) {
@@ -1240,6 +1239,7 @@ func (v *GridListView) ReadyToShow(beforeWindow bool) {
 	v.ScrollView.ReadyToShow(beforeWindow)
 	v.updateBorder()
 	if beforeWindow && v.BorderColor.Valid {
+		v.SetStroke(1, v.BorderColor, true)
 	}
 }
 
