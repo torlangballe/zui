@@ -94,7 +94,7 @@ func NewMenuedOwner() *MenuedOwner {
 }
 
 func (o *MenuedOwner) Init() {
-	o.Font = zgeo.FontNice(zgeo.FontDefaultSize-1, zgeo.FontStyleNormal)
+	o.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
 	o.HoverColor = MenuedOwnerDefaultHightlightColor()
 	o.BGColor = MenuedOwnerDefaultBGColor()
 	o.TextColor = MenuedOwnerDefaultTextColor()
@@ -458,7 +458,6 @@ func (o *MenuedOwner) popup() {
 	list.JSSet("className", "znofocus")
 	stack.SetBGColor(o.BGColor)
 	list.MultiSelectable = o.IsMultiple
-	list.SetStroke(0, zgeo.ColorClear, false)
 	list.Selectable = !o.IsMultiple
 	list.HoverColor = o.HoverColor
 	list.BorderColor.Valid = false
@@ -478,7 +477,7 @@ func (o *MenuedOwner) popup() {
 	// 	return o.BGColor
 	// }
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
-	lineHeight := o.Font.LineHeight() + 8
+	lineHeight := o.Font.LineHeight() + 6
 	list.CellHeightFunc = func(id string) float64 {
 		i, _ := strconv.Atoi(id)
 		if o.items[i].IsSeparator {
@@ -776,7 +775,6 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 		v.Add(keyLabel, zgeo.CenterRight, marg)
 		marg.W += gap + shortcutWidth
 	}
-
 	return v
 }
 
