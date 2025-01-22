@@ -312,6 +312,10 @@ func (v *NativeView) Corner() float64 {
 
 func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 	if inset {
+		if width == 0 || !c.Valid {
+			v.SetDropShadow()
+			return
+		}
 		d := zstyle.MakeDropShadow(0, 0, 0, c)
 		d.Inset = true
 		d.Spread = width
@@ -743,6 +747,9 @@ func (v *NativeView) SetDropShadow(shadow ...zstyle.DropShadow) {
 	var parts []string
 	var ss string
 	for _, d := range shadow {
+		if !d.Color.Valid {
+			continue
+		}
 		if d.Spread != 0 {
 			ss = fmt.Sprintf("%dpx", int(d.Spread))
 		}
@@ -752,9 +759,11 @@ func (v *NativeView) SetDropShadow(shadow ...zstyle.DropShadow) {
 		}
 		parts = append(parts, str)
 	}
+	str := "none"
 	if len(parts) > 0 {
-		v.SetJSStyle("boxShadow", strings.Join(parts, ", "))
+		str = strings.Join(parts, ", ")
 	}
+	v.SetJSStyle("boxShadow", str)
 }
 
 func (v *NativeView) SetToolTip(str string) {
