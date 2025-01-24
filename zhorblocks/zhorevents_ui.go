@@ -111,6 +111,8 @@ const (
 	zoomIndexKey        = ".horblock.Events.zoom"
 	dividerHeight       = 2
 	widthRatioToNowLine = 0.8
+
+	LockedItemStrokeWidth = 4.0
 )
 
 func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
@@ -447,10 +449,11 @@ func (v *HorEventsView) makeButtons() {
 
 	v.GotoLockedButton = zshape.NewView(zshape.TypeRoundRect, zgeo.SizeD(24, 20))
 	v.GotoLockedButton.Ratio = 0.2
+	v.GotoLockedButton.StrokeColor = zgridlist.DefaultSelectColor
+	v.GotoLockedButton.StrokeWidth = LockedItemStrokeWidth
 	v.GotoLockedButton.SetPressedHandler("", 0, func() {
 		v.GotoTime(v.LockedTime.Add(-v.BlockDuration / 2))
 	})
-	v.GotoLockedButton.SetColor(zgridlist.DefaultSelectColor)
 	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft)
 
 }
