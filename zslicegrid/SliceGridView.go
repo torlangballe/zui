@@ -53,7 +53,7 @@ type SliceGridView[S zstr.StrIDer] struct {
 	Bar                     *zcontainer.StackView
 	EditParameters          zfields.FieldViewParameters
 	StructName              string
-	ForceUpdateSlice        bool // Set this to make UpdateSlice update, even if slice hash is the same, usefull if other factors cause it to display differently
+	ForceUpdateSlice        bool // Set this to make UpdateSlice update, even if slice hash is the same, useful if other factors cause it to display differently
 	NameOfXItemsFunc        func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc    func(ids []string) string
 	UpdateViewFunc          func(arrange, restoreSelectionScroll bool)      // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
