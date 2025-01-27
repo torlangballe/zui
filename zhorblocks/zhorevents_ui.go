@@ -234,14 +234,17 @@ func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 	pole.SetPressedHandler("pole-click", 0, func() {
 		v.handlePolePress(false)
 	})
-	v.horInfinite.VertOverlay.Add(pole, zgeo.Top|a|zgeo.VertExpand, zgeo.SizeD(0, v.timeAxisHeight)).Free = true
+	w := 0.0
+	if a.Has(zgeo.Right) {
+		w = zscrollview.DefaultBarSize
+	}
+	v.horInfinite.VertOverlay.Add(pole, zgeo.Top|a|zgeo.VertExpand, zgeo.SizeD(w, v.timeAxisHeight)).Free = true
 	return pole
 }
 
 func (v *HorEventsView) handlePolePress(left bool) {
-	y := zview.LastPressedPos.Y
-	zlog.Info("handlePolePress:", left, y, v.horInfinite.VertStack.ContentOffset().Y)
-
+	// y := zview.LastPressedPos.Y
+	// zlog.Info("handlePolePress:", left, y, v.horInfinite.VertStack.ContentOffset().Y)
 }
 
 // func rescaleGraph(rt *row, laneID int64, view zview.View) {
@@ -343,7 +346,10 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 	}
 	endTimeOfBlock := v.IndexToTime(float64(blockIndex) + 1)
 	if !isNew && time.Since(endTimeOfBlock) > time.Second*10 { // if it's an old block, and last events written to db and gotten, don't update anymore.
-		// zlog.Info("updateBlockView1 delete:", blockIndex)
+		_, got := v.updateBlocks[blockIndex]
+		if got {
+			zlog.Info("****** updateBlockView1 delete:", blockIndex)
+		}
 		delete(v.updateBlocks, blockIndex)
 		v.updatingBlock = false
 		return
@@ -763,7 +769,7 @@ func (v *HorEventsView) createLanes() {
 		div.SetBGColor(zgeo.ColorNewGray(0.1, 1))
 		div.SetZIndex(50)
 		div.SetMinSize(zgeo.SizeD(bgWidth, dividerHeight))
-		v.horInfinite.VertOverlay.Add(div, zgeo.TopRight, zgeo.SizeD(0, y+v.timeAxisHeight)).Free = true
+		v.horInfinite.VertOverlay.Add(div, zgeo.TopRight, zgeo.SizeD(zscrollview.DefaultBarSize, y+v.timeAxisHeight)).Free = true
 		y += dividerHeight
 		zslice.Add(&v.lanes[i].views, div.View)
 	}

@@ -189,7 +189,7 @@ func (v *HorBlocksView) scrollSubViews() {
 	pos := v.VertStack.ContentOffset()
 	v.horHeader.SetXContentOffset(pos.X)
 	v.VertOverlay.SetYContentOffset(pos.Y)
-	// zlog.Info("ScrollOffset:", pos, v.VertOverlay.ContentOffset().Y)
+	// zlog.Info("ScrollOffset:", pos, v.VertOverlay.Rect().Size.H, pos.Y)
 }
 
 func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
@@ -341,9 +341,13 @@ func (v *HorBlocksView) setSizes() {
 
 	s.W = 10
 	v.VertOverlay.SetMinSize(s)
-	// v.VertOverlay.SetHeight(s.H)
-	// zlog.Info("setSizes:", s.H, zdebug.CallingStackString())
-	// zlog.Info("setSizes2", v.VertOverlay.Rect().Size.H)
+
+	for _, c := range v.VertOverlay.Cells {
+		if c.Alignment&zgeo.VertExpand != 0 {
+			// zlog.Info("Stretychy:", c.View.ObjectName())
+			c.View.Native().SetHeight(s.H + zscrollview.DefaultBarSize)
+		}
+	}
 }
 
 func (v *HorBlocksView) DebugPrintCells() string {
