@@ -458,6 +458,7 @@ func (v *HorEventsView) makeButtons() {
 	v.GotoLockedButton.StrokeColor = zgridlist.DefaultSelectColor
 	v.GotoLockedButton.StrokeWidth = LockedItemStrokeWidth
 	v.GotoLockedButton.SetPressedHandler("", 0, func() {
+		v.setScrollToNowOn(false)
 		v.GotoTime(v.LockedTime.Add(-v.BlockDuration / 2))
 	})
 	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft)
