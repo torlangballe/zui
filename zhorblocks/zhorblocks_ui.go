@@ -52,7 +52,7 @@ type HorBlocksView struct {
 	queLock                      sync.Mutex
 	scrollToIndexAfterAllUpdates float64
 	horScrollHeader              *zcontainer.StackView
-	horHeader                    *zcontainer.StackView
+	HorHeader                    *zcontainer.StackView
 	subViewSlaveScrollerRepeater *ztimer.Repeater
 }
 
@@ -74,19 +74,19 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 
 	v.HorScrollHeaderHeight = 20
 
-	v.horHeader = zcontainer.StackViewHor("hor-header")
-	v.horHeader.ShowScrollBars(true, false)
-	v.horHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
-	v.horHeader.JSSet("className", "znoscrollbar")
-	// v.horHeader.SetScrollHandler(func(pos zgeo.Pos) { // this makes things sluggish, must be some kind of feedback loop
+	v.HorHeader = zcontainer.StackViewHor("hor-header")
+	v.HorHeader.ShowScrollBars(true, false)
+	v.HorHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
+	v.HorHeader.JSSet("className", "znoscrollbar")
+	// v.HorHeader.SetScrollHandler(func(pos zgeo.Pos) { // this makes things sluggish, must be some kind of feedback loop
 	// 	v.VertStack.SetXContentOffset(pos.X)
 	// })
-	v.Add(v.horHeader, zgeo.TopLeft|zgeo.HorExpand)
+	v.Add(v.HorHeader, zgeo.TopLeft|zgeo.HorExpand)
 
 	v.horScrollHeader = zcontainer.StackViewHor("hor-scroll-header")
 	v.horScrollHeader.SetJSStyle("display", "flex")
 	v.horScrollHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
-	v.horHeader.Add(v.horScrollHeader, zgeo.AlignmentNone)
+	v.HorHeader.Add(v.horScrollHeader, zgeo.AlignmentNone)
 
 	v.VertStack = zcontainer.StackViewVert("vstack")
 	v.VertStack.SetSpacing(0)
@@ -187,7 +187,7 @@ func (v *HorBlocksView) handleDrag(pos zgeo.Pos, down zbool.BoolInd) bool {
 
 func (v *HorBlocksView) scrollSubViews() {
 	pos := v.VertStack.ContentOffset()
-	v.horHeader.SetXContentOffset(pos.X)
+	v.HorHeader.SetXContentOffset(pos.X)
 	v.VertOverlay.SetYContentOffset(pos.Y)
 	// zlog.Info("ScrollOffset:", pos, v.VertOverlay.Rect().Size.H, pos.Y)
 }
