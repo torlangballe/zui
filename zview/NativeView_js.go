@@ -1083,7 +1083,8 @@ func setContentOffsetAnimated(v *NativeView, vertical bool, n float64, animateDo
 }
 
 func (v *NativeView) SetRootYContentOffset(y float64) {
-	v.RootParent().SetYContentOffset(y)
+	toModalWindowOnly := true
+	v.RootParent(toModalWindowOnly).SetYContentOffset(y)
 }
 
 func (v *NativeView) ShowScrollBars(x, y bool) {
@@ -1547,7 +1548,7 @@ func (nv *NativeView) EnvokeFocusIn() {
 	nv.JSCall("dispatchEvent", fin)
 }
 
-func (v *NativeView) RootParent() *NativeView {
+func (v *NativeView) RootParent(toModalWindowOnly bool) *NativeView {
 	all := v.AllParents()
 	if len(all) == 0 {
 		return v
@@ -1556,7 +1557,7 @@ func (v *NativeView) RootParent() *NativeView {
 	if all[i].ObjectName() == "window" {
 		i++
 	}
-	if all[i].ObjectName() == "$blocker" {
+	if toModalWindowOnly && all[i].ObjectName() == "$blocker" {
 		i++
 	}
 	return all[i]
