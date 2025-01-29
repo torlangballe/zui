@@ -40,7 +40,8 @@ func (v *FieldView) rebuildFieldViewIfUseInValueChangedOrIsRebuild(f *Field) {
 			sv, _ := v.ParentFV.View.(*FieldSliceView)
 			if sv != nil {
 				sv.UpdateSlice(f, nil)
-				zcontainer.ArrangeChildrenAtRootContainer(v.ParentFV)
+				toModalWindowRootOnly := false
+				zcontainer.ArrangeChildrenAtRootContainer(v.ParentFV, toModalWindowRootOnly)
 				return
 			}
 		}

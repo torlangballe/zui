@@ -693,8 +693,8 @@ func ChildView(v zview.View, path string) zview.View {
 	return nil
 }
 
-func ArrangeChildrenAtRootContainer(view zview.View) {
-	root := view.Native().RootParent()
+func ArrangeChildrenAtRootContainer(view zview.View, toModalWindowRootOnly bool) {
+	root := view.Native().RootParent(toModalWindowRootOnly)
 	a, _ := root.View.(Arranger)
 	if a != nil {
 		a.ArrangeChildren()

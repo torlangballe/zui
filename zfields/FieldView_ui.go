@@ -758,7 +758,8 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 			str := ""
 			mval := reflect.ValueOf(str)
 			buildMapRow(parent, stackFV, i, "", mval, false, f)
-			zcontainer.ArrangeChildrenAtRootContainer(parent)
+			toModalWindowRootOnly := false
+			zcontainer.ArrangeChildrenAtRootContainer(parent, toModalWindowRootOnly)
 		})
 	}
 	var keys []reflect.Value
@@ -856,7 +857,8 @@ func (v *FieldView) Rebuild() {
 	if rep != nil {
 		rep.ReplaceChild(v, fview)
 	}
-	zcontainer.ArrangeChildrenAtRootContainer(v)
+	toModalWindowRootOnly := false
+	zcontainer.ArrangeChildrenAtRootContainer(v, toModalWindowRootOnly)
 }
 
 func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValue interface{}) {

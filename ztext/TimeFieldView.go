@@ -95,7 +95,7 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 			flipDayMonth(v, true)
 			v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 			if changed {
-				zcontainer.ArrangeChildrenAtRootContainer(v)
+				zcontainer.ArrangeChildrenAtRootContainer(v, true)
 			}
 		})
 		v.AddOnRemoveFunc(func() {

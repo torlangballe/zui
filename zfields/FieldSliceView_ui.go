@@ -284,7 +284,8 @@ func (v *FieldSliceView) selectItem(i int) {
 	}
 	v.updateMenu()
 	if v.IsPresented() {
-		zcontainer.ArrangeChildrenAtRootContainer(v)
+		toModalWindowRootOnly := false
+		zcontainer.ArrangeChildrenAtRootContainer(v, toModalWindowRootOnly)
 	}
 }
 
