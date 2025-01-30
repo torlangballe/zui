@@ -133,7 +133,6 @@ func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Heade
 }
 
 func (v *HeaderView) Populate(headers []Header) {
-	// zlog.Info("HeaderView.Populate")
 	type newSort struct {
 		fieldName string
 		small     bool
