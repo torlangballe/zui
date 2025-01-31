@@ -879,6 +879,14 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 			return
 		}
 		t := v.XInBlockToTime(pos.X-1, blockIndex)
+		if v.BlockDuration >= time.Hour*8 {
+			sec := 0
+			if t.Second() > 30 {
+				sec = 60
+			}
+			t = ztime.ChangedPartsOfTime(t, -1, -1, sec, 0)
+
+		}
 		v.markerPole.SetObjectName(ztime.GetNice(t, true))
 		x, _ := v.TimeToXInHorEventView(t)
 		r := zgeo.RectFromXY2(x-35, v.timeAxisHeight+v.Bar.Rect().Size.H, x+35, v.Rect().Size.H)
