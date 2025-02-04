@@ -368,6 +368,7 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 
 func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 	if v.ViewWidth == 0 || len(v.lanes) == 0 {
+		delete(v.updateBlocks, blockIndex) // without this we loop forever
 		v.updatingBlock = false
 		return
 	}
