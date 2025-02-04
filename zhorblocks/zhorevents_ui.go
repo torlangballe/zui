@@ -5,6 +5,7 @@ package zhorblocks
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -75,6 +76,8 @@ type HorEventsView struct {
 	lastBlockUpdateTime   time.Time
 	LockedTime            time.Time
 	markerPole            *zcustom.CustomView
+	moveStartX            float64
+	markerTimes           []time.Time
 }
 
 type Updater interface {
@@ -113,11 +116,12 @@ type EventOptions struct {
 }
 
 const (
-	zoomIndexKey        = ".horblock.Events.zoom"
-	dividerHeight       = 2
-	widthRatioToNowLine = 0.8
-
 	LockedItemStrokeWidth = 4.0
+
+	zoomIndexKey         = ".horblock.Events.zoom"
+	dividerHeight        = 2
+	widthRatioToNowLine  = 0.8
+	markerButtonTimesKey = "MarkerButtonTimesKey"
 )
 
 func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
@@ -220,6 +224,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		v.nowLine = line
 		v.Add(line, zgeo.AlignmentNone)
 	}
+	v.loadMarkerButtons()
 	v.updateNowRepeater = ztimer.RepeaterNew()
 	v.AddOnRemoveFunc(v.updateNowRepeater.Stop)
 	v.horInfinite.SetMaxIndex(1)
@@ -233,10 +238,48 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	return v
 }
 
-func (v *HorEventsView) makeMarkerButton() {
-	v.markerPole = zcustom.NewView("pole")
-	v.markerPole.SetMinSize(zgeo.SizeD(40, 40))
+func (v *HorEventsView) loadMarkerButtons() {
+	if zkeyvalue.DefaultStore != nil && v.storeKey != "" {
+		var times []time.Time
+		zkeyvalue.DefaultStore.GetObject(v.storeKey+markerButtonTimesKey, &times)
+		for _, t := range times {
+			v.makeMarkerButton(t)
+		}
+	}
+}
 
+func (v *HorEventsView) saveMarkerButtons() {
+	if zkeyvalue.DefaultStore != nil && v.storeKey != "" {
+		zkeyvalue.DefaultStore.SetObject(v.markerTimes, v.storeKey+markerButtonTimesKey, true)
+	}
+}
+
+func (v *HorEventsView) makeMarkerButton(t time.Time) {
+	button := zshape.NewView(zshape.TypeCircle, zgeo.SizeBoth(24))
+	stime := t.Format(time.RFC3339Nano)
+	button.SetObjectName(stime)
+	button.SetColor(zgeo.ColorGreen)
+	v.markerTimes = append(v.markerTimes, t)
+	button.SetTextColor(zgeo.ColorBlack)
+	v.Bar.Add(button, zgeo.CenterLeft)
+	v.Bar.ArrangeChildren()
+	tip := "marker. Press to go to " + ztime.GetNice(t, true) + "\n"
+	tip += zkeyboard.ModifierCommand.AsSymbolsString() + "-press to remove"
+	button.SetToolTip(tip)
+	button.SetPressedHandler("goto", 0, func() {
+		v.GotoTime(t.Add(-v.BlockDuration / 2))
+		v.showMarkerPoleAt(t)
+		ztimer.StartIn(1, func() {
+			v.markerPole.Show(false)
+		})
+	})
+	button.SetPressedHandler("clear", zkeyboard.ModifierCommand, func() {
+		i := slices.Index(v.markerTimes, t)
+		zslice.RemoveAt(&v.markerTimes, i)
+		v.Bar.RemoveChild(button, true)
+		v.Bar.ArrangeChildren()
+		v.saveMarkerButtons()
+	})
 }
 
 func (v *HorEventsView) makeMarkerPole() {
@@ -246,7 +289,7 @@ func (v *HorEventsView) makeMarkerPole() {
 	// v.markerPole.SetBGColor(zgeo.ColorBlue)
 	v.markerPole.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
 		x := v.markerPole.Rect().Size.W / 2
-		canvas.SetColor(zgeo.ColorYellow)
+		canvas.SetColor(zgeo.ColorGreen)
 		canvas.StrokeVertical(x, rect.Min().Y, rect.Max().Y, 1, zgeo.PathLineButt)
 		ti := ztextinfo.New()
 		ti.Alignment = zgeo.Center
@@ -309,9 +352,6 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 		}
 	}
 	v.BlockDuration = d
-	// ztime.Minimize(&nowLineRatioTime, time.Now())
-	// zlog.Info("*************** SetBlockDuration 1:", v.currentTime, "->", t, v.horInfinite.DebugPrintList())
-	// t := nowLineRatioTime.Add(-v.calcDurationToNowLineRatio())
 	ztime.Minimize(&t, time.Now())
 	v.startTime = v.calcTimePosToShowTime(t).Add(time.Second * 3)
 	v.currentTime = v.startTime
@@ -497,7 +537,7 @@ func (v *HorEventsView) makeButtons() {
 		v.setScrollToNowOn(false)
 		v.GotoTime(v.LockedTime.Add(-v.BlockDuration / 2))
 	})
-	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft)
+	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft).Collapsed = true
 
 }
 
@@ -628,7 +668,7 @@ func (v *HorEventsView) UpdateWidgets() {
 			pd.stack.SetBGColor(zgeo.ColorClear)
 		}
 	}
-	v.GotoLockedButton.Show(!v.LockedTime.IsZero())
+	v.Bar.CollapseChild(v.GotoLockedButton, v.LockedTime.IsZero(), true)
 }
 
 func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
@@ -673,7 +713,6 @@ func (v *HorEventsView) panPressed(left bool, id int) {
 func (v *HorEventsView) GotoTime(t time.Time) {
 	i := v.timeToFractionalBlockIndex(t)
 	i = min(i, float64(v.horInfinite.maxIndex))
-	// zlog.Info("GotoTime:", t, "index:", i, v.BlockDuration, v.horInfinite.DebugPrintList(), "cur:", v.horInfinite.CurrentIndex())
 	v.currentTime = t
 	v.horInfinite.SetFloatingCurrentIndex(i)
 }
@@ -779,10 +818,6 @@ func (v *HorEventsView) ForLaneOverlayViews(each func(view zview.View, laneID, r
 
 func (v *HorEventsView) createLanes() {
 	const laneTitleHeight = 20
-	// zlog.Info("HEV setLanes:", len(lanes), v.blockStack.Rect())
-
-	// bs, _ := v.Bar.CalculatedSize(v.Rect().Size)
-	// zlog.Info("SetLanes:", len(v.lanes), v.Bar.Rect().Max().Y, v.timeAxisHeight)
 	bgWidth := v.ViewWidth //+ v.PoleWidth*2
 	var y float64
 	for i, lane := range v.lanes {
@@ -884,24 +919,41 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 	})
 	axis.ExposeIn(0.1)
 	axis.SetPressedHandler("marker", 0, func() {
-		v.makeMarkerButton()
+		if len(v.markerTimes) >= 6 {
+			return
+		}
+		t := v.xInBlockToMarkerTime(zview.LastPressedPos.X, blockIndex)
+		v.makeMarkerButton(t)
+		v.saveMarkerButtons()
 	})
 	handleMoves := true
 	axis.SetPointerEnterHandler(handleMoves, func(pos zgeo.Pos, inside zbool.BoolInd) {
-		if !inside.IsUnknown() {
-			v.markerPole.Show(inside.Bool())
+		if inside.IsFalse() {
+			v.markerPole.Show(false)
+			return
+		}
+		if inside.IsTrue() {
+			v.moveStartX = pos.X
+			return
+		}
+		if zmath.Abs(pos.X-v.moveStartX) < 5 {
 			return
 		}
 		t := v.xInBlockToMarkerTime(pos.X-1, blockIndex)
-		v.markerPole.SetObjectName(ztime.GetNice(t, true))
-		x, _ := v.TimeToXInHorEventView(t)
-		r := zgeo.RectFromXY2(x-35, v.timeAxisHeight+v.Bar.Rect().Size.H, x+35, v.Rect().Size.H)
-		v.markerPole.SetRect(r)
-		v.markerPole.Expose()
+		v.showMarkerPoleAt(t)
 		// zlog.Info("ScrollHeaderX:", blockIndex, pos.X, "->", x, t)
 		//		do this in each individual bar-part? so we know blockid?
 	})
 	return axis
+}
+
+func (v *HorEventsView) showMarkerPoleAt(t time.Time) {
+	v.markerPole.Show(true)
+	v.markerPole.SetObjectName(ztime.GetNice(t, true))
+	x, _ := v.TimeToXInHorEventView(t)
+	r := zgeo.RectFromXY2(x-35, v.timeAxisHeight+v.Bar.Rect().Size.H, x+35, v.Rect().Size.H)
+	v.markerPole.SetRect(r)
+	v.markerPole.Expose()
 }
 
 func (v *HorEventsView) xInBlockToMarkerTime(x float64, blockIndex int) time.Time {
@@ -912,7 +964,6 @@ func (v *HorEventsView) xInBlockToMarkerTime(x float64, blockIndex int) time.Tim
 			sec = 60
 		}
 		t = ztime.ChangedPartsOfTime(t, -1, -1, sec, 0)
-
 	}
 	return t
 }
