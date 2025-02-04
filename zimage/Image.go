@@ -61,6 +61,7 @@ type SimpleAnalytics struct {
 	EdgesAmount    float64
 	BlockFrequency zgeo.IPos
 	BlockOffset    zgeo.IPos
+	BlockAmount    float64
 }
 
 var (
