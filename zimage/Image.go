@@ -54,6 +54,15 @@ type Owner interface {
 	SetImage(image *Image, path string, got func(*Image))
 }
 
+type SimpleAnalytics struct {
+	Size           zgeo.ISize
+	BlurAmount     float64
+	FlatsAmount    float64
+	EdgesAmount    float64
+	BlockFrequency zgeo.IPos
+	BlockOffset    zgeo.IPos
+}
+
 var (
 	GlobalURLPrefix     string
 	MainScreenScaleFunc = func() float64 {

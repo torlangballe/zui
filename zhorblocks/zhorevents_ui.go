@@ -406,7 +406,7 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 		}
 		bView, _ := v.horInfinite.FindViewForBlockIndex(blockIndex) // in case black view has changed
 		if bView != view {
-			zlog.Info("Block View ChangedDone", blockIndex, "to:", zlog.Pointer(blockView))
+			// zlog.Info("Block View ChangedDone", blockIndex, "to:", zlog.Pointer(blockView))
 			v.updateBlocks[blockIndex] = time.Time{} // force new update for new block view
 			v.lastBlockUpdateTime = time.Now()
 			v.updatingBlock = false
