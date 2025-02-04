@@ -299,7 +299,7 @@ func (v *HorBlocksView) Reset(update bool) {
 	// zlog.Info("HB ReSet:", update, zdebug.CallingStackString())
 	// v.currentIndex = 0
 	// v.VertStack.SetXContentOffset(0)
-	// zlog.Info("HB Reset", zdebug.CallingStackString())
+	// zlog.Info("HB Reset")
 	v.Scroller.RemoveAllChildren()
 	v.horScrollHeader.RemoveAllChildren()
 	v.oldRect = zgeo.Rect{}
@@ -307,10 +307,6 @@ func (v *HorBlocksView) Reset(update bool) {
 		v.update()
 	}
 }
-
-// func (v *HorBlocksView) indexToX(i int) float64 {
-// 	return float64(i) * v.viewSize.W
-// }
 
 func (v *HorBlocksView) ScrollOffsetInBlock() float64 {
 	return v.VertStack.ContentOffset().X - v.indexToOffset(v.currentIndex)
@@ -411,14 +407,12 @@ fullLoop:
 						v.currentIndex = v.currentIndex - blocksDiff
 						// zlog.Info("ChangeCur:", v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
-						adjustedOffset = true
 						continue fullLoop
 					}
 					// v.currentIndex, _ = strconv.Atoi(v.Scroller.Cells[ni].View.ObjectName())
 					if v.currentIndex < v.maxIndex || blocksDiff < 0 {
 						_, fract := math.Modf(o / v.viewSize.W)
 						newOffset := (float64(i) + fract) * v.viewSize.W
-						// zlog.Info("moreInc:", v.maxIndex, w, o, blocksDiff, i, v.currentIndex, newOffset)
 						v.VertStack.SetXContentOffset(newOffset)
 						adjustedOffset = true
 					}
@@ -438,6 +432,7 @@ fullLoop:
 			continue fullLoop
 		}
 		if adjustedOffset {
+			// zlog.Info("adjustedOffset")
 			continue
 		}
 		break
