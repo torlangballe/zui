@@ -92,7 +92,7 @@ func (info *ImageInfo) setDiff(l *lengths, i int, diff float64, counts *counts) 
 	}
 }
 
-func (info *ImageInfo) Analyze(img image.Image) {
+func (info *ImageInfo) 	Analyze(img image.Image) {
 	goRect := img.Bounds()
 	var oldRow []float64 = nil
 	info.Size = zgeo.RectFromGoRect(img.Bounds()).Size.ISize()
@@ -152,10 +152,10 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, nextRatio float
 	}
 	const blockMax = 32
 	clen := len(xcounts)
-	var best, bestFreq, bestOffset, nextBest, nextBestFreq int // ,
-	for freq := 8; freq <= blockMax; freq++ {
+	var best, bestFreq, bestOffset, nextBest, nextBestFreq int
+	for freq := 8; freq <= blockMax; freq *= 2 {
 		for w := range blockMax {
-			var lines, lineNextBest, lineNextBestFreq int
+			var lines int
 			var sum int
 			for i := w; i < clen-(blockMax-w); i += freq {
 				sum += xcounts[i]
@@ -166,33 +166,22 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, nextRatio float
 			}
 			n := sum / lines
 			if n > best {
-				// zlog.Info("Freq:", freq, w, ":", n, best)
-				if best != 0 && 100*n/best < 105 && freq%bestFreq == 0 {
+				if best != 0 && 100*n/best < 105 {
 					continue
 				}
 				nextBest = best
-				lineNextBestFreq = bestFreq
+				nextBestFreq = bestFreq
 				best = n
 				bestFreq = freq
 				bestOffset = w
-			} else if n > lineNextBest {
-				nextBest = n
-				lineNextBestFreq = freq
-				// zlog.Info("Next:", freq, w, ":", best, n)
 			}
-			nextBest = max(nextBest, lineNextBest)
-			nextBestFreq = max(nextBestFreq, lineNextBestFreq)
 		}
 	}
 	if bestFreq == 0 {
 		return 0, 0, 0
 	}
-	nextRatio = 1 - float64(nextBest)/float64(best)
-	zlog.Info("Next Best Ratio:", nextRatio, nextBestFreq, best, nextBest)
-	if nextRatio < 0.5 {
-		return 0, 0, nextRatio
-	}
-	return bestFreq, bestOffset, nextRatio
+	zlog.Info("Next Best Freq:", nextBestFreq)
+	return bestFreq, bestOffset, float64(nextBest) / float64(best)
 }
 
 func (info *ImageInfo) BlurAmount() zgeo.Pos {
@@ -200,9 +189,7 @@ func (info *ImageInfo) BlurAmount() zgeo.Pos {
 	sum := info.Size.W * info.Size.H
 	for len, count := range info.hCounts.blurs {
 		// zlog.Info("HBlur:", len, count, i)
-		if len > 7 {
-			w += len * count
-		}
+		w += len * count
 	}
 	for len, count := range info.vCounts.blurs {
 		h += len * count
@@ -250,7 +237,7 @@ func (info *ImageInfo) PrintInfo() {
 }
 
 func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
-	freq, offset, nextRatio := info.BlockFrequency()
+	freq, offset, _ := info.BlockFrequency()
 	return SimpleAnalytics{
 		Size:           info.Size,
 		BlurAmount:     info.BlurAmount().Average(),
@@ -258,6 +245,5 @@ func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
 		EdgesAmount:    info.EdgePointsAmount().Average(),
 		BlockFrequency: freq,
 		BlockOffset:    offset,
-		BlockAmount:    nextRatio.Average(),
 	}
 }
