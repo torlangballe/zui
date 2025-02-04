@@ -207,6 +207,13 @@ func (v *HorBlocksView) handleScroll(pos zgeo.Pos) {
 	}
 }
 
+func (v *HorBlocksView) ForAllBlockViews(got func(blockIndex int, bview zview.View)) {
+	for _, c := range v.Scroller.Cells {
+		i, _ := strconv.Atoi(c.View.ObjectName())
+		got(i, c.View)
+	}
+}
+
 func (v *HorBlocksView) FindViewForBlockIndex(index int) (zview.View, int) {
 	si := strconv.Itoa(index)
 	cell, i := v.Scroller.FindCellWithName(si)
