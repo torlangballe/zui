@@ -458,11 +458,13 @@ func (v *NativeView) IsFocused() bool {
 
 func (v *NativeView) Focus(focus bool) {
 	// v.JSSet("contenteditable", focus) ?
-	// zlog.Info("NV Focus:", v.Hierarchy(), focus, zdebug.CallingStackString())
 	if focus {
 		v.JSCall("focus")
+		// zlog.Info("NV Focus:", v.Hierarchy())
 	} else {
 		v.JSCall("blur")
+		v.Document().Get("body").Call("focus")
+		// zlog.Info("NV unFocus:", v.Hierarchy(), v.IsFocused(), v.Document().Get("activeElement").Get("id"))
 	}
 	// ztimer.StartIn(2, func() {
 	// 	v.EnvokeFocusIn()
@@ -542,6 +544,17 @@ func handleFocusInChildren(root *NativeView, eventName string, forFocused bool, 
 	})
 }
 
+func (root *NativeView) GetFocusedChildView(andSelf bool) View {
+	e := getActiveElement(root)
+	if e.IsUndefined() {
+		return nil
+	}
+	if andSelf && root.IsFocused() {
+		return root
+	}
+	return FindChildWithElement(root, e)
+}
+
 func FindChildWithElement(root *NativeView, e js.Value) View {
 	var found View
 	foundID := e.Get("id").String()
@@ -557,17 +570,6 @@ func FindChildWithElement(root *NativeView, e js.Value) View {
 		return true
 	})
 	return found
-}
-
-func (root *NativeView) GetFocusedChildView(andSelf bool) View {
-	e := getActiveElement(root)
-	if e.IsUndefined() {
-		return nil
-	}
-	if andSelf && root.IsFocused() {
-		return root
-	}
-	return FindChildWithElement(root, e)
 }
 
 func (v *NativeView) SetOpaque(opaque bool) {
@@ -1309,7 +1311,6 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 		event = "keydown"
 	}
 	v.SetListenerJSFunc(event, func(val js.Value, args []js.Value) any {
-		// zlog.Info("Key!")
 		if !v.Document().Call("hasFocus").Bool() {
 			return nil
 		}
@@ -1321,6 +1322,7 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 			} else {
 				zkeyboard.CurrentKeyDown = zkeyboard.KeyMod{}
 			}
+			// zlog.Info("Key!", v.Hierarchy(), v.IsFocused())
 			if handler(km, down) {
 				event.Call("preventDefault")
 				event.Call("stopPropagation")
