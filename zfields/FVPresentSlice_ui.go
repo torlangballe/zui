@@ -161,6 +161,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	})
 
 	fview := FieldViewNew("OkCancel", editStruct, params)
+	fview.SetCanTabFocus(true) // we need view to have focus to avoid things below modal still having focus
 	update := true
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {
