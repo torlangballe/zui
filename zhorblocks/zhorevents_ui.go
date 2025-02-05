@@ -19,7 +19,6 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zshape"
-	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -147,7 +146,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		panDuration{"1d", zkeyboard.ModifierNone, time.Hour * 24, nil},
 		panDuration{"1h", zkeyboard.ModifierCommand, time.Hour * 1, nil},
 		panDuration{"10m", zkeyboard.ModifierAlt, time.Minute * 10, nil},
-		panDuration{"1m", zkeyboard.ModifierCommand | zkeyboard.ModifierAlt, time.Minute, nil},
+		panDuration{"1m", zkeyboard.ModifierShift, time.Minute, nil},
 	}
 	blockDuration := opts.BlockDuration
 	v.zoomIndex = -1
@@ -201,15 +200,6 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		box := v.makeAxisRow(blockIndex)
 		return box
 	}
-	// v.horInfinite.HorHeader.SetCursor(zcursor.Crosshair)
-
-	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if !down {
-			return false
-		}
-		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
-	})
-
 	if opts.ShowNowPole {
 		line := zcustom.NewView("now-pole")
 		line.SetZIndex(11000)
@@ -521,9 +511,9 @@ func (v *HorEventsView) makeButtons() {
 		v.panDurations[i].stack = stack
 		v.Bar.Add(stack, zgeo.CenterLeft)
 	}
-	leftKey := zkeyboard.KeyMod{Key: zkeyboard.KeyLeftArrow, Modifier: zkeyboard.ModifierShift}
-	rightKey := zkeyboard.KeyMod{Key: zkeyboard.KeyRightArrow, Modifier: zkeyboard.ModifierShift}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", leftKey, "zcore/zoom-in-gray", "zoom in", rightKey, "filler", 4, 28, -1, v.zoomPressed)
+	outKey := zkeyboard.KeyMod{Char: "-"}
+	inKey := zkeyboard.KeyMod{Char: "+"}
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "filler", 4, 28, -1, v.zoomPressed)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
 
 	v.nowButton = zshape.ImageButtonViewSimpleInsets("now", "lightGray")
@@ -639,6 +629,7 @@ func (v *HorEventsView) zoomPressed(left bool, id int) {
 		v.zoomIndex++
 	}
 	dur := v.zoomLevels[v.zoomIndex].duration
+	// zlog.Info("zoom:", dur, v.zoomIndex)
 	v.SetBlockDuration(dur)
 	v.UpdateWidgets()
 	// v.Bar.ArrangeChildren()
@@ -674,16 +665,16 @@ func (v *HorEventsView) UpdateWidgets() {
 	v.Bar.CollapseChild(v.GotoLockedButton, v.LockedTime.IsZero(), true)
 }
 
-func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-	var left bool
-	if sc.Key == zkeyboard.KeyLeftArrow {
-		left = true
-	} else if sc.Key != zkeyboard.KeyRightArrow {
-		return false
-	}
-	v.panPressed(left, -1)
-	return true
-}
+// func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+// 	var left bool
+// 	if sc.Key == zkeyboard.KeyLeftArrow {
+// 		left = true
+// 	} else if sc.Key != zkeyboard.KeyRightArrow {
+// 		return false
+// 	}
+// 	v.panPressed(left, -1)
+// 	return true
+// }
 
 func (v *HorEventsView) panPressed(left bool, id int) {
 	v.setScrollToNowOn(false)
@@ -697,7 +688,7 @@ func (v *HorEventsView) panPressed(left bool, id int) {
 		d *= -1
 	}
 	t := v.currentTime.Add(d)
-	// zlog.Info("Pan:", v.currentTime, "+", d, "->", t)
+	// zlog.Info("Pan:", v.currentTime, "+", d, "->", t, zdebug.CallingStackString())
 	if zmath.Abs(d) > v.BlockDuration {
 		v.GotoTime(t)
 		return
