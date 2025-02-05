@@ -255,10 +255,13 @@ func (v *HorEventsView) saveMarkerButtons() {
 }
 
 func (v *HorEventsView) makeMarkerButton(t time.Time) {
-	button := zshape.NewView(zshape.TypeCircle, zgeo.SizeBoth(24))
-	stime := t.Format(time.RFC3339Nano)
-	button.SetObjectName(stime)
+	button := zshape.NewView(zshape.TypeRoundRect, zgeo.SizeD(60, 24))
+	stime := ztime.GetNice(t, false)
+	button.SetText(stime)
+	button.SetTextColor(zgeo.ColorBlack)
 	button.SetColor(zgeo.ColorGreen)
+	button.SetFont(zgeo.FontDefault(-3))
+	button.SetMarginS(zgeo.SizeD(4, 0))
 	v.markerTimes = append(v.markerTimes, t)
 	button.SetTextColor(zgeo.ColorBlack)
 	v.Bar.Add(button, zgeo.CenterLeft)
