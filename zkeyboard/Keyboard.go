@@ -137,7 +137,7 @@ func KMod(k Key, m Modifier) KeyMod {
 }
 
 func (k KeyMod) IsNull() bool {
-	return k.Key == 0 && k.Modifier == 0
+	return k.Key == 0 && k.Modifier == 0 && k.Char == ""
 }
 
 func (k KeyMod) Matches(m KeyMod) bool {
