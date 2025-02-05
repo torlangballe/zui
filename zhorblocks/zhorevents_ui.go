@@ -267,6 +267,7 @@ func (v *HorEventsView) makeMarkerButton(t time.Time) {
 	tip += zkeyboard.ModifierCommand.AsSymbolsString() + "-press to remove"
 	button.SetToolTip(tip)
 	button.SetPressedHandler("goto", 0, func() {
+		v.setScrollToNowOn(false)
 		v.GotoTime(t.Add(-v.BlockDuration / 2))
 		v.showMarkerPoleAt(t)
 		ztimer.StartIn(1, func() {
@@ -538,7 +539,6 @@ func (v *HorEventsView) makeButtons() {
 		v.GotoTime(v.LockedTime.Add(-v.BlockDuration / 2))
 	})
 	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft).Collapsed = true
-
 }
 
 func (v *HorEventsView) updateNowScrollAndPole() {
