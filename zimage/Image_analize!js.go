@@ -225,8 +225,7 @@ func (info *ImageInfo) EdgePointsAmount() zgeo.Pos {
 func (info *ImageInfo) BlockFrequency() (freq, offset zgeo.IPos, nextRatio zgeo.Pos) {
 	fX, oX, nX := info.hCounts.getBlockFrequencyAndOffset()
 	fY, oY, nY := info.vCounts.getBlockFrequencyAndOffset()
-	if fX == 0 || fY == 0 || (fX/fY != 4 && fX/fY != 2 && fY/fX != 4 && fY/fX != 4) {
-		zlog.Info("Clear Freq:", fX, fY)
+	if fX == 0 || fY == 0 || (fX/fY != 4 && fX/fY != 2 && fY/fX != 4 && fY/fX != 2) {
 		fX = 0
 		fY = 0
 	}
