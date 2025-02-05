@@ -92,17 +92,17 @@ func (info *ImageInfo) setDiff(l *lengths, i int, diff float64, counts *counts) 
 	}
 }
 
-func (info *ImageInfo) 	Analyze(img image.Image) {
+func (info *ImageInfo) Analyze(img image.Image) {
 	goRect := img.Bounds()
 	var oldRow []float64 = nil
 	info.Size = zgeo.RectFromGoRect(img.Bounds()).Size.ISize()
 	info.hCounts = makeCounts()
 	info.vCounts = makeCounts()
 	var vertLengths = make([]lengths, int(goRect.Max.X))
-
-	outImage := image.NewRGBA(goRect)
+	// outImage := image.NewRGBA(goRect)
+	row := make([]float64, int(goRect.Max.X))
 	for y := range goRect.Max.Y {
-		row := make([]float64, int(goRect.Max.X))
+		clear(row)
 		var oldCol float64 = -1
 		var horLengths lengths
 		for x := range goRect.Max.X {
@@ -112,24 +112,24 @@ func (info *ImageInfo) 	Analyze(img image.Image) {
 			row[x] = fcol
 			if oldCol != -1 {
 				hdiff := zmath.Abs(fcol - oldCol)
-				outImage.Set(x, y, zgeo.GoGrayColor(float32(hdiff)))
+				// outImage.Set(x, y, zgeo.GoGrayColor(float32(hdiff)))
 				info.setDiff(&horLengths, x, hdiff, &info.hCounts)
 				v1 := info.setEdgeToPerp(x, hdiff, &vertLengths[x], &info.vCounts)
 				if v1 != 0 {
-					for y1 := max(0, y-v1); y1 < y; y1++ {
-						outImage.Set(x, y1, zgeo.ColorMagenta.GoColor())
-					}
+					// for y1 := max(0, y-v1); y1 < y; y1++ {
+					// outImage.Set(x, y1, zgeo.ColorMagenta.GoColor())
+					// }
 				}
 			}
 			if oldRow != nil {
 				vdiff := zmath.Abs(fcol - oldRow[x])
 				info.setDiff(&vertLengths[x], x, vdiff, &info.vCounts)
-				h1 := info.setEdgeToPerp(y, vdiff, &horLengths, &info.hCounts)
-				if h1 != 0 {
-					for x1 := max(0, x-h1); x1 < x; x1++ {
-						outImage.Set(x1, y, zgeo.ColorRed.GoColor())
-					}
-				}
+				// h1 := info.setEdgeToPerp(y, vdiff, &horLengths, &info.hCounts)
+				// if h1 != 0 {
+				// 	for x1 := max(0, x-h1); x1 < x; x1++ {
+				// 		outImage.Set(x1, y, zgeo.ColorRed.GoColor())
+				// 	}
+				// }
 			}
 			oldCol = fcol
 		}
@@ -152,7 +152,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, nextRatio float
 	}
 	const blockMax = 32
 	clen := len(xcounts)
-	var best, bestFreq, bestOffset, nextBest, nextBestFreq int
+	var best, bestFreq, bestOffset, nextBest int // , nextBestFreq
 	for freq := 8; freq <= blockMax; freq *= 2 {
 		for w := range blockMax {
 			var lines int
@@ -170,7 +170,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, nextRatio float
 					continue
 				}
 				nextBest = best
-				nextBestFreq = bestFreq
+				// nextBestFreq = bestFreq
 				best = n
 				bestFreq = freq
 				bestOffset = w
@@ -180,7 +180,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, nextRatio float
 	if bestFreq == 0 {
 		return 0, 0, 0
 	}
-	zlog.Info("Next Best Freq:", nextBestFreq)
+	// zlog.Info("Next Best Freq:", nextBestFreq)
 	return bestFreq, bestOffset, float64(nextBest) / float64(best)
 }
 
@@ -225,6 +225,11 @@ func (info *ImageInfo) EdgePointsAmount() zgeo.Pos {
 func (info *ImageInfo) BlockFrequency() (freq, offset zgeo.IPos, nextRatio zgeo.Pos) {
 	fX, oX, nX := info.hCounts.getBlockFrequencyAndOffset()
 	fY, oY, nY := info.vCounts.getBlockFrequencyAndOffset()
+	if fX == 0 || fY == 0 || (fX/fY != 4 && fX/fY != 2 && fY/fX != 4 && fY/fX != 4) {
+		zlog.Info("Clear Freq:", fX, fY)
+		fX = 0
+		fY = 0
+	}
 	return zgeo.IPos{X: fX, Y: fY}, zgeo.IPos{X: oX, Y: oY}, zgeo.PosD(nX, nY)
 }
 
