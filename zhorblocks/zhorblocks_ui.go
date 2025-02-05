@@ -366,12 +366,13 @@ func (v *HorBlocksView) DebugPrintCells() string {
 // }
 
 func (v *HorBlocksView) update() {
+	// zlog.Info("** update1: cur:", v.currentIndex)
 	if v.Updating {
 		return
 	}
 	// s := time.Now()
 	v.Updating = true
-	// zlog.Info("** update1: cur:", v.currentIndex)
+	var didAdjust bool
 fullLoop:
 	for {
 		var adjustedOffset bool
@@ -432,8 +433,11 @@ fullLoop:
 			continue fullLoop
 		}
 		if adjustedOffset {
-			// zlog.Info("adjustedOffset")
-			continue
+			// fmt.Println("adjustedOffset")
+			if !didAdjust {
+				didAdjust = true
+				continue
+			}
 		}
 		break
 	}
