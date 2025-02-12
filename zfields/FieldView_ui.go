@@ -712,7 +712,7 @@ func updateMap(fv *FieldView, stackFV *FieldView, f *Field) {
 		}
 		valType := rval.Type().Elem()
 		e := reflect.New(valType)
-		zreflect.SetStringToAny(e.Interface(), value)
+		zstr.SetStringToAny(e.Interface(), value)
 		rval.SetMapIndex(reflect.ValueOf(key), e.Elem())
 		zlog.Info("map add:", rval.Interface())
 	}
