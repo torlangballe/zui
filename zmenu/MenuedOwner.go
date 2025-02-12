@@ -469,6 +469,7 @@ func (o *MenuedOwner) popup() {
 	list.MultiplyColorAlternate = 1
 	list.CurrentHoverID = "0"
 	list.BorderColor = zgeo.Color{}
+	list.DeselectOnEscape = false
 	// list.CellColorFunc = func(id string) zgeo.Color {
 	// 	i := list.IndexOfID(id)
 	// 	if o.items[i].IsSeparator {

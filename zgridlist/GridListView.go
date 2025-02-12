@@ -62,6 +62,7 @@ type GridListView struct {
 	HorizontalFirst           bool // HorizontalFirst means 1 2 3 on first row, not down first
 	RestoreOffsetOnNextLayout bool
 	UpdateOnceOnSetRect       bool
+	DeselectOnEscape          bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -129,6 +130,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.BranchToggleType = zwidgets.BranchToggleTriangle
 	v.Spacing = zgeo.SizeD(14, 6)
 	v.MultiplyColorAlternate = 0.95
+	v.DeselectOnEscape = true
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
 	v.loadOpenBranches()
@@ -1210,7 +1212,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 				return v.moveHover(1, 0, km.Modifier)
 			}
 		case zkeyboard.KeyEscape:
-			if v.Selectable || v.MultiSelectable {
+			if v.DeselectOnEscape && (v.Selectable || v.MultiSelectable) {
 				v.UnselectAll(true)
 			}
 		case 'A':
