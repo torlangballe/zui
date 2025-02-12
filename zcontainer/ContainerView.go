@@ -593,6 +593,20 @@ func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
 	return nil, -1
 }
 
+func CellInParent(child zview.View) *Cell {
+	co, _ := child.Native().Parent().View.(CellsOwner)
+	if co == nil {
+		return nil
+	}
+	cells := co.GetCells()
+	for i, c := range *cells {
+		if c.View == child {
+			return &(*cells)[i]
+		}
+	}
+	return nil
+}
+
 func (v *ContainerView) RemoveChild(subView zview.View, callRemoveFuncs bool) {
 	v.DetachChild(subView)
 	v.CustomView.RemoveChild(subView, callRemoveFuncs)
