@@ -11,9 +11,9 @@ import (
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
-	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -35,18 +35,17 @@ type HorBlocksView struct {
 	HorScrollHeaderHeight float64
 	CenterSpin            *zwidgets.ActivityView
 
-	VertStack    *zcontainer.StackView
-	currentIndex int
-	maxIndex     int // this can change over time
-	Updating     bool
-	viewSize     zgeo.Size
-	fixedHeight  float64
-	flippedAt    time.Time
-	dragXStart   float64
-	flipping     bool
-	presented    bool
-	oldScrollX   float64
-	// hasUpdated                   bool
+	VertStack                    *zcontainer.StackView
+	currentIndex                 int
+	maxIndex                     int // this can change over time
+	Updating                     bool
+	viewSize                     zgeo.Size
+	fixedHeight                  float64
+	flippedAt                    time.Time
+	dragXStart                   float64
+	flipping                     bool
+	presented                    bool
+	oldScrollX                   float64
 	oldRect                      zgeo.Rect
 	queuedGetViews               map[int]bool
 	queLock                      sync.Mutex
@@ -107,7 +106,6 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	//	v.VertOverlay.SetUsable(false)
 	v.VertOverlay.SetInteractive(false)
 	v.VertOverlay.SetZIndex(500)
-	//	v.VertStack.Add(v.VertOverlay, zgeo.BottomRight|zgeo.Expand, zgeo.SizeD(zscrollview.DefaultBarSize, 0)).Free = true
 	v.Add(v.VertOverlay, zgeo.TopLeft|zgeo.Expand).Free = true // huge hack whereby adding it to v, and not updating it's hight works. Changing hight disabled scrolling!!!
 
 	v.oldScrollX = zfloat.Undefined
@@ -224,6 +222,19 @@ func (v *HorBlocksView) FindViewForBlockIndex(index int) (zview.View, int) {
 	return cell.View, i
 }
 
+func findLeastBiggerViewWithIndex(index int, fromCells []zcontainer.Cell) zview.View {
+	var next zview.View
+	var inearest = -1
+	for _, c := range fromCells {
+		ci, _ := strconv.Atoi(c.View.ObjectName())
+		if ci > index && (inearest == -1 || inearest > ci) {
+			next = c.View
+			inearest = ci
+		}
+	}
+	return next
+}
+
 func (v *HorBlocksView) createAndSetView(i int) {
 	si := strconv.Itoa(i)
 	view := v.GetViewFunc(i)
@@ -246,10 +257,18 @@ func (v *HorBlocksView) createAndSetView(i int) {
 		// zlog.Info("getAndSetView view == nil:", i)
 		return
 	}
-	si1 := strconv.Itoa(i + 1)
-	next, _ := v.Scroller.FindViewWithName(si1, false)
+	next := findLeastBiggerViewWithIndex(i, v.Scroller.Cells)
+	// var next zview.View
+	// var inearest = -1
+	// for _, c := range v.Scroller.Cells {
+	// 	ci, _ := strconv.Atoi(c.View.ObjectName())
+	// 	if ci > i && (inearest == -1 || inearest > ci) {
+	// 		next = c.View
+	// 		inearest = ci
+	// 	}
+	// }
 	view.SetRect(zgeo.Rect{Size: s})
-	// zlog.Info("getAndSetView", i, next != nil, s, view.Rect().Size)
+	// zlog.Info("getAndSetView", i, next != nil, si1, view.Rect().Size)
 	v.Scroller.AddBefore(view, next, zgeo.TopLeft).Alignment = zgeo.AlignmentNone // Set alignment to none, since we set it on add only
 	// if next != nil && v.scrollToIndexAfterAllUpdates == zfloat.Undefined {        //!!
 	// 	// x := v.VertStack.ContentOffset().X
@@ -257,7 +276,10 @@ func (v *HorBlocksView) createAndSetView(i int) {
 	// 	v.dragXStart += v.viewSize.W
 	// }
 	if v.CreateHeaderBlockView != nil {
-		next, _ := v.horScrollHeader.FindViewWithName(si1, false)
+		next := findLeastBiggerViewWithIndex(i, v.horScrollHeader.Cells)
+
+		// si1 := strconv.Itoa(inearest)
+		// next, _ := v.horScrollHeader.FindViewWithName(si1, false)
 		over := v.CreateHeaderBlockView(i, v.viewSize.W)
 		nv := over.Native()
 		nv.SetJSStyle("position", "relative")
@@ -281,12 +303,10 @@ func (v *HorBlocksView) SetRect(r zgeo.Rect) {
 	v.Scroller.RemoveAllChildren()
 	v.horScrollHeader.RemoveAllChildren()
 	// old := v.viewSize.W
-	v.viewSize.W = r.Size.W - zscrollview.DefaultBarSize // 2*v.gutter.Size.W -
+	v.viewSize.W = r.Size.W - zwindow.ScrollBarSizeForView(v) // 2*v.gutter.Size.W -
 	if v.fixedHeight == 0 {
 		v.viewSize.H = r.Size.H
 	}
-	// zlog.Info("HB.SetRect1:", r, v.viewSize.W)
-
 	v.StackView.SetRect(r) // sets rect as stack, so all parts set
 	// zlog.Info("HB SetRect", v.VertOverlay.Rect().Size.H)
 	if v.viewSize.W != 0 {
@@ -335,13 +355,9 @@ func (v *HorBlocksView) getBlocksWidth() float64 {
 func (v *HorBlocksView) setSizes() {
 	w := v.getBlocksWidth()
 	s := zgeo.SizeD(w, v.viewSize.H)
-	// s.H -= zscrollview.DefaultBarSize
 	v.Scroller.SetMinSize(s)
 	v.Scroller.SetSize(s)
-
 	v.horScrollHeader.SetWidth(w)
-	// v.horScrollHeader.SetTop(v.AbsoluteRect().Pos.Y)
-
 	s.W = 10
 	v.VertOverlay.SetMinSize(s)
 
@@ -423,6 +439,7 @@ fullLoop:
 		iMax := min(v.maxIndex, v.currentIndex+v.IndexWindow)
 		// zlog.Info("Add?: start:", v.currentIndex-v.IndexWindow, "max", iMax, "ci", v.currentIndex)
 		for ji := v.currentIndex - v.IndexWindow; ji <= iMax; ji++ {
+			// for ji := iMax; ji >= v.currentIndex-v.IndexWindow; ji-- {
 			view, _ := v.FindViewForBlockIndex(ji)
 			if view != nil {
 				continue
