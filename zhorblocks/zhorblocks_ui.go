@@ -348,7 +348,7 @@ func (v *HorBlocksView) setSizes() {
 	for _, c := range v.VertOverlay.Cells {
 		if c.Alignment&zgeo.VertExpand != 0 {
 			// zlog.Info("Stretychy:", c.View.ObjectName())
-			c.View.Native().SetHeight(s.H + zscrollview.DefaultBarSize)
+			c.View.Native().SetHeight(s.H + zwindow.ScrollBarSizeForView(v))
 		}
 	}
 }
