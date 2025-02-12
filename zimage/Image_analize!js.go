@@ -240,7 +240,7 @@ func (info *ImageInfo) PrintInfo() {
 }
 
 func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
-	freq, offset, _ := info.BlockFrequency()
+	freq, offset, nextRatio := info.BlockFrequency()
 	return SimpleAnalytics{
 		Size:           info.Size,
 		BlurAmount:     info.BlurAmount().Average(),
@@ -248,5 +248,6 @@ func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
 		EdgesAmount:    info.EdgePointsAmount().Average(),
 		BlockFrequency: freq,
 		BlockOffset:    offset,
+		BlockAmount:    nextRatio.Average(),
 	}
 }
