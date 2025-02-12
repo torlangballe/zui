@@ -9,6 +9,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
@@ -29,14 +30,6 @@ type ScrollView struct {
 	overflow               bool
 }
 
-var DefaultBarSize = 17.0 // 17.0
-
-func init() {
-	if zdevice.OS() == zdevice.MacOSType {
-		DefaultBarSize = 15 // 15
-	}
-}
-
 func New() *ScrollView {
 	v := &ScrollView{}
 	v.Init(v, "scrollview")
@@ -45,7 +38,7 @@ func New() *ScrollView {
 
 func (v *ScrollView) BarSize() float64 {
 	if v.overflow && v.ShowBar {
-		s := DefaultBarSize
+		s := zwindow.ScrollBarSizeForView(v)
 		if zdevice.OS() == zdevice.WindowsType {
 			// s /= zwindow.FromNativeView(v.Native()).Scale
 		}

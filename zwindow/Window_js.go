@@ -410,3 +410,20 @@ func getRectFromOptions(o Options) (rect zgeo.Rect, gotPos, gotSize bool) {
 	}
 	return
 }
+
+func (w *Window) ScrollBarSize() float64 {
+	s := 17.0 // 17.0
+	if zdevice.OS() == zdevice.MacOSType {
+		s = 15
+	}
+	s /= w.Scale
+	s = math.Floor(s)
+	// zlog.Info("ScrollBar2:", s, w.Scale, scale)
+	return s
+}
+
+func ScrollBarSizeForView(view zview.View) float64 {
+	win := FromNativeView(view.Native())
+	s := win.ScrollBarSize()
+	return s
+}

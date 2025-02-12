@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zscrollview"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
@@ -155,7 +154,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 					attributes.ModalCornerSides = []zgeo.Alignment{ah, av, attributes.Alignment}
 				}
 			}
-			full.Size.W -= zscrollview.DefaultBarSize // scroll bare seems to be on top of everything, let's get out of the way
+			full.Size.W -= win.ScrollBarSize() // scroll bare seems to be on top of everything, let's get out of the way
 			r = r.MovedInto(full)
 			zfloat.Maximize(&r.Pos.X, 0) // these are needed for overflow:scroll in blocker to work???
 			zfloat.Maximize(&r.Pos.Y, 0) // +
