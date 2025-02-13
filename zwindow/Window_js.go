@@ -60,6 +60,10 @@ func (w *Window) ContentRect() zgeo.Rect {
 	r.Pos.Y = w.Element.Get("screenY").Float()
 	r.Size.W = w.Element.Get("innerWidth").Float()
 	r.Size.H = w.Element.Get("innerHeight").Float()
+	// r.Size.W -= 25
+	if zdevice.CurrentWasmBrowser == zdevice.Firefox {
+		r.Size.H-- // Can't figure out why this is necessary, but vertical scroller appears otherwise
+	}
 	return r
 }
 
@@ -341,8 +345,8 @@ func (win *Window) AddStyle() {
 	.znoscrollbar::-webkit-scrollbar { display: none; }
 	.zdarkscroll::-webkit-scrollbar { background-color: #555; }
 	.zdarkscroll::-webkit-scrollbar-thumb { background-color: #888; }
+	/* body { overflow-x: hidden; } */
 }
-
 `
 	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
