@@ -73,8 +73,10 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 
 	v.HorScrollHeaderHeight = 20
 
-	v.HorHeader = zcontainer.StackViewHor("hor-header")
+	v.HorHeader = zcontainer.StackViewHor("hor-header") // HorHeader
 	v.HorHeader.ShowScrollBars(true, false)
+	v.HorHeader.JSSet("className", "znoscrollbar")
+	v.HorHeader.SetJSStyle("scrollbar-width", "none")
 	v.HorHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
 	v.HorHeader.JSSet("className", "znoscrollbar")
 	// v.HorHeader.SetScrollHandler(func(pos zgeo.Pos) { // this makes things sluggish, must be some kind of feedback loop
@@ -82,8 +84,9 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	// })
 	v.Add(v.HorHeader, zgeo.TopLeft|zgeo.HorExpand)
 
-	v.horScrollHeader = zcontainer.StackViewHor("hor-scroll-header")
+	v.horScrollHeader = zcontainer.StackViewHor("hor-scroll-header2")
 	v.horScrollHeader.SetJSStyle("display", "flex")
+	v.horScrollHeader.ShowScrollBars(false, false)
 	v.horScrollHeader.SetMinSize(zgeo.SizeD(10, v.HorScrollHeaderHeight))
 	v.HorHeader.Add(v.horScrollHeader, zgeo.AlignmentNone)
 
