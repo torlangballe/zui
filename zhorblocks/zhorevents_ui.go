@@ -302,7 +302,11 @@ func (v *HorEventsView) makeMarkerPole() {
 
 func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 	pole := zcontainer.StackViewVert(a.String() + "-pole")
-	pole.SetMinSize(zgeo.SizeD(v.GutterWidth, 10))
+	w := v.GutterWidth
+	if a == zgeo.Right {
+		w += zwindow.ScrollBarSizeForView(v)
+	}
+	pole.SetMinSize(zgeo.SizeD(w, 10))
 	pole.SetBGColor(v.BGColor().WithOpacity(0.8))
 	// pole.SetBGColor(zgeo.ColorBlue)
 	pole.SetPressedHandler("pole-click", 0, func() {
@@ -662,16 +666,19 @@ func (v *HorEventsView) UpdateWidgets() {
 	v.Bar.CollapseChild(v.GotoLockedButton, v.LockedTime.IsZero(), true)
 }
 
-// func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-// 	var left bool
-// 	if sc.Key == zkeyboard.KeyLeftArrow {
-// 		left = true
-// 	} else if sc.Key != zkeyboard.KeyRightArrow {
-// 		return false
-// 	}
-// 	v.panPressed(left, -1)
-// 	return true
-// }
+func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	if sc.Modifier != zkeyboard.ModifierNone {
+		return false
+	}
+	var left bool
+	if sc.Key == zkeyboard.KeyLeftArrow {
+		left = true
+	} else if sc.Key != zkeyboard.KeyRightArrow {
+		return false
+	}
+	v.panPressed(left, -1)
+	return true
+}
 
 func (v *HorEventsView) panPressed(left bool, id int) {
 	v.setScrollToNowOn(false)
@@ -685,20 +692,7 @@ func (v *HorEventsView) panPressed(left bool, id int) {
 		d *= -1
 	}
 	t := v.currentTime.Add(d)
-	// zlog.Info("Pan:", v.currentTime, "+", d, "->", t, zdebug.CallingStackString())
-	if zmath.Abs(d) > v.BlockDuration {
-		v.GotoTime(t)
-		return
-	}
-	w := v.ViewWidth * (float64(d) / float64(v.BlockDuration))
-	x := v.horInfinite.VertStack.ContentOffset().X
-	x += w
-	// zlog.Info("pan", d, w, v.BlockDuration, x)
-	// v.horInfinite.IgnoreScroll = true
-	// v.horInfinite.SetXContentOffsetAnimated(x, func() {
 	v.GotoTime(t)
-	// v.horInfinite.IgnoreScroll = false
-	// })
 }
 
 func (v *HorEventsView) GotoTime(t time.Time) {
@@ -706,6 +700,7 @@ func (v *HorEventsView) GotoTime(t time.Time) {
 	i = min(i, float64(v.horInfinite.maxIndex))
 	v.currentTime = t
 	v.horInfinite.SetFloatingCurrentIndex(i)
+	v.UpdateWidgets()
 }
 
 func (v *HorEventsView) DurationToWidth(d time.Duration) float64 {
@@ -857,7 +852,7 @@ func (v *HorEventsView) createLanes() {
 
 func (v *HorEventsView) SetRect(r zgeo.Rect) {
 	// zlog.Info("HV SetRect", r.Size, v.ViewWidth)
-	zcontainer.CellInParent(v.rightPole).Margin.SetMaxX(-zwindow.ScrollBarSizeForView(v))
+	//!!! zcontainer.CellInParent(v.rightPole).Margin.SetMaxX(-zwindow.ScrollBarSizeForView(v))
 	v.StackView.SetRect(r)
 	oldWidth := v.ViewWidth
 	v.ViewWidth = r.Size.W - zwindow.ScrollBarSizeForView(v)
