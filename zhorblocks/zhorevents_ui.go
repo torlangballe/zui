@@ -39,44 +39,44 @@ type HorEventsView struct {
 	zcontainer.StackView
 	BlockDuration             time.Duration
 	Bar                       *zcontainer.StackView
+	LastEventTimeForBlock     map[int]time.Time
+	LockedTime                time.Time
+	TestMode                  bool
+	Updater                   Updater
+	MixOddBlocksColor         zgeo.Color // If Valid, is mixed a tiny bit with odd background block color to show borders
+	GutterWidth               float64
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(isOverlay bool, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
-	TestMode                  bool
-	Updater                   Updater
 
-	nowLine               *zcustom.CustomView
-	lanes                 []Lane
-	horInfinite           *HorBlocksView
-	ViewWidth             float64
-	startTime             time.Time
-	currentTime           time.Time
-	zoomStack             *zcontainer.StackView
-	timeField             *ztext.TimeFieldView
-	rightPole             *zcontainer.StackView
-	leftPole              *zcontainer.StackView
-	nowButton             *zshape.ImageButtonView
-	GotoLockedButton      *zshape.ShapeView
-	zoomLevels            []zoomLevel
-	panDurations          []panDuration
-	panDuration           time.Duration
-	zoomIndex             int
-	storeKey              string
-	currentNowBlockIndex  int
-	LastEventTimeForBlock map[int]time.Time
-	updateBlocks          map[int]time.Time
-	scrollToNow           bool
-	lastScrollToX         int
-	updateNowRepeater     *ztimer.Repeater
-	updatingBlock         bool
-	MixOddBlocksColor     zgeo.Color
-	GutterWidth           float64
-	timeAxisHeight        float64
-	lastBlockUpdateTime   time.Time
-	LockedTime            time.Time
-	markerPole            *zcustom.CustomView
-	moveStartX            float64
-	markerTimes           []time.Time
+	nowLine              *zcustom.CustomView
+	lanes                []Lane
+	horInfinite          *HorBlocksView
+	ViewWidth            float64
+	startTime            time.Time
+	currentTime          time.Time
+	zoomStack            *zcontainer.StackView
+	timeField            *ztext.TimeFieldView
+	rightPole            *zcontainer.StackView
+	leftPole             *zcontainer.StackView
+	nowButton            *zshape.ImageButtonView
+	GotoLockedButton     *zshape.ShapeView
+	zoomLevels           []zoomLevel
+	panDurations         []panDuration
+	panDuration          time.Duration
+	zoomIndex            int
+	storeKey             string
+	currentNowBlockIndex int
+	updateBlocks         map[int]time.Time
+	scrollToNow          bool
+	lastScrollToX        int
+	updateNowRepeater    *ztimer.Repeater
+	updatingBlock        bool
+	timeAxisHeight       float64
+	lastBlockUpdateTime  time.Time
+	markerPole           *zcustom.CustomView
+	moveStartX           float64
+	markerTimes          []time.Time
 }
 
 type Updater interface {
@@ -258,7 +258,7 @@ func (v *HorEventsView) makeMarkerButton(t time.Time) {
 	v.Bar.Add(button, zgeo.CenterLeft)
 	v.Bar.ArrangeChildren()
 	tip := "marker. Press to go to " + ztime.GetNice(t, true) + "\n"
-	tip += zkeyboard.ModifierCommand.AsSymbolsString() + "-press to remove"
+	tip += "shift-press to remove"
 	button.SetToolTip(tip)
 	button.SetPressedHandler("goto", 0, func() {
 		v.setScrollToNowOn(false)
@@ -268,7 +268,7 @@ func (v *HorEventsView) makeMarkerButton(t time.Time) {
 			v.markerPole.Show(false)
 		})
 	})
-	button.SetPressedHandler("clear", zkeyboard.ModifierCommand, func() {
+	button.SetPressedHandler("clear", zkeyboard.ModifierShift, func() {
 		i := slices.Index(v.markerTimes, t)
 		zslice.RemoveAt(&v.markerTimes, i)
 		v.Bar.RemoveChild(button, true)
@@ -343,8 +343,10 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 	if t.IsZero() {
 		t = v.currentTime.Add(v.BlockDuration / 2)
 	}
+	zlog.Info("SetBlockDuration Pre:", t, v.BlockDuration)
 	v.BlockDuration = d
 	t = t.Add(-d / 2)
+	zlog.Info("SetBlockDuration Post:", t, d)
 	ztime.Minimize(&t, time.Now())
 	//	v.startTime = v.calcTimePosToShowTime(t).Add(time.Second * 3)
 	v.startTime = t.Add(time.Second * 3)
@@ -557,6 +559,7 @@ func (v *HorEventsView) setScrollToNowOn(on bool) {
 		text += " ⏲"
 	}
 	v.nowButton.SetText(text)
+	v.nowButton.SetToolTip("press to jump forward to now-time and keep scrolling.\nPress again to disable.")
 	v.nowButton.SetImageName(name, zgeo.Size{})
 	v.nowButton.SetTextColor(col)
 	if on {
