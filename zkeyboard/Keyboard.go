@@ -91,10 +91,16 @@ const (
 	ReturnKeyContinue ReturnKeyType = "continue"
 )
 
+const (
+	OptionModifierConstName  = "Option"
+	AltModifierConstName     = "Alt"
+	CommandModifierConstName = "Command"
+)
+
 var (
 	ModifiersAtPress    Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
 	MetaModifier        = ModifierControl
-	AltModifierName     = "Alt"
+	AltModifierName     = AltModifierConstName
 	CommandModifierName = "Meta"
 	CurrentKeyDown      KeyMod
 )
@@ -102,35 +108,10 @@ var (
 func init() {
 	if zdevice.OS() == zdevice.MacOSType || zdevice.OS() == zdevice.IOSType {
 		MetaModifier = ModifierCommand
-		AltModifierName = "Option"
-		CommandModifierName = "Command"
+		AltModifierName = OptionModifierConstName
+		CommandModifierName = CommandModifierConstName
 	}
 }
-
-// type Modifiers struct {
-// 	AltName    string
-// 	AltSymbol  string
-// 	MetaName   string
-// 	MetaSymbol string
-// }
-// func ModifiersForOS(os zdevice.OSType) Modifiers {
-// 	if os == zdevice.MacOSType || os == zdevice.IOSType {
-// 		return Modifiers{
-// 			AltName:    "Option",
-// 			AltSymbol:  "⎇",
-// 			MetaName:   "Command",
-// 			MetaSymbol: "⌘",
-// 		}
-// 	}
-// 	return Modifiers{
-// 		AltName:    "Alt",
-// 		AltSymbol:  "alt-",
-// 		MetaName:   "Control",
-// 		MetaSymbol: "ctrl-",
-// 	}
-// }
-
-// Android: https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType
 
 func KMod(k Key, m Modifier) KeyMod {
 	return KeyMod{Key: k, Modifier: m}
@@ -248,13 +229,13 @@ func (key Key) AsString(singleLetterKey bool) string {
 	case KeyBackspace:
 		return "⌫"
 	case KeyLeftArrow:
-		return "←"
+		return "⇦"
 	case KeyRightArrow:
-		return "→"
+		return "⇨"
 	case KeyUpArrow:
-		return "↑"
+		return "⇧"
 	case KeyDownArrow:
-		return "↓"
+		return "⇩"
 	case KeyTab:
 		return "⇥"
 	}
