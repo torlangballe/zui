@@ -168,8 +168,8 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		}
 	}
 	if v.zoomIndex == -1 {
-		v.zoomIndex = 0
-		blockDuration = v.zoomLevels[0].duration
+		v.zoomIndex = 1
+		blockDuration = v.zoomLevels[v.zoomIndex].duration
 	}
 	v.LastEventTimeForBlock = map[int]time.Time{}
 	v.updateBlocks = map[int]time.Time{}
