@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zscreen"
 )
@@ -240,6 +241,9 @@ func (v *ShapeView) UpdateText() {
 			v.TextLabel = zlabel.New("")
 			v.TextLabel.SetInteractive(false)
 			v.TextLabel.SetObjectName("title")
+			if v.textInfo.Alignment.Has(zgeo.HorCenter) && zdevice.CurrentWasmBrowser != zdevice.Safari && zdevice.OS() != zdevice.MacOSType {
+				v.TextLabel.SetMargin(zgeo.RectFromXY2(0, 0, -5, 0))
+			}
 			v.AddAdvanced(v.TextLabel, a, v.TextMargin, zgeo.SizeNull, -1, false)
 		} else {
 			c, _ := v.FindCellWithView(v.TextLabel)

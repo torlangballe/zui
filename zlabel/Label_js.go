@@ -77,7 +77,7 @@ func setPadding(v *Label) {
 	pad := v.margin
 
 	pad.Pos.Y++
-	if zdevice.CurrentWasmBrowser != zdevice.Safari && zdevice.OS() == zdevice.MacOSType {
+	if zdevice.CurrentWasmBrowser != zdevice.Safari && zdevice.OS() != zdevice.MacOSType {
 		pad.Pos.Y++
 	}
 	v.SetNativePadding(pad)
