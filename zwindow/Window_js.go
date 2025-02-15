@@ -420,9 +420,10 @@ func (w *Window) ScrollBarSize() float64 {
 	if zdevice.OS() == zdevice.MacOSType {
 		s = 15
 	}
-	s /= w.Scale
+	if w != nil {
+		s /= w.Scale
+	}
 	s = math.Floor(s)
-	// zlog.Info("ScrollBar2:", s, w.Scale, scale)
 	return s
 }
 
