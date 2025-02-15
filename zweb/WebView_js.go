@@ -39,15 +39,15 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 			// zlog.Info("LOC:", contentDoc.Get("location"))
 			newURL := contentDoc.Get("location").Get("href").String()
 			if newURL != v.url {
-				v.url = newURL
-				// zlog.Info("cddoc:", newURL)
+				old := v.url
+				v.url = newURL				
 				v.History = append(v.History, newURL)
 				if v.Back != nil {
 					v.Back.SetUsable(true)
 				}
 				v.setTitle()
 				if v.URLChangedFunc != nil {
-					v.URLChangedFunc(newURL)
+					v.URLChangedFunc(newURL, old)
 				}
 			}
 		}
@@ -73,7 +73,7 @@ func (v *WebView) SetURL(surl string) {
 	old := v.url
 	v.url = surl
 	if old != "" && v.URLChangedFunc != nil {
-		v.URLChangedFunc(surl)
+		v.URLChangedFunc(surl, old)
 	}
 	v.setTitle()
 }
@@ -94,7 +94,7 @@ func (v *WebView) SetHTMLContent(html string) {
 	v.Element.Set("innerHTML", html)
 }
 
-func (v *WebView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size)  {
+func (v *WebView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	h := v.JSGet("scrollHeight").Float()
 	zfloat.Maximize(&h, v.minSize.H)
 	return zgeo.SizeD(v.minSize.W, h), zgeo.Size{}

@@ -23,7 +23,7 @@ type WebView struct {
 	url             string
 	minSize         zgeo.Size
 	History         []string
-	URLChangedFunc  func(surl string)
+	URLChangedFunc  func(surl, oldURL string)
 	HandleErrorFunc func(code int)
 
 	TitleLabel *zlabel.Label
