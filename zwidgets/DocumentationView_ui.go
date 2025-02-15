@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 // https://apple.stackexchange.com/questions/365857/create-system-preferences-url-to-privacy-files-and-folders-in-10-15-catalina
@@ -61,6 +62,18 @@ type DocumentationView struct {
 	// OldContentHash int64 -- what is this?
 }
 
+func (v *DocumentationView) handleURLChange(surl, oldURL string) {
+	var rest string
+	if zstr.HasPrefix(surl, oldURL, &rest) {
+		if zstr.FirstRuneAsString(rest) == "#" {
+			return
+		}
+	}
+	// This is done because jumping to a new page sometimes doesn't scroll to top
+	// TODO: Should be general in WebView? Figure out why.
+	v.SetYContentOffset(0)
+}
+
 func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	v := &DocumentationView{}
 	v.Init(v, true, "docview")
@@ -69,6 +82,7 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 	isFrame := true
 	isMakeBar := true
 	v.WebView = zweb.NewView(minSize, isFrame, isMakeBar)
+	v.WebView.URLChangedFunc = v.handleURLChange
 	v.Add(v.WebView.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	v.Add(v.WebView, zgeo.TopLeft|zgeo.Expand)
 

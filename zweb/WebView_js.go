@@ -40,7 +40,7 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 			newURL := contentDoc.Get("location").Get("href").String()
 			if newURL != v.url {
 				old := v.url
-				v.url = newURL				
+				v.url = newURL
 				v.History = append(v.History, newURL)
 				if v.Back != nil {
 					v.Back.SetUsable(true)
