@@ -789,16 +789,48 @@ func (v *NativeView) AbsoluteRect() zgeo.Rect {
 	return zgeo.RectFromXYWH(x, y, w, h)
 }
 
+func (v *NativeView) AbsoluteRectWithParentOffset() zgeo.Rect {
+	offset := v.parent.ContentOffset()
+	r := v.AbsoluteRect()
+	r.Pos.Add(offset)
+	return r
+}
+
 var globalForceClick bool
 
 const pressMouseDownPrefix = "mousedown:$press-"
 
-func (v *NativeView) Click() {
-	//	v.Element.Call("click")
+func (v *NativeView) DoMouseDown(id string, mods zkeyboard.Modifier) {
+	mid := makeDownPressKey(id+"$down", false, mods)
+	globalForceClick = true
+	for n, f := range v.jsFuncs {
+		// zlog.Info("ClickDown", n, "==", mid, n == mid)
+		if n == mid {
+			f.Value.Invoke(f.Value)
+			break
+		}
+	}
+	globalForceClick = false
+}
+
+func (v *NativeView) ClickAll() {
 	globalForceClick = true
 	for n, f := range v.jsFuncs {
 		if strings.HasPrefix(n, pressMouseDownPrefix) {
 			f.Value.Invoke(f.Value)
+		}
+	}
+	globalForceClick = false
+}
+
+func (v *NativeView) Click(id string, long bool, mods zkeyboard.Modifier) {
+	mid := makeDownPressKey(id, long, mods)
+	globalForceClick = true
+	for n, f := range v.jsFuncs {
+		// zlog.Info("Click", n, "==", mid, n == mid)
+		if n == mid {
+			f.Value.Invoke(f.Value)
+			break
 		}
 	}
 	globalForceClick = false
@@ -824,22 +856,27 @@ type longPresser struct {
 var globalLongPressState longPresser
 var lastPressedEvent js.Value
 
-func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
-	v.JSSet("className", "widget")
+func makeDownPressKey(id string, long bool, mods zkeyboard.Modifier) string {
 	if id == "" {
 		id = "$general"
 	}
-	if long != nil {
+	if long {
 		id += ".$long"
 	} else {
 		id += ".$short"
 	}
+
+	return fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
+}
+
+func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
+	v.JSSet("className", "widget")
 	_, got := v.jsFuncs[id]
 	if got {
 		return
 	}
 	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
-	mid := fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
+	mid := makeDownPressKey(id, long != nil, mods)
 	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
 		if globalForceClick {
 			press()
@@ -939,6 +976,7 @@ func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args 
 // If isListener is set, the func is added as a listener to the view, and removed as well.
 // anything after : in the name is removed first, to allow multiple listeners with same name to co-exist.
 func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) js.Func {
+	// zlog.Info("setJSFunc:", v.Hierarchy(), name, isListener)
 	var outFunc js.Func
 	nameEventPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
 	if v.jsFuncs == nil {
@@ -1240,15 +1278,20 @@ func (v *NativeView) HasPressedDownHandler() bool {
 	return v.JSGet("onmousedown").IsNull()
 }
 
-func (v *NativeView) SetPressedDownHandler(id string, handler func()) {
+func (v *NativeView) SetPressedDownHandler(id string, mods zkeyboard.Modifier, handler func()) {
 	// zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
-	if id == "" {
-		id = "$pressed-down"
-	}
-	v.SetListenerJSFunc("mousedown:"+id, func(this js.Value, args []js.Value) any {
+	mid := makeDownPressKey(id+"$down", false, mods)
+	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
+		if globalForceClick {
+			handler()
+			return nil
+		}
 		e := args[0]
 		v.SetStateOnPress(e)
+		if zkeyboard.ModifiersAtPress != mods {
+			return nil // don't call stopPropagation, we aren't handling it
+		}
 		e.Call("stopPropagation")
 		zlog.Assert(len(args) > 0)
 		handler()
