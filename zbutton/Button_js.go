@@ -61,7 +61,7 @@ func (v *Button) MakeReturnKeyDefault() {
 					return
 				}
 			}
-			v.Click()
+			v.ClickAll()
 		})
 	})
 }
@@ -70,7 +70,7 @@ func (v *Button) MakeEscapeCanceler() {
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() {
-			v.Click()
+			v.ClickAll()
 		})
 	})
 }

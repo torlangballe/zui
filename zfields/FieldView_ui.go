@@ -1812,7 +1812,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.HasFlag(f.Flags&FlagLongPress | FlagPress | FlagShowPopup) {
 		nowItem := rval // store item in nowItem so closures below uses right item
 		if f.HasFlag(FlagShowPopup) {
-			view.Native().SetPressedDownHandler("zfields.ShowPopup", func() {
+			view.Native().SetPressedDownHandler("zfields.ShowPopup", 0, func() {
 				v.popupContent(view, f)
 			})
 		} else {

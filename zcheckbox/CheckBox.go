@@ -35,7 +35,7 @@ func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) 
 	label := zlabel.New(title)
 	label.SetObjectName("$checkBoxLabel:[" + title + "]")
 	label.SetPressedHandler("$press.label", zkeyboard.ModifierNone, func() {
-		c.Click()
+		c.ClickAll()
 	})
 	stack := zcontainer.StackViewHor("$labledCheckBoxStack.[" + title + "]")
 	stack.SetMargin(zgeo.RectFromXY2(0, 3, 0, -3))
