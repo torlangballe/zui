@@ -28,11 +28,12 @@ type CustomView struct {
 	exposeTimer      *ztimer.Timer
 	isSetup          bool
 	isHighlighted    bool
+	ShortCutHandler  zkeyboard.ShortcutHandler
 }
 
 var (
-	HandleOutsideShortcutFunc     func(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool
-	ShowShortCutHelperForViewFunc func(view zview.View, sc zkeyboard.KeyMod)
+	OutsideShortcutInformativeDisplayFunc func(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool
+	ShowShortCutHelperForViewFunc         func(view zview.View, sc zkeyboard.KeyMod)
 )
 
 func NewView(name string) *CustomView {
@@ -92,7 +93,11 @@ func (v *CustomView) SetPressedHandler(id string, mods zkeyboard.Modifier, handl
 }
 
 func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-	return HandleOutsideShortcutFunc(v, v.KeyboardShortcut, sc)
+	used := OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut, sc)
+	if v.ShortCutHandler != nil {
+		return v.ShortCutHandler.HandleOutsideShortcut(sc)
+	}
+	return used
 }
 
 func (v *CustomView) GetToolTipAddition() string {

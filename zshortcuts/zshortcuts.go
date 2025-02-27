@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	zcustom.HandleOutsideShortcutFunc = HandleShortcut
+	zcustom.OutsideShortcutInformativeDisplayFunc = HandleShortcut
 	zcustom.ShowShortCutHelperForViewFunc = ShowShortCutHelperForView
 }
 
@@ -122,7 +122,6 @@ func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool
 	zcontainer.ViewRangeChildren(view, true, false, func(childView zview.View) bool {
 		sh, _ := childView.(zkeyboard.ShortcutHandler)
 		if sh != nil {
-			// zlog.Info("SC:", childView.ObjectName(), childView.IsUsable())
 			if !childView.IsUsable() {
 				return true
 			}
