@@ -23,17 +23,17 @@ import (
 
 type HorBlocksView struct {
 	zcontainer.StackView
-	CacheDelta            int // CacheDelta is how many more than center view to cache on each side
-	IndexWindow           int // IndexWindow is how many more than center view to get
-	GetViewFunc           func(blockIndex int) zview.View
-	RemovedViewFunc       func(blockIndex int)
-	CreateHeaderBlockView func(blockIndex int, w float64) zview.View
-	PanHandler            PanHandler
-	IgnoreScroll          bool
-	VertOverlay           *zcontainer.StackView
-	Scroller              *zcontainer.StackView
-	HorScrollHeaderHeight float64
-	CenterSpin            *zwidgets.ActivityView
+	CacheDelta                int // CacheDelta is how many more than center view to cache on each side
+	IndexWindow               int // IndexWindow is how many more than center view to get
+	GetViewFunc               func(blockIndex int) zview.View
+	RemovedViewFunc           func(blockIndex int)
+	CreateHeaderBlockViewFunc func(blockIndex int, w float64) zview.View
+	PanHandler                PanHandler
+	IgnoreScroll              bool
+	VertOverlay               *zcontainer.StackView
+	Scroller                  *zcontainer.StackView
+	HorScrollHeaderHeight     float64
+	CenterSpin                *zwidgets.ActivityView
 
 	VertStack                    *zcontainer.StackView
 	currentIndex                 int
@@ -158,6 +158,7 @@ func (v *HorBlocksView) SetFloatingCurrentIndex(fi float64) {
 	v.currentIndex = int(fi)
 	_, fract := math.Modf(fi)
 	// zlog.Info("SetFloatingCurrentIndex1", fi, "->", fract)
+	v.VertStack.SetXContentOffset(0) //!!!!
 	v.SetMaxIndex(ni + 1)
 	v.update() // fract * v.viewSize.W)
 	if fract != 0 {
@@ -257,33 +258,15 @@ func (v *HorBlocksView) createAndSetView(i int) {
 	style.Set("min-width", fmt.Sprintf("%fpx", s.W))
 	style.Set("min-height", fmt.Sprintf("%fpx", s.H))
 	if view == nil {
-		// zlog.Info("getAndSetView view == nil:", i)
 		return
 	}
 	next := findLeastBiggerViewWithIndex(i, v.Scroller.Cells)
-	// var next zview.View
-	// var inearest = -1
-	// for _, c := range v.Scroller.Cells {
-	// 	ci, _ := strconv.Atoi(c.View.ObjectName())
-	// 	if ci > i && (inearest == -1 || inearest > ci) {
-	// 		next = c.View
-	// 		inearest = ci
-	// 	}
-	// }
 	view.SetRect(zgeo.Rect{Size: s})
 	// zlog.Info("getAndSetView", i, next != nil, si1, view.Rect().Size)
 	v.Scroller.AddBefore(view, next, zgeo.TopLeft).Alignment = zgeo.AlignmentNone // Set alignment to none, since we set it on add only
-	// if next != nil && v.scrollToIndexAfterAllUpdates == zfloat.Undefined {        //!!
-	// 	// x := v.VertStack.ContentOffset().X
-	// 	// v.VertStack.SetXContentOffset(x + v.viewSize.W)
-	// 	v.dragXStart += v.viewSize.W
-	// }
-	if v.CreateHeaderBlockView != nil {
+	if v.CreateHeaderBlockViewFunc != nil {
 		next := findLeastBiggerViewWithIndex(i, v.horScrollHeader.Cells)
-
-		// si1 := strconv.Itoa(inearest)
-		// next, _ := v.horScrollHeader.FindViewWithName(si1, false)
-		over := v.CreateHeaderBlockView(i, v.viewSize.W)
+		over := v.CreateHeaderBlockViewFunc(i, v.viewSize.W)
 		nv := over.Native()
 		nv.SetJSStyle("position", "relative")
 		nv.SetObjectName(si)
@@ -293,19 +276,14 @@ func (v *HorBlocksView) createAndSetView(i int) {
 		v.horScrollHeader.AddBefore(nv, next, zgeo.AlignmentNone)
 		cv, _ := over.(*zcustom.CustomView)
 		if cv != nil {
-			cv.ForceDrawSelf()
+			cv.ReadyToShow(false) // this sets up HandleExpose to draw
 		}
 	}
 }
 
 func (v *HorBlocksView) SetRect(r zgeo.Rect) {
-	// if v.oldRect == r {
-	// 	return
-	// }
-	// // if v.IsPresented() && v.presented {
 	v.Scroller.RemoveAllChildren()
 	v.horScrollHeader.RemoveAllChildren()
-	// old := v.viewSize.W
 	v.viewSize.W = r.Size.W - zwindow.ScrollBarSizeForView(v) // 2*v.gutter.Size.W -
 	if v.fixedHeight == 0 {
 		v.viewSize.H = r.Size.H
@@ -331,11 +309,15 @@ func (v *HorBlocksView) Reset(update bool) {
 	}
 }
 
-func (v *HorBlocksView) ScrollOffsetInBlock() float64 {
-	return v.VertStack.ContentOffset().X - v.indexToOffset(v.currentIndex)
+func (v *HorBlocksView) ScrollOffset() float64 {
+	return v.VertStack.ContentOffset().X
 }
 
-func (v *HorBlocksView) indexToOffset(index int) float64 {
+func (v *HorBlocksView) ScrollOffsetInBlock() float64 {
+	return v.ScrollOffset() - v.IndexToOffset(v.currentIndex)
+}
+
+func (v *HorBlocksView) IndexToOffset(index int) float64 {
 	return v.floatingIndexToOffset(float64(index))
 }
 

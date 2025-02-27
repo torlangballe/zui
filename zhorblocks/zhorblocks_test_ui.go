@@ -80,7 +80,7 @@ func MakeHorBlocksTestView(id string, delete bool) zview.View {
 	// 	v.VertOverlay.Add(pole, zgeo.Top|a|zgeo.VertExpand).Free = true
 	// }
 
-	v.CreateHeaderBlockView = func(blockIndex int, w float64) zview.View {
+	v.CreateHeaderBlockViewFunc = func(blockIndex int, w float64) zview.View {
 		si := strconv.Itoa(blockIndex)
 		v := zcontainer.StackViewHor(si)
 		label := zlabel.New(si)

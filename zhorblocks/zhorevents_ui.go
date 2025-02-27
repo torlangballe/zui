@@ -48,6 +48,7 @@ type HorEventsView struct {
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(isOverlay bool, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
+	LockChildViewFunc         func(child zview.View)
 
 	nowLine              *zcustom.CustomView
 	lanes                []Lane
@@ -124,6 +125,8 @@ const (
 	OverlayBackgroundViewName = "OverlayBackgroundViewName"
 )
 
+var BestRowIDForCentering int64
+
 func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	if v == nil {
 		v = &HorEventsView{}
@@ -152,9 +155,9 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	blockDuration := opts.BlockDuration
 	v.zoomIndex = -1
 	v.currentNowBlockIndex = zint.Undefined
-	if zkeyvalue.DefaultStore != nil && opts.StoreKey != "" {
+	if blockDuration == 0 && zkeyvalue.DefaultStore != nil && opts.StoreKey != "" {
 		n, got := zkeyvalue.DefaultStore.GetInt(opts.StoreKey+zoomIndexKey, 0)
-		if got && n > 0 && n < len(v.zoomLevels) {
+		if got && n >= 0 && n < len(v.zoomLevels) {
 			v.zoomIndex = n
 			blockDuration = v.zoomLevels[n].duration
 		}
@@ -181,7 +184,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.Bar = zcontainer.StackViewHor("bar")
 	v.Bar.SetBGColor(zgeo.ColorNewGray(0.4, 1))
 	v.Bar.SetMarginS(zgeo.SizeD(8, 3))
-	v.Bar.SetSpacing(12)
+	v.Bar.SetSpacing(8)
 	v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 	v.makeButtons()
 	v.makeMarkerPole()
@@ -197,7 +200,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.leftPole = v.makeSidePole(zgeo.Left)
 	v.rightPole = v.makeSidePole(zgeo.Right)
 
-	v.horInfinite.CreateHeaderBlockView = func(blockIndex int, w float64) zview.View {
+	v.horInfinite.CreateHeaderBlockViewFunc = func(blockIndex int, w float64) zview.View {
 		box := v.makeAxisRow(blockIndex)
 		return box
 	}
@@ -261,7 +264,7 @@ func (v *HorEventsView) makeMarkerButton(t time.Time) {
 	tip += "shift-press to remove"
 	button.SetToolTip(tip)
 	button.SetPressedHandler("goto", 0, func() {
-		v.setScrollToNowOn(false)
+		v.SetScrollToNowOn(false)
 		v.GotoTime(t.Add(-v.BlockDuration / 2))
 		v.showMarkerPoleAt(t)
 		ztimer.StartIn(1, func() {
@@ -338,18 +341,95 @@ func (v *HorEventsView) updateNowPole() {
 	v.nowLine.SetRect(zgeo.RectFromXYWH(x, y, 10, v.horInfinite.Rect().Size.H))
 }
 
-func (v *HorEventsView) SetBlockDuration(d time.Duration) {
-	t := v.LockedTime
-	if t.IsZero() {
-		t = v.currentTime.Add(v.BlockDuration / 2)
+func (v *HorEventsView) lockCenterView() zview.View {
+	// cx := v.horInfinite.IndexToOffset()
+	cx := v.Rect().Center().X
+	// ox := v.horInfinite.ScrollOffset()
+	min := math.MaxFloat64
+	var centerBlock *zcontainer.ContainerView
+	for _, view := range v.horInfinite.BlockViews() {
+		x := view.Native().AbsoluteRect().Center().X
+		diff := math.Abs(x - cx)
+		// zlog.Info("Center?:", x, cx, x-cx, view.ObjectName())
+		if diff < min {
+			min = diff
+			centerBlock, _ = view.(*zcontainer.ContainerView)
+		}
 	}
-	zlog.Info("SetBlockDuration Pre:", t, v.BlockDuration)
-	v.BlockDuration = d
-	t = t.Add(-d / 2)
-	zlog.Info("SetBlockDuration Post:", t, d)
-	ztime.Minimize(&t, time.Now())
-	//	v.startTime = v.calcTimePosToShowTime(t).Add(time.Second * 3)
-	v.startTime = t.Add(time.Second * 3)
+	if centerBlock == nil {
+		return nil
+	}
+	// zlog.Info("CenterBlock:", min, centerBlock.ObjectName(), cx)
+	var centerChild zview.View
+	for _, lane := range v.lanes {
+		if lane.ID == 0 { // this is a hack, we don't know 0 is system row in timeline in this base class
+			continue
+		}
+		for _, row := range lane.Rows {
+			if row.y+row.Height > v.horInfinite.viewSize.H {
+				break
+			}
+			if row.ID != BestRowIDForCentering {
+				continue
+			}
+			name := fmt.Sprintf("%d-%v", lane.ID, row.ID)
+			bgRow, _ := centerBlock.FindViewWithName(name, false)
+			if bgRow == nil {
+				return nil
+			}
+			// zlog.Info("Center:", centerBlock.ObjectName(), min, bestRow.Name, bestRow.y)
+			min = math.MaxFloat64
+			zcontainer.ViewRangeChildren(bgRow, false, false, func(child zview.View) bool {
+				x := child.Native().AbsoluteRect().Center().X
+				diff := math.Abs(x - cx)
+				if diff < min {
+					min = diff
+					centerChild = child
+				}
+				return true
+			})
+		}
+	}
+	return centerChild
+}
+
+func (v *HorEventsView) SetBlockDuration(d time.Duration) {
+	now := time.Now()
+	_, shown := v.TimeToXInHorEventView(now)
+	// zlog.Info("SetBlockDuration Pre:", x, shown, t, v.BlockDuration)
+	var t time.Time
+	if shown {
+		t = now
+		v.BlockDuration = d
+		v.startTime = v.calcTimePosToShowTime(t) //.Add(time.Second * 3)
+	} else {
+		if v.LockedTime.IsZero() && v.LockChildViewFunc != nil {
+			lockChild := v.lockCenterView()
+			if lockChild != nil {
+				v.LockChildViewFunc(lockChild)
+				// zlog.Info("Child2Select:", lockChild.ObjectName(), blockIndex)
+				ztimer.StartIn(0.5, func() {
+					v.SetBlockDuration(d)
+					ztimer.StartIn(0.8, func() {
+						v.GotoLockedButton.Click("", false, zkeyboard.ModifierShift)
+					})
+				})
+				return
+			}
+		}
+		if t.IsZero() {
+			t = v.LockedTime
+			if t.IsZero() {
+				t = v.currentTime.Add(v.BlockDuration / 2)
+			}
+		}
+		t = t.Add(-d / 2)
+		ztime.Minimize(&t, now)
+		v.BlockDuration = d
+		v.startTime = t
+	}
+	// zlog.Info("SetBlockDuration Post:", v.LockedTime, v.startTime, d)
+	// v.startTime = t.Add(time.Second * 3)
 	v.currentTime = v.startTime
 	v.horInfinite.SetFloatingCurrentIndex(0)
 	v.Updater.Update()
@@ -497,7 +577,7 @@ func (v *HorEventsView) makeButtons() {
 		if err != nil {
 			return
 		}
-		v.setScrollToNowOn(false)
+		v.SetScrollToNowOn(false)
 		v.GotoTime(t)
 	}
 	v.timeField.SetToolTip("Enter a time/date and press return to jump to this time")
@@ -522,7 +602,7 @@ func (v *HorEventsView) makeButtons() {
 	v.nowButton = zshape.ImageButtonViewSimpleInsets("now", "lightGray")
 	v.Bar.Add(v.nowButton, zgeo.CenterLeft)
 	v.nowButton.SetPressedHandler("", 0, func() {
-		v.setScrollToNowOn(!v.scrollToNow)
+		v.SetScrollToNowOn(!v.scrollToNow)
 	})
 	v.timeField.SetValue(v.startTime) // must b
 
@@ -531,7 +611,7 @@ func (v *HorEventsView) makeButtons() {
 	v.GotoLockedButton.StrokeColor = zgridlist.DefaultSelectColor
 	v.GotoLockedButton.StrokeWidth = LockedItemStrokeWidth
 	v.GotoLockedButton.SetPressedHandler("", 0, func() {
-		v.setScrollToNowOn(false)
+		v.SetScrollToNowOn(false)
 		v.GotoTime(v.LockedTime.Add(-v.BlockDuration / 2))
 	})
 	v.Bar.Add(v.GotoLockedButton, zgeo.CenterLeft).Collapsed = true
@@ -548,7 +628,7 @@ func (v *HorEventsView) updateNowScrollAndPole() {
 	}
 }
 
-func (v *HorEventsView) setScrollToNowOn(on bool) {
+func (v *HorEventsView) SetScrollToNowOn(on bool) {
 	v.scrollToNow = on
 	name := "lightGray"
 	col := zgeo.ColorBlack
@@ -684,7 +764,7 @@ func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 }
 
 func (v *HorEventsView) panPressed(left bool, id int) {
-	v.setScrollToNowOn(false)
+	v.SetScrollToNowOn(false)
 	v.Bar.SetInteractive(false)
 	defer v.Bar.SetInteractive(true)
 	d := v.BlockDuration
@@ -732,7 +812,9 @@ func (v *HorEventsView) TimeToXInHorEventView(t time.Time) (x float64, visible b
 	x -= ox
 	x += float64(diff) * v.ViewWidth
 	x = math.Ceil(x)
-	visible = (zint.Abs(diff) <= 1)
+	visible = (x >= 0 && x < v.ViewWidth)
+	// zlog.Info("diff:", diff)
+	// visible = (zint.Abs(diff) <= 1)
 	return x, visible
 }
 
@@ -787,9 +869,9 @@ func (v *HorEventsView) SetLanes(lanes []Lane) {
 		}
 		y += dividerHeight
 	}
-	if v.IsPresented() {
-		v.createLanes()
-	}
+	// if v.IsPresented() {
+	v.createLanes()
+	// }
 }
 
 func (v *HorEventsView) ForLaneOverlayViews(each func(view zview.View, laneID, rowID int64)) {
@@ -806,6 +888,7 @@ func (v *HorEventsView) ForLaneOverlayViews(each func(view zview.View, laneID, r
 }
 
 func (v *HorEventsView) createLanes() {
+	// zlog.Info("He.createLanes", len(v.lanes))
 	const laneTitleHeight = 20
 	bgWidth := v.ViewWidth //+ v.PoleWidth*2
 	var y float64
@@ -899,7 +982,7 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 	axis := zcustom.NewView("axis")
 	axis.SetMinSize(zgeo.SizeD(100, v.timeAxisHeight))
 	axis.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
-		// zlog.Info("Axis draw:", blockIndex)
+		// zlog.Info("Axis draw:", blockIndex, rect, start, end)
 		beyond := true
 		dark := true
 		zdraw.DrawHorTimeAxis(canvas, rect, start, end, beyond, dark)
