@@ -3,6 +3,7 @@
 package zbutton
 
 import (
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
@@ -13,6 +14,8 @@ import (
 
 type Button struct {
 	zview.NativeView
+	KeyboardShortcut zkeyboard.KeyMod
+
 	minWidth float64
 	maxWidth float64
 	margin   zgeo.Rect
@@ -58,4 +61,20 @@ func (v *Button) SetMinWidth(min float64) {
 
 func (v *Button) SetMaxWidth(max float64) {
 	v.maxWidth = max
+}
+
+func (v *Button) GetToolTipAddition() string {
+	var str string
+	if !v.KeyboardShortcut.IsNull() {
+		str = zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
+	}
+	return str
+}
+
+func (v *Button) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+	if !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut {
+		v.ClickAll()
+		return true
+	}
+	return false
 }
