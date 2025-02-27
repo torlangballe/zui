@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -29,6 +30,7 @@ var (
 	DocumentationPathPrefix       = "doc/"
 	DocumentationDefaultIconColor = zstyle.GrayF(0.9, 0.5)
 	DocumentationViewDefaultModal = false
+	DocumentationCookieMap        map[string]string
 )
 
 func DocumentationIconViewNew(path string) *DocumentationIconView {
@@ -142,6 +144,8 @@ func DocumentationViewPresent(path string, modal bool) error {
 		if win == nil {
 			return
 		}
+		zlog.Info("SetCookie", DocumentationCookieMap)
+		v.WebView.SetCookies(DocumentationCookieMap)
 		v.WebView.SetURL(path)
 	}
 	zpresent.PresentView(v, attr)

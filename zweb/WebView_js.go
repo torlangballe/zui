@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -28,11 +29,13 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	}
 	v.Element.Set("overflow", "auto")
 	v.Element.Set("style", "position:absolute")
+	// doc := v.Element.Get("document")
+	// zlog.Info("Doc:", doc.IsUndefined())
 	v.SetObjectName("webview") // must be after creation
 	v.View = v
 
 	repeater := ztimer.Repeat(0.5, func() bool {
-		// zlog.Info("cddoc:", v.JSGet("contentDocument"))
+		// zlog.Info("cddoc:", v.JSGet("contentDocument").IsUndefined(), v.Element.Get("document").IsUndefined())
 		contentDoc := v.JSGet("contentDocument")
 		// zlog.Info("CDOC:", contentDoc, zdom.DocumentJS)
 		if !contentDoc.IsUndefined() && !contentDoc.IsNull() {
@@ -54,6 +57,16 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		return true
 	})
 	v.AddOnRemoveFunc(repeater.Stop)
+}
+
+func (v *WebView) SetCookies(cookieMap map[string]string) {
+	if cookieMap != nil {
+		str := zstr.GetArgsAsURLParameters(cookieMap)
+		contentDoc := v.JSGet("contentDocument")
+		zlog.Info("SetCookieDoc:", contentDoc.IsUndefined())
+		contentDoc.Set("cookie", str)
+		// v.Element.Get("document").Set("cookie", str)
+	}
 }
 
 func (v *WebView) setTitle() {

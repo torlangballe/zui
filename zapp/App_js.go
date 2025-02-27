@@ -17,6 +17,8 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+var cookies map[string]string
+
 // URL returns the url that invoked this app
 func URL() *url.URL {
 	u, err := url.Parse(URLString())
@@ -37,6 +39,18 @@ func MainArgs() (path string, args map[string]string) {
 		args[k] = v[0]
 	}
 	return
+}
+
+func Cookies() map[string]string {
+	if cookies == nil {
+		params := zdom.DocumentJS.Get("cookie")
+		if params.IsUndefined() {
+			return map[string]string{}
+		}
+		cookies = zstr.GetParametersFromURLArgString(params.String())
+		zlog.Info("Got Cookies:", cookies)
+	}
+	return cookies
 }
 
 func URLStub() string {
