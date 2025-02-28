@@ -50,34 +50,36 @@ type HorEventsView struct {
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
 	LockChildViewFunc         func(child zview.View)
 
-	nowLine              *zcustom.CustomView
-	lanes                []Lane
-	horInfinite          *HorBlocksView
-	ViewWidth            float64
-	startTime            time.Time
-	currentTime          time.Time
-	zoomStack            *zcontainer.StackView
-	timeField            *ztext.TimeFieldView
-	rightPole            *zcontainer.StackView
-	leftPole             *zcontainer.StackView
-	nowButton            *zshape.ImageButtonView
-	GotoLockedButton     *zshape.ShapeView
-	zoomLevels           []zoomLevel
-	panDurations         []panDuration
-	panDuration          time.Duration
-	zoomIndex            int
-	storeKey             string
-	currentNowBlockIndex int
-	updateBlocks         map[int]time.Time
-	scrollToNow          bool
-	lastScrollToX        int
-	updateNowRepeater    *ztimer.Repeater
-	updatingBlock        bool
-	timeAxisHeight       float64
-	lastBlockUpdateTime  time.Time
-	markerPole           *zcustom.CustomView
-	moveStartX           float64
-	markerTimes          []time.Time
+	nowLine               *zcustom.CustomView
+	lanes                 []Lane
+	horInfinite           *HorBlocksView
+	ViewWidth             float64
+	startTime             time.Time
+	currentTime           time.Time
+	zoomStack             *zcontainer.StackView
+	timeField             *ztext.TimeFieldView
+	rightPole             *zcontainer.StackView
+	leftPole              *zcontainer.StackView
+	nowButton             *zshape.ImageButtonView
+	GotoLockedButton      *zshape.ShapeView
+	zoomLevels            []zoomLevel
+	panDurations          []panDuration
+	panDuration           time.Duration
+	zoomIndex             int
+	storeKey              string
+	currentNowBlockIndex  int
+	updateBlocks          map[int]time.Time
+	scrollToNow           bool
+	lastScrollToX         int
+	updateNowRepeater     *ztimer.Repeater
+	updatingBlock         bool
+	timeAxisHeight        float64
+	lastBlockUpdateTime   time.Time
+	markerPole            *zcustom.CustomView
+	moveStartX            float64
+	markerTimes           []time.Time
+	keepScrollingRepeater *ztimer.Repeater
+	keepScrollingDir      float64
 }
 
 type Updater interface {
@@ -1175,6 +1177,22 @@ func (v *HorEventsView) WithBackgroundViews(rowID int64, got func(blockIndex int
 			got(blockIndex, cview, lane.ID, false)
 		}
 	})
+}
+
+func (v *HorEventsView) KeepScrollingToShowAllRows() {
+	if v.keepScrollingRepeater == nil && v.horInfinite.Scroller.Rect().Size.H > v.horInfinite.VertStack.Rect().Size.H {
+		v.keepScrollingDir = 2
+		diff := v.horInfinite.Scroller.Rect().Size.H - v.horInfinite.VertStack.Rect().Size.H
+		v.keepScrollingRepeater = ztimer.RepeatForever(0.05, func() {
+			o := v.horInfinite.VertStack.ContentOffset().Y
+			o += v.keepScrollingDir
+			if v.keepScrollingDir > 0 && o >= diff || v.keepScrollingDir < 0 && o < 0 {
+				v.keepScrollingDir *= -1
+			}
+			v.horInfinite.VertStack.SetYContentOffset(o)
+		})
+		v.AddOnRemoveFunc(v.keepScrollingRepeater.Stop)
+	}
 }
 
 type panDuration struct {
