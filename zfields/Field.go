@@ -53,7 +53,7 @@ type FieldParameters struct {
 	HideStatic      bool
 	ForceZeroOption bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
 	AllStatic       bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	UseInValues     []string // IDs that reflect a state. Fields with UseIn set will only show if it intersecs UseInValues. Exampe: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
+	UseInValues     []string // IDs that reflect a state. Fields with UseIn set will only show if it intersects UseInValues. Example: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
 	SkipFieldNames  []string
 }
 
@@ -64,13 +64,13 @@ type ActionType string
 const (
 	NoAction              ActionType = ""            // Add a trigger for this to get ALL actions
 	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
-	DataChangedAction     ActionType = "changed"     // called when value changed, typically programatically or edited. Called on fields with id, then on struct
+	DataChangedAction     ActionType = "changed"     // called when value changed, typically programmatically or edited. Called on fields with id, then on struct
 	EditedAction          ActionType = "edited"      // called when value edited by user, DataChangedAction will also be called
 	SetupFieldAction      ActionType = "setup"       // called when a field is being set up from a struct, view will be nil
 	PressedAction         ActionType = "pressed"     // called when view is pressed, view is valid
-	LongPressedAction     ActionType = "longpressed" // called when view is long-pressed, view is valid
-	CreateFieldViewAction ActionType = "createview"  // called to create view, view is pointer to view and is returned in it
-	CreatedViewAction     ActionType = "createdview" // called after view created, view is pointer to newly created view.
+	LongPressedAction     ActionType = "long-pressed" // called when view is long-pressed, view is valid
+	CreateFieldViewAction ActionType = "create-view"  // called to create view, view is pointer to view and is returned in it
+	CreatedViewAction     ActionType = "created-view" // called after view created, view is pointer to newly created view.
 
 	RowUseInSpecialName    = "$row"
 	DialogUseInSpecialName = "$dialog"
