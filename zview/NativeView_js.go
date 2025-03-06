@@ -883,6 +883,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		}
 		event := args[0]
+		v.SetStateOnPress(event)
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
@@ -906,12 +907,11 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 				}
 			}
 		}
-		v.SetStateOnPress(event)
 		// if foundChild != nil {
 		// 	LastPressedPos.Add(foundChild.AbsoluteRect().Pos)
 		// }
 		// zlog.Info("Press:", foundChild != nil, LastPressedPos, v.Hierarchy(), id)
-		// zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
+		zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
 		if long != nil {
 			globalLongPressState = longPresser{}
 			globalLongPressState.downPressedTime = time.Now()
