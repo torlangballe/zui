@@ -911,7 +911,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		// 	LastPressedPos.Add(foundChild.AbsoluteRect().Pos)
 		// }
 		// zlog.Info("Press:", foundChild != nil, LastPressedPos, v.Hierarchy(), id)
-		zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
+		// zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
 		if long != nil {
 			globalLongPressState = longPresser{}
 			globalLongPressState.downPressedTime = time.Now()
