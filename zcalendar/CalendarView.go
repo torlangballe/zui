@@ -243,8 +243,13 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.addSettingsCheck(s, "Show Week Numbers", zlocale.IsShowWeekNumbersInCalendars, true)
 	v.addSettingsCheck(s, "Use 24-hour Clock", zlocale.IsUse24HourClock, false)
 	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
+	h1 := zcontainer.StackViewHor("bottom-bar")
+	s.Add(h1, zgeo.BottomRight|zgeo.HorExpand)
+	label := zlabel.New("Reopen any view with a time or\ndate to see effect")
+	label.SetFont(zgeo.FontDefault(-3))
+	h1.Add(label, zgeo.TopLeft)
 	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(20, 20))
-	s.Add(close, zgeo.BottomRight, zgeo.SizeD(4, 4))
+	h1.Add(close, zgeo.BottomRight, zgeo.SizeD(4, 4))
 	close.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.daysGrid.SetJSStyle("filter", "none")
 		zanimation.Translate(s, zgeo.PosD(0, -v.settingsSlider.OriginalRect.Size.H), 0.5, func() {
