@@ -72,7 +72,6 @@ func (v *CalendarView) Init(view zview.View) {
 	v.header.Add(v.monthLabel, zgeo.HorCenter|zgeo.HorExpand) // for space to month-forward
 	v.monthLabel.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		t := time.Now()
-		zlog.Info("pressed", zkeyboard.ModifiersAtPress, v.value)
 		if zkeyboard.ModifiersAtPress == zkeyboard.ModifierShift && !v.value.IsZero() {
 			t = v.value
 		}
@@ -108,10 +107,11 @@ func (v *CalendarView) Init(view zview.View) {
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
 	v.settingsGear.SetPressedHandler("", zkeyboard.ModifierNone, v.handleSettingsPressed)
+	v.settingsGear.SetPressedHandler("", zkeyboard.ModifierCommand, v.handleSettingsPressed)
 	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.SizeF(6, 6)).Free = true
 
 	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if km.Key == zkeyboard.KeyCommandKey {
+		if km.Key == 0 && km.Modifier == zkeyboard.ModifierCommand {
 			showSettings(v, v.settingsGear, down)
 		}
 		if !down {
