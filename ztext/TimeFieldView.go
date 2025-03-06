@@ -56,25 +56,29 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.7, 1))
 
-	if zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
+	if false && zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
 		style := Style{KeyboardType: zkeyboard.TypeInteger}
 		tv := NewView("", style, 1, 1)
 		tv.Show(false)
 		v.Add(tv, zgeo.TopLeft, zgeo.SizeD(-15, 0))
 	}
 	if flags&ztime.TimeFieldDateOnly == 0 {
-		v.hourText = addText(v, 2, "H", "")
-		v.minuteText = addText(v, 2, "M", ":")
+		hmax := 23
+		if v.currentUse24Clock {
+			hmax = 12
+		}
+		v.hourText = addText(v, 2, "H", "", hmax)
+		v.minuteText = addText(v, 2, "M", ":", 59)
 		if flags&ztime.TimeFieldSecs != 0 {
-			v.secondsText = addText(v, 2, "S", ":")
+			v.secondsText = addText(v, 2, "S", ":", 59)
 		}
 		v.ampmLabel = zlabel.New("AM")
 		v.ampmLabel.SetCanTabFocus(true)
 		v.ampmLabel.View.SetObjectName("ampm")
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
-		v.ampmLabel.SetColor(zgeo.ColorNewGray(0.5, 1))
+		v.ampmLabel.SetColor(zgeo.ColorNew(0, 0, 0.1, 1))
 		v.ampmLabel.SetPressedHandler("", zkeyboard.ModifierNone, v.toggleAMPM)
-		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(-8, 0))
+		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(2, 0))
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 		zlocale.IsUse24HourClock.AddChangedHandler(func() {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
@@ -103,19 +107,21 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 		})
 		if flags&ztime.TimeFieldTimeOnly == 0 {
 			spacing := zcustom.NewView("spacing")
-			spacing.SetMinSize(zgeo.SizeD(23, 6))
+			spacing.SetMinSize(zgeo.SizeD(6, 6))
 			v.Add(spacing, zgeo.CenterLeft)
 		}
 	}
 	if flags&ztime.TimeFieldTimeOnly == 0 {
-		v.dayText = addText(v, 2, "D", "")
-		v.monthText = addText(v, 2, "M", "/")
+		v.dayText = addText(v, 2, "D", "", 31)
+		v.dayText.SetMin(1)
+		v.monthText = addText(v, 2, "M", "/", 12)
+		v.monthText.SetMin(1)
 		if flags&ztime.TimeFieldYears != 0 {
 			cols := 4
 			if flags&ztime.TimeFieldShortYear != 0 {
 				cols = 2
 			}
-			v.yearText = addText(v, cols, "Y", "/")
+			v.yearText = addText(v, cols, "Y", "/", 2100)
 		}
 		if flags&ztime.TimeFieldNoCalendar == 0 {
 			v.calendar = zimageview.NewWithCachedPath("images/zcore/calendar.png", zgeo.SizeD(16, 16))
@@ -143,12 +149,16 @@ func (v *TimeFieldView) handleReturn(km zkeyboard.KeyMod, down bool) bool {
 	return false
 }
 
-func addText(v *TimeFieldView, columns int, placeholder string, pre string) *TextView {
+func addText(v *TimeFieldView, columns int, placeholder string, pre string, max int) *TextView {
 	style := Style{KeyboardType: zkeyboard.TypeInteger}
 	tv := NewView("", style, columns, 1)
 	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	tv.UpdateSecs = 0
 	tv.SetPlaceholder(placeholder)
+	tv.SetMin(0)
+	if max != -1 {
+		tv.SetMax(float64(max))
+	}
 	tv.SetZIndex(zview.BaseZIndex)
 	tv.SetFocusHandler(func(focused bool) {
 		index := zview.BaseZIndex
@@ -193,12 +203,15 @@ func convertFrom24Hour(v *TimeFieldView, hour int) (int, bool) {
 	}
 }
 
-func setPM(v *TimeFieldView, pm bool) {
-	set := "AM"
+func getAMPMString(pm bool) string {
 	if pm {
-		set = "PM"
+		return "PM"
 	}
-	v.ampmLabel.SetText(set)
+	return "AM"
+}
+
+func setPM(v *TimeFieldView, pm bool) {
+	v.ampmLabel.SetText(getAMPMString(pm))
 }
 
 func flipDayMonth(v *TimeFieldView, arrange bool) {
@@ -225,6 +238,7 @@ func (v *TimeFieldView) toggleAMPM() {
 func (v *TimeFieldView) popCalendar() {
 	cal := zcalendar.New("")
 	val, err := v.Value()
+	// zlog.Info("popCalendar:", val, err)
 	if err != nil {
 		return
 	}
@@ -351,11 +365,14 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 	// }
 	getNumString(v.dayText, &sday, "")
 
+	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	stime := zstr.Concat(":", shour, smin, ssec)
+	if !v.currentUse24Clock {
+		stime += v.ampmLabel.Text()
+	}
 	sdate := zstr.Concat("-", sday, smonth, syear)
 	str := zstr.Concat(" ", stime, sdate)
 	// zlog.Info("PARSE:", str)
-	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	fieldToView := map[ztime.TimeFieldFlags]zview.View{
 		ztime.TimeFieldHours:  v.hourText,
 		ztime.TimeFieldMins:   v.minuteText,
