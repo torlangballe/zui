@@ -230,6 +230,7 @@ func (v *CalendarView) handleSettingsPressed() {
 	v.settingsGear.Show(false)
 	// zlog.Info("handleSettingsPressed")
 	s := zcontainer.StackViewVert("v1")
+	v.Add(s, zgeo.TopLeft).Free = true
 	s.SetMargin(zgeo.RectFromXY2(10, 10, -10, -10))
 	// s.SetTilePath("images/tile.png")
 	s.SetBGColor(zgeo.ColorNewGray(0.85, 0.9))
