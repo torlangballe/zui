@@ -883,30 +883,34 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 			return nil
 		}
 		event := args[0]
-		v.SetStateOnPress(event)
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
 		// zlog.Info("Pressed2:", v.Hierarchy(), mid)
 		target := event.Get("target")
+		var foundChild *NativeView
 		if !target.Equal(v.Element) {
 			// zlog.Info("Pressed Child:", v.Hierarchy(), mid, target.Get("id").String())
-			var found *NativeView
 			RangeChildrenFunc(v.View, true, false, func(view View) bool {
 				// zlog.Info("Pressed Child Find?:", view.Native().Hierarchy(), view.Native().Element.Get("id").String())
 				if view.Native().Element.Equal(target) {
-					found = view.Native()
+					foundChild = view.Native()
 					return false
 				}
 				return true
 			})
-			if found != nil {
-				// zlog.Info("Pressed Child Found:", found.Hierarchy(), found.IsUsable(), found.IsInteractive())
-				if found.IsUsable() && found.IsInteractive() {
+			if foundChild != nil {
+				// zlog.Info("Pressed Child Found:", found.Hierarchy(), foundChild.IsUsable(), foundChild.IsInteractive())
+				if foundChild.IsUsable() && foundChild.IsInteractive() {
 					return nil
 				}
 			}
 		}
+		v.SetStateOnPress(event)
+		// if foundChild != nil {
+		// 	LastPressedPos.Add(foundChild.AbsoluteRect().Pos)
+		// }
+		// zlog.Info("Press:", foundChild != nil, LastPressedPos, v.Hierarchy(), id)
 		// zlog.Info("Pressed:", v.Hierarchy(), v.AbsoluteRect(), LastPressedPos)
 		if long != nil {
 			globalLongPressState = longPresser{}

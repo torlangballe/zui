@@ -267,7 +267,6 @@ func Close(view zview.View, dismissed bool, done func(dismissed bool)) {
 
 func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
-	// zlog.Info("CloseOver")
 	old := presentCloseFuncs[view]
 	presentCloseFuncs[view] = func(dismissed bool) {
 		if done != nil {
