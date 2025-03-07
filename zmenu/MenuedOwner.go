@@ -67,7 +67,7 @@ type MenuedOwner struct {
 
 type MenuedOItem struct {
 	Name        string
-	Value       interface{}
+	Value       any
 	Selected    bool
 	LabelColor  zgeo.Color
 	TextColor   zgeo.Color
@@ -100,7 +100,7 @@ func (o *MenuedOwner) Init() {
 	o.TextColor = MenuedOwnerDefaultTextColor()
 }
 
-func MenuedAction(name string, val interface{}) MenuedOItem {
+func MenuedAction(name string, val any) MenuedOItem {
 	var item MenuedOItem
 	item.Name = name
 	item.Value = val
@@ -373,7 +373,22 @@ func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 	o.UpdateTitleAndImage()
 }
 
-func (o *MenuedOwner) SetSelectedValuesAndEdited(vals []interface{}, edited bool) {
+func (o *MenuedOwner) AddSelected(val any, edited bool) {
+	for i, item := range o.getItems() {
+		if reflect.DeepEqual(item.Value, val) {
+			if !o.items[i].Selected {
+				o.items[i].Selected = true
+				o.UpdateTitleAndImage()
+				if o.SelectedHandlerFunc != nil {
+					o.SelectedHandlerFunc(edited)
+				}
+				return
+			}
+		}
+	}
+}
+
+func (o *MenuedOwner) SetSelectedValuesAndEdited(vals []any, edited bool) {
 	// zlog.Info("SetSelectedValues1", vals, o.Name)
 outer:
 	for i, item := range o.getItems() {
@@ -394,12 +409,12 @@ outer:
 	}
 }
 
-func (o *MenuedOwner) SetSelectedValues(vals []interface{}) {
+func (o *MenuedOwner) SetSelectedValues(vals []any) {
 	o.SetSelectedValuesAndEdited(vals, false)
 }
 
-func (o *MenuedOwner) SetSelectedValue(val interface{}) {
-	o.SetSelectedValues([]interface{}{val})
+func (o *MenuedOwner) SetSelectedValue(val any) {
+	o.SetSelectedValues([]any{val})
 }
 
 func (o *MenuedOwner) RegenerateItems() {
@@ -413,7 +428,7 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 	return o.items
 }
 
-func (o *MenuedOwner) ChangeNameForValue(name string, value interface{}) {
+func (o *MenuedOwner) ChangeNameForValue(name string, value any) {
 	if zlog.ErrorIf(value == nil, o.View.ObjectName()) {
 		return
 	}
