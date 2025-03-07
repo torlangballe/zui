@@ -174,9 +174,9 @@ func (ti *Info) SetWidthFreeHight(w float64) {
 func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
 	// zlog.PushTimingLog()
 	maxLines := ti.MaxLines
-	if ti.Wrap != WrapNone {
-		maxLines = 1
-	}
+	// if ti.Wrap != WrapNone {
+	// 	maxLines = 1
+	// }
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := zcanvas.GetTextSize(str, ti.Font)
