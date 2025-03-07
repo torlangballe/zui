@@ -18,15 +18,16 @@ import (
 
 type Label struct {
 	zview.NativeView
-	minWidth    float64
-	maxWidth    float64
-	maxLines    int
-	margin      zgeo.Rect
-	alignment   zgeo.Alignment
-	text        string // we need to store the text as NativeView's Text() doesn't work right away
-	wrap        ztextinfo.WrapType
-	pressed     func()
-	longPressed func()
+	minWidth          float64
+	maxWidth          float64
+	maxCalculateWidth float64
+	maxLines          int
+	margin            zgeo.Rect
+	alignment         zgeo.Alignment
+	text              string // we need to store the text as NativeView's Text() doesn't work right away
+	wrap              ztextinfo.WrapType
+	pressed           func()
+	longPressed       func()
 
 	Columns                      int
 	KeyboardShortcut             zkeyboard.KeyMod
@@ -59,6 +60,15 @@ func (v *Label) GetToolTipAddition() string {
 	}
 	str += "press to copy to clipboard"
 	return str
+}
+
+func (v *Label) SetMaxLinesBasedOnTextLines(notBeyond int) {
+	count := strings.Count(v.Text(), "\n")
+	m := count + 1
+	if notBeyond != 0 {
+		m = min(m, notBeyond)
+	}
+	v.SetMaxLines(m)
 }
 
 func (v *Label) SetPressWithModifierToClipboard(mod zkeyboard.Modifier) {
@@ -114,12 +124,16 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
+	if v.maxCalculateWidth != 0 {
+		zfloat.Minimize(&s.W, v.maxCalculateWidth)
+	}
 	if len(widths) == 1 {
 		// zlog.Info("LABELINC:", v.Text(), ti.Font.Size/5)
 		//!!!! s.H += ti.Font.Size / 5
 	}
 	s = s.Ceil()
 	s.W += 1
+	// zlog.Info("LabelCalcSize2:", v.ObjectName(), v.Text(), s)
 	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
 }
 
@@ -153,6 +167,10 @@ func (v *Label) SetMinWidth(min float64) {
 
 func (v *Label) SetMaxWidth(max float64) {
 	v.maxWidth = max
+}
+
+func (v *Label) SetMaxCalculateWidth(max float64) {
+	v.maxCalculateWidth = max
 }
 
 func (v *Label) SetWidth(w float64) {
