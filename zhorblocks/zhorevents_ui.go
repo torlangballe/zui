@@ -1137,13 +1137,13 @@ func (v *HorEventsView) ForAllBackgroundViews(got func(blockIndex int, cview zvi
 		zcontainer.ViewRangeChildren(bview, false, false, func(view zview.View) bool {
 			var laneID, rowID int64
 			if zstr.SplitN(view.ObjectName(), "-", &laneID, &rowID) {
-				if laneID != 0 && rowID != 0 {
-					lane, row := v.FindLaneAndRow(laneID, rowID)
-					if lane != nil && row != nil {
-						got(blockIndex, view, lane, row)
-						return true
-					}
+				// if laneID != 0 && rowID != 0 {
+				lane, row := v.FindLaneAndRow(laneID, rowID)
+				if lane != nil && row != nil {
+					got(blockIndex, view, lane, row)
+					return true
 				}
+				// }
 			}
 			// zlog.Error("Bad bg:", view.ObjectName())
 			return true
