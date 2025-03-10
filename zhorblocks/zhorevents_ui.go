@@ -210,6 +210,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		line := zcustom.NewView("now-pole")
 		line.SetZIndex(11000)
 		line.SetMinSize(zgeo.SizeD(20, 100))
+		line.SetInteractive(false)
 		line.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 			// zlog.Info("draw now pole:", rect)
 			colors := []zgeo.Color{zgeo.ColorNew(0, 1, 0, 0), zgeo.ColorNew(0, 1, 0, 0.8)}
