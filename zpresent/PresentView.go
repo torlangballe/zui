@@ -503,7 +503,7 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 func MakeBar(stitle string, titleAlign zgeo.Alignment) (*zcontainer.StackView, *zlabel.Label) {
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetSpacing(2)
-	bar.SetMarginS(zgeo.SizeD(6, 2))
+	bar.SetMargin(zgeo.RectFromXY2(6, 4, -6, -7))
 	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
 		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
