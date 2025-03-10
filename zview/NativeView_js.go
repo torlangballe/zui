@@ -393,11 +393,11 @@ func (v *NativeView) IsShown() bool {
 
 func (v *NativeView) IsUsable() bool {
 	dis := v.Element.Get("disabled")
-	// zlog.Info("Usable:", v.Hierarchy(), dis)
 	if dis.IsNull() || dis.IsUndefined() {
 		return true
 	}
-	return dis.String() != ""
+	// zlog.Info("Usable:", v.Hierarchy(), dis, dis.Bool())
+	return !dis.Bool()
 }
 
 func (v *NativeView) SetUsable(usable bool) {
@@ -413,10 +413,11 @@ func (v *NativeView) SetUsable(usable bool) {
 func (v *NativeView) setUsableAttributes(usable bool) {
 	u := usable //&& v.IsUsable()
 	if usable {
-		v.Element.Delete("disabled")
+		v.JSSet("disabled", nil)
 	} else {
-		v.JSSet("disabled", "")
+		v.JSSet("disabled", "true")
 	}
+	zlog.Info("setUsableAttributes", v.ObjectName(), usable)
 	style := v.JSStyle()
 	var alpha float32 = 0.4
 	if u || v.Flags&ViewNoDimUsableFlag != 0 {
