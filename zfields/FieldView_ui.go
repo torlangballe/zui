@@ -1786,10 +1786,13 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 					view.Native().AddOnRemoveFunc(timer.Stop)
 				} else {
 					if f.Format == "nice" {
-						timer := ztimer.StartAt(ztime.OnTheNextHour(time.Now()), func() {
-							nlabel := view.(*zlabel.Label)
-							str, _ := getTextFromNumberishItem(rval, f)
-							nlabel.SetText(str)
+						timer := ztimer.StartAt(ztime.OnThisHour(time.Now(), 1), func() {
+							repeater := ztimer.RepeatForever(60*60, func() {
+								nlabel := view.(*zlabel.Label)
+								str, _ := getTextFromNumberishItem(rval, f)
+								nlabel.SetText(str)
+							})
+							v.AddOnRemoveFunc(repeater.Stop)
 						})
 						v.AddOnRemoveFunc(timer.Stop)
 					}
