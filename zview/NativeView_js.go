@@ -415,7 +415,7 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 	if usable {
 		v.JSSet("disabled", nil)
 	} else {
-		v.JSSet("disabled", "true")
+		v.JSSet("disabled", true)
 	}
 	// zlog.Info("setUsableAttributes", v.ObjectName(), usable)
 	style := v.JSStyle()
