@@ -417,7 +417,7 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 	} else {
 		v.JSSet("disabled", "true")
 	}
-	zlog.Info("setUsableAttributes", v.ObjectName(), usable)
+	// zlog.Info("setUsableAttributes", v.ObjectName(), usable)
 	style := v.JSStyle()
 	var alpha float32 = 0.4
 	if u || v.Flags&ViewNoDimUsableFlag != 0 {
