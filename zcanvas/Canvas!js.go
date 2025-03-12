@@ -12,6 +12,8 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zutil/zdebug"
+	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 )
@@ -90,19 +92,26 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 	if runtime.GOOS == "darwin" {
 		paths = append(paths, "/System/Library/Fonts/")
 	}
+	if zdebug.IsInTests {
+		paths = append(paths, "../Fonts/")
+	}
 	for _, path := range paths {
 		for _, ext := range []string{".ttf", ".ttc"} {
 			p := path + name + ext
+			// zlog.Warn("Path:", p)
 			zlog.Assert(c.context != nil)
-			fontMutex.Lock()
-			err = c.context.LoadFontFace(p, font.Size)
-			fontMutex.Unlock()
-			if err == nil {
-				return nil
+			if zfile.Exists(p) {
+				fontMutex.Lock()
+				err = c.context.LoadFontFace(p, font.Size)
+				fontMutex.Unlock()
+				if err == nil {
+					return nil
+				}
+				zlog.OnError(err, p)
 			}
 		}
 	}
-	return zlog.Error("couldn't load font", font.Name, paths)
+	return zlog.Error("couldn't load font, not found", font.Name, paths)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {
