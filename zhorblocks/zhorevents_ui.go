@@ -80,6 +80,7 @@ type HorEventsView struct {
 	markerTimes           []time.Time
 	keepScrollingRepeater *ztimer.Repeater
 	keepScrollingDir      float64
+	startupGotoTime       time.Time
 }
 
 type Updater interface {
@@ -254,7 +255,8 @@ func (v *HorEventsView) setStartTime(t time.Time) {
 		zlog.Fatal("Bad Duration", v.BlockDuration)
 	}
 	v.startTime = start
-	v.currentTime = t
+	v.currentTime = start
+	v.startupGotoTime = t
 }
 
 func (v *HorEventsView) loadMarkerButtons() {
@@ -433,7 +435,7 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 			if lockChild != nil {
 				v.LockChildViewFunc(lockChild)
 				// zlog.Info("Child2Select:", lockChild.ObjectName(), blockIndex)
-				ztimer.StartIn(0.5, func() {
+				ztimer.StartIn(1, func() {
 					v.SetBlockDuration(d)
 					ztimer.StartIn(0.8, func() {
 						v.GotoLockedButton.Click("", false, zkeyboard.ModifierShift)
@@ -958,13 +960,11 @@ func (v *HorEventsView) createLanes() {
 }
 
 func (v *HorEventsView) SetRect(r zgeo.Rect) {
-	// zlog.Info("HV SetRect", r.Size, v.ViewWidth)
-	//!!! zcontainer.CellInParent(v.rightPole).Margin.SetMaxX(-zwindow.ScrollBarSizeForView(v))
+	// zlog.Info("HV SetRect", r)
 	v.StackView.SetRect(r)
 	oldWidth := v.ViewWidth
 	v.ViewWidth = r.Size.W - zwindow.ScrollBarSizeForView(v)
 	if oldWidth != 0 && v.IsPresented() {
-		// zlog.Info("HV SetRect Update", r.Size, v.ViewWidth)
 		v.Updater.Update()
 	}
 	v.horInfinite.IgnoreScroll = false
@@ -1127,6 +1127,12 @@ func (v *HorEventsView) releaseViewForIndex(blockIndex int) {
 }
 
 func (v *HorEventsView) HandlePan(blockIndex float64) {
+	if !v.startupGotoTime.IsZero() {
+		t := v.startupGotoTime
+		v.startupGotoTime = time.Time{} // let's clear this before calling goto
+		v.GotoTime(t)
+		return
+	}
 	t := v.IndexToTime(blockIndex)
 	// zlog.Info("HandlePan", blockIndex, t)
 	v.currentTime = t
