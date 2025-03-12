@@ -180,8 +180,8 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.updateBlocks = map[int]time.Time{}
 	v.BlockDuration = blockDuration // must be before calculating startTime
 	start := opts.StartTime
-	v.startTime = v.calcTimePosToShowTime(start)
-	v.currentTime = v.startTime
+	t := v.calcTimePosToShowTime(start)
+	v.setStartTime(t)
 	v.SetSpacing(0)
 	v.Bar = zcontainer.StackViewHor("bar")
 	v.Bar.SetBGColor(zgeo.ColorNewGray(0.4, 1))
@@ -233,6 +233,28 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	})
 	v.AddOnRemoveFunc(updateRepeater.Stop)
 	return v
+}
+
+func (v *HorEventsView) setStartTime(t time.Time) {
+	var start time.Time
+	switch v.BlockDuration {
+	case time.Hour * 24:
+		start = ztime.OnThisDay(t, 0)
+	case time.Hour:
+		start = ztime.ChangedPartsOfTime(t, -1, 0, 0, 0)
+	case time.Minute * 10:
+		m := zmath.RoundToMod(t.Minute(), 10)
+		start = ztime.ChangedPartsOfTime(t, -1, m, 0, 0)
+	case time.Minute:
+		start = ztime.ChangedPartsOfTime(t, -1, -1, 0, 0)
+	case time.Second * 10:
+		s := zmath.RoundToMod(t.Second(), 10)
+		start = ztime.ChangedPartsOfTime(t, -1, -1, s, 0)
+	default:
+		zlog.Fatal("Bad Duration", v.BlockDuration)
+	}
+	v.startTime = start
+	v.currentTime = t
 }
 
 func (v *HorEventsView) loadMarkerButtons() {
@@ -400,11 +422,11 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 	now := time.Now()
 	_, shown := v.TimeToXInHorEventView(now)
 	// zlog.Info("SetBlockDuration Pre:", x, shown, t, v.BlockDuration)
-	var t time.Time
+	var t, start time.Time
 	if shown {
 		t = now
 		v.BlockDuration = d
-		v.startTime = v.calcTimePosToShowTime(t) //.Add(time.Second * 3)
+		start = v.calcTimePosToShowTime(t) //.Add(time.Second * 3)
 	} else {
 		if v.LockedTime.IsZero() && v.LockChildViewFunc != nil {
 			lockChild := v.lockCenterView()
@@ -429,15 +451,11 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 		t = t.Add(-d / 2)
 		ztime.Minimize(&t, now)
 		v.BlockDuration = d
-		v.startTime = t
+		start = t
 	}
-	// zlog.Info("SetBlockDuration Post:", v.LockedTime, v.startTime, d)
-	// v.startTime = t.Add(time.Second * 3)
-	v.currentTime = v.startTime
+	v.setStartTime(start)
 	v.horInfinite.SetFloatingCurrentIndex(0)
 	v.Updater.Update()
-	// zlog.Info("*************** SetBlockDuration 2:", v.currentTime, "->", t)
-	// v.GotoTime(t)
 }
 
 func (v *HorEventsView) Reset(updateBlocks bool) {
