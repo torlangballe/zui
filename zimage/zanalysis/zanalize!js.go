@@ -1,6 +1,6 @@
 //xxxgo:build !js
 
-package zimage
+package zanalysis
 
 import (
 	"fmt"
@@ -9,6 +9,16 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zmath"
 )
+
+type SimpleAnalytics struct {
+	Size           zgeo.ISize
+	BlurAmount     float64
+	FlatsAmount    float64
+	EdgesAmount    float64
+	BlockFrequency zgeo.IPos
+	BlockOffset    zgeo.IPos
+	BlockAmount    float64
+}
 
 type counts struct {
 	blurs                    map[int]int
