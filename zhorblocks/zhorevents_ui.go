@@ -44,10 +44,12 @@ type HorEventsView struct {
 	TestMode                  bool
 	Updater                   Updater
 	MixOddBlocksColor         zgeo.Color // If Valid, is mixed a tiny bit with odd background block color to show borders
-	GutterWidth               float64
+	GutterWidth               zmath.RangeF64
+	OddLaneColor              zgeo.Color
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
-	MakeRowBackgroundViewFunc func(isOverlay bool, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
+	MakeRowBackgroundViewFunc func(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
 	MakeLaneActionIconFunc    func(laneID int64) zview.View
+	MakeLaneRowActionIconFunc func(laneID int64, rowID int64) zview.View
 	LockChildViewFunc         func(child zview.View)
 
 	nowLine               *zcustom.CustomView
@@ -113,7 +115,7 @@ type EventOptions struct {
 	BlockDuration        time.Duration
 	StartTime            time.Time
 	ShowNowPole          bool
-	GutterWidth          float64
+	GutterWidth          zmath.RangeF64
 	TimeAxisHeight       float64
 	BGColor              zgeo.Color
 }
@@ -143,11 +145,11 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
 	v.zoomLevels = []zoomLevel{
-		zoomLevel{"1d", time.Hour * 24},
-		zoomLevel{"1h", time.Hour * 1},
-		zoomLevel{"10m", time.Minute * 10},
-		zoomLevel{"1m", time.Minute * 1},
-		zoomLevel{"10s", time.Second * 10},
+		zoomLevel{"24 Hours", time.Hour * 24},
+		zoomLevel{"1 Hour", time.Hour * 1},
+		zoomLevel{"10 Min", time.Minute * 10},
+		zoomLevel{"1 Min", time.Minute * 1},
+		zoomLevel{"10 Secs", time.Second * 10},
 	}
 	v.panDurations = []panDuration{
 		panDuration{"1d", zkeyboard.ModifierNone, time.Hour * 24, nil},
@@ -332,8 +334,9 @@ func (v *HorEventsView) makeMarkerPole() {
 
 func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 	pole := zcontainer.StackViewVert(a.String() + "-pole")
-	w := v.GutterWidth
+	w := v.GutterWidth.Min
 	if a == zgeo.Right {
+		w = v.GutterWidth.Max
 		w += zwindow.ScrollBarSizeForView(v)
 	}
 	pole.SetMinSize(zgeo.SizeD(w, 10))
@@ -552,7 +555,7 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 			v.updatingBlock = false
 			return false
 		}
-		_, row := v.FindLaneAndRow(laneID, rowType)
+		_, _, row, _ := v.FindLaneAndRow(laneID, rowType)
 		oname := fmt.Sprintf("%d-%d", laneID, rowType)
 		rv, _ := blockView.FindViewWithName(oname, false)
 		zlog.Assert(rv != nil, oname)
@@ -584,7 +587,7 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 	})
 }
 
-func defaultMakeBackgroundViewFunc(isOverlay bool, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView {
+func defaultMakeBackgroundViewFunc(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView {
 	bg := zcontainer.New("")
 	bg.SetMinSize(size)
 	// bg.SetBGColor(zgeo.ColorBlue)
@@ -620,6 +623,8 @@ func (v *HorEventsView) makeButtons() {
 	outKey := zkeyboard.KeyMod{Char: "-"}
 	inKey := zkeyboard.KeyMod{Char: "+"}
 	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "filler", 4, 28, -1, v.zoomPressed)
+	title, _ := v.zoomStack.FindViewWithName("title", true)
+	title.SetColor(zgeo.ColorOrange)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
 
 	v.nowButton = zshape.ImageButtonViewSimpleInsets("now", "lightGray")
@@ -919,12 +924,12 @@ func (v *HorEventsView) createLanes() {
 		title := makeTextTitle(lane.Name, 2, lane.TextColor)
 		zslice.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
-		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, lane.y+v.timeAxisHeight)).Free = true
+		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth.Min+2, lane.y+v.timeAxisHeight)).Free = true
 		if v.MakeLaneActionIconFunc != nil {
 			view := v.MakeLaneActionIconFunc(lane.ID)
 			view.Native().SetInteractive(true)
 			zslice.Add(&v.lanes[i].overlayViews, view)
-			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(2, lane.y+2+v.timeAxisHeight)).Free = true
+			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(20, y+2+v.timeAxisHeight)).Free = true
 		}
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
@@ -935,13 +940,19 @@ func (v *HorEventsView) createLanes() {
 			if j == 0 {
 				ty += laneTitleHeight
 			}
-			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth+2, ty)).Free = true
+			if v.MakeLaneRowActionIconFunc != nil {
+				view := v.MakeLaneRowActionIconFunc(lane.ID, r.ID)
+				view.Native().SetZIndex(99999)
+				view.Native().SetInteractive(true)
+				zslice.Add(&v.lanes[i].overlayViews, view)
+				v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(24, ty)).Free = true
+			}
+			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth.Min+4, ty)).Free = true
 			h := r.Height
 			if j == len(lane.Rows)-1 {
 				h += dividerHeight
 			}
-			isOverlay := true
-			bgView := v.MakeRowBackgroundViewFunc(isOverlay, lane.ID, &r, zgeo.SizeD(bgWidth, h))
+			bgView := v.MakeRowBackgroundViewFunc(zint.Undefined, lane.ID, &r, zgeo.SizeD(bgWidth, h))
 			if bgView != nil {
 				bgView.SetObjectName(OverlayBackgroundViewName)
 				bgView.Native().SetDimUsable(false)
@@ -983,18 +994,21 @@ func makeTextTitle(text string, fontAdd float64, col zgeo.Color) zview.View {
 	return label
 }
 
-func (v *HorEventsView) FindLaneAndRow(laneID, rowID int64) (*Lane, *Row) {
+func (v *HorEventsView) FindLaneAndRow(laneID, rowID int64) (*Lane, int, *Row, int) {
 	for i, lane := range v.lanes {
 		// zlog.Info("FindLaneAndRow", zlog.Full(lane))
 		if lane.ID == laneID {
+			if rowID == 0 {
+				return &v.lanes[i], i, nil, -1
+			}
 			for j, r := range lane.Rows {
 				if r.ID == rowID {
-					return &v.lanes[i], &v.lanes[i].Rows[j]
+					return &v.lanes[i], i, &v.lanes[i].Rows[j], j
 				}
 			}
 		}
 	}
-	return nil, nil
+	return nil, -1, nil, -1
 }
 
 func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
@@ -1087,17 +1101,20 @@ func (v *HorEventsView) makeBlockView(blockIndex int) zview.View {
 	}
 	blockView.SetBGColor(col)
 
-	for _, lane := range v.lanes {
+	for i, lane := range v.lanes {
 		for j, r := range lane.Rows {
 			s := zgeo.SizeD(v.ViewWidth, r.Height)
 			lastRow := (j == len(lane.Rows)-1)
 			if lastRow {
 				s.H += dividerHeight
 			}
-			isOverlay := false
-			bg := v.MakeRowBackgroundViewFunc(isOverlay, lane.ID, &r, s)
+			// isOverlay := false
+			bg := v.MakeRowBackgroundViewFunc(blockIndex, lane.ID, &r, s)
 			if bg == nil {
-				bg = defaultMakeBackgroundViewFunc(isOverlay, lane.ID, &r, s)
+				bg = defaultMakeBackgroundViewFunc(blockIndex, lane.ID, &r, s)
+			}
+			if i%2 == 1 && v.OddLaneColor.Valid {
+				bg.SetBGColor(v.OddLaneColor)
 			}
 			oname := fmt.Sprintf("%d-%v", lane.ID, r.ID)
 			bg.SetObjectName(oname)
@@ -1163,7 +1180,7 @@ func (v *HorEventsView) ForAllBackgroundViews(got func(blockIndex int, cview zvi
 			var laneID, rowID int64
 			if zstr.SplitN(view.ObjectName(), "-", &laneID, &rowID) {
 				// if laneID != 0 && rowID != 0 {
-				lane, row := v.FindLaneAndRow(laneID, rowID)
+				lane, _, row, _ := v.FindLaneAndRow(laneID, rowID)
 				if lane != nil && row != nil {
 					got(blockIndex, view, lane, row)
 					return true

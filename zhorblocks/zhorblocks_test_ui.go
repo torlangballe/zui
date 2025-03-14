@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -112,7 +113,7 @@ func MakeHorEventsTestView(id string, delete bool) zview.View {
 		ShowNowPole:          true,
 		TimeAxisHeight:       30,
 		BGColor:              zgeo.ColorNewGray(0.3, 1),
-		GutterWidth:          16,
+		GutterWidth:          zmath.RangeF64{Min: 20, Max: 20},
 	}
 	v := NewEventsView(nil, opts)
 	v.GetEventViewsFunc = func(blockIndex int, isNewView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool) {
@@ -142,7 +143,7 @@ func makeEventView(v *HorEventsView, e Event) zview.View {
 	view := zcontainer.New(str)
 	view.SetBGColor(zgeo.ColorRandom())
 	w := v.DurationToWidth(e.End.Sub(e.Start))
-	_, row := v.FindLaneAndRow(e.LaneID, e.LaneRowID)
+	_, _, row, _ := v.FindLaneAndRow(e.LaneID, e.LaneRowID)
 	view.SetMinSize(zgeo.SizeD(w, row.Height))
 
 	label := zlabel.New(str)
