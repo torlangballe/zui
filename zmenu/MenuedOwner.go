@@ -373,17 +373,16 @@ func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
 	o.UpdateTitleAndImage()
 }
 
-func (o *MenuedOwner) AddSelected(val any, edited bool) {
+func (o *MenuedOwner) ChangeSelected(val any, selected, edited bool) {
 	for i, item := range o.getItems() {
 		if reflect.DeepEqual(item.Value, val) {
-			if !o.items[i].Selected {
-				o.items[i].Selected = true
-				o.UpdateTitleAndImage()
-				if o.SelectedHandlerFunc != nil {
-					o.SelectedHandlerFunc(edited)
-				}
-				return
+			o.items[i].Selected = selected
+			o.UpdateTitleAndImage()
+			if o.SelectedHandlerFunc != nil {
+				zlog.Info("ChangeSelected2", val, selected, edited)
+				o.SelectedHandlerFunc(edited)
 			}
+			return
 		}
 	}
 }
