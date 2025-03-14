@@ -63,6 +63,7 @@ type GridListView struct {
 	RestoreOffsetOnNextLayout bool
 	UpdateOnceOnSetRect       bool
 	DeselectOnEscape          bool
+	DisabledCells             map[string]bool
 
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
@@ -131,6 +132,8 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.Spacing = zgeo.SizeD(14, 6)
 	v.MultiplyColorAlternate = 0.95
 	v.DeselectOnEscape = true
+	v.DisabledCells = map[string]bool{}
+
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
 	v.loadOpenBranches()
@@ -444,6 +447,9 @@ func (v *GridListView) handleHover(pos zgeo.Pos, inside zbool.BoolInd) {
 	if id == v.CurrentHoverID {
 		return
 	}
+	if v.DisabledCells[id] {
+		return
+	}
 	if v.CellHeightFunc != nil && v.children[id] != nil {
 		h := v.CellHeightFunc(id)
 		if h <= 4 { // hack to avoid hovering over small separator-type cells
@@ -486,6 +492,9 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 	eventHandled := true
 	var index int
 	id, inside := v.FindCellForPos(pos)
+	if v.DisabledCells[id] {
+		return false
+	}
 	if id != "" {
 		if !v.Selectable && !v.MultiSelectable && v.HandleRowPressedFunc != nil {
 			if inside && down.IsTrue() {

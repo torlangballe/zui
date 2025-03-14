@@ -508,6 +508,12 @@ func (o *MenuedOwner) popup() {
 		return strconv.Itoa(i)
 	}
 	list.UpdateCellSelectionFunc = o.updateCellSelection
+
+	for i, item := range o.items {
+		if item.IsDisabled {
+			list.DisabledCells[strconv.Itoa(i)] = true
+		}
+	}
 	rm := float64(rightMarg)
 	if o.HasLabelColor {
 		rm += 24
