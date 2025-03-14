@@ -118,8 +118,6 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 		s, _, widths = ti.GetBounds()
 	}
 	s.Add(v.margin.Size.Negative())
-	// zlog.Info("LabelCalcSize2:", v.ObjectName(), v.Text(), s)
-
 	zfloat.Maximize(&s.W, v.minWidth)
 	if v.maxWidth != 0 {
 		zfloat.Minimize(&s.W, v.maxWidth)
@@ -133,7 +131,6 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	s = s.Ceil()
 	s.W += 1
-	// zlog.Info("LabelCalcSize2:", v.ObjectName(), v.Text(), s)
 	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
 }
 
