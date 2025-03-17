@@ -62,12 +62,12 @@ type FieldParameters struct {
 type ActionType string
 
 const (
-	NoAction              ActionType = ""            // Add a trigger for this to get ALL actions
-	DataChangedActionPre  ActionType = "changed-pre" // called on struct before DataChangedAction on fields
-	DataChangedAction     ActionType = "changed"     // called when value changed, typically programmatically or edited. Called on fields with id, then on struct
-	EditedAction          ActionType = "edited"      // called when value edited by user, DataChangedAction will also be called
-	SetupFieldAction      ActionType = "setup"       // called when a field is being set up from a struct, view will be nil
-	PressedAction         ActionType = "pressed"     // called when view is pressed, view is valid
+	NoAction              ActionType = ""             // Add a trigger for this to get ALL actions
+	DataChangedActionPre  ActionType = "changed-pre"  // called on struct before DataChangedAction on fields
+	DataChangedAction     ActionType = "changed"      // called when value changed, typically programmatically or edited. Called on fields with id, then on struct
+	EditedAction          ActionType = "edited"       // called when value edited by user, DataChangedAction will also be called
+	SetupFieldAction      ActionType = "setup"        // called when a field is being set up from a struct, view will be nil
+	PressedAction         ActionType = "pressed"      // called when view is pressed, view is valid
 	LongPressedAction     ActionType = "long-pressed" // called when view is long-pressed, view is valid
 	CreateFieldViewAction ActionType = "create-view"  // called to create view, view is pointer to view and is returned in it
 	CreatedViewAction     ActionType = "created-view" // called after view created, view is pointer to newly created view.
@@ -107,7 +107,7 @@ const (
 	FlagLongPress                                     // If FlagLongPress is set this button/image etc handles long-press
 	FlagDisableAutofill                               // FlagDisableAutofill if set makes a text field not autofill
 	FlagIsSearchable                                  // This field can be used to search in tables etc
-	FlagIsUseInValue                                  // This value is set as a string to InNames before entire struct is created
+	FlagIsUseInValue                                  // ????This value is set as a string to InNames before entire struct is created
 	FlagAllowEmptyAsZero                              // This shows the empty value as nothing. So int 0 would be shown as "" in text
 	FlagZeroIsBig                                     // If set, a zero value is considered big, currenlty used in sorting
 	FlagIsForZDebugOnly                               // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
