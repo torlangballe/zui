@@ -428,7 +428,7 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 	_, shown := v.TimeToXInHorEventView(now)
 	// zlog.Info("SetBlockDuration Pre:", x, shown, t, v.BlockDuration)
 	var t, start time.Time
-	if shown {
+	if shown && v.LockedTime.IsZero() {
 		t = now
 		v.BlockDuration = d
 		start = v.calcTimePosToShowTime(t) //.Add(time.Second * 3)
@@ -1147,6 +1147,7 @@ func (v *HorEventsView) HandlePan(blockIndex float64) {
 	if !v.startupGotoTime.IsZero() {
 		t := v.startupGotoTime
 		v.startupGotoTime = time.Time{} // let's clear this before calling goto
+		zlog.Info("GOT New Time", t)
 		v.GotoTime(t)
 		return
 	}
