@@ -48,8 +48,8 @@ type HorEventsView struct {
 	OddLaneColor              zgeo.Color
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
-	MakeLaneActionIconFunc    func(laneID int64) zview.View
-	MakeLaneRowActionIconFunc func(laneID int64, rowID int64) zview.View
+	MakeLaneActionIconFunc    func(laneID int64) *zimageview.ImageView
+	MakeLaneRowActionIconFunc func(laneID int64, rowID int64) *zimageview.ImageView
 	LockChildViewFunc         func(child zview.View)
 
 	nowLine               *zcustom.CustomView
@@ -922,32 +922,41 @@ func (v *HorEventsView) createLanes() {
 	var y float64
 	for i, lane := range v.lanes {
 		title := makeTextTitle(lane.Name, 2, lane.TextColor)
+		titleSize, _ := title.CalculatedSize(v.Rect().Size)
 		zslice.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
-		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth.Min+2, lane.y+v.timeAxisHeight)).Free = true
+		titlePos := zgeo.PosD(v.GutterWidth.Min+2, lane.y+v.timeAxisHeight)
+		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, titlePos.Size()).Free = true
 		if v.MakeLaneActionIconFunc != nil {
-			view := v.MakeLaneActionIconFunc(lane.ID)
-			view.Native().SetInteractive(true)
-			zslice.Add(&v.lanes[i].overlayViews, view)
-			v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(20, y+2+v.timeAxisHeight)).Free = true
+			icon := v.MakeLaneActionIconFunc(lane.ID)
+			icon.SetInteractive(true)
+			zslice.Add(&v.lanes[i].overlayViews, icon.View)
+			iconPos := titlePos //.PlusX(-2)
+			iconPos.X -= icon.FitSize().W
+			titleSize.W += icon.FitSize().W + 8
+			v.horInfinite.VertOverlay.Add(icon, zgeo.TopLeft, iconPos.Size()).Free = true
 		}
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
 			y = r.y
 			rowTitle := makeTextTitle(r.Name, 0, zgeo.ColorLightGray) // lane.TextColor.Mixed(zgeo.ColorBlue, 0.3))
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
-			ty := r.y + v.timeAxisHeight
-			if j == 0 {
-				ty += laneTitleHeight
+			rowTitlePos := titlePos
+			rowTitlePos.Y = r.y + v.timeAxisHeight
+			if j == 0 && r.Height < 35 {
+				rowTitlePos.X += titleSize.W
+			} else {
+				rowTitlePos.Y += laneTitleHeight
 			}
+			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, rowTitlePos.Size()).Free = true
 			if v.MakeLaneRowActionIconFunc != nil {
-				view := v.MakeLaneRowActionIconFunc(lane.ID, r.ID)
-				view.Native().SetZIndex(99999)
-				view.Native().SetInteractive(true)
-				zslice.Add(&v.lanes[i].overlayViews, view)
-				v.horInfinite.VertOverlay.Add(view, zgeo.TopLeft, zgeo.SizeD(24, ty)).Free = true
+				icon := v.MakeLaneRowActionIconFunc(lane.ID, r.ID)
+				icon.SetZIndex(99999)
+				icon.SetInteractive(true)
+				zslice.Add(&v.lanes[i].overlayViews, icon.View)
+				iconPos := rowTitlePos.PlusX(-16)
+				v.horInfinite.VertOverlay.Add(icon, zgeo.TopLeft, iconPos.Size()).Free = true
 			}
-			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, zgeo.SizeD(v.GutterWidth.Min+4, ty)).Free = true
 			h := r.Height
 			if j == len(lane.Rows)-1 {
 				h += dividerHeight
