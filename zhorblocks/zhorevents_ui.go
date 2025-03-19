@@ -943,7 +943,7 @@ func (v *HorEventsView) createLanes() {
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
-			if j == 0 && r.Height < 35 {
+			if j == 0 {
 				rowTitlePos.X += titleSize.W
 			} else {
 				rowTitlePos.Y += laneTitleHeight
@@ -1156,7 +1156,7 @@ func (v *HorEventsView) HandlePan(blockIndex float64) {
 	if !v.startupGotoTime.IsZero() {
 		t := v.startupGotoTime
 		v.startupGotoTime = time.Time{} // let's clear this before calling goto
-		zlog.Info("GOT New Time", t)
+		// zlog.Info("GOT New Time", t)
 		v.GotoTime(t)
 		return
 	}
