@@ -479,31 +479,34 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 		return
 	}
 	v.updatingBlock = true
-	bestDiff := math.MaxInt
+	bestDiff := math.MaxFloat64
 	var bestIndex int
 	var bestTime time.Time
+	midTime := v.currentTime
+	midTime = midTime.Add(time.Hour * 14)
+	// zlog.Info("Mid:", v.currentTime, midTime)
 	secs := min(5, max(1, ztime.DurSeconds(v.BlockDuration)/30))
-	ci := v.horInfinite.CurrentIndex()
+	// ci := v.horInfinite.CurrentIndex()
 	for bi, t := range v.updateBlocks {
 		if ztime.Since(t) < secs {
-			continue
+			continue // have a pause before update
 		}
 		startOfBlock := v.IndexToTime(float64(bi))
-		if time.Since(startOfBlock) < 0 {
-			continue
-		}
-		diff := zint.Abs(bi - ci)
+		diff := math.Abs(ztime.DurSeconds(startOfBlock.Sub(midTime)))
+		// zlog.Info("updateCurrentBlockView1:", bi, diff, midTime)
 		if diff < bestDiff {
 			bestDiff = diff
 			bestIndex = bi
 			bestTime = t
 		}
 	}
-	if bestDiff == math.MaxInt {
+
+	if bestDiff == math.MaxFloat64 {
 		v.updatingBlock = false
 		return
 	}
 	v.updateBlockView(bestIndex, bestTime.IsZero())
+	zlog.Info("updateCurrentBlockViews. Best:", bestIndex, v.horInfinite.CurrentIndex(), v.currentTime)
 	ni := v.TimeToBlockIndex(time.Now())
 	v.horInfinite.SetMaxIndex(ni + 1)
 }
