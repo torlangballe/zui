@@ -42,23 +42,15 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	vert := !f.Vertical.Bool()
 	v := &FieldSliceView{}
 	v.data = slicePtr
-	v.Init(v, vert, f.FieldName)
-	v.field = f
-	v.ParentFV = fv
-	v.params = fv.params
-	v.currentIndex = -1
-	v.params.Field.MergeInField(f)
 	rt := reflect.ValueOf(slicePtr)
 	if rt.Kind() == reflect.Pointer {
 		rt = rt.Elem()
 	}
-	var isInterface bool
 	if rt.Len() == 0 {
 		rt = zslice.MakeAnElementOfSliceRValType(rt)
 	} else {
 		rt = rt.Index(0)
 		if rt.Kind() == reflect.Interface {
-			isInterface = true
 			rt = reflect.ValueOf(rt.Interface())
 
 		}
@@ -69,12 +61,15 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	v.isCompositeItems = (kind == reflect.Struct || kind == reflect.Slice)
 	if !v.isCompositeItems {
 		v.params.Field.ClearFlag(FlagIsLabelize)
-		vert = !vert
+		vert = false
 	}
-	if isInterface {
-		vert = true
-	}
-	// zlog.Info("NewSliceView:", len, v.isCompositeItems, kind, v.params.Field.HasFlag(FlagIsLabelize))
+	v.Init(v, vert, f.FieldName)
+	v.field = f
+	v.ParentFV = fv
+	v.params = fv.params
+	v.params.Field.MergeInField(f)
+	v.currentIndex = -1
+	// zlog.Info("NewSliceView:", v.isCompositeItems, vert, kind)
 	v.build(f.IsStatic())
 	return v
 }
