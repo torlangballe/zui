@@ -35,25 +35,50 @@ type FieldSliceView struct {
 	currentIndex       int
 	stack              *zcontainer.StackView
 	storeKey           string
-	isStructItems      bool
+	isCompositeItems   bool
 }
 
 func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	vert := !f.Vertical.Bool()
 	v := &FieldSliceView{}
-	sliceRval := reflect.ValueOf(slicePtr).Elem()
-	v.isStructItems = (sliceRval.Type().Elem().Kind() == reflect.Struct)
-	if !v.isStructItems {
-		vert = !vert
-	}
-	v.Init(v, vert, f.FieldName)
 	v.data = slicePtr
+	v.Init(v, vert, f.FieldName)
 	v.field = f
 	v.ParentFV = fv
 	v.params = fv.params
 	v.currentIndex = -1
 	v.params.Field.MergeInField(f)
-	v.build(false)
+	rt := reflect.ValueOf(slicePtr)
+	if rt.Kind() == reflect.Pointer {
+		rt = rt.Elem()
+	}
+	var isInterface bool
+	len := rt.Len()
+	if rt.Len() == 0 {
+		rt = zslice.MakeAnElementOfSliceRValType(rt)
+		zlog.Info("Zero:", rt.Kind(), rt.Interface())
+	} else {
+		rt = rt.Index(0)
+		if rt.Kind() == reflect.Interface {
+			isInterface = true
+			rt = reflect.ValueOf(rt.Interface())
+
+		}
+		zlog.Info("NFV:", rt.Kind(), rt.Interface())
+	}
+	kind := rt.Kind()
+
+	// _, isDict := slice.Rval.
+	v.isCompositeItems = (kind == reflect.Struct || kind == reflect.Slice)
+	if !v.isCompositeItems {
+		v.params.Field.ClearFlag(FlagIsLabelize)
+		vert = !vert
+	}
+	if isInterface {
+		vert = true
+	}
+	// zlog.Info("NewSliceView:", len, v.isCompositeItems, kind, v.params.Field.HasFlag(FlagIsLabelize))
+	v.build(f.IsStatic())
 	return v
 }
 
@@ -61,8 +86,11 @@ func (v *FieldSliceView) build(addItems bool) {
 	var header *zcontainer.StackView
 	var index int
 	// zlog.Info("FieldSliceView build:", v.Hierarchy(), v.data != nil, reflect.ValueOf(v.data).Kind())
-	sliceRval := reflect.ValueOf(v.data).Elem()
 
+	sliceRval := reflect.ValueOf(v.data)
+	if sliceRval.Kind() == reflect.Pointer {
+		sliceRval = sliceRval.Elem()
+	}
 	if v.field.Flags&FlagHasFrame != 0 {
 		var title string
 		if v.field.Flags&FlagFrameIsTitled != 0 {
@@ -175,7 +203,8 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		collapse = false
 	}
 	var add zview.View
-	if v.isStructItems {
+
+	if v.isCompositeItems {
 		id := strconv.Itoa(i)
 		copyParams := v.params
 		// copyParams.Labelize = false
@@ -203,18 +232,17 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 			// v.callEditedAction() // we return false below instead
 			return false
 		})
+		itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	} else {
-		special, skip := v.createSpecialView(rval, v.field)
-		if !skip {
-			setter, _ := special.(zview.AnyValueSetter)
-			if setter != nil {
-				setter.SetValueWithAny(rval.Interface())
-			}
-			add = special
+		simple := v.buildItem(v.field, rval, -1, zgeo.CenterLeft, zgeo.Size{}, false)
+		simple.SetObjectName(fmt.Sprintf("%s.%d", v.ObjectName(), i))
+		setter, _ := simple.(zview.AnyValueSetter)
+		if setter != nil {
+			setter.SetValueWithAny(rval.Interface())
 		}
+		add = simple
 	}
 	zlog.Assert(add != nil)
-	itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	if v.field.Flags&FlagGroupSingle == 0 && !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		deleteButton := makeButton("minus", "red")
 		itemStack.Add(deleteButton, zgeo.CenterRight, zgeo.SizeD(3, 0))
@@ -290,7 +318,7 @@ func (v *FieldSliceView) selectItem(i int) {
 }
 
 func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
-	// zlog.Info("FieldSliceView.UpdateSlice", v.Hierarchy()) //, zlog.CallingStackString())
+	// zlog.Info("FieldSliceView.UpdateSlice", v.Hierarchy(), reflect.TypeOf(slicePtr))
 	var focusedPath string
 	focused := v.GetFocusedChildView(false)
 	if focused != nil {

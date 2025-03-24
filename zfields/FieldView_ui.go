@@ -629,7 +629,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 	var mf Field
 	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
 	mf.FieldName = key
-	mf.Alignment = zgeo.CenterLeft
+	mf.Alignment = zgeo.CenterLeft | zgeo.HorExpand
 	lkey := strings.ToLower(key)
 	for _, suf := range []string{"bps", "bits/s", "b/s", "bits/sec"} {
 		if strings.HasSuffix(lkey, suf) {
@@ -639,6 +639,9 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 	}
 	if f.HasFlag(FlagToClipboard) {
 		mf.SetFlag(FlagToClipboard)
+	}
+	if f.HasFlag(FlagIsFixed) {
+		mf.SetFlag(FlagIsFixed)
 	}
 	mf.MaxWidth = 600
 	if fixed {
@@ -654,13 +657,23 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		} else {
 			mf.Wrap = ztextinfo.WrapTailTruncate.String()
 		}
+		// zlog.Info("Row:", mf.Name, mval.Kind(), mval.Elem().Kind())
+		if mval.Kind() == reflect.Interface {
+			mval = mval.Elem()
+			// if mval.Kind() == reflect.Slice && !mval.CanAddr() {
+			// 	clone := zslice.NewCopy(mval.Interface())
+			// 	mval = reflect.ValueOf(clone)
+			// 	zlog.Info("SliceType:", mval.Type(), mval.Kind())
+			// }
+		}
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		if f.IsStatic() {
 			view.Native().SetUsable(true)
-			is, _ := view.(zview.InteractiveSetter)
+			setter, _ := view.(zview.InteractiveSetter)
 			_, isLabel := view.(*zlabel.Label)
-			if is != nil && !isLabel {
-				is.SetInteractive(false)
+			_, isStack := view.(zcontainer.ChildrenOwner)
+			if setter != nil && !isLabel && !isStack {
+				setter.SetInteractive(false)
 			}
 		}
 		return view, mf
@@ -932,7 +945,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 				}
 			}
 			if !changed {
-				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil)
+				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil, sv.Kind() == reflect.Ptr, sv.CanAddr())
 				// zlog.Fatal("Not CHANGED!", ap.Field.FN())
 			}
 		}
@@ -1759,7 +1772,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 			params := v.params
 			params.Field.MergeInField(f)
-			view = v.NewSliceView(rval.Addr().Interface(), f)
+			// zlog.Info("NewSlice", f.Name, rval.Type(), rval.Kind(), f.Flags, zdebug.CallingStackString())
+			if rval.Kind() != reflect.Pointer && rval.CanAddr() {
+				rval = rval.Addr()
+			}
+			view = v.NewSliceView(rval.Interface(), f)
 
 		case zreflect.KindTime:
 			columns := f.Columns
@@ -1909,8 +1926,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.VertCenter
 		}
-		// zlog.Info("FV Labelzie:", f.Name, a)
 		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, a, desc)
+		cell.Alignment |= zgeo.HorShrink
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
