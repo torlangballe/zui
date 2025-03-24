@@ -69,7 +69,7 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	v.params = fv.params
 	v.params.Field.MergeInField(f)
 	v.currentIndex = -1
-	// zlog.Info("NewSliceView:", v.isCompositeItems, vert, kind)
+	zlog.Info("NewSliceView:", v.isCompositeItems, vert, kind)
 	v.build(f.IsStatic())
 	return v
 }

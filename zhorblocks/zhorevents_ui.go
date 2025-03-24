@@ -506,7 +506,6 @@ func (v *HorEventsView) updateCurrentBlockViews() {
 		return
 	}
 	v.updateBlockView(bestIndex, bestTime.IsZero())
-	zlog.Info("updateCurrentBlockViews. Best:", bestIndex, v.horInfinite.CurrentIndex(), v.currentTime)
 	ni := v.TimeToBlockIndex(time.Now())
 	v.horInfinite.SetMaxIndex(ni + 1)
 }
