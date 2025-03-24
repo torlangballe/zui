@@ -948,8 +948,6 @@ func (v *HorEventsView) createLanes() {
 			rowTitlePos.Y = r.y + v.timeAxisHeight
 			if j == 0 {
 				rowTitlePos.X += titleSize.W
-			} else {
-				rowTitlePos.Y += laneTitleHeight
 			}
 			v.horInfinite.VertOverlay.Add(rowTitle, zgeo.TopLeft, rowTitlePos.Size()).Free = true
 			if v.MakeLaneRowActionIconFunc != nil {
@@ -972,6 +970,7 @@ func (v *HorEventsView) createLanes() {
 				zslice.Add(&v.lanes[i].Rows[j].overlayViews, bgView.View)
 				v.horInfinite.VertOverlay.Add(bgView, zgeo.TopLeft, zgeo.SizeD(0, r.y-1+v.timeAxisHeight)).Free = true
 			}
+			rowTitlePos.Y += laneTitleHeight
 			y = r.y + h
 			// zlog.Info("SetLaneRowY:", lane.Name, r.Name, r.Height, y)
 		}
