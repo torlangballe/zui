@@ -53,10 +53,8 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 		rt = rt.Elem()
 	}
 	var isInterface bool
-	len := rt.Len()
 	if rt.Len() == 0 {
 		rt = zslice.MakeAnElementOfSliceRValType(rt)
-		zlog.Info("Zero:", rt.Kind(), rt.Interface())
 	} else {
 		rt = rt.Index(0)
 		if rt.Kind() == reflect.Interface {
@@ -64,7 +62,6 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 			rt = reflect.ValueOf(rt.Interface())
 
 		}
-		zlog.Info("NFV:", rt.Kind(), rt.Interface())
 	}
 	kind := rt.Kind()
 
