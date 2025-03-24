@@ -91,9 +91,6 @@ func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 			spacing = v.GridVerticalSpace
 		}
 		s, max = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
-		// if v.ObjectName() == "zheader" {
-		// 	zlog.Info("sv.CalculatedSize:", s, max)
-		// }
 		zfloat.Maximize(&s.W, ws) // why for W only?
 	}
 	ms := v.Margin().Size.Negative()
@@ -157,9 +154,6 @@ func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
 
 func (v *StackView) arrangeChildrenInGrid() {
 	rect := v.LocalRect().Plus(v.margin)
-	// if v.ObjectName() == "License" {
-	// 	zlog.Info("arrangeChildrenInGrid:", v.ObjectName(), rect)
-	// }
 	row, heights := v.getGridLayoutRow(rect.Size)
 	j := 0
 	r := rect
