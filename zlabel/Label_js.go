@@ -96,12 +96,12 @@ func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
 	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
 	style := v.JSStyle()
 	v.wrap = wrap
-	if wrap == ztextinfo.WrapTailTruncate {
+	if wrap == ztextinfo.WrapTailTruncate && v.maxLines == 1 {
 		style.Set("textOverflow", "ellipsis")
+		// style.Set("whiteSpace", "nowrap")
 	}
-	style.Set("display", "inline-block")
-	style.Set("overflow", "hidden")
-	style.Set("whiteSpace", "nowrap")
+	// style.Set("display", "inline-block")
+	// style.Set("overflow", "hidden")
 }
 
 func (v *Label) SetMaxLines(max int) {
@@ -119,6 +119,9 @@ func (v *Label) SetMaxLines(max int) {
 		style.Set("text-overflow", "initial")
 		style.Set("whiteSpace", "pre-wrap")
 		style.Set("overflow", "hidden")
+	}
+	if v.wrap == ztextinfo.WrapTailTruncate && max == 1 {
+		style.Set("textOverflow", "ellipsis")
 	}
 	// v.SetStyleForAllPlatforms("line-clamp", fmt.Sprint(max))
 }

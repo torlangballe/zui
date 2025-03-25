@@ -657,7 +657,6 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		} else {
 			mf.Wrap = ztextinfo.WrapTailTruncate.String()
 		}
-		// zlog.Info("Row:", mf.Name, mval.Kind(), mval.Elem().Kind())
 		if mval.Kind() == reflect.Interface {
 			mval = mval.Elem()
 			// if mval.Kind() == reflect.Slice && !mval.CanAddr() {
