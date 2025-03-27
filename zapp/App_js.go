@@ -84,9 +84,6 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	DownloadPathPrefix = url.String()
 	zwidgets.DocumentationPathPrefix = DownloadPathPrefix + "doc/"
 	path, args = MainArgs()
-	if zbool.FromString(args["zdebug"], false) {
-		zui.DebugMode = true
-	}
 	if zbool.FromString(args["ztest"], false) {
 		zdebug.IsInTests = true // for testing gui
 	}

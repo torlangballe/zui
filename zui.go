@@ -4,7 +4,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-var DebugMode bool
 var DebugOwnerMode bool // OwnerMode allows the software's developer to edit manuals and more from gui.
 
 func IsRelease() bool {
