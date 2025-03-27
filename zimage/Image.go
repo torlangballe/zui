@@ -520,3 +520,27 @@ func GoImageCropped(img image.Image, crop zgeo.Rect, copy bool) (image.Image, er
 	ni := imaging.Crop(img, r)
 	return ni, nil
 }
+
+func GoImagesDiffAreaRatio(a, b image.Image, pixelDiffPercent float64, doAlpha bool) float64 {
+	w := a.Bounds().Dx()
+	h := a.Bounds().Dy()
+	if w != b.Bounds().Dx() || h != b.Bounds().Dy() {
+		return 0
+	}
+	area := w * h
+	var count int
+	intDiff := int(pixelDiffPercent*0xFFFF) / 100
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			ar, ag, ab, aa := a.At(x, y).RGBA()
+			br, bg, bb, ba := b.At(x, y).RGBA()
+			if zint.Abs(int(ar)-int(br)) > intDiff || zint.Abs(int(ag)-int(bg)) > intDiff || zint.Abs(int(ab)-int(bb)) > intDiff {
+				count++
+			}
+			if doAlpha && zint.Abs(int(aa)-int(ba)) > intDiff {
+				count++
+			}
+		}
+	}
+	return float64(count) / float64(area)
+}
