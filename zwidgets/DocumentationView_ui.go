@@ -14,7 +14,6 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -131,6 +130,9 @@ func DocumentationViewPresent(path string, modal bool) error {
 	if !zhttp.StringStartsWithHTTPX(path) {
 		path = DocumentationPathPrefix + path
 	}
+	if zui.DebugOwnerMode {
+		path += "?zdev=1"
+	}
 	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
 	attr := zpresent.AttributesNew()
@@ -144,7 +146,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 		if win == nil {
 			return
 		}
-		zlog.Info("SetCookie", DocumentationCookieMap)
+		// zlog.Info("SetCookie", path, DocumentationCookieMap)
 		v.WebView.SetCookies(DocumentationCookieMap)
 		v.WebView.SetURL(path)
 	}
