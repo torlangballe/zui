@@ -197,6 +197,7 @@ type Field struct {
 	MaxText              string            // Text to replace a "maximum" value with set with "allowempty" tag.
 	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String()
 	Default              string            // Default value for field. May be numbers or strings.
+	Ask                  string            // If present, buttons etc show a Yes dialog with this before triggering
 }
 
 const (
@@ -688,6 +689,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			}
 		case "button":
 			f.Flags |= FlagIsButton | FlagPress
+		case "ask":
+			f.Ask = val
 		case "enable":
 			f.LocalEnable = val
 		case "disable":

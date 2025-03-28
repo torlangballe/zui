@@ -1008,7 +1008,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	}
 	if f.RPCCall != "" {
 		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-			go func() {
+			maybeAskBeforeAction(f, func() {
 				var reply string
 				a := reflect.ValueOf(fv.data).Elem().Interface()
 				err := zrpc.MainClient.Call(f.RPCCall, a, &reply)
@@ -1018,10 +1018,22 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 				if reply != "" {
 					zalert.Show(reply)
 				}
-			}()
+			})
 		})
 	}
 	return button
+}
+
+func maybeAskBeforeAction(f *Field, action func()) {
+	if f.Ask == "" {
+		go action()
+		return
+	}
+	zalert.Ask(f.Ask, func(ok bool) {
+		if ok {
+			go action()
+		}
+	})
 }
 
 func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
@@ -1450,8 +1462,10 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		return iv
 	}
 	iv.SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
-		ap := ActionPack{Field: f, Action: PressedAction, RVal: reflect.ValueOf(f.FieldName), View: &iv.View}
-		v.callTriggerHandler(ap)
+		maybeAskBeforeAction(f, func() {
+			ap := ActionPack{Field: f, Action: PressedAction, RVal: reflect.ValueOf(f.FieldName), View: &iv.View}
+			v.callTriggerHandler(ap)
+		})
 	})
 	return iv
 }
@@ -1837,12 +1851,16 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		} else {
 			if f.Flags&FlagPress != 0 {
 				view.Native().SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
-					callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view})
+					maybeAskBeforeAction(f, func() {
+						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view})
+					})
 				})
 			}
 			if f.Flags&FlagLongPress != 0 {
 				view.Native().SetLongPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
-					callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view})
+					maybeAskBeforeAction(f, func() {
+						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view})
+					})
 				})
 			}
 		}
