@@ -208,9 +208,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			if i >= len(v.filteredSlice) {
 				return ""
 			}
-			if i < 5 && v.Grid.ObjectName() == "alarms-GridListView" {
-				zlog.Info("Cell2:", i, v.filteredSlice[i])
-			}
 			return GetIDForItem(&v.filteredSlice[i])
 		}
 		var count int
