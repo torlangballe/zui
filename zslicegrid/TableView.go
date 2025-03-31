@@ -26,7 +26,7 @@ import (
 // TableView is a SliceGridView which creates rows from structs using the zfields package.
 // See zfields for details on how to tag struct fields with `zui:"xxx"` for styling.
 // if the AddHeader option is set, it adds header on top using zheader.HeaderView.
-type TableView[S zstr.StrIDer] struct {
+type TableView[S any] struct {
 	SliceGridView[S]
 	Header                     *zheader.HeaderView // Optional header based on S struct
 	ColumnMargin               float64             // Margin between columns

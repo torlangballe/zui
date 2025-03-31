@@ -7,6 +7,7 @@ package zslicegrid
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -38,7 +39,7 @@ type ChildrenOwner interface {
 
 // SliceGridView creates a GridListView for a slice of any struct.
 //
-// The struct must confirm to zstr.StrIDer, returning a unique string id for each item.
+// The struct must confirm to zstr.StrIDer, or contain a Field called ID that is a string or in64 id for each row.
 // It has options to add a bar on top, and add edit and delete buttons.
 //
 // Editing will actually open multiple cells in a dialog with zfields.PresentEditOrViewStructSlice then call StoreChangedItemsFunc.
@@ -47,7 +48,7 @@ type ChildrenOwner interface {
 // If its struct type confirms to ChildrenOwner (has GetChildren()), it will show child-slices
 // in a hierarchy, setting the GridListViews hierarchy HierarchyLevelFunc, and calculating cell-count,
 // id-at-index etc based on open branch toggles.
-type SliceGridView[S zstr.StrIDer] struct {
+type SliceGridView[S any] struct {
 	zcontainer.StackView
 	Grid                       *zgridlist.GridListView
 	Bar                        *zcontainer.StackView
@@ -64,12 +65,13 @@ type SliceGridView[S zstr.StrIDer] struct {
 	DeleteItemsFunc            func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
 	HandleShortCutInRowFunc    func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
 	CallDeleteItemFunc         func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
-	slicePtr                   *[]S
-	filteredSlice              []S
-	options                    OptionType
-	laidOut                    bool
 	CurrentLowerCaseSearchText string
 	FilterSkipCache            map[string]bool
+
+	slicePtr      *[]S
+	filteredSlice []S
+	options       OptionType
+	laidOut       bool
 
 	SearchField *ztext.SearchField
 	ActionMenu  *zmenu.MenuedOwner
@@ -106,7 +108,7 @@ const (
 )
 
 // NewView creates a new SliceGridView using v.Init()
-func NewView[S zstr.StrIDer](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
+func NewView[S any](slice *[]S, storeName string, options OptionType) (sv *SliceGridView[S]) {
 	v := &SliceGridView[S]{}
 	v.Init(v, slice, storeName, options)
 	return v
@@ -206,7 +208,10 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			if i >= len(v.filteredSlice) {
 				return ""
 			}
-			return v.filteredSlice[i].GetStrID()
+			if i < 5 && v.Grid.ObjectName() == "alarms-GridListView" {
+				zlog.Info("Cell2:", i, v.filteredSlice[i])
+			}
+			return GetIDForItem(&v.filteredSlice[i])
 		}
 		var count int
 		return v.getIDForIndex(&v.filteredSlice, i, &count)
@@ -303,7 +308,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		for i, item := range items {
 			// if true { //len(*v.slicePtr) <= i || zreflect.HashAnyToInt64(item, "") != zreflect.HashAnyToInt64((*v.slicePtr)[i], "") {
 			wg.Add(1)
-			v.Grid.SetDirtyRow(item.GetStrID())
+			v.Grid.SetDirtyRow(GetIDForItem(&item))
 			go func(i int, item S) {
 				err := v.StoreChangedItemFunc(item, i == len(items)-1)
 				if err == nil {
@@ -347,6 +352,30 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	return
 }
 
+func GetIDForItem[S any](item *S) string {
+	var a any
+	a = item
+	g, _ := a.(zstr.StrIDer)
+	if g != nil {
+		return g.GetStrID()
+	}
+	zlog.Fatal("Not a StrIDer!!!")
+	var sid string
+	zreflect.ForEachField(item, zreflect.FlattenIfAnonymous, func(each zreflect.FieldInfo) bool {
+		if each.StructField.Name == "ID" {
+			if each.StructField.Type.Kind() == reflect.String {
+				sid = reflect.ValueOf(item).Elem().Field(each.FieldIndex).String()
+				return false
+			}
+			sid = fmt.Sprint(reflect.ValueOf(item).Elem().Field(each.FieldIndex).Interface())
+			return false
+		}
+		return true
+	})
+	zlog.Assert(sid != "", *item)
+	return sid
+}
+
 func (v *SliceGridView[S]) handleLayoutButton(value string) {
 	if v.Grid == nil {
 		return
@@ -381,13 +410,13 @@ func (v *SliceGridView[S]) insertItemsIntoASlice(items []S, slicePtr *[]S) int {
 		v.Grid.DirtyIDs = map[string]bool{}
 	}
 	for _, item := range items {
-		isid := item.GetStrID()
+		isid := GetIDForItem(&item)
 		if v != nil {
 			delete(v.FilterSkipCache, isid)
 			v.Grid.DirtyIDs[isid] = true
 		}
 		for i, s := range *slicePtr {
-			if s.GetStrID() == isid {
+			if GetIDForItem(&s) == isid {
 				found = true
 				// fmt.Printf("edited: %+v %v %d\n", (*v.slicePtr)[i], item, i)
 				(*slicePtr)[i] = item
@@ -404,7 +433,7 @@ func (v *SliceGridView[S]) insertItemsIntoASlice(items []S, slicePtr *[]S) int {
 
 func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
 	for _, s := range items {
-		v.Grid.SetDirtyRow(s.GetStrID())
+		v.Grid.SetDirtyRow(GetIDForItem(&s))
 	}
 	added = v.insertItemsIntoASlice(items, v.slicePtr)
 	v.doFilterAndSort(*v.slicePtr)
@@ -413,7 +442,7 @@ func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
 
 func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
 	for i := 0; i < len(*v.slicePtr); i++ {
-		id := (*v.slicePtr)[i].GetStrID()
+		id := GetIDForItem(&(*v.slicePtr)[i])
 		delete(v.FilterSkipCache, id)
 		if zstr.StringsContain(ids, id) {
 			zslice.RemoveAt(v.slicePtr, i)
@@ -428,7 +457,7 @@ func (v *SliceGridView[S]) getIDForIndex(slice *[]S, index int, count *int) stri
 		// if index != -1 {
 		// 	zlog.Info("getIDForIndex", index, i, s)
 		// }
-		id := s.GetStrID()
+		id := GetIDForItem(&s)
 		if index == *count {
 			return id
 		}
@@ -461,7 +490,7 @@ func (v *SliceGridView[S]) countHierarcy(slice []S) int {
 
 func (v *SliceGridView[S]) structForID(slice *[]S, id string) *S {
 	for i, s := range *slice {
-		sid := s.GetStrID()
+		sid := GetIDForItem(&s)
 		if id == sid {
 			return &(*slice)[i]
 		}
@@ -492,7 +521,7 @@ func (v *SliceGridView[S]) doFilter(slice []S) (selectedAfter []string) {
 		var skipCount, keepCount int
 		for _, s := range slice {
 			// zlog.Info("doFilter", v.Hierarchy(), len(slice), len(v.filteredSlice), v.FilterFunc(s))
-			sid := s.GetStrID()
+			sid := GetIDForItem(&s)
 			skip, got := v.FilterSkipCache[sid]
 			if !got {
 				skip = !v.FilterFunc(s)
@@ -536,7 +565,7 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 	// v.Grid.UpdateCell = v.UpdateCell
 }
 
-func UpdateRows[S zstr.StrIDer](rows []S, onGrid any, orSlice *[]S) {
+func UpdateRows[S any](rows []S, onGrid any, orSlice *[]S) {
 	sgv, _ := onGrid.(*SliceGridView[S])
 	// zlog.Info("UpdateRows:", len(rows), onGrid != nil, len(*orSlice))
 	if sgv == nil {
@@ -560,7 +589,7 @@ func (v *SliceGridView[S]) UpdateSlice(s []S, arrange bool) {
 		update = (len(s) != len(*v.slicePtr) || zreflect.HashAnyToInt64(s, "") != zreflect.HashAnyToInt64(*v.slicePtr, ""))
 	}
 	for _, si := range s {
-		sid := si.GetStrID()
+		sid := GetIDForItem(&si)
 		v.Grid.SetDirtyRow(sid)
 		delete(v.FilterSkipCache, sid)
 	}
@@ -578,7 +607,7 @@ func (v *SliceGridView[S]) UpdateSlice(s []S, arrange bool) {
 func (v *SliceGridView[S]) getItemsFromIDs(ids []string) []S {
 	var items []S
 	for i := 0; i < len(*v.slicePtr); i++ {
-		sid := (*v.slicePtr)[i].GetStrID()
+		sid := GetIDForItem(&(*v.slicePtr)[i])
 		if zstr.StringsContain(ids, sid) {
 			items = append(items, (*v.slicePtr)[i])
 		}
@@ -649,7 +678,7 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 		if selectAfterEditing {
 			var ids []string
 			for _, n := range ns {
-				ids = append(ids, n.GetStrID())
+				ids = append(ids, GetIDForItem(&n))
 			}
 			v.Grid.SelectCells(ids, true, true)
 		}
@@ -708,7 +737,7 @@ func (v *SliceGridView[S]) DeleteItemsAsk(ids []string) {
 func (v *SliceGridView[S]) getHierarchy(slice *[]S, level int, id string) (hlevel int, leaf, got bool) {
 	for i, s := range *slice {
 		children := v.getChildren(&v.filteredSlice, i)
-		sid := s.GetStrID()
+		sid := GetIDForItem(&s)
 		kids := (v.Grid.OpenBranches[sid] && len(*children) > 0)
 		zlog.Info("getHier:", id, sid, level, kids, len(*children))
 		if id == sid {
