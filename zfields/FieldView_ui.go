@@ -566,11 +566,15 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 
 	case zreflect.KindInt, zreflect.KindFloat:
 		var dur time.Duration
-		valStr, dur = getTextFromNumberishItem(rval, f)
+		var tip string
+		valStr, tip, dur = getTextFromNumberishItem(rval, f)
 		v.setText(f, valStr, foundView)
 		label, _ := foundView.(*zlabel.Label)
 		if label != nil {
 			updateOldDuration(label, dur, f)
+			if tip != "" {
+				label.SetToolTip(tip)
+			}
 		}
 
 	case zreflect.KindString, zreflect.KindFunc: // why KindFunc???
@@ -742,6 +746,9 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 	var outView zview.View
 	// params := v.params
 	params.triggerHandlers = zmap.EmptyOf(params.triggerHandlers)
+	if f.IsStatic() {
+		params.AllStatic = true
+	}
 	stackFV := fieldViewNew(f.FieldName+".FV", true, rval.Interface(), params, zgeo.Size{}, parent)
 	outView = stackFV
 	stackFV.GridVerticalSpace = math.Max(6, spacing)
@@ -1186,20 +1193,20 @@ func getTimeString(rval reflect.Value, f *Field) string {
 	return str
 }
 
-func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Duration) {
+func getTextFromNumberishItem(rval reflect.Value, f *Field) (text, tip string, dur time.Duration) {
 	if f.Flags&FlagAllowEmptyAsZero != 0 {
 		if rval.IsZero() {
-			return f.ZeroText, 0
+			return f.ZeroText, "", 0
 		}
 	}
 	stringer, got := rval.Interface().(UIStringer)
 	if got {
-		return stringer.ZUIString(), 0
+		return stringer.ZUIString(), "", 0
 	}
 	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	isDurTime := zkind == zreflect.KindTime && f.Flags&FlagIsDuration != 0
 	if zkind == zreflect.KindTime && !isDurTime {
-		return getTimeString(rval, f), 0
+		return getTimeString(rval, f), "", 0
 	}
 	if isDurTime || f.PackageName == "time" && rval.Type().Name() == "Duration" {
 		var dur time.Duration
@@ -1216,7 +1223,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 			str = ztime.GetDurationAsHMSString(dur, f.HasFlag(FlagHasHours), f.HasFlag(FlagHasMinutes), f.HasFlag(FlagHasSeconds), f.FractionDecimals)
 		}
 		// zlog.Info("DurTime", dur, str, f.HasFlag(FlagHasHours))
-		return str, dur
+		return str, "", dur
 	}
 	format := f.Format
 	significant := f.FractionDecimals
@@ -1224,23 +1231,24 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 	//TODO: Handle float
 	b, err := zint.GetAny(rval.Interface())
 	if err != nil {
-		return fmt.Sprint(rval.Interface()), 0
+		return fmt.Sprint(rval.Interface()), "", 0
 	}
 	if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-		return f.ZeroText, 0
+		return f.ZeroText, "", 0
 	}
 	if f.MaxText != "" && b == math.MaxInt64 {
-		return f.MaxText, 0
+		return f.MaxText, "", 0
 	}
+	tip = fmt.Sprint(b)
 	switch format {
 	case MemoryFormat:
-		return zwords.GetMemoryString(b, "", significant), 0
+		return zwords.GetMemoryString(b, "", significant), tip, 0
 	case StorageFormat:
-		return zwords.GetStorageSizeString(b, "", significant), 0
+		return zwords.GetStorageSizeString(b, "", significant), tip, 0
 	case BPSFormat:
-		return zwords.GetBandwidthString(b, "", significant), 0
+		return zwords.GetBandwidthString(b, "", significant), tip, 0
 	case HumanFormat:
-		return zint.MakeHumanFriendly(b), 0
+		return zint.MakeHumanFriendly(b), "", 0
 	}
 	if format == "" {
 		format = "%v"
@@ -1248,21 +1256,20 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (string, time.Durati
 	ni, err := zint.FromAnyInt(rval.Interface())
 	// zlog.Info("FInt:", ni, err, f.FieldName, rval.Interface())
 	if err == nil {
-		return strconv.FormatInt(ni, 10), 0
+		return strconv.FormatInt(ni, 10), "", 0
 	}
 	n, err := zfloat.GetAny(rval.Interface())
 	if err == nil {
-		return zwords.NiceFloat(n, significant), 0
+		return zwords.NiceFloat(n, significant), "", 0
 	}
-	return fmt.Sprintf(format, rval.Interface()), 0
+	return fmt.Sprintf(format, rval.Interface()), "", 0
 }
 
 func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
-	var str string
+	str, tip, _ := getTextFromNumberishItem(rval, f)
 	if f.IsStatic() || v.params.AllStatic {
 		var label *zlabel.Label
 		surl := f.Path
-		str, _ := getTextFromNumberishItem(rval, f)
 		// zlog.Info("LABEL1:", f.FieldName, f.Rows, str)
 		if f.HasFlag(FlagIsDocumentation) {
 			label = zlabel.New(str)
@@ -1287,6 +1294,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			} else {
 				label = zlabel.New(str)
 			}
+		}
+		if tip != "" {
+			label.SetToolTip(tip)
 		}
 		if f.Wrap == ztextinfo.WrapTailTruncate.String() {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
@@ -1361,6 +1371,9 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	tv.SetValueHandler("zfields.Filter", func(edited bool) {
 		v.fieldHandleValueChanged(f, edited, tv.View)
 	})
+	if tip != "" {
+		tv.SetToolTip(tip)
+	}
 	return tv
 }
 
@@ -1701,6 +1714,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 			params := v.params
 			params.Field.MergeInField(f)
+			if f.IsStatic() {
+				params.AllStatic = true
+			}
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
 			view, _ = makeFrameIfFlag(f, fieldView, "")
 			if view == nil {
@@ -1819,8 +1835,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 						timer := ztimer.StartAt(ztime.OnThisHour(time.Now(), 1), func() {
 							repeater := ztimer.RepeatForever(60*60, func() {
 								nlabel := view.(*zlabel.Label)
-								str, _ := getTextFromNumberishItem(rval, f)
+								str, tip, _ := getTextFromNumberishItem(rval, f)
 								nlabel.SetText(str)
+								if tip != "" {
+									nlabel.SetToolTip(tip)
+								}
 							})
 							v.AddOnRemoveFunc(repeater.Stop)
 						})
@@ -1921,7 +1940,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	var lstack *zcontainer.StackView
-	if v.params.Field.HasFlag(FlagIsLabelize) {
+	isLabelize := (v.params.Field.HasFlag(FlagIsLabelize) && !f.HasFlag(FlagDontLabelize))
+	if isLabelize {
 		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
@@ -1967,8 +1987,11 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if v.params.BuildChildrenHidden {
 		view.Show(false)
 	}
-	if !v.params.Field.HasFlag(FlagIsLabelize) {
+	if !isLabelize {
 		cell.View = view
+		if v.params.Field.HasFlag(FlagIsLabelize) {
+			cell.NotInGrid = true
+		}
 		v.AddCell(*cell, -1)
 	}
 	return view

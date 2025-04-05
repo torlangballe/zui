@@ -132,6 +132,7 @@ const (
 	FlagIsOpen                                        // This field can open the struct if in a table or something else that handles it.
 	FlagIsOpener                                      // Flag IsOpen, and is set to a view or edit icon by table or something.
 	FlagShowIfExtraSpace                              // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
+	FlagDontLabelize                                  // When we are labelizing items, use full space with no label for this one.
 )
 
 const (
@@ -258,6 +259,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"HasDefault":               uint64(FlagHasDefault),
 	"IsOpen":                   uint64(FlagIsOpen),
 	"FlagIsOpener":             uint64(FlagIsOpener),
+	"FlagDontLabelize":         uint64(FlagDontLabelize),
 }
 
 var (
@@ -282,6 +284,10 @@ func (f Field) IsStatic() bool {
 
 func (f Field) HasFlag(flag FlagType) bool {
 	return f.Flags&flag != 0
+}
+
+func (f Field) HasAllFlags(flags FlagType) bool {
+	return f.Flags&flags != flags
 }
 
 func (f *Field) SetFlag(flag FlagType) {
@@ -687,6 +693,8 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 			if val == "withdesc" {
 				f.Flags |= FlagLabelizeWithDescriptions
 			}
+		case "unlabled":
+			f.SetFlag(FlagDontLabelize)
 		case "button":
 			f.Flags |= FlagIsButton | FlagPress
 		case "ask":
