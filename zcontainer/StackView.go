@@ -55,14 +55,18 @@ func (v *StackView) Spacing() float64 {
 func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 	var s zgeo.Size
 	row, heights := v.getGridLayoutRow(total)
-	// zlog.Info("calculateGridSize grid1:", v.Hierarchy(), row)
 	vertical := false
 	sl, _ := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), vertical, v.spacing, row)
+	// zlog.Info("calculateGridSize grid1:", v.Hierarchy(), row, sl)
 	s.W = sl.W
 	j := 0
 	for _, vc := range v.Cells {
 		if vc.Collapsed || vc.View == nil || vc.Free {
 			continue
+		}
+		if vc.NotInGrid {
+			notS, _ := vc.View.CalculatedSize(total)
+			zfloat.Maximize(&s.W, notS.W)
 		}
 		s.H += vc.Margin.Size.H
 		s.H += v.GridVerticalSpace
