@@ -126,9 +126,10 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 		zfloat.Minimize(&s.W, v.maxCalculateWidth)
 	}
 	if len(widths) == 1 {
-		// zlog.Info("LABELINC:", v.Text(), ti.Font.Size/5)
-		//!!!! s.H += ti.Font.Size / 5
 	}
+	// if strings.HasPrefix(v.ObjectName(), "https://ew-ottcdn") {
+	// 	zlog.Info("Label.CalculatedSize:", s, v.MaxLines(), v.Text(), ti.Font.Size/5)
+	// }
 	s = s.Ceil()
 	s.W += 1
 	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
