@@ -275,6 +275,11 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 		return zgeo.Rect{Pos: ti.Rect.Pos, Size: zgeo.SizeNull}
 	}
 	canvas.SetColor(ti.Color)
+	if !tin.Rect.IsNull() {
+		canvas.PushState()
+		path := zgeo.PathNewRect(tin.Rect, zgeo.SizeNull)
+		canvas.ClipPath(path, false)
+	}
 	if ti.Type == Stroke {
 		w = ti.StrokeWidth
 	}
@@ -309,6 +314,9 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 		}
 		canvas.DrawTextInPos(zgeo.PosD(x, y), s, w)
 		y += h
+	}
+	if !tin.Rect.IsNull() {
+		canvas.PopState()
 	}
 	return ra
 }
