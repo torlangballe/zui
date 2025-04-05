@@ -75,6 +75,7 @@ type MenuedOItem struct {
 	IsDisabled  bool
 	IsAction    bool
 	IsSeparator bool
+	IsDebug     bool
 	Function    func()
 }
 
@@ -484,13 +485,13 @@ func (o *MenuedOwner) popup() {
 	list.CurrentHoverID = "0"
 	list.BorderColor = zgeo.Color{}
 	list.DeselectOnEscape = false
-	// list.CellColorFunc = func(id string) zgeo.Color {
-	// 	i := list.IndexOfID(id)
-	// 	if o.items[i].IsSeparator {
-	// 		return zgeo.ColorLightGray
-	// 	}
-	// 	return o.BGColor
-	// }
+	list.CellColorFunc = func(id string) zgeo.Color {
+		i := list.IndexOfID(id)
+		if o.items[i].IsDebug {
+			return zstyle.DebugBackgroundColor
+		}
+		return list.CellColor
+	}
 	stack.Add(list, zgeo.TopLeft|zgeo.Expand)
 	lineHeight := o.Font.LineHeight() + 6
 	list.CellHeightFunc = func(id string) float64 {
