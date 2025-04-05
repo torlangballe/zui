@@ -4,6 +4,7 @@ package zview
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -62,7 +63,8 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 		if mo != nil {
 			str += fmt.Sprint(" vmarg: ", mo.Margin())
 		}
-		// zlog.Info("NativeView:", v.Hierarchy(), zlog.Pointer(view), reflect.TypeOf(view), v.Rect(), str)
+		s, max := v.View.CalculatedSize(zgeo.SizeBoth(9999))
+		zlog.Info("NativeView:", v.Hierarchy(), zlog.Pointer(view), reflect.TypeOf(view), v.Rect(), str, "calc:", s, max)
 	})
 }
 
