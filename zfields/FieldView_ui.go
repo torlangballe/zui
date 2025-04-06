@@ -204,7 +204,8 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 	zreflect.ForEachField(v.data, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 		// zlog.Info("FVNew:", each.StructField)
 		f := EmptyField
-		if !f.SetFromReflectValue(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
+
+		if !f.SetFromReflectValueAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
 			return true
 		}
 		if params.ImmediateEdit {
@@ -630,16 +631,32 @@ func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name stri
 }
 
 func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Value, fixed bool, f *Field) (zview.View, Field) { // v *FieldView,
+	var typeName, tag string
 	var mf Field
+
+	zstr.SplitN(key, "|", &key, &tag)
+	if zstr.SplitN(key, ":", &key, &typeName) {
+		zreflect.SetReflectValForRegisteredType(&mval, typeName)
+
+	}
+	if tag != "" {
+		var pkg, field string
+		zstr.SplitN(typeName, ".", &pkg, field)
+		mf.SetFromReflectValue(mval, tag, field, pkg, 0, FieldParameters{})
+	}
+	if mf.Format == "" {
+		lkey := strings.ToLower(key)
+		for _, suf := range []string{"bps", "bits/s", "b/s", "bits/sec"} {
+			if strings.HasSuffix(lkey, suf) {
+				mf.Format = HumanFormat
+				break
+			}
+		}
+	}
 	mf.Name = zlocale.FirstToTitleCaseExcept(key, "")
 	mf.FieldName = key
-	mf.Alignment = zgeo.CenterLeft | zgeo.HorExpand
-	lkey := strings.ToLower(key)
-	for _, suf := range []string{"bps", "bits/s", "b/s", "bits/sec"} {
-		if strings.HasSuffix(lkey, suf) {
-			mf.Format = HumanFormat
-			break
-		}
+	if mf.Alignment == zgeo.AlignmentNone {
+		mf.Alignment = zgeo.CenterLeft | zgeo.HorExpand
 	}
 	if f.HasFlag(FlagToClipboard) {
 		mf.SetFlag(FlagToClipboard)
@@ -663,11 +680,6 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		}
 		if mval.Kind() == reflect.Interface {
 			mval = mval.Elem()
-			// if mval.Kind() == reflect.Slice && !mval.CanAddr() {
-			// 	clone := zslice.NewCopy(mval.Interface())
-			// 	mval = reflect.ValueOf(clone)
-			// 	zlog.Info("SliceType:", mval.Type(), mval.Kind())
-			// }
 		}
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		if f.IsStatic() {

@@ -327,12 +327,20 @@ func GetZUITags(tagMap map[string][]string) (keyVals []zstr.KeyValue, skip bool)
 	return zreflect.GetZTags(tagMap, "zui")
 }
 
-func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
+func (f *Field) SetFromReflectValueAndStructField(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
+	tagPart, got := sf.Tag.Lookup("zui")
+	if !got {
+		return false
+	}
+	return f.SetFromReflectValue(rval, tagPart, sf.Name, sf.PkgPath, index, params)
+}
+
+func (f *Field) SetFromReflectValue(rval reflect.Value, zuiTagPart string, sfName, sfPkg string, index int, params FieldParameters) bool {
 	f.Index = index
 	//	f.ID = fieldNameToID(sf.Name)
 	fTypeName := rval.Type().Name()
 	f.Kind = zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
-	f.FieldName = sf.Name
+	f.FieldName = sfName
 	// zlog.Info("FIELD:", f.FieldName)
 	f.Alignment = zgeo.AlignmentNone
 	f.UpdateSecs = -1
@@ -344,13 +352,17 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
-	keyVals, skip := GetZUITags(zreflect.GetTagAsMap(string(sf.Tag)))
+
+	keyVals, skip := zreflect.TagKeyValuesFromString(zuiTagPart)
+
+	// keyVals, skip := GetZUITags(zreflect.GetTagAsMap(string(sf.Tag)))
+
 	if skip {
 		return false
 	}
-	for _, kv := range keyVals {
-		key := kv.Key
-		val := kv.Value
+	for key, val := range keyVals {
+		// key := kv.Key
+		// val := kv.Value
 		barParts := strings.Split(val, "|")
 		if key == "IN" {
 			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
@@ -746,7 +758,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 	if f.MaxWidth != 0 {
 		zfloat.Minimize(&f.MinWidth, f.MaxWidth)
 	}
-	name := zstr.PadCamelCase(sf.Name, " ")
+	name := zstr.PadCamelCase(sfName, " ")
 	name = zlocale.FirstToTitleCaseExcept(name, "")
 	if f.Name == "" {
 		f.Name = name
@@ -767,7 +779,7 @@ func (f *Field) SetFromReflectValue(rval reflect.Value, sf reflect.StructField, 
 		}
 	case zreflect.KindInt:
 		if fTypeName != "BoolInd" {
-			if sf.PkgPath == "time" && fTypeName == "Duration" {
+			if sfPkg == "time" && fTypeName == "Duration" {
 				if f.Flags&flagTimeFlags == 0 { // if no flags set, set default h,m,s
 					f.Flags |= flagTimeFlags
 				}
@@ -1120,7 +1132,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 	if len(fields) == 0 {
 		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 			f := EmptyField
-			if !f.SetFromReflectValue(each.ReflectValue, each.StructField, each.FieldIndex, params) {
+			if !f.SetFromReflectValueAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
 			fields = append(fields, f)
@@ -1179,7 +1191,7 @@ func FindIndicatorOfSlice(slicePtr any) string {
 func FindIndicatorRValOfStruct(structPtr any) (rval reflect.Value, field *Field, got bool) {
 	// fmt.Printf("CreateSliceGroupOwner %s %+v\n", grouper.GetGroupBase().Hierarchy(), s)
 	ForEachField(structPtr, FieldParameters{}, nil, func(each FieldInfo) bool {
-		vals, _ := zreflect.GetTagValuesForKey(each.StructField.Tag, "zui")
+		vals, _ := zreflect.TagValuesForKey(each.StructField.Tag, "zui")
 		for _, part := range vals {
 			if part == "indicator" {
 				rval = each.ReflectValue
