@@ -133,6 +133,7 @@ const (
 	FlagIsOpener                                      // Flag IsOpen, and is set to a view or edit icon by table or something.
 	FlagShowIfExtraSpace                              // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
 	FlagDontLabelize                                  // When we are labelizing items, use full space with no label for this one.
+	FlagOmitZero                                      // Like for json, skip an item if it is zero, but only if static
 )
 
 const (
@@ -260,6 +261,7 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsOpen":                   uint64(FlagIsOpen),
 	"FlagIsOpener":             uint64(FlagIsOpener),
 	"FlagDontLabelize":         uint64(FlagDontLabelize),
+	"FlagOmitZero":             uint64(FlagOmitZero),
 }
 
 var (
@@ -512,6 +514,8 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.SetFlag(FlagHasDefault)
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
+		case "omitzero":
+			f.Flags |= FlagOmitZero
 		case "zerotext":
 			f.ZeroText = val
 		case "maxtext":

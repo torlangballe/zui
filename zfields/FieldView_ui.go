@@ -1709,8 +1709,14 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// 	labelizeWidth = parentFV.params.LabelizeWidth
 	// }
 	exp := zgeo.AlignmentNone
-	if v.params.HideStatic && f.IsStatic() {
-		return nil
+
+	if f.IsStatic() {
+		if v.params.HideStatic {
+			return nil
+		}
+		if f.HasFlag(FlagOmitZero) && rval.IsZero() {
+			return nil
+		}
 	}
 	view, skip := v.createSpecialView(rval, f)
 	if skip {
@@ -1728,9 +1734,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			params.Field.MergeInField(f)
 			if f.IsStatic() {
 				params.AllStatic = true
-				if f.HasFlag(FlagAllowEmptyAsZero) && rval.IsZero() {
-					return nil
-				}
 			}
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
 			view, _ = makeFrameIfFlag(f, fieldView, "")
