@@ -327,15 +327,15 @@ func GetZUITags(tagMap map[string][]string) (keyVals []zstr.KeyValue, skip bool)
 	return zreflect.GetZTags(tagMap, "zui")
 }
 
-func (f *Field) SetFromReflectValueAndStructField(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
+func (f *Field) SetFromRValAndStructField(rval reflect.Value, sf reflect.StructField, index int, params FieldParameters) bool {
 	tagPart, got := sf.Tag.Lookup("zui")
 	if !got {
 		return false
 	}
-	return f.SetFromReflectValue(rval, tagPart, sf.Name, sf.PkgPath, index, params)
+	return f.SetFromRVal(rval, tagPart, sf.Name, sf.PkgPath, index, params)
 }
 
-func (f *Field) SetFromReflectValue(rval reflect.Value, zuiTagPart string, sfName, sfPkg string, index int, params FieldParameters) bool {
+func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg string, index int, params FieldParameters) bool {
 	f.Index = index
 	//	f.ID = fieldNameToID(sf.Name)
 	fTypeName := rval.Type().Name()
@@ -1132,7 +1132,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 	if len(fields) == 0 {
 		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
 			f := EmptyField
-			if !f.SetFromReflectValueAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
+			if !f.SetFromRValAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
 			fields = append(fields, f)

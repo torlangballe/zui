@@ -205,7 +205,7 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 		// zlog.Info("FVNew:", each.StructField)
 		f := EmptyField
 
-		if !f.SetFromReflectValueAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
+		if !f.SetFromRValAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params.FieldParameters) {
 			return true
 		}
 		if params.ImmediateEdit {
@@ -636,13 +636,13 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 
 	zstr.SplitN(key, "|", &key, &tag)
 	if zstr.SplitN(key, ":", &key, &typeName) {
-		zreflect.SetReflectValForRegisteredType(&mval, typeName)
+		zreflect.DefaultStructRegistrar.SetRValFromRegisteredType(&mval, typeName)
 
 	}
 	if tag != "" {
 		var pkg, field string
 		zstr.SplitN(typeName, ".", &pkg, field)
-		mf.SetFromReflectValue(mval, tag, field, pkg, 0, FieldParameters{})
+		mf.SetFromRVal(mval, tag, field, pkg, 0, FieldParameters{})
 	}
 	if mf.Format == "" {
 		lkey := strings.ToLower(key)
