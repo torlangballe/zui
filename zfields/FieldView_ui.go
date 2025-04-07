@@ -1728,6 +1728,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			params.Field.MergeInField(f)
 			if f.IsStatic() {
 				params.AllStatic = true
+				if f.HasFlag(FlagAllowEmptyAsZero) && rval.IsZero() {
+					return nil
+				}
 			}
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
 			view, _ = makeFrameIfFlag(f, fieldView, "")
