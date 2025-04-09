@@ -277,7 +277,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	canvas.SetColor(ti.Color)
 	if !tin.Rect.IsNull() {
 		canvas.PushState()
-		path := zgeo.PathNewRect(tin.Rect, zgeo.SizeNull)
+		path := zgeo.PathNewRect(tin.Rect.ExpandedD(1), zgeo.SizeNull)
 		canvas.ClipPath(path, false)
 	}
 	if ti.Type == Stroke {
