@@ -631,18 +631,18 @@ func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name stri
 }
 
 func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Value, fixed bool, f *Field) (zview.View, Field) { // v *FieldView,
-	var typeName, tag string
 	var mf Field
-
-	zstr.SplitN(key, "|", &key, &tag)
-	if zstr.SplitN(key, ":", &key, &typeName) {
-		zreflect.DefaultStructRegistrar.SetRValFromRegisteredType(&mval, typeName)
-
-	}
-	if tag != "" {
-		var pkg, field string
-		zstr.SplitN(typeName, ".", &pkg, field)
-		mf.SetFromRVal(mval, tag, field, pkg, 0, FieldParameters{})
+	var typeName string
+	key = zstr.HeadUntilWithRest(key, ":", &typeName)
+	if typeName != "" {
+		n, tag, err := zreflect.NewStructFromRegisteredTypeName(typeName, mval.Interface())
+		zlog.Info("zfields.RegField:", key, n, tag, err)
+		if err == nil {
+			mval = reflect.ValueOf(n)
+			var pkg, field string
+			zstr.SplitN(typeName, ".", &pkg, field)
+			mf.SetFromRVal(mval, tag, field, pkg, 0, FieldParameters{})
+		}
 	}
 	if mf.Format == "" {
 		lkey := strings.ToLower(key)
