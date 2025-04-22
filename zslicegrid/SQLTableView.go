@@ -74,7 +74,7 @@ func (v *SQLTableView[S]) Init(view zview.View, owner *SQLOwner[S], options Opti
 	v.TableView.Init(v, v.Owner.slicePage, "ztable."+v.Owner.TableName, options)
 	v.StoreChangedItemsFunc = v.Owner.PushRowsToServer
 	v.DeleteItemsFunc = v.deleteItems
-	if v.options&AddHeader != 0 {
+	if v.Options&AddHeader != 0 {
 		v.addActionButton()
 	}
 }
@@ -85,26 +85,26 @@ func (v *SQLTableView[S]) addActionButton() {
 		ids := v.Grid.SelectedIDs()
 		noItems := v.NameOfXItemsFunc(ids, true)
 		if len(ids) > 0 {
-			if v.options&AllowDelete != 0 {
+			if v.Options&AllowDelete != 0 {
 				idel := zmenu.MenuedSCFuncAction("Delete "+noItems+"…", zkeyboard.KeyBackspace, 0, func() {
-					v.handleDeleteKey(true)
+					v.HandleDeleteKey(true)
 				})
 				items = append(items, idel)
 			}
-			if v.options&AllowDuplicate != 0 {
+			if v.Options&AllowDuplicate != 0 {
 				idup := zmenu.MenuedSCFuncAction("Duplcate "+noItems, 'D', 0, func() {
 					v.doEdit(ids, true, true, true)
 				})
 				items = append(items, idup)
 			}
-			if v.options&AllowEdit != 0 {
+			if v.Options&AllowEdit != 0 {
 				iedit := zmenu.MenuedSCFuncAction("Edit "+noItems, ' ', 0, func() {
 					v.doEdit(ids, false, false, false)
 				})
 				items = append(items, iedit)
 			}
 		}
-		if v.options&AllowNew != 0 {
+		if v.Options&AllowNew != 0 {
 			inew := zmenu.MenuedSCFuncAction("New "+v.StructName, 'N', 0, func() {
 				var s S
 				zfields.CallStructInitializer(&s)

@@ -70,10 +70,10 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		return r
 	}
 	// zlog.Info("TABLE INIT:", v.Hierarchy(), v.Grid.CreateCellFunc != nil, zlog.Pointer(v.Grid))
-	if v.options&AddHeader != 0 {
+	if v.Options&AddHeader != 0 {
 		v.Header = zheader.NewView(v.ObjectName() + ".header")
 		index := 0
-		if v.options&AddBar != 0 && v.options&AddBarInHeader == 0 {
+		if v.Options&AddBar != 0 && v.Options&AddBarInHeader == 0 {
 			index = 1
 		}
 		v.SliceGridView.AddAdvanced(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand, zgeo.RectNull, zgeo.SizeNull, index, false)
@@ -162,7 +162,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			setupOpen = true
 			if each.Field.HasFlag(zfields.FlagIsOpener) {
 				var verb string
-				if v.options&AllowView != 0 {
+				if v.Options&AllowView != 0 {
 					each.Field.Size = zgeo.SizeD(16, 10)
 					each.Field.ImageFixedPath = "images/zcore/eye-dark-gray.png"
 					verb = "view"
@@ -182,12 +182,12 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 	if setupOpen {
 		v.FieldParameters.AddTrigger("*", zfields.PressedAction, func(ap zfields.ActionPack) bool {
 			if ap.Field.HasFlag(zfields.FlagIsOpen) {
-				v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.options&AllowView != 0, nil)
+				v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.Options&AllowView != 0, nil)
 			}
 			return true
 		})
 	}
-	if v.options&AddHeader != 0 {
+	if v.Options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			// zlog.Info("SORT TABLE:", v.Hierarchy())
 			zfields.SortSliceWithFields(s, v.fields, v.Header.SortOrder)
@@ -201,7 +201,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
-		if v.options&AddBarInHeader != 0 {
+		if v.Options&AddBarInHeader != 0 {
 			right := v.Header.RightColumn()
 			m := right.Margin()
 			m.Size.W += 1 // this is only done since we in particular place headers so right bezel is shown, but place one pixel too far to right on all other views. Should really fix the latter instead.
@@ -227,9 +227,9 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	s := v.StructForID(id)
 	view := v.createRowFromStruct(s, id)
 	view.Native().SetSelectable(false)
-	if v.options&(AllowEdit|AllowView) != 0 {
+	if v.Options&(AllowEdit|AllowView) != 0 {
 		view.Native().SetDoublePressedHandler(func() {
-			v.editOrViewItemIDs([]string{id}, false, v.options&AllowView != 0, nil)
+			v.editOrViewItemIDs([]string{id}, false, v.Options&AllowView != 0, nil)
 		})
 	}
 	return view

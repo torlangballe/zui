@@ -24,6 +24,7 @@ import (
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -67,10 +68,10 @@ type SliceGridView[S any] struct {
 	CallDeleteItemFunc         func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 	CurrentLowerCaseSearchText string
 	FilterSkipCache            map[string]bool
+	Options                    OptionType
 
 	slicePtr      *[]S
 	filteredSlice []S
-	options       OptionType
 	laidOut       bool
 
 	SearchField *ztext.SearchField
@@ -103,6 +104,7 @@ const (
 	AddDocumentationIcon                        // Adds a icon to press to show doc/name.md file where name is in init
 	AddHeader                                   // Adds a Header to the top of table. Currenty used by TableView
 	AddBarInHeader                              // Sets the bar inside the Header, in right-most column. Sets  AddHeader and AddBar
+	AddShortHelperArea                          // Adds an view where what you could have pressed to invoke shortcuts is shown
 	LastBaseOption
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
@@ -142,7 +144,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&(AddSearch|AddMenu|AddChangeLayout|AddDocumentationIcon|AddBarInHeader) != 0 {
 		options |= AddBar
 	}
-	v.options = options
+	v.Options = options
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.NoCalculatedMaxSize.W = true
@@ -189,6 +191,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		doc := zwidgets.DocumentationIconViewNew(storeName)
 		doc.SetZIndex(200)
 		v.Bar.Add(doc, zgeo.CenterRight, zgeo.SizeD(zstyle.DefaultRowRightMargin, 0))
+	}
+	if options&AddShortHelperArea != 0 {
+		scStack := zcontainer.StackViewHor("shortcut-stack")
+		zshortcuts.RegisterShortCutHelperAreaForWindow(zwindow.GetMain(), scStack)
+		v.Bar.Add(scStack, zgeo.CenterRight, zgeo.SizeD(zstyle.DefaultRowRightMargin, 0))
 	}
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
@@ -706,7 +713,7 @@ func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
 	v.EditItems(newItems, title, false, true, nil)
 }
 
-func (v *SliceGridView[S]) handleDeleteKey(ask bool) {
+func (v *SliceGridView[S]) HandleDeleteKey(ask bool) {
 	ids := v.Grid.SelectedIDsOrHoverID()
 	if len(ids) == 0 {
 		return
@@ -804,7 +811,7 @@ func addHierarchy(stack *zcontainer.StackView) {
 func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
-	if v.options&AllowNew != 0 && !forSingleCell {
+	if v.Options&AllowNew != 0 && !forSingleCell {
 		add := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, add)
 	}
@@ -817,26 +824,26 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 		}
 		if len(ids) > 0 {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			if v.options&AllowDuplicate != 0 {
+			if v.Options&AllowDuplicate != 0 {
 				del := zmenu.MenuedSCFuncAction("Duplicate "+nitems+"…", 'D', 0, func() {
 					v.duplicateItems(nitems, ids)
 				})
 				items = append(items, del)
 			}
-			if v.options&AllowDelete != 0 {
+			if v.Options&AllowDelete != 0 {
 				del := zmenu.MenuedSCFuncAction("Delete "+nitems+"…", zkeyboard.KeyBackspace, 0, func() {
-					v.handleDeleteKey(true)
+					v.HandleDeleteKey(true)
 				})
 				items = append(items, del)
 			}
-			if v.options&AllowEdit != 0 {
+			if v.Options&AllowEdit != 0 {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, ' ', 0, func() {
 					// zlog.Info("SGV.Edit")
 					v.EditItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}
-			if v.options&AllowView != 0 {
+			if v.Options&AllowView != 0 {
 				edit := zmenu.MenuedSCFuncAction("View "+nitems, ' ', 0, func() {
 					v.ViewItemIDs(ids, false, nil)
 				})
