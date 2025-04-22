@@ -564,9 +564,14 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 		rowBGView, _ := rv.(*zcontainer.ContainerView)
 		zlog.Assert(row != nil, "FindLR:", laneID, rowType, len(v.lanes))
 		posMarg := zgeo.SizeD(float64(x), 0)
-		mg := childView.(zview.MinSizeGettable) // let's let this panic if not available, not sure what to do yet if so.
-		size := mg.MinSize()
-		size.H--
+		// mg := childView.(zview.MinSizeGettable) // let's let this panic if not available, not sure what to do yet if so.
+		// size := mg.MinSize()
+		// posMarg.H += cellBox.H - size.H
+		// if cellBox.H-size.H != 0 {
+		// 	zlog.Info("PosMarg:", cellBox.H-size.H, )
+		// }
+		// size.H--
+
 		cellRect := blockView.LocalRect().Align(cellBox, zgeo.TopLeft, posMarg)
 		y := int(posMarg.H)
 		pos := zgeo.PosI(x, y)
