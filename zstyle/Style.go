@@ -67,11 +67,26 @@ func useInvertedIfInvalid(c, alt zgeo.Color) zgeo.Color {
 	if c.Valid {
 		return c
 	}
-	return alt.OpacityInverted()
+	return alt.BrightnessInverted()
 }
 
 func Col(l, d zgeo.Color) zgeo.Color {
-	if Dark {
+	return ColFor(l, d, Dark)
+}
+
+func Col1(c zgeo.Color) zgeo.Color {
+	return Col1For(c, Dark)
+}
+
+func Col1For(c zgeo.Color, dark bool) zgeo.Color {
+	if dark {
+		return c.BrightnessInverted()
+	}
+	return c
+}
+
+func ColFor(l, d zgeo.Color, dark bool) zgeo.Color {
+	if dark {
 		return useInvertedIfInvalid(d, l)
 	}
 	// zlog.Error(zlog.StackAdjust(1), "ColLight:", l)
@@ -85,7 +100,22 @@ func ColF(l, d zgeo.Color) func() zgeo.Color {
 }
 
 func Gray(l, d float32) zgeo.Color {
-	return Col(zgeo.ColorNewGray(l, 1), zgeo.ColorNewGray(d, 1))
+	return GrayFor(l, d, Dark)
+}
+
+func Gray1(g float32) zgeo.Color {
+	return Gray1For(g, Dark)
+}
+
+func Gray1For(g float32, dark bool) zgeo.Color {
+	if dark {
+		g = 1 - g
+	}
+	return zgeo.ColorNewGray(g, 1)
+}
+
+func GrayFor(l, d float32, dark bool) zgeo.Color {
+	return ColFor(zgeo.ColorNewGray(l, 1), zgeo.ColorNewGray(d, 1), dark)
 }
 
 func GrayF(l, d float32) func() zgeo.Color {
