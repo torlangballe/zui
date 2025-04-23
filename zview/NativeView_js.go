@@ -402,7 +402,10 @@ func (v *NativeView) IsUsable() bool {
 	return !dis.Bool()
 }
 
-func (v *NativeView) SetUsable(usable bool) {
+func (v *NativeView) SetUsable(usable bool) bool {
+	if usable == v.IsUsable() {
+		return false
+	}
 	zbits.ChangeBit((*int64)(&v.Flags), ViewUsableFlag, usable)
 	v.setUsableAttributes(usable)
 	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
@@ -410,6 +413,7 @@ func (v *NativeView) SetUsable(usable bool) {
 		view.Native().setUsableAttributes(usable)
 		return true
 	})
+	return true
 }
 
 func (v *NativeView) setUsableAttributes(usable bool) {

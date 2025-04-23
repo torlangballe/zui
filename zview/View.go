@@ -15,7 +15,7 @@ type View interface {
 	CalculatedSize(total zgeo.Size) (s, max zgeo.Size)
 	SetObjectName(name string)
 	ObjectName() string
-	SetUsable(usable bool)
+	SetUsable(usable bool) bool
 	IsUsable() bool
 	SetColor(color zgeo.Color)   // Color is the main color of a view. If it is stroked and filled, it is fill color
 	SetBGColor(color zgeo.Color) // BGColor is all color in background of view, not just fill color

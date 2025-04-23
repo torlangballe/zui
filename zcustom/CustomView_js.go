@@ -67,9 +67,12 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 	v.isSetup = true
 }
 
-func (v *CustomView) SetUsable(usable bool) {
-	v.NativeView.SetUsable(usable)
-	v.Expose()
+func (v *CustomView) SetUsable(usable bool) bool {
+	if v.NativeView.SetUsable(usable) {
+		v.Expose()
+		return true
+	}
+	return false
 }
 
 func (v *CustomView) MC() {
