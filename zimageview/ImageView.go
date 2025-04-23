@@ -35,6 +35,7 @@ type ImageView struct {
 	CapInsetCorner     zgeo.Size
 	EmptyColor         zgeo.Color
 	TintColor          zgeo.Color
+	MixColor           zgeo.Color // Alpha is used to specify amount to mix, and used as 1
 	LoadedFunc         func(img *zimage.Image)
 }
 
@@ -214,6 +215,13 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		}
 		if col.Valid {
 			v.image.TintedWithColor(col, 1, func(ti *zimage.Image) { // we tint with 1 because we assume amount is in alpha of col
+				v.drawImage(canvas, ti, rect)
+			})
+		} else if v.MixColor.Valid {
+			col = v.MixColor
+			amount := col.Colors.A
+			col.Colors.A = 1
+			v.image.MixedWithColor(col, amount, func(ti *zimage.Image) { // we tint with 1 because we assume amount is in alpha of col
 				v.drawImage(canvas, ti, rect)
 			})
 		} else {

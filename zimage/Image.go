@@ -387,6 +387,17 @@ func (i *Image) TintedWithColor(color zgeo.Color, amount float32, got func(i *Im
 	FromGo(out, got)
 }
 
+func (i *Image) MixedWithColor(color zgeo.Color, amount float32, got func(i *Image)) {
+	gi := i.ToGo()
+	amount = float32(zfloat.Clamped(float64(amount), 0, 1))
+	out := image.NewRGBA(gi.Bounds())
+	i.ForPixels(func(x, y int, c zgeo.Color) {
+		n := c.Mixed(color, amount).GoColor()
+		out.Set(x, y, n)
+	})
+	FromGo(out, got)
+}
+
 type ImageGetter struct {
 	Path       string
 	Image      *Image
