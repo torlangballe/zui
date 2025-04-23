@@ -18,6 +18,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zshape"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -46,6 +47,7 @@ type HorEventsView struct {
 	MixOddBlocksColor         zgeo.Color // If Valid, is mixed a tiny bit with odd background block color to show borders
 	GutterWidth               zmath.RangeF64
 	OddLaneColor              zgeo.Color
+	IsDark                    bool
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
 	MakeLaneActionIconFunc    func(laneID int64) *zimageview.ImageView
@@ -117,6 +119,7 @@ type EventOptions struct {
 	ShowNowPole          bool
 	GutterWidth          zmath.RangeF64
 	TimeAxisHeight       float64
+	IsDark               bool
 	BGColor              zgeo.Color
 }
 
@@ -130,7 +133,9 @@ const (
 	OverlayBackgroundViewName = "OverlayBackgroundViewName"
 )
 
-var BestRowIDForCentering int64
+var (
+	BestRowIDForCentering int64
+)
 
 func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	if v == nil {
@@ -144,6 +149,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.GutterWidth = opts.GutterWidth
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
+	v.IsDark = opts.IsDark
 	v.zoomLevels = []zoomLevel{
 		zoomLevel{"24 Hours", time.Hour * 24},
 		zoomLevel{"1 Hour", time.Hour * 1},
@@ -187,7 +193,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.setStartTime(t)
 	v.SetSpacing(0)
 	v.Bar = zcontainer.StackViewHor("bar")
-	v.Bar.SetBGColor(zgeo.ColorNewGray(0.4, 1))
+	v.Bar.SetBGColor(zstyle.GrayFor(0.9, 0.4, v.IsDark))
 	v.Bar.SetMarginS(zgeo.SizeD(8, 3))
 	v.Bar.SetSpacing(8)
 	v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
@@ -220,7 +226,6 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 			path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 			canvas.DrawGradient(path, colors, rect.Min(), rect.TopRight(), nil)
 		})
-		// line.SetBGColor(zgeo.ColorNew(0, 1, 0, 0.5))
 		v.nowLine = line
 		v.Add(line, zgeo.AlignmentNone)
 	}
@@ -313,7 +318,6 @@ func (v *HorEventsView) makeMarkerPole() {
 	v.markerPole = zcustom.NewView("marker")
 	v.markerPole.SetMinSize(zgeo.SizeD(60, 40))
 	v.markerPole.SetZIndex(12000)
-	// v.markerPole.SetBGColor(zgeo.ColorBlue)
 	v.markerPole.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
 		x := v.markerPole.Rect().Size.W / 2
 		canvas.SetColor(zgeo.ColorGreen)
@@ -341,7 +345,6 @@ func (v *HorEventsView) makeSidePole(a zgeo.Alignment) *zcontainer.StackView {
 	}
 	pole.SetMinSize(zgeo.SizeD(w, 10))
 	pole.SetBGColor(v.BGColor().WithOpacity(0.8))
-	// pole.SetBGColor(zgeo.ColorBlue)
 	pole.SetPressedHandler("pole-click", 0, func() {
 		v.handlePolePress(false)
 	})
@@ -597,7 +600,6 @@ func (v *HorEventsView) updateBlockView(blockIndex int, isNew bool) {
 func defaultMakeBackgroundViewFunc(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView {
 	bg := zcontainer.New("")
 	bg.SetMinSize(size)
-	// bg.SetBGColor(zgeo.ColorBlue)
 	return bg
 }
 
@@ -622,14 +624,14 @@ func (v *HorEventsView) makeButtons() {
 			leftKey = zkeyboard.KeyMod{Key: zkeyboard.KeyLeftArrow, Modifier: pan.modifier}
 			rightKey = zkeyboard.KeyMod{Key: zkeyboard.KeyRightArrow, Modifier: pan.modifier}
 		}
-		stack := makeButtonPairInStack(int(pan.duration), "zcore/triangle-left-light-gray", "go back in time by "+pan.name, leftKey, "zcore/triangle-right-light-gray", "go forward in time by "+pan.name, rightKey, pan.name, 0, 0, 3, v.panPressed)
+		stack := makeButtonPairInStack(int(pan.duration), "zcore/triangle-left-light-gray", "go back in time by "+pan.name, leftKey, "zcore/triangle-right-light-gray", "go forward in time by "+pan.name, rightKey, pan.name, 0, 0, 3, v.IsDark, v.panPressed)
 		stack.SetCorner(3)
 		v.panDurations[i].stack = stack
 		v.Bar.Add(stack, zgeo.CenterLeft)
 	}
 	outKey := zkeyboard.KeyMod{Char: "-"}
 	inKey := zkeyboard.KeyMod{Char: "+"}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "filler", 4, 28, -1, v.zoomPressed)
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "filler", 4, 28, -1, v.IsDark, v.zoomPressed)
 	title, _ := v.zoomStack.FindViewWithName("title", true)
 	title.SetColor(zgeo.ColorOrange)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
@@ -696,13 +698,16 @@ func (v *HorEventsView) gotoNowScrollTime() {
 	v.GotoTime(t)
 }
 
-func makeImageView(pathStub string, shortCut zkeyboard.KeyMod, left bool, id int, tip string, pressed func(left bool, id int)) *imageView {
+func makeImageView(pathStub string, shortCut zkeyboard.KeyMod, left bool, id int, tip string, isDark bool, pressed func(left bool, id int)) *imageView {
 	v := &imageView{}
 	v.Init(v, true, nil, "images/"+pathStub+".png", zgeo.SizeBoth(20))
 	v.KeyboardShortcut = shortCut
 	v.left = left
 	v.pressed = pressed
 	v.id = id
+	if !isDark {
+		v.MixColor = zgeo.ColorBlack
+	}
 	v.SetToolTip(tip)
 	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.pressed(left, v.id)
@@ -710,12 +715,12 @@ func makeImageView(pathStub string, shortCut zkeyboard.KeyMod, left bool, id int
 	return v
 }
 
-func makeButtonPairInStack(id int, leftImageStub, leftTip string, leftKey zkeyboard.KeyMod, rightImageStub, rightTip string, rightKey zkeyboard.KeyMod, midTitle string, midFontInc, midMinWidth, modMarg float64, pressed func(left bool, id int)) *zcontainer.StackView {
+func makeButtonPairInStack(id int, leftImageStub, leftTip string, leftKey zkeyboard.KeyMod, rightImageStub, rightTip string, rightKey zkeyboard.KeyMod, midTitle string, midFontInc, midMinWidth, modMarg float64, isDark bool, pressed func(left bool, id int)) *zcontainer.StackView {
 	stack := zcontainer.StackViewHor(midTitle)
 	stack.SetMarginS(zgeo.SizeBoth(2))
 	stack.SetSpacing(0)
 
-	vleft := makeImageView(leftImageStub, leftKey, true, id, leftTip, pressed)
+	vleft := makeImageView(leftImageStub, leftKey, true, id, leftTip, isDark, pressed)
 	vleft.SetObjectName("left")
 	vleft.SetMarginS(zgeo.SizeBoth(2))
 	stack.Add(vleft, zgeo.CenterLeft)
@@ -724,11 +729,11 @@ func makeButtonPairInStack(id int, leftImageStub, leftTip string, leftKey zkeybo
 	label.SetObjectName("title")
 	label.SetTextAlignment(zgeo.Center)
 	label.SetMinWidth(midMinWidth)
-	label.SetColor(zgeo.ColorLightGray)
+	label.SetColor(zstyle.Gray1For(0.25, isDark))
 	label.SetFont(zgeo.FontNice(zgeo.FontDefaultSize+midFontInc, zgeo.FontStyleBold))
 	stack.Add(label, zgeo.CenterLeft, zgeo.SizeD(modMarg, 0))
 
-	vright := makeImageView(rightImageStub, rightKey, false, id, rightTip, pressed)
+	vright := makeImageView(rightImageStub, rightKey, false, id, rightTip, isDark, pressed)
 	vright.SetObjectName("right")
 	vright.SetMarginS(zgeo.SizeBoth(2))
 	stack.Add(vright, zgeo.CenterLeft)
@@ -928,7 +933,7 @@ func (v *HorEventsView) createLanes() {
 	bgWidth := v.ViewWidth //+ v.PoleWidth*2
 	var y float64
 	for i, lane := range v.lanes {
-		title := makeTextTitle(lane.Name, 2, lane.TextColor)
+		title := makeTextTitle(lane.Name, 2, lane.TextColor, v.IsDark)
 		titleSize, _ := title.CalculatedSize(v.Rect().Size)
 		zslice.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
@@ -946,7 +951,7 @@ func (v *HorEventsView) createLanes() {
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
 			y = r.y
-			rowTitle := makeTextTitle(r.Name, 0, zgeo.ColorLightGray) // lane.TextColor.Mixed(zgeo.ColorBlue, 0.3))
+			rowTitle := makeTextTitle(r.Name, 0, zstyle.GrayFor(0.25, 0.75, v.IsDark), v.IsDark)
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
@@ -996,15 +1001,15 @@ func (v *HorEventsView) SetRect(r zgeo.Rect) {
 	v.horInfinite.IgnoreScroll = false
 }
 
-func makeTextTitle(text string, fontAdd float64, col zgeo.Color) zview.View {
+func makeTextTitle(text string, fontAdd float64, col zgeo.Color, isDark bool) zview.View {
 	label := zlabel.New(text)
 	label.SetCorner(2)
 	if !col.Valid {
-		col = zgeo.ColorNewGray(0.9, 1)
+		col = zstyle.GrayFor(0, 0.9, isDark)
 	}
 	label.SetColor(col)
 	label.SetFont(zgeo.FontNice(14+fontAdd, zgeo.FontStyleBold))
-	label.OutsideDropStroke(3, zgeo.ColorBlack)
+	label.OutsideDropStroke(2, zstyle.Gray1For(1, isDark))
 	label.SetZIndex(5000)
 	return label
 }
@@ -1034,7 +1039,7 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 	axis.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
 		// zlog.Info("Axis draw:", blockIndex, rect, start, end)
 		beyond := true
-		dark := true
+		dark := v.IsDark
 		zdraw.DrawHorTimeAxis(canvas, rect, start, end, beyond, dark)
 	})
 	axis.ExposeIn(0.1)
