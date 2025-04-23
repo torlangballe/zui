@@ -50,10 +50,11 @@ type filesRedirector struct {
 var wwwFS embed.FS
 
 var (
-	AllWebFS           zfile.MultiFS
-	RequestRedirector  *filesRedirector
-	CanBrotlyFunc      func(req *http.Request) bool
-	HandleGUIErrorFunc func(ci *zrpc.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
+	AllWebFS                    zfile.MultiFS
+	RequestRedirector           *filesRedirector
+	InlineDocumentationHeaderMD string
+	CanBrotlyFunc               func(req *http.Request) bool
+	HandleGUIErrorFunc          func(ci *zrpc.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
 )
 
 func Init(executor *zrpc.Executor) {
@@ -222,7 +223,7 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 	m.Variables = GetDocumentationValues()
 	m.Dir = "www/doc/"
 	m.FileSystem = AllWebFS
-	// zlog.Info("makeMarkdownConverter fs:", m.FileSystem)
+	m.HeaderMD = InlineDocumentationHeaderMD + "\n"
 	return m
 }
 
