@@ -2110,14 +2110,24 @@ func (v *FieldView) parentsDataForMe() any {
 		return v.data
 	}
 	data := v.ParentFV.parentsDataForMe()
-	if v.ParentFV.sliceItemIndex != -1 {
-		zlog.Assert(v.ParentFV.params.Kind == zreflect.KindSlice, v.ParentFV.params.Kind, v.ParentFV.ObjectName())
+	if data == nil {
+		return v.data
+	}
+	dataKind := reflect.ValueOf(data).Kind()
+	if v.sliceItemIndex != -1 && dataKind == reflect.Slice {
 		ritem := reflect.ValueOf(data).Elem().Index(v.sliceItemIndex)
 		data = ritem.Addr().Interface()
 		return data
 	}
 	finfo := zreflect.FieldForIndex(data, FlattenIfAnonymousOrZUITag, v.params.Field.Index)
-	return finfo.ReflectValue.Addr().Interface()
+	if finfo.FieldIndex == -1 {
+		return v.data
+	}
+	rval := finfo.ReflectValue
+	if rval.CanAddr() {
+		rval = rval.Addr()
+	}
+	return rval.Interface()
 }
 
 func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Value, err error) {
