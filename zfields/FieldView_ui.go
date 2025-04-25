@@ -950,22 +950,22 @@ func callActionHandlerFunc(ap ActionPack) bool {
 	if !result {
 		var fieldAddress interface{}
 		if !direct {
-			changed := false
+			// changed := false
 			sv := reflect.ValueOf(ap.FieldView.data)
 			if sv.Kind() == reflect.Ptr || sv.CanAddr() {
 				// Here we run thru the possiblly new struct again, and find the item with same id as field
 				finfo, found := zreflect.FieldForName(ap.FieldView.data, FlattenIfAnonymousOrZUITag, ap.Field.FieldName)
 				if found {
-					changed = true
+					// changed = true
 					if finfo.ReflectValue.CanAddr() {
 						fieldAddress = finfo.ReflectValue.Addr().Interface()
 					}
 				}
 			}
-			if !changed {
-				zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil, sv.Kind() == reflect.Ptr, sv.CanAddr())
-				// zlog.Fatal("Not CHANGED!", ap.Field.FN())
-			}
+			// if !changed {
+			// 	zlog.Info("NOOT!!!", ap.Field.FN(), ap.Action, ap.FieldView.data != nil, sv.Kind() == reflect.Ptr, sv.CanAddr())
+			// 	// zlog.Fatal("Not CHANGED!", ap.Field.FN())
+			// }
 		}
 		aih, _ := ap.RVal.Interface().(ActionHandler)
 		if aih == nil && fieldAddress != nil {
