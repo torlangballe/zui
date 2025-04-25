@@ -10,6 +10,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -609,7 +610,7 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 }
 
 func (v *NativeView) RemoveFromParent(callRemoveFuncs bool) {
-	zlog.Assert(v.parent != nil, v.Hierarchy())
+	zlog.Assert(!zui.DebugOwnerMode || v.parent != nil, v.Hierarchy())
 	// zlog.Info("NV.RemoveFromParent:", v.Hierarchy())
 	v.parent.RemoveChild(v.View, callRemoveFuncs)
 	v.parent = nil
