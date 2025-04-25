@@ -54,22 +54,22 @@ type HorEventsView struct {
 	MakeLaneRowActionIconFunc func(laneID int64, rowID int64) *zimageview.ImageView
 	LockChildViewFunc         func(child zview.View)
 
-	nowLine               *zcustom.CustomView
-	lanes                 []Lane
-	horInfinite           *HorBlocksView
-	ViewWidth             float64
-	startTime             time.Time
-	currentTime           time.Time
-	zoomStack             *zcontainer.StackView
-	timeField             *ztext.TimeFieldView
-	rightPole             *zcontainer.StackView
-	leftPole              *zcontainer.StackView
-	nowButton             *zshape.ImageButtonView
-	GotoLockedButton      *zshape.ShapeView
-	zoomLevels            []zoomLevel
-	panDurations          []panDuration
-	panDuration           time.Duration
-	zoomIndex             int
+	nowLine          *zcustom.CustomView
+	lanes            []Lane
+	horInfinite      *HorBlocksView
+	ViewWidth        float64
+	startTime        time.Time
+	currentTime      time.Time
+	zoomStack        *zcontainer.StackView
+	timeField        *ztext.TimeFieldView
+	rightPole        *zcontainer.StackView
+	leftPole         *zcontainer.StackView
+	nowButton        *zshape.ImageButtonView
+	GotoLockedButton *zshape.ShapeView
+	zoomLevels       []zoomLevel
+	panDurations     []panDuration
+	panDuration      time.Duration
+	// zoomIndex             int
 	storeKey              string
 	currentNowBlockIndex  int
 	updateBlocks          map[int]time.Time
@@ -123,10 +123,33 @@ type EventOptions struct {
 	BGColor              zgeo.Color
 }
 
-const (
-	LockedItemStrokeWidth = 4.0
+type panDuration struct {
+	name     string
+	modifier zkeyboard.Modifier
+	duration time.Duration
+	stack    *zcontainer.StackView
+}
 
-	zoomIndexKey              = ".horblock.Events.zoom"
+type zoomLevel struct {
+	name     string
+	duration time.Duration
+}
+
+// type viewX struct {
+// 	view zview.View
+// 	x    int
+// }
+
+type imageView struct {
+	zimageview.ImageView
+	left    bool
+	pressed func(left bool, id int)
+	id      int
+}
+
+const (
+	LockedItemStrokeWidth     = 4.0
+	zoomDurationKey           = ".horblock.Events.zoomDur"
 	dividerHeight             = 2
 	widthRatioToNowLine       = 0.8
 	markerButtonTimesKey      = "MarkerButtonTimesKey"
@@ -164,26 +187,20 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		panDuration{"1m", zkeyboard.ModifierShift, time.Minute, nil},
 	}
 	blockDuration := opts.BlockDuration
-	v.zoomIndex = -1
 	v.currentNowBlockIndex = zint.Undefined
 	if blockDuration == 0 && zkeyvalue.DefaultStore != nil && opts.StoreKey != "" {
-		n, got := zkeyvalue.DefaultStore.GetInt(opts.StoreKey+zoomIndexKey, 0)
-		if got && n >= 0 && n < len(v.zoomLevels) {
-			v.zoomIndex = n
-			blockDuration = v.zoomLevels[n].duration
-		}
-	}
-	if v.zoomIndex == -1 {
-		for i, z := range v.zoomLevels {
-			if z.duration == blockDuration {
-				v.zoomIndex = i
-				break
+		n, got := zkeyvalue.DefaultStore.GetInt64(opts.StoreKey+zoomDurationKey, 0)
+		if got && n >= 0 {
+			dur := time.Duration(n)
+			for _, z := range v.zoomLevels {
+				if z.duration == dur {
+					blockDuration = dur
+				}
 			}
 		}
 	}
-	if v.zoomIndex == -1 {
-		v.zoomIndex = 1
-		blockDuration = v.zoomLevels[v.zoomIndex].duration
+	if blockDuration == 0 {
+		blockDuration = v.zoomLevels[0].duration
 	}
 	v.LastEventTimeForBlock = map[int]time.Time{}
 	v.updateBlocks = map[int]time.Time{}
@@ -426,23 +443,23 @@ func (v *HorEventsView) lockCenterView() zview.View {
 	return centerChild
 }
 
-func (v *HorEventsView) SetBlockDuration(d time.Duration) {
+func (v *HorEventsView) SetBlockDuration(d time.Duration, forceCurrent bool) {
 	now := time.Now()
 	_, shown := v.TimeToXInHorEventView(now)
 	// zlog.Info("SetBlockDuration Pre:", x, shown, t, v.BlockDuration)
 	var t, start time.Time
-	if shown && v.LockedTime.IsZero() {
+	if !forceCurrent && shown && v.LockedTime.IsZero() {
 		t = now
 		v.BlockDuration = d
 		start = v.calcTimePosToShowTime(t) //.Add(time.Second * 3)
 	} else {
-		if v.LockedTime.IsZero() && v.LockChildViewFunc != nil {
+		if !forceCurrent && v.LockedTime.IsZero() && v.LockChildViewFunc != nil {
 			lockChild := v.lockCenterView()
 			if lockChild != nil {
 				v.LockChildViewFunc(lockChild)
 				// zlog.Info("Child2Select:", lockChild.ObjectName(), blockIndex)
 				ztimer.StartIn(1, func() {
-					v.SetBlockDuration(d)
+					v.SetBlockDuration(d, false)
 					ztimer.StartIn(0.8, func() {
 						v.GotoLockedButton.Click("", false, zkeyboard.ModifierShift)
 					})
@@ -452,17 +469,23 @@ func (v *HorEventsView) SetBlockDuration(d time.Duration) {
 		}
 		if t.IsZero() {
 			t = v.LockedTime
-			if t.IsZero() {
-				t = v.currentTime.Add(v.BlockDuration / 2)
+			if !t.IsZero() {
+				t = t.Add(-d / 2)
+			} else {
+				t = v.currentTime // .Add(v.BlockDuration / 2)
 			}
 		}
-		t = t.Add(-d / 2)
 		ztime.Minimize(&t, now)
 		v.BlockDuration = d
 		start = t
 	}
 	v.setStartTime(start)
 	v.horInfinite.SetFloatingCurrentIndex(0)
+	v.UpdateWidgets()
+	// v.Bar.ArrangeChildren()
+	if v.storeKey != "" {
+		zkeyvalue.DefaultStore.SetInt64(int64(v.BlockDuration), v.storeKey+zoomDurationKey, true)
+	}
 	v.Updater.Update()
 }
 
@@ -747,30 +770,27 @@ func (v *HorEventsView) zoomPressed(left bool, id int) {
 	pressed = true
 	v.Bar.SetInteractive(false)
 	defer v.Bar.SetInteractive(true)
-	if left {
-		v.zoomIndex--
-	} else {
-		v.zoomIndex++
+	index := v.zoomIndex()
+	if left && index > 0 {
+		index--
+	} else if index < len(v.zoomLevels)-1 {
+		index++
 	}
-	dur := v.zoomLevels[v.zoomIndex].duration
+	dur := v.zoomLevels[index].duration
 	// zlog.Info("zoom:", dur, v.zoomIndex)
-	v.SetBlockDuration(dur)
-	v.UpdateWidgets()
-	// v.Bar.ArrangeChildren()
-	if v.storeKey != "" {
-		zkeyvalue.DefaultStore.SetInt(v.zoomIndex, v.storeKey+zoomIndexKey, true)
-	}
+	v.SetBlockDuration(dur, false)
 	v.Bar.ArrangeChildren()
 }
 
 func (v *HorEventsView) UpdateWidgets() {
 	leftZoom, _ := v.zoomStack.FindViewWithName("left", true)
-	leftZoom.SetUsable(v.zoomIndex > 0)
+	index := v.zoomIndex()
+	leftZoom.SetUsable(index > 0)
 
 	rightZoom, _ := v.zoomStack.FindViewWithName("right", true)
-	rightZoom.SetUsable(v.zoomIndex < len(v.zoomLevels)-1)
+	rightZoom.SetUsable(index < len(v.zoomLevels)-1)
 	title, _ := v.zoomStack.FindViewWithName("title", true)
-	str := v.zoomLevels[v.zoomIndex].name
+	str := v.zoomLevels[index].name
 	title.(*zlabel.Label).SetText(str)
 
 	for _, pd := range v.panDurations {
@@ -1255,26 +1275,38 @@ func (v *HorEventsView) KeepScrollingToShowAllRows() {
 	}
 }
 
-type panDuration struct {
-	name     string
-	modifier zkeyboard.Modifier
-	duration time.Duration
-	stack    *zcontainer.StackView
+func (v *HorEventsView) ZoomToFit(start, end time.Time) {
+	dur := end.Sub(start)
+	var zoomDur time.Duration
+	for _, z := range v.zoomLevels {
+		if dur <= z.duration {
+			zoomDur = z.duration // biggest are first in v.zoomLevels, so will find the smallest fit
+		}
+	}
+	diff := zoomDur - dur
+	v.currentTime = start.Add(-diff / 2)
+	v.SetBlockDuration(zoomDur, true)
+	ztimer.StartIn(1, func() {
+		xs, _ := v.TimeToXInHorEventView(start)
+		xe, _ := v.TimeToXInHorEventView(end)
+		// zlog.Info("ZoomToFit:", start, end, "->", start, zoomDur, "block:", xs, xe)
+		block := zcustom.NewView("yellow")
+		block.SetBGColor(zgeo.ColorNew(0.6, 0.6, 0, 0.2))
+		s := zgeo.SizeD(xe-xs, v.Rect().Size.H)
+		block.SetMinSize(s)
+		v.Add(block, zgeo.TopLeft, zgeo.SizeD(xs, 0)).Free = true
+		block.SetRect(zgeo.Rect{Pos: zgeo.PosD(xs, 0), Size: s})
+		ztimer.StartIn(4, func() {
+			v.RemoveChild(block, false)
+		})
+	})
 }
 
-type zoomLevel struct {
-	name     string
-	duration time.Duration
-}
-
-type viewX struct {
-	view zview.View
-	x    int
-}
-
-type imageView struct {
-	zimageview.ImageView
-	left    bool
-	pressed func(left bool, id int)
-	id      int
+func (v *HorEventsView) zoomIndex() int {
+	for i, z := range v.zoomLevels {
+		if z.duration == v.BlockDuration {
+			return i
+		}
+	}
+	return 0 // lets return 0 and not -1, in case we ever change zoom level durations
 }
