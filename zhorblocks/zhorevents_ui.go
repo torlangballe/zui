@@ -412,7 +412,7 @@ func (v *HorEventsView) lockCenterView() zview.View {
 	// zlog.Info("CenterBlock:", min, centerBlock.ObjectName(), cx)
 	var centerChild zview.View
 	for _, lane := range v.lanes {
-		if lane.ID == 0 { // this is a hack, we don't know 0 is system row in timeline in this base class
+		if lane.ID == 0 { // this is a hack, we don't know 0 is system row in analytics in this base class
 			continue
 		}
 		for _, row := range lane.Rows {
