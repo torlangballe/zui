@@ -706,7 +706,7 @@ func makeImageView(pathStub string, shortCut zkeyboard.KeyMod, left bool, id int
 	v.pressed = pressed
 	v.id = id
 	if !isDark {
-		v.MixColor = zgeo.ColorBlack
+		v.MixColor = zgeo.ColorDarkGray
 	}
 	v.SetToolTip(tip)
 	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
@@ -951,7 +951,7 @@ func (v *HorEventsView) createLanes() {
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
 			y = r.y
-			rowTitle := makeTextTitle(r.Name, 0, zstyle.GrayFor(0.25, 0.75, v.IsDark), v.IsDark)
+			rowTitle := makeTextTitle(r.Name, 0, zgeo.ColorWhite, v.IsDark)
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
@@ -1004,12 +1004,9 @@ func (v *HorEventsView) SetRect(r zgeo.Rect) {
 func makeTextTitle(text string, fontAdd float64, col zgeo.Color, isDark bool) zview.View {
 	label := zlabel.New(text)
 	label.SetCorner(2)
-	if !col.Valid {
-		col = zstyle.GrayFor(0, 0.9, isDark)
-	}
 	label.SetColor(col)
 	label.SetFont(zgeo.FontNice(14+fontAdd, zgeo.FontStyleBold))
-	label.OutsideDropStroke(2, zstyle.Gray1For(1, isDark))
+	label.OutsideDropStroke(2, zgeo.ColorBlack)
 	label.SetZIndex(5000)
 	return label
 }

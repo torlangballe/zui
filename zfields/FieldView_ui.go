@@ -636,7 +636,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 	key = zstr.HeadUntilWithRest(key, ":", &typeName)
 	if typeName != "" {
 		n, tag, err := zreflect.NewStructFromRegisteredTypeName(typeName, mval.Interface())
-		zlog.Info("zfields.RegField:", key, n, tag, err)
+		// zlog.Info("zfields.RegField:", key, n, tag, err)
 		if err == nil {
 			mval = reflect.ValueOf(n)
 			var pkg, field string
