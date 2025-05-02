@@ -114,7 +114,6 @@ const (
 	FlagIsRebuildAllOnChange                          // If set, and this item is edited, rebuild the FieldView
 	FlagIsURL                                         // (Field is string, and it's a url) OR (it has Path set to fixed URL)
 	FlagIsDocumentation                               // It is a .Path link to Documentation view.
-	FlagIsAudio                                       // If set, the field is audio, and AudioPath contains a path in storage, a $fieldname to get name from, and extension after that
 	FlagIsDownload                                    // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
 	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
 	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
@@ -247,7 +246,6 @@ var flagsNameMap = zbits.NamedBitMap{
 	"IsRebuildAllOnChange":     uint64(FlagIsRebuildAllOnChange),
 	"IsURL":                    uint64(FlagIsURL),
 	"IsDocumentation":          uint64(FlagIsDocumentation),
-	"IsAudio":                  uint64(FlagIsAudio),
 	"IsDownload":               uint64(FlagIsDownload),
 	"IsLabelize":               uint64(FlagIsLabelize),
 	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
@@ -332,7 +330,6 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 	// zlog.Info("FIELD:", f.FieldName)
 	f.Alignment = zgeo.AlignmentNone
 	f.UpdateSecs = -1
-	f.Rows = 1
 	f.SortSmallFirst = zbool.Unknown
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
@@ -636,8 +633,6 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 
 		case "path":
 			f.Path = val
-		case "audio":
-			f.Flags |= FlagIsAudio
 		case "off":
 			f.OffImagePath = "images/" + val
 		case "opener":

@@ -15,7 +15,7 @@ func init() {
 // Widgeter is an interface to make a type create its own view when built with zfields package.
 // It is registered with the RegisterWidgeter function, and specified with the zui:"widget:xxx" tag.
 type Widgeter interface {
-	Create(f *Field) zview.View
+	Create(fv *FieldView, f *Field) zview.View
 	// SetValue(view zview.View, val any)
 }
 

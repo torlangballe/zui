@@ -30,7 +30,7 @@ func init() {
 	RegisterCreator("zerrors.ContextError", buildContextError)
 }
 
-func (a AmountBarWidgeter) Create(f *Field) zview.View {
+func (a AmountBarWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	min := f.MinWidth
 	if min == 0 {
 		min = 100
@@ -49,7 +49,7 @@ func (a AmountBarWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a AmountCircleWidgeter) Create(f *Field) zview.View {
+func (a AmountCircleWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	if f.Size.IsNull() {
 		f.Size = zgeo.SizeBoth(20)
 	}
@@ -72,7 +72,7 @@ func (a AmountCircleWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a ActivityWidgeter) Create(f *Field) zview.View {
+func (a ActivityWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	if f.Size.IsNull() {
 		f.Size = zgeo.SizeBoth(20)
 	}
@@ -90,18 +90,18 @@ func (a ImagesSetWidgeter) SetupField(f *Field) {
 	f.Flags |= FlagIsStatic
 }
 
-func (a ImagesSetWidgeter) Create(f *Field) zview.View {
+func (a ImagesSetWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	f.Flags |= FlagIsStatic
 	v := zwidgets.NewImagesSetView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
 	v.SetStyling(f.Styling)
 	return v
 }
 
-func (a ColorWidgeter) Create(f *Field) zview.View {
+func (a ColorWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	return zcolor.New(zgeo.ColorClear)
 }
 
-func (s ScreensViewWidgeter) Create(f *Field) zview.View {
+func (ScreensViewWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	minSize := zgeo.SizeD(120, 90)
 	if !f.Size.IsNull() {
 		minSize = f.Size

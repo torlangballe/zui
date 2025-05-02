@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zalert"
-	"github.com/torlangballe/zui/zaudio"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
@@ -1599,7 +1598,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if f.WidgetName != "" && rval.Kind() != reflect.Slice {
 		w := widgeters[f.WidgetName]
 		if w != nil {
-			widgetView := w.Create(f)
+			widgetView := w.Create(v, f)
 			changer, _ := widgetView.(zview.ValueHandler)
 			if changer != nil {
 				changer.SetValueHandler("zfields.widgetChanged", func(edited bool) {
@@ -1745,17 +1744,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		case zreflect.KindBool:
 			if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
 				view = v.makeImage(rval, f)
-				break
-			}
-			if f.HasFlag(FlagIsAudio) {
-				s := f.Size
-				if s.IsNull() {
-					s = zgeo.SizeBoth(20)
-				}
-				path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
-				av := zaudio.NewAudioIconView(s, path)
-				av.SetObjectName(f.FieldName)
-				view = av
 				break
 			}
 			b := zbool.ToBoolInd(rval.Interface().(bool))
@@ -1929,11 +1917,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		zstr.HasPrefix(path, "./", &path)
 		path = replaceDoubleSquiggliesWithFields(v, f, path)
 		if f.HasFlag(FlagIsDownload) {
-			if !f.HasFlag(FlagIsAudio) {
-				view.Native().SetPressedHandler("zfield.Download", zkeyboard.ModifierNone, func() {
-					zview.DownloadURI(path, "")
-				})
-			}
+			view.Native().SetPressedHandler("zfield.Download", zkeyboard.ModifierNone, func() {
+				zview.DownloadURI(path, "")
+			})
 		}
 	}
 	cell := &zcontainer.Cell{}
