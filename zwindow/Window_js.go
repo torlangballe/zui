@@ -22,6 +22,7 @@ type windowNative struct {
 	hasResized      bool
 	Element         js.Value
 	AnimationFrames map[int]int // maps random animation id to dom animationFrameID
+	doneKeyEventMS  int
 }
 
 func init() {
@@ -256,7 +257,7 @@ func (win *Window) SetAddressBarURL(surl string) {
 	win.Element.Get("history").Call("pushState", "", "", surl)
 }
 
-func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down bool, handler func()) (id int64) {
+func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down bool, handler func() bool) (id int64) {
 	name := "keyup"
 	if down {
 		name = "keydown"
@@ -265,6 +266,19 @@ func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down
 	id = rand.Int63()
 	win.callbackIDs = append(win.callbackIDs, id)
 	jfunc := js.FuncOf(func(val js.Value, args []js.Value) any { // TODO: release function
+
+		top := TopView(win).Native()
+		toModalWindowOnly := true
+		root := view.Native().RootParent(toModalWindowOnly)
+		if root != top {
+			return nil
+		}
+		// zlog.Info("KeyPress:", zlog.Pointer(view), top.Hierarchy(), root.Hierarchy(), root == top)
+		eventTimestamp := args[0].Get("timeStamp").Int()
+		if eventTimestamp == win.doneKeyEventMS {
+			zlog.Info("KeyPress Skip event already handled:", eventTimestamp, view.Native().Hierarchy())
+			return nil
+		}
 		if !zview.HasViewCallback(view, id) {
 			return nil
 		}
@@ -276,7 +290,9 @@ func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down
 		if !ekm.Matches(km) {
 			return nil
 		}
-		handler()
+		if handler() {
+			win.doneKeyEventMS = eventTimestamp
+		}
 		return nil
 	})
 	doc.Call("addEventListener", name, jfunc)

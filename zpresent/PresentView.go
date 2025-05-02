@@ -169,8 +169,9 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		}
 		if attributes.ModalDismissOnEscapeKey {
 			w := zwindow.FromNativeView(nv)
-			w.AddKeyPressHandler(v, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() {
+			w.AddKeyPressHandler(v, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() bool {
 				Close(v, true, nil)
+				return true
 			})
 		}
 	} else {
@@ -267,6 +268,7 @@ func Close(view zview.View, dismissed bool, done func(dismissed bool)) {
 
 func CloseOverride(view zview.View, dismissed bool, overrideAttributes Attributes, done func(dismissed bool)) {
 	// TODO: Handle non-modal window too
+	// zlog.Info("CloseOverride:", view.Native().Hierarchy(), zdebug.CallingStackString())
 	old := presentCloseFuncs[view]
 	presentCloseFuncs[view] = func(dismissed bool) {
 		if done != nil {

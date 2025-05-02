@@ -46,7 +46,7 @@ func (v *Button) MakeReturnKeyDefault() {
 	//	v.margin.Size.H += 4
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
-		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyReturn}, true, func() {
+		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyReturn}, true, func() bool {
 			// zlog.Info("KeyPress", down, v.RootParent().Hierarchy())
 			toModalWindowOnly := true
 			top := v.RootParent(toModalWindowOnly)
@@ -55,13 +55,14 @@ func (v *Button) MakeReturnKeyDefault() {
 				tv, _ := foc.(*ztext.TextView)
 				if tv != nil {
 					if tv.MaxLines() > 1 {
-						return
+						return false
 					}
 				} else if foc != v.View {
-					return
+					return false
 				}
 			}
 			v.ClickAll()
+			return true
 		})
 	})
 }
@@ -69,8 +70,10 @@ func (v *Button) MakeReturnKeyDefault() {
 func (v *Button) MakeEscapeCanceler() {
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
-		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() {
+		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() bool {
+			// zlog.Info("EscapeCancelerPressed:", v.Hierarchy())
 			v.ClickAll()
+			return true
 		})
 	})
 }
