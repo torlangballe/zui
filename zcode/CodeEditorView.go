@@ -9,9 +9,6 @@ import (
 
 type CodeEditorView struct {
 	ztext.TextView
-	// NativeView
-	// nativeCodeEditorView
-	// MinSize zgeo.Size
 }
 
 func NewEditorView(text string, cols, rows int) *CodeEditorView {
@@ -25,4 +22,3 @@ func NewEditorView(text string, cols, rows int) *CodeEditorView {
 	v.SetFont(font)
 	return v
 }
-
