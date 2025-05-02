@@ -55,6 +55,9 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.JSStyle().Set("zIndex", BaseZIndex)
 	v.View = view
 	v.SetPressedHandler("$zdebug", zkeyboard.MetaModifier|zkeyboard.ModifierAlt|zkeyboard.ModifierShift, func() {
+		if globalForceClick {
+			return
+		}
 		var str string
 		cell := FindLayoutCellForView(v.View)
 		if cell != nil {
@@ -593,6 +596,7 @@ func (v *NativeView) Hierarchy() string {
 func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 	var str string
 	var found bool
+	var debug bool
 	if root == nil {
 		found = true
 		str = "/"
@@ -602,10 +606,16 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 			found = (root == p)
 		}
 		if found {
-			str += p.ObjectName() + "/"
+			str += p.ObjectName()
+			if debug {
+				str += ":" + zlog.Pointer(p)
+			}
 		}
 	}
 	str += v.ObjectName()
+	if debug {
+		str += ":" + zlog.Pointer(v)
+	}
 	return str
 }
 
