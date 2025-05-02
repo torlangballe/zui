@@ -12,6 +12,23 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
+func init() {
+	RegisterWidgeter("zaudio", widgeter{})
+}
+
+type widgeter struct{}
+
+func (widgeter) Create(f *Field) zview.View {
+	s := f.Size
+	if s.IsNull() {
+		s = zgeo.SizeBoth(20)
+	}
+	path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
+	av := zaudio.NewAudioIconView(s, path)
+	av.SetObjectName(f.FieldName)
+	return av
+}
+
 type AudioIconView struct {
 	zcontainer.ContainerView
 
