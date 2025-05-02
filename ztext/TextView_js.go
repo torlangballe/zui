@@ -13,7 +13,7 @@ import (
 
 // https://www.w3schools.com/jsref/dom_obj_textarea.asp
 
-func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, cols int) {
+func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, rows int) {
 	v.textStyle = textStyle
 	v.SetMaxLines(rows)
 	if rows > 1 {
@@ -51,6 +51,8 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, rows, col
 	}
 	//!! v.SetMargin(zgeo.RectFromXY2(0, 2, -10, -5))
 	v.SetObjectName("textview")
+	// zlog.Info("TV.Init", v.Hierarchy(), cols, rows)
+
 	v.Columns = cols
 	css := v.JSStyle()
 	css.Set("position", "absolute")

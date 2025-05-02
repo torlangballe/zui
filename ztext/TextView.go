@@ -60,7 +60,7 @@ var (
 func NewView(text string, style Style, cols, rows int) *TextView {
 	v := &TextView{}
 	zlog.Assert(cols != 0)
-	v.Init(v, text, style, rows, cols)
+	v.Init(v, text, style, cols, rows)
 	return v
 }
 
@@ -82,6 +82,7 @@ func (v *TextView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 		ti.SetWidthFreeHight(v.maxWidth + v.margin.Size.W*2)
 	}
 	s = ti.GetColumnsSize(v.Columns)
+	// zlog.Info("TV.CalculatedSize", v.Hierarchy(), v.Columns, s)
 	s.Add(v.margin.Size.Negative())
 	s = s.Ceil()
 	s.W += 6
