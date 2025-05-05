@@ -47,7 +47,6 @@ func (v *Button) MakeReturnKeyDefault() {
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyReturn}, true, func() bool {
-			// zlog.Info("KeyPress", down, v.RootParent().Hierarchy())
 			toModalWindowOnly := true
 			top := v.RootParent(toModalWindowOnly)
 			foc := top.GetFocusedChildView(false)
@@ -58,7 +57,7 @@ func (v *Button) MakeReturnKeyDefault() {
 						return false
 					}
 				} else if foc != v.View {
-					return false
+					// return false
 				}
 			}
 			v.ClickAll()
