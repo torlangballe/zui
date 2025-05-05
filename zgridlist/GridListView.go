@@ -366,7 +366,7 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	col := v.CellColorFunc(cid)
-	index := v.Columns*y + x
+	index := v.IndexOfID(cid)
 	min, max := zint.MinMax(v.pressStartIndex, v.pressEndIndex)
 	if min != -1 && index >= min && index <= max {
 		// zlog.Info("updateCellBackground4", min, max, "xy:", x, y, "inx:", index)
@@ -798,6 +798,20 @@ func (v *GridListView) insertBranchToggle(id string, child zview.View) {
 	}
 }
 
+func (v *GridListView) addDebugIndexLabel(child zview.View, id string) {
+	a, _ := child.(zcontainer.AdvancedAdder)
+	if a == nil {
+		return
+	}
+	i := v.IndexOfID(id)
+	label := zlabel.New(strconv.Itoa(i))
+	label.SetObjectName("debug-index")
+	label.SetZIndex(22111)
+	label.SetBGColor(zgeo.ColorOrange)
+
+	a.AddAdvanced(label, zgeo.TopRight, zgeo.RectNull, zgeo.SizeNull, -1, true)
+}
+
 func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	child := v.children[id]
 	// zlog.Info("makeOrGetChild:", id, child != nil)
@@ -808,6 +822,7 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 		v.DirtyIDs[id] = true
 	}
 	child = v.CreateCellFunc(v, id)
+	// v.addDebugIndexLabel(child, id)
 	if v.HierarchyLevelFunc != nil {
 		v.insertBranchToggle(id, child)
 	}
