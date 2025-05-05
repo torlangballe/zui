@@ -1624,7 +1624,7 @@ func (v *NativeView) RootParent(toModalWindowOnly bool) *NativeView {
 	if all[i].ObjectName() == "window" {
 		i++
 	}
-	if len(all) > i && toModalWindowOnly && all[i].ObjectName() == "$blocker" {
+	if len(all)-1 > i && toModalWindowOnly && all[i].ObjectName() == "$blocker" {
 		i++
 	}
 	return all[i]
