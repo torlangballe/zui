@@ -199,6 +199,8 @@ type Field struct {
 	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String()
 	Default              string            // Default value for field. May be numbers or strings.
 	Ask                  string            // If present, buttons etc show a Yes dialog with this before triggering
+	Prefix               string            // Added to static text
+	Suffix               string            // Added to static text
 }
 
 const (
@@ -400,6 +402,10 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.Title = val
 		case "header":
 			f.Header = val
+		case "prefix":
+			f.Prefix = val
+		case "suffix":
+			f.Suffix = val
 		case "url":
 			f.Path = val
 			f.Flags |= FlagIsURL

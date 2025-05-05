@@ -595,7 +595,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			if f.IsStatic() && f.Flags&FlagIsFixed != 0 {
 				valStr = f.Name
 			}
-			v.setText(f, valStr, foundView)
+			v.setText(f, f.Prefix+valStr+f.Suffix, foundView)
 		}
 	}
 	return true
@@ -1299,7 +1299,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 					surl = ug.GetURL()
 				}
 			}
-			// zlog.Info("LINK:", f.Name, rval.Type(), rval.Interface(), isLink, str, surl)
+			str = f.Prefix + str + f.Suffix
 			if isLink {
 				label = zlabel.NewLink(str, surl, true)
 			} else {
@@ -1314,10 +1314,8 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 		label.Columns = f.Columns
 		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-			// zlog.Info("LABEL:", f.Wrap, f.FieldName, v.params.UseInValues, f.Rows)
 			label.SetMaxLines(f.Rows)
 		}
-		// zlog.Info("LABEL:", f.FieldName, label.Columns, f.Rows)
 		if f.MaxWidth != 0 {
 			label.SetMaxWidth(f.MaxWidth)
 		}
