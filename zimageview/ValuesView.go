@@ -53,7 +53,6 @@ func (v *ValuesView) AddVariant(value, path string) {
 }
 
 func (v *ValuesView) SetValue(value string) {
-	// zlog.Info("ValuesView.SetValue", value, v.ValueChangedHandlerFunc != nil)
 	v.currentValue = value
 	for _, a := range v.variants {
 		if a.value == value {

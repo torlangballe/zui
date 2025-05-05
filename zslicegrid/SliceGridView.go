@@ -82,9 +82,9 @@ type SliceGridView[S any] struct {
 type LayoutType string
 
 const (
+	LayoutSingleRowsType      = "single-rows"
 	LayoutHorizontalFirstType = "hor"
 	LayoutVerticalFirstType   = "vert"
-	LayoutSingleRowsType      = "single-rows"
 )
 
 // OptionType is a set of options for altering a SliceGridView's appearance and behavior
@@ -171,9 +171,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		}
 		v.Layout = zimageview.NewValuesView(zgeo.SizeD(31, 19), key)
 		v.Layout.SetObjectName("layout")
+		v.Layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
 		v.Layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
 		v.Layout.AddVariant(LayoutVerticalFirstType, "images/zcore/order-vert-first.png")
-		v.Layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
 		v.Layout.ValueChangedHandlerFunc = func() {
 			v.handleLayoutButton(v.Layout.Value())
 		}
