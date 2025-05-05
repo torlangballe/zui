@@ -592,10 +592,14 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			io := foundView.(zimage.Owner)
 			io.SetImage(nil, path, nil)
 		} else {
-			if f.IsStatic() && f.Flags&FlagIsFixed != 0 {
-				valStr = f.Name
+			if f.IsStatic() || v.params.AllStatic {
+				if f.Flags&FlagIsFixed != 0 {
+					valStr = f.Name
+				}
+				valStr = f.Prefix + valStr + f.Suffix
+				// zlog.Info("PREFIX:", valStr, f.Prefix)
 			}
-			v.setText(f, f.Prefix+valStr+f.Suffix, foundView)
+			v.setText(f, valStr, foundView)
 		}
 	}
 	return true
@@ -1300,6 +1304,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 				}
 			}
 			str = f.Prefix + str + f.Suffix
+			// zlog.Info(""makeText":", f.Name, str, f.Prefix)
 			if isLink {
 				label = zlabel.NewLink(str, surl, true)
 			} else {
