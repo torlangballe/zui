@@ -532,7 +532,7 @@ func (v *SliceGridView[S]) doFilter(slice []S) (selectedAfter []string) {
 				v.FilterSkipCache[sid] = skip
 			}
 			if skip {
-				sids = zstr.RemovedFromSlice(sids, sid)
+				sids = zstr.RemovedFromSet(sids, sid)
 				skipCount++
 			} else {
 				keepCount++
