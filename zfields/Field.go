@@ -1256,3 +1256,12 @@ func OutputJSONStructDescription(s any, indent string) string {
 	str += indent + "}\n"
 	return str
 }
+
+func (f *Field) JoinSeparatedSlice(rval reflect.Value) string {
+	var parts []string
+	for i := 0; i < rval.Len(); i++ {
+		v := rval.Index(i).Interface()
+		parts = append(parts, fmt.Sprint(v))
+	}
+	return strings.Join(parts, f.StringSep)
+}
