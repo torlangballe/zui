@@ -92,9 +92,10 @@ type StructInitializer interface {
 }
 
 var (
-	fieldViewEdited = map[string]time.Time{}
-	textFilters     = map[string]func(string) string{}
-	EnableLog       zlog.Enabler
+	fieldViewEdited  = map[string]time.Time{}
+	textFilters      = map[string]func(string) string{}
+	EnableLog        zlog.Enabler
+	enumEditHandlers = map[string]func(item *zmenu.MenuedOItem, action zmenu.EditAction){}
 )
 
 var DefaultFieldViewParameters = FieldViewParameters{
@@ -129,6 +130,10 @@ func RegisterTextFilter(name string, filter func(string) string) {
 
 func GetTextFilter(name string) func(string) string {
 	return textFilters[name]
+}
+
+func RegisterEnumEditHandler(enumName string, handler func(item *zmenu.MenuedOItem, action zmenu.EditAction)) {
+	enumEditHandlers[enumName] = handler
 }
 
 func CallStructInitializer(a any) {
@@ -1053,115 +1058,129 @@ func maybeAskBeforeAction(f *Field, action func()) {
 	})
 }
 
-func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
+func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.Value, f *Field, items zdict.Items) zview.View {
+	isImage := (f.ImageFixedPath != "")
+	shape := zshape.TypeRoundRect
+	if isImage {
+		shape = zshape.TypeNone
+	}
+	menuOwner := zmenu.NewMenuedOwner()
+	menuOwner.IsStatic = static
+	menuOwner.IsMultiple = isSlice
+
+	if isEdit {
+		zlog.Assert(!isSlice)
+		menuOwner.EditFunc = enumEditHandlers[f.Enum]
+	}
+	if v.params.IsEditOnNewStruct {
+		menuOwner.StoreKey = f.ValueStoreKey
+	}
+	menuOwner.SetTitle = true
+	for _, format := range strings.Split(f.Format, "|") {
+		if menuOwner.TitleIsAll == " " {
+			menuOwner.TitleIsAll = format
+		}
+		switch format {
+		case "all":
+			menuOwner.TitleIsAll = " "
+		case "%d":
+			menuOwner.GetTitleFunc = func(icount int) string { return strconv.Itoa(icount) }
+		case `title`:
+			menuOwner.TitleIsValueIfOne = true
+		default:
+			menuOwner.PluralableWord = format
+		}
+	}
+	mItems := zmenu.MOItemsFromZDictItemsAndValues(items, rval.Interface(), f.Flags&FlagIsActions != 0)
+
+	menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
+	if isImage {
+		menu.SetImage(nil, true, f.Size, f.ImageFixedPath, zgeo.SizeNull, nil)
+	} else {
+		if len(f.Colors) != 0 {
+			menu.SetColor(zgeo.ColorFromString(f.Colors[0]))
+		}
+	}
 	var view zview.View
+	view = menu
+	// SetAuthenticationIDAsDefaultForSliceViewview := menu
+	menuOwner.SelectedHandlerFunc = func(edited bool) {
+		sel := menuOwner.SelectedItem()
+		if sel != nil {
+			kind := reflect.ValueOf(sel.Value).Kind()
+			if menuOwner.IsStatic {
+				if kind != reflect.Ptr && kind != reflect.Struct {
+					callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: rval, View: &view})
+				}
+			} else {
+				if menuOwner.IsMultiple {
+					allSelected := menuOwner.SelectedItems()
+					slicePtr := rval.Addr().Interface()
+					zslice.Empty(slicePtr)
+					for _, item := range allSelected {
+						zslice.AddAtEnd(slicePtr, item.Value)
+					}
+					return
+				}
+				if sel.Value != nil {
+					val, _ := v.fieldToDataItem(f, menu)
+					val.Set(reflect.ValueOf(sel.Value))
+				}
+			}
+		}
+
+		ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+		v.callTriggerHandler(ap)
+		// zlog.Info("MV.Call action:", f.Name, rval)
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
+	}
+	menuOwner.ClosedFunc = func() {
+		if menuOwner.IsMultiple {
+			zlog.Assert(isSlice)
+			zslice.Empty(rval.Addr().Interface())
+			for _, mi := range menuOwner.SelectedItems() {
+				zslice.AddAtEnd(rval.Addr().Interface(), mi.Value)
+			}
+		}
+	}
+	return menu
+}
+
+func (v *FieldView) makeSimpleMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
+	name := f.Name + "Menu"
+	if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+		name = "key:" + f.ValueStoreKey
+	}
+	menu := zmenu.NewView(name, items, rval.Interface())
+	menu.RowFormat = f.Format
+	menu.SetMaxWidth(f.MaxWidth)
+	var view zview.View
+	view = menu
+	menu.SetSelectedHandler(func() {
+		val, _ := v.fieldToDataItem(f, menu)
+		isZero := true
+		if val.IsValid() {
+			isZero = val.IsZero()
+		}
+		// zlog.Info("Menu Edited", v.Hierarchy(), f.Name, isZero, val, menu.CurrentValue())
+		v.updateShowEnableFromZeroer(isZero, true, menu.ObjectName())
+		v.updateShowEnableFromZeroer(isZero, false, menu.ObjectName())
+		ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+		v.callTriggerHandler(ap)
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
+	})
+	return view
+}
+
+func (v *FieldView) makeMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
 	static := f.IsStatic() //|| v.params.AllStatic
 	isSlice := rval.Kind() == reflect.Slice
 	// zlog.Info("makeMenu", f.Name, f.IsStatic(), v.params.AllStatic, isSlice, rval.Kind(), len(items))
-	if static || isSlice {
-		// multi := isSlice
-		isImage := (f.ImageFixedPath != "")
-		shape := zshape.TypeRoundRect
-		if isImage {
-			shape = zshape.TypeNone
-		}
-		menuOwner := zmenu.NewMenuedOwner()
-		menuOwner.IsStatic = static
-		menuOwner.IsMultiple = isSlice
-		if v.params.IsEditOnNewStruct {
-			menuOwner.StoreKey = f.ValueStoreKey
-		}
-		menuOwner.SetTitle = true
-		for _, format := range strings.Split(f.Format, "|") {
-			if menuOwner.TitleIsAll == " " {
-				menuOwner.TitleIsAll = format
-			}
-			switch format {
-			case "all":
-				menuOwner.TitleIsAll = " "
-			case "%d":
-				menuOwner.GetTitleFunc = func(icount int) string { return strconv.Itoa(icount) }
-			case `title`:
-				menuOwner.TitleIsValueIfOne = true
-			default:
-				menuOwner.PluralableWord = format
-			}
-		}
-		mItems := zmenu.MOItemsFromZDictItemsAndValues(items, rval.Interface(), f.Flags&FlagIsActions != 0)
-
-		menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)
-		if isImage {
-			menu.SetImage(nil, true, f.Size, f.ImageFixedPath, zgeo.SizeNull, nil)
-		} else {
-			if len(f.Colors) != 0 {
-				menu.SetColor(zgeo.ColorFromString(f.Colors[0]))
-			}
-		}
-		view = menu
-		menuOwner.SelectedHandlerFunc = func(edited bool) {
-			sel := menuOwner.SelectedItem()
-			if sel != nil {
-				kind := reflect.ValueOf(sel.Value).Kind()
-				if menuOwner.IsStatic {
-					if kind != reflect.Ptr && kind != reflect.Struct {
-						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: rval, View: &view})
-					}
-				} else {
-					zlog.Info("Here!", menuOwner.IsMultiple, rval, rval.Type())
-					if menuOwner.IsMultiple {
-						allSelected := menuOwner.SelectedItems()
-						slicePtr := rval.Addr().Interface()
-						zslice.Empty(slicePtr)
-						for _, item := range allSelected {
-							zslice.AddAtEnd(slicePtr, item.Value)
-						}
-						return
-					}
-					if sel.Value != nil {
-						val, _ := v.fieldToDataItem(f, menu)
-						val.Set(reflect.ValueOf(sel.Value))
-					}
-				}
-			}
-
-			ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
-			v.callTriggerHandler(ap)
-			// zlog.Info("MV.Call action:", f.Name, rval)
-			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
-		}
-		menuOwner.ClosedFunc = func() {
-			if menuOwner.IsMultiple {
-				zlog.Assert(isSlice)
-				zslice.Empty(rval.Addr().Interface())
-				for _, mi := range menuOwner.SelectedItems() {
-					zslice.AddAtEnd(rval.Addr().Interface(), mi.Value)
-				}
-			}
-		}
-	} else {
-		name := f.Name + "Menu"
-		if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
-			name = "key:" + f.ValueStoreKey
-		}
-		menu := zmenu.NewView(name, items, rval.Interface())
-		menu.RowFormat = f.Format
-		menu.SetMaxWidth(f.MaxWidth)
-		view = menu
-		menu.SetSelectedHandler(func() {
-			val, _ := v.fieldToDataItem(f, menu)
-			isZero := true
-			if val.IsValid() {
-				isZero = val.IsZero()
-			}
-			// zlog.Info("Menu Edited", v.Hierarchy(), f.Name, isZero, val, menu.CurrentValue())
-			v.updateShowEnableFromZeroer(isZero, true, menu.ObjectName())
-			v.updateShowEnableFromZeroer(isZero, false, menu.ObjectName())
-			ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
-			v.callTriggerHandler(ap)
-			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
-		})
+	_, isEdit := enumEditHandlers[f.Enum]
+	if static || isSlice || isEdit {
+		return v.makeMenuedOwner(static, isSlice, isEdit, rval, f, items)
 	}
-	return view
+	return v.makeSimpleMenu(rval, f, items)
 }
 
 func getTimeString(rval reflect.Value, f *Field) string {

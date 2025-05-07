@@ -4,6 +4,7 @@ package zmenu
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/torlangballe/zui/ztextinfo"
@@ -37,6 +38,15 @@ var menuViewHeight = 21.0
 
 func (v *MenuView) CurrentValue() interface{} {
 	return v.currentValue
+}
+
+func (v *MenuView) CurrentItem() *zdict.Item {
+	for i, item := range v.items {
+		if reflect.DeepEqual(item.Value, v.currentValue) {
+			return &v.items[i]
+		}
+	}
+	return nil
 }
 
 func (v *MenuView) GetDump() string {

@@ -7,9 +7,11 @@ import (
 	"math/rand"
 	"path"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
@@ -34,6 +36,15 @@ import (
 	"github.com/torlangballe/zutil/zwords"
 )
 
+type EditAction int
+
+const (
+	EditCreate EditAction = 1 << iota
+	EditTypeName
+	EditRename
+	EditDelete
+)
+
 type MenuedOwner struct {
 	View                zview.View
 	Name                string   // Name is just used for setting View Object Name for debugging
@@ -43,6 +54,7 @@ type MenuedOwner struct {
 	ActionHandlerFunc   func(id string)
 	CreateItemsFunc     func() []MenuedOItem
 	ClosedFunc          func()
+	EditFunc            func(item *MenuedOItem, action EditAction)
 	PluralableWord      string // if set, used instead of GetTitle, and pluralized
 	TitleIsValueIfOne   bool   // if set and IsMultiple, name of value used as title if only one set
 	TitleIsAll          string // if != "", all items are listed in title, separated by TitleIsAll string
@@ -153,12 +165,12 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	if view != nil {
 		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
 			o.MinWidth = view.Rect().Size.W
-			if o.CreateItemsFunc != nil {
-				o.items = o.CreateItemsFunc()
-			}
-			if len(o.items) != 0 {
-				o.popup()
-			}
+			// if o.CreateItemsFunc != nil {
+			// 	o.items = o.CreateItemsFunc()
+			// }
+			// if len(o.items) != 0 {
+			o.popup()
+			// }
 		})
 	}
 	// zlog.Info("Build", o.View.ObjectName(), items == nil)
@@ -425,7 +437,75 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 	if o.CreateItemsFunc != nil {
 		o.items = o.CreateItemsFunc()
 	}
+	if o.EditFunc != nil {
+		if o.CreateItemsFunc == nil {
+			for i, item := range o.items {
+				if item.IsSeparator {
+					o.items = o.items[:i]
+					break
+				}
+			}
+		}
+		name := "item"
+		var item MenuedOItem
+		o.EditFunc(&item, EditTypeName)
+		if item.Name != "" {
+			name = item.Name
+		}
+		o.AddMOItem(MenuedOItemSeparator)
+		add := MenuedFuncAction("Add "+name, func() {
+			zalert.PromptForText("Name of "+name, "", func(s string) {
+				var nitem MenuedOItem
+				nitem.Name = s
+				o.EditFunc(&nitem, EditCreate)
+				o.items = append([]MenuedOItem{nitem}, o.items...)
+				for i, item := range o.items {
+					if item.IsSeparator {
+						sort.Slice(o.items[:i], func(i, j int) bool {
+							return strings.Compare(o.items[i].Name, o.items[j].Name) < 0
+						})
+						break
+					}
+				}
+			})
+		})
+		o.AddMOItem(add)
+		sel := o.SelectedItem()
+		zlog.Info("getItems", sel != nil, o.CreateItemsFunc != nil)
+		if sel != nil {
+			rename := MenuedFuncAction(`Rename "`+sel.Name+`"`, func() {
+				zalert.PromptForText("Change name of "+sel.Name, sel.Name, func(answer string) {
+					s, si := o.itemForValue(sel.Value)
+					zlog.Assert(si != -1)
+					s.Name = answer
+					o.EditFunc(s, EditRename)
+				})
+			})
+			del := MenuedFuncAction(`Delete "`+sel.Name+`"…`, func() {
+				zalert.Ask(`Do you want to delete the region "`+sel.Name+`"?`, func(ok bool) {
+					if !ok {
+						return
+					}
+					s, si := o.itemForValue(sel.Value)
+					zlog.Assert(si != -1)
+					o.EditFunc(s, EditDelete)
+					zslice.RemoveAt(&o.items, si)
+				})
+			})
+			o.AddMOItem(rename)
+			o.AddMOItem(del)
+		}
+	}
 	return o.items
+}
+
+func (o *MenuedOwner) itemForValue(value any) (*MenuedOItem, int) {
+	for i, item := range o.items {
+		if reflect.DeepEqual(item.Value, value) {
+			return &o.items[i], i
+		}
+	}
+	return nil, -1
 }
 
 func (o *MenuedOwner) ChangeNameForValue(name string, value any) {
