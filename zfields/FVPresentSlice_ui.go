@@ -21,7 +21,7 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
-func accumilateSlice(accSlice, fromSlice reflect.Value) {
+func accumulateSlice(accSlice, fromSlice reflect.Value) {
 	for i := 0; i < fromSlice.Len(); i++ {
 		var has bool
 		av := fromSlice.Index(i).Interface()
@@ -138,7 +138,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				if each.Field.IsStatic() {
 					if each.ReflectValue.Kind() == reflect.Slice {
 						// zlog.Info("IsStatEq set:", each.StructField.Name, sliceField.Interface(), each.ReflectValue.Interface())
-						accumilateSlice(each.ReflectValue, sliceField)
+						accumulateSlice(each.ReflectValue, sliceField)
 					} else {
 						// zlog.Info("IsStatEq clear:", each.StructField.Name, sliceField.Interface(), each.ReflectValue.Interface())
 						each.ReflectValue.Set(reflect.Zero(each.ReflectValue.Type()))
