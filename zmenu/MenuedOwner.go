@@ -471,14 +471,15 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 		})
 		o.AddMOItem(add)
 		sel := o.SelectedItem()
-		zlog.Info("getItems", sel != nil, o.CreateItemsFunc != nil)
-		if sel != nil {
+		// zlog.Info("getItems", sel != nil, o.CreateItemsFunc != nil)
+		if sel != nil && sel.Value != nil && !reflect.ValueOf(sel.Value).IsZero() {
 			rename := MenuedFuncAction(`Rename "`+sel.Name+`"`, func() {
 				zalert.PromptForText("Change name of "+sel.Name, sel.Name, func(answer string) {
 					s, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
 					s.Name = answer
 					o.EditFunc(s, EditRename)
+					o.UpdateTitleAndImage()
 				})
 			})
 			del := MenuedFuncAction(`Delete "`+sel.Name+`"…`, func() {

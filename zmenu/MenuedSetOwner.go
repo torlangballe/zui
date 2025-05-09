@@ -1,5 +1,7 @@
 //go:build zui
 
+//TODO: Use new MenuedOwner EditFunc to do this.
+
 package zmenu
 
 import (
