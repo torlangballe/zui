@@ -224,7 +224,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					zero := each.ReflectValue.IsZero()
 					if each.Field.Required == RequiredSingleValue {
 						if zero {
-							zalert.Show("Field " + each.StructField.Name + " can't be empty")
+							zalert.Show("Field " + each.Field.TitleOrName() + " can't be empty")
 							doClose.FromBool(false)
 							return false
 						}
@@ -233,7 +233,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 							g, has := hasReqGroups[each.Field.Required]
 							// zlog.Info("Has:", has, g, each.Field.Required, each.StructField.Name)
 							if !has || len(g) > 0 {
-								hasReqGroups[each.Field.Required] = append(hasReqGroups[each.Field.Required], each.StructField.Name)
+								hasReqGroups[each.Field.Required] = append(hasReqGroups[each.Field.Required], each.Field.TitleOrName())
 							}
 						} else {
 							hasReqGroups[each.Field.Required] = []string{}
