@@ -264,6 +264,11 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		ilen := len(ids)
 		if singleSpecial && ilen == 1 {
 			s := v.StructForID(ids[0])
+			if s == nil {
+				zlog.Error("NameOfXItemsFunc: s is nil:", v.Hierarchy(), ids[0])
+				return v.StructName
+			}
+			//s is zero sometimes!!!!
 			var a any = s
 			ng, got := a.(zstr.NameGetter)
 			if got && ng != nil {
