@@ -207,15 +207,39 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	}
 	// zlog.Info("EDIT Struct:", zlog.Full(originalStruct))
 	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
+		var doClose = new(zbool.BoolInd)
 		if ok {
 			err := fview.ToData(true)
 			if err != nil {
 				return false
 			}
+			hasReqGroups := map[string][]string{}
 			ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 				// zlog.Info("origFieldReflectValue1:", each.Field.Name, each.ReflectValue.Interface(), each.Field.Flags, each.Field.IsStatic(), FlagIsButton, FlagIsStatic)
 				if each.StructField.Tag.Get("zui") == "-" {
+					zlog.Info("SHOULD THIS HAPPEN?")
 					return true // skip to next
+				}
+				if each.Field.Required != "" {
+					zero := each.ReflectValue.IsZero()
+					if each.Field.Required == RequiredSingleValue {
+						if zero {
+							zalert.Show("Field " + each.StructField.Name + " can't be empty")
+							doClose.FromBool(false)
+							return false
+						}
+					} else {
+						if zero {
+							g, has := hasReqGroups[each.Field.Required]
+							// zlog.Info("Has:", has, g, each.Field.Required, each.StructField.Name)
+							if !has || len(g) > 0 {
+								hasReqGroups[each.Field.Required] = append(hasReqGroups[each.Field.Required], each.StructField.Name)
+							}
+						} else {
+							hasReqGroups[each.Field.Required] = []string{}
+						}
+					}
+
 				}
 				bid := each.StructField.Name
 				view, _ := fview.FindNamedViewOrInLabelized(bid)
@@ -278,6 +302,16 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				}
 				return true
 			})
+			for _, fields := range hasReqGroups {
+				if len(fields) > 0 {
+					doClose.FromBool(false)
+					zalert.Show("All of fields:", strings.Join(fields, "/"), "can't be empty")
+					break
+				}
+			}
+		}
+		if ok && !doClose.IsUnknown() {
+			return doClose.IsTrue()
 		}
 		return done(ok)
 	})

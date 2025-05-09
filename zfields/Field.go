@@ -157,57 +157,59 @@ type Field struct {
 	Justify              zgeo.Alignment    // zui:"justify". Justifies text etc within field.
 	Format               string            // zui:"format". Used to format numbers, time. See below.
 	Colors               []string          // zui:"color". Colors for field, can be multiple.
-	ImageFixedPath       string            // zui:"".
-	OffImagePath         string            // zui:"".
-	HeaderImageFixedPath string            // zui:"".
+	ImageFixedPath       string            // zui:""
+	OffImagePath         string            // zui:""
+	HeaderImageFixedPath string            // zui:""
 	Header               string            // zui:"header". Uses as header column name, overriding of title/name.
-	Path                 string            // zui:"".
-	Height               float64           // zui:"".
-	Enum                 string            // zui:"".
-	LocalEnum            string            // zui:"".
-	Size                 zgeo.Size         // zui:"".
-	HeaderSize           zgeo.Size         // zui:"".
-	Margin               zgeo.Size         // zui:"".
-	Flags                FlagType          // zui:"".
-	Tooltip              string            // zui:"".
-	Description          string            // zui:"".
-	UpdateSecs           float64           // zui:"".
-	LocalEnable          string            // zui:"".
-	LocalDisable         string            // zui:"".
-	LocalShow            string            // zui:"".
-	LocalHide            string            // zui:"".
-	Placeholder          string            // zui:"".
-	Columns              int               // zui:"".
-	Rows                 int               // zui:"".
-	SortSmallFirst       zbool.BoolInd     // zui:"".
-	SortPriority         int               // zui:"".
-	FractionDecimals     int               // zui:"".
-	OldSecs              int               // zui:"".
-	ValueStoreKey        string            // zui:"".
-	Visible              bool              // zui:"".
-	Disabled             bool              // zui:"".
-	SetEdited            bool              // zui:"".
-	WidgetName           string            // zui:"".
-	UseIn                []string          // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry
-	Styling              zstyle.Styling    // zui:"".
-	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something
+	Path                 string            // zui:""
+	Height               float64           // zui:""
+	Enum                 string            // zui:""
+	LocalEnum            string            // zui:""
+	Size                 zgeo.Size         // zui:""
+	HeaderSize           zgeo.Size         // zui:""
+	Margin               zgeo.Size         // zui:""
+	Flags                FlagType          // zui:""
+	Tooltip              string            // zui:""
+	Description          string            // zui:""
+	UpdateSecs           float64           // zui:""
+	LocalEnable          string            // zui:""
+	LocalDisable         string            // zui:""
+	LocalShow            string            // zui:""
+	LocalHide            string            // zui:""
+	Placeholder          string            // zui:""
+	Columns              int               // zui:""
+	Rows                 int               // zui:""
+	SortSmallFirst       zbool.BoolInd     // zui:""
+	SortPriority         int               // zui:""
+	FractionDecimals     int               // zui:""
+	OldSecs              int               // zui:""
+	ValueStoreKey        string            // zui:""
+	Visible              bool              // zui:""
+	Disabled             bool              // zui:""
+	SetEdited            bool              // zui:""
+	WidgetName           string            // zui:""
+	UseIn                []string          // If UseIn set, field will only be made if FieldView has paramater UseInValues with corresponding entry.
+	Styling              zstyle.Styling    // zui:""
+	CustomFields         map[string]string // CustomFields are anything not parsed by SetFromReflectItem TODO: Rename to custom options or something.
 	StringSep            string            // "sep": if set value is actually a slice, set/got from string separated by StringSep, no value given is space as separator.
-	RPCCall              string            // an RPC method to Call, typically on press of a button
-	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum
+	RPCCall              string            // an RPC method to Call, typically on press of a button.
+	Filters              []string          // Registered filters (| separated). Currently used for textview fields to filter text in/output. Built in: $lower $upper $uuid $hex $alpha $num $alphanum.
 	ZeroText             string            // Text to replace a zero value with set with "allowempty" tag.
 	MaxText              string            // Text to replace a "maximum" value with set with "allowempty" tag.
-	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String()
+	Wrap                 string            // How to wrap if text. As in ztextinfo.WrapType.String().
 	Default              string            // Default value for field. May be numbers or strings.
 	Ask                  string            // If present, buttons etc show a Yes dialog with this before triggering
 	Prefix               string            // Added to static text
 	Suffix               string            // Added to static text
+	Required             string            // If set, fields must be non-zero after editing. If Required is not RequiredSingleValue, it is a group id where at least one field with this Required group has to be non-zero.
 }
 
 const (
-	MemoryFormat  = "memory"
-	StorageFormat = "storage"
-	BPSFormat     = "bps"   // bits or bytes pr sec
-	HumanFormat   = "human" // human-readable int
+	MemoryFormat        = "memory"
+	StorageFormat       = "storage"
+	BPSFormat           = "bps"   // bits or bytes pr sec
+	HumanFormat         = "human" // human-readable int
+	RequiredSingleValue = "$single"
 )
 
 var EmptyField = Field{
@@ -519,6 +521,11 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.Flags |= FlagAllowEmptyAsZero
 		case "omitzero":
 			f.Flags |= FlagOmitZero
+		case "required":
+			f.Required = val
+			if val == "" {
+				f.Required = RequiredSingleValue
+			}
 		case "zerotext":
 			f.ZeroText = val
 		case "maxtext":
