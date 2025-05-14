@@ -300,9 +300,9 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H
-		if o.Size.W == 0 {
-			zlog.Info("Add Zero:", cells[i].View.ObjectName(), cr.Size)
-		}
+		// if o.Size.W == 0 {
+		// 	zlog.Info("Add Zero:", cells[i].View.ObjectName(), cr.Size)
+		// }
 		if o.Size.W != 0 {
 			hviews[i].SetRect(o)
 		}
