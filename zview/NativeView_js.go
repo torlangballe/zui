@@ -1261,10 +1261,15 @@ func (v *NativeView) SetPointerDropHandler(handler func(dtype DragType, data []b
 	})
 }
 
-func (v *NativeView) SetUploader(got func(data []byte, name string), skip func(name string) bool, progress func(p float64)) {
+func (v *NativeView) SetUploader(mimesOrExtensions []string, got func(data []byte, name string), skip func(name string) bool, progress func(p float64)) {
 	e := v.Document().Call("createElement", "input")
 	e.Set("type", "file")
 	e.Set("style", "opacity: 0.0; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 100%; height:100%;")
+	if len(mimesOrExtensions) > 0 {
+		str := strings.Join(mimesOrExtensions, ",")
+		e.Set("accept", str)
+	}
+	// e.Set("type", "file")
 	// e.Set("accept", "*/*")
 
 	var changeFunc js.Func

@@ -61,13 +61,13 @@ func (v *NativeView) AddChild(child View, index int)                         {}
 func (v *NativeView) RemoveChild(child View)                                 {}
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                 {}
 func (v *NativeView) SetToolTip(str string)                                  {}
-func (v *NativeView) SetChildrenAboveParent(above bool)                              {}
+func (v *NativeView) SetChildrenAboveParent(above bool)                      {}
 func (v *NativeView) SetScrollHandler(handler func(pos zgeo.Pos))            {}
 func (v *NativeView) JSSet(property string, value interface{})               {}
 func (v *NativeView) JSGet(property string) any                              { return nil }
 func (v *NativeView) JSCall(method string, args ...interface{}) any          { return nil }
 func (v *NativeView) SetDraggable(getData func() (data string, mime string)) {}
-func (v *NativeView) SetUploader(got func(data []byte, name string), use func(name string) bool, progress func(p float64)) {
+func (v *NativeView) SetUploader(mimesOrExtensions []string, got func(data []byte, name string), use func(name string) bool, progress func(p float64)) {
 }
 func (v *NativeView) ReplaceChild(child, with View) error                             { return nil }
 func (v *NativeView) AllParents() (all []*NativeView)                                 { return }
