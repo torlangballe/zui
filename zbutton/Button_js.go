@@ -13,8 +13,9 @@ func New(text string) *Button {
 	v.MakeJSElement(v, "button")
 	v.SetText(text)
 	v.SetObjectName(text)
-	v.SetMargin(zgeo.RectFromXY2(12, 4, -12, -4))
-	v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
+	// v.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
+	v.SetMargin(zgeo.RectFromXY2(12, 4, -12, -8))
+	// v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
 	// style := v.JSStyle()
 	// style.Set("textAlign", "left")
 	// style.Set("display", "block")
@@ -22,17 +23,12 @@ func New(text string) *Button {
 	// style.Set("whiteSpace", "preWrap")
 	f := zgeo.FontNice(zgeo.FontDefaultSize-2, zgeo.FontStyleNormal)
 	v.SetFont(f)
-	// v.SetKeyDownHandler(func(key zkeyboard.Key, mod zkeyboard.Modifier) bool {
-	// 	if key.IsReturnish() && mod == zkeyboard.ModifierNone {
-	// 		zlog.Info("ButKey:", key, mod)
-	// 		if v.PressedHandler != nil {
-	// 			zlog.Info("ButKey2:", key, mod)
-	// 			v.PressedHandler()
-	// 			return true
-	// 		}
-	// 	}
-	// 	return false
-	// })
+	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+		if down && km.Key.IsReturnish() && km.Modifier == zkeyboard.ModifierNone {
+			v.ClickAll()
+		}
+		return false
+	})
 	return v
 }
 
@@ -70,7 +66,6 @@ func (v *Button) MakeEscapeCanceler() {
 	ztimer.StartIn(0.01, func() {
 		win := zwindow.FromNativeView(&v.NativeView)
 		win.AddKeyPressHandler(v.View, zkeyboard.KeyMod{Key: zkeyboard.KeyEscape}, true, func() bool {
-			// zlog.Info("EscapeCancelerPressed:", v.Hierarchy())
 			v.ClickAll()
 			return true
 		})
@@ -79,4 +74,9 @@ func (v *Button) MakeEscapeCanceler() {
 
 func (v *Button) SetMargin(m zgeo.Rect) {
 	v.margin = m
+}
+
+func (v *Button) SetRect(r zgeo.Rect) {
+	rm := r.Plus(zgeo.RectFromMarginSize(zgeo.SizeBoth(3)))
+	v.NativeView.SetRect(rm)
 }
