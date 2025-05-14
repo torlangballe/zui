@@ -4,6 +4,7 @@ package zaudio
 
 import (
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
@@ -13,18 +14,18 @@ import (
 )
 
 func init() {
-	RegisterWidgeter("zaudio", widgeter{})
+	zfields.RegisterWidgeter("zaudio", widgeter{})
 }
 
 type widgeter struct{}
 
-func (widgeter) Create(f *Field) zview.View {
+func (widgeter) Create(fv *zfields.FieldView, f *zfields.Field) zview.View {
 	s := f.Size
 	if s.IsNull() {
 		s = zgeo.SizeBoth(20)
 	}
-	path := replaceDoubleSquiggliesWithFields(v, f, f.Path)
-	av := zaudio.NewAudioIconView(s, path)
+	path := zfields.ReplaceDoubleSquiggliesWithFields(fv, f, f.Path)
+	av := NewAudioIconView(s, path)
 	av.SetObjectName(f.FieldName)
 	return av
 }
