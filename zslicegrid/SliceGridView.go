@@ -718,8 +718,11 @@ func (v *SliceGridView[S]) duplicateItems(nitems string, ids []string) {
 	v.EditItems(newItems, title, false, true, nil)
 }
 
-func (v *SliceGridView[S]) HandleDeleteKey(ask bool) {
+func (v *SliceGridView[S]) HandleDeleteKey(ask bool, overrideIDs []string) {
 	ids := v.Grid.SelectedIDsOrHoverID()
+	if len(ids) == 0 {
+		ids = overrideIDs
+	}
 	if len(ids) == 0 {
 		return
 	}
@@ -837,7 +840,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 			}
 			if v.Options&AllowDelete != 0 {
 				del := zmenu.MenuedSCFuncAction("Delete "+nitems+"…", zkeyboard.KeyBackspace, 0, func() {
-					v.HandleDeleteKey(true)
+					v.HandleDeleteKey(true, ids)
 				})
 				items = append(items, del)
 			}

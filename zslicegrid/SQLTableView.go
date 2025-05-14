@@ -87,7 +87,7 @@ func (v *SQLTableView[S]) addActionButton() {
 		if len(ids) > 0 {
 			if v.Options&AllowDelete != 0 {
 				idel := zmenu.MenuedSCFuncAction("Delete "+noItems+"…", zkeyboard.KeyBackspace, 0, func() {
-					v.HandleDeleteKey(true)
+					v.HandleDeleteKey(true, ids)
 				})
 				items = append(items, idel)
 			}
