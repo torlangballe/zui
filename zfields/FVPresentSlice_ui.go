@@ -220,11 +220,11 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					zlog.Info("SHOULD THIS HAPPEN?")
 					return true // skip to next
 				}
-				if each.Field.Required != "" {
+				if !params.MultiSliceEditInProgress && each.Field.Required != "" {
 					zero := each.ReflectValue.IsZero()
 					if each.Field.Required == RequiredSingleValue {
 						if zero {
-							zalert.Show("Field " + each.Field.TitleOrName() + " can't be empty")
+							zalert.Show("Field '" + each.Field.TitleOrName() + "' can't be empty")
 							doClose.FromBool(false)
 							return false
 						}
