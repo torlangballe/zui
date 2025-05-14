@@ -839,6 +839,20 @@ func (v *NativeView) ClickAll() {
 		}
 	}
 	globalForceClick = false
+	children := v.JSGet("children")
+	if children.IsUndefined() {
+		return
+	}
+	if children.Length() > 0 {
+		node := children.Index(0)
+		if node.IsUndefined() {
+			return
+		}
+		if node.Get("type").String() != "file" {
+			return
+		}
+		node.Call("click")
+	}
 }
 
 func (v *NativeView) Click(id string, long bool, mods zkeyboard.Modifier) {
