@@ -536,6 +536,7 @@ const (
 func (o *MenuedOwner) popup() {
 	allAction := true
 	o.hasShortcut = false
+	o.getItems()
 	for _, item := range o.items {
 		if !item.IsAction {
 			allAction = false
@@ -544,7 +545,6 @@ func (o *MenuedOwner) popup() {
 			o.hasShortcut = true
 		}
 	}
-	o.getItems()
 	stack := zcontainer.StackViewVert("menued-pop-stack")
 	o.currentPopupStack = stack
 	stack.SetMargin(zgeo.RectFromXY2(0, topMarg, 0, -bottomMarg))
@@ -821,7 +821,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	}
 	marg := zgeo.SizeD(4, 0)
 
-	// zlog.Info("CreateRow:", i, item.Name, item.Selected, item.IsAction, item.Value)
+	// zlog.Info("CreateRow:", i, item.Name, item.Selected, item.IsAction, item.Value, item.Shortcut)
 	if !item.IsAction {
 		status := zlabel.New("")
 		status.SetObjectName("status")
