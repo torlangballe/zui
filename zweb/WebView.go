@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 )
 
 var DefaultBarIconSize float64 = 20
@@ -74,13 +75,11 @@ func (v *WebView) MakeBar() *zcontainer.StackView {
 	v.TitleLabel.SetColor(zgeo.ColorNewGray(0.3, 1))
 	v.Bar.Add(v.TitleLabel, zgeo.Center|zgeo.HorExpand)
 
-	// v.Back = ImageViewNew(nil, "images/triangle-left-gray.png", zgeo.SizeBoth(DefaultBarIconSize))
-	// v.Back.DownsampleImages = true
-	// v.Back.SetPressedHandler(func() {
-	// 	zlog.Info("back")
-	// })
-	// v.Back.SetUsable(false)
-	// v.Bar.Add(v.Back, zgeo.CenterLeft)
+	v.Back = zimageview.New(nil, true, "images/zcore/triangle-left-gray.png", zgeo.SizeBoth(DefaultBarIconSize))
+	v.Back.DownsampleImages = true
+	v.Back.SetPressedHandler("", 0, v.handleBack)
+	v.Back.SetUsable(false)
+	v.Bar.Add(v.Back, zgeo.CenterLeft)
 	// v.Forward = ImageViewNew(nil, "images/triangle-right-gray.png", zgeo.SizeBoth(DefaultBarIconSize))
 	// v.Forward.SetPressedHandler(func() {
 	// 	zlog.Info("forward")
@@ -114,14 +113,9 @@ func OpenFullScreenWebViewInScreenID(screenID int64, surl string) {
 	wv.SetURL(surl)
 }
 
-// func NewViewWithScrollAndPadding(minSize zgeo.Size, isFrame, makeBar bool) (*zcontainer.StackView, *WebView) {
-// 	web := NewView(minSize, isFrame, makeBar)
-// 	stack := zcontainer.StackViewVert("web-stack")
-// 	if web.Bar != nil {
-// 		stack.Add(web.Bar, zgeo.TopLeft|zgeo.HorExpand)
-// 	}
-// 	scroll := zscrollview.New()
-// 	stack.Add(scroll, zgeo.TopLeft|zgeo.Expand)
-// 	stack.AddChild(web, -1)
-// 	return stack, web
-// }
+func (v *WebView) handleBack() {
+	zslice.Pop(&v.History)
+	topURL := zslice.Top(v.History)
+	v.SetURL(topURL)
+	v.updateWidgets()
+}

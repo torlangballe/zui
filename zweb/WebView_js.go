@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -39,15 +40,13 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		contentDoc := v.JSGet("contentDocument")
 		// zlog.Info("CDOC:", contentDoc, zdom.DocumentJS)
 		if !contentDoc.IsUndefined() && !contentDoc.IsNull() {
-			// zlog.Info("LOC:", contentDoc.Get("location"))
 			newURL := contentDoc.Get("location").Get("href").String()
+			zlog.Info("LOC:", newURL)
 			if newURL != v.url {
 				old := v.url
 				v.url = newURL
 				v.History = append(v.History, newURL)
-				if v.Back != nil {
-					v.Back.SetUsable(true)
-				}
+				v.updateWidgets()
 				v.setTitle()
 				if v.URLChangedFunc != nil {
 					v.URLChangedFunc(newURL, old)
@@ -57,6 +56,12 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		return true
 	})
 	v.AddOnRemoveFunc(repeater.Stop)
+}
+
+func (v *WebView) updateWidgets() {
+	if v.Back != nil {
+		v.Back.SetUsable(len(v.History) > 1)
+	}
 }
 
 func (v *WebView) SetCookies(cookieMap map[string]string) {
@@ -85,6 +90,10 @@ func (v *WebView) SetURL(surl string) {
 	v.Element.Set("src", surl)
 	old := v.url
 	v.url = surl
+	if len(v.History) == 0 || zslice.Top(v.History) != surl {
+		v.History = append(v.History, surl)
+		v.updateWidgets()
+	}
 	if old != "" && v.URLChangedFunc != nil {
 		v.URLChangedFunc(surl, old)
 	}
