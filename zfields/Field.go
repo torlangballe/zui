@@ -202,6 +202,7 @@ type Field struct {
 	Prefix               string            // Added to static text
 	Suffix               string            // Added to static text
 	Required             string            // If set, fields must be non-zero after editing. If Required is not RequiredSingleValue, it is a group id where at least one field with this Required group has to be non-zero.
+	Radio                string            // If set, value is an enum name. Field must be value type of enum.
 }
 
 const (
@@ -210,6 +211,7 @@ const (
 	BPSFormat           = "bps"   // bits or bytes pr sec
 	HumanFormat         = "human" // human-readable int
 	RequiredSingleValue = "$single"
+	IsRadioValue        = "$radio"
 )
 
 var EmptyField = Field{
@@ -268,7 +270,7 @@ var flagsNameMap = zbits.NamedBitMap{
 
 var (
 	callSetupWidgeter func(f *Field)             // callSetupWidgeter is called to set gui widgets registered for use in zui tags. It is dependent on a gui, so injected with this func variable.
-	fieldEnums        = map[string]zdict.Items{} // fieldEnums stores registered enums used by enum tag
+	fieldEnums        = map[string]zdict.Items{} // fieldEnums stores registered enums used by enum/radio tag
 )
 
 func (f FlagType) String() string {
@@ -674,6 +676,12 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.HeaderSize = size
 				f.HeaderImageFixedPath = path
 			}
+		case "radio":
+			_, got := fieldEnums[val]
+			if !got {
+				zlog.Error("no such radio:", val, fieldEnums, f.FieldName, zdebug.CallingStackString())
+			}
+			f.Radio = val
 		case "enum":
 			if zstr.HasPrefix(val, "./", &f.LocalEnum) {
 			} else {
@@ -784,7 +792,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				}
 				setDurationColumns(f)
 			}
-			if f.Enum == "" && f.LocalEnum == "" {
+			if f.Enum == "" && f.Radio == "" && f.LocalEnum == "" {
 				if f.MinWidth == 0 {
 					f.MinWidth = 40
 				}
@@ -805,7 +813,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			zfloat.Maximize(&f.MinWidth, f.HeaderSize.W)
 			zfloat.Maximize(&f.MaxWidth, f.HeaderSize.W)
 		}
-		if f.MinWidth == 0 && f.Flags&FlagIsButton == 0 && f.Enum == "" && f.LocalEnum == "" {
+		if f.MinWidth == 0 && f.Flags&FlagIsButton == 0 && f.Enum == "" && f.Radio == "" && f.LocalEnum == "" {
 			f.MinWidth = 20
 		}
 	case zreflect.KindTime:
@@ -915,16 +923,27 @@ func GetEnum(name string) zdict.Items {
 	return fieldEnums[name]
 }
 
+func SetEnumIntRange[N ~int](name string, from, to N) {
+	var items zdict.Items
+	for i := from; i <= to; i++ {
+		var item zdict.Item
+		item.Name = fmt.Sprint(i)
+		item.Value = i
+		items = append(items, item)
+	}
+	fieldEnums[name] = items
+}
+
 func SetEnumItems(name string, nameValPairs ...any) {
-	var dis zdict.Items
+	var items zdict.Items
 
 	for i := 0; i < len(nameValPairs); i += 2 {
 		var di zdict.Item
 		di.Name = fmt.Sprint(nameValPairs[i])
 		di.Value = nameValPairs[i+1]
-		dis = append(dis, di)
+		items = append(items, di)
 	}
-	fieldEnums[name] = dis
+	fieldEnums[name] = items
 }
 
 func SetStringBasedEnum(name string, vals ...string) {

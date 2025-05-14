@@ -20,6 +20,7 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
+	"github.com/torlangballe/zui/zradio"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
@@ -35,6 +36,7 @@ import (
 	"github.com/torlangballe/zutil/zguiutil"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zint"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
@@ -560,6 +562,11 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			iv.SetImage(nil, path, nil)
 			break
 		}
+		rv, _ := foundView.(*zradio.RadioButton) // it might be a button or something instead
+		if rv != nil {
+			rval.SetBool(rv.Value())
+			return true
+		}
 		cv, _ := foundView.(*zcheckbox.CheckBox) // it might be a button or something instead
 		if cv != nil {
 			b := zbool.ToBoolInd(rval.Interface().(bool))
@@ -1024,7 +1031,7 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	button.SetSpacing(0)
 	if f.HasFlag(FlagIsURL) {
 		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-			surl := replaceDoubleSquiggliesWithFields(fv, f, f.Path)
+			surl := ReplaceDoubleSquiggliesWithFields(fv, f, f.Path)
 			zwindow.GetMain().SetLocation(surl)
 		})
 	}
@@ -1484,7 +1491,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 	}
 	if f.HasFlag(FlagIsURL) {
 		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-			surl := replaceDoubleSquiggliesWithFields(v, f, f.Path)
+			surl := ReplaceDoubleSquiggliesWithFields(v, f, f.Path)
 			zwindow.GetMain().SetLocation(surl)
 		})
 		return iv
@@ -1591,6 +1598,49 @@ func getDictItemsFromSlice(slice reflect.Value, f *Field) (zdict.Items, error) {
 	return *items, nil
 }
 
+func (v *FieldView) makeRadioButtonGroup(f *Field, rval reflect.Value) zview.View {
+	stack := zcontainer.StackViewVert(f.FieldName)
+	// stack.SetSpacing(44)
+	stack.SetObjectName(f.FieldName)
+	stack.GridVerticalSpace = 16
+	enum, got := fieldEnums[f.Radio]
+	if rval.IsZero() && f.HasFlag(FlagHasDefault) && f.Default != "" {
+		zstr.SetStringToAny(rval.Addr().Interface(), f.Default)
+	}
+	if f.ValueStoreKey != "" {
+		val, got := zkeyvalue.DefaultStore.GetItemAsAny(f.ValueStoreKey)
+		if got {
+			rval.Set(reflect.ValueOf(val))
+		}
+	}
+	zlog.Assert(got, f.Radio)
+	for _, e := range enum {
+		equal := reflect.DeepEqual(rval.Interface(), e.Value)
+		b := zradio.NewButton(equal, fmt.Sprint(e.Value), f.FieldName)
+		b.SetValueHandler("zfields", func(edited bool) {
+			frval, err := v.fieldToDataItem(f, stack)
+			if err == nil {
+				return
+			}
+			action := DataChangedAction
+			if edited {
+				action = EditedAction
+				if f.ValueStoreKey != "" {
+					zkeyvalue.DefaultStore.SetItem(f.ValueStoreKey, frval.Interface(), true)
+				}
+			}
+			ap := ActionPack{FieldView: v, Field: f, Action: action, RVal: frval, View: &b.View}
+			if v.callTriggerHandler(ap) {
+				return
+			}
+			callActionHandlerFunc(ap)
+		})
+		_, row, _, _ := zguiutil.Labelize(b, e.Name, f.MinWidth, zgeo.CenterLeft, f.Description)
+		stack.Add(row, zgeo.CenterLeft)
+	}
+	return stack
+}
+
 func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
@@ -1601,6 +1651,9 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if !rval.IsValid() {
 		// zlog.Info("createSpecialView: not valid", f.FieldName)
 		return nil, true
+	}
+	if f.Radio != "" {
+		return v.makeRadioButtonGroup(f, rval), false
 	}
 	// zlog.Info("createSpecialView:", f.FieldName, rval.IsZero(), rval.Type())
 
@@ -1763,8 +1816,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				view = v.makeImage(rval, f)
 				break
 			}
-			b := zbool.ToBoolInd(rval.Interface().(bool))
 			exp = zgeo.AlignmentNone
+			vbool := rval.Interface().(bool)
+			b := zbool.ToBoolInd(vbool)
 			view = v.makeCheckbox(f, b)
 
 		case zreflect.KindInt:
@@ -1932,7 +1986,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.Path != "" {
 		path := f.Path
 		zstr.HasPrefix(path, "./", &path)
-		path = replaceDoubleSquiggliesWithFields(v, f, path)
+		path = ReplaceDoubleSquiggliesWithFields(v, f, path)
 		if f.HasFlag(FlagIsDownload) {
 			view.Native().SetPressedHandler("zfield.Download", zkeyboard.ModifierNone, func() {
 				zview.DownloadURI(path, "")
@@ -2054,7 +2108,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	zpresent.PopupView(stack, target, att)
 }
 
-func replaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {
+func ReplaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {
 	out := zstr.ReplaceAllCapturesFunc(zstr.InDoubleSquigglyBracketsRegex, str, zstr.RegWithoutMatch, func(fieldName string, index int) string {
 		a, findex := FindLocalFieldWithFieldName(v.data, fieldName)
 		if findex == -1 {
@@ -2133,6 +2187,27 @@ func (v *FieldView) parentsDataForMe() any {
 	return rval.Interface()
 }
 
+func (v *FieldView) getRadioGroupValue(f *Field, view zview.View) (any, error) {
+	var found any
+	var err error
+	enum := fieldEnums[f.Radio]
+	zcontainer.ViewRangeChildren(view, true, false, func(v zview.View) bool {
+		rb, _ := v.(*zradio.RadioButton)
+		if rb != nil && rb.Value() {
+			// zlog.Info("getRadioGroupValue:", f.Name, f.Radio, rb.ObjectName(), enum)
+			for _, e := range enum {
+				if rb.ObjectName() == fmt.Sprint(e.Value) {
+					found = e.Value
+					return false
+				}
+			}
+			err = zlog.Error("Not found", rb.ObjectName)
+		}
+		return true
+	})
+	return found, err
+}
+
 func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Value, err error) {
 	if f.IsStatic() {
 		return
@@ -2151,6 +2226,15 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			}
 			return
 		}
+	}
+	if f.Radio != "" {
+		val, e := v.getRadioGroupValue(f, view)
+		if e == nil {
+			value = reflect.ValueOf(val)
+			finfo.ReflectValue.Set(value)
+		}
+		err = e
+		return
 	}
 	if f.Enum != "" || f.LocalEnum != "" {
 		mv, _ := view.(*zmenu.MenuView)
