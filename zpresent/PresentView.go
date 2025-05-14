@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -95,7 +96,7 @@ func PresentView(v zview.View, attributes Attributes) {
 		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes)
 	}
 	ct, _ := v.(zcontainer.ChildrenOwner)
-	if ct != nil {
+	if false && ct != nil { //!!!! Let's try not doing this, as will block if popup windows not allowed in browser (cause it's not run from a user action)
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
 			presentLoaded(win, v, outer, attributes)
 		})
@@ -184,6 +185,7 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			o := attributes.Options
 			o.Pos = &rect.Pos
 			o.Size = size
+			zlog.Info("WinOPen:", zdebug.CallingStackString())
 			win = zwindow.Open(o)
 			if win == nil {
 				if !attributes.NoMessageOnOpenFail && ShowErrorFunc != nil {
