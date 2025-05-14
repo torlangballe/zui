@@ -595,7 +595,7 @@ func (v *NativeView) Hierarchy() string {
 
 func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 	var str string
-	var found bool
+	var found, added bool
 	var debug bool
 	if root == nil {
 		found = true
@@ -606,13 +606,17 @@ func (v *NativeView) HierarchyToRoot(root *NativeView) string {
 			found = (root == p)
 		}
 		if found {
+			if added {
+				str += "/"
+			}
 			str += p.ObjectName()
 			if debug {
 				str += ":" + zlog.Pointer(p)
 			}
+			added = true
 		}
 	}
-	str += v.ObjectName()
+	str += "/" + v.ObjectName()
 	if debug {
 		str += ":" + zlog.Pointer(v)
 	}
@@ -1643,8 +1647,13 @@ func (v *NativeView) RootParent(toModalWindowOnly bool) *NativeView {
 	if all[i].ObjectName() == "window" {
 		i++
 	}
-	if len(all)-1 > i && toModalWindowOnly && all[i].ObjectName() == "$blocker" {
+	// zlog.Info("RootParent:", v.Hierarchy(), i, len(all)-1, toModalWindowOnly, all[i].ObjectName())
+	if len(all) > i && toModalWindowOnly && all[i].ObjectName() == "$blocker" {
+		// zlog.Info("RootParent2:", v.Hierarchy(), i)
 		i++
+	}
+	if i >= len(all) {
+		return v
 	}
 	return all[i]
 }
