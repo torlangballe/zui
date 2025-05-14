@@ -34,16 +34,17 @@ const (
 )
 
 type Alert struct {
-	Text              string
-	OKButton          string
-	CancelButton      string
-	OtherButton       string
-	UploadButton      string
-	DestructiveButton string
-	SubText           string
-	BuildGUI          bool
-	HandleUpload      func(data []byte, filename string)
-	DialogView        zview.View
+	Text                       string
+	OKButton                   string
+	CancelButton               string
+	OtherButton                string
+	UploadButton               string
+	DestructiveButton          string
+	SubText                    string
+	BuildGUI                   bool
+	HandleUpload               func(data []byte, filename string)
+	DialogView                 zview.View
+	MimesOrExtensionsForUpload []string
 }
 
 func init() {
@@ -142,7 +143,7 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 		if result == Upload {
 			zlog.Assert(a.HandleUpload != nil)
 			button := zbutton.New(text)
-			button.SetUploader(func(data []byte, filename string) {
+			button.SetUploader(a.MimesOrExtensionsForUpload, func(data []byte, filename string) {
 				a.HandleUpload(data, filename)
 				zpresent.Close(a.DialogView, false, nil)
 			}, nil, nil)
@@ -150,6 +151,9 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 		} else {
 			button := zbutton.New(text)
 			bar.Add(button, zgeo.CenterRight)
+			if result == Cancel {
+				button.MakeEscapeCanceler()
+			}
 			button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 				zpresent.Close(stack, result == Cancel, func(dismissed bool) {
 					if handle != nil {
@@ -157,6 +161,21 @@ func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text strin
 					}
 				})
 			})
+			// 	button.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+			// 		zlog.Info("PRess:", km.Key.IsReturnish(), km.Modifier)
+			// 		if !down {
+			// 			return false
+			// 		}
+			// 		if km.Key.IsReturnish() && km.Modifier == 0 {
+			// 			zpresent.Close(stack, result == Cancel, func(dismissed bool) {
+			// 				if handle != nil {
+			// 					handle(result)
+			// 				}
+			// 			})
+			// 			return true
+			// 		}
+			// 		return false
+			// 	})
 		}
 	}
 }
