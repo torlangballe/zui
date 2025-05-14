@@ -42,7 +42,6 @@ func Labelize(c *CheckBox, title string) (*zlabel.Label, *zcontainer.StackView) 
 	stack.SetSpacing(0)
 	stack.Add(c, zgeo.Left|zgeo.VertCenter, zgeo.SizeD(0, -4))
 	stack.Add(label, zgeo.Left|zgeo.VertCenter, zgeo.SizeD(6, 0))
-
 	return label, stack
 }
 
@@ -50,4 +49,8 @@ func NewWithLabel(def bool, title, storeKey string) (check *CheckBox, label *zla
 	check = NewWithStore(def, storeKey)
 	label, stack = Labelize(check, title)
 	return
+}
+
+func (v *CheckBox) Toggle() {
+	v.SetOn(!v.On())
 }
