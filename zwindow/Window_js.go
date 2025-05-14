@@ -266,7 +266,6 @@ func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down
 	id = rand.Int63()
 	win.callbackIDs = append(win.callbackIDs, id)
 	jfunc := js.FuncOf(func(val js.Value, args []js.Value) any { // TODO: release function
-
 		top := TopView(win).Native()
 		toModalWindowOnly := true
 		root := view.Native().RootParent(toModalWindowOnly)
@@ -282,11 +281,12 @@ func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down
 		if !zview.HasViewCallback(view, id) {
 			return nil
 		}
-		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), eventName, down, win.Element.Get("document").Call("hasFocus").Bool(), len(win.keyHandlers))
+		// zlog.Info("KeyWin:", win.Element.Get("outerWidth"), down, win.Element.Get("document").Call("hasFocus").Bool())
 		if !win.Element.Get("document").Call("hasFocus").Bool() {
 			return nil
 		}
 		ekm := zkeyboard.GetKeyModFromEvent(args[0])
+		// zlog.Info("WinKey3", ekm, km)
 		if !ekm.Matches(km) {
 			return nil
 		}
