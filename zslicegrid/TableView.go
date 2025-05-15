@@ -227,11 +227,6 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	s := v.StructForID(id)
 	view := v.createRowFromStruct(s, id)
 	view.Native().SetSelectable(false)
-	if v.Options&(AllowEdit|AllowView) != 0 {
-		view.Native().SetDoublePressedHandler(func() {
-			v.editOrViewItemIDs([]string{id}, false, v.Options&AllowView != 0, nil)
-		})
-	}
 	return view
 }
 

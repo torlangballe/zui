@@ -570,6 +570,11 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 		return
 	}
 	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
+	if v.Options&(AllowEdit|AllowView) != 0 {
+		v.Grid.HandleRowDoubleTappedFunc = func(id string) {
+			v.editOrViewItemIDs([]string{id}, false, v.Options&AllowView != 0, nil)
+		}
+	}
 
 	// v.Grid.UpdateCell = v.UpdateCell
 }

@@ -73,7 +73,8 @@ type GridListView struct {
 	CellHeightFunc             func(id string) float64 // only needed to have variable-height
 	HandleSelectionChangedFunc func()
 	HandleRowPressedFunc       func(id string) bool // this only gets called for non-selectable grids. Return if it eats press
-	HandleHoverOverFunc        func(id string)      // this gets "" id when hovering out of a cell
+	HandleRowDoubleTappedFunc  func(id string)
+	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
 	HandleKeyFunc              func(km zkeyboard.KeyMod, down bool) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
 
@@ -825,6 +826,11 @@ func (v *GridListView) makeOrGetChild(id string) (zview.View, bool) {
 	// v.addDebugIndexLabel(child, id)
 	if v.HierarchyLevelFunc != nil {
 		v.insertBranchToggle(id, child)
+	}
+	if v.HandleRowDoubleTappedFunc != nil {
+		child.Native().SetDoublePressedHandler(func() {
+			v.HandleRowDoubleTappedFunc(id)
+		})
 	}
 	v.children[id] = child
 	// child.Show(false)
