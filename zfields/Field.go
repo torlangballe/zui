@@ -333,7 +333,6 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 	fTypeName := rval.Type().Name()
 	f.Kind = zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	f.FieldName = sfName
-	// zlog.Info("FIELD:", f.FieldName)
 	f.Alignment = zgeo.AlignmentNone
 	f.UpdateSecs = -1
 	f.SortSmallFirst = zbool.Unknown
@@ -344,7 +343,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
 
-	var keyVals map[string]string
+	var keyVals []zstr.KeyValue
 	if zuiTagPart != "" {
 		var skip bool
 		keyVals, skip = zreflect.TagKeyValuesFromString(zuiTagPart)
@@ -352,84 +351,84 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			return false
 		}
 	}
-	for key, val := range keyVals {
+	for _, kv := range keyVals {
 		// key := kv.Key
 		// val := kv.Value
-		barParts := strings.Split(val, "|")
-		if key == "IN" {
+		barParts := strings.Split(kv.Value, "|")
+		if kv.Key == "IN" {
 			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
 			continue
 		}
 		if skipping {
 			continue
 		}
-		n, floatErr := strconv.ParseFloat(val, 32)
-		flag := zbool.FromString(val, false)
-		switch key {
+		n, floatErr := strconv.ParseFloat(kv.Value, 32)
+		flag := zbool.FromString(kv.Value, false)
+		switch kv.Key {
 		case "search":
 			f.Flags |= FlagIsSearchable
 		case "password":
 			f.Flags |= FlagIsPassword
-			if val == "existing" {
+			if kv.Value == "existing" {
 				f.Flags |= FlagIsFixed
 			}
 		case "setedited":
 			f.SetEdited = flag
 		case "format":
-			f.Format = val
+			f.Format = kv.Value
 		case "vertical":
 			f.Vertical = zbool.True
 		case "horizontal":
 			f.Vertical = zbool.False
 		case "align":
-			f.Alignment = zgeo.AlignmentFromString(val)
-			// zlog.Info("ALIGN:", f.Name, val, a)
+			f.Alignment = zgeo.AlignmentFromString(kv.Value)
+			// zlog.Info("ALIGN:", f.Name, kv.Value, a)
 		// case "cannil"
 		// f.Flags |= flagAllowNil
 		case "celljustify", "justify":
-			if val == "" {
+			if kv.Value == "" {
 				f.Justify = f.Alignment
 			} else {
-				f.Justify = zgeo.AlignmentFromString(val)
+				f.Justify = zgeo.AlignmentFromString(kv.Value)
 			}
-			if key == "celljustify" {
+			if kv.Key == "celljustify" {
 				f.SetFlag(FlagDontJustifyHeader)
 			}
 		case "wrap":
-			f.Wrap = val
-			if val == "" {
+			f.Wrap = kv.Value
+			if kv.Value == "" {
 				f.Wrap = "tailtrunc"
 			}
 		case "name":
-			f.Name = val
+			f.Name = kv.Value
 		case "title":
-			f.Title = val
+			f.Title = kv.Value
 		case "header":
-			f.Header = val
+			f.Header = kv.Value
 		case "prefix":
-			f.Prefix = val
+			f.Prefix = kv.Value
 		case "suffix":
-			f.Suffix = val
+			f.Suffix = kv.Value
 		case "url":
-			f.Path = val
+			f.Path = kv.Value
 			f.Flags |= FlagIsURL
 		case "doc":
-			f.Path = val
+			f.Path = kv.Value
 			f.Flags |= FlagIsDocumentation
 		case "usein":
 			f.UseIn = barParts
 		case "rebuild":
 			f.Flags |= FlagIsRebuildAllOnChange
 		case "sep":
-			f.StringSep = val
-			if val == "" {
+			f.StringSep = kv.Value
+			if kv.Value == "" {
 				f.StringSep = " "
 			}
 		case "hlockable":
 			f.SetFlag(FlagHeaderLockable)
-			if val == "start" {
+			if kv.Value == "start" {
 				f.SetFlag(FlagIsStart)
-			} else if val == "end" {
+			} else if kv.Value == "end" {
 				f.SetFlag(FlagIsEnd)
 			}
 		case "lockable":
@@ -448,12 +447,12 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.Styling.FGColor.SetFromString(f.Colors[0])
 			}
 		case "bgcolor":
-			f.Styling.BGColor.SetFromString(val)
+			f.Styling.BGColor.SetFromString(kv.Value)
 		case "download":
 			f.Flags |= FlagIsDownload
-			f.Path = val
+			f.Path = kv.Value
 		case "zrpc":
-			f.RPCCall = val
+			f.RPCCall = kv.Value
 		case "zdebug":
 			f.Flags |= FlagIsForZDebugOnly
 		case "height":
@@ -479,9 +478,9 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.MinWidth = n
 			}
 		case "widget":
-			f.WidgetName = val
+			f.WidgetName = kv.Value
 		case "descending", "ascending":
-			if key == "ascending" {
+			if kv.Key == "ascending" {
 				f.SortSmallFirst = zbool.True
 			} else {
 				f.SortSmallFirst = zbool.False
@@ -498,14 +497,14 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "noautofill":
 			f.Flags |= FlagDisableAutofill
 		case "size":
-			f.Size, _ = zgeo.SizeFromString(val)
+			f.Size, _ = zgeo.SizeFromString(kv.Value)
 			if f.Size.IsNull() {
 				f.Size = zgeo.SizeBoth(n)
 			}
 		case "marg":
 			var err error
-			f.Margin, err = zgeo.SizeFromString(val)
-			zlog.OnError(err, val)
+			f.Margin, err = zgeo.SizeFromString(kv.Value)
+			zlog.OnError(err, kv.Value)
 		case "minwidth":
 			if floatErr == nil {
 				f.MinWidth = n
@@ -515,36 +514,36 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.Styling.Spacing = n
 			}
 		case "storekey":
-			f.ValueStoreKey = val
+			f.ValueStoreKey = kv.Value
 		case "default":
-			f.Default = val
+			f.Default = kv.Value
 			f.SetFlag(FlagHasDefault)
 		case "allowempty":
 			f.Flags |= FlagAllowEmptyAsZero
 		case "omitzero":
 			f.Flags |= FlagOmitZero
 		case "required":
-			f.Required = val
-			if val == "" {
+			f.Required = kv.Value
+			if kv.Value == "" {
 				f.Required = RequiredSingleValue
 			}
 		case "zerotext":
-			f.ZeroText = val
+			f.ZeroText = kv.Value
 		case "maxtext":
-			f.MaxText = val
+			f.MaxText = kv.Value
 		case "invalid":
-			switch val {
+			switch kv.Value {
 			case "past":
 				f.SetFlag(FlagPastInvalid)
 			case "future":
 				f.SetFlag(FlagFutureInvalid)
 			default:
-				zlog.Error("invalid: bad val:", val)
+				zlog.Error("invalid: bad val:", kv.Value)
 			}
 		case "open":
 			f.Flags |= FlagIsOpen
 		case "static":
-			if flag || val == "" {
+			if flag || kv.Value == "" {
 				f.Flags |= FlagIsStatic
 			}
 		case "fracts":
@@ -582,7 +581,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "frame":
 			// zlog.Info("Frame:", f.Name, f.FieldName)
 			f.Flags |= FlagHasFrame
-			for _, part := range strings.Split(val, "|") {
+			for _, part := range strings.Split(kv.Value, "|") {
 				switch part {
 				case "titled":
 					f.Flags |= FlagFrameIsTitled
@@ -595,7 +594,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "opaque":
 			f.Flags |= FlagIsOpaque
 		case "shadow":
-			for _, part := range strings.Split(val, "|") {
+			for _, part := range strings.Split(kv.Value, "|") {
 				got := false
 				if f.Styling.DropShadow.Delta.IsNull() {
 					var err error
@@ -624,7 +623,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 
 		case "font":
 			var sign int
-			for _, part := range strings.Split(val, "|") {
+			for _, part := range strings.Split(kv.Value, "|") {
 				if zstr.HasPrefix(part, "+", &part) {
 					sign = 1
 				}
@@ -647,9 +646,9 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			}
 
 		case "path":
-			f.Path = val
+			f.Path = kv.Value
 		case "off":
-			f.OffImagePath = "images/" + val
+			f.OffImagePath = "images/" + kv.Value
 		case "opener":
 			f.Flags |= FlagIsOpen | FlagIsOpener | FlagNoTitle | FlagIsImage
 			f.MinWidth = 20
@@ -667,7 +666,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 					path = "images/" + part
 				}
 			}
-			if key == "image" {
+			if kv.Key == "image" {
 				f.Size = size
 				f.Flags |= FlagIsImage
 				f.ImageFixedPath = path
@@ -677,26 +676,26 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.HeaderImageFixedPath = path
 			}
 		case "radio":
-			_, got := fieldEnums[val]
+			_, got := fieldEnums[kv.Value]
 			if !got {
-				zlog.Error("no such radio:", val, fieldEnums, f.FieldName, zdebug.CallingStackString())
+				zlog.Error("no such radio:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
 			}
-			f.Radio = val
+			f.Radio = kv.Value
 		case "enum":
-			if zstr.HasPrefix(val, "./", &f.LocalEnum) {
+			if zstr.HasPrefix(kv.Value, "./", &f.LocalEnum) {
 			} else {
-				_, got := fieldEnums[val]
+				_, got := fieldEnums[kv.Value]
 				if !got {
-					zlog.Error("no such enum:", val, fieldEnums, f.FieldName, zdebug.CallingStackString())
+					zlog.Error("no such enum:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
 				}
-				f.Enum = val
+				f.Enum = kv.Value
 			}
 		case "notitle":
 			f.Flags |= FlagNoTitle
 		case "tip":
-			f.Tooltip = val
+			f.Tooltip = kv.Value
 		case "desc":
-			f.Description = val
+			f.Description = kv.Value
 		case "immediate":
 			f.UpdateSecs = 0
 		case "upsecs":
@@ -709,7 +708,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.Flags |= FlagToClipboard
 		case "labelize":
 			f.Flags |= FlagIsLabelize
-			if val == "withdesc" {
+			if kv.Value == "withdesc" {
 				f.Flags |= FlagLabelizeWithDescriptions
 			}
 		case "unlabled":
@@ -717,30 +716,30 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "button":
 			f.Flags |= FlagIsButton | FlagPress
 		case "ask":
-			f.Ask = val
+			f.Ask = kv.Value
 		case "enable":
-			f.LocalEnable = val
+			f.LocalEnable = kv.Value
 		case "disable":
-			if val != "" {
-				f.LocalDisable = val
+			if kv.Value != "" {
+				f.LocalDisable = kv.Value
 			} else {
 				f.Disabled = true // not used yet
 			}
 		case "show":
-			if val == "" {
+			if kv.Value == "" {
 				f.Visible = true
 			} else {
-				f.LocalShow = val
+				f.LocalShow = kv.Value
 			}
 		case "hide":
-			if val == "" {
+			if kv.Value == "" {
 				f.Visible = false
 			} else {
-				f.LocalHide = val
+				f.LocalHide = kv.Value
 			}
 		case "placeholder":
-			if val != "" {
-				f.Placeholder = val
+			if kv.Value != "" {
+				f.Placeholder = kv.Value
 			} else {
 				f.Placeholder = "$HAS$" // set to this special value to set to name once set
 			}
@@ -749,7 +748,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "since":
 			f.Flags |= FlagIsStatic | FlagIsDuration
 		default:
-			f.CustomFields[key] = val
+			f.CustomFields[kv.Key] = kv.Value
 		}
 	}
 	if rval.Type() == reflect.TypeOf(zgeo.Color{}) {
@@ -1129,12 +1128,12 @@ func FlattenIfAnonymousOrZUITag(f reflect.StructField) bool {
 	if f.Anonymous {
 		return true
 	}
-	kvMap, skip := zreflect.TagKeyValuesForKeyInStructField(&f, "zui")
-	if kvMap == nil || skip {
+	keyVals, skip := zreflect.TagKeyValuesForKeyInStructField(&f, "zui")
+	if len(keyVals) == 0 || skip {
 		return false
 	}
-	_, got := kvMap["flatten"]
-	if got {
+	_, i := zstr.KeyValuesFindForKey(keyVals, "flatten")
+	if i != -1 {
 		return true
 	}
 	return false
@@ -1270,7 +1269,7 @@ func OutputJSONStructDescription(s any, indent string) string {
 			if len(jsonVals) > 0 {
 				fn = jsonVals[0]
 			}
-			val, got := zuiKV["desc"]
+			val, got := zstr.KeyValuesValueForKey(zuiKV, "desc")
 			if got {
 				desc = val
 			}
