@@ -2038,6 +2038,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.VertCenter
 		}
+		if !v.params.MultiSliceEditInProgress && f.Required != "" {
+			title += "*"
+		}
 		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, a, desc)
 		cell.Alignment |= zgeo.HorShrink
 		if f.HasFlag(FlagIsLockable) {
