@@ -121,6 +121,9 @@ func (v *Label) SetMaxLines(max int) {
 }
 
 func (v *Label) SetRect(r zgeo.Rect) {
+	if zdevice.CurrentWasmBrowser == zdevice.Firefox {
+		r.IncMinY(-1)
+	}
 	r.Size.H--
 	v.NativeView.SetRect(r)
 }

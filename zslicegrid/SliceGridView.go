@@ -148,7 +148,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
 		v.Bar.NoCalculatedMaxSize.W = true
-		v.Bar.SetMargin(zgeo.RectFromXY2(6, 5, 0, -3))
+		v.Bar.SetMargin(zgeo.RectFromXY2(6, 3, 0, -3))
 		if options&AddBarInHeader == 0 {
 			v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
 		}
