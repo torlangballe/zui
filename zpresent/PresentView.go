@@ -16,7 +16,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
-	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -185,7 +184,6 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 			o := attributes.Options
 			o.Pos = &rect.Pos
 			o.Size = size
-			zlog.Info("WinOPen:", zdebug.CallingStackString())
 			win = zwindow.Open(o)
 			if win == nil {
 				if !attributes.NoMessageOnOpenFail && ShowErrorFunc != nil {
