@@ -245,6 +245,14 @@ func (o *MenuedOwner) SelectedValue() any {
 	return item.Value
 }
 
+func (o *MenuedOwner) SelectedValues() []any {
+	var sel []any
+	for _, item := range o.SelectedItems() {
+		sel = append(sel, item.Value)
+	}
+	return sel
+}
+
 func (o *MenuedOwner) SelectedItems() (sitems zdict.Items) {
 	for _, item := range o.items {
 		if item.Selected {
