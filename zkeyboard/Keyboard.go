@@ -14,7 +14,7 @@ type AutoCapType string
 type ReturnKeyType string
 
 type KeyMod struct {
-	Key Key
+	Key      Key
 	Modifier Modifier
 }
 
@@ -35,12 +35,12 @@ const (
 )
 
 const (
-	KeyNone Key = iota
+	KeySpace     = ' '
+	KeyNone  Key = iota + 1000
 	KeyReturn
 	KeyEnter
 	KeyTab
 	KeyBackspace
-	KeySpace
 	KeyDelete
 	KeyEscape
 	KeyLeftArrow

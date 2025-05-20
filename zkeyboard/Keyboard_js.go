@@ -51,7 +51,6 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 	case "+":
 		km.Key = KeyPlus
 		km.Modifier = 0
-		// zlog.Info("Key:", key, km)
 	case "-":
 		km.Key = KeyMinus
 		km.Modifier = 0
