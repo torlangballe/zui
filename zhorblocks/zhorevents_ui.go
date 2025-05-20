@@ -652,9 +652,9 @@ func (v *HorEventsView) makeButtons() {
 		v.panDurations[i].stack = stack
 		v.Bar.Add(stack, zgeo.CenterLeft)
 	}
-	outKey := zkeyboard.KeyMod{Char: "-"}
-	inKey := zkeyboard.KeyMod{Char: "+"}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "filler", 4, 28, -1, v.IsDark, v.zoomPressed)
+	outKey := zkeyboard.KeyMod{Key: zkeyboard.KeyMinus}
+	inKey := zkeyboard.KeyMod{Key: zkeyboard.KeyPlus}
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "zoom", 4, 28, -1, v.IsDark, v.zoomPressed)
 	title, _ := v.zoomStack.FindViewWithName("title", true)
 	title.SetColor(zgeo.ColorOrange)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
