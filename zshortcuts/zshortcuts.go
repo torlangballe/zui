@@ -32,7 +32,7 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	nv := view.Native()
 	var col zgeo.Color
 	var o float32
-	if scut.Key == 0 && scut.Char == "" && scut.Modifier&viewKM.Modifier != 0 {
+	if scut.Key == 0 && scut.Modifier&viewKM.Modifier != 0 {
 		col = zgeo.ColorYellow
 		o = 0.3
 		if scut.Modifier == viewKM.Modifier {
@@ -113,7 +113,6 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 }
 
 func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod) bool {
-	// zlog.Info("HandleOutsideShortcutRecursively:", view.Native().ObjectName(), sc)
 	var handled bool
 	sh, _ := view.(zkeyboard.ShortcutHandler)
 	if sh != nil && sh.HandleOutsideShortcut(sc) {
@@ -144,7 +143,6 @@ func HandleShortcut(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool {
 		return false
 	}
 	f := pfo.PressedHandler()
-	// zlog.Info("HandleShortcut", view.Native().Hierarchy(), viewSC, zlog.Full(pressedSC), f != nil)
 	if f == nil {
 		return false
 	}
