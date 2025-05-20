@@ -14,8 +14,7 @@ type AutoCapType string
 type ReturnKeyType string
 
 type KeyMod struct {
-	Key      Key
-	Char     string
+	Key Key
 	Modifier Modifier
 }
 
@@ -36,26 +35,32 @@ const (
 )
 
 const (
-	KeyNone       Key = 0
-	KeyReturn     Key = 13
-	KeyEnter      Key = 131313 // not sure what it is elsewhere, doesn't exist in js/html
-	KeyTab        Key = 9
-	KeyBackspace  Key = 8
-	KeySpace      Key = 32
-	KeyDelete     Key = 127
-	KeyEscape     Key = 27
-	KeyLeftArrow  Key = 37
-	KeyRightArrow Key = 39
-	KeyUpArrow    Key = 38
-	KeyDownArrow  Key = 40
-	KeyShiftKey   Key = 16
-	KeyControlKey Key = 17
-	KeyAltKey     Key = 18
-	KeyCommandKey Key = 91
-	KeyPageUp     Key = 33
-	KeyPageDown   Key = 34
-	KeyEnd        Key = 35
-	KeyHome       Key = 36
+	KeyNone Key = iota
+	KeyReturn
+	KeyEnter
+	KeyTab
+	KeyBackspace
+	KeySpace
+	KeyDelete
+	KeyEscape
+	KeyLeftArrow
+	KeyRightArrow
+	KeyUpArrow
+	KeyDownArrow
+	KeyShiftLeft
+	KeyControlLeft
+	KeyAltLeft
+	KeyCommandLeft
+	KeyShiftRight
+	KeyControlRight
+	KeyAltRight
+	KeyCommandRight
+	KeyPageUp
+	KeyPageDown
+	KeyEnd
+	KeyHome
+	KeyPlus
+	KeyMinus
 )
 
 const (
@@ -118,20 +123,20 @@ func KMod(k Key, m Modifier) KeyMod {
 }
 
 func (k KeyMod) IsNull() bool {
-	return k.Key == 0 && k.Modifier == 0 && k.Char == ""
+	return k.Key == 0 && k.Modifier == 0 //&& k.Char == ""
 }
 
 func (k KeyMod) Matches(m KeyMod) bool {
-	if k.Char == "" && k.Key == 0 && m.Char == "" && m.Key == 0 {
+	if k.Key == 0 && m.Key == 0 {
 		return false
-	}
-	if k.Char != "" && m.Char != "" {
-		return k.Char == m.Char
 	}
 	if k.Modifier != m.Modifier {
 		return false
 	}
-	return k.Key == m.Key
+	if k.Key == m.Key {
+		return true
+	}
+	return false
 }
 
 func (m Modifier) IsNull() bool {
@@ -264,8 +269,6 @@ func (km KeyMod) SymbolParts(singleLetterKey bool) []string {
 	parts := km.Modifier.AsSymbols()
 	if km.Key != 0 {
 		parts = append(parts, km.Key.AsString(singleLetterKey))
-	} else {
-		parts = append(parts, km.Char)
 	}
 	return parts
 }
