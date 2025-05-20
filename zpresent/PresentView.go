@@ -95,7 +95,7 @@ func PresentView(v zview.View, attributes Attributes) {
 		outer = makeEmbeddingViewAndAddToWindow(win, v, attributes)
 	}
 	ct, _ := v.(zcontainer.ChildrenOwner)
-	if false && ct != nil { //!!!! Let's try not doing this, as will block if popup windows not allowed in browser (cause it's not run from a user action)
+	if ct != nil && (!FirstPresented || attributes.Modal) {
 		zcontainer.WhenContainerLoaded(ct, func(waited bool) {
 			presentLoaded(win, v, outer, attributes)
 		})
