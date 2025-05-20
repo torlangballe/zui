@@ -4,6 +4,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 func GetKeyModFromEvent(event js.Value) KeyMod {
@@ -15,6 +16,10 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 	key := event.Get("key")
 	if !key.IsUndefined() {
 		km.Char = key.String()
+		if km.Key >= 'A' && km.Key <= 'Z' || km.Key >= 'a' && km.Key <= 'z' {
+			km.Char = string(rune(km.Key))
+			km.Key = 0
+		}
 	}
 	switch km.Char {
 	case "Control":
@@ -40,7 +45,7 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 	if zdom.GetBoolIfDefined(event, "ctrlKey") {
 		km.Modifier |= ModifierControl
 	}
-	// zlog.Info("KM:", km.Char, "key:", km.Key, "mod1:", km.Modifier)
+	zlog.Info("KM:", km.Char, "key:", km.Key, "mod1:", km.Modifier, "ascii:", string(rune(km.Key)))
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
 		km.Modifier |= MetaModifier
 	}
