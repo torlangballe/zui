@@ -1437,7 +1437,7 @@ func (v *NativeView) SetStateOnPress(event js.Value) {
 	pos.X = event.Get("offsetX").Float()
 	pos.Y = event.Get("offsetY").Float()
 	LastPressedPos = pos //.Minus(v.AbsoluteRect().Pos)
-	zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(event).Modifier
+	zkeyboard.ModifiersAtPress = zkeyboard.ModifierFromEvent(event)
 }
 
 func (v *NativeView) ClearStateOnUpPress() {
@@ -1465,7 +1465,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		v.SetStateOnPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
-		zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
+		zkeyboard.ModifiersAtPress = zkeyboard.ModifierFromEvent(e)
 		if handler(*movingPos, zbool.True) {
 			e.Call("stopPropagation")
 			e.Call("preventDefault")
@@ -1481,7 +1481,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			we.Call("removeEventListener", "mousemove", moveFunc)
 			upFunc.Release()
 			moveFunc.Release()
-			zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
+			zkeyboard.ModifiersAtPress = zkeyboard.ModifierFromEvent(e)
 			if handler(upPos, zbool.False) {
 				// e.Call("stopPropagation")
 				// e.Call("preventDefault")
@@ -1496,7 +1496,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			if movingPos != nil {
 				e := args[0]
 				pos := getMousePosRelative(v, e)
-				zkeyboard.ModifiersAtPress = zkeyboard.GetKeyModFromEvent(e).Modifier
+				zkeyboard.ModifiersAtPress = zkeyboard.ModifierFromEvent(e)
 				if handler(pos, zbool.Unknown) {
 					e.Call("stopPropagation")
 					e.Call("preventDefault")
