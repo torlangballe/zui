@@ -59,9 +59,11 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 		return km
 	}
 	scode := event.Get("code").String()
-	if zstr.HasPrefix(scode, "Key", &c) && len(c) == 1 {
-		km.Key = Key(c[0])
-		return km
+	for _, pre := range []string{"Key", "Digit"} {
+		if zstr.HasPrefix(scode, pre, &c) && len(c) == 1 {
+			km.Key = Key(c[0])
+			return km
+		}
 	}
 	switch scode {
 	case "ControlLeft":
