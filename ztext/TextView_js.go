@@ -247,14 +247,12 @@ func (v *TextView) setHandlers() {
 		if v.changed.Count() == 0 && v.editDone == nil && v.FilterFunc == nil {
 			return nil
 		}
-		which := event.Get("which")
-		if which.IsUndefined() {
+		km := zkeyboard.GetKeyModFromEvent(event)
+		if km.Key == 0 {
 			return nil
 		}
-		key := zkeyboard.Key(which.Int())
-		// zlog.Info("OnKeyDown", key)
 		propagate := false
-		if key == zkeyboard.KeyReturn || key == zkeyboard.KeyTab {
+		if km.Key.IsReturnish() || km.Key == zkeyboard.KeyTab {
 			propagate = true
 			if v.editDone != nil {
 				v.editDone(false)
@@ -263,7 +261,7 @@ func (v *TextView) setHandlers() {
 				v.updateDone()
 			}
 		}
-		if key == zkeyboard.KeyEscape {
+		if km.Key == zkeyboard.KeyEscape {
 			propagate = true
 			if v.editDone != nil {
 				v.editDone(true)
@@ -279,23 +277,20 @@ func (v *TextView) setHandlers() {
 			return nil
 		}
 		event := vs[0]
-		w := event.Get("which")
-		if w.IsUndefined() {
+		km := zkeyboard.GetKeyModFromEvent(event)
+		if km.Key == 0 {
 			return nil
 		}
-		mod := zkeyboard.GetKeyModFromEvent(event).Modifier
-		if mod&zkeyboard.MetaModifier != 0 {
+		if km.Modifier&zkeyboard.MetaModifier != 0 {
 			return nil
 		}
 		r := rune(event.Get("charCode").Int())
-		// zlog.Info("OnKey3", r, mod, mod&zkeyboard.MetaModifier)
 		if r < ' ' && r != '\t' || r == 127 {
 			return nil
 		}
 		if v.FilterFunc != nil {
 			in := string(r)
 			out := v.FilterFunc(in)
-			// zlog.Info("Filter:", "'"+in+"'", "'"+out+"'")
 			if out != in {
 				event.Call("preventDefault")
 				if out != "" {
