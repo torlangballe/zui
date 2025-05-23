@@ -1,6 +1,11 @@
 package zclipboard
 
-import "github.com/torlangballe/zui/zdom"
+import (
+	"syscall/js"
+
+	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zutil/zlog"
+)
 
 func SetString(str string) {
 	oldFocused := zdom.DocumentJS.Get("activeElement")
@@ -17,5 +22,17 @@ func SetString(str string) {
 	}
 }
 
-// "clipboard-read" permission.
-// https://web.dev/async-clipboard/
+func GetString(got func(s string)) {
+	clip := js.Global().Get("navigator").Get("clipboard")
+	if clip.IsUndefined() {
+		return
+	}
+	promise := clip.Call("readText")
+	zdom.Resolve(promise, func(resolved js.Value, err error) {
+		if err != nil {
+			zlog.Error("play", err)
+			return
+		}
+		got(resolved.String())
+	})
+}
