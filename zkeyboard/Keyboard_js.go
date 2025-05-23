@@ -4,6 +4,7 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
@@ -21,7 +22,11 @@ func ModifierFromEvent(event js.Value) Modifier {
 		m |= ModifierControl
 	}
 	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
-		m |= MetaModifier
+		if zdevice.OS() == zdevice.MacOSType || zdevice.OS() == zdevice.IOSType {
+			m |= ModifierCommand
+		} else {
+			m |= ModifierMeta
+		}
 	}
 	if zdom.GetBoolIfDefined(event, "shiftKey") {
 		m |= ModifierShift
@@ -34,18 +39,7 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 	var c string
 
 	km.Modifier = ModifierFromEvent(event)
-	if zdom.GetBoolIfDefined(event, "altKey") {
-		km.Modifier |= ModifierAlt
-	}
-	if zdom.GetBoolIfDefined(event, "ctrlKey") {
-		km.Modifier |= ModifierControl
-	}
-	if zdom.GetBoolIfDefined(event, "metaKey") || zdom.GetBoolIfDefined(event, "osKey") {
-		km.Modifier |= MetaModifier
-	}
-	if zdom.GetBoolIfDefined(event, "shiftKey") {
-		km.Modifier |= ModifierShift
-	}
+	// zlog.Info("KEY:", km.Modifier, ModifierMenu, ModifierMeta, ModifierCommand)
 	key := event.Get("key").String()
 	switch key {
 	case "+":

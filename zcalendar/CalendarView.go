@@ -107,11 +107,10 @@ func (v *CalendarView) Init(view zview.View) {
 	v.settingsGear.SetZIndex(zview.BaseZIndex + 2)
 	v.settingsGear.SetAlpha(0)
 	v.settingsGear.SetPressedHandler("", zkeyboard.ModifierNone, v.handleSettingsPressed)
-	v.settingsGear.SetPressedHandler("", zkeyboard.ModifierCommand, v.handleSettingsPressed)
 	v.Add(v.settingsGear, zgeo.BottomRight, zgeo.SizeF(6, 6)).Free = true
 
 	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if km.Key == 0 && km.Modifier == zkeyboard.ModifierCommand {
+		if km.Key == 0 && km.Modifier == zkeyboard.ModifierMenu {
 			showSettings(v, v.settingsGear, down)
 		}
 		if !down {

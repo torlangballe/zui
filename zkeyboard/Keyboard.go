@@ -32,6 +32,7 @@ const (
 	ModifierControl
 	ModifierAlt
 	ModifierCommand
+	ModifierMeta
 )
 
 const (
@@ -103,18 +104,26 @@ const (
 )
 
 var (
-	ModifiersAtPress    Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
-	MetaModifier        = ModifierControl
-	AltModifierName     = AltModifierConstName
-	CommandModifierName = "Meta"
-	CurrentKeyDown      KeyMod
+	ModifiersAtPress Modifier // ModifiersAtPress is set from  events before handlers are called. This is global to avoid passing mods in all pressed/longpressed handlers
+	ModifierMenu     = ModifierControl
+	AltModifierName  = AltModifierConstName
+	CurrentKeyDown   KeyMod
+	CopyKeyMod       = KMod('C', ModifierMenu)
+	PasteKeyMod      = KMod('V', ModifierMenu)
+	CutKeyMod        = KMod('X', ModifierMenu)
 )
 
 func init() {
 	if zdevice.OS() == zdevice.MacOSType || zdevice.OS() == zdevice.IOSType {
-		MetaModifier = ModifierCommand
+		ModifierMenu = ModifierCommand
 		AltModifierName = OptionModifierConstName
-		CommandModifierName = CommandModifierConstName
+		CopyKeyMod = KMod('C', ModifierMenu) // need to do this again as ModiferMenu changed
+		PasteKeyMod = KMod('V', ModifierMenu)
+		CutKeyMod = KMod('X', ModifierMenu)
+	} else if zdevice.OS() == zdevice.LinuxType {
+		CopyKeyMod = KMod('C', ModifierMenu|ModifierShift)
+		PasteKeyMod = KMod('V', ModifierMenu|ModifierShift)
+		CutKeyMod = KMod('X', ModifierMenu|ModifierShift)
 	}
 }
 
@@ -157,6 +166,9 @@ func (m Modifier) String() string {
 	if m&ModifierCommand != 0 {
 		parts = append(parts, "command")
 	}
+	if m&ModifierMeta != 0 {
+		parts = append(parts, "meta")
+	}
 	return strings.Join(parts, "|")
 }
 
@@ -168,8 +180,8 @@ func (m Modifier) HumanString() string {
 		return "Shift"
 	case ModifierControl:
 		return "Control"
-	case ModifierCommand:
-		return CommandModifierName
+	case ModifierMeta:
+		return "Meta"
 	}
 	return ""
 }

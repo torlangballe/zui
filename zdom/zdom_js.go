@@ -114,7 +114,7 @@ func Resolve(val js.Value, done func(resolved js.Value, err error)) {
 
 	then.Call("catch", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		str := fmt.Sprint(args[0].Call("toString").String()) // ???
-		zlog.Info("CATCH!", args[0].String(), this)
+		zlog.Info("CATCH!", str, args[0].String(), this)
 		if done != nil {
 			done(js.Undefined(), errors.New(str))
 		}

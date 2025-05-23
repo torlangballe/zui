@@ -182,7 +182,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	}
 	v.panDurations = []panDuration{
 		panDuration{"1d", zkeyboard.ModifierNone, time.Hour * 24, nil},
-		panDuration{"1h", zkeyboard.ModifierCommand, time.Hour * 1, nil},
+		panDuration{"1h", zkeyboard.ModifierMenu, time.Hour * 1, nil},
 		panDuration{"10m", zkeyboard.ModifierAlt, time.Minute * 10, nil},
 		panDuration{"1m", zkeyboard.ModifierShift, time.Minute, nil},
 	}

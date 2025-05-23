@@ -281,7 +281,7 @@ func (v *TextView) setHandlers() {
 		if km.Key == 0 {
 			return nil
 		}
-		if km.Modifier&zkeyboard.MetaModifier != 0 {
+		if km.Modifier&zkeyboard.ModifierMenu != 0 {
 			return nil
 		}
 		r := rune(event.Get("charCode").Int())

@@ -54,7 +54,7 @@ func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element.Set("style", "position:absolute")
 	v.JSStyle().Set("zIndex", BaseZIndex)
 	v.View = view
-	v.SetPressedHandler("$zdebug", zkeyboard.MetaModifier|zkeyboard.ModifierAlt|zkeyboard.ModifierShift, func() {
+	v.SetPressedHandler("$zdebug", zkeyboard.ModifierMenu|zkeyboard.ModifierAlt|zkeyboard.ModifierShift, func() {
 		if globalForceClick {
 			return
 		}
@@ -1410,7 +1410,7 @@ func setKeyHandler(down bool, v *NativeView, handler func(km zkeyboard.KeyMod, d
 			} else {
 				zkeyboard.CurrentKeyDown = zkeyboard.KeyMod{}
 			}
-			// zlog.Info("Key!", v.Hierarchy(), v.IsFocused())
+			// zlog.Info("Key!", v.Hierarchy(), km)
 			if handler(km, down) {
 				event.Call("preventDefault")
 				event.Call("stopPropagation")

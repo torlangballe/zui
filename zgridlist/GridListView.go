@@ -527,7 +527,7 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		// 	zlog.Info("NOT INTERACTIVE gridlistpress!!??!?!")
 		// 	return false
 		// }
-		if zkeyboard.ModifiersAtPress&zkeyboard.MetaModifier != 0 {
+		if zkeyboard.ModifiersAtPress&zkeyboard.ModifierMenu != 0 {
 			v.ignoreMouseEvent = true
 			if v.selectedIDs[id] {
 				delete(v.selectedIDs, id)
@@ -1201,7 +1201,7 @@ func (v *GridListView) handleKeyPressed(km zkeyboard.KeyMod, down bool) bool {
 		}
 		if id != "" {
 			v.selectedIndex = v.IndexOfID(id)
-			if km.Modifier&zkeyboard.MetaModifier != 0 {
+			if km.Modifier&zkeyboard.ModifierMenu != 0 {
 				clear := v.selectedIDs[id]
 				if clear {
 					delete(v.selectedIDs, id)
