@@ -6,12 +6,14 @@
 package zslicegrid
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
@@ -51,24 +53,25 @@ type ChildrenOwner interface {
 // id-at-index etc based on open branch toggles.
 type SliceGridView[S any] struct {
 	zcontainer.StackView
-	Grid                       *zgridlist.GridListView
-	Bar                        *zcontainer.StackView
-	EditParameters             zfields.FieldViewParameters
-	StructName                 string
-	ForceUpdateSlice           bool // Set this to make UpdateSlice update, even if slice hash is the same, useful if other factors cause it to display differently
-	NameOfXItemsFunc           func(ids []string, singleSpecial bool) string
-	DeleteAskSubTextFunc       func(ids []string) string
-	UpdateViewFunc             func(arrange, restoreSelectionScroll bool)      // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
-	SortFunc                   func(s []S)                                     // SortFunc is called to sort the slice after any updates.
-	FilterFunc                 func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
-	StoreChangedItemsFunc      func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
-	StoreChangedItemFunc       func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
-	DeleteItemsFunc            func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
-	HandleShortCutInRowFunc    func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
-	CallDeleteItemFunc         func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
-	CurrentLowerCaseSearchText string
-	FilterSkipCache            map[string]bool
-	Options                    OptionType
+	Grid                            *zgridlist.GridListView
+	Bar                             *zcontainer.StackView
+	EditParameters                  zfields.FieldViewParameters
+	StructName                      string
+	ForceUpdateSlice                bool // Set this to make UpdateSlice update, even if slice hash is the same, useful if other factors cause it to display differently
+	NameOfXItemsFunc                func(ids []string, singleSpecial bool) string
+	DeleteAskSubTextFunc            func(ids []string) string
+	UpdateViewFunc                  func(arrange, restoreSelectionScroll bool)      // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
+	SortFunc                        func(s []S)                                     // SortFunc is called to sort the slice after any updates.
+	FilterFunc                      func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
+	StoreChangedItemsFunc           func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
+	StoreChangedItemFunc            func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	DeleteItemsFunc                 func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
+	ValidateClipboardPasteItemsFunc func(items []S) bool                            // Called on incoming items paste items to zero ID's or something, and validate
+	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
+	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
+	CurrentLowerCaseSearchText      string
+	FilterSkipCache                 map[string]bool
+	Options                         OptionType
 
 	slicePtr      *[]S
 	filteredSlice []S
@@ -101,6 +104,7 @@ const (
 	AllowDelete                                 // It is deletable, and allows keyboard/menu delete
 	AllowEdit                                   // Allows selected cell(s) to be edited with menu or E key.
 	AllowView                                   // Allows selected cell(s) to be viewed (like edit) with menu.
+	AllowCopyPaste                              // Allows copy of rows to paste into same table on another server.
 	AddDocumentationIcon                        // Adds a icon to press to show doc/name.md file where name is in init
 	AddHeader                                   // Adds a Header to the top of table. Currenty used by TableView
 	AddBarInHeader                              // Sets the bar inside the Header, in right-most column. Sets  AddHeader and AddBar
@@ -440,6 +444,7 @@ func (v *SliceGridView[S]) insertItemsIntoASlice(items []S, slicePtr *[]S) int {
 	return added
 }
 
+// SetItemsInSlice adds or changes existing items with items.
 func (v *SliceGridView[S]) SetItemsInSlice(items []S) (added int) {
 	for _, s := range items {
 		v.Grid.SetDirtyRow(GetIDForItem(&s))
@@ -497,17 +502,17 @@ func (v *SliceGridView[S]) countHierarcy(slice []S) int {
 	return count
 }
 
-func (v *SliceGridView[S]) structForID(slice *[]S, id string) *S {
-	for i, s := range *slice {
+func (v *SliceGridView[S]) structForID(fromSlice *[]S, id string) *S {
+	for i, s := range *fromSlice {
 		sid := GetIDForItem(&s)
 		if id == sid {
-			return &(*slice)[i]
+			return &(*fromSlice)[i]
 		}
 		if v.Grid.HierarchyLevelFunc != nil {
 			if !v.Grid.OpenBranches[sid] {
 				continue
 			}
-			children := v.getChildren(slice, i)
+			children := v.getChildren(fromSlice, i)
 			cs := v.structForID(children, id)
 			if cs != nil {
 				return cs
@@ -863,8 +868,72 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				items = append(items, edit)
 			}
 		}
+		if v.Options&AllowCopyPaste != 0 {
+			if len(ids) > 0 {
+				nitems := v.NameOfXItemsFunc(ids, true)
+				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to clipboard", func() {
+					v.copyItemsToClipboard(ids)
+					zlog.Info("CopyItems")
+				})
+				copy.Shortcut = zkeyboard.CopyKeyMod
+				items = append(items, copy)
+				if !forSingleCell {
+					paste := zmenu.MenuedFuncAction("Paste clipboard to add items", func() {
+						v.pasteItemsFromClipboard()
+					})
+					paste.Shortcut = zkeyboard.PasteKeyMod
+					items = append(items, paste)
+				}
+			}
+		}
 	}
 	return items
+}
+
+func (v *SliceGridView[S]) pasteItemsFromClipboard() {
+	zclipboard.GetString(func(str string) {
+		line, body := zstr.SplitInTwo(str, "\n")
+		var stype string
+		if !zstr.HasPrefix(line, "zcopyitem: ", &stype) {
+			zalert.ShowError(nil, "Paste buffer doesn't contain items to paste")
+			return
+		}
+		var s S
+		rtype := reflect.TypeOf(s)
+		stype2 := zreflect.MakeTypeNameWithPackage(rtype)
+		if stype != stype2 {
+			zalert.ShowError(nil, "Paste type is not the same as wanted receive type\n", stype, "\n", stype2)
+			return
+		}
+		var slice []S
+		err := json.Unmarshal([]byte(body), &slice)
+		if err != nil {
+			zalert.ShowError(nil, "Couldn't unpack paste data")
+			return
+		}
+		if !v.ValidateClipboardPasteItemsFunc(slice) {
+			return
+		}
+		v.StoreChangedItemsFunc(slice)
+	})
+}
+
+func (v *SliceGridView[S]) copyItemsToClipboard(ids []string) {
+	var items []S
+	for _, id := range ids {
+		s := v.StructForID(id)
+		items = append(items, *s)
+	}
+	djson, err := json.Marshal(items)
+	if err != nil {
+		zalert.ShowError(err)
+		return
+	}
+	var s S
+	rtype := reflect.TypeOf(s)
+	str := "zcopyitem: " + zreflect.MakeTypeNameWithPackage(rtype) + "\n"
+	str += string(djson)
+	zclipboard.SetString(str)
 }
 
 func (o OptionType) String() string {
