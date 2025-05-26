@@ -66,7 +66,7 @@ type SliceGridView[S any] struct {
 	StoreChangedItemsFunc           func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
 	StoreChangedItemFunc            func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
 	DeleteItemsFunc                 func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
-	ValidateClipboardPasteItemsFunc func(items []S) bool                            // Called on incoming items paste items to zero ID's or something, and validate
+	ValidateClipboardPasteItemsFunc func(items *[]S, proceed func())                // Called on incoming items paste items to zero ID's or something, and validate. Call proceed if any left or user accepts or something
 	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
 	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 	CurrentLowerCaseSearchText      string
@@ -878,7 +878,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
 				if !forSingleCell {
-					paste := zmenu.MenuedFuncAction("Paste clipboard to add items", func() {
+					paste := zmenu.MenuedFuncAction("Paste from Clipboard to add Items", func() {
 						v.pasteItemsFromClipboard()
 					})
 					paste.Shortcut = zkeyboard.PasteKeyMod
@@ -911,10 +911,14 @@ func (v *SliceGridView[S]) pasteItemsFromClipboard() {
 			zalert.ShowError(nil, "Couldn't unpack paste data")
 			return
 		}
-		if !v.ValidateClipboardPasteItemsFunc(slice) {
-			return
-		}
-		v.StoreChangedItemsFunc(slice)
+		v.ValidateClipboardPasteItemsFunc(&slice, func() {
+			go v.StoreChangedItemsFunc(slice)
+			var ids []string
+			for _, s := range slice {
+				ids = append(ids, GetIDForItem(&s))
+			}
+			v.Grid.SelectCells(ids, true, false)
+		})
 	})
 }
 
