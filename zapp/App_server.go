@@ -266,6 +266,7 @@ func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) erro
 func (AppCalls) GetTimeInfo(a zrpc.Unused, info *TimeInfo) error {
 	t := time.Now()
 	ServerTimezoneName, info.ZoneOffsetSeconds = t.Zone()
+	// zlog.Info("AppCall.GetTimeInfo:", t, ServerTimezoneName, info.ZoneOffsetSeconds)
 	info.ZoneName = ServerTimezoneName
 	info.JSISOTimeString = t.UTC().Format(ztime.JavascriptISO)
 	return nil

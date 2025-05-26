@@ -60,6 +60,7 @@ func fetchTimeInfo() bool {
 		return false
 	}
 	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
+	zlog.Info("fetchTimeInfo:", t, err, since, ServerTimezoneName, info.ZoneOffsetSeconds)
 	if err != nil {
 		zlog.Error("parse", err)
 		return false
@@ -77,17 +78,15 @@ func updateCurrentTime(label *zlabel.Label) {
 	format := "15:04:05"
 	t := time.Now()
 	str := ""
-	// zlog.Info("updateCurrentTime:", zlocale.IsDisplayServerTime.Get())
 	if zlocale.IsDisplayServerTime.Get() {
 		t = t.Add(ServerTimeDifference)
-		loc, _ := time.LoadLocation(ServerTimezoneName)
-		if loc != nil {
-			t = t.In(loc)
-		}
+		loc := time.FixedZone(ServerTimezoneName, ztime.ServerTimezoneOffsetSecs)
+		t = t.In(loc)
+		// zlog.Info("updateCurrentTime:", t, loc, t.Location(), loc == nil, ServerTimezoneName)
 		format += "-07"
 		str = "☁️"
 	}
-	str += time.Now().Format(format)
+	str += t.Format(format)
 	col := zgeo.ColorBlack
 	if ServerTimeDifference > time.Second*2 {
 		col = zgeo.ColorRed
