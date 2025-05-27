@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
@@ -44,6 +43,11 @@ type TimeFieldView struct {
 	ampmLabel               *zlabel.Label
 	currentUse24Clock       bool
 }
+
+var (
+	PopupViewFunc func(view, on zview.View)
+	CloseViewFunc func(view zview.View, dismiss bool)
+)
 
 func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v := &TimeFieldView{}
@@ -247,15 +251,11 @@ func (v *TimeFieldView) popCalendar() {
 	cal.HandleValueChangedFunc = func() {
 		ct := cal.Value()
 		t := time.Date(ct.Year(), ct.Month(), ct.Day(), val.Hour(), val.Minute(), val.Second(), 0, v.location)
-		zpresent.Close(cal, true, nil)
+		CloseViewFunc(cal, true)
 		v.SetValue(t)
 	}
 	cal.JSSet("className", "znofocus")
-	att := zpresent.AttributesNew()
-	att.Alignment = zgeo.TopRight | zgeo.HorOut
-	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
-	att.FocusView = cal
-	zpresent.PopupView(cal, v, att)
+	PopupViewFunc(cal, v)
 }
 
 func clearColorTexts(texts ...*TextView) {

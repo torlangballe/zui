@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/zfocus"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
-	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
@@ -73,6 +72,8 @@ func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, im
 	}
 }
 
+var PresentTitledViewFunc func(title string, vuew zview.View)
+
 func (v *ImageView) SetPressToShowImage(on bool) {
 	const id = "$press.to.show"
 	if on {
@@ -83,10 +84,7 @@ func (v *ImageView) SetPressToShowImage(on bool) {
 					path = zstr.Concat("/", zrest.AppURLPrefix, path)
 				}
 				nv := New(v.image, v.UseDownsampleCache, v.image.Path, zgeo.SizeNull)
-				att := zpresent.AttributesNew()
-				att.Modal = true
-				att.ModalCloseOnOutsidePress = true
-				zpresent.PresentTitledView(nv, path, att, nil, nil)
+				PresentTitledViewFunc(path, nv)
 			}
 		})
 	} else {

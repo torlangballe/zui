@@ -10,10 +10,13 @@ import (
 
 	"github.com/torlangballe/zui/zanimation"
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zfloat"
@@ -541,4 +544,36 @@ func PopupView(view, over zview.View, att Attributes) {
 		root.Native().SetInteractive(true)
 	}
 	PresentView(view, att)
+}
+
+func init() {
+	zclipboard.PasteIntoTextFieldFunc = func(got func(s string)) {
+		v := ztext.NewView("", ztext.Style{}, 60, 10)
+		v.SetBGColor(zgeo.ColorLightGray)
+		v.SetColor(zgeo.ColorLightGray)
+		v.SetValueHandler("", func(edited bool) {
+			text := v.Text()
+			Close(v, true, nil)
+			got(text)
+		})
+		att := ModalPopupAttributes
+		title := "Paste into this text field from clipboard"
+		PresentTitledView(v, title, att, nil, nil)
+	}
+	zimageview.PresentTitledViewFunc = func(title string, view zview.View) {
+		att := AttributesNew()
+		att.Modal = true
+		att.ModalCloseOnOutsidePress = true
+		PresentTitledView(view, title, att, nil, nil)
+	}
+	ztext.PopupViewFunc = func(view, on zview.View) {
+		att := AttributesNew()
+		att.Alignment = zgeo.TopRight | zgeo.HorOut
+		att.PlaceOverMargin = zgeo.SizeD(-8, -4)
+		att.FocusView = view
+		PopupView(view, on, att)
+	}
+	ztext.CloseViewFunc = func(view zview.View, dismiss bool) {
+		Close(view, dismiss, nil)
+	}
 }

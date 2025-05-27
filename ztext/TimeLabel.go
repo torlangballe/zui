@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlocale"
@@ -34,13 +33,13 @@ func TimeLabelNew(name string, flags ztime.TimeFieldFlags) *TimeLabel {
 				t, err := tf.Value()
 				if err == nil {
 					tl.SetValue(t)
-					zpresent.Close(tf, false, nil)
+					CloseViewFunc(tf, false)
 				} else {
 					tl.SetToolTip(err.Error())
 				}
 			}
 			tf.SetValue(tl.value)
-			zpresent.PopupView(tf, tl, zpresent.AttributesNew())
+			PopupViewFunc(tf, tl)
 		})
 	}
 	tl.SetColor(col)
