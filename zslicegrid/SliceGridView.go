@@ -878,7 +878,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
 				if !forSingleCell {
-					paste := zmenu.MenuedFuncAction("Paste from Clipboard to add Items", func() {
+					paste := zmenu.MenuedFuncAction("Paste from Clipboard to add Items…", func() {
 						v.pasteItemsFromClipboard()
 					})
 					paste.Shortcut = zkeyboard.PasteKeyMod
