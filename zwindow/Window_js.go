@@ -347,7 +347,7 @@ func (win *Window) AddStyle() {
 	input.rounded:focus { border: 2px solid rgb(147,180,248); }
 	.zfocus:focus { outline: solid 4px rgb(147,180,248); }
 	.znofocus:focus { outline: none; }
-	input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; } 
+	input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
 	input[type=number] { -moz-appearance: textfield; }
 	input.rounded {
 		border: 1px solid #666;
@@ -447,4 +447,8 @@ func ScrollBarSizeForView(view zview.View) float64 {
 	win := FromNativeView(view.Native())
 	s := win.ScrollBarSize()
 	return s
+}
+
+func (w *Window) IsSecureContext() bool {
+	return w.Element.Get("isSecureContext").Bool()
 }
