@@ -60,7 +60,7 @@ func fetchTimeInfo() bool {
 		return false
 	}
 	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
-	zlog.Info("fetchTimeInfo:", t, err, since, ServerTimezoneName, info.ZoneOffsetSeconds)
+	// zlog.Info("fetchTimeInfo:", t, err, since, ServerTimezoneName, info.ZoneOffsetSeconds)
 	if err != nil {
 		zlog.Error("parse", err)
 		return false
