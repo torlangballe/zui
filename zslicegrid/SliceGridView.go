@@ -27,6 +27,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -269,7 +270,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if singleSpecial && ilen == 1 {
 			s := v.StructForID(ids[0])
 			if s == nil {
-				zlog.Error("NameOfXItemsFunc: s is nil:", v.Hierarchy(), ids[0])
+				zlog.Error("NameOfXItemsFunc: s is nil:", v.Hierarchy(), ids[0], zdebug.CallingStackString())
 				return v.StructName
 			}
 			//s is zero sometimes!!!!
@@ -871,18 +872,22 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 		if v.Options&AllowCopyPaste != 0 {
 			if len(ids) > 0 {
 				nitems := v.NameOfXItemsFunc(ids, true)
-				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to clipboard", func() {
+				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to Clipboard", func() {
 					v.copyItemsToClipboard(ids)
 				})
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
-				if !forSingleCell {
-					paste := zmenu.MenuedFuncAction("Paste from Clipboard to add Items…", func() {
-						v.pasteItemsFromClipboard()
-					})
-					paste.Shortcut = zkeyboard.PasteKeyMod
-					items = append(items, paste)
+			}
+			if !forSingleCell {
+				name := "items"
+				if v.StructName != "" {
+					name = zwords.PluralizeEnglishWord(v.StructName)
 				}
+				paste := zmenu.MenuedFuncAction("Paste from Clipboard to add "+name+"…", func() {
+					v.pasteItemsFromClipboard()
+				})
+				paste.Shortcut = zkeyboard.PasteKeyMod
+				items = append(items, paste)
 			}
 		}
 	}
