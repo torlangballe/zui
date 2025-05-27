@@ -26,7 +26,7 @@ func SetString(str string) {
 }
 
 func GetString(got func(s string)) {
-	if false && zwindow.Current().IsSecureContext() {
+	if zwindow.Current().IsSecureContext() {
 		clip := js.Global().Get("navigator").Get("clipboard")
 		zlog.Info("zclip.GetString", clip)
 		if !clip.IsUndefined() {

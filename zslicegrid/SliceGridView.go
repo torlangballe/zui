@@ -873,7 +873,6 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				nitems := v.NameOfXItemsFunc(ids, true)
 				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to clipboard", func() {
 					v.copyItemsToClipboard(ids)
-					zlog.Info("CopyItems")
 				})
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
