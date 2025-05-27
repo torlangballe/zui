@@ -4,8 +4,11 @@ import (
 	"syscall/js"
 
 	"github.com/torlangballe/zui/zdom"
+	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zlog"
 )
+
+var PasteIntoTextFieldFunc func(got func(s string))
 
 func SetString(str string) {
 	oldFocused := zdom.DocumentJS.Get("activeElement")
@@ -23,16 +26,20 @@ func SetString(str string) {
 }
 
 func GetString(got func(s string)) {
-	clip := js.Global().Get("navigator").Get("clipboard")
-	if clip.IsUndefined() {
-		return
-	}
-	promise := clip.Call("readText")
-	zdom.Resolve(promise, func(resolved js.Value, err error) {
-		if err != nil {
-			zlog.Error("play", err)
+	if false && zwindow.Current().IsSecureContext() {
+		clip := js.Global().Get("navigator").Get("clipboard")
+		zlog.Info("zclip.GetString", clip)
+		if !clip.IsUndefined() {
+			promise := clip.Call("readText")
+			zdom.Resolve(promise, func(resolved js.Value, err error) {
+				if err != nil {
+					zlog.Error("play", err)
+					return
+				}
+				got(resolved.String())
+			})
 			return
 		}
-		got(resolved.String())
-	})
+	}
+	PasteIntoTextFieldFunc(got)
 }
