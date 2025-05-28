@@ -878,17 +878,17 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
 			}
-			if !forSingleCell {
-				name := "items"
-				if v.StructName != "" {
-					name = zwords.PluralizeEnglishWord(v.StructName)
-				}
-				paste := zmenu.MenuedFuncAction("Paste from Clipboard to add "+name+"…", func() {
-					v.pasteItemsFromClipboard()
-				})
-				paste.Shortcut = zkeyboard.PasteKeyMod
-				items = append(items, paste)
+		}
+		if !forSingleCell {
+			name := "items"
+			if v.StructName != "" {
+				name = zwords.PluralizeEnglishWord(v.StructName)
 			}
+			paste := zmenu.MenuedFuncAction("Paste from Clipboard to add "+name+"…", func() {
+				v.pasteItemsFromClipboard()
+			})
+			paste.Shortcut = zkeyboard.PasteKeyMod
+			items = append(items, paste)
 		}
 	}
 	return items
