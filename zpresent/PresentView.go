@@ -549,14 +549,17 @@ func PopupView(view, over zview.View, att Attributes) {
 func init() {
 	zclipboard.PasteIntoTextFieldFunc = func(got func(s string)) {
 		v := ztext.NewView("", ztext.Style{}, 60, 10)
-		v.SetBGColor(zgeo.ColorLightGray)
-		v.SetColor(zgeo.ColorLightGray)
+		v.SetMargin(zgeo.RectFromXY2(4, 4, -12, -12))
+		v.SetBGColor(zgeo.ColorWhite)
+		v.SetColor(zgeo.ColorWhite)
 		v.SetValueHandler("", func(edited bool) {
 			text := v.Text()
 			Close(v, true, nil)
 			got(text)
 		})
 		att := ModalPopupAttributes
+		att.ModalStrokeWidth = 1
+		att.ModalStrokeColor = zgeo.ColorDarkGray
 		title := "Paste into this text field from clipboard"
 		PresentTitledView(v, title, att, nil, nil)
 	}
