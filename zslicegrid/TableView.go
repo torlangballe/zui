@@ -80,6 +80,9 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	}
 	v.Grid.HandleSelectionChangedFunc = func() {
 		v.UpdateWidgets()
+		if v.Header == nil {
+			return
+		}
 		selCount := len(v.Grid.SelectedIDs())
 		for _, c := range v.Header.GetChildren(false) {
 			h, _ := c.(*zshape.ImageButtonView)

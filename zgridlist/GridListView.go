@@ -761,6 +761,7 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 		return v.cachedChildSize
 	}
 	cid := v.IDAtIndexFunc(0)
+	// zlog.Info("getAChildSize:CreateCellFunc", v.CreateCellFunc != nil)
 	child := v.CreateCellFunc(v, cid)
 	s, _ := child.CalculatedSize(total)
 	if v.CellHeightFunc != nil {
