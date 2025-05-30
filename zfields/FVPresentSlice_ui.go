@@ -111,9 +111,11 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	unknownBoolViewIDs := map[string]bool{}
 	params.FieldParameters.UseInValues = []string{DialogUseInSpecialName}
 	params.MultiSliceEditInProgress = (sliceLength > 1)
+	wasAllNotZero := map[string]bool{}
 
 	ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 		var notEqual bool
+		var notZero bool
 		for i := 0; i < sliceLength; i++ {
 			finfo := zreflect.FieldForIndex(sliceVal.Index(i).Interface(), FlattenIfAnonymousOrZUITag, each.FieldIndex) // (fieldRefVal reflect.Value, sf reflect.StructField) {
 			sliceField := finfo.ReflectValue
@@ -133,6 +135,8 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					reduceSliceField(each.ReflectValue, sliceField)
 				}
 				continue
+			} else if !each.ReflectValue.IsZero() {
+				notZero = true
 			}
 			if !reflect.DeepEqual(sliceField.Interface(), each.ReflectValue.Interface()) {
 				if each.Field.IsStatic() {
@@ -156,6 +160,8 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				unknownBoolViewIDs[each.StructField.Name] = true
 				// zslice.AddEmptyElementAtEnd(val.Addr().Interface())
 			}
+		} else if notZero {
+			wasAllNotZero[each.StructField.Name] = true
 		}
 		return true
 	})
@@ -213,7 +219,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 			if err != nil {
 				return false
 			}
-			hasReqGroups := map[string][]string{}
+			hasRequiredGroups := map[string][]string{}
 			ForEachField(editStruct, params.FieldParameters, nil, func(each FieldInfo) bool {
 				// zlog.Info("origFieldReflectValue1:", each.Field.Name, each.ReflectValue.Interface(), each.Field.Flags, each.Field.IsStatic(), FlagIsButton, FlagIsStatic)
 				if each.StructField.Tag.Get("zui") == "-" {
@@ -230,13 +236,13 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 						}
 					} else {
 						if zero {
-							g, has := hasReqGroups[each.Field.Required]
+							g, has := hasRequiredGroups[each.Field.Required]
 							// zlog.Info("Has:", has, g, each.Field.Required, each.StructField.Name)
 							if !has || len(g) > 0 {
-								hasReqGroups[each.Field.Required] = append(hasReqGroups[each.Field.Required], each.Field.TitleOrName())
+								hasRequiredGroups[each.Field.Required] = append(hasRequiredGroups[each.Field.Required], each.Field.TitleOrName())
 							}
 						} else {
-							hasReqGroups[each.Field.Required] = []string{}
+							hasRequiredGroups[each.Field.Required] = []string{}
 						}
 					}
 
@@ -289,7 +295,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				}
 				// zlog.Info("each.ReflectValue:", each.Field.Name, each.ReflectValue.Interface())
 				//				if !(origFieldReflectValue.IsZero() && each.ReflectValue.IsZero()) || sliceLength == 1 || isCheck {
-				if !each.ReflectValue.IsZero() || sliceLength == 1 || isCheck {
+				if (!each.ReflectValue.IsZero() || wasAllNotZero[each.StructField.Name]) || sliceLength == 1 || isCheck {
 					for i := 0; i < sliceLength; i++ {
 						itemRVal := sliceVal.Index(i)
 						if itemRVal.Kind() != reflect.Pointer {
@@ -302,7 +308,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				}
 				return true
 			})
-			for _, fields := range hasReqGroups {
+			for _, fields := range hasRequiredGroups {
 				if len(fields) > 0 {
 					doClose.FromBool(false)
 					zalert.Show("All of fields:", strings.Join(fields, "/"), "can't be empty")
