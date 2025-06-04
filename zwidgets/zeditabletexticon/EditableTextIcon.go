@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type widgeter struct{}
@@ -70,7 +69,6 @@ func (v *IconView) popEditor() {
 
 func (v *IconView) SetValueWithAny(a any) {
 	v.editText = a.(string)
-	zlog.Info("IV SetValueWithAny", v.editText)
 	v.update()
 }
 
