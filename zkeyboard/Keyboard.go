@@ -33,6 +33,7 @@ const (
 	ModifierAlt
 	ModifierCommand
 	ModifierMeta
+	ModifierAny // this is used to create a pressed handle for any combination
 )
 
 const (
@@ -150,6 +151,23 @@ func (k KeyMod) Matches(m KeyMod) bool {
 
 func (m Modifier) IsNull() bool {
 	return m == ModifierNone
+}
+
+func (m *Modifier) FromString(str string) {
+	for _, p := range strings.Split(str, "|") {
+		switch p {
+		case "shift":
+			*m |= ModifierShift
+		case "alt":
+			*m |= ModifierAlt
+		case "control":
+			*m |= ModifierControl
+		case "command":
+			*m |= ModifierCommand
+		case "meta":
+			*m |= ModifierMeta
+		}
+	}
 }
 
 func (m Modifier) String() string {
