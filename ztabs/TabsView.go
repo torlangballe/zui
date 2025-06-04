@@ -159,8 +159,8 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	if imagePath != "" {
 		button.SetImage(nil, true, zgeo.SizeNull, imagePath, zgeo.SizeNull, nil)
 	}
-	button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-		go v.SelectItem(id, nil)
+	button.SetPressedHandler("", zkeyboard.ModifierAny, func() {
+		v.SelectItem(id, nil) // go
 	})
 	v.header.Add(view, zgeo.BottomLeft)
 	v.items = append(v.items, item{id: id, view: view, create: create})
