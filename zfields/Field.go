@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
@@ -203,6 +204,7 @@ type Field struct {
 	Suffix               string            // Added to static text
 	Required             string            // If set, fields must be non-zero after editing. If Required is not RequiredSingleValue, it is a group id where at least one field with this Required group has to be non-zero.
 	Radio                string            // If set, value is an enum name. Field must be value type of enum.
+	WhenMods             zkeyboard.Modifier
 }
 
 const (
@@ -424,6 +426,8 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			if kv.Value == "" {
 				f.StringSep = " "
 			}
+		case "mod":
+			f.WhenMods.FromString(kv.Value)
 		case "hlockable":
 			f.SetFlag(FlagHeaderLockable)
 			if kv.Value == "start" {
@@ -945,6 +949,14 @@ func SetEnumItems(name string, nameValPairs ...any) {
 	fieldEnums[name] = items
 }
 
+func AppendEnumItem(enum, key string, value any) {
+	e := fieldEnums[enum]
+	var item zdict.Item
+	item.Name = key
+	item.Value = value
+	fieldEnums[enum] = append(e, item)
+}
+
 func SetStringBasedEnum(name string, vals ...string) {
 	var items zdict.Items
 	for _, s := range vals {
@@ -975,12 +987,11 @@ func addNamesOfEnumValue(enumTitles map[string]mapValueToName, slice any, f Fiel
 	}
 	for i := 0; i < slen; i++ {
 		fi := val.Index(i).Addr().Interface()
-		ic, ierr := zreflect.IterateStruct(fi, zreflect.Options{UnnestAnonymous: true})
-		zlog.Assert(ierr == nil)
-		item := ic.Children[f.Index]
-		di := enum.FindValue(item.Interface)
+		field := zreflect.FieldForIndex(fi, zreflect.FlattenIfAnonymous, f.Index)
+		a := field.ReflectValue.Interface()
+		di := enum.FindValue(a)
 		if di != nil {
-			m[item.Interface] = di.Name
+			m[a] = di.Name
 		}
 	}
 }
@@ -1027,9 +1038,6 @@ func SortSliceWithFields(slice any, fields []Field, sortOrder []SortInfo) {
 		// count++
 		ei := val.Index(i).Addr().Interface()
 		ej := val.Index(j).Addr().Interface()
-		// ic, ierr := zreflect.IterateStruct(ei, zreflect.Options{UnnestAnonymous: true})
-		// jc, jerr := zreflect.IterateStruct(ej, zreflect.Options{UnnestAnonymous: true})
-		// zlog.Assert(ierr == nil && jerr == nil, ierr, jerr)
 		for _, s := range sortOrder {
 			f := fieldMap[s.FieldName]
 			iitem := zreflect.FieldForIndex(ei, zreflect.FlattenIfAnonymous, f.Index).ReflectValue

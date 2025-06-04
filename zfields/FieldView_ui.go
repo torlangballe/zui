@@ -1765,6 +1765,11 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
+	if f.WhenMods != zkeyboard.ModifierNone {
+		if zkeyboard.ModifiersAtPress != f.WhenMods {
+			return nil
+		}
+	}
 	if rval.Kind() == reflect.Interface {
 		rval = rval.Elem()
 	}
