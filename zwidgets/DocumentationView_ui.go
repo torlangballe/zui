@@ -3,6 +3,9 @@
 package zwidgets
 
 import (
+	"path"
+	"strings"
+
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimageview"
@@ -15,6 +18,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztimer"
 )
 
 // https://apple.stackexchange.com/questions/365857/create-system-preferences-url-to-privacy-files-and-folders-in-10-15-catalina
@@ -32,9 +36,9 @@ var (
 	DocumentationCookieMap        map[string]string
 )
 
-func DocumentationIconViewNew(path string) *DocumentationIconView {
+func DocumentationIconViewNew(docPath string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(22, 22), "documentation:"+path)
+	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(22, 22), "documentation:"+docPath)
 	v.MaxSize = v.MinSize()
 	v.SetText("?")
 	v.SetColor(DocumentationDefaultIconColor())
@@ -52,7 +56,10 @@ func DocumentationIconViewNew(path string) *DocumentationIconView {
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {
 		// }, nil)
-		DocumentationViewPresent(path+".md", v.Modal) // go
+		if path.Ext(docPath) == "" {
+			docPath = docPath + ".md"
+		}
+		DocumentationViewPresent(docPath, v.Modal) // go
 	})
 	return v
 }
@@ -149,6 +156,11 @@ func DocumentationViewPresent(path string, modal bool) error {
 		// zlog.Info("SetCookie", path, DocumentationCookieMap)
 		v.WebView.SetCookies(DocumentationCookieMap)
 		v.WebView.SetURL(path)
+		if strings.Contains(path, "#") {
+			ztimer.StartIn(0.5, func() {
+				v.WebView.SetURL(path)
+			})
+		}
 	}
 	zpresent.PresentView(v, attr)
 	return nil

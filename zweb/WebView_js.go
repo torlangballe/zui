@@ -41,7 +41,6 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 		// zlog.Info("CDOC:", contentDoc, zdom.DocumentJS)
 		if !contentDoc.IsUndefined() && !contentDoc.IsNull() {
 			newURL := contentDoc.Get("location").Get("href").String()
-			zlog.Info("LOC:", newURL)
 			if newURL != v.url {
 				old := v.url
 				v.url = newURL
