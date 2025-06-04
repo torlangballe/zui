@@ -920,7 +920,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		}
 		event := args[0]
 		v.SetStateOnPress(event)
-		if zkeyboard.ModifiersAtPress != mods {
+		if mods != zkeyboard.ModifierAny && zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
 		// zlog.Info("Pressed2:", v.Hierarchy(), mid)
@@ -1442,6 +1442,7 @@ func (v *NativeView) SetStateOnPress(event js.Value) {
 
 func (v *NativeView) ClearStateOnUpPress() {
 	LastPressedPos = zgeo.Pos{}
+	zlog.Info("ClearStateOnPress", zdebug.CallingStackString())
 	zkeyboard.ModifiersAtPress = zkeyboard.ModifierNone
 }
 
