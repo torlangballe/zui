@@ -71,6 +71,7 @@ type SliceGridView[S any] struct {
 	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
 	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 	CurrentLowerCaseSearchText      string
+	EditDialogDocumentationPath     string
 	FilterSkipCache                 map[string]bool
 	Options                         OptionType
 
@@ -684,6 +685,7 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 		att = zpresent.ModalPopupAttributes
 		att.ModalDimBackground = true
 	}
+	att.DocumentationIconPath = v.EditDialogDocumentationPath
 	att.TitledMargin = zgeo.RectFromXY2(zstyle.DefaultRowLeftMargin, 0, 0, 0)
 	zfields.EditOrViewStructSlice(&ns, isReadOnly, params, title, att, func(ok bool) bool {
 		if !ok {

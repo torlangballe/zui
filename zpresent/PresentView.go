@@ -37,6 +37,7 @@ type Attributes struct {
 	FadeToo                  bool
 	DeleteOld                bool
 	Modal                    bool
+	DocumentationIconPath    string
 	Title                    string
 	ModalCorner              float64
 	ModalCornerSides         []zgeo.Alignment
@@ -57,11 +58,12 @@ type Attributes struct {
 }
 
 var (
-	presentCloseFuncs  = map[zview.View]func(dismissed bool){}
-	previousFocusViews []zview.View
-	FirstPresented     bool
-	Presenting         = true // true for first pre-present
-	ShowErrorFunc      func(title, subTitle string)
+	presentCloseFuncs            = map[zview.View]func(dismissed bool){}
+	previousFocusViews           []zview.View
+	FirstPresented               bool
+	Presenting                   = true // true for first pre-present
+	ShowErrorFunc                func(title, subTitle string)
+	DocumentationIconViewNewFunc func(path string) zview.View
 )
 
 var ModalConfirmAttributes = Attributes{
@@ -490,6 +492,10 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand, zgeo.SizeNull)
 
 	// xmargin := zstyle.DefaultRowRightMargin
+	if att.DocumentationIconPath != "" {
+		help := DocumentationIconViewNewFunc(att.DocumentationIconPath)
+		bar.Add(help, zgeo.CenterRight)
+	}
 	for v, a := range barViews {
 		if a&zgeo.Vertical == 0 {
 			a |= zgeo.Vertical
