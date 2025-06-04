@@ -82,11 +82,9 @@ func (v *CustomView) SetPressedHandler(id string, mods zkeyboard.Modifier, handl
 		// f := v.PressedHandler()
 		// zlog.Info("IV Pressed", v.KeyboardShortcut.IsNull(), f != nil)
 		if !v.KeyboardShortcut.IsNull() {
-			ShowShortCutHelperForViewFunc(v, v.KeyboardShortcut)
 			ztimer.StartIn(0.1, func() { // otherwise it does handler that might block shortcut animation
-				handler()
+				ShowShortCutHelperForViewFunc(v, v.KeyboardShortcut)
 			})
-			return
 		}
 		handler()
 	})
