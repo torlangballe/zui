@@ -1,3 +1,5 @@
+//go:build zui
+
 package zwidgets
 
 import (
