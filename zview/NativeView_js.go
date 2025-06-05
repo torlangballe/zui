@@ -1442,7 +1442,7 @@ func (v *NativeView) SetStateOnPress(event js.Value) {
 
 func (v *NativeView) ClearStateOnUpPress() {
 	LastPressedPos = zgeo.Pos{}
-	zlog.Info("ClearStateOnPress", zdebug.CallingStackString())
+	// zlog.Info("ClearStateOnPress", zdebug.CallingStackString())
 	zkeyboard.ModifiersAtPress = zkeyboard.ModifierNone
 }
 
