@@ -20,6 +20,7 @@ type StackView struct {
 	Vertical            bool
 	GridVerticalSpace   float64
 	NoCalculatedMaxSize zgeo.BoolSize
+	MaxColumns          int // If set, it wraps, creating a grid, assuming all cells are the same size
 }
 
 func StackViewNew(vertical bool, name string) *StackView {
@@ -50,6 +51,29 @@ func (v *StackView) SetSpacing(spacing float64) *StackView {
 
 func (v *StackView) Spacing() float64 {
 	return v.spacing
+}
+
+func (v *StackView) calculateMaxColumnSize(total zgeo.Size) zgeo.Size {
+	var child zview.View
+	var count int
+	for _, c := range v.Cells {
+		if c.Alignment == 0 || c.Free || c.View == nil {
+			continue
+		}
+		child = c.View
+		count++
+	}
+	if child == nil {
+		return zgeo.SizeNull
+	}
+	childSize, _ := child.CalculatedSize(total)
+	spacing := zgeo.SizeBoth(v.Spacing())
+	y := (count + v.MaxColumns - 1) / v.MaxColumns
+	x, y := zgeo.MaxCellsInSize(spacing, childSize, total)
+
+	w := float64(x)*childSize.W + float64(x-1)*spacing.W
+	h := float64(y)*childSize.H + float64(y-1)*spacing.H
+	return zgeo.SizeD(w, h)
 }
 
 func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
@@ -85,6 +109,10 @@ func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	// }
 	var ws float64
 	if len(v.Cells) != 0 {
+		if v.MaxColumns > 0 {
+			s := v.calculateMaxColumnSize(total)
+			return s, s
+		}
 		if v.GridVerticalSpace != zfloat.Undefined {
 			s := v.calculateGridSize(total)
 			return s, s
