@@ -379,7 +379,7 @@ func WhenContainerLoaded(ct ChildrenOwner, done func(waited bool)) {
 }
 
 func (v *ContainerView) ArrangeChildren() {
-	v.ArrangeAdvanced(true)
+	v.ArrangeAdvanced(false)
 }
 
 func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
