@@ -497,12 +497,14 @@ func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd
 		return false
 	}
 	if id != "" {
-		if !v.Selectable && !v.MultiSelectable && v.HandleRowPressedFunc != nil {
+		if v.HandleRowPressedFunc != nil {
 			if inside && down.IsTrue() {
 				// zlog.Info("HandleRowPressedFunc:", id, inside)
-				return v.HandleRowPressedFunc(id)
+				handled := v.HandleRowPressedFunc(id)
+				if !v.Selectable && !v.MultiSelectable {
+					return handled
+				}
 			}
-			return true
 		}
 		index = v.IndexOfID(id)
 		if index == -1 {
