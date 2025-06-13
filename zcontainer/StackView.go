@@ -300,7 +300,7 @@ func (v *StackView) ArrangeChildren() {
 		for _, c := range v.Cells {
 			if c.View != nil && !c.Free && !c.Collapsed {
 				co, _ := c.View.(CellsOwner)
-				ca, _ := c.View.(Arranger)
+				ca, _ := c.View.(ChildArranger)
 				if co != nil && ca != nil {
 					for _, c := range *co.GetCells() {
 						if c.Free && c.View != nil && !c.Collapsed {

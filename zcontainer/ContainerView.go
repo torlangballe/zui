@@ -56,6 +56,10 @@ type ChildrenOwner interface {
 
 type Arranger interface {
 	ArrangeChildren()
+	// ArrangeChild(Cell, zgeo.Rect) zgeo.Rect
+}
+
+type ChildArranger interface {
 	ArrangeChild(Cell, zgeo.Rect) zgeo.Rect
 }
 
@@ -417,6 +421,14 @@ func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
 	}
 }
 
+func (v *ContainerView) IsViewCollapsed(view zview.View) bool {
+	cell, _ := v.FindCellWithView(view)
+	if cell == nil {
+		return false
+	}
+	return cell.Collapsed
+}
+
 func (v *ContainerView) CollapseChild(view zview.View, collapse bool, arrange bool) (changed bool) {
 	cell, _ := v.FindCellWithView(view)
 	if cell == nil {
@@ -580,13 +592,17 @@ func (v *ContainerView) FindCellWithName(name string) (*Cell, int) {
 }
 
 func (v *ContainerView) FindCellWithView(view zview.View) (*Cell, int) {
+	// zlog.Info("FindCellWithView:", zlog.Pointer(view), reflect.ValueOf(view).Type(), view != nil)
+	zlog.Assert(view != nil)
+	nv := view.Native()
+	zlog.Assert(nv != nil)
 	for i, c := range v.Cells {
 		if c.View == nil {
 			continue
 		}
 		// fmt.Printf("FindCellWithView: %d) %s %p == %p %v\n", i, c.View.ObjectName(), c.View.Native(), view.Native(), c.View.Native() == view.Native())
 		// zlog.Info("FindCellWithView:", i, c.View.ObjectName(), reflect.TypeOf(c.View), reflect.TypeOf(view))
-		if c.View.Native() == view.Native() {
+		if c.View.Native() == nv {
 			return &v.Cells[i], i
 		}
 	}
