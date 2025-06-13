@@ -64,12 +64,13 @@ type FieldView struct {
 type FieldViewParameters struct {
 	Field
 	FieldParameters
-	BuildChildrenHidden      bool
-	ImmediateEdit            bool                                 // ImmediateEdit forces immediate write-to-data when editing a field.
-	MultiSliceEditInProgress bool                                 // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
-	EditWithoutCallbacks     bool                                 // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	IsEditOnNewStruct        bool                                 // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
-	triggerHandlers          map[trigger]func(ap ActionPack) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
+	BuildChildrenHidden       bool
+	ImmediateEdit             bool                                 // ImmediateEdit forces immediate write-to-data when editing a field.
+	MultiSliceEditInProgress  bool                                 // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
+	EditWithoutCallbacks      bool                                 // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	IsEditOnNewStruct         bool                                 // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
+	triggerHandlers           map[trigger]func(ap ActionPack) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
+	CreateActionMenuItemsFunc func(sid string) []zmenu.MenuedOItem
 }
 
 type ActionPack struct {
@@ -91,6 +92,10 @@ type ActionHandler interface {
 // TODO: Make default Add element in SliceGridView that uses this.
 type StructInitializer interface {
 	InitZFieldStruct()
+}
+
+type FieldViewOwner interface {
+	GetFieldView() *FieldView
 }
 
 var (
@@ -225,6 +230,8 @@ func fieldViewNew(id string, vertical bool, data any, params FieldViewParameters
 		v.SetMargin(zgeo.RectFromMinMax(marg.Pos(), marg.Pos().Negative()))
 	}
 	v.params = params
+	// zlog.Info("fieldViewNew:", v.ObjectName(), params.Use)
+
 	v.ID = id
 	v.ParentFV = parent
 
@@ -345,7 +352,7 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 			continue
 		}
 		if zstr.SplitN(local, "/", &prefix, &fname) && prefix == f.FieldName {
-			fv := view.(*FieldView)
+			fv := viewToFieldView(view)
 			if fv == nil {
 				zlog.Error("updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
 				return
@@ -541,7 +548,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		to.SetText(valStr)
 
 	case zreflect.KindStruct:
-		fv, _ := foundView.(*FieldView)
+		fv := viewToFieldView(foundView)
 		if fv == nil {
 			fv = findSubFieldView(foundView, "")
 		}
@@ -869,10 +876,10 @@ func (v *FieldView) setText(f *Field, valStr string, foundView zview.View) {
 
 func findSubFieldView(view zview.View, optionalID string) (fv *FieldView) {
 	zcontainer.ViewRangeChildren(view, true, true, func(view zview.View) bool {
-		f, _ := view.(*FieldView)
-		if f != nil {
-			if optionalID == "" || f.ID == optionalID {
-				fv = f
+		fvf := viewToFieldView(view)
+		if fvf != nil {
+			if optionalID == "" || fvf.ID == optionalID {
+				fv = fvf
 				return false
 			}
 		}
@@ -908,7 +915,7 @@ func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValu
 		zlog.Error("CallFieldAction find view", fieldID)
 		return
 	}
-	f := v.findFieldWithFieldName(fieldID)
+	f := v.FindFieldWithFieldName(fieldID)
 	if f == nil {
 		zlog.Error("CallFieldAction find field", fieldID)
 		return
@@ -938,7 +945,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 		for n != nil {
 			parent := n.Parent()
 			if parent != nil {
-				fv, _ := parent.View.(*FieldView)
+				fv := viewToFieldView(parent.View)
 				if fv != nil {
 					if fv.IsSlice() {
 						zlog.Info("SetDataHash:", n.Hierarchy())
@@ -988,7 +995,7 @@ func callActionHandlerFunc(ap ActionPack) bool {
 	return result
 }
 
-func (v *FieldView) findFieldWithFieldName(fn string) *Field {
+func (v *FieldView) FindFieldWithFieldName(fn string) *Field {
 	for i, f := range v.Fields {
 		if f.FieldName == fn {
 			return &v.Fields[i]
@@ -1335,7 +1342,8 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if tip != "" {
 			label.SetToolTip(tip)
 		}
-		if f.Wrap == ztextinfo.WrapTailTruncate.String() {
+		isInRow := zstr.StringsContain(v.Parameters().UseInValues, RowUseInSpecialName)
+		if f.Wrap == ztextinfo.WrapTailTruncate.String() || isInRow {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
@@ -1641,12 +1649,38 @@ func (v *FieldView) makeRadioButtonGroup(f *Field, rval reflect.Value) zview.Vie
 	return stack
 }
 
+func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
+	size := zgeo.SizeD(18, 18)
+	if !f.Size.IsNull() {
+		size = f.Size
+	}
+	actions := zimageview.NewWithCachedPath("images/zcore/gear.png", size)
+	actions.DownsampleImages = true
+	menu := zmenu.NewMenuedOwner()
+	menu.Build(actions, nil) // do we need to do this?
+	menu.CreateItemsFunc = func() []zmenu.MenuedOItem {
+		return v.params.CreateActionMenuItemsFunc(sid)
+	}
+	return actions
+}
+
 func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
 			return nil, true
 		}
 		return v.makeButton(rval, f), false
+	}
+	// zlog.Info("CreateSpecial?", f.Name, v.Parameters().UseInValues)
+	if f.HasFlag(FlagIsActions) && rval.Kind() == reflect.Bool {
+		if zstr.StringsContain(v.Parameters().UseInValues, RowUseInSpecialName) {
+			zlog.Assert(v.params.CreateActionMenuItemsFunc != nil)
+			sget, _ := v.data.(zstr.StrIDer)
+			zlog.Assert(sget != nil, reflect.TypeOf(v.data))
+			return v.createActionMenu(f, sget.GetStrID()), false
+		} else {
+			return nil, true
+		}
 	}
 	if !rval.IsValid() {
 		// zlog.Info("createSpecialView: not valid", f.FieldName)
@@ -2373,7 +2407,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 	case zreflect.KindStruct:
 		zcontainer.ViewRangeChildren(v, true, true, func(view zview.View) bool {
 			if view.ObjectName() == f.FieldName {
-				fv, _ := view.(*FieldView)
+				fv := viewToFieldView(view)
 				if fv != nil {
 					cerr := fv.ToData(false)
 					if cerr != nil {
@@ -2441,11 +2475,23 @@ func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
 	}
 }
 
+func viewToFieldView(view zview.View) *FieldView {
+	fv, _ := view.(*FieldView)
+	if fv != nil {
+		return fv
+	}
+	fo, _ := view.(FieldViewOwner)
+	if fo != nil {
+		return fo.GetFieldView()
+	}
+	return nil
+}
+
 // ParentFieldView returns the closest FieldView parent to view
 func ParentFieldView(view zview.View) *FieldView {
 	var got *FieldView
 	for _, nv := range view.Native().AllParents() {
-		fv, _ := nv.View.(*FieldView)
+		fv := viewToFieldView(nv.View)
 		if fv != nil {
 			got = fv
 		}
