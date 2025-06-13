@@ -9,11 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zheader"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
@@ -31,12 +33,13 @@ type TableView[S any] struct {
 	Header                     *zheader.HeaderView // Optional header based on S struct
 	ColumnMargin               float64             // Margin between columns
 	RowInset                   float64             // inset on far left and right
-	FieldParameters            zfields.FieldViewParameters
+	FieldViewParameters        zfields.FieldViewParameters
 	AfterLockPressedFunc       func(fieldName string, didLock bool)
 	ReadToShowBeforeWindowFunc func()          // Is called at end of Table's ReadyToShow, but before it calls SliceGridView's ReadyToShow
 	fields                     []zfields.Field // the fields in an S struct used to generate columns for the table
-	LockedFieldValues          map[string]any  // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
-	hasFitHeaderToRows         bool
+	fieldRects                 map[string]zgeo.Rect
+	LockedFieldValues          map[string]any // this is map of FieldName to list of values in the field that need to equal row's or its filtered out
+	recalcRows                 bool
 }
 
 func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) *TableView[S] {
@@ -47,16 +50,19 @@ func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) 
 
 func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options OptionType) {
 	v.SliceGridView.Init(view, s, storeName, options)
-	v.Grid.MaxColumns = 1
+	if options&AddChangeLayout == 0 {
+		v.Grid.MaxColumns = 1
+	}
 	v.Grid.SetMargin(zgeo.Rect{})
+	v.fieldRects = map[string]zgeo.Rect{}
 	v.ColumnMargin = 5
 	v.RowInset = 7 //RowInset not used yet, should be Grid margin, but calculated OnReady
 	v.LockedFieldValues = map[string]any{}
 	// v.HeaderHeight = 28
-	v.FieldParameters = zfields.DefaultFieldViewParameters
-	v.FieldParameters.AllStatic = true
-	v.FieldParameters.UseInValues = []string{zfields.RowUseInSpecialName}
-	v.FieldParameters.AddTrigger("*", zfields.EditedAction, func(ap zfields.ActionPack) bool {
+	v.FieldViewParameters = zfields.DefaultFieldViewParameters
+	v.FieldViewParameters.AllStatic = true
+	v.FieldViewParameters.UseInValues = []string{zfields.RowUseInSpecialName}
+	v.FieldViewParameters.AddTrigger("*", zfields.EditedAction, func(ap zfields.ActionPack) bool {
 		if v.StoreChangedItemFunc != nil {
 			go v.StoreChangedItemFunc(*(ap.FieldView.Data().(*S)), true)
 		}
@@ -118,36 +124,66 @@ func (v *TableView[S]) findField(fieldName string) (*zfields.Field, int) {
 }
 
 func (v *TableView[S]) ArrangeChildren() {
-	// zlog.Info("TV ArrangeChildren1", v.Hierarchy(), v.Rect())
-	// defer zlog.Info("TV ArrangeChildren Done", v.Hierarchy(), v.Rect())
-	var sw float64
-	if v.Grid.HasSize() {
-		sw = v.Grid.Rect().Size.W
+	// zlog.Info("TableView.ArrangeChildren", v.Grid.MaxColumns)
+	v.recalcRows = true
+	v.updateStoredFields()
+	if v.Header != nil {
+		v.CollapseChild(v.Header, v.Grid.MaxColumns != 1, false)
 	}
 	v.SliceGridView.ArrangeChildren()
-	if v.Header == nil || (v.Grid.HasSize() && v.Grid.Rect().Size.W == sw) {
-		return
+	if len(*v.slicePtr) == 0 {
+		v.calculateColumns(v.Rect().Size)
 	}
-	freeOnly := true
-	v.Header.ArrangeAdvanced(freeOnly)
-	var fv *zfields.FieldView
-	if v.Grid.CellCountFunc() > 0 {
-		view := v.Grid.AnyChildView()
-		if view != nil {
-			// zlog.Info("TV: ArrangeChildren FitHEader")
-			fv = view.(*zfields.FieldView)
+}
+
+func (v *TableView[S]) calculateColumns(size zgeo.Size) {
+	var s S
+	// zlog.Info("TableView.calculateColumns:", v.ObjectName(), v.Grid.MaxColumns, v.FieldViewParameters.UseInValues)
+	view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
+	fv := view.(zfields.FieldViewOwner).GetFieldView()
+	// total := v.LocalRect().Plus(v.Margin())
+	// total = total.Expanded(zgeo.SizeD(-v.RowInset, 0))
+
+	total := zgeo.Rect{Size: size}
+	rowSize, _ := view.CalculatedSize(total.Size)
+	total.Pos.Y = 0
+	total.Size.H = rowSize.H
+	fv.NativeView.SetRect(total)
+	// zgeo.LayoutDebugPrint = true
+	// zlog.Info("TableView.calculateColumns:", v.ObjectName())
+	fv.ArrangeChildren()
+	// zlog.Info("TableView.calculateColumns done:", v.ObjectName())
+	// zgeo.LayoutDebugPrint = false
+	v.fieldRects = map[string]zgeo.Rect{}
+	for _, child := range (fv.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
+		fname := child.ObjectName()
+		r := child.Native().Rect()
+		r.Pos.Y += v.Grid.Spacing.H / 2
+		v.fieldRects[fname] = r
+		// cell, _ := fv.FindCellWithView(child)
+		// zlog.Info("ArrangeCalc:", rowSize.H, total, fname, v.fieldRects[fname], cell.Alignment)
+	}
+	if v.Header != nil {
+		// zlog.Info("TableView.calculateColumns:", v.IsViewCollapsed(v.Header))
+		if !v.IsViewCollapsed(v.Header) {
+			v.Header.ArrangeAdvanced(zbool.Is("freeOnly"))
+			xOffset := v.Margin().Pos.X + v.ColumnMargin/2
+			v.Header.FitToRowStack(&fv.StackView, xOffset)
 		}
-	} else { // no rows, make an empty one to fit header with
-		var s S
-		view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
-		fv = view.(*zfields.FieldView)
-		fv.SetRect(v.LocalRect())
-		fv.ArrangeChildren()
 	}
-	if fv != nil {
-		v.hasFitHeaderToRows = true
-		v.Header.FitToRowStack(&fv.StackView)
-	}
+	v.recalcRows = false
+}
+
+func (v *TableView[S]) updateStoredFields() {
+	// zlog.Info("updateStoredFields")
+	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
+	v.fields = []zfields.Field{}
+	params := v.FieldViewParameters.FieldParameters
+	zstr.AddToSet(&params.UseInValues, "$fullrow")
+	zfields.ForEachField(s, params, nil, func(each zfields.FieldInfo) bool {
+		v.fields = append(v.fields, *each.Field)
+		return true
+	})
 }
 
 func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
@@ -158,38 +194,38 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		// }
 		return
 	}
-	var setupOpen bool
-	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
-	zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
-		if each.Field.HasFlag(zfields.FlagIsOpen) {
-			setupOpen = true
-			if each.Field.HasFlag(zfields.FlagIsOpener) {
-				var verb string
-				if v.Options&AllowView != 0 {
-					each.Field.Size = zgeo.SizeD(16, 10)
-					each.Field.ImageFixedPath = "images/zcore/eye-dark-gray.png"
-					verb = "view"
-				} else {
-					each.Field.Size = zgeo.SizeD(16, 16)
-					each.Field.ImageFixedPath = "images/zcore/edit-dark-gray.png"
-					verb = "edit"
-				}
-				if each.Field.Tooltip == "" {
-					each.Field.Tooltip = "Press to " + verb + "     " + zstr.UTFPostModifierForRoundRect
-				}
-			}
-		}
-		v.fields = append(v.fields, *each.Field)
-		return true
-	})
-	if setupOpen {
-		v.FieldParameters.AddTrigger("*", zfields.PressedAction, func(ap zfields.ActionPack) bool {
-			if ap.Field.HasFlag(zfields.FlagIsOpen) {
-				v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.Options&AllowView != 0, nil)
-			}
-			return true
-		})
-	}
+	// var setupOpen bool
+	// s := zslice.MakeAnElementOfSliceType(v.slicePtr)
+	// zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
+	// 	if each.Field.HasFlag(zfields.FlagIsOpen) {
+	// 		setupOpen = true
+	// 		if each.Field.HasFlag(zfields.FlagIsOpener) {
+	// 			var verb string
+	// 			if v.Options&AllowView != 0 {
+	// 				each.Field.Size = zgeo.SizeD(16, 10)
+	// 				each.Field.ImageFixedPath = "images/zcore/eye-dark-gray.png"
+	// 				verb = "view"
+	// 			} else {
+	// 				each.Field.Size = zgeo.SizeD(16, 16)
+	// 				each.Field.ImageFixedPath = "images/zcore/edit-dark-gray.png"
+	// 				verb = "edit"
+	// 			}
+	// 			if each.Field.Tooltip == "" {
+	// 				each.Field.Tooltip = "Press to " + verb + "     " + zstr.UTFPostModifierForRoundRect
+	// 			}
+	// 		}
+	// 	}
+	// 	v.fields = append(v.fields, *each.Field)
+	// 	return true
+	// })
+	// if setupOpen {
+	// 	v.FieldParameters.AddTrigger("*", zfields.PressedAction, func(ap zfields.ActionPack) bool {
+	// 		if ap.Field.HasFlag(zfields.FlagIsOpen) {
+	// 			v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.Options&AllowView != 0, nil)
+	// 		}
+	// 		return true
+	// 	})
+	// }
 	if v.Options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			// zlog.Info("SORT TABLE:", v.Hierarchy())
@@ -202,6 +238,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 			// 	fmt.Printf("Sorted: %d %+v\n", i, s)
 			// }
 		}
+		v.updateStoredFields()
 		headers := makeHeaderFields(v.fields)
 		v.Header.Populate(headers)
 		if v.Options&AddBarInHeader != 0 {
@@ -214,7 +251,8 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 	}
 	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-		fv := grid.CellView(id).(*zfields.FieldView)
+		fo := grid.CellView(id).(zfields.FieldViewOwner)
+		fv := fo.GetFieldView()
 		zlog.Assert(fv != nil)
 		fv.Update(v.StructForID(id), true, false)
 		// fv.ArrangeChildren()
@@ -233,12 +271,39 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	return view
 }
 
+type TableRow[S any] struct {
+	table *TableView[S]
+	zfields.FieldView
+}
+
+func (tr *TableRow[S]) GetFieldView() *zfields.FieldView {
+	return &tr.FieldView
+}
+
+func (tr *TableRow[S]) ArrangeChildren() {
+	if tr.table.recalcRows {
+		tr.table.calculateColumns(tr.Rect().Size)
+	}
+	freeOnly := true
+	tr.FieldView.ArrangeAdvanced(freeOnly)
+
+	for _, child := range (tr.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
+		fname := child.ObjectName()
+		r := tr.table.fieldRects[fname]
+		child.SetRect(r)
+		// zlog.Info("TR.ArrangeChildren:", fname, tr.Rect(), r)
+	}
+}
+
 func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
-	params := v.FieldParameters
+	params := v.FieldViewParameters
 	params.ImmediateEdit = false
 	params.Styling.Spacing = 0
 	params.AllStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)
-
+	// zstr.AddToSet(&params.UseInValues, zfields.RowUseInSpecialName)
+	if v.Grid.MaxColumns == 1 {
+		params.UseInValues = append(params.UseInValues, "$fullrow")
+	}
 	fv := zfields.FieldViewNew(id, s, params)
 	fv.Vertical = false
 	fv.Fields = v.fields
@@ -247,11 +312,16 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	fv.SetMargin(zgeo.Rect{})
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
-	fv.BuildStack(name, zgeo.CenterLeft, zgeo.SizeD(v.ColumnMargin, 0), useWidth)
+	tr := &TableRow[S]{}
+	tr.table = v
+	fv.View = tr
+	tr.FieldView = *fv
+	// zlog.Info("createRowFromStruct:", id, v.Grid.MaxColumns, params.UseInValues, tr.FieldView.Parameters().FieldParameters.UseInValues)
+	tr.FieldView.BuildStack(name, zgeo.CenterLeft, zgeo.SizeD(v.ColumnMargin, 0), useWidth)
 	// dontOverwriteEdited := false
 	// fv.Update(nil, dontOverwriteEdited, false)
 	// v.Grid.ClearDirtyRow(id) // we clear dirty as we did update above so ArrangeChild will work better
-	return fv
+	return tr
 }
 
 func makeHeaderFields(fields []zfields.Field) []zheader.Header {

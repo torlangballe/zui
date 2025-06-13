@@ -260,7 +260,7 @@ func ShowLock(headerButton *zshape.ImageButtonView, show bool) {
 	}
 }
 
-func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
+func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 	var cells []zcontainer.Cell
 
 	for _, c := range stack.Cells {
@@ -279,10 +279,10 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 			hviews = append(hviews, c.View)
 		}
 	}
-	xdiff := stack.AbsoluteRect().Pos.X - v.AbsoluteRect().Pos.X
-
-	zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
-
+	// if len(cells) != len(hviews) {
+	// 	return
+	// }
+	// zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
 	hr := v.Rect()
 	x := hr.Pos.X
 	for i := range cells {
@@ -304,7 +304,12 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView) {
 		// 	zlog.Info("Add Zero:", cells[i].View.ObjectName(), cr.Size)
 		// }
 		if o.Size.W != 0 {
-			hviews[i].SetRect(o)
+			for _, hv := range hviews {
+				if hv.ObjectName() == cells[i].View.ObjectName() {
+					hv.SetRect(o)
+					break
+				}
+			}
 		}
 	}
 }
