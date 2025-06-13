@@ -36,6 +36,7 @@ type FieldSliceView struct {
 	stack              *zcontainer.StackView
 	storeKey           string
 	isCompositeItems   bool
+	building           bool
 }
 
 func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
@@ -78,6 +79,7 @@ func (v *FieldSliceView) build(addItems bool) {
 	var index int
 	// zlog.Info("FieldSliceView build:", v.Hierarchy(), v.data != nil, reflect.ValueOf(v.data).Kind())
 
+	v.building = true
 	sliceRval := reflect.ValueOf(v.data)
 	if sliceRval.Kind() == reflect.Pointer {
 		sliceRval = sliceRval.Elem()
@@ -138,6 +140,7 @@ func (v *FieldSliceView) build(addItems bool) {
 		}
 	}
 	v.selectItem(index)
+	v.building = false
 }
 
 // func (v *FieldSliceView) ArrangeChildren() {
@@ -302,7 +305,7 @@ func (v *FieldSliceView) selectItem(i int) {
 		}
 	}
 	v.updateMenu()
-	if v.IsPresented() {
+	if v.IsPresented() && !v.building {
 		toModalWindowRootOnly := false
 		zcontainer.ArrangeChildrenAtRootContainer(v, toModalWindowRootOnly)
 	}
