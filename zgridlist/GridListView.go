@@ -677,6 +677,7 @@ func (v *GridListView) FindCellForPos(pos zgeo.Pos) (id string, inside bool) {
 
 func (v *GridListView) CalculateColumnsAndRows(childWidth, totalWidth float64) (nx, ny int) {
 	nx = zgeo.MaxCellsInLength(v.Spacing.W, childWidth, totalWidth-v.margin.Size.W)
+	// zlog.Info("CalculateColumnsAndRows:", v.ObjectName(), nx, v.MaxColumns)
 	if v.MaxColumns != 0 {
 		zint.Minimize(&nx, v.MaxColumns)
 	}

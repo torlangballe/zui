@@ -408,9 +408,10 @@ func (v *SliceGridView[S]) handleLayoutButton(value string) {
 	}
 	v.Grid.RecreateCells = v.laidOut
 	v.laidOut = true
-	// zlog.Info("handleLayoutButton:", v.Grid.RecreateCells, v.IsPresented())
+	// zlog.Info("handleLayoutButton:", v.Grid.MaxColumns, value, v.Grid.RecreateCells, v.IsPresented())
 	if v.IsPresented() {
-		v.ArrangeChildren()
+		a := v.View.(zcontainer.Arranger)
+		a.ArrangeChildren()
 	}
 }
 
