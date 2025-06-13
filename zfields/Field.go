@@ -1159,6 +1159,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 			if !f.SetFromRValAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
+			// zlog.Info("UseIn:", f.Name, f.UseIn, params.UseInValues)
 			fields = append(fields, f)
 			return true
 		})
@@ -1184,16 +1185,16 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.HasFlag(FlagIsForZDebugOnly) && !zui.DebugOwnerMode {
 			return true
 		}
-		useIs, useNot := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
+		usePlain, useDollar := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
 			return strings.HasPrefix(s, "$")
 		})
-		hasIs, hasNot := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
+		hasPlain, hasDollar := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
 			return strings.HasPrefix(s, "$")
 		})
-		if len(useIs) != 0 && !zstr.SlicesIntersect(useIs, hasIs) {
+		if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
 			return true
 		}
-		if len(useNot) != 0 && !zstr.SlicesIntersect(useNot, hasNot) {
+		if len(useDollar) != 0 && !zstr.SlicesIntersect(useDollar, hasDollar) {
 			return true
 		}
 		var finfo FieldInfo
