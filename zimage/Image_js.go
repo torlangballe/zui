@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zutil/zcache"
+	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -211,7 +212,7 @@ func (i *Image) FixedOrientation() *Image {
 func FromGo(img image.Image, got func(image *Image)) {
 	data, err := GoImagePNGData(img)
 	if err != nil {
-		zlog.Error("to-png", err)
+		zlog.Error("to-png", err, zdebug.CallingStackString())
 		got(nil)
 	}
 	surl := zhttp.MakeDataURL(data, "image/png")

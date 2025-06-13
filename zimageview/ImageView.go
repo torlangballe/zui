@@ -205,6 +205,9 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 }
 
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+	if rect.Size.Area() == 0 {
+		return
+	}
 	canvas.DownsampleImages = v.DownsampleImages
 	if v.image != nil {
 		col := v.TintColor

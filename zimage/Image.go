@@ -143,6 +143,7 @@ func GoImageShrunkInto(goImage image.Image, size zgeo.Size, proportional bool) (
 			return nil, zlog.Error("rez resize", err)
 		}
 	} else {
+		// zlog.Info("GoImageShrunkInto:", size, goImage.Bounds(), width, height)
 		newImage = imaging.Resize(goImage, width, height, imaging.Lanczos)
 	}
 	// zlog.Info("GoImageShrunkInto2:", newImage != nil)
@@ -172,7 +173,7 @@ func GoImagePNGData(goImage image.Image) ([]byte, error) {
 	out := bytes.NewBuffer([]byte{})
 	err := png.Encode(out, goImage)
 	if err != nil {
-		err = zlog.Error("encode", err)
+		err = zlog.Error("encode", err, goImage.Bounds())
 		return []byte{}, err
 	}
 	return out.Bytes(), nil
