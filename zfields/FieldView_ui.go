@@ -99,10 +99,11 @@ type FieldViewOwner interface {
 }
 
 var (
-	fieldViewEdited  = map[string]time.Time{}
-	textFilters      = map[string]func(string) string{}
-	EnableLog        zlog.Enabler
-	enumEditHandlers = map[string]func(item *zmenu.MenuedOItem, action zmenu.EditAction){}
+	fieldViewEdited         = map[string]time.Time{}
+	textFilters             = map[string]func(string) string{}
+	EnableLog               zlog.Enabler
+	enumEditHandlers        = map[string]func(item *zmenu.MenuedOItem, action zmenu.EditAction){}
+	fieldToTextTransformers = map[string]func(in any, label *zlabel.Label){}
 )
 
 var DefaultFieldViewParameters = FieldViewParameters{
@@ -129,6 +130,10 @@ func init() {
 	RegisterTextFilter("$headerkey", zstr.CreateFilterFunc(zhttp.IsRuneValidForHeaderKey))
 	RegisterTextFilter("$ascii", zstr.CreateFilterFunc(zstr.IsRuneASCIIPrintable))
 
+}
+
+func RegisterFieldTransformer(name string, trans func(in any, label *zlabel.Label)) {
+	fieldToTextTransformers[name] = trans
 }
 
 func RegisterTextFilter(name string, filter func(string) string) {
@@ -425,6 +430,17 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	if called {
 		return true
 	}
+	if f.Transformer != "" && (f.IsStatic() || v.params.AllStatic) {
+		label, _ := foundView.(*zlabel.Label)
+		if label != nil {
+			trans, got := fieldToTextTransformers[f.Transformer]
+			if got {
+				trans(rval.Interface(), label)
+				return true
+			}
+		}
+	}
+
 	// zlog.Info("updateField3:", v.Hierarchy(), sf.Name)
 	if f.WidgetName != "" && f.Kind != zreflect.KindSlice {
 		w := widgeters[f.WidgetName]
@@ -439,6 +455,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	if f.StringSep == "" && f.Enum != "" && (f.IsStatic() || v.params.AllStatic) {
 		enum := GetEnum(f.Enum)
 		str := findNameOfEnumForRVal(rval, enum)
+		str = f.Prefix + str + f.Suffix
 		foundView.(*zlabel.Label).SetText(str)
 		return true
 	}
@@ -545,7 +562,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			}
 		}
 		to := foundView.(ztext.TextOwner)
-		to.SetText(valStr)
+		str := f.Prefix + valStr + f.Suffix
+		to.SetText(str)
 
 	case zreflect.KindStruct:
 		fv := viewToFieldView(foundView)
@@ -616,7 +634,6 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 					valStr = f.Name
 				}
 				valStr = f.Prefix + valStr + f.Suffix
-				// zlog.Info("PREFIX:", valStr, f.Prefix)
 			}
 			v.setText(f, valStr, foundView)
 		}
@@ -861,7 +878,7 @@ func (v *FieldView) setText(f *Field, valStr string, foundView zview.View) {
 	if f.IsStatic() || v.params.AllStatic {
 		label, _ := foundView.(*zlabel.Label)
 		if label != nil {
-			label.SetText(valStr)
+			label.SetText(f.Prefix + valStr + f.Suffix)
 		}
 		return
 	}
@@ -1237,6 +1254,7 @@ func getTimeString(rval reflect.Value, f *Field) string {
 }
 
 func getTextFromNumberishItem(rval reflect.Value, f *Field) (text, tip string, dur time.Duration) {
+
 	if f.Flags&FlagAllowEmptyAsZero != 0 {
 		if rval.IsZero() {
 			return f.ZeroText, "", 0
@@ -1665,6 +1683,9 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 }
 
 func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.View, skip bool) {
+	if f.Transformer != "" {
+		return v.makeText(rval, f, false), false
+	}
 	if f.Flags&FlagIsButton != 0 {
 		if v.params.HideStatic {
 			return nil, true
@@ -2031,6 +2052,10 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				zview.DownloadURI(path, "")
 			})
 		}
+	}
+	_, isLabel := view.(*zlabel.Label)
+	if isLabel && (f.MaxWidth != f.MinWidth || f.MaxWidth != 0) {
+		exp = zgeo.HorExpand
 	}
 	cell := &zcontainer.Cell{}
 	def := defaultAlign

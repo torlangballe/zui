@@ -205,6 +205,7 @@ type Field struct {
 	Required             string            // If set, fields must be non-zero after editing. If Required is not RequiredSingleValue, it is a group id where at least one field with this Required group has to be non-zero.
 	Radio                string            // If set, value is an enum name. Field must be value type of enum.
 	WhenMods             zkeyboard.Modifier
+	Transformer          string // A transformer that turns this field, if static, to a string, registed with RegisterFieldTransformer()
 }
 
 const (
@@ -439,6 +440,8 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.SetFlag(FlagIsLockable)
 		case "filter":
 			f.Filters = barParts
+		case "trans":
+			f.Transformer = kv.Value
 		case "count":
 			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
 		case "isuseinval":
