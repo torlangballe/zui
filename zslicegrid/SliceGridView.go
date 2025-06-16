@@ -61,15 +61,16 @@ type SliceGridView[S any] struct {
 	ForceUpdateSlice                bool // Set this to make UpdateSlice update, even if slice hash is the same, useful if other factors cause it to display differently
 	NameOfXItemsFunc                func(ids []string, singleSpecial bool) string
 	DeleteAskSubTextFunc            func(ids []string) string
-	UpdateViewFunc                  func(arrange, restoreSelectionScroll bool)      // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
-	SortFunc                        func(s []S)                                     // SortFunc is called to sort the slice after any updates.
-	FilterFunc                      func(s S) bool                                  // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
-	StoreChangedItemsFunc           func(items []S)                                 // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
-	StoreChangedItemFunc            func(item S, last bool) error                   // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
-	DeleteItemsFunc                 func(ids []string)                              // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
-	ValidateClipboardPasteItemsFunc func(items *[]S, proceed func())                // Called on incoming items paste items to zero ID's or something, and validate. Call proceed if any left or user accepts or something
-	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod) bool    // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
-	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
+	UpdateViewFunc                  func(arrange, restoreSelectionScroll bool)             // Filter, sorts, arranges (updates and lays out) and updates widgets. Override to do more. arrange=false if it or parent's ArrangeChildren is going to be called anyway.
+	SortFunc                        func(s []S)                                            // SortFunc is called to sort the slice after any updates.
+	FilterFunc                      func(s S) bool                                         // FilterFunc is called to decide what cells are shown. Might typically use v.SearchField's text.
+	StoreChangedItemsFunc           func(items []S)                                        // StoreChangedItemsFunc is called with ids of all cells that have been edited. It must set the items in slicePtr, can use SetItemsInSlice. It ends by calling UpdateViewFunc(). Might call go-routine to push to backend.
+	StoreChangedItemFunc            func(item S, last bool) error                          // StoreChangedItemFunc is called by the default StoreChangedItemsFunc with index of item in slicePtr, each in a goroutine which can clear showError to not show more than one error. The items are set in the slicePtr afterwards. last is true if it's the last one in items.
+	DeleteItemsFunc                 func(ids []string)                                     // DeleteItemsFunc is called with ids of all selected cells to be deleted. It must remove them from slicePtr.
+	ValidateClipboardPasteItemsFunc func(items *[]S, proceed func())                       // Called on incoming items paste items to zero ID's or something, and validate. Call proceed if any left or user accepts or something
+	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod) bool           // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
+	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error        // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
+	CreateActionMenuItemsFunc       func(sids []string, isGlobal bool) []zmenu.MenuedOItem // Used to set ActionMenu and FieldViewParameters.CreateActionMenuItemsFunc
 	CurrentLowerCaseSearchText      string
 	EditDialogDocumentationPath     string
 	FilterSkipCache                 map[string]bool
@@ -78,10 +79,9 @@ type SliceGridView[S any] struct {
 	slicePtr      *[]S
 	filteredSlice []S
 	laidOut       bool
-
-	SearchField *ztext.SearchField
-	ActionMenu  *zmenu.MenuedOwner
-	Layout      *zimageview.ValuesView
+	SearchField   *ztext.SearchField
+	ActionMenu    *zmenu.MenuedOwner
+	Layout        *zimageview.ValuesView
 }
 
 type LayoutType string
@@ -364,6 +364,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.RemoveItemsFromSlice(deleteIDs)
 		v.UpdateViewFunc(true, false)
 	}
+
 	return
 }
 
@@ -583,8 +584,14 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 			v.editOrViewItemIDs([]string{id}, false, v.Options&AllowView != 0, nil)
 		}
 	}
-
-	// v.Grid.UpdateCell = v.UpdateCell
+	if v.CreateActionMenuItemsFunc != nil {
+		if v.ActionMenu != nil {
+			v.ActionMenu.CreateItemsFunc = func() []zmenu.MenuedOItem {
+				selected := v.Grid.SelectedIDs()
+				return v.CreateActionMenuItemsFunc(selected, true)
+			}
+		}
+	}
 }
 
 func UpdateRows[S any](rows []S, onGrid any, orSlice *[]S) {

@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zheader"
+	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
@@ -227,6 +228,18 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		fv.Update(v.StructForID(id), true, false)
 		// fv.ArrangeChildren()
 	}
+	if v.CreateActionMenuItemsFunc != nil {
+		var s S
+		zfields.ForEachField(s, zfields.FieldParameters{}, nil, func(each zfields.FieldInfo) bool {
+			if each.Field.HasFlag(zfields.FlagIsActions) {
+				v.FieldViewParameters.CreateActionMenuItemsFunc = func(sid string) []zmenu.MenuedOItem {
+					return v.CreateActionMenuItemsFunc([]string{sid}, zbool.Not("global"))
+				}
+				return false
+			}
+			return true
+		})
+	}
 	if v.ReadToShowBeforeWindowFunc != nil {
 		v.ReadToShowBeforeWindowFunc()
 	}
@@ -252,6 +265,7 @@ func (tr *TableRow[S]) GetFieldView() *zfields.FieldView {
 
 func (tr *TableRow[S]) ArrangeChildren() {
 	if tr.table.recalcRows {
+		// zlog.Info("TR.Arrange:", tr.Rect())
 		tr.table.calculateColumns(tr.Rect().Size)
 	}
 	freeOnly := true
@@ -279,7 +293,7 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	fv.Fields = v.fields
 	fv.SetSpacing(0)
 	// fv.SetCanFocus(true)
-	fv.SetMargin(zgeo.Rect{})
+	fv.SetMargin(zgeo.RectFromMarginSize(zgeo.SizeD(v.RowInset, 0)))
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
 	tr := &TableRow[S]{}
