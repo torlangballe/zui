@@ -139,7 +139,8 @@ func (v *TableView[S]) ArrangeChildren() {
 func (v *TableView[S]) calculateColumns(size zgeo.Size) {
 	var s S
 	// zlog.Info("TableView.calculateColumns:", v.ObjectName(), v.Grid.MaxColumns, v.FieldViewParameters.UseInValues)
-	view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
+	// view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
+	view := v.createRowFromStruct(&s, v.ObjectName()+"-TableRow") // So we can if for it when debugging
 	fv := view.(zfields.FieldViewOwner).GetFieldView()
 	// total := v.LocalRect().Plus(v.Margin())
 	// total = total.Expanded(zgeo.SizeD(-v.RowInset, 0))
@@ -194,38 +195,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		// }
 		return
 	}
-	// var setupOpen bool
-	// s := zslice.MakeAnElementOfSliceType(v.slicePtr)
-	// zfields.ForEachField(s, v.FieldParameters.FieldParameters, nil, func(each zfields.FieldInfo) bool {
-	// 	if each.Field.HasFlag(zfields.FlagIsOpen) {
-	// 		setupOpen = true
-	// 		if each.Field.HasFlag(zfields.FlagIsOpener) {
-	// 			var verb string
-	// 			if v.Options&AllowView != 0 {
-	// 				each.Field.Size = zgeo.SizeD(16, 10)
-	// 				each.Field.ImageFixedPath = "images/zcore/eye-dark-gray.png"
-	// 				verb = "view"
-	// 			} else {
-	// 				each.Field.Size = zgeo.SizeD(16, 16)
-	// 				each.Field.ImageFixedPath = "images/zcore/edit-dark-gray.png"
-	// 				verb = "edit"
-	// 			}
-	// 			if each.Field.Tooltip == "" {
-	// 				each.Field.Tooltip = "Press to " + verb + "     " + zstr.UTFPostModifierForRoundRect
-	// 			}
-	// 		}
-	// 	}
-	// 	v.fields = append(v.fields, *each.Field)
-	// 	return true
-	// })
-	// if setupOpen {
-	// 	v.FieldParameters.AddTrigger("*", zfields.PressedAction, func(ap zfields.ActionPack) bool {
-	// 		if ap.Field.HasFlag(zfields.FlagIsOpen) {
-	// 			v.editOrViewItemIDs([]string{ap.FieldView.ID}, false, v.Options&AllowView != 0, nil)
-	// 		}
-	// 		return true
-	// 	})
-	// }
+
 	if v.Options&AddHeader != 0 {
 		v.SortFunc = func(s []S) {
 			// zlog.Info("SORT TABLE:", v.Hierarchy())
