@@ -437,9 +437,8 @@ func (w *Window) ScrollBarSize() float64 {
 		s = 15
 	}
 	if w != nil {
-		s /= w.Scale
+		s = math.Ceil(s / w.Scale)
 	}
-	s = math.Floor(s)
 	return s
 }
 

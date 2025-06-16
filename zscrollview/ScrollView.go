@@ -110,15 +110,17 @@ func (v *ScrollView) SetRect(rect zgeo.Rect) {
 
 func (v *ScrollView) SetRectWithChildSize(rect zgeo.Rect, cs zgeo.Size) {
 	// zlog.Info("SV.SetRectWithChildSize", v.ObjectName(), rect, cs)
-	v.CustomView.SetRect(rect)
 	if rect.Size.W < 0 {
 		zlog.Info("ScrollStRectW:", v.Hierarchy(), rect, cs, zdebug.CallingStackString())
 	}
+	overflow := (cs.H > rect.Size.H)
+	if overflow != v.overflow {
+		v.overflow = overflow
+	}
+	v.CustomView.SetRect(rect)
 	if v.child != nil {
 		v.child.SetRect(zgeo.Rect{Size: cs})
 	}
-	v.overflow = (cs.H > v.LocalRect().Size.H)
-	// zlog.Info("ScrollOverflow:", v.Hierarchy(), rect, cs, v.overflow)
 }
 
 func (v *ScrollView) ArrangeChildren() {
