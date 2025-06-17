@@ -37,9 +37,9 @@ const (
 )
 
 const (
-	KeySpace     = ' '
-	KeyNone  Key = iota + 1000
-	KeyReturn
+	KeyNone   Key = 0
+	KeySpace  Key = ' '
+	KeyReturn Key = iota + 1000
 	KeyEnter
 	KeyTab
 	KeyBackspace

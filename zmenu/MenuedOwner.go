@@ -549,7 +549,7 @@ func (o *MenuedOwner) popup() {
 		if !item.IsAction {
 			allAction = false
 		}
-		if item.Shortcut.Key != 0 {
+		if item.Shortcut.Key != zkeyboard.KeyNone {
 			o.hasShortcut = true
 		}
 	}
