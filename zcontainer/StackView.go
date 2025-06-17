@@ -173,7 +173,8 @@ func (v *StackView) getLayoutCells(total zgeo.Size) (lays []zgeo.LayoutCell) {
 		// zlog.Info("StackView getLayoutCells:", v.ObjectName(), c.View.ObjectName(), l.OriginalSize)
 		div, _ := c.View.(*DividerView)
 		if div != nil {
-			l.Divider = div.Delta
+			// zlog.Info("StackView getLayoutCells:", v.ObjectName(), div.Ratio)
+			l.DividerRatio = div.Ratio
 		}
 		lays = append(lays, l)
 	}

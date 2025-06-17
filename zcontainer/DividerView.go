@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
-	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/ztime"
@@ -21,27 +20,31 @@ type DividerView struct {
 	zcustom.CustomView
 	valueChanged   func(view zview.View)
 	Vertical       bool
-	startDelta     float64
-	Delta          float64
+	startRatio     float64
+	startPos       float64
+	delta          float64
+	Ratio          float64
 	downAt         time.Time
 	doubleClicking bool
 	storeKey       string
 }
 
-func newDiv(storeKey string) *DividerView {
+func newDiv(storeKey string, defaultRatio float64) *DividerView {
 	v := &DividerView{}
 	v.CustomView.Init(v, "divider")
 	v.SetCursor(zcursor.RowResize)
 	v.SetDrawHandler(v.draw)
-	v.storeKey = storeKey
+	v.storeKey = "zcontainer.Div." + storeKey
+	v.startRatio = defaultRatio
 	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) bool {
-		abs := v.AbsoluteRect().Pos.Element(v.Vertical) + pos.Element(v.Vertical)
+		ar := v.Parent().AbsoluteRect()
+		height := ar.Size.Element(v.Vertical)
+		divPos := v.AbsoluteRect().Pos.Y - ar.Pos.Y
 		switch down {
 		case zbool.False:
 			zview.SkipEnterHandler = false
 		case zbool.True:
 			zview.SkipEnterHandler = true
-			v.startDelta = v.Delta - abs
 			since := ztime.Since(v.downAt)
 			if since > 1 {
 				v.downAt = time.Time{}
@@ -49,8 +52,6 @@ func newDiv(storeKey string) *DividerView {
 			if since < 0.4 {
 				v.doubleClicking = true
 				v.downAt = time.Time{}
-				v.Delta = 0
-				v.storeDelta()
 				at, _ := v.Parent().View.(Arranger)
 				at.ArrangeChildren()
 			} else {
@@ -65,9 +66,10 @@ func newDiv(storeKey string) *DividerView {
 			if v.doubleClicking {
 				break
 			}
-			zfloat.Maximize(&abs, v.Parent().AbsoluteRect().Pos.Element(v.Vertical))
-			v.Delta = v.startDelta + abs
-			v.storeDelta()
+			pos := pos.Element(v.Vertical) + divPos
+			v.Ratio = (pos / height)
+			// zlog.Info("DETLA:", pos, height, v.Ratio)
+			v.storeRatio()
 			at, _ := v.Parent().View.(Arranger)
 			at.ArrangeChildren()
 		}
@@ -80,28 +82,29 @@ func (v *DividerView) ReadyToShow(beforeWindow bool) {
 	v.CustomView.ReadyToShow(beforeWindow)
 	if beforeWindow {
 		if v.storeKey != "" {
-			delta, got := zkeyvalue.DefaultSessionStore.GetDouble(v.storeKey, 0)
+			ratio, got := zkeyvalue.DefaultSessionStore.GetDouble(v.storeKey, 0)
 			if got {
-				v.Delta = delta
+				v.startRatio = ratio
 			}
 		}
+		v.Ratio = v.startRatio
 	}
 }
 
-func (v *DividerView) storeDelta() {
+func (v *DividerView) storeRatio() {
 	if v.storeKey != "" {
-		zkeyvalue.DefaultSessionStore.SetDouble(v.Delta, v.storeKey, true)
+		zkeyvalue.DefaultSessionStore.SetDouble(v.Ratio, v.storeKey, true)
 	}
 }
 
-func DividerViewNewVert(storeKey string) *DividerView {
-	v := newDiv("zcontainer." + storeKey)
+func DividerViewNewVert(storeKey string, defaultRatio float64) *DividerView {
+	v := newDiv(storeKey, defaultRatio)
 	v.Vertical = true
 	return v
 }
 
-func DividerViewNewHor(storeKey string) *DividerView {
-	v := newDiv(storeKey)
+func DividerViewNewHor(storeKey string, defaultRatio float64) *DividerView {
+	v := newDiv(storeKey, defaultRatio)
 	v.Vertical = false
 	return v
 }
