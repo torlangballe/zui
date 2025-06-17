@@ -15,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zweb"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zstr"
@@ -33,6 +34,7 @@ var (
 	DocumentationPathPrefix       = "doc/"
 	DocumentationDefaultIconColor = zstyle.GrayF(0.9, 0.5)
 	DocumentationViewDefaultModal = false
+	DocumentationShowInBrowser    bool
 	DocumentationCookieMap        map[string]string
 )
 
@@ -128,6 +130,13 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 // }
 
 func DocumentationViewPresent(path string, modal bool) error {
+	if DocumentationShowInBrowser {
+		opts := zwindow.Options{
+			URL: zfile.JoinPathParts(DocumentationPathPrefix, path),
+		}
+		zwindow.Open(opts)
+		return nil
+	}
 	opts := zwindow.Options{}
 	opts.ID = "doc:" + path
 	if zwindow.ExistsActivate(opts.ID) {
