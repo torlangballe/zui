@@ -1,9 +1,10 @@
 package zcode
 
 import (
+	"syscall/js"
+
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zview"
-	"syscall/js"
 )
 
 type nativeCodeEditorView struct {
@@ -11,9 +12,7 @@ type nativeCodeEditorView struct {
 }
 
 func (v *CodeEditorView) Init(view zview.View, name string) {
-	// v.MakeJSElement(view, "div")
 	v.Element = zdom.DocumentJS.Call("createElement", "div")
-	//	v.Element.Set("style", "position:absolute")
 	v.View = view
 	v.Element.Set("id", "editor")
 }
