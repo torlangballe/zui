@@ -1679,6 +1679,7 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 	menu.CreateItemsFunc = func() []zmenu.MenuedOItem {
 		return v.params.CreateActionMenuItemsFunc(sid)
 	}
+	actions.ShortCutHandler = menu
 	return actions
 }
 
