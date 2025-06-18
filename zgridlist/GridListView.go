@@ -770,6 +770,7 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 	if v.CellHeightFunc != nil {
 		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
 	}
+	child.Native().PerformAddRemoveFuncs(false)
 	zfloat.Maximize(&s.W, v.MinSize().W)
 	v.cachedChildSize = s
 	return s
