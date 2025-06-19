@@ -630,6 +630,14 @@ func (v *NativeView) RemoveFromParent(callRemoveFuncs bool) {
 	v.parent = nil
 }
 
+func (v *NativeView) SetTextLine(under bool) {
+	str := "overline"
+	if under {
+		str = "underline"
+	}
+	v.JSStyle().Set("text-decoration", str)
+}
+
 func (v *NativeView) SetFont(font *zgeo.Font) {
 	cssStyle := v.JSStyle()
 	if font.Style == zgeo.FontStyleUndef {
