@@ -14,6 +14,7 @@ import (
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -114,6 +115,8 @@ var DefaultFieldViewParameters = FieldViewParameters{
 }
 
 func init() {
+	var dl DocumentationLink
+	zreflect.DefaultTypeRegistrar.Register(dl, nil)
 	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
 
 	RegisterTextFilter("$nowhite", func(s string) string {
@@ -674,7 +677,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 	var typeName string
 	key = zstr.HeadUntilWithRest(key, ":", &typeName)
 	if typeName != "" {
-		n, tag, err := zreflect.NewStructFromRegisteredTypeName(typeName, mval.Interface())
+		n, tag, err := zreflect.NewTypeFromRegisteredTypeName(typeName, mval.Interface())
 		// zlog.Info("zfields.RegField:", key, n, tag, err)
 		if err == nil {
 			mval = reflect.ValueOf(n)
@@ -1357,6 +1360,8 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 				label = zlabel.New(str)
 			}
 		}
+		setDocumentationLink(label, rval)
+
 		if tip != "" {
 			label.SetToolTip(tip)
 		}
@@ -1436,6 +1441,29 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		tv.SetToolTip(tip)
 	}
 	return tv
+}
+
+func setDocumentationLink(label *zlabel.Label, rval reflect.Value) {
+	link, isDoc := rval.Interface().(DocumentationLink)
+	if !isDoc {
+		return
+	}
+	str := string(link)
+	str = zstr.HeadUntil(str, "#")
+	if zstr.HasSuffix(str, ".md", &str) {
+		str = strings.Replace(str, "_", " ", -1)
+		str = zstr.TitledWords(str)
+		label.SetText(str)
+	}
+	label.SetFont(label.Font().NewWithStyle(zgeo.FontStyleBold))
+	label.SetTextLine(true)
+	label.SetCursor(zcursor.Pointer)
+	col := label.Color().Mixed(zgeo.ColorBlue, 0.3)
+	label.SetColor(col)
+	// zlog.Info("DOC:", str, link)
+	label.SetPressedHandler("", 0, func() {
+		zwidgets.DocumentationViewPresent(string(link), zwidgets.DocumentationViewDefaultModal)
+	})
 }
 
 func getFilterFuncFromFilterNames(names []string, f *Field) func(string) string {

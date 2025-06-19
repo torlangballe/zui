@@ -62,6 +62,9 @@ type FieldParameters struct {
 // This allows a type to handle its  Field setup, its creation, editing, data changed and more.
 type ActionType string
 
+// DocumentationLink is used to flag a string to create doc links
+type DocumentationLink string
+
 const (
 	NoAction              ActionType = ""             // Add a trigger for this to get ALL actions
 	DataChangedActionPre  ActionType = "changed-pre"  // called on struct before DataChangedAction on fields
