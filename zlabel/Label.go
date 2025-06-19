@@ -132,7 +132,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	// 	zlog.Info("Label.CalculatedSize:", s, v.MaxLines(), v.Text(), ti.Font.Size/5)
 	// }
 	s = s.Ceil()
-	s.W += 1
+	s.W += 3
 	return s, zgeo.SizeD(v.maxWidth, 0) // should we calculate max height?
 }
 
