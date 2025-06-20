@@ -512,7 +512,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	zuistringer, _ := rval.Interface().(UIStringer)
 	if to != nil && zuistringer != nil {
 		// if f.IsStatic() || v.params.AllStatic {
-		to.SetText(zuistringer.ZUIString())
+		to.SetText(zuistringer.ZUIString(f.HasFlag(FlagAllowEmptyAsZero)))
 		return true
 	}
 	switch f.Kind {
@@ -1265,7 +1265,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (text, tip string, d
 	}
 	stringer, got := rval.Interface().(UIStringer)
 	if got {
-		return stringer.ZUIString(), "", 0
+		return stringer.ZUIString(f.HasFlag(FlagAllowEmptyAsZero)), "", 0
 	}
 	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	isDurTime := zkind == zreflect.KindTime && f.Flags&FlagIsDuration != 0
@@ -2180,7 +2180,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	str := fmt.Sprint(a)
 	zs, _ := a.(UIStringer)
 	if zs != nil {
-		str = zs.ZUIString()
+		str = zs.ZUIString(f.HasFlag(FlagAllowEmptyAsZero))
 	}
 	d, _ := a.(zstr.Describer)
 	if d != nil {

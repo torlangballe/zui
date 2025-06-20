@@ -35,7 +35,7 @@ import (
 // UIStringer defines a ZUIString() method, which if present, shows a complex type as a string in FieldViews.
 // We can't just use the fmt.Stringer interface as that would be too common.
 type UIStringer interface {
-	ZUIString() string
+	ZUIString(allowEmpty bool) string
 }
 
 // UISetStringer is like UIStringer, but for allowing a type to be edited as a string, then converted from that string.
