@@ -1062,21 +1062,6 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 			zwindow.GetMain().SetLocation(surl)
 		})
 	}
-	if f.RPCCall != "" {
-		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
-			maybeAskBeforeAction(f, func() {
-				var reply string
-				a := reflect.ValueOf(fv.data).Elem().Interface()
-				err := zrpc.MainClient.Call(f.RPCCall, a, &reply)
-				if err != nil {
-					zalert.ShowError(err)
-				}
-				if reply != "" {
-					zalert.Show(reply)
-				}
-			})
-		})
-	}
 	return button
 }
 
@@ -1563,7 +1548,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		})
 		return iv
 	}
-	iv.SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
+	iv.SetPressedHandler("zfield.Image.CallAction", zkeyboard.ModifierNone, func() {
 		maybeAskBeforeAction(f, func() {
 			ap := ActionPack{Field: f, Action: PressedAction, RVal: reflect.ValueOf(f.FieldName), View: &iv.View}
 			v.callTriggerHandler(ap)
@@ -2036,6 +2021,20 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		} else {
 			if f.Flags&FlagPress != 0 {
 				view.Native().SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
+					if f.RPCCall != "" {
+						maybeAskBeforeAction(f, func() {
+							var reply string
+							a := reflect.ValueOf(v.data).Elem().Interface()
+							err := zrpc.MainClient.Call(f.RPCCall, a, &reply)
+							if err != nil {
+								zalert.ShowError(err)
+							}
+							if reply != "" {
+								zalert.Show(reply)
+							}
+						})
+						return
+					}
 					maybeAskBeforeAction(f, func() {
 						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view})
 					})
