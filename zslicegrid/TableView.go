@@ -226,7 +226,12 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 		}
 	}
 	v.Grid.UpdateCellFunc = func(grid *zgridlist.GridListView, id string) {
-		fo := grid.CellView(id).(zfields.FieldViewOwner)
+		// zlog.Info("UpdateCellFunc:", id, grid.CellView(id) != nil)
+		cell := grid.CellView(id)
+		if cell == nil {
+			return
+		}
+		fo := cell.(zfields.FieldViewOwner)
 		fv := fo.GetFieldView()
 		zlog.Assert(fv != nil)
 		fv.Update(v.StructForID(id), true, false)
