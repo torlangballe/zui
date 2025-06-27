@@ -5,6 +5,7 @@ package ztabs
 import (
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zshape"
@@ -18,10 +19,11 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
-type item struct {
-	id     string
-	view   zview.View
-	create func(id string, delete bool) zview.View
+type Item struct {
+	id        string
+	view      zview.View
+	SlowStart bool // SlowStart shows a wait cursor before changing the view in a goroutine, so cursor can kick in.
+	create    func(id string, delete bool) zview.View
 }
 
 type TabsView struct {
@@ -36,7 +38,7 @@ type TabsView struct {
 	DefaultID             string
 
 	storeKey           string
-	items              []item
+	items              []Item
 	currentChild       zview.View
 	header             *zcontainer.StackView
 	ChangedHandlerFunc func(newID string)
@@ -133,7 +135,7 @@ func (v *TabsView) ReadyToShow(beforeWindow bool) {
 // view/create are either the view to show for this tab, or how to make/delete it dynamically.
 // It is added/removed from view hierarchy by this method.
 // create is a function to create or delete the content child each time tab is set.
-func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create func(id string, delete bool) zview.View) {
+func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create func(id string, delete bool) zview.View) *Item {
 	// v.AddGroupItem(id, title, imagePath, set, view, create)
 	var button *zshape.ShapeView
 	minSize := zgeo.SizeD(20, 22)
@@ -160,10 +162,20 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 		button.SetImage(nil, true, zgeo.SizeNull, imagePath, zgeo.SizeNull, nil)
 	}
 	button.SetPressedHandler("", zkeyboard.ModifierAny, func() {
-		v.SelectItem(id, nil) // go
+		i := v.FindItem(id)
+		item := v.items[i]
+		if !item.SlowStart {
+			v.SelectItem(id, nil)
+			return
+		}
+		v.SetCursor(zcursor.Wait)
+		ztimer.StartIn(0.1, func() {
+			v.SelectItem(id, nil)
+			v.SetCursor(zcursor.Default)
+		})
 	})
 	v.header.Add(view, zgeo.BottomLeft)
-	v.items = append(v.items, item{id: id, view: view, create: create})
+	v.items = append(v.items, Item{id: id, view: view, create: create})
 	ilen := len(v.items)
 	if ilen < 10 {
 		key := zkeyboard.Key('0' + ilen)
@@ -172,6 +184,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	if v.CurrentID == id {
 		v.SelectItem(id, nil)
 	}
+	return &v.items[len(v.items)-1]
 }
 
 func (v *TabsView) SelectItem(id string, done func()) {
@@ -179,9 +192,9 @@ func (v *TabsView) SelectItem(id string, done func()) {
 }
 
 func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) {
-	if v.CurrentID == id && v.findItem(id) != -1 && v.currentChild != nil {
+	if v.CurrentID == id && v.FindItem(id) != -1 && v.currentChild != nil {
 		if reloadIfAlreadySelected {
-			i := v.findItem(id)
+			i := v.FindItem(id)
 			item := v.items[i]
 			if item.create != nil {
 				item.create(id, true)
@@ -196,7 +209,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 		}
 		return
 	}
-	i := v.findItem(v.CurrentID)
+	i := v.FindItem(v.CurrentID)
 	if i != -1 {
 		item := v.items[i]
 		item.create(v.CurrentID, true)
@@ -213,7 +226,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 		zkeyvalue.DefaultStore.SetString(v.CurrentID, storeKeyPrefix+v.storeKey, true)
 	}
 	v.setButtonOn(v.CurrentID, true)
-	item := v.items[v.findItem(id)]
+	item := v.items[v.FindItem(id)]
 	v.currentChild = item.view
 	if item.create != nil {
 		v.currentChild = item.create(id, false)
@@ -242,7 +255,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 }
 
 func (v *TabsView) RemoveItem(id string) {
-	i := v.findItem(id)
+	i := v.FindItem(id)
 	zslice.RemoveAt(&v.items, i)
 	item := v.items[i]
 	if item.create != nil {
@@ -285,7 +298,7 @@ func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner 
 	v.separatorForIDs = forIDs
 }
 
-func (v *TabsView) findItem(id string) int {
+func (v *TabsView) FindItem(id string) int {
 	for i := range v.items {
 		if v.items[i].id == id {
 			return i
