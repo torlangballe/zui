@@ -26,6 +26,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zwords"
 )
 
 type Header struct {
@@ -70,10 +71,16 @@ func (v *HeaderView) updateTriangle(triangle *zimageview.ImageView, id string) {
 	} else {
 		triangle.SetAlpha(0.5)
 	}
+	num := zwords.OrdinalNumber(i + 1)
+	tip := "order " + num + ", sort "
 	str := "down"
 	if sorting.SmallFirst {
+		tip += "ascending"
 		str = "up"
+	} else {
+		tip += "descending"
 	}
+	triangle.SetToolTip(tip)
 
 	str = fmt.Sprintf("images/zcore/sort-triangle-%s.png", str)
 	triangle.SetImage(nil, str, nil)
