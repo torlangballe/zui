@@ -375,7 +375,7 @@ func GetIDForItem[S any](item *S) string {
 	if g != nil {
 		return g.GetStrID()
 	}
-	zlog.Fatal("Not a StrIDer!!!")
+	// zlog.Fatal("Not a StrIDer!!!")
 	var sid string
 	zreflect.ForEachField(item, zreflect.FlattenIfAnonymous, func(each zreflect.FieldInfo) bool {
 		if each.StructField.Name == "ID" {
