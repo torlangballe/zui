@@ -9,12 +9,14 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -774,4 +776,18 @@ func DumpHierarchy(view zview.View, add string) {
 		}
 		DumpHierarchy(cell.View, add)
 	}
+}
+
+func (v *ContainerView) SearchForDocs(text string, cell zdocs.PathPart) []zdocs.SearchResult {
+	var got []zdocs.SearchResult
+	cell.PathStub = zstr.Concat("/", cell.PathStub, v.ObjectName())
+	for _, c := range v.Cells {
+		if c.View != nil {
+			dls, _ := c.View.(zdocs.DocLinkSearcher)
+			if dls != nil {
+				got = append(got, dls.SearchForDocs(text, cell)...)
+			}
+		}
+	}
+	return got
 }
