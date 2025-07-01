@@ -672,7 +672,13 @@ func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name stri
 	return tv
 }
 
+var inMapRows int
+
 func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Value, fixed bool, f *Field) (zview.View, Field) { // v *FieldView,
+	inMapRows++
+	defer func() {
+		inMapRows--
+	}()
 	var mf Field
 	var typeName string
 	key = zstr.HeadUntilWithRest(key, ":", &typeName)
@@ -682,7 +688,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		if err == nil {
 			mval = reflect.ValueOf(n)
 			var pkg, field string
-			zstr.SplitN(typeName, ".", &pkg, field)
+			zstr.SplitN(typeName, ".", &pkg, &field)
 			mf.SetFromRVal(mval, tag, field, pkg, 0, FieldParameters{})
 		}
 	}
@@ -723,6 +729,8 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		if mval.Kind() == reflect.Interface {
 			mval = mval.Elem()
 		}
+		// zlog.Info(f.Name, "map buildItem:", mf.Name, mval.Type())
+		mf.Vertical = zbool.False
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		if f.IsStatic() {
 			view.Native().SetUsable(true)
@@ -1123,6 +1131,12 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 	var view zview.View
 	view = menu
 	// SetAuthenticationIDAsDefaultForSliceViewview := menu
+	if menuOwner.IsStatic {
+		menuOwner.StaticSelectedHandlerFunc = func(id string) {
+			idVal := reflect.ValueOf(id)
+			callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: idVal, View: &view})
+		}
+	}
 	menuOwner.SelectedHandlerFunc = func(edited bool) {
 		sel := menuOwner.SelectedItem()
 		if sel != nil {
@@ -1373,7 +1387,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		}
 		f.SetFont(label, nil)
 		label.SetTextAlignment(j)
-		if f.Rows <= 1 {
+		if f.Rows <= 1 || inMapRows > 0 {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) && f.Flags&FlagToClipboard != 0 {

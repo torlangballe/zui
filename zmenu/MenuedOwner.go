@@ -46,35 +46,36 @@ const (
 )
 
 type MenuedOwner struct {
-	View                zview.View
-	Name                string   // Name is just used for setting View Object Name for debugging
-	PopPos              zgeo.Pos // either View or PopPos
-	SelectedHandlerFunc func(edited bool)
-	GetTitleFunc        func(itemCount int) string
-	ActionHandlerFunc   func(id string)
-	CreateItemsFunc     func() []MenuedOItem
-	ClosedFunc          func()
-	EditFunc            func(item *MenuedOItem, action EditAction)
-	PluralableWord      string // if set, used instead of GetTitle, and pluralized
-	TitleIsValueIfOne   bool   // if set and IsMultiple, name of value used as title if only one set
-	TitleIsAll          string // if != "", all items are listed in title, separated by TitleIsAll string
-	Font                *zgeo.Font
-	ImagePath           string
-	IsStatic            bool // if set, user can't set a different value, but can press and see them. Shows number of items
-	IsMultiple          bool
-	HasLabelColor       bool
-	SetTitle            bool
-	StoreKey            string
-	BGColor             zgeo.Color
-	TextColor           zgeo.Color
-	HoverColor          zgeo.Color
-	MinWidth            float64
-	DefaultSelected     any
-	items               []MenuedOItem
-	hasShortcut         bool
-	currentPopupStack   *zcontainer.StackView
-	needsSave           bool
-	isRemoved           bool
+	View                      zview.View
+	Name                      string   // Name is just used for setting View Object Name for debugging
+	PopPos                    zgeo.Pos // either View or PopPos
+	SelectedHandlerFunc       func(edited bool)
+	StaticSelectedHandlerFunc func(id string)
+	GetTitleFunc              func(itemCount int) string
+	ActionHandlerFunc         func(id string)
+	CreateItemsFunc           func() []MenuedOItem
+	ClosedFunc                func()
+	EditFunc                  func(item *MenuedOItem, action EditAction)
+	PluralableWord            string // if set, used instead of GetTitle, and pluralized
+	TitleIsValueIfOne         bool   // if set and IsMultiple, name of value used as title if only one set
+	TitleIsAll                string // if != "", all items are listed in title, separated by TitleIsAll string
+	Font                      *zgeo.Font
+	ImagePath                 string
+	IsStatic                  bool // if set, user can't set a different value, but can press and see them. Shows number of items
+	IsMultiple                bool
+	HasLabelColor             bool
+	SetTitle                  bool
+	StoreKey                  string
+	BGColor                   zgeo.Color
+	TextColor                 zgeo.Color
+	HoverColor                zgeo.Color
+	MinWidth                  float64
+	DefaultSelected           any
+	items                     []MenuedOItem
+	hasShortcut               bool
+	currentPopupStack         *zcontainer.StackView
+	needsSave                 bool
+	isRemoved                 bool
 }
 
 type MenuedOItem struct {
@@ -646,6 +647,12 @@ func (o *MenuedOwner) popup() {
 	}
 	list.HandleSelectionChangedFunc = func() {
 		if o.IsStatic {
+			if o.StaticSelectedHandlerFunc != nil {
+				ids := list.SelectedIDs()
+				if len(ids) == 1 {
+					o.StaticSelectedHandlerFunc(ids[0])
+				}
+			}
 			return
 		}
 		ids := list.SelectedIDs()
