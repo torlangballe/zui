@@ -30,6 +30,7 @@ type Label struct {
 	longPressed       func()
 
 	Columns                      int
+	IsDocSearchable              bool // If IsDocSearchable, it is part of what is found when searching GUI for documentation, sp typically a title and not just data
 	KeyboardShortcut             zkeyboard.KeyMod
 	pressWithModifierToClipboard zkeyboard.Modifier
 }
@@ -192,3 +193,17 @@ func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
 	}
 	return false
 }
+
+/*
+func (v *Label) SearchForDocs(match string, cell zdocs.PathPart) []zdocs.SearchResult {
+	// https://pkg.go.dev/golang.org/x/text/search#Matcher.IndexString
+	if !v.IsDocSearchable {
+		return nil
+	}
+	var texts []string
+	zstr.AddNonEmpty(&texts, v.Tex(), v.Tooltip())
+	cell.PathStub = zstr.Concat("/", cell.PathStub, v.ObjectName())
+	var result zdocs.SearchResult
+	result.Match = text
+}
+*/
