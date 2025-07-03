@@ -92,7 +92,12 @@ func (a ImagesSetWidgeter) SetupField(f *Field) {
 
 func (a ImagesSetWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	f.Flags |= FlagIsStatic
+	s := f.Size
+	if s.IsNull() {
+		s = zgeo.SizeBoth(14)
+	}
 	v := zwidgets.NewImagesSetView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
+	v.SetMinSize(zgeo.SizeD(f.MinWidth, s.H))
 	v.SetStyling(f.Styling)
 	return v
 }
