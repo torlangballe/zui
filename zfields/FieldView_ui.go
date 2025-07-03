@@ -514,7 +514,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		menuType.UpdateItems(enum, rval.Interface(), f.Flags&FlagIsActions != 0)
 		return true
 	}
-	updateItemLocalToolTip(f, v.data, foundView)
+	updateToolTip(f, v.data, foundView)
 	to, _ := foundView.(ztext.TextOwner)
 	zuistringer, _ := rval.Interface().(UIStringer)
 	if to != nil && zuistringer != nil {
@@ -2070,7 +2070,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 		}
 	}
-	updateItemLocalToolTip(f, v.data, view)
+	updateToolTip(f, v.data, view)
 	if !f.Styling.DropShadow.Delta.IsNull() {
 		nv := view.Native()
 		nv.SetDropShadow(f.Styling.DropShadow)
@@ -2168,7 +2168,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			label.SetBGColor(zstyle.DebugBackgroundColor)
 			label.SetCorner(4)
 		}
-		updateItemLocalToolTip(f, v.data, lstack)
+		updateToolTip(f, v.data, lstack)
 		v.Add(lstack, zgeo.HorExpand|zgeo.Left|zgeo.Top)
 	}
 	if useMinWidth {
@@ -2236,7 +2236,7 @@ func ReplaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) strin
 	return out
 }
 
-func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
+func updateToolTip(f *Field, structure any, view zview.View) {
 	var tipField, tip string
 	if zstr.HasPrefix(f.Tooltip, "./", &tipField) {
 		// ei, _, findex := zreflect.FieldForName(structure, FlattenIfAnonymousOrZUITag, tipField)
@@ -2244,7 +2244,7 @@ func updateItemLocalToolTip(f *Field, structure any, view zview.View) {
 		if found {
 			tip = fmt.Sprint(finfo.ReflectValue.Interface())
 		} else { // can't use tip == "" to check, since field might just be empty
-			zlog.Error("updateItemLocalToolTip: no local field for tip", f.Name, tipField)
+			zlog.Error("updateToolTip: no local field for tip", f.Name, tipField)
 		}
 	} else if f.Tooltip != "" {
 		tip = f.Tooltip

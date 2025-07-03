@@ -41,7 +41,6 @@ type FieldSliceView struct {
 
 func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	vert := !f.Vertical.Bool()
-	zlog.Info("NewSliceView", fv.ObjectName(), f.Name, vert)
 	v := &FieldSliceView{}
 	v.data = slicePtr
 	rt := reflect.ValueOf(slicePtr)
