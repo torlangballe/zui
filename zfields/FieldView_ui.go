@@ -104,7 +104,7 @@ var (
 	textFilters             = map[string]func(string) string{}
 	EnableLog               zlog.Enabler
 	enumEditHandlers        = map[string]func(item *zmenu.MenuedOItem, action zmenu.EditAction){}
-	fieldToTextTransformers = map[string]func(in any, label *zlabel.Label){}
+	fieldToTextTransformers = map[string]func(val, structure any, label *zlabel.Label){}
 )
 
 var DefaultFieldViewParameters = FieldViewParameters{
@@ -135,8 +135,15 @@ func init() {
 
 }
 
-func RegisterFieldTransformer(name string, trans func(in any, label *zlabel.Label)) {
+func RegisterFieldTransformer(name string, trans func(val, structure any, label *zlabel.Label)) {
 	fieldToTextTransformers[name] = trans
+}
+
+func RegisterFieldTransformerText(name string, trans func(val, structure any) string) {
+	fieldToTextTransformers[name] = func(val, s any, label *zlabel.Label) {
+		out := trans(val, s)
+		label.SetText(out)
+	}
 }
 
 func RegisterTextFilter(name string, filter func(string) string) {
@@ -438,7 +445,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		if label != nil {
 			trans, got := fieldToTextTransformers[f.Transformer]
 			if got {
-				trans(rval.Interface(), label)
+				trans(rval.Interface(), v.data, label)
 				return true
 			}
 		}
