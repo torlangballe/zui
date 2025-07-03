@@ -346,6 +346,8 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 		}
 		if f.Tooltip != "" && !strings.HasPrefix(f.Tooltip, ".") {
 			h.Tip = f.Tooltip
+		} else if f.Description != "" {
+			h.Tip = f.Description
 		}
 		h.SortSmallFirst = f.SortSmallFirst
 		h.SortPriority = f.SortPriority
