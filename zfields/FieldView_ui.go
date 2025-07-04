@@ -643,7 +643,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 				if f.Flags&FlagIsFixed != 0 {
 					valStr = f.Name
 				}
-				valStr = f.Prefix + valStr + f.Suffix
+				// valStr = f.Prefix + valStr + f.Suffix // done in v.setString()
 			}
 			v.setText(f, valStr, foundView)
 		}
