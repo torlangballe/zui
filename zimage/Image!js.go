@@ -5,6 +5,7 @@ package zimage
 import (
 	"image"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 	"os"
 
@@ -165,3 +166,38 @@ func (i *Image) RGBAImage(got func(img *Image)) {
 }
 
 func (i *Image) Release() {}
+
+func GoImageFromFile(path string) (img image.Image, format string, err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, "", err
+	}
+	return image.Decode(file)
+}
+
+func GoImageToJPEGFile(img image.Image, filepath string, qualityPercent int) error {
+	out, err := os.Create(filepath)
+	if err != nil {
+		return zlog.Error("os.create", filepath, err)
+	}
+	defer out.Close()
+	options := jpeg.Options{Quality: qualityPercent}
+	err = jpeg.Encode(out, img, &options)
+	if err != nil {
+		return zlog.Error("encode", err)
+	}
+	return nil
+}
+
+func GoImageToPNGFile(img image.Image, filepath string) error {
+	out, err := os.Create(filepath)
+	if err != nil {
+		return zlog.Error(zlog.StackAdjust(1), "os.create", filepath, err)
+	}
+	defer out.Close()
+	err = png.Encode(out, img)
+	if err != nil {
+		return zlog.Error("encode", filepath, err)
+	}
+	return nil
+}
