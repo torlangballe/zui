@@ -10,7 +10,6 @@ import (
 
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/zslice"
 )
@@ -22,6 +21,7 @@ type SimpleAnalytics struct {
 	EdgesAmount    float64
 	BlockFrequency zgeo.IPos
 	BlockOffset    zgeo.IPos
+	BlockAmount    float64
 }
 
 type counts struct {
@@ -168,9 +168,9 @@ type freqInfo struct {
 	offset int
 }
 
-func (c *counts) getBlockFrequencyAndOffset() (freq, offset int) {
+func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64) {
 	var w int
-	zlog.Info("getBlockFrequencyAndOffset:", len(c.perpendicularEdgeLengths))
+	// zlog.Info("getBlockFrequencyAndOffset:", len(c.perpendicularEdgeLengths))
 	for x, _ := range c.perpendicularEdgeLengths {
 		w = max(w, x)
 	}
@@ -205,25 +205,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int) {
 			f.freq = freq
 			f.offset = w
 			order = append(order, f)
-			// zlog.Info("Line:", w, freq, "sum:", n, "best:", best)
-			/*
-				if n > best {
-					// zlog.Info("LineBest:", w, freq, "sum:", n, "best:", best)
-					if best != 0 && 100*n/best < 105 {
-						continue
-					}
-					nextBestFreq = bestFreq
-					nextBest = best
-					best = n
-					// zlog.Info("LineBest2:", w, freq, "sum:", n, "best:", best)
-					bestFreq = freq
-					bestOffset = w
-				}
-			*/
 		}
-	}
-	if len(order) == 0 {
-		return 0, 0
 	}
 	for i := 0; i < len(order); i++ {
 		for j := i + 1; j < len(order); j++ {
@@ -237,7 +219,6 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int) {
 	for i := 0; i < len(order); i++ {
 		for j := 0; j < len(order) && i < len(order); j++ {
 			if i != j && order[j].freq > order[i].freq && order[j].freq%order[i].freq == 0 {
-				zlog.Info("Remove:", order[j].freq, order[i].freq)
 				order[i].amount += order[j].amount
 				zslice.RemoveAt(&order, j)
 				j--
@@ -247,11 +228,17 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int) {
 	sort.Slice(order, func(i, j int) bool {
 		return order[i].amount < order[j].amount
 	})
-	for _, o := range order {
-		zlog.Info("Freqs:", o.freq, o.amount, o.offset)
+	if len(order) < 2 {
+		return 0, 0, 0
 	}
+	// for _, o := range order {
+	// 	zlog.Info("Freqs:", o.freq, o.amount, o.offset)
+	// }
+	best := order[len(order)-1]
+	next := order[len(order)-2]
+	amount = float64(best.amount)/float64(next.amount) - 1
 	// zlog.Info("Best Freq:", bestFreq, bestOffset, float64(nextBest)/float64(best))
-	return 0, 0
+	return best.freq, best.offset, amount
 }
 
 func (info *ImageInfo) BlurAmount() zgeo.Pos {
@@ -292,38 +279,28 @@ func (info *ImageInfo) EdgePointsAmount() zgeo.Pos {
 	return edges
 }
 
-func (info *ImageInfo) BlockFrequency() (freq, offset zgeo.IPos) {
-	fX, oX := info.hCounts.getBlockFrequencyAndOffset()
-	fY, oY := info.vCounts.getBlockFrequencyAndOffset()
-	if fX == 0 || fY == 0 || (fX/fY != 4 && fX/fY != 2 && fY/fX != 4 && fY/fX != 2) {
+func (info *ImageInfo) BlockFrequency() (freq, offset zgeo.IPos, amount zgeo.Pos) {
+	fX, oX, amountX := info.hCounts.getBlockFrequencyAndOffset()
+	fY, oY, amountY := info.vCounts.getBlockFrequencyAndOffset()
+	if fX == 0 || fY == 0 {
 		fX = 0
 		fY = 0
+		amountX = 0
+		amountY = 0
 	}
-	if fX != 0 && oX%fX == 0 {
-		oX = 0
-	}
-	if fY != 0 && oY%fY == 0 {
-		oY = 0
-	}
-	// if fX < fY && fY%fX == 0 {
-	// 	fY = fX
-	// }
-	// if fY < fX && fX%fY == 0 {
-	// 	fX = fY
-	// }
-	return zgeo.IPos{X: fX, Y: fY}, zgeo.IPos{X: oX, Y: oY}
+	return zgeo.IPos{X: fX, Y: fY}, zgeo.IPos{X: oX, Y: oY}, zgeo.PosD(amountX, amountY)
 }
 
 func (info *ImageInfo) PrintInfo() {
 	fmt.Print("blur:", info.BlurAmount().Average())
 	fmt.Print(" flat:", info.FlatAmount().Average())
 	fmt.Print(" edges:", info.EdgePointsAmount().Average())
-	freq, offset := info.BlockFrequency()
-	fmt.Print(" bfreq:", freq, offset)
+	freq, offset, amount := info.BlockFrequency()
+	fmt.Print(" bfreq:", freq, offset, amount)
 }
 
 func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
-	freq, offset := info.BlockFrequency()
+	freq, offset, amount := info.BlockFrequency()
 	return SimpleAnalytics{
 		Size:           info.Size,
 		BlurAmount:     info.BlurAmount().Average(),
@@ -331,5 +308,6 @@ func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
 		EdgesAmount:    info.EdgePointsAmount().Average(),
 		BlockFrequency: freq,
 		BlockOffset:    offset,
+		BlockAmount:    amount.Average(),
 	}
 }
