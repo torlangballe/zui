@@ -1305,3 +1305,11 @@ func (f *Field) JoinSeparatedSlice(rval reflect.Value) string {
 	}
 	return strings.Join(parts, f.StringSep)
 }
+
+func FieldsToDict(structure any, dict *zdict.Dict, fieldParams FieldParameters) {
+	ForEachField(structure, fieldParams, nil, func(each FieldInfo) bool {
+		zlog.Info("zfields.FieldsToDict:", each.Field.Name)
+		(*dict)[each.Field.Name] = each.ReflectValue.Interface()
+		return true
+	})
+}
