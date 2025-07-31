@@ -1125,6 +1125,7 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 			menuOwner.PluralableWord = format
 		}
 	}
+	menuOwner.ShowZeroAsEmpty = f.HasFlag(FlagAllowEmptyAsZero)
 	mItems := zmenu.MOItemsFromZDictItemsAndValues(items, rval.Interface(), f.Flags&FlagIsActions != 0)
 
 	menu := zmenu.MenuOwningButtonCreate(menuOwner, mItems, shape)

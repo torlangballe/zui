@@ -64,6 +64,7 @@ type MenuedOwner struct {
 	IsStatic                  bool // if set, user can't set a different value, but can press and see them. Shows number of items
 	IsMultiple                bool
 	HasLabelColor             bool
+	ShowZeroAsEmpty           bool
 	SetTitle                  bool
 	StoreKey                  string
 	BGColor                   zgeo.Color
@@ -310,7 +311,9 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 			} else if o.GetTitleFunc != nil {
 				nstr = o.GetTitleFunc(count)
 			} else {
-				nstr = strconv.Itoa(count)
+				if count != 0 || !o.ShowZeroAsEmpty {
+					nstr = strconv.Itoa(count)
+				}
 			}
 			o.SetTitleText(nstr)
 			return
