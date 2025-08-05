@@ -225,6 +225,12 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 			}
 		}
 	}
+	for i := 0; i < len(order); i++ {
+		if order[i].amount == 0 {
+			zslice.RemoveAt(&order, i)
+			i--
+		}
+	}
 	sort.Slice(order, func(i, j int) bool {
 		return order[i].amount < order[j].amount
 	})
@@ -236,7 +242,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 	// }
 	best := order[len(order)-1]
 	next := order[len(order)-2]
-	amount = float64(best.amount)/float64(next.amount) - 1
+	amount = float64(best.amount) / float64(next.amount)
 	// zlog.Info("Best Freq:", bestFreq, bestOffset, float64(nextBest)/float64(best))
 	return best.freq, best.offset, amount
 }
