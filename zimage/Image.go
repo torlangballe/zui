@@ -157,7 +157,9 @@ func GoImageFromURL(path string) (img image.Image, format string, err error) {
 		zlog.Error(path, err)
 		return nil, "", err
 	}
-	return image.Decode(resp.Body)
+	img, format, err = image.Decode(resp.Body)
+	resp.Body.Close()
+	return img, format, err
 }
 
 func GoImagePNGData(goImage image.Image) ([]byte, error) {
