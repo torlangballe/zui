@@ -382,15 +382,22 @@ func (v *NativeView) GetScale() float64 {
 	return 1
 }
 
+func (v *NativeView) StyleString() string {
+	style := v.JSStyle()
+	args := map[string]string{}
+	for i := range style.Length() {
+		key := style.Index(i).String()
+		args[key] = style.Get(key).String()
+	}
+	return zstr.ArgsToString(args, " ", ":", "")
+}
+
 func (v *NativeView) Show(show bool) {
-	// if strings.HasSuffix(v.Hierarchy(), "activity.png") {
-	// zlog.Info("Show", v.Hierarchy(), show, zlog.CallingStackString())
-	// }
 	str := "hidden"
 	if show {
 		str = "inherit" //visible"
 	}
-	v.JSStyle().Set("visibility", str)
+	v.SetJSStyle("visibility", str)
 }
 
 func (v *NativeView) IsShown() bool {
