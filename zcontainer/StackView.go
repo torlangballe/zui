@@ -322,6 +322,7 @@ func (v *StackView) ArrangeChildren() {
 	// 	zlog.Info("arrangeChildren1:", rm, v.Margin(), v.ObjectName())
 	// }
 	rects := zgeo.LayoutCellsInStack(v.ObjectName(), rm, v.Vertical, v.spacing, lays)
+	// zlog.Info("arrangeChildren1:", v.ObjectName(), len(v.Cells), "->", len(rects))
 	j := 0
 	for _, c := range v.Cells {
 		if c.View == nil {
@@ -339,11 +340,13 @@ func (v *StackView) ArrangeChildren() {
 			// }
 			c.View.SetRect(r)
 			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
+				// zlog.Info("arrangeChildren:", v.ObjectName(), c.View.ObjectName(), r, lays[j])
 				c.View.Show(true)
 			}
 		} else {
+			// zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
 			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
-				// zlog.Info("Hide null rect:", c.View.ObjectName(), "in:", v.Hierarchy())
+				c.View.SetRect(zgeo.RectFromXY2(-100, 0, 14, 14))
 				c.View.Show(false)
 			}
 		}
