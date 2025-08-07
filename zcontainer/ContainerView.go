@@ -771,9 +771,6 @@ func DumpHierarchy(view zview.View, add string) {
 			fmt.Println(add + "nil")
 			continue
 		}
-		if cell.Collapsed {
-			fmt.Print("collapsed: ")
-		}
 		DumpHierarchy(cell.View, add)
 	}
 }
