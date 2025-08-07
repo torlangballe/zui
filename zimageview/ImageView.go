@@ -68,6 +68,7 @@ func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, im
 			}
 		})
 	} else {
+		v.image = image
 		v.Expose()
 	}
 }
