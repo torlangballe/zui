@@ -270,11 +270,13 @@ func ShowLock(headerButton *zshape.ImageButtonView, show bool) {
 func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 	var cells []zcontainer.Cell
 
+	hr := v.Rect()
 	for _, c := range stack.Cells {
-		if !c.Collapsed && !c.Free {
+		if c.View.Native().IsShown() && !c.Collapsed && !c.Free && c.View.Rect().Max().X < hr.Max().X {
+			// zlog.Info("Add:", c.View.ObjectName(), c.View.Rect().Max().X, hr.Max().X)
 			cells = append(cells, c)
-		} else if c.Collapsed {
-			zlog.Info("Collapsed:", c.View.ObjectName(), c.View.Rect().Size, c.ShowIfExtraSpace)
+		} else {
+			// zlog.Info("Collapsed:", c.View.Native().IsShown(), c.View.ObjectName(), c.View.Rect().Size, c.ShowIfExtraSpace)
 		}
 	}
 	var hviews []zview.View
@@ -290,7 +292,6 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 	// 	return
 	// }
 	// zlog.Assert(len(cells) == len(hviews), len(cells), len(hviews), stack.Hierarchy())
-	hr := v.Rect()
 	x := hr.Pos.X
 	for i := range cells {
 		cr := cells[i].View.Rect()
@@ -307,16 +308,21 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 		o.SetMaxX(x)
 		o.Pos.Y = 0
 		o.Size.H = hr.Size.H
-		// if o.Size.W == 0 {
-		// 	zlog.Info("Add Zero:", cells[i].View.ObjectName(), cr.Size)
-		// }
 		if o.Size.W != 0 {
-			for _, hv := range hviews {
-				if hv.ObjectName() == cells[i].View.ObjectName() {
+			for j, hv := range hviews {
+				if hv != nil && hv.ObjectName() == cells[i].View.ObjectName() {
 					hv.SetRect(o)
+					hv.Show(true)
+					hviews[j] = nil
 					break
 				}
 			}
+		}
+	}
+	for _, hv := range hviews {
+		if hv != nil {
+			// zlog.Info("FitToRowStack Hide:", hv.ObjectName())
+			hv.Show(false)
 		}
 	}
 }
