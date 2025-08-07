@@ -672,7 +672,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				if err == nil {
 					size = s
 					// zlog.Info("Got size:", part, size)
-				} else {
+				} else if part != "" {
 					path = "images/" + part
 				}
 			}
