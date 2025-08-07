@@ -37,7 +37,6 @@ func New(on zbool.BoolInd) *CheckBox {
 	v.Element = zdom.DocumentJS.Call("createElement", "input")
 	v.JSSet("style", "position:absolute")
 	v.JSSet("type", "checkbox")
-	// v.JSStyle().Set("margin-left", "4px")
 	v.SetCanTabFocus(false)
 	v.View = v
 	v.SetValue(on)
