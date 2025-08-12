@@ -12,12 +12,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
-// type baseVideoView struct {
-// }
-
-// func (v *VideoView) Init(view zview.View, minSize zgeo.Size) {}
-// func (v *VideoView) CreateStream(withAudio bool)             {}
-
 type VideoStream struct {
 	stream      mediadevices.MediaStream
 	videoTrack  *mediadevices.VideoTrack
