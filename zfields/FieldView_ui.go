@@ -15,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcursor"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -2605,4 +2606,25 @@ func (v *FieldView) CreateStoreKeyForField(f *Field, name string) string {
 		h = f.ValueStoreKey
 	}
 	return zstr.Concat("/", h, name)
+}
+
+func (v *FieldView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
+	fieldName := parts[0].PathStub
+	child, _ := v.FindNamedViewOrInLabelized(fieldName)
+	if child != nil {
+		if len(parts) == 1 {
+			old := v.BGColor()
+			child.SetBGColor(zgeo.ColorYellow)
+			child.Native().Focus(true)
+			ztimer.StartIn(1.2, func() {
+				child.SetBGColor(old)
+			})
+			return true
+		}
+		o, _ := child.(zdocs.GUIPartOpener)
+		if o != nil {
+			return o.OpenGUIFromPathParts(parts[1:])
+		}
+	}
+	return false
 }
