@@ -33,7 +33,7 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Styling.FGColor = zgeo.ColorNewGray(0, 0.05)
 	v.Styling.StrokeWidth = 1
 	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
-	v.Styling.DropShadow = zstyle.DropShadow{Delta: zgeo.SizeBoth(5), Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
+	v.Styling.DropShadow = zview.DropShadow{Delta: zgeo.SizeBoth(5), Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
 	v.ImageAlignment = zgeo.Center | zgeo.Shrink
 	v.SetPlaceholder(placeHolder)
 	v.SetMinSize(size)

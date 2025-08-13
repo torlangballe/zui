@@ -22,6 +22,14 @@ type NativeView struct {
 	DoOnAdd    []func() // anything that needs to be stopped
 }
 
+type DropShadow struct {
+	Delta  zgeo.Size
+	Blur   float64
+	Color  zgeo.Color
+	Inset  bool
+	Spread float64
+}
+
 type DragType string
 
 const (
@@ -44,6 +52,10 @@ var (
 	RangeChildrenFunc func(root View, recursive, includeCollapsed bool, got func(View) bool)
 	LastPressedPos    zgeo.Pos
 	SkipEnterHandler  bool
+
+	DropShadowDefault = DropShadow{Delta: zgeo.SizeBoth(3), Blur: 3, Color: zgeo.ColorNewGray(0, 0.7)}
+	DropShadowUndef   = DropShadow{Delta: zgeo.SizeUndef, Blur: -1}
+	DropShadowClear   = DropShadow{}
 )
 
 func (v *NativeView) IsPresented() bool {
@@ -127,4 +139,8 @@ func (v *NativeView) SetResizeCursorFromAlignment(a zgeo.Alignment) bool {
 func GetShortCutTooltipAddition(sc zkeyboard.KeyMod) string {
 	singleLetterKey := true
 	return "    " + sc.AsString(singleLetterKey) + zstr.UTFPostModifierForRoundRect
+}
+
+func MakeDropShadow(dx, dy, blur float64, col zgeo.Color) DropShadow {
+	return DropShadow{Delta: zgeo.SizeD(dx, dy), Blur: blur, Color: col}
 }

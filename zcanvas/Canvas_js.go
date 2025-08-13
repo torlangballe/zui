@@ -6,7 +6,7 @@ import (
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zimage"
-	"github.com/torlangballe/zui/zstyle"
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zcache"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
@@ -270,7 +270,7 @@ func (c *Canvas) Clear() {
 	c.context.Call("clearRect", rect.Pos.X, rect.Pos.Y, rect.Size.W, rect.Size.H)
 }
 
-func (c *Canvas) SetDropShadow(d zstyle.DropShadow) {
+func (c *Canvas) SetDropShadow(d zview.DropShadow) {
 	c.context.Set("shadowOffsetX", d.Delta.W)
 	c.context.Set("shadowOffsetY", d.Delta.H)
 	c.context.Set("shadowBlur", d.Blur)
@@ -278,7 +278,7 @@ func (c *Canvas) SetDropShadow(d zstyle.DropShadow) {
 }
 
 func (c *Canvas) ClearDropShadow() {
-	c.SetDropShadow(zstyle.DropShadowClear)
+	c.SetDropShadow(zview.DropShadowClear)
 }
 
 func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float64) {

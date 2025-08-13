@@ -48,7 +48,7 @@ type ShapeView struct {
 	MaxSize      zgeo.Size
 	Value        float64
 	PathLineType zgeo.PathLineType
-	DropShadow   zstyle.DropShadow
+	DropShadow   zview.DropShadow
 
 	ImageView *zimageview.ImageView
 	TextLabel *zlabel.Label

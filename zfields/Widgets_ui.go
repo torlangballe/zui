@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui/zcolor"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zerrors"
@@ -98,7 +99,7 @@ func (a ImagesSetWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	}
 	v := zwidgets.NewImagesSetView(f.FieldName, f.ImageFixedPath, f.Size, &f.Styling)
 	v.SetMinSize(zgeo.SizeD(f.MinWidth, s.H))
-	v.SetStyling(f.Styling)
+	zstyle.SetStyling(v, f.Styling)
 	return v
 }
 

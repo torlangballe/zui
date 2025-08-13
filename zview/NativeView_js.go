@@ -14,7 +14,6 @@ import (
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
-	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
@@ -322,7 +321,7 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 			v.SetDropShadow()
 			return
 		}
-		d := zstyle.MakeDropShadow(0, 0, 0, c)
+		d := MakeDropShadow(0, 0, 0, c)
 		d.Inset = true
 		d.Spread = width
 		v.SetDropShadow(d)
@@ -782,7 +781,7 @@ func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
-func (v *NativeView) SetDropShadow(shadow ...zstyle.DropShadow) {
+func (v *NativeView) SetDropShadow(shadow ...DropShadow) {
 	var parts []string
 	var ss string
 	for _, d := range shadow {
@@ -1591,37 +1590,6 @@ func (v *NativeView) Document() js.Value {
 func (v *NativeView) GetWindowElement() js.Value {
 	d := v.Document()
 	return d.Get("defaultView")
-}
-
-func (v *NativeView) SetStyling(style zstyle.Styling) {
-	if style.DropShadow.Color.Valid {
-		v.SetDropShadow(style.DropShadow)
-	}
-	if style.BGColor.Valid {
-		v.SetBGColor(style.BGColor)
-	}
-	if style.Corner != -1 {
-		v.SetCorner(style.Corner)
-	}
-	if style.StrokeColor.Valid {
-		// zlog.Info("SetStyling:", v.Hierarchy(), style.StrokeWidth, style.StrokeColor)
-		v.SetStroke(style.StrokeWidth, style.StrokeColor, style.StrokeIsInset.IsTrue())
-	}
-	if style.OutlineColor.Valid {
-		v.SetOutline(style.OutlineWidth, style.OutlineColor, style.OutlineOffset)
-	}
-	if style.FGColor.Valid {
-		v.SetColor(style.FGColor)
-	}
-	if style.Font.Name != "" {
-		v.SetFont(&style.Font)
-	}
-	if !style.Margin.IsUndef() {
-		m, _ := v.View.(Marginalizer)
-		if m != nil {
-			m.SetMargin(style.Margin)
-		}
-	}
 }
 
 func (nv *NativeView) SetNativePadding(p zgeo.Rect) {

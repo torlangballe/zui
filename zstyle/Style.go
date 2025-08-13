@@ -4,6 +4,7 @@ import (
 	"math"
 	"path"
 
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zfloat"
@@ -24,7 +25,7 @@ var (
 )
 
 type Styling struct {
-	DropShadow    DropShadow
+	DropShadow    zview.DropShadow
 	BGColor       zgeo.Color
 	FGColor       zgeo.Color
 	Font          zgeo.Font
@@ -39,19 +40,7 @@ type Styling struct {
 	Spacing       float64
 }
 
-type DropShadow struct {
-	Delta  zgeo.Size
-	Blur   float64
-	Color  zgeo.Color
-	Inset  bool
-	Spread float64
-}
-
 var (
-	DropShadowDefault = DropShadow{Delta: zgeo.SizeBoth(3), Blur: 3, Color: zgeo.ColorNewGray(0, 0.7)}
-	DropShadowUndef   = DropShadow{Delta: zgeo.SizeUndef, Blur: -1}
-	DropShadowClear   = DropShadow{}
-
 	EmptyStyling = Styling{
 		Corner:        -1,
 		StrokeWidth:   -1,
@@ -194,8 +183,4 @@ func (s Styling) SpacingOrMax(max float64) float64 {
 		return max
 	}
 	return math.Max(max, s.Spacing)
-}
-
-func MakeDropShadow(dx, dy, blur float64, col zgeo.Color) DropShadow {
-	return DropShadow{Delta: zgeo.SizeD(dx, dy), Blur: blur, Color: col}
 }
