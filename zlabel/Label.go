@@ -6,11 +6,14 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui/zclipboard"
+	"github.com/torlangballe/zui/zcursor"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -43,8 +46,30 @@ func New(text string) *Label {
 
 func NewLink(name, surl string, newWindow bool) *Label {
 	v := &Label{}
-	v.InitAsLink(v, name, surl, newWindow)
+	var rest string
+	if !zstr.HasPrefix(surl, "zapp://", &rest) {
+		v.InitAsLink(v, name, surl, newWindow)
+		return v
+	}
+	v.Init(v, "")
+	v.SetCursor(zcursor.Pointer)
+	ztextinfo.SetTextDecoration(&v.NativeView, ztextinfo.DecorationUnderlined)
+	v.SetPressedHandler("zapp-link", 0, func() {
+		openInteralAppLink(rest)
+		// args[0].Call("preventDefault")
+	})
 	return v
+}
+
+func openInteralAppLink(spath string) {
+	var parts []zdocs.PathPart
+	for _, stub := range strings.Split(spath, "/") {
+		pp := zdocs.PathPart{PathStub: stub, Type: zdocs.GUIPressField}
+		parts = append(parts, pp)
+	}
+	if zdocs.PartOpener != nil {
+		zdocs.PartOpener.OpenGUIFromPathParts(parts)
+	}
 }
 
 func (v *Label) GetToolTipAddition() string {
