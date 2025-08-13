@@ -169,6 +169,10 @@ func (v *FieldView) Data() any {
 	return v.data
 }
 
+func (v *FieldView) isRows() bool {
+	return zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName)
+}
+
 func (v *FieldView) IsSlice() bool {
 	rval := reflect.ValueOf(v.data)
 	if rval.Kind() == reflect.Map {
@@ -1189,7 +1193,7 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 
 func (v *FieldView) makeSimpleMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
 	name := f.Name + "Menu"
-	if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+	if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !v.isRows() {
 		name = "key:" + f.ValueStoreKey
 	}
 	menu := zmenu.NewView(name, items, rval.Interface())
@@ -1340,18 +1344,21 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	str, tip, _ := getTextFromNumberishItem(rval, f)
 	if f.IsStatic() || v.params.AllStatic {
 		var label *zlabel.Label
-		surl := f.Path
 		// zlog.Info("LABEL1:", f.FieldName, f.Rows, str)
 		if f.HasFlag(FlagIsDocumentation) {
+			surl := ReplaceDoubleSquiggliesWithFields(v, f, f.Path)
 			label = zlabel.New(str)
-			ztext.SetTextDecoration(&label.NativeView, ztextinfo.DecorationUnderlined)
+			ztextinfo.SetTextDecoration(label, ztextinfo.DecorationUnderlined)
 			label.SetPressedHandler("zfield.DocPressed", zkeyboard.ModifierNone, func() {
 				go zwidgets.DocumentationViewPresent(surl, false)
 			})
 		} else {
-			isLink := f.HasFlag(FlagIsURL)
+			surl := ReplaceDoubleSquiggliesWithFields(v, f, f.Path)
+			isLink := f.HasFlag(FlagIsURL) && !v.isRows()
 			if isLink {
-				surl = rval.String()
+				if surl == "" {
+					surl = rval.String()
+				}
 			} else {
 				ug, is := rval.Interface().(zstr.URLGetter)
 				if is {
@@ -1372,12 +1379,11 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if tip != "" {
 			label.SetToolTip(tip)
 		}
-		isInRow := zstr.StringsContain(v.Parameters().UseInValues, RowUseInSpecialName)
-		if f.Wrap == ztextinfo.WrapTailTruncate.String() || isInRow {
+		if f.Wrap == ztextinfo.WrapTailTruncate.String() || v.isRows() {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
-		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+		if !v.isRows() {
 			label.SetMaxLines(f.Rows)
 		}
 		if f.MaxWidth != 0 {
@@ -1398,7 +1404,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if f.Rows <= 1 || inMapRows > 0 {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
-		if !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) && f.Flags&FlagToClipboard != 0 {
+		if !v.isRows() && f.Flags&FlagToClipboard != 0 {
 			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
 		}
 		label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
@@ -1527,7 +1533,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		}
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: val, View: &view})
 	})
-	if !v.params.Field.HasFlag(FlagIsLabelize) && !zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+	if !v.params.Field.HasFlag(FlagIsLabelize) && !v.isRows() {
 		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
@@ -1730,7 +1736,7 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	}
 	// zlog.Info("CreateSpecial?", f.Name, v.Parameters().UseInValues)
 	if f.HasFlag(FlagIsActions) && rval.Kind() == reflect.Bool {
-		if zstr.StringsContain(v.Parameters().UseInValues, RowUseInSpecialName) {
+		if v.isRows() {
 			zlog.Assert(v.params.CreateActionMenuItemsFunc != nil)
 			sget, _ := v.data.(zstr.StrIDer)
 			zlog.Assert(sget != nil, reflect.TypeOf(v.data))
@@ -1944,7 +1950,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			view = v.BuildMapList(rval, f, "")
 
 		case zreflect.KindSlice:
-			if !f.HasFlag(FlagIsGroup) || zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName) {
+			if !f.HasFlag(FlagIsGroup) || v.isRows() {
 				if f.StringSep != "" {
 					noUpdate := true
 					rv := reflect.ValueOf("")
