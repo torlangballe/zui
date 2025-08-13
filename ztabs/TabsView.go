@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcursor"
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zshortcuts"
@@ -14,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
@@ -187,11 +189,15 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	return &v.items[len(v.items)-1]
 }
 
-func (v *TabsView) SelectItem(id string, done func()) {
-	v.SelectOrReloadItem(id, false, done)
+func (v *TabsView) SelectItem(id string, done func()) bool {
+	return v.SelectOrReloadItem(id, false, done)
 }
 
-func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) {
+func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) bool {
+	ni := v.FindItem(id)
+	if ni == -1 {
+		return false
+	}
 	if v.CurrentID == id && v.FindItem(id) != -1 && v.currentChild != nil {
 		if reloadIfAlreadySelected {
 			i := v.FindItem(id)
@@ -202,16 +208,16 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 			v.RemoveChild(v.currentChild, true)
 			v.currentChild = nil
 			v.SelectItem(id, done)
-			return
+			return true
 		}
 		if done != nil {
 			done()
 		}
-		return
+		return true
 	}
-	i := v.FindItem(v.CurrentID)
-	if i != -1 {
-		item := v.items[i]
+	ci := v.FindItem(v.CurrentID)
+	if ci != -1 {
+		item := v.items[ci]
 		item.create(v.CurrentID, true)
 	}
 	if v.currentChild != nil {
@@ -226,7 +232,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 		zkeyvalue.DefaultStore.SetString(v.CurrentID, storeKeyPrefix+v.storeKey, true)
 	}
 	v.setButtonOn(v.CurrentID, true)
-	item := v.items[v.FindItem(id)]
+	item := v.items[ni]
 	v.currentChild = item.view
 	if item.create != nil {
 		v.currentChild = item.create(id, false)
@@ -252,6 +258,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 	ztimer.StartIn(0.02, func() {
 		v.SetRootYContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
 	})
+	return true
 }
 
 func (v *TabsView) RemoveItem(id string) {
@@ -333,4 +340,18 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
 	cell, _ := v.header.FindCellWithName(id)
 	cell.Alignment = a
+}
+
+func (v *TabsView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
+	tabID := parts[0].PathStub
+	handled := v.SelectItem(tabID, nil)
+	zlog.Info("Tabs.OpenGUIFromPathParts:", handled, tabID, parts)
+	if handled {
+		if len(parts) > 1 {
+			zlog.Assert(v.currentChild != nil)
+			o, _ := v.currentChild.(zdocs.GUIPartOpener)
+			o.OpenGUIFromPathParts(parts[1:])
+		}
+	}
+	return handled
 }
