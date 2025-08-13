@@ -16,22 +16,10 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
 	"github.com/torlangballe/zutil/zstr"
-	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwords"
 )
 
 //  Created by Tor Langballe on /7/11/15.
-
-type Result int
-
-const (
-	Cancel Result = iota
-	OK
-	Destructive
-	Other
-	Upload
-	borderMargin = 10
-)
 
 type Alert struct {
 	Text                       string
@@ -46,6 +34,24 @@ type Alert struct {
 	DialogView                 zview.View
 	MimesOrExtensionsForUpload []string
 }
+
+type StatusSetter interface {
+	Clear(id string)
+	ClearAll()
+	SetError(id, str string, secs int, details ...any)
+	SetOKText(id, str string, secs int, details ...any)
+}
+
+type Result int
+
+const (
+	Cancel Result = iota
+	OK
+	Destructive
+	Other
+	Upload
+	borderMargin = 10
+)
 
 func init() {
 	zpresent.ShowErrorFunc = func(title, subTitle string) {
@@ -118,25 +124,28 @@ func (a *Alert) ShowOK(handle func()) {
 	})
 }
 
-var SetStatus func(parts ...interface{}) = func(parts ...interface{}) {
-	zlog.Info(parts...)
-}
-var statusTimer *ztimer.Timer
+// var SetStatus func(parts ...interface{}) = func(parts ...interface{}) {
+// 	zlog.Info(parts...)
+// }
+
+// var StatusLabel *widgets.StatusLabel
+
+// var statusTimer *ztimer.Timer
 
 // ShowStatus shows an status/error in a label on gui, and can hide it after secs
-func ShowStatus(secs float64, parts ...interface{}) {
-	// zlog.Info("ShowStatus", len(parts))
-	SetStatus(parts...)
-	if statusTimer != nil {
-		statusTimer.Stop()
-	}
-	if secs != 0 {
-		statusTimer = ztimer.StartIn(secs, func() {
-			statusTimer = nil
-			SetStatus("")
-		})
-	}
-}
+// func ShowStatus(secs float64, parts ...interface{}) {
+// 	// zlog.Info("ShowStatus", len(parts))
+// 	SetStatus(parts...)
+// 	if statusTimer != nil {
+// 		statusTimer.Stop()
+// 	}
+// 	if secs != 0 {
+// 		statusTimer = ztimer.StartIn(secs, func() {
+// 			statusTimer = nil
+// 			SetStatus("")
+// 		})
+// 	}
+// }
 
 func (a *Alert) addButtonIfNotEmpty(stack, bar *zcontainer.StackView, text string, handle func(result Result), result Result) {
 	if text != "" {

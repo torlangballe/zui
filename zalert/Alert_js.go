@@ -7,6 +7,8 @@ import (
 	"github.com/torlangballe/zutil/zdebug"
 )
 
+var Status StatusSetter
+
 func (a *Alert) showNative(handle func(result Result)) {
 	r := true
 	str := a.Text
