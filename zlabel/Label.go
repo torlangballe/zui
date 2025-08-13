@@ -47,29 +47,35 @@ func New(text string) *Label {
 func NewLink(name, surl string, newWindow bool) *Label {
 	v := &Label{}
 	var rest string
-	if !zstr.HasPrefix(surl, "zapp://", &rest) {
-		v.InitAsLink(v, name, surl, newWindow)
+	if zstr.HasPrefix(surl, "zapp://", &rest) {
+		v.Init(v, "")
+		v.MakeZAppLink(rest)
 		return v
 	}
-	v.Init(v, "")
-	v.SetCursor(zcursor.Pointer)
-	ztextinfo.SetTextDecoration(&v.NativeView, ztextinfo.DecorationUnderlined)
-	v.SetPressedHandler("zapp-link", 0, func() {
-		openInteralAppLink(rest)
-		// args[0].Call("preventDefault")
-	})
+	v.InitAsLink(v, name, surl, newWindow)
 	return v
 }
 
-func openInteralAppLink(spath string) {
-	var parts []zdocs.PathPart
-	for _, stub := range strings.Split(spath, "/") {
-		pp := zdocs.PathPart{PathStub: stub, Type: zdocs.GUIPressField}
-		parts = append(parts, pp)
-	}
-	if zdocs.PartOpener != nil {
-		zdocs.PartOpener.OpenGUIFromPathParts(parts)
-	}
+func (v *Label) UnmakeZAppLink() {
+	v.SetCursor(zcursor.Default)
+	ztextinfo.SetTextDecoration(&v.NativeView, ztextinfo.Decoration{})
+	v.SetPressedHandler("zapp-link", 0, nil)
+}
+
+func (v *Label) MakeZAppLink(path string) {
+	v.SetCursor(zcursor.Pointer)
+	ztextinfo.SetTextDecoration(&v.NativeView, ztextinfo.DecorationUnderlined)
+	v.SetPressedHandler("zapp-link", 0, func() {
+		var parts []zdocs.PathPart
+		for _, stub := range strings.Split(path, "/") {
+			pp := zdocs.PathPart{PathStub: stub, Type: zdocs.GUIPressField}
+			parts = append(parts, pp)
+		}
+		if zdocs.PartOpener != nil {
+			zdocs.PartOpener.OpenGUIFromPathParts(parts)
+		}
+	})
+
 }
 
 func (v *Label) GetToolTipAddition() string {
