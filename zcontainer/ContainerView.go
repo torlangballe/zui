@@ -788,3 +788,19 @@ func (v *ContainerView) SearchForDocs(text string, cell zdocs.PathPart) []zdocs.
 	}
 	return got
 }
+
+// OpenGUIFromPathParts implements zdocs.GUIPartOpener to recusively try to open children.
+func (v *ContainerView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
+	for _, c := range v.Cells {
+		if c.View != nil {
+			o, _ := c.View.(zdocs.GUIPartOpener)
+			if o != nil {
+				handled := o.OpenGUIFromPathParts(parts)
+				if handled {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
