@@ -19,6 +19,7 @@ import (
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
@@ -1306,4 +1307,15 @@ func (v *GridListView) AnyChildView() zview.View {
 	var view zview.View
 	zmap.GetAnyValue(&view, v.children)
 	return view
+}
+
+func (v *GridListView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
+	rowID := parts[0].PathStub
+	i := v.IndexOfID(rowID)
+	zlog.Info("GridListView.OpenGUIFromPathParts:", rowID, i)
+	if i == -1 {
+		return false
+	}
+	v.SelectCell(rowID, true, false)
+	return true
 }
