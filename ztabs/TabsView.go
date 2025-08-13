@@ -345,7 +345,6 @@ func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
 func (v *TabsView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	tabID := parts[0].PathStub
 	handled := v.SelectItem(tabID, nil)
-	zlog.Info("Tabs.OpenGUIFromPathParts:", handled, tabID, parts)
 	if handled {
 		if len(parts) > 1 {
 			zlog.Assert(v.currentChild != nil)
