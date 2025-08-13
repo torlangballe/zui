@@ -17,7 +17,6 @@ type PathPart struct {
 }
 
 type DocLink struct {
-	Type  DocType
 	Title string
 	Path  []PathPart
 	Score float64

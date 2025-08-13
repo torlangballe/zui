@@ -1,5 +1,11 @@
 package zdocs
 
+type GUIPartOpener interface {
+	OpenGUIFromPathParts(parts []PathPart) bool
+}
+
+var PartOpener GUIPartOpener
+
 /*
 import "github.com/torlangballe/zui/zcontainer"
 
