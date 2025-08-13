@@ -321,7 +321,7 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 			v.SetDropShadow()
 			return
 		}
-		d := MakeDropShadow(0, 0, 0, c)
+		d := zgeo.MakeDropShadow(0, 0, 0, c)
 		d.Inset = true
 		d.Spread = width
 		v.SetDropShadow(d)
@@ -781,7 +781,7 @@ func (v *NativeView) RemoveChild(child View, callRemoveFuncs bool) {
 	//!! nv.parent = nil if we don't do this, we can still uncollapse child in container without having to remember comtainer. Testing.
 }
 
-func (v *NativeView) SetDropShadow(shadow ...DropShadow) {
+func (v *NativeView) SetDropShadow(shadow ...zgeo.DropShadow) {
 	var parts []string
 	var ss string
 	for _, d := range shadow {

@@ -143,7 +143,7 @@ func (v *Label) SetMargin(m zgeo.Rect) {
 	setPadding(v)
 }
 
-func (v *Label) SetDropShadow(shadow ...zview.DropShadow) {
+func (v *Label) SetDropShadow(shadow ...zgeo.DropShadow) {
 	var parts []string
 	for _, s := range shadow {
 		str := fmt.Sprintf("%dpx %dpx %dpx %s ", int(s.Delta.W), int(s.Delta.H), int(s.Blur), zdom.MakeRGBAString(s.Color))
@@ -153,10 +153,10 @@ func (v *Label) SetDropShadow(shadow ...zview.DropShadow) {
 }
 
 func (v *Label) OutsideDropStroke(delta float64, col zgeo.Color) {
-	var drops []zview.DropShadow
+	var drops []zgeo.DropShadow
 	for x := -delta; x <= delta; x++ {
 		for y := -delta; y <= delta; y++ {
-			drop := zview.MakeDropShadow(x, y, 0, col)
+			drop := zgeo.MakeDropShadow(x, y, 0, col)
 			drops = append(drops, drop)
 		}
 	}

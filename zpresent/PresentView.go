@@ -44,7 +44,7 @@ type Attributes struct {
 	ModalCloseOnOutsidePress bool
 	ModalDimBackground       bool
 	ModalNoBlock             bool
-	ModalDropShadows         []zview.DropShadow
+	ModalDropShadows         []zgeo.DropShadow
 	ModalDismissOnEscapeKey  bool
 	ModalStrokeWidth         float64
 	ModalStrokeColor         zgeo.Color
@@ -69,7 +69,7 @@ var (
 var ModalConfirmAttributes = Attributes{
 	Modal:              true,
 	ModalDimBackground: true,
-	ModalDropShadows:   []zview.DropShadow{zview.DropShadowDefault},
+	ModalDropShadows:   []zgeo.DropShadow{zgeo.DropShadowDefault},
 	// ModalDismissOnEscapeKey: true, // The view needs to have a special escape key do dismiss on escape
 }
 
@@ -77,7 +77,7 @@ var ModalPopupAttributes = Attributes{
 	Modal:                    true,
 	ModalCloseOnOutsidePress: true,
 	ModalDismissOnEscapeKey:  true,
-	ModalDropShadows:         []zview.DropShadow{zview.DropShadowDefault},
+	ModalDropShadows:         []zgeo.DropShadow{zgeo.DropShadowDefault},
 }
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
@@ -372,8 +372,8 @@ func AttributesNew() Attributes {
 	a.MakeFull = false
 	a.PortraitOnly = false
 	a.ModalDimBackground = true
-	a.ModalDropShadows = []zview.DropShadow{
-		zview.DropShadow{
+	a.ModalDropShadows = []zgeo.DropShadow{
+		zgeo.DropShadow{
 			Delta: zgeo.SizeD(4, 4),
 			Blur:  8,
 			Color: zgeo.ColorNewGray(0.2, 1),

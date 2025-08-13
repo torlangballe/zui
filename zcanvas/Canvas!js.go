@@ -11,7 +11,6 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/torlangballe/zui/zimage"
-	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
@@ -157,8 +156,8 @@ func (c *Canvas) Clear() {
 	c.context.Clear()
 }
 
-func (c *Canvas) SetDropShadow(d zstyle.DropShadow) {}
-func (c *Canvas) ClearDropShadow()                  {}
+func (c *Canvas) SetDropShadow(d zgeo.DropShadow) {}
+func (c *Canvas) ClearDropShadow()                {}
 
 func (c *Canvas) DrawGradient(path *zgeo.Path, colors []zgeo.Color, pos1 zgeo.Pos, pos2 zgeo.Pos, locations []float64) {
 	c.PushState()

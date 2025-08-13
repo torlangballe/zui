@@ -4,7 +4,6 @@ import (
 	"math"
 	"path"
 
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zfloat"
@@ -25,7 +24,7 @@ var (
 )
 
 type Styling struct {
-	DropShadow    zview.DropShadow
+	DropShadow    zgeo.DropShadow
 	BGColor       zgeo.Color
 	FGColor       zgeo.Color
 	Font          zgeo.Font
