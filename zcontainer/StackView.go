@@ -340,7 +340,6 @@ func (v *StackView) ArrangeChildren() {
 			// }
 			c.View.SetRect(r)
 			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
-				// zlog.Info("arrangeChildren:", v.ObjectName(), c.View.ObjectName(), r, lays[j])
 				c.View.Show(true)
 			}
 		} else {

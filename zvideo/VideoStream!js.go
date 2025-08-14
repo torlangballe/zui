@@ -9,7 +9,6 @@ import (
 	_ "github.com/pion/mediadevices/pkg/driver/camera"
 	"github.com/pion/mediadevices/pkg/io/video"
 	"github.com/pion/mediadevices/pkg/prop"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type VideoStream struct {
@@ -32,7 +31,7 @@ func GetStream() (*VideoStream, error) {
 		return nil, err
 	}
 	track := vs.stream.GetVideoTracks()[0] // Since track can represent audio as well, we need to cast it to *mediadevices.VideoTrack to get video specific functionalities
-	zlog.Info("Track:", track.ID())
+	// zlog.Info("Track:", track.ID())
 	vs.videoTrack = track.(*mediadevices.VideoTrack)
 	vs.videoReader = vs.videoTrack.NewReader(false)
 	return vs, nil
