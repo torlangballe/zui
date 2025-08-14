@@ -321,7 +321,7 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 	}
 	for _, hv := range hviews {
 		if hv != nil {
-			// zlog.Info("FitToRowStack Hide:", hv.ObjectName())
+			hv.SetRect(zgeo.RectFromXYWH(-100, 0, 20, 16)) // If we don't set their rect, they don't draw when shown
 			hv.Show(false)
 		}
 	}
