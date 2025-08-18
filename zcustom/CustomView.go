@@ -90,10 +90,10 @@ func (v *CustomView) SetPressedHandler(id string, mods zkeyboard.Modifier, handl
 	})
 }
 
-func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
 	used := OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut, sc)
 	if !used && v.ShortCutHandler != nil {
-		return v.ShortCutHandler.HandleOutsideShortcut(sc)
+		return v.ShortCutHandler.HandleOutsideShortcut(sc, isWithinFocus)
 	}
 	return used
 }

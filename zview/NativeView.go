@@ -128,3 +128,11 @@ func GetShortCutTooltipAddition(sc zkeyboard.KeyMod) string {
 	singleLetterKey := true
 	return "    " + sc.AsString(singleLetterKey) + zstr.UTFPostModifierForRoundRect
 }
+
+func (v *NativeView) IsInAFocusedView() bool {
+	focused := v.RootParent(true).GetFocusedChildView(true)
+	if focused == v {
+		return true
+	}
+	return focused != nil && focused.Native().IsParentOf(v)
+}

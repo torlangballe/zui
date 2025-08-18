@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
@@ -108,7 +109,7 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 		if !down {
 			return false
 		}
-		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
+		return zshortcuts.HandleOutsideShortcutRecursively(v, km, zbool.Unknown)
 	})
 	return v
 }

@@ -127,7 +127,7 @@ func (v *CalendarView) Init(view zview.View) {
 		if v.navigator.HandleKey(km, down) {
 			return true
 		}
-		return zshortcuts.HandleOutsideShortcutRecursively(v, km)
+		return zshortcuts.HandleOutsideShortcutRecursively(v, km, zbool.Unknown)
 	})
 }
 

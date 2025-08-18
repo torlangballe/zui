@@ -19,7 +19,7 @@ type KeyMod struct {
 }
 
 type ShortcutHandler interface {
-	HandleOutsideShortcut(sc KeyMod) bool
+	HandleOutsideShortcut(sc KeyMod, isWithinFocus bool) bool
 }
 
 type KeyConsumer interface {

@@ -810,7 +810,10 @@ func (v *HorEventsView) UpdateWidgets() {
 	v.Bar.CollapseChild(v.GotoLockedButton, v.LockedTime.IsZero(), true)
 }
 
-func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+	if !isWithinFocus {
+		return false
+	}
 	if sc.Modifier != zkeyboard.ModifierNone {
 		return false
 	}

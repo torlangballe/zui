@@ -217,8 +217,8 @@ func (v *Label) LongPressedHandler() func() {
 	return v.longPressed
 }
 
-func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
-	if !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut && v.PressedHandler() != nil {
+func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+	if isWithinFocus && !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut && v.PressedHandler() != nil {
 		v.PressedHandler()()
 		return true
 	}

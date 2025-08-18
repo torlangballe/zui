@@ -71,7 +71,10 @@ func (v *Button) GetToolTipAddition() string {
 	return str
 }
 
-func (v *Button) HandleOutsideShortcut(sc zkeyboard.KeyMod) bool {
+func (v *Button) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+	if !isWithinFocus {
+		return false
+	}
 	if !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut {
 		v.ClickAll()
 		return true
