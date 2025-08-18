@@ -107,7 +107,6 @@ type Row struct {
 	Height        float64
 	y             float64 // accumulated from top
 	ForGlobalLane bool
-	Stroke        bool
 	overlayViews  []zview.View
 }
 
@@ -957,7 +956,7 @@ func (v *HorEventsView) createLanes() {
 	bgWidth := v.ViewWidth //+ v.PoleWidth*2
 	var y float64
 	for i, lane := range v.lanes {
-		title := makeTextTitle(lane.Name, 2, lane.TextColor, v.IsDark, true)
+		title := makeTextTitle(lane.Name, 2, lane.TextColor, v.IsDark)
 		titleSize, _ := title.CalculatedSize(v.Rect().Size)
 		zslice.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
@@ -975,7 +974,7 @@ func (v *HorEventsView) createLanes() {
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
 			y = r.y
-			rowTitle := makeTextTitle(r.Name, 0, zgeo.Color{}, v.IsDark, r.Stroke)
+			rowTitle := makeTextTitle(r.Name, 0, zgeo.Color{}, v.IsDark)
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
@@ -1025,17 +1024,15 @@ func (v *HorEventsView) SetRect(r zgeo.Rect) {
 	v.horInfinite.IgnoreScroll = false
 }
 
-func makeTextTitle(text string, fontAdd float64, col zgeo.Color, isDark, stroke bool) zview.View {
+func makeTextTitle(text string, fontAdd float64, col zgeo.Color, isDark bool) zview.View {
 	label := zlabel.New(text)
 	label.SetCorner(2)
 	if !col.Valid {
-		col = zstyle.Gray1For(0, stroke || isDark)
+		col = zgeo.ColorWhite
 	}
 	label.SetColor(col)
 	label.SetFont(zgeo.FontNice(14+fontAdd, zgeo.FontStyleBold))
-	if stroke {
-		label.OutsideDropStroke(2, zgeo.ColorBlack)
-	}
+	label.OutsideDropStroke(2, zgeo.ColorBlack)
 	label.SetZIndex(5000)
 	return label
 }
