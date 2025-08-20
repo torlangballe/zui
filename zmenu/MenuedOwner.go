@@ -880,11 +880,12 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 			if item.IsDisabled {
 				col.SetOpacity(0.5)
 			}
-			cv.SetMinSize(zgeo.SizeD(colorWidth, 0))
+			cv.SetMinSize(zgeo.SizeD(colorWidth, 12))
 			cv.SetBGColor(col)
-			cv.SetCorner(3)
+			cv.SetCorner(2)
 			cv.SetObjectName("color-label")
 			v.Add(cv, zgeo.CenterRight, marg)
+
 		}
 		marg.W += gap + colorWidth
 	}
