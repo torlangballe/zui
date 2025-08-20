@@ -4,6 +4,7 @@ import "strings"
 
 type DocType string
 
+// https://github.com/blevesearch/bleve
 const (
 	GUIPressField = "gui-press"
 	ExternalWeb   = "web"
