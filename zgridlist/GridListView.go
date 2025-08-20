@@ -24,6 +24,7 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zscrollview"
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
@@ -1318,4 +1319,17 @@ func (v *GridListView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	}
 	v.SelectCell(rowID, true, false)
 	return true
+}
+
+func (v *GridListView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+	selID := v.SelectedID()
+	if selID == "" {
+		return false
+	}
+	cell := v.CellView(selID)
+	if cell != nil {
+		return zshortcuts.HandleOutsideShortcutRecursively(cell, sc, zbool.True)
+	}
+	return false
+
 }

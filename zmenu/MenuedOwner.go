@@ -778,7 +778,6 @@ func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus b
 	if !isWithinFocus {
 		return false
 	}
-	// zlog.Info("MO SC:", o.View.Native().Hierarchy(), sc, zdebug.CallingStackString())
 	for i, item := range o.getItems() {
 		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {

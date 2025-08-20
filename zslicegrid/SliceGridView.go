@@ -27,7 +27,6 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zui/zwindow"
-	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -244,12 +243,12 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		} else if slen == 0 {
 			oneID = v.Grid.CurrentHoverID
 		}
-		if oneID != "" {
-			cell := v.Grid.CellView(oneID)
-			if zshortcuts.HandleOutsideShortcutRecursively(cell, km, zbool.FromBool(isInFocus)) {
-				return true
-			}
-		}
+		// if oneID != "" {
+		// 	cell := v.Grid.CellView(oneID)
+		// 	if zshortcuts.HandleOutsideShortcutRecursively(cell, km, zbool.FromBool(isInFocus)) {
+		// 		return true
+		// 	}
+		// }
 		if v.ActionMenu != nil {
 			focused := isInFocus
 			if !focused {
