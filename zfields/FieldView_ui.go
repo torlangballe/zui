@@ -2044,8 +2044,8 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.HasFlag(f.Flags&FlagLongPress | FlagPress | FlagShowPopup) {
 		nowItem := rval // store item in nowItem so closures below uses right item
 		if f.HasFlag(FlagShowPopup) {
-			view.Native().SetPressedDownHandler("zfields.ShowPopup", 0, func() {
-				v.popupContent(view, f)
+			view.Native().SetPressedDownHandler("zfields.ShowPopup", 0, func() bool {
+				return v.popupContent(view, f)
 			})
 		} else {
 			if f.Flags&FlagPress != 0 {
@@ -2202,7 +2202,7 @@ func (fv *FieldView) freshRValue(fieldName string) reflect.Value {
 	return finfo.ReflectValue
 }
 
-func (fv *FieldView) popupContent(target zview.View, f *Field) {
+func (fv *FieldView) popupContent(target zview.View, f *Field) bool {
 	rval := fv.freshRValue(f.FieldName)
 	a := rval.Interface()
 	str := fmt.Sprint(a)
@@ -2217,7 +2217,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	}
 	// zlog.Info("popupContent:", str)
 	if str == "" {
-		return
+		return false
 	}
 	att := zpresent.AttributesNew()
 	att.Alignment = zgeo.TopLeft // | zgeo.HorOut
@@ -2230,6 +2230,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) {
 	label.SetColor(target.Native().Color())
 	stack.Add(label, zgeo.Center|zgeo.Expand)
 	zpresent.PopupView(stack, target, att)
+	return true
 }
 
 func ReplaceDoubleSquiggliesWithFields(v *FieldView, f *Field, str string) string {
