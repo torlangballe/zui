@@ -189,11 +189,12 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 		wild.SetTextAlignment(zgeo.TopCenter)
 		wild.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
 		wild.SetColor(zgeo.ColorGray)
-		wild.SetPressedDownHandler("", 0, func() {
+		wild.SetPressedDownHandler("", 0, func() bool {
 			tv := getFocusedEmptyTextView(wild.Parent())
 			if tv != nil {
 				tv.SetText("*x*->*y*")
 			}
+			return true
 		})
 		att.PresentedFunc = func(win *zwindow.Window) {
 			fview.HandleFocusInChildren(true, false, func(view zview.View, focused bool) {

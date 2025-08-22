@@ -404,11 +404,12 @@ func addDayLabel(v *CalendarView, grid *zcontainer.GridView, t time.Time, a any)
 		}
 		v.setColors(box, label, t)
 	})
-	box.SetPressedDownHandler("", 0, func() {
+	box.SetPressedDownHandler("", 0, func() bool {
 		if !v.CanTabFocus() || v.IsFocused() {
 			handleSelect(v, t)
 		}
 		v.navigator.CurrentFocused = box
+		return true
 	})
 }
 
