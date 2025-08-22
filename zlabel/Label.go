@@ -105,7 +105,6 @@ func (v *Label) SetMaxLinesBasedOnTextLines(notBeyond int) {
 }
 
 func (v *Label) SetPressWithModifierToClipboard(mod zkeyboard.Modifier) {
-	// zlog.Info("Set LABEL PRESSED2Clip:", zkeyboard.ModifiersAtPress)
 	if v.pressWithModifierToClipboard == -1 {
 		v.pressWithModifierToClipboard = mod
 		tip := v.ToolTip()
