@@ -915,18 +915,21 @@ func makeDownPressKey(id string, long bool, mods zkeyboard.Modifier) string {
 	} else {
 		id += ".$short"
 	}
-
 	return fmt.Sprintf("%s%s^%s", pressMouseDownPrefix, id, mods)
 }
 
 func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, press func(), long func()) {
+	mid := makeDownPressKey(id, long != nil, mods)
+	if press == nil {
+		v.setJSFunc(mid, true, true, nil)
+		return
+	}
 	v.JSSet("className", "widget")
 	_, got := v.jsFuncs[id]
 	if got {
 		return
 	}
 	invokeFunc := zdebug.FileLineAndCallingFunctionString(4, true)
-	mid := makeDownPressKey(id, long != nil, mods)
 	v.SetListenerJSFunc(mid, func(this js.Value, args []js.Value) any {
 		if globalForceClick {
 			press()
@@ -937,6 +940,7 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		if mods != zkeyboard.ModifierAny && zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
+		zlog.Info("MouseDown:", id, v.Hierarchy())
 		// zlog.Info("Pressed2:", v.Hierarchy(), mid)
 		target := event.Get("target")
 		var foundChild *NativeView
@@ -1017,23 +1021,22 @@ func getMousePos(e js.Value) (pos zgeo.Pos) {
 
 // AttachJSFunc calls setJSFunc below with isListener false.
 func (v *NativeView) AttachJSFunc(name string, fn func(this js.Value, args []js.Value) any) js.Func {
-	return v.setJSFunc(name, false, fn)
+	return v.setJSFunc(name, false, false, fn)
 }
 
 // SetListenerJSFunc calls setJSFunc below with isListener true.
 func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args []js.Value) any) js.Func {
-	return v.setJSFunc(name, true, fn)
+	return v.setJSFunc(name, true, false, fn)
 }
 
 // setJSFunc adds a named js func created with js.FuncOf to a view's jsFuncs map.
 // These are released on view remove, or if set again for the same name.
 // If isListener is set, the func is added as a listener to the view, and removed as well.
 // anything after : in the name is removed first, to allow multiple listeners with same name to co-exist.
-func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Value, args []js.Value) any) js.Func {
-	// zlog.Info("setJSFunc:", v.Hierarchy(), name, isListener)
+func (v *NativeView) setJSFunc(name string, isListener, isRemove bool, fn func(this js.Value, args []js.Value) any) js.Func {
 	var outFunc js.Func
 	nameEventPart := zstr.HeadUntil(name, ":") // we allow for multiple funcs with same name to exists at same time, if they have different :xxx suffixes.
-	if v.jsFuncs == nil {
+	if !isRemove && v.jsFuncs == nil {
 		v.jsFuncs = map[string]js.Func{}
 		v.AddOnRemoveFunc(func() {
 			for _, f := range v.jsFuncs {
@@ -1051,7 +1054,7 @@ func (v *NativeView) setJSFunc(name string, isListener bool, fn func(this js.Val
 			f.Release()
 		}
 	}
-	if fn == nil {
+	if isRemove {
 		delete(v.jsFuncs, name)
 	} else {
 		// outFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -1337,7 +1340,9 @@ func (v *NativeView) HasPressedDownHandler() bool {
 	return v.JSGet("onmousedown").IsNull()
 }
 
-func (v *NativeView) SetPressedDownHandler(id string, mods zkeyboard.Modifier, handler func()) {
+// SetPressedDownHandler handles presses, triggering on down. Pass handler == nil to remove for that id/mods
+// if handler returns true, stopPropagation is called
+func (v *NativeView) SetPressedDownHandler(id string, mods zkeyboard.Modifier, handler func() bool) {
 	// zlog.Info("nv.SetPressedDownHandler:", v.Hierarchy())
 	v.JSSet("className", "widget")
 	mid := makeDownPressKey(id+"$down", false, mods)
@@ -1351,9 +1356,10 @@ func (v *NativeView) SetPressedDownHandler(id string, mods zkeyboard.Modifier, h
 		if zkeyboard.ModifiersAtPress != mods {
 			return nil // don't call stopPropagation, we aren't handling it
 		}
-		e.Call("stopPropagation")
 		zlog.Assert(len(args) > 0)
-		handler()
+		if handler() {
+			e.Call("stopPropagation")
+		}
 		return nil
 	})
 }
