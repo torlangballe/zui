@@ -76,7 +76,7 @@ func CGImageToGoImage(imageRef unsafe.Pointer, inRect zgeo.Rect, scale float64) 
 	sw := int(inRect.Size.W * scale)
 	sh := int(inRect.Size.H * scale)
 
-	// zlog.Info("CGImageToGoImage:", zlog.Pointer(imageRef), inRect, iw, ih)
+	// zlog.Info("CGImageToGoImage:", inRect, iw, ih)
 	img := image.NewNRGBA(image.Rect(0, 0, sw, sh))
 	if img == nil {
 		return nil, zlog.Error("NewRGBA returned nil", sw, sh)
@@ -86,7 +86,6 @@ func CGImageToGoImage(imageRef unsafe.Pointer, inRect zgeo.Rect, scale float64) 
 	x := C.CGFloat(-inRect.Pos.X)
 	y := -C.CGFloat(diff) // origo is at the bottom, so we subtract difference between full snap size and inset Max().Y
 	cgDrawRect := C.CGRectMake(x, y, C.CGFloat(osize.W), C.CGFloat(osize.H))
-	// zlog.Info("CGImageToGoImage:", inRect, scale, cgDrawRect)
 	C.CGContextDrawImage(ctx, cgDrawRect, cgimage)
 	C.ConvertARGBToRGBAOpaque(C.int(sw), C.int(sh), C.int(img.Stride), (*C.uchar)(unsafe.Pointer(&img.Pix[0])))
 	C.CGContextRelease(ctx)
