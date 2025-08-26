@@ -7,8 +7,10 @@ import (
 
 	"github.com/pion/mediadevices"
 	_ "github.com/pion/mediadevices/pkg/driver/camera"
+	_ "github.com/pion/mediadevices/pkg/frame"
 	"github.com/pion/mediadevices/pkg/io/video"
 	"github.com/pion/mediadevices/pkg/prop"
+	"github.com/torlangballe/zutil/zgeo"
 )
 
 type VideoStream struct {
@@ -17,23 +19,29 @@ type VideoStream struct {
 	videoReader video.Reader
 }
 
-func GetStream() (*VideoStream, error) {
+func GetStream(sizeConstraint zgeo.Size) (*VideoStream, error) {
 	vs := &VideoStream{}
 	var err error
 	vs.stream, err = mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
 		Video: func(constraint *mediadevices.MediaTrackConstraints) {
-			// Query for ideal resolutions
-			constraint.Width = prop.Int(1920)
-			constraint.Height = prop.Int(1080)
+			// constraint.FrameFormat = prop.FrameFormatOneOf{
+			// 	frame.FormatYUYV,
+			// }
+			// constraint.DiscardFramesOlderThan = time.Millisecond * 200
+			if !sizeConstraint.IsNull() {
+				constraint.Width = prop.Int(sizeConstraint.W)
+				constraint.Height = prop.Int(sizeConstraint.H)
+			}
 		},
+		// Codec: codecSelector,
 	})
 	if err != nil {
 		return nil, err
 	}
-	track := vs.stream.GetVideoTracks()[0] // Since track can represent audio as well, we need to cast it to *mediadevices.VideoTrack to get video specific functionalities
-	// zlog.Info("Track:", track.ID())
-	vs.videoTrack = track.(*mediadevices.VideoTrack)
-	vs.videoReader = vs.videoTrack.NewReader(false)
+	// for _, t := range vs.stream.GetVideoTracks() {
+	// 	zlog.Info("Track:", t.Kind(), t.ID())
+	// }
+	// vs.videoReader = vs.videoTrack.NewReader(true)
 	return vs, nil
 }
 
@@ -42,6 +50,10 @@ func (vs *VideoStream) Close() {
 }
 
 func (vs *VideoStream) FrameImage() (frame image.Image, release func(), err error) {
-	frame, release, err = vs.videoReader.Read()
+	track := vs.stream.GetVideoTracks()[0] // Since track can represent audio as well, we need to cast it to *mediadevices.VideoTrack to get video specific functionalities
+	vtrack := track.(*mediadevices.VideoTrack)
+	reader := vtrack.NewReader(false)
+	frame, release, err = reader.Read()
+	vtrack.Close()
 	return frame, release, err
 }
