@@ -243,7 +243,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 	best := order[len(order)-1]
 	next := order[len(order)-2]
 	amount = float64(best.amount) / float64(next.amount)
-	// zlog.Info("Best Freq:", bestFreq, bestOffset, float64(nextBest)/float64(best))
+	// zlog.Info("Best Freq:", best.amount, best.freq, "next:", next.amount, next.freq, float64(best.amount)/float64(next.amount))
 	return best.freq, best.offset, amount
 }
 
