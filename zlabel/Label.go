@@ -68,7 +68,7 @@ func (v *Label) MakeZAppLink(path string) {
 	v.SetPressedHandler("zapp-link", 0, func() {
 		var parts []zdocs.PathPart
 		for _, stub := range strings.Split(path, "/") {
-			pp := zdocs.PathPart{PathStub: stub, Type: zdocs.GUIPressField}
+			pp := zdocs.PathPart{PathStub: stub, Type: zdocs.PressField}
 			parts = append(parts, pp)
 		}
 		if zdocs.PartOpener != nil {
@@ -237,3 +237,8 @@ func (v *Label) SearchForDocs(match string, cell zdocs.PathPart) []zdocs.SearchR
 	result.Match = text
 }
 */
+
+func (v *Label) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName(), v.Text())
+	return []zdocs.SearchableItem{item}
+}

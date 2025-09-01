@@ -51,11 +51,12 @@ type SortInfo struct {
 
 // FieldParameters are parameters for a FieldView's presentation.
 type FieldParameters struct {
-	HideStatic      bool
-	ForceZeroOption bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
-	AllStatic       bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
-	UseInValues     []string // IDs that reflect a state. Fields with UseIn set will only show if it intersects UseInValues. Example: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
-	SkipFieldNames  []string
+	HideStatic           bool
+	ForceZeroOption      bool     // ForceZeroOption makes menus (and theoretically more) have a zero, or undefined option. This is set when creating a single dialog box for a whole slice of structures.
+	AllStatic            bool     // AllStatic makes even not "static" tagged fields static. Good for showing in tables etc.
+	UseInValues          []string // IDs that reflect a state. Fields with UseIn set will only show if it intersects UseInValues. Example: TableView sets UseInValues=[$row], field with usein:$row shows in table but not dialog.
+	SkipFieldNames       []string
+	IgnoreUseInAndINTags bool
 }
 
 // ActionType are the types of actions any type can handle an HandleAction method with type of.
@@ -110,7 +111,8 @@ const (
 	FlagPress                                         // If FlagLongPress is set this button/image etc handles press
 	FlagLongPress                                     // If FlagLongPress is set this button/image etc handles long-press
 	FlagDisableAutofill                               // FlagDisableAutofill if set makes a text field not autofill
-	FlagIsSearchable                                  // This field can be used to search in tables etc
+	FlagIsTableSearchable                             // This field can be used to search in tables etc
+	FlagIsNotGUISearchable                            // This field should NOT be part of searching for anything in GUI
 	FlagIsUseInValue                                  // ????This value is set as a string to InNames before entire struct is created
 	FlagAllowEmptyAsZero                              // This shows the empty value as nothing. So int 0 would be shown as "" in text
 	FlagZeroIsBig                                     // If set, a zero value is considered big, currenlty used in sorting
@@ -250,7 +252,8 @@ var flagsNameMap = zbits.NamedBitMap{
 	"LongPress":                uint64(FlagLongPress),
 	"Press":                    uint64(FlagPress),
 	"DisableAutofill":          uint64(FlagDisableAutofill),
-	"IsSearchable":             uint64(FlagIsSearchable),
+	"FlagIsTableSearchable":    uint64(FlagIsTableSearchable),
+	"FlagIsNotGUISearchable":   uint64(FlagIsNotGUISearchable),
 	"IsUseInValue":             uint64(FlagIsUseInValue),
 	"AllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
 	"ZeroIsBig":                uint64(FlagZeroIsBig),
@@ -372,7 +375,9 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		flag := zbool.FromString(kv.Value, false)
 		switch kv.Key {
 		case "search":
-			f.Flags |= FlagIsSearchable
+			f.Flags |= FlagIsTableSearchable
+		case "noguisearch":
+			f.Flags |= FlagIsNotGUISearchable
 		case "password":
 			f.Flags |= FlagIsPassword
 			if kv.Value == "existing" {
@@ -1191,17 +1196,19 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f.HasFlag(FlagIsForZDebugOnly) && !zui.DebugOwnerMode {
 			return true
 		}
-		usePlain, useDollar := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
-			return strings.HasPrefix(s, "$")
-		})
-		hasPlain, hasDollar := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
-			return strings.HasPrefix(s, "$")
-		})
-		if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
-			return true
-		}
-		if len(useDollar) != 0 && !zstr.SlicesIntersect(useDollar, hasDollar) {
-			return true
+		if !params.IgnoreUseInAndINTags {
+			usePlain, useDollar := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
+				return strings.HasPrefix(s, "$")
+			})
+			hasPlain, hasDollar := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
+				return strings.HasPrefix(s, "$")
+			})
+			if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
+				return true
+			}
+			if len(useDollar) != 0 && !zstr.SlicesIntersect(useDollar, hasDollar) {
+				return true
+			}
 		}
 		var finfo FieldInfo
 		finfo.FieldInfo = each

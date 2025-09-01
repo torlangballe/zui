@@ -9,6 +9,7 @@ import (
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -53,6 +54,8 @@ type ShapeView struct {
 	ImageView *zimageview.ImageView
 	TextLabel *zlabel.Label
 	loading   bool
+
+	SubPart any // points to a MenuedOwner if any
 }
 
 func NewView(shapeType Type, minSize zgeo.Size) *ShapeView {
@@ -275,4 +278,25 @@ func (v *ShapeView) SetFont(font *zgeo.Font) {
 func (v *ShapeView) SetColor(c zgeo.Color) {
 	v.NativeView.SetColor(c)
 	// zlog.Info("SV.SetColor:", v.Hierarchy(), c, v.Color())
+}
+
+func (v *ShapeView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	if v.SubPart != nil {
+		sig, _ := v.SubPart.(zdocs.SearchableItemsGetter)
+		if sig != nil {
+			subPath := zdocs.AddedPath(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName())
+			subParts := sig.GetSearchableItems(subPath)
+			parts = append(parts, subParts...)
+		}
+	}
+	if len(parts) == 0 && v.textInfo.Text != "" {
+		ctype := zdocs.StaticField
+		if v.PressedHandler() != nil {
+			ctype = zdocs.PressField
+		}
+		item := zdocs.MakeSearchableItem(currentPath, ctype, v.ObjectName(), v.ObjectName(), v.textInfo.Text)
+		parts = append(parts, item)
+	}
+	return parts
 }

@@ -12,12 +12,12 @@ import (
 
 type FocusType int
 
-type ViewFlags int64
+type ViewFlagType int64
 
 type NativeView struct {
 	baseNativeView
 	View       View
-	Flags      ViewFlags
+	Flags      ViewFlagType
 	DoOnRemove []func() // anything that needs to be stopped // these could be in a global map if added/removed properly?
 	DoOnAdd    []func() // anything that needs to be stopped
 }
@@ -34,9 +34,10 @@ const (
 
 	BaseZIndex = 100
 
-	ViewPresentedFlag   = 1
-	ViewUsableFlag      = 2
-	ViewNoDimUsableFlag = 4
+	ViewPresentedFlag ViewFlagType = 1 << iota
+	ViewUsableFlag
+	ViewNoDimUsableFlag
+	NotSearchableFlag
 )
 
 var (
@@ -50,8 +51,16 @@ func (v *NativeView) IsPresented() bool {
 	return v.Flags&ViewPresentedFlag != 0
 }
 
+func (v *NativeView) IsSearchable() bool {
+	return v.Flags&NotSearchableFlag == 0
+}
+
+func (v *NativeView) SetSearchable(on bool) {
+	zbits.ChangeBit(&v.Flags, NotSearchableFlag, !on)
+}
+
 func (v *NativeView) SetDimUsable(dim bool) {
-	zbits.ChangeBit((*int64)(&v.Flags), ViewNoDimUsableFlag, !dim)
+	zbits.ChangeBit(&v.Flags, ViewNoDimUsableFlag, !dim)
 }
 
 // AddOnRemoveFunc adds a function to call when the v is removed from its parent.

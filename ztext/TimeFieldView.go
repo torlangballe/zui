@@ -59,7 +59,7 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v.SetMargin(zgeo.RectFromXY2(4, 2, -2, -2))
 	v.SetCorner(6)
 	v.SetBGColor(zgeo.ColorNewGray(0.7, 1))
-
+	v.SetSearchable(false)
 	if false && zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
 		style := Style{KeyboardType: zkeyboard.TypeInteger}
 		tv := NewView("", style, 1, 1)

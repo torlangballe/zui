@@ -8,6 +8,7 @@ import (
 
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
@@ -173,6 +174,12 @@ func DocumentationViewPresent(path string, modal bool) error {
 	}
 	zpresent.PresentView(v, attr)
 	return nil
+}
+
+func (v *DocumentationIconView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	// parts := v.ShapeView.GetSearchableItems(currentPath)
+	// var parts []zdocs.SearchableItem
+	return nil // parts
 }
 
 /*

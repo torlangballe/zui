@@ -654,7 +654,7 @@ func (v *HorEventsView) makeButtons() {
 	}
 	outKey := zkeyboard.KeyMod{Key: zkeyboard.KeyMinus}
 	inKey := zkeyboard.KeyMod{Key: zkeyboard.KeyPlus}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "zoom", 4, 28, -1, v.IsDark, v.zoomPressed)
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "Zoom", 4, 28, -1, v.IsDark, v.zoomPressed)
 	title, _ := v.zoomStack.FindViewWithName("title", true)
 	title.SetColor(zgeo.ColorOrange)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
@@ -742,6 +742,7 @@ func makeButtonPairInStack(id int, leftImageStub, leftTip string, leftKey zkeybo
 	stack := zcontainer.StackViewHor(midTitle)
 	stack.SetMarginS(zgeo.SizeBoth(2))
 	stack.SetSpacing(0)
+	stack.SetSearchable(false)
 
 	vleft := makeImageView(leftImageStub, leftKey, true, id, leftTip, isDark, pressed)
 	vleft.SetObjectName("left")

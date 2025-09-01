@@ -68,7 +68,7 @@ func (v *HorBlocksView) Init(indexWindow, cacheDelta int) {
 	// v.SetMargin(zgeo.RectFromXY2(0, 0, 0, -1))
 	v.SetPressUpDownMovedHandler(v.handleDrag)
 	v.SetSpacing(0)
-
+	v.SetSearchable(false)
 	// v.gutter = gutter
 
 	v.HorScrollHeaderHeight = 20

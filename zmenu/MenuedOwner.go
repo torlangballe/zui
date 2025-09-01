@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zimageview"
@@ -939,6 +941,7 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.StrokeWidth = 1
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)
 	v.SetTextColor(zstyle.DefaultFGColor())
+	v.SubPart = menu
 	menu.Build(v, items)
 	return v
 }
@@ -947,4 +950,19 @@ func (o *MenuedOwner) Dump() {
 	for _, item := range o.items {
 		zlog.Info("MDump:", item.Name, item.Selected)
 	}
+}
+
+func (o *MenuedOwner) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	zdocs.IsCreatingActionMenu = true
+	var parts []zdocs.SearchableItem
+	items := o.getItems()
+	for _, ditem := range items {
+		if ditem.IsDebug && !zui.DebugOwnerMode || ditem.IsSeparator {
+			continue
+		}
+		key := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", ditem.Name)
+		parts = append(parts, key)
+	}
+	zdocs.IsCreatingActionMenu = false
+	return parts
 }

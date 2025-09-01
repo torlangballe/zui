@@ -13,6 +13,7 @@
 package zgridlist
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -1332,4 +1333,22 @@ func (v *GridListView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus 
 	}
 	return false
 
+}
+
+func (v *GridListView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	zlog.Info("GridListView.GetSearchableItems", v.ObjectName(), v.IsSearchable(), v.CellCountFunc())
+	if !v.IsSearchable() {
+		return nil
+	}
+	var parts []zdocs.SearchableItem
+	for i := range v.CellCountFunc() {
+		cid := v.IDAtIndexFunc(i)
+		child := v.CreateCellFunc(v, cid)
+		name := fmt.Sprint(i + 1)
+		path := zdocs.AddedPath(currentPath, zdocs.PressField, name, name)
+		sig := child.(zdocs.SearchableItemsGetter)
+		items := sig.GetSearchableItems(path)
+		parts = append(parts, items...)
+	}
+	return parts
 }

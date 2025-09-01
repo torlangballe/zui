@@ -16,7 +16,6 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
-	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -775,14 +774,15 @@ func DumpHierarchy(view zview.View, add string) {
 	}
 }
 
-func (v *ContainerView) SearchForDocs(text string, cell zdocs.PathPart) []zdocs.SearchResult {
-	var got []zdocs.SearchResult
-	cell.PathStub = zstr.Concat("/", cell.PathStub, v.ObjectName())
+func (v *ContainerView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var got []zdocs.SearchableItem
+	containerPath := zdocs.AddedPath(currentPath, zdocs.FillerField, v.ObjectName(), v.ObjectName())
 	for _, c := range v.Cells {
-		if c.View != nil {
-			dls, _ := c.View.(zdocs.DocLinkSearcher)
+		if c.View != nil && c.View.Native().IsSearchable() {
+			dls, _ := c.View.(zdocs.SearchableItemsGetter)
 			if dls != nil {
-				got = append(got, dls.SearchForDocs(text, cell)...)
+				parts := dls.GetSearchableItems(containerPath)
+				got = append(got, parts...)
 			}
 		}
 	}
@@ -792,7 +792,7 @@ func (v *ContainerView) SearchForDocs(text string, cell zdocs.PathPart) []zdocs.
 // OpenGUIFromPathParts implements zdocs.GUIPartOpener to recusively try to open children.
 func (v *ContainerView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	for _, c := range v.Cells {
-		if c.View != nil {
+		if c.View != nil && c.View.Native().IsSearchable() {
 			o, _ := c.View.(zdocs.GUIPartOpener)
 			if o != nil {
 				handled := o.OpenGUIFromPathParts(parts)

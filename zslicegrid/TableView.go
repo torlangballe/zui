@@ -393,7 +393,7 @@ func (v *TableView[S]) FilterString(str string, fieldName string, contains *bool
 
 // FilterRowWithZFields returns false for a row that should be filtered out of the table.
 // Typically used with underlying SliceGridView's FilterFunc.
-// For fields with FlagIsSearchable, is
+// For fields with FlagIsTableSearchable, is
 func (v *TableView[S]) FilterRowWithZFields(row *S) bool {
 	zlog.Assert(len(v.fields) != 0)
 	var hasSearchable, searchMatch bool
@@ -406,7 +406,7 @@ func (v *TableView[S]) FilterRowWithZFields(row *S) bool {
 			val, hasLock = v.LockedFieldValues[f.FieldName]
 
 		}
-		search := (v.CurrentLowerCaseSearchText != "" && f.HasFlag(zfields.FlagIsSearchable))
+		search := (v.CurrentLowerCaseSearchText != "" && f.HasFlag(zfields.FlagIsTableSearchable))
 		if hasLock || search {
 			finfo, found := zreflect.FieldForName(row, zfields.FlattenIfAnonymousOrZUITag, f.FieldName)
 			zlog.Assert(found, f.FieldName)

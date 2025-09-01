@@ -61,6 +61,7 @@ type FieldView struct {
 	params         FieldViewParameters
 	sliceItemIndex int
 	lastCheckered  bool // toggled during build for each column
+	frameTitle     string
 }
 
 type FieldViewParameters struct {
@@ -218,6 +219,7 @@ func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string) (view zview.
 	if title == "" && f.HasFlag(FlagFrameIsTitled) {
 		title = f.TitleOrName()
 	}
+	fv.frameTitle = title
 	frame := zcontainer.StackViewVert("frame")
 	header = zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
 	maybeAddDocToHeader(f, header)
@@ -2614,7 +2616,7 @@ func (v *FieldView) CreateStoreKeyForField(f *Field, name string) string {
 
 func (v *FieldView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	fieldName := parts[0].PathStub
-	child, _ := v.FindNamedViewOrInLabelized(fieldName)
+	child, _, _ := v.FindNamedViewOrInLabelized(fieldName)
 	if child != nil {
 		if len(parts) == 1 {
 			old := v.BGColor()
@@ -2631,4 +2633,67 @@ func (v *FieldView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 		}
 	}
 	return false
+}
+
+func (v *FieldView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	// zlog.Info("FV.GetSearchableItems", v.Hierarchy(), v.frameTitle)
+	path := currentPath
+	if v.frameTitle != "" {
+		item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", v.frameTitle)
+		parts = append(parts, item)
+		path = zdocs.AddedPath(currentPath, zdocs.StaticField, v.frameTitle, v.frameTitle)
+	}
+	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
+		view, label, _ := v.FindNamedViewOrInLabelized(each.Field.FieldName)
+		var labelText string
+		if label != nil && label.Native().IsSearchable() {
+			labelText = each.Field.TitleOrName()
+			item := zdocs.MakeSearchableItem(path, zdocs.StaticField, "", "", labelText)
+			parts = append(parts, item)
+		}
+		if view != nil && view.Native().IsSearchable() {
+			o, _ := view.(ztext.TextOwner)
+			// zlog.Info("FV.GetSearchableItems", v.Hierarchy(), each.Field.FieldName, o != nil, reflect.TypeOf(view))
+			if o != nil {
+				text := o.Text()
+				if text != "" && text != labelText {
+					stub := each.Field.FieldName
+					titleOrName := each.Field.TitleOrName()
+					if titleOrName == text {
+						stub = ""
+						titleOrName = ""
+					}
+					item := zdocs.MakeSearchableItem(path, zdocs.ValueField, titleOrName, stub, text)
+					parts = append(parts, item)
+				}
+			} else {
+				sig, _ := view.(zdocs.SearchableItemsGetter)
+				if sig != nil {
+					subPath := zdocs.AddedPath(path, zdocs.StaticField, each.Field.TitleOrName(), each.Field.FieldName)
+					items := sig.GetSearchableItems(subPath)
+					parts = append(parts, items...)
+				}
+			}
+		}
+		return true
+	})
+	return parts
+}
+
+func MakeSearchableFieldItems(path []zdocs.PathPart, f *Field) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	item := zdocs.MakeSearchableItem(path, zdocs.StaticField, "", "", f.Name)
+	parts = append(parts, item)
+	subPath := zdocs.AddedPath(path, zdocs.StaticField, f.Name, f.FieldName)
+
+	if f.Tooltip != "" && !strings.HasPrefix(f.Tooltip, ".") {
+		item := zdocs.MakeSearchableItem(subPath, zdocs.StaticField, "Tip", "Tip", f.Tooltip)
+		parts = append(parts, item)
+	}
+	if f.Description != "" {
+		item := zdocs.MakeSearchableItem(subPath, zdocs.StaticField, "Desc", "Desc", f.Description)
+		parts = append(parts, item)
+	}
+	return parts
 }

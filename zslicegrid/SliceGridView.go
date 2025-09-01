@@ -15,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zalert"
 	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zimageview"
@@ -111,6 +112,8 @@ const (
 	AddHeader                                   // Adds a Header to the top of table. Currenty used by TableView
 	AddBarInHeader                              // Sets the bar inside the Header, in right-most column. Sets  AddHeader and AddBar
 	AddShortHelperArea                          // Adds an view where what you could have pressed to invoke shortcuts is shown
+	RowsGUISearchable                           // Allows rows to be part of gui search
+	AddNameAsSearchItem                         // If true, this table adds ObjectName() to currentPath for searching
 	LastBaseOption
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
@@ -191,6 +194,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
 		v.ActionMenu.Build(actions, nil)
+		v.ActionMenu.Name = v.ObjectName()
 		v.Bar.Add(actions, zgeo.CenterRight, zgeo.SizeNull)
 	}
 	if options&AddDocumentationIcon != 0 {
@@ -206,6 +210,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	v.Grid = zgridlist.NewView(storeName + "-GridListView")
 	v.Grid.HorizontalFirst = horFirst
+	v.Grid.SetSearchable(options&RowsGUISearchable == 0)
 	v.Grid.CellCountFunc = func() int {
 		zlog.Assert(len(v.filteredSlice) <= len(*v.slicePtr), len(v.filteredSlice), len(*v.slicePtr))
 		if !hasHierarchy {
@@ -845,47 +850,47 @@ func addHierarchy(stack *zcontainer.StackView) {
 func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
 	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
-	if v.Options&AllowNew != 0 && !forSingleCell {
+	if zdocs.IsCreatingActionMenu || v.Options&AllowNew != 0 && !forSingleCell {
 		add := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, add)
 	}
-	if v.Grid.CellCountFunc() > 0 {
+	if v.Grid.CellCountFunc() > 0 || zdocs.IsCreatingActionMenu {
 		if v.Grid.MultiSelectable && !forSingleCell {
 			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
 				v.Grid.SelectAll(true)
 			})
 			items = append(items, all)
 		}
-		if len(ids) > 0 {
+		if len(ids) > 0 || zdocs.IsCreatingActionMenu {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			if v.Options&AllowDuplicate != 0 {
+			if v.Options&AllowDuplicate != 0 || zdocs.IsCreatingActionMenu {
 				del := zmenu.MenuedSCFuncAction("Duplicate "+nitems+"…", 'D', 0, func() {
 					v.duplicateItems(nitems, ids)
 				})
 				items = append(items, del)
 			}
-			if v.Options&AllowDelete != 0 {
+			if v.Options&AllowDelete != 0 || zdocs.IsCreatingActionMenu {
 				del := zmenu.MenuedSCFuncAction("Delete "+nitems+"…", zkeyboard.KeyBackspace, 0, func() {
 					v.HandleDeleteKey(true, ids)
 				})
 				items = append(items, del)
 			}
-			if v.Options&AllowEdit != 0 {
+			if v.Options&AllowEdit != 0 || zdocs.IsCreatingActionMenu {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, ' ', 0, func() {
 					// zlog.Info("SGV.Edit")
 					v.EditItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}
-			if v.Options&AllowView != 0 {
+			if v.Options&AllowView != 0 || zdocs.IsCreatingActionMenu {
 				edit := zmenu.MenuedSCFuncAction("View "+nitems, ' ', 0, func() {
 					v.ViewItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}
 		}
-		if v.Options&AllowCopyPaste != 0 {
-			if len(ids) > 0 {
+		if v.Options&AllowCopyPaste != 0 || zdocs.IsCreatingActionMenu {
+			if len(ids) > 0 || zdocs.IsCreatingActionMenu {
 				nitems := v.NameOfXItemsFunc(ids, true)
 				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to Clipboard", func() {
 					v.copyItemsToClipboard(ids)
@@ -893,7 +898,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
 			}
-			if !forSingleCell {
+			if !forSingleCell || zdocs.IsCreatingActionMenu {
 				name := "items"
 				if v.StructName != "" {
 					name = zwords.PluralizeEnglishWord(v.StructName)
@@ -995,4 +1000,40 @@ func (o OptionType) String() string {
 		str += "head "
 	}
 	return strings.TrimRight(str, " ")
+}
+
+func (v *SliceGridView[S]) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	if !v.IsSearchable() {
+		return nil
+	}
+	basePath := currentPath
+	if v.Options&AddNameAsSearchItem != 0 {
+		basePath = zdocs.AddedPath(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName())
+	}
+	tablePath := zdocs.AddedPath(basePath, zdocs.StaticField, "Table", "Table")
+	columnsPath := zdocs.AddedPath(tablePath, zdocs.StaticField, "Columns", "Columns")
+	var s S
+	v.ReadyToShow(false)
+	zfields.ForEachField(&s, zfields.FieldParameters{IgnoreUseInAndINTags: true}, nil, func(each zfields.FieldInfo) bool {
+		if each.Field.HasFlag(zfields.FlagIsNotGUISearchable) {
+			return true
+		}
+		items := zfields.MakeSearchableFieldItems(columnsPath, each.Field)
+		parts = append(parts, items...)
+		return true
+	})
+	if v.ActionMenu != nil {
+		path := zdocs.AddedPath(tablePath, zdocs.StaticField, "Action Menu", "menu")
+		items := v.ActionMenu.GetSearchableItems(path)
+		zlog.Info("slicegrid Make ActionMenu:", v.ObjectName(), len(*v.slicePtr), len(items), path)
+		parts = append(parts, items...)
+	}
+	if v.Options&RowsGUISearchable != 0 {
+		v.doFilter(*v.slicePtr) // we need to get filteredSlice set since it's what's acrtually used
+		path := zdocs.AddedPath(tablePath, zdocs.StaticField, "Rows", "Rows")
+		items := v.Grid.GetSearchableItems(path)
+		parts = append(parts, items...)
+	}
+	return parts
 }

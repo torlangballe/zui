@@ -54,6 +54,7 @@ func (v *ImageView) Init(view zview.View, useCache bool, image *zimage.Image, im
 	v.UseDownsampleCache = useCache
 	v.DownsampleImages = true
 	v.SetSelectable(false)
+	v.SetSearchable(false)
 	name := "image"
 	if imagePath != "" {
 		_, name = path.Split(imagePath)

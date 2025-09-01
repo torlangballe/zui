@@ -14,6 +14,7 @@ import (
 	"sort"
 
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
@@ -350,4 +351,19 @@ func (v *HeaderView) RightColumn() *zshape.ImageButtonView {
 
 func (v *HeaderView) ArrangeChildren() {
 	// We purpously don't do anything here, as we want FitToRowStack to arrange us
+}
+
+func (v *HeaderView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	headerPath := zdocs.AddedPath(currentPath, zdocs.StaticField, "Header", "Header")
+	for _, c := range v.Cells {
+		if c.View != nil && c.View.Native().IsSearchable() && v.Native().IsShown() {
+			sig, _ := c.View.(zdocs.SearchableItemsGetter)
+			if sig != nil {
+				items := sig.GetSearchableItems(headerPath)
+				parts = append(parts, items...)
+			}
+		}
+	}
+	return parts
 }

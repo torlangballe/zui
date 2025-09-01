@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
@@ -111,4 +112,14 @@ func (v *MenuView) SetStoreKey(key string) {
 	if len(v.items) != 0 && v.currentValue == nil {
 		v.SelectWithValue(v.items[0].Value)
 	}
+}
+
+func (v *MenuView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	stub := "" //v.ObjectName()
+	for _, ditem := range v.items {
+		key := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, stub, stub, ditem.Name)
+		parts = append(parts, key)
+	}
+	return parts
 }

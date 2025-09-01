@@ -22,11 +22,20 @@ import (
 	"github.com/torlangballe/zutil/ztimer"
 )
 
+type CreateType int
+
+const (
+	Create CreateType = iota + 1
+	CreateTemp
+	Delete
+)
+
 type Item struct {
 	id        string
+	title     string
 	view      zview.View
 	SlowStart bool // SlowStart shows a wait cursor before changing the view in a goroutine, so cursor can kick in.
-	create    func(id string, delete bool) zview.View
+	create    func(id string, ctype CreateType) zview.View
 }
 
 type TabsView struct {
@@ -138,7 +147,7 @@ func (v *TabsView) ReadyToShow(beforeWindow bool) {
 // view/create are either the view to show for this tab, or how to make/delete it dynamically.
 // It is added/removed from view hierarchy by this method.
 // create is a function to create or delete the content child each time tab is set.
-func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create func(id string, delete bool) zview.View) *Item {
+func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create func(id string, ctype CreateType) zview.View) *Item {
 	// v.AddGroupItem(id, title, imagePath, set, view, create)
 	var button *zshape.ShapeView
 	minSize := zgeo.SizeD(20, 22)
@@ -178,7 +187,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 		})
 	})
 	v.header.Add(view, zgeo.BottomLeft)
-	v.items = append(v.items, Item{id: id, view: view, create: create})
+	v.items = append(v.items, Item{id: id, create: create, title: title})
 	ilen := len(v.items)
 	if ilen < 10 {
 		key := zkeyboard.Key('0' + ilen)
@@ -204,7 +213,8 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 			i := v.FindItem(id)
 			item := v.items[i]
 			if item.create != nil {
-				item.create(id, true)
+				item.create(id, Delete)
+				v.items[i].view = nil
 			}
 			v.RemoveChild(v.currentChild, true)
 			v.currentChild = nil
@@ -217,9 +227,10 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 		return true
 	}
 	ci := v.FindItem(v.CurrentID)
-	if ci != -1 {
+	if ci != -1 && v.currentChild != nil {
 		item := v.items[ci]
-		item.create(v.CurrentID, true)
+		item.create(v.CurrentID, Delete)
+		v.items[ci].view = nil
 	}
 	if v.currentChild != nil {
 		v.RemoveChild(v.currentChild, true)
@@ -236,7 +247,8 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 	item := v.items[ni]
 	v.currentChild = item.view
 	if item.create != nil {
-		v.currentChild = item.create(id, false)
+		v.currentChild = item.create(id, Create)
+		v.items[ni].view = v.currentChild
 	}
 	//	v.Add(v.currentChild, zgeo.TopLeft|zgeo.Expand)
 	marg := zgeo.Size{}
@@ -267,7 +279,8 @@ func (v *TabsView) RemoveItem(id string) {
 	zslice.RemoveAt(&v.items, i)
 	item := v.items[i]
 	if item.create != nil {
-		item.create(id, true)
+		item.create(id, Delete)
+		v.items[i].view = nil
 	}
 	if v.currentChild != nil {
 		v.RemoveChild(v.currentChild, true)
@@ -354,4 +367,25 @@ func (v *TabsView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 		}
 	}
 	return handled
+}
+
+func (v *TabsView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var got []zdocs.SearchableItem
+	tabPath := zdocs.AddedPath(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName())
+	for _, item := range v.items {
+		view := item.create(item.id, CreateTemp)
+		if view.Native().IsSearchable() {
+			itemPath := zdocs.AddedPath(tabPath, zdocs.PressField, item.title, item.id)
+			sig, _ := view.(zdocs.SearchableItemsGetter)
+			if sig != nil {
+				add := sig.GetSearchableItems(itemPath)
+				got = append(got, add...)
+			}
+		}
+		view.Native().PerformAddRemoveFuncs(false)
+		if item.id != v.CurrentID {
+			item.create(item.id, Delete)
+		}
+	}
+	return got
 }

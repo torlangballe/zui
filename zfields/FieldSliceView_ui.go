@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
@@ -91,6 +92,7 @@ func (v *FieldSliceView) build(addItems bool) {
 			title = v.field.TitleOrName()
 		}
 		header = zguiutil.MakeStackATitledFrame(&v.StackView, title, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
+		v.frameTitle = title
 	}
 	if header == nil && !v.field.IsStatic() {
 		header = zcontainer.StackViewHor("header")
@@ -335,4 +337,10 @@ func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
 func makeButton(shape, col string) *zimageview.ImageView {
 	str := fmt.Sprintf("images/zcore/%s-circled-dark%s.png", shape, col)
 	return zimageview.New(nil, true, str, zgeo.SizeD(20, 20))
+}
+
+func (v *FieldSliceView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	// var parts []zdocs.SearchableItem
+	zlog.Info("FieldSliceView.GetSearchableItems", v.ObjectName())
+	return nil
 }
