@@ -82,3 +82,11 @@ func (v *Button) SetRect(r zgeo.Rect) {
 	rm := r.Plus(zgeo.RectFromMarginSize(zgeo.SizeBoth(3)))
 	v.NativeView.SetRect(rm)
 }
+
+func (v *Button) Text() string {
+	return v.NativeView.InnerText()
+}
+
+func (v *Button) SetText(str string) {
+	v.NativeView.SetInnerText(str)
+}

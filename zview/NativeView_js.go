@@ -686,11 +686,11 @@ func (v *NativeView) Font() *zgeo.Font {
 	return zgeo.FontNew(name, size, fstyle)
 }
 
-func (v *NativeView) SetText(text string) {
+func (v *NativeView) SetInnerText(text string) {
 	v.JSSet("innerText", text)
 }
 
-func (v *NativeView) Text() string {
+func (v *NativeView) InnerText() string {
 	text := v.JSGet("innerText").String()
 	return text
 }

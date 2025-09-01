@@ -69,7 +69,7 @@ func (v *Label) SetText(text string) {
 		return
 	}
 	v.text = text
-	v.NativeView.SetText(text)
+	v.NativeView.SetInnerText(text)
 	setPadding(v)
 }
 

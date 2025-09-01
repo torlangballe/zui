@@ -24,7 +24,7 @@ type Button struct {
 func (v *Button) GetTextInfo() ztextinfo.Info {
 	t := ztextinfo.New()
 	t.Font = v.Font()
-	t.Text = v.Text()
+	t.Text = v.InnerText()
 	if v.maxWidth != 0 {
 		t.SetWidthFreeHight(v.maxWidth)
 	}
