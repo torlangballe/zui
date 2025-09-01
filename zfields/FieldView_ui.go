@@ -276,23 +276,24 @@ func (v *FieldView) Build(update bool) {
 	}
 }
 
-func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, maybeLabel zview.View) {
+func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, label, labelStack zview.View) {
 	for _, c := range (v.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		n := c.ObjectName()
 		if n == name {
-			return c, c
+			return c, nil, nil
 		}
 		if strings.HasPrefix(n, "$labelize.") {
 			s, _ := c.(*zcontainer.StackView)
 			if s != nil {
-				v, _ := s.FindViewWithName(name, true)
-				if v != nil {
-					return v, c
+				view, _ = s.FindViewWithName(name, true)
+				if view != nil {
+					label, _ = s.FindViewWithName("$labelize.label."+name, true)
+					return view, label, s
 				}
 			}
 		}
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string) {
@@ -303,7 +304,8 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 		var id string
 		local, neg := getLocalFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(local, "./", &id) && id == toID {
-			_, foundView := v.FindNamedViewOrInLabelized(f.FieldName)
+			// _, foundView := v.FindNamedViewOrInLabelized(f.FieldName)
+			foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
 			if foundView == nil {
 				continue
 			}
@@ -423,12 +425,12 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	if f == nil {
 		return true
 	}
-	foundView, flabelized := v.FindNamedViewOrInLabelized(f.FieldName)
+	foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
 	if foundView == nil {
 		return true
 	}
-	v.updateShowEnableOnView(flabelized, true, foundView.ObjectName())
-	v.updateShowEnableOnView(flabelized, false, foundView.ObjectName())
+	v.updateShowEnableOnView(foundView, true, foundView.ObjectName())
+	v.updateShowEnableOnView(foundView, false, foundView.ObjectName())
 	var called bool
 	tri, _ := rval.Interface().(TriggerDataChangedTriggerer)
 	if tri != nil {
@@ -1703,7 +1705,7 @@ func (v *FieldView) makeRadioButtonGroup(f *Field, rval reflect.Value) zview.Vie
 			}
 			callActionHandlerFunc(ap)
 		})
-		_, row, _, _ := zguiutil.Labelize(b, e.Name, f.MinWidth, zgeo.CenterLeft, f.Description)
+		_, row, _, _ := zguiutil.Labelize(b, e.Name, "", f.MinWidth, zgeo.CenterLeft, f.Description)
 		stack.Add(row, zgeo.CenterLeft)
 	}
 	return stack
@@ -1863,6 +1865,7 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
+	// zlog.Info("FV.buildItem", v.Hierarchy(), f.Name)
 	if f.WhenMods != zkeyboard.ModifierNone {
 		if zkeyboard.ModifiersAtPress != f.WhenMods {
 			return nil
@@ -2162,7 +2165,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		if !v.params.MultiSliceEditInProgress && f.Required != "" {
 			title += "*"
 		}
-		label, lstack, cell, _ = zguiutil.Labelize(view, title, 0, a, desc)
+		label, lstack, cell, _ = zguiutil.Labelize(view, title, f.FieldName, 0, a, desc)
 		cell.Alignment |= zgeo.HorShrink
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
@@ -2270,7 +2273,7 @@ func updateToolTip(f *Field, structure any, view zview.View) {
 
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
-		foundView, _ := v.FindNamedViewOrInLabelized(f.FieldName)
+		foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
 		if foundView == nil {
 			continue
 		}
