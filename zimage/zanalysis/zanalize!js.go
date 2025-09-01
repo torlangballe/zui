@@ -29,6 +29,7 @@ type counts struct {
 	flats                    map[int]int
 	edgePoints               int
 	perpendicularEdgeLengths map[int]map[int]int // map of x/y coordinate to histogram of continuous edge-length counts for that x/y.
+
 }
 
 type lengths struct {
@@ -189,7 +190,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 	clen := len(xcounts)
 	// var best, bestFreq, bestOffset, nextBestFreq, nextBest int
 	var order []freqInfo
-	for freq := 8; freq <= blockMax; freq++ {
+	for freq := 8; freq <= blockMax; freq += 4 {
 		for w := range blockMax {
 			var lines int
 			var sum int
@@ -202,6 +203,7 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 			}
 			var f freqInfo
 			f.amount = sum / lines
+			//!! CURRENT STUFF: zlog.Info("AMOUNT:", clen, f.amount, "freq:", freq, "x:", w, sum, lines)
 			f.freq = freq
 			f.offset = w
 			order = append(order, f)

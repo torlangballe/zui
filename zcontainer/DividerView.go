@@ -68,7 +68,6 @@ func newDiv(storeKey string, defaultRatio float64) *DividerView {
 			}
 			pos := pos.Element(v.Vertical) + divPos
 			v.Ratio = (pos / height)
-			// zlog.Info("DETLA:", pos, height, v.Ratio)
 			v.storeRatio()
 			at, _ := v.Parent().View.(Arranger)
 			at.ArrangeChildren()
