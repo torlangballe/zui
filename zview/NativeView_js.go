@@ -1026,7 +1026,7 @@ func (v *NativeView) AttachJSFunc(name string, fn func(this js.Value, args []js.
 
 // SetListenerJSFunc calls setJSFunc below with isListener true.
 func (v *NativeView) SetListenerJSFunc(name string, fn func(this js.Value, args []js.Value) any) js.Func {
-	return v.setJSFunc(name, true, false, fn)
+	return v.setJSFunc(name, true, fn == nil, fn)
 }
 
 // setJSFunc adds a named js func created with js.FuncOf to a view's jsFuncs map.
