@@ -745,6 +745,9 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		if mval.Kind() == reflect.Interface {
 			mval = mval.Elem()
 		}
+		if zhttp.StringStartsWithHTTPX(mval.String()) {
+			mf.SetFlag(FlagIsURL)
+		}
 		// zlog.Info(f.Name, "map buildItem:", mf.Name, mval.Type())
 		mf.Vertical = zbool.False
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
