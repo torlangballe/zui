@@ -5,26 +5,40 @@ Use of this source code is governed by a BSD-style
 license that can be found in the LICENSE file.
 -->
 <html>
-<head>
-	<meta charset="utf-8">
-	<title>Go wasm</title>
-</head>
-<body>
-	<script src="js/zcore/wasm_exec.js"></script>
-	<script>
-		const go = new Go();
-		let mod, inst;
-		WebAssembly.instantiateStreaming(fetch("main.wasm", {cache:"force-cache"}), go.importObject).then((result) => {
-			mod = result.module;
-			inst = result.instance;
-            WebAssembly.instantiate(mod, go.importObject).then((result) => {
-                go.run(inst);
-				document.getElementById("_zspinner").remove();
-            })
-		}).catch((err) => {
-			console.error(err);
-		});
-	</script>
-	<img id="_zspinner" src="images/zcore/spinner.gif" style="display: block; margin: auto;">
-</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>Go wasm</title>
+    </head>
+    <body>
+        <script src="js/zcore/wasm_exec.js"></script>
+        <script>
+            const go = new Go();
+            let mod, inst;
+            WebAssembly.instantiateStreaming(
+                fetch("main.wasm", {
+                    cache: "force-cache",
+                    signal: AbortSignal.timeout(3 * 60 * 1000),
+                }),
+                go.importObject,
+            )
+                .then((result) => {
+                    mod = result.module;
+                    inst = result.instance;
+                    WebAssembly.instantiate(mod, go.importObject).then(
+                        (result) => {
+                            go.run(inst);
+                            document.getElementById("_zspinner").remove();
+                        },
+                    );
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        </script>
+        <img
+            id="_zspinner"
+            src="images/zcore/spinner.gif"
+            style="display: block; margin: auto"
+        />
+    </body>
 </html>
