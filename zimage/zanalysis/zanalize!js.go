@@ -8,7 +8,6 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/zslice"
@@ -19,15 +18,18 @@ type SimpleAnalytics struct {
 	BlurAmount     float64
 	FlatsAmount    float64
 	EdgesAmount    float64
-	BlockFrequency zgeo.IPos
-	BlockOffset    zgeo.IPos
+	BlockFrequency zgeo.IRect
 	BlockAmount    float64
+	BlockBetter    float64
+	Blockiness     float64
+	DebugImage     image.Image `json:"-"`
 }
 
 type counts struct {
 	blurs                    map[int]int
 	flats                    map[int]int
 	edgePoints               int
+	oppositeLength           int
 	perpendicularEdgeLengths map[int]map[int]int // map of x/y coordinate to histogram of continuous edge-length counts for that x/y.
 
 }
@@ -45,7 +47,9 @@ type ImageInfo struct {
 	BlurMinThreshold float64
 	BlurMaxThreshold float64
 	EdgeMinThreshold float64
-	DebugImage       *image.Image
+
+	DebugImage          *image.RGBA
+	DebugImageBlockFreq zgeo.IRect
 }
 
 func NewImageInfo() *ImageInfo {
@@ -54,7 +58,7 @@ func NewImageInfo() *ImageInfo {
 	info.vCounts = makeCounts()
 	info.BlurMinThreshold = 0.001
 	info.BlurMaxThreshold = 0.005
-	info.EdgeMinThreshold = 0.05
+	info.EdgeMinThreshold = 0.05 // 0.05
 	return info
 }
 
@@ -109,17 +113,31 @@ func (info *ImageInfo) setDiff(l *lengths, i int, diff float64, counts *counts) 
 	}
 }
 
-func (info *ImageInfo) Analyze(img image.Image, debugImagePath string) {
+func isXYOnBlockFrequency(x, y int, bf zgeo.IRect) bool {
+	if bf.Size.W == 0 {
+		return false
+	}
+	if (x-bf.Pos.X)%bf.Size.W != 0 {
+		return false
+	}
+	if (y-bf.Pos.Y)%bf.Size.H != 0 {
+		return false
+	}
+	return true
+}
+
+func (info *ImageInfo) Analyze(img image.Image) {
 	goRect := img.Bounds()
 	var oldRow []float64 = nil
 	info.Size = zgeo.RectFromGoRect(img.Bounds()).Size.ISize()
 	info.hCounts = makeCounts()
 	info.vCounts = makeCounts()
 	var vertLengths = make([]lengths, int(goRect.Max.X))
-	var debugImage *image.RGBA
-	if debugImagePath != "" {
-		debugImage = image.NewRGBA(goRect)
-	}
+	info.hCounts.oppositeLength = goRect.Dy()
+	info.vCounts.oppositeLength = goRect.Dx()
+
+	magenta := zgeo.ColorMagenta.GoColor()
+	yellow := zgeo.ColorYellow.GoColor()
 	row := make([]float64, int(goRect.Max.X))
 	for y := range goRect.Max.Y {
 		clear(row)
@@ -132,14 +150,18 @@ func (info *ImageInfo) Analyze(img image.Image, debugImagePath string) {
 			row[x] = fcol
 			if oldCol != -1 {
 				hdiff := zmath.Abs(fcol - oldCol)
-				if debugImage != nil {
-					debugImage.Set(x, y, zgeo.GoGrayColor(float32(hdiff)))
+				if info.DebugImage != nil {
+					info.DebugImage.Set(x, y, zgeo.GoGrayColor(float32(hdiff)))
 				}
 				info.setDiff(&horLengths, x, hdiff, &info.hCounts)
 				v1 := info.setEdgeToPerp(x, hdiff, &vertLengths[x], &info.vCounts)
-				if v1 != 0 && debugImage != nil {
+				if v1 != 0 && info.DebugImage != nil {
+					col := magenta
+					if isXYOnBlockFrequency(x, y, info.DebugImageBlockFreq) {
+						col = yellow
+					}
 					for y1 := max(0, y-v1); y1 < y; y1++ {
-						debugImage.Set(x, y1, zgeo.ColorMagenta.GoColor())
+						info.DebugImage.Set(x, y1, col)
 					}
 				}
 			}
@@ -148,9 +170,9 @@ func (info *ImageInfo) Analyze(img image.Image, debugImagePath string) {
 				info.setDiff(&vertLengths[x], x, vdiff, &info.vCounts)
 				h1 := info.setEdgeToPerp(y, vdiff, &horLengths, &info.hCounts)
 				// zlog.Info("Set hcounts perp:", vdiff, horLengths.perpEdge)
-				if debugImage != nil && h1 != 0 {
+				if info.DebugImage != nil && h1 != 0 {
 					for x1 := max(0, x-h1); x1 < x; x1++ {
-						debugImage.Set(x1, y, zgeo.ColorRed.GoColor())
+						info.DebugImage.Set(x1, y, magenta)
 					}
 				}
 			}
@@ -158,18 +180,15 @@ func (info *ImageInfo) Analyze(img image.Image, debugImagePath string) {
 		}
 		oldRow = slices.Clone(row)
 	}
-	if debugImage != nil {
-		zimage.GoImageToPNGFile(debugImage, debugImagePath)
-	}
 }
 
 type freqInfo struct {
-	amount int
+	amount float64
 	freq   int
 	offset int
 }
 
-func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64) {
+func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount, better float64) {
 	var w int
 	// zlog.Info("getBlockFrequencyAndOffset:", len(c.perpendicularEdgeLengths))
 	for x, _ := range c.perpendicularEdgeLengths {
@@ -192,6 +211,9 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 	var order []freqInfo
 	for freq := 8; freq <= blockMax; freq += 4 {
 		for w := range blockMax {
+			if w != 0 && w%freq == 0 {
+				continue
+			}
 			var lines int
 			var sum int
 			for i := w; i < clen-(blockMax-w); i += freq {
@@ -202,8 +224,8 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 				continue
 			}
 			var f freqInfo
-			f.amount = sum / lines
-			//!! CURRENT STUFF: zlog.Info("AMOUNT:", clen, f.amount, "freq:", freq, "x:", w, sum, lines)
+			f.amount = float64(sum) / float64(lines) / float64(c.oppositeLength)
+			// zlog.Info("AMOUNT:", clen, f.amount, "freq:", freq, "x:", w, sum, lines)
 			f.freq = freq
 			f.offset = w
 			order = append(order, f)
@@ -237,16 +259,16 @@ func (c *counts) getBlockFrequencyAndOffset() (freq, offset int, amount float64)
 		return order[i].amount < order[j].amount
 	})
 	if len(order) < 2 {
-		return 0, 0, 0
+		return 0, 0, 0, 0
 	}
 	// for _, o := range order {
 	// 	zlog.Info("Freqs:", o.freq, o.amount, o.offset)
 	// }
 	best := order[len(order)-1]
 	next := order[len(order)-2]
-	amount = float64(best.amount) / float64(next.amount)
+	better = float64(best.amount) / float64(next.amount)
 	// zlog.Info("Best Freq:", best.amount, best.freq, "next:", next.amount, next.freq, float64(best.amount)/float64(next.amount))
-	return best.freq, best.offset, amount
+	return best.freq, best.offset, best.amount, better
 }
 
 func (info *ImageInfo) BlurAmount() zgeo.Pos {
@@ -287,35 +309,36 @@ func (info *ImageInfo) EdgePointsAmount() zgeo.Pos {
 	return edges
 }
 
-func (info *ImageInfo) BlockFrequency() (freq, offset zgeo.IPos, amount zgeo.Pos) {
-	fX, oX, amountX := info.hCounts.getBlockFrequencyAndOffset()
-	fY, oY, amountY := info.vCounts.getBlockFrequencyAndOffset()
+func (info *ImageInfo) BlockFrequency() (offset zgeo.IPos, freq zgeo.ISize, amount, better zgeo.Pos) {
+	fX, oX, amountX, betterX := info.hCounts.getBlockFrequencyAndOffset()
+	fY, oY, amountY, betterY := info.vCounts.getBlockFrequencyAndOffset()
 	if fX == 0 || fY == 0 {
 		fX = 0
 		fY = 0
 		amountX = 0
 		amountY = 0
 	}
-	return zgeo.IPos{X: fX, Y: fY}, zgeo.IPos{X: oX, Y: oY}, zgeo.PosD(amountX, amountY)
+	return zgeo.IPos{X: oX, Y: oY}, zgeo.ISize{W: fX, H: fY}, zgeo.PosD(amountX, amountY), zgeo.PosD(betterX, betterY)
 }
 
 func (info *ImageInfo) PrintInfo() {
 	fmt.Print("blur:", info.BlurAmount().Average())
 	fmt.Print(" flat:", info.FlatAmount().Average())
 	fmt.Print(" edges:", info.EdgePointsAmount().Average())
-	freq, offset, amount := info.BlockFrequency()
-	fmt.Print(" bfreq:", freq, offset, amount)
+	freq, offset, amount, betterPrecent := info.BlockFrequency()
+	fmt.Print(" bfreq:", freq, offset, amount, betterPrecent)
 }
 
 func (info *ImageInfo) SimpleAnalytics() SimpleAnalytics {
-	freq, offset, amount := info.BlockFrequency()
+	offset, freq, amount, better := info.BlockFrequency()
 	return SimpleAnalytics{
 		Size:           info.Size,
 		BlurAmount:     info.BlurAmount().Average(),
 		FlatsAmount:    info.FlatAmount().Average(),
 		EdgesAmount:    info.EdgePointsAmount().Average(),
-		BlockFrequency: freq,
-		BlockOffset:    offset,
+		BlockFrequency: zgeo.IRect{Pos: offset, Size: freq},
 		BlockAmount:    amount.Average(),
+		BlockBetter:    better.Average(),
+		Blockiness:     amount.Average() * (better.Average() - 1),
 	}
 }
