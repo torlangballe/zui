@@ -696,17 +696,13 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		inMapRows--
 	}()
 	var mf Field
-	var typeName string
-	key = zstr.HeadUntilWithRest(key, ":", &typeName)
-	if typeName != "" {
-		n, tag, err := zreflect.NewTypeFromRegisteredTypeName(typeName, mval.Interface())
-		// zlog.Info("zfields.RegField:", key, n, tag, err)
-		if err == nil {
-			mval = reflect.ValueOf(n)
-			var pkg, field string
-			zstr.SplitN(typeName, ".", &pkg, &field)
-			mf.SetFromRVal(mval, tag, field, pkg, 0, FieldParameters{})
-		}
+	n, fname, typeName, tags, err := zreflect.ValueFromTypeFormatSuffixedName(key, mval.Interface())
+	if !zlog.OnError(err, key, mval.Interface()) && n != nil {
+		mval = reflect.ValueOf(n)
+		var pkg, field string
+		zstr.SplitN(typeName, ".", &pkg, &field)
+		mf.SetFromRVal(mval, tags, field, pkg, 0, FieldParameters{})
+		key = fname
 	}
 	if mf.Format == "" {
 		lkey := strings.ToLower(key)
