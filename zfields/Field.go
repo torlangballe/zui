@@ -223,8 +223,8 @@ const (
 )
 
 var EmptyField = Field{
-	Styling:      zstyle.EmptyStyling,
-	CustomFields: map[string]string{},
+	Styling: zstyle.EmptyStyling,
+	// CustomFields: map[string]string{},
 }
 
 var flagsNameMap = zbits.NamedBitMap{
@@ -763,6 +763,9 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 		case "since":
 			f.Flags |= FlagIsStatic | FlagIsDuration
 		default:
+			if f.CustomFields == nil {
+				f.CustomFields = map[string]string{}
+			}
 			f.CustomFields[kv.Key] = kv.Value
 		}
 	}
