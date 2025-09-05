@@ -9,7 +9,6 @@ import (
 	"sort"
 
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/zslice"
 )
@@ -160,8 +159,6 @@ func (info *ImageInfo) Analyze(img image.Image) {
 		sx = info.LimitFrame.Pos.X
 		ex = sx + info.LimitFrame.Size.W
 	}
-	zlog.Info("Anal:", sx, sy, ex, sy)
-
 	for y := sy; y < ey; y++ {
 		clear(row)
 		var oldCol float64 = -1
