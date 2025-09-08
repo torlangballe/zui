@@ -21,7 +21,6 @@ type SimpleAnalytics struct {
 	BlockFrequency zgeo.IRect
 	BlockAmount    float64
 	BlockBetter    float64
-	Blockiness     float64
 	DebugImage     image.Image `json:"-"`
 }
 
@@ -32,11 +31,11 @@ type count struct {
 	perpLengths []zmath.Range[int]
 }
 
-type lengths struct {
-	blur     int
-	flat     int
-	perpEdge int
-}
+// type lengths struct {
+// 	blur     int
+// 	flat     int
+// 	perpEdge int
+// }
 
 type ImageInfo struct {
 	Size                     zgeo.ISize
@@ -62,48 +61,58 @@ func NewImageInfo() *ImageInfo {
 	info := &ImageInfo{}
 	info.BlurMinThreshold = 0.001
 	info.BlurMaxThreshold = 0.005
-	info.EdgeMinThreshold = 0.09 // 0.05
+	info.EdgeMinThreshold = 0.07 // 0.05
 	return info
 }
 
+func (info *ImageInfo) setHorEdge(x int, vdiff float64, c *count, endX int) int {
+	return info.setHorVertEdge(x, vdiff, c, endX)
+}
+
+func (info *ImageInfo) setVertEdge(y int, hdiff float64, c *count, endY int) int {
+	return info.setHorVertEdge(y, hdiff, c, endY)
+}
+
 // For an x/y i, setEdgeToPerp adds 1 to an existing perpLens.perpEdge if still contrast
-// If low contrast, and existing edge count exists, its count is used to create a histogram count of lengths for that coordinate
-func (info *ImageInfo) setEdgeToPerp(i int, diff float64, perpLens *lengths, counts []count) int {
-	if diff > info.EdgeMinThreshold {
-		perpLens.perpEdge++
+func (info *ImageInfo) setHorVertEdge(i int, diff float64, c *count, end int) int {
+	var lastRange *zmath.Range[int]
+	if len(c.perpLengths) > 0 {
+		lastRange = &c.perpLengths[len(c.perpLengths)-1]
+	}
+	edgy := (diff > info.EdgeMinThreshold)
+	if edgy {
+		if lastRange != nil {
+			if lastRange.Max == i {
+				lastRange.Max++
+				if i == end-1 {
+					return lastRange.Length()
+				}
+				return 0
+			}
+		}
+		r := zmath.MakeRange(i, i+1)
+		c.perpLengths = append(c.perpLengths, r)
+		if i == end-1 {
+			return 1
+		}
 		return 0
 	}
-	if perpLens.perpEdge > 0 {
-		perpLens.perpEdge++
-		r := zmath.MakeRange(i-perpLens.perpEdge, i)
-		c := &counts[i]
-		c.perpLengths = append(c.perpLengths, r)
-		l := perpLens.perpEdge
-		perpLens.perpEdge = 0
-		return l
+	if lastRange != nil && lastRange.Max == i {
+		return lastRange.Length()
 	}
 	return 0
 }
 
-func (info *ImageInfo) setDiff(l *lengths, i int, diff float64, counts []count) {
+func (info *ImageInfo) setDiff(i int, diff float64, counts []count) {
 	if diff > info.EdgeMinThreshold {
 		counts[i].edgePoints++
 	}
 	if diff > info.BlurMinThreshold {
-		if l.flat != 0 {
-			counts[i].flats++
-			l.flat = 0
-		}
 		if diff < info.BlurMaxThreshold {
-			l.blur++
-		} else {
-			if l.blur > 1 {
-				counts[i].blur++
-			}
-			l.blur = 0
+			counts[i].blur++
 		}
 	} else {
-		l.flat++
+		counts[i].flats++
 	}
 }
 
@@ -136,52 +145,51 @@ func isYOnBlockFrequency(y int, bf zgeo.IRect) bool {
 
 func (info *ImageInfo) Analyze(img image.Image) {
 	goRect := img.Bounds()
-	var oldRow []float64 = nil
+	var oldRow []zgeo.Color = nil
 	info.Size = zgeo.RectFromGoRect(img.Bounds()).Size.ISize()
 
-	info.hCounts = make([]count, info.Size.W)
 	info.vCounts = make([]count, info.Size.H)
-	var vertLengths = make([]lengths, int(goRect.Max.X))
+	info.hCounts = make([]count, info.Size.W)
 
 	blue := zgeo.ColorBlue.GoColor()
 	magenta := zgeo.ColorMagenta.GoColor()
 	yellow := zgeo.ColorYellow.GoColor()
 	orange := zgeo.ColorOrange.GoColor()
-	darkYellow := zgeo.ColorYellow.Mixed(zgeo.ColorBlack, 0.7).GoColor()
-	row := make([]float64, int(goRect.Max.X))
-	sy := 0
+	darkYellow := zgeo.ColorYellow.Mixed(zgeo.ColorBlack, 0.5).GoColor()
+	row := make([]zgeo.Color, int(goRect.Max.X))
 	sx := 0
+	sy := 0
 	ex := goRect.Max.X
 	ey := goRect.Max.Y
 	if info.LimitFrame.Size.W != 0 {
-		sy = info.LimitFrame.Pos.Y
-		ey = sy + info.LimitFrame.Size.H
 		sx = info.LimitFrame.Pos.X
+		sy = info.LimitFrame.Pos.Y
 		ex = sx + info.LimitFrame.Size.W
+		ey = sy + info.LimitFrame.Size.H
 	}
+	// if !info.DebugImageBackgroundOnly {
+	// zlog.Info("Analyse:", sx, sy, ex, ey")
+	// }
 	for y := sy; y < ey; y++ {
+		// zlog.Info("Y:", y)
 		clear(row)
-		var oldCol float64 = -1
-		var horLengths lengths
+		var oldCol zgeo.Color
 		for x := sx; x < ex; x++ {
 			goCol := img.At(x, y)
 			col := zgeo.ColorFromGo(goCol)
 			dark := col.Mixed(zgeo.ColorBlack, 0.6)
+			dotCol := dark.GoColor()
 			if info.DebugImage != nil {
-				info.DebugImage.Set(x, y, dark.GoColor())
 				if isXYOnBlockFrequency(x, y, info.DebugImageBlockFreq) {
-					info.DebugImage.Set(x, y, darkYellow)
+					dotCol = darkYellow
 				}
+				info.DebugImage.Set(x, y, dotCol)
 			}
-			fcol := float64(col.GrayScale())
-			row[x] = fcol
-			if oldCol != -1 {
-				hdiff := zmath.Abs(fcol - oldCol)
-				// if info.DebugImage != nil {
-				// 	info.DebugImage.Set(x, y, zgeo.GoGrayColor(float32(hdiff)))
-				// }
-				info.setDiff(&horLengths, x, hdiff, info.hCounts)
-				v1 := info.setEdgeToPerp(y, hdiff, &vertLengths[x], info.vCounts)
+			row[x] = col
+			if oldCol.Valid {
+				hdiff := float64(col.Difference(oldCol))
+				info.setDiff(x, hdiff, info.hCounts)
+				v1 := info.setVertEdge(y, hdiff, &info.hCounts[x], info.Size.H)
 				if v1 != 0 && info.DebugImage != nil {
 					col := blue
 					if isXOnBlockFrequency(x, info.DebugImageBlockFreq) {
@@ -189,37 +197,41 @@ func (info *ImageInfo) Analyze(img image.Image) {
 					} else {
 						// continue
 					}
-					for y1 := max(0, y-v1); y1 < y; y1++ {
-						info.DebugImage.Set(x, y1, col)
+					if !info.DebugImageBackgroundOnly {
+						for y1 := max(0, y-v1); y1 < y; y1++ {
+							info.DebugImage.Set(x, y1, col)
+						}
 					}
 				}
 			}
 			if oldRow != nil {
-				vdiff := zmath.Abs(fcol - oldRow[x])
-				info.setDiff(&vertLengths[x], y, vdiff, info.vCounts)
-				h1 := info.setEdgeToPerp(x, vdiff, &horLengths, info.hCounts)
-				// zlog.Info("Set hcounts perp:", vdiff, horLengths.perpEdge)
+				vdiff := float64(col.Difference(oldRow[x]))
+				// zlog.Info("SetVDIFF:", y)
+				info.setDiff(y, vdiff, info.vCounts)
+				h1 := info.setHorEdge(x, vdiff, &info.vCounts[y], info.Size.W)
 				if info.DebugImage != nil && h1 != 0 {
+					// zlog.Info("Set hcounts perp:", x, vdiff, h1, isYOnBlockFrequency(y, info.DebugImageBlockFreq))
 					col := magenta
 					if isYOnBlockFrequency(y, info.DebugImageBlockFreq) {
 						col = orange
 					} else {
 						// continue
 					}
-					for x1 := max(0, x-h1); x1 < x; x1++ {
-						info.DebugImage.Set(x1, y, col)
-						// zlog.Info("Yellow2", x1, y)
+					if !info.DebugImageBackgroundOnly {
+						for x1 := max(0, x-h1); x1 < x; x1++ {
+							info.DebugImage.Set(x1, y, col)
+						}
 					}
 				}
 			}
-			oldCol = fcol
+			oldCol = col
 		}
 		oldRow = slices.Clone(row)
 	}
 
 }
 
-func SimpleAnalysesOfSquares(img image.Image, squareSize int, blockinessBetterCutOff float64) (debugImage image.Image, squareCount, squareTotal int) {
+func (info *ImageInfo) AnalyzeSquares(img image.Image, squareSize int, minArea, minBlockAmount, minBlockBetter float64) (debugImage image.Image, areaCoverage, amount, better float64, freq zgeo.IRect, blocky bool) {
 	type squares struct {
 		freq   zgeo.IRect
 		amount float64
@@ -229,23 +241,51 @@ func SimpleAnalysesOfSquares(img image.Image, squareSize int, blockinessBetterCu
 	sx := s.W % int(squareSize) / 2
 	sy := s.H % int(squareSize) / 2
 	dbImage := image.NewRGBA(img.Bounds())
-	for x := sx; x < s.W; x += squareSize {
-		for y := sy; y < s.H; y += squareSize {
+	var squareTotal, squareCount float64
+	var amountAdd, betterAdd float64
+	var freqs []zgeo.IRect
+	yc := 0
+	for y := sy; y <= s.H-squareSize; y += squareSize {
+		// zlog.Info("Y:", yc)
+		xc := 0
+		for x := sx; x <= s.W-squareSize; x += squareSize {
 			squareTotal++
-			info := NewImageInfo()
 			info.LimitFrame = zgeo.RectFromXYWH(float64(x), float64(y), float64(squareSize), float64(squareSize)).IRect()
+			info.DebugImage = nil
+			// now := time.Now()
 			info.Analyze(img)
+			// next := time.Since(now)
 			a := info.SimpleAnalytics(false)
+			// zlog.Info("Time:", next, time.Since(now))
 			info.DebugImage = dbImage
-			if a.BlockBetter < blockinessBetterCutOff {
-				info.DebugImageBackgroundOnly = true
-			} else {
+			if a.BlockFrequency.Size.W != 0 && a.BlockBetter > minBlockBetter && a.BlockAmount > minBlockAmount {
+				// zlog.Info("A:", xc, yc, a.BlockAmount, a.BlockBetter, a.BlockFrequency)
+				info.DebugImageBackgroundOnly = false
 				info.DebugImageBlockFreq = a.BlockFrequency
+				amountAdd += a.BlockAmount
+				betterAdd += a.BlockBetter
+				freqs = append(freqs, a.BlockFrequency)
 				squareCount++
+			} else {
+				// zlog.Info("B: [", xc, yc, "]", a.BlockAmount, a.BlockBetter, a.BlockFrequency)
+				info.DebugImageBlockFreq = zgeo.IRect{}
+				info.DebugImageBackgroundOnly = true
 			}
+			info.Analyze(img)
+			xc++
 		}
+		yc++
 	}
-	return dbImage, squareCount, squareSize
+	sorted, _ := zslice.SortByFrequency(freqs)
+	if len(sorted) != 0 {
+		freq = sorted[0]
+	}
+	area := squareCount / squareTotal
+	amount = amountAdd / squareCount
+	better = betterAdd / squareCount
+	blocky = amount > minBlockAmount && better > minBlockBetter && area > minArea
+	// zlog.Info("Squares:", amount, better, area, blocky)
+	return dbImage, area, amount, better, freq, blocky
 }
 
 type freqInfo struct {
@@ -258,6 +298,15 @@ type freqInfo struct {
 func getBlockFrequencyAndOffset(print bool, counts []count, frame zgeo.IRect) (freq, offset int, amount, better float64) {
 	clen := len(counts)
 	xcounts := make([]int, clen)
+	// maxX := frame.Pos.X + frame.Size.W
+	// maxY := frame.Pos.Y + frame.Size.H
+	// for i := frame.Pos.X; i < maxX; i++ {
+	// 	for _, r := range counts[i].perpLengths {
+	// 		if r.Max >= frame.Pos.Y && r.Min <= maxY {
+	// 			xcounts[i] += r.Length() // we do whole for now, even if partially outside frame
+	// 		}
+	// 	}
+	// }
 	maxX := frame.Pos.X + frame.Size.W
 	maxY := frame.Pos.Y + frame.Size.H
 	for i := frame.Pos.X; i < maxX; i++ {
@@ -269,38 +318,31 @@ func getBlockFrequencyAndOffset(print bool, counts []count, frame zgeo.IRect) (f
 	}
 	const blockMax = 32
 	var order []freqInfo
+	count := 0
 	for freq := 8; freq <= blockMax; freq++ {
 		for w := range blockMax {
 			if w != 0 && w%freq == 0 {
 				continue
 			}
-			var sum int
+			var sum, lines int
 			for i := w; i < clen-(blockMax-w); i += freq { // this is inefficient as it goes through full with
 				// if w == 0 && xcounts[i] != 0 {
 				// 	zlog.Info("XCount:", i, xcounts[i], "freq:", freq)
 				// }
 				sum += xcounts[i]
+				lines += frame.Size.H
+				count++
 			}
 			var f freqInfo
-			f.amount = float64(sum) / float64(frame.Rect().Size.Area())
-			// zlog.Info("AMOUNT:", clen, f.amount, "freq:", freq, "x:", w, sum, lines)
+			f.amount = float64(sum) / float64(lines)
+			// if f.amount != 0 {
+			// 	zlog.Info("AMOUNT:", clen, f.amount, frame.Rect().Size.Area(), f.amount/frame.Rect().Size.Area())
+			// }
 			f.freq = freq
 			f.offset = w
 			order = append(order, f)
 		}
 	}
-
-	// for i := 0; i < len(order); i++ {
-	// 	for j := i + 1; j < len(order); j++ {
-	// 		if order[i].freq == order[j].freq {
-	// 			if order[i].amount < order[j].amount {
-	// 				order[i] = order[j]
-	// 				zslice.RemoveAt(&order, j)
-	// 				j--
-	// 			}
-	// 		}
-	// 	}
-	// }
 	for i := 0; i < len(order); i++ {
 		for j := 0; j < len(order) && i < len(order); j++ {
 			if i != j && order[j].freq >= order[i].freq && order[j].freq%order[i].freq == 0 && order[j].offset%order[i].freq == 0 {
@@ -322,17 +364,6 @@ func getBlockFrequencyAndOffset(print bool, counts []count, frame zgeo.IRect) (f
 	sort.Slice(order, func(i, j int) bool {
 		return order[i].amount > order[j].amount
 	})
-	// bestFreq := order[0].freq
-	// order = slices.DeleteFunc(order, func(f freqInfo) bool {
-	// 	zlog.Info("==", f.freq, bestFreq, f.freq == 0)
-	// 	return f.freq > bestFreq || f.freq == 0
-	// })
-	// for _, o := range order {
-	// 	zlog.Info("Penultimate2:", o.freq, o.amount)
-	// }
-	if len(order) < 2 {
-		return 0, 0, 0, 0
-	}
 	if print {
 		// for _, o := range order {
 		// 	zlog.Info("freqs:", o.freq, o.amount, o.offset)
@@ -341,7 +372,8 @@ func getBlockFrequencyAndOffset(print bool, counts []count, frame zgeo.IRect) (f
 	best := order[0]
 	next := order[1]
 	better = float64(best.amount) / float64(next.amount)
-	// zlog.Info("Best Freq:", best.amount, best.freq, "next:", next.amount, next.freq, float64(best.amount)/float64(next.amount))
+	// zlog.Info("Best Freq Count:", frame.Pos, len(order), better)
+	// zlog.Info("Best Freq:", frame.Pos, int(frame.Rect().Size.Area()*best.amount))
 	return best.freq, best.offset, best.amount, better
 }
 
@@ -390,7 +422,7 @@ func (info *ImageInfo) EdgePointsAmount() zgeo.Pos {
 	return edges
 }
 
-func (info *ImageInfo) BlockFrequency(print bool, frame zgeo.IRect) (offset zgeo.IPos, freq zgeo.ISize, amount, better zgeo.Pos) {
+func (info *ImageInfo) BlockFrequency(print bool, frame zgeo.IRect) (freq zgeo.IRect, amount, better zgeo.Size) {
 	if frame.Size.W == 0 {
 		frame.Size = info.Size
 	}
@@ -407,19 +439,20 @@ func (info *ImageInfo) BlockFrequency(print bool, frame zgeo.IRect) (offset zgeo
 		amountX = 0
 		amountY = 0
 	}
-	return zgeo.IPos{X: oX, Y: oY}, zgeo.ISize{W: fX, H: fY}, zgeo.PosD(amountX, amountY), zgeo.PosD(betterX, betterY)
+	// zlog.Info("better:", frame, betterX, betterY)
+	return zgeo.IRectForXYWH(oX, oY, fX, fY), zgeo.SizeD(amountX, amountY), zgeo.SizeD(betterX, betterY)
 }
 
 func (info *ImageInfo) SimpleAnalytics(print bool) SimpleAnalytics {
-	offset, freq, amount, better := info.BlockFrequency(print, info.LimitFrame)
+	freq, amount, better := info.BlockFrequency(print, info.LimitFrame)
+	// zlog.Info("Simple:", info.LimitFrame, area)
 	return SimpleAnalytics{
 		Size:           info.Size,
 		BlurAmount:     info.BlurAmount().Average(),
 		FlatsAmount:    info.FlatAmount().Average(),
 		EdgesAmount:    info.EdgePointsAmount().Average(),
-		BlockFrequency: zgeo.IRect{Pos: offset, Size: freq},
+		BlockFrequency: freq,
 		BlockAmount:    amount.Average(),
 		BlockBetter:    better.Average(),
-		Blockiness:     amount.Average() * (better.Average() - 1),
 	}
 }
