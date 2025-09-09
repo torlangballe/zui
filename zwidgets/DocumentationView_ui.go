@@ -3,6 +3,7 @@
 package zwidgets
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -28,7 +30,9 @@ import (
 
 type DocumentationIconView struct {
 	zshape.ShapeView
-	Modal bool
+	docPath               string
+	cachedSearchableItems []zdocs.SearchableItem
+	Modal                 bool
 }
 
 var (
@@ -59,9 +63,7 @@ func DocumentationIconViewNew(docPath string) *DocumentationIconView {
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {
 		// }, nil)
-		if path.Ext(docPath) == "" {
-			docPath = docPath + ".md"
-		}
+		v.docPath = docPath
 		DocumentationViewPresent(docPath, v.Modal) // go
 	})
 	return v
@@ -130,6 +132,20 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 
 // }
 
+func makeURL(docPath string) string {
+	if !zhttp.StringStartsWithHTTPX(docPath) {
+		docPath = DocumentationPathPrefix + docPath
+	}
+	if zui.DebugOwnerMode {
+		docPath += "?zdev=1"
+	}
+	if path.Ext(docPath) == "" {
+		docPath = docPath + ".md"
+	}
+
+	return docPath
+}
+
 func DocumentationViewPresent(path string, modal bool) error {
 	if DocumentationShowInBrowser {
 		opts := zwindow.Options{
@@ -144,12 +160,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 		return nil
 	}
 	v := DocumentationViewNew(zgeo.SizeD(980, 800))
-	if !zhttp.StringStartsWithHTTPX(path) {
-		path = DocumentationPathPrefix + path
-	}
-	if zui.DebugOwnerMode {
-		path += "?zdev=1"
-	}
+	path = makeURL(path)
 	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
 	attr := zpresent.AttributesNew()
@@ -176,80 +187,53 @@ func DocumentationViewPresent(path string, modal bool) error {
 	return nil
 }
 
-func (v *DocumentationIconView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
-	// parts := v.ShapeView.GetSearchableItems(currentPath)
-	// var parts []zdocs.SearchableItem
-	return nil // parts
+func addItem(currentPath []zdocs.PathPart, title string, items *[]zdocs.SearchableItem, start *int, lines *[]string) {
+	if len(*lines) == 0 {
+		return
+	}
+	var text string
+	for _, l := range *lines {
+		text += l + "\n"
+	}
+	end := *start + len(text)
+	pathStub := fmt.Sprintf("%d-%d", *start, end)
+	si := zdocs.MakeSearchableItem(currentPath, zdocs.InlineDocumentation, title, pathStub, text)
+	*items = append(*items, si)
+	*lines = []string{}
+	*start = end
 }
 
-/*
+func (v *DocumentationIconView) getMarkdownAsSearchableItems(currentPath []zdocs.PathPart) {
+	params := zhttp.MakeParameters()
+	surl := makeURL(v.docPath)
+	var text string
+	_, err := zhttp.Get(surl, params, &text)
+	if zlog.OnError(err, surl, currentPath) {
+		return
+	}
+	var lines []string
+	var items []zdocs.SearchableItem
+	var start int
+	var title string
+	zstr.RangeStringLines(text, false, func(s string) bool {
+		var rest string
+		pre := zstr.HeadUntilWithRest(s, " ", &rest)
+		count := strings.Count(pre, "#")
+		if count == len(pre) { // it's all ## to start
+			title = rest
+			addItem(currentPath, title, &items, &start, &lines)
+			lines = append(lines, s)
+		}
+		return true
+	})
+	addItem(currentPath, title, &items, &start, &lines)
+	v.cachedSearchableItems = items
+}
 
-x-apple.systempreferences:
-
-Accessibility Preference Pane
-Main    x-apple.systempreferences:com.apple.preference.universalaccess
-Display x-apple.systempreferences:com.apple.preference.universalaccess?Seeing_Display
-Zoom    x-apple.systempreferences:com.apple.preference.universalaccess?Seeing_Zoom
-VoiceOver   x-apple.systempreferences:com.apple.preference.universalaccess?Seeing_VoiceOver
-Descriptions    x-apple.systempreferences:com.apple.preference.universalaccess?Media_Descriptions
-Captions    x-apple.systempreferences:com.apple.preference.universalaccess?Captioning
-Audio   x-apple.systempreferences:com.apple.preference.universalaccess?Hearing
-Keyboard    x-apple.systempreferences:com.apple.preference.universalaccess?Keyboard
-Mouse & Trackpad    x-apple.systempreferences:com.apple.preference.universalaccess?Mouse
-Switch Control  x-apple.systempreferences:com.apple.preference.universalaccess?Switch
-Dictation   x-apple.systempreferences:com.apple.preference.universalaccess?SpeakableItems
-
-Security & Privacy Preference Pane
-Main    x-apple.systempreferences:com.apple.preference.security
-General x-apple.systempreferences:com.apple.preference.security?General
-FileVault   x-apple.systempreferences:com.apple.preference.security?FDE
-Firewall    x-apple.systempreferences:com.apple.preference.security?Firewall
-Advanced    x-apple.systempreferences:com.apple.preference.security?Advanced
-Privacy x-apple.systempreferences:com.apple.preference.security?Privacy
-Privacy-Camera x-apple.systempreferences:com.apple.preference.security?Privacy_Camera
-Privacy-Microphone  x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone
-Privacy-Automation  x-apple.systempreferences:com.apple.preference.security?Privacy_Automation
-Privacy-AllFiles    x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles
-Privacy-Accessibility   x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility
-Privacy-Assistive   x-apple.systempreferences:com.apple.preference.security?Privacy_Assistive
-Privacy-Location Services   x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices
-Privacy-SystemServices  x-apple.systempreferences:com.apple.preference.security?Privacy_SystemServices
-Privacy-Advertising x-apple.systempreferences:com.apple.preference.security?Privacy_Advertising
-Privacy-Contacts    x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts
-Privacy-Diagnostics & Usage x-apple.systempreferences:com.apple.preference.security?Privacy_Diagnostics
-Privacy-Calendars   x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars
-Privacy-Reminders   x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders
-Privacy-Facebook    x-apple.systempreferences:com.apple.preference.security?Privacy_Facebook
-Privacy-LinkedIn    x-apple.systempreferences:com.apple.preference.security?Privacy_LinkedIn
-Privacy-Twitter x-apple.systempreferences:com.apple.preference.security?Privacy_Twitter
-Privacy-Weibo   x-apple.systempreferences:com.apple.preference.security?Privacy_Weibo
-Privacy-Tencent Weibo   x-apple.systempreferences:com.apple.preference.security?Privacy_TencentWeibo
-
-macOS Catalina 10.15:
-Privacy-ScreenCapture   x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture
-Privacy-DevTools    x-apple.systempreferences:com.apple.preference.security?Privacy_DevTools
-Privacy-InputMonitoring x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent
-Privacy-DesktopFolder   x-apple.systempreferences:com.apple.preference.security?Privacy_DesktopFolder
-Privacy-DocumentsFolder x-apple.systempreferences:com.apple.preference.security?Privacy_DocumentsFolder
-Privacy-DownloadsFolder x-apple.systempreferences:com.apple.preference.security?Privacy_DownloadsFolder
-Privacy-NetworkVolume   x-apple.systempreferences:com.apple.preference.security?Privacy_NetworkVolume
-Privacy-RemovableVolume x-apple.systempreferences:com.apple.preference.security?Privacy_RemovableVolume
-Privacy-SpeechRecognition   x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition
-
-Dictation & Speech Preference Pane
-Dictation   x-apple.systempreferences:com.apple.preference.speech?Dictation
-Text to Speech  x-apple.systempreferences:com.apple.preference.speech?TTS
-Sharing Preference Pane
-Main    x-apple.systempreferences:com.apple.preferences.sharing
-Screen Sharing  x-apple.systempreferences:com.apple.preferences.sharing?Services_ScreenSharing
-File Sharing    x-apple.systempreferences:com.apple.preferences.sharing?Services_PersonalFileSharing
-Printer Sharing x-apple.systempreferences:com.apple.preferences.sharing?Services_PrinterSharing
-Remote Login    x-apple.systempreferences:com.apple.preferences.sharing?Services_RemoteLogin
-Remote Management   x-apple.systempreferences:com.apple.preferences.sharing?Services_ARDService
-Remote Apple Events x-apple.systempreferences:com.apple.preferences.sharing?Services_RemoteAppleEvent
-Internet Sharing    x-apple.systempreferences:com.apple.preferences.sharing?Internet
-Bluetooth Sharing   x-apple.systempreferences:com.apple.preferences.sharing?Services_BluetoothSharing
-
-Software update x-apple.systempreferences:com.apple.preferences.softwareupdate?client=softwareupdateapp
-
-*/
+func (v *DocumentationIconView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	if len(v.cachedSearchableItems) != 0 {
+		return v.cachedSearchableItems
+	}
+	go v.getMarkdownAsSearchableItems()
+	return nil // parts
+}
