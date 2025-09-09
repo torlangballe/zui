@@ -121,15 +121,6 @@ func (v *ImageView) Path() string {
 	return ""
 }
 
-func (v *ImageView) SetRect(rect zgeo.Rect) {
-	v.CustomView.SetRect(rect)
-	// zlog.Info("IV SR", v.Hierarchy(), p, rect)
-	// zlog.Info("ImageView SetRect:", rect, v.JSGet("id"))
-	if v.ObjectName() == "zap!" {
-		// zlog.Info("ImageView SetRect:", rect, zlog.GetCallingStackString())
-	}
-}
-
 func (v *ImageView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	if v.image != nil {
 		s = v.image.Size()
@@ -268,3 +259,11 @@ func (v *ImageView) drawImage(canvas *zcanvas.Canvas, img *zimage.Image, rect zg
 		zfocus.Draw(canvas, rect, 15, 0, 1)
 	}
 }
+
+// func (v *ImageView) ArrangeChildren() {
+// 	v.ContainerView.ArrangeChildren()
+// }
+//
+// func (v *ImageView) SetRect(rect zgeo.Rect) {
+// v.ContainerView.SetRect(rect)
+// }
