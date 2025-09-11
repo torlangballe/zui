@@ -3,6 +3,7 @@
 package zbutton
 
 import (
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
@@ -80,4 +81,16 @@ func (v *Button) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) 
 		return true
 	}
 	return false
+}
+
+func (v *Button) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
+	var parts []zdocs.SearchableItem
+	item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", v.Text())
+	parts = append(parts, item)
+	tip := v.ToolTip()
+	if tip != "" {
+		item = zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "Tip", "Tip", tip)
+		parts = append(parts, item)
+	}
+	return []zdocs.SearchableItem{item}
 }
