@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -130,7 +131,7 @@ func (v *ContainerView) GetCells() *[]Cell {
 func ArrangeAncestorContainer(view zview.View) {
 	a := FindAncestorArranger(view)
 	if a == nil {
-		zlog.Error("no parent arranger", view.Native().Hierarchy())
+		zlog.Error("no parent arranger", view.Native().Hierarchy(), zdebug.CallingStackString())
 		return
 	}
 	a.ArrangeChildren()
@@ -776,6 +777,33 @@ func DumpHierarchy(view zview.View, add string) {
 
 func (v *ContainerView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
 	var got []zdocs.SearchableItem
+	var name string
+	if zstr.HasPrefix(v.ObjectName(), "$labelize.stack.", &name) {
+		item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", name)
+		got = append(got, item)
+		subPath := zdocs.AddedPath(currentPath, zdocs.StaticField, name, name)
+		for _, c := range v.Cells {
+			var post string
+			if c.View != nil {
+				if zstr.HasPrefix(c.View.ObjectName(), "$labelize.label.", &post) {
+					if post == ".$desc" {
+						sig, _ := c.View.(zdocs.SearchableItemsGetter)
+						if sig != nil {
+							item := sig.GetSearchableItems(subPath)
+							got = append(got, item...)
+						}
+					}
+				} else {
+					sig, _ := c.View.(zdocs.SearchableItemsGetter)
+					if sig != nil {
+						parts := sig.GetSearchableItems(subPath)
+						got = append(got, parts...)
+					}
+				}
+			}
+		}
+		return got
+	}
 	containerPath := zdocs.AddedPath(currentPath, zdocs.FillerField, v.ObjectName(), v.ObjectName())
 	for _, c := range v.Cells {
 		if c.View != nil && c.View.Native().IsSearchable() {
