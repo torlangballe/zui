@@ -375,6 +375,11 @@ func (v *TabsView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.Sear
 	for _, item := range v.items {
 		view := item.create(item.id, CreateTemp)
 		if view.Native().IsSearchable() {
+			r, _ := view.(zview.ReadyToShowType)
+			if r != nil {
+				r.ReadyToShow(true)
+				r.ReadyToShow(false)
+			}
 			itemPath := zdocs.AddedPath(tabPath, zdocs.PressField, item.title, item.id)
 			sig, _ := view.(zdocs.SearchableItemsGetter)
 			if sig != nil {
