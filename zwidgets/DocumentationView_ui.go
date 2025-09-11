@@ -30,9 +30,8 @@ import (
 
 type DocumentationIconView struct {
 	zshape.ShapeView
-	docPath               string
-	cachedSearchableItems []zdocs.SearchableItem
-	Modal                 bool
+	docPath string
+	Modal   bool
 }
 
 var (
@@ -41,6 +40,7 @@ var (
 	DocumentationViewDefaultModal = false
 	DocumentationShowInBrowser    bool
 	DocumentationCookieMap        map[string]string
+	cachedSearchableItems         = map[string][]zdocs.SearchableItem{}
 )
 
 func DocumentationIconViewNew(docPath string) *DocumentationIconView {
@@ -58,12 +58,12 @@ func DocumentationIconViewNew(docPath string) *DocumentationIconView {
 	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
 	v.StrokeWidth = 2
 	v.Modal = DocumentationViewDefaultModal
+	v.docPath = docPath
 	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		// editor := CodeEditorViewNew("editor")
 		// attr := PresentViewAttributes{}
 		// PresentView(editor, attr, func(win *Window) {
 		// }, nil)
-		v.docPath = docPath
 		DocumentationViewPresent(docPath, v.Modal) // go
 	})
 	return v
@@ -132,18 +132,22 @@ func DocumentationViewNew(minSize zgeo.Size) *DocumentationView {
 
 // }
 
-func makeURL(docPath string) string {
+func makeURL(docPath string, rawMarkdown bool) string {
 	if !zhttp.StringStartsWithHTTPX(docPath) {
 		docPath = DocumentationPathPrefix + docPath
-	}
-	if zui.DebugOwnerMode {
-		docPath += "?zdev=1"
 	}
 	if path.Ext(docPath) == "" {
 		docPath = docPath + ".md"
 	}
-
-	return docPath
+	args := map[string]string{}
+	if zui.DebugOwnerMode {
+		args["zdev"] = "1"
+	}
+	if rawMarkdown {
+		args["raw"] = "1"
+	}
+	surl, _ := zhttp.MakeURLWithArgs(docPath, args)
+	return surl
 }
 
 func DocumentationViewPresent(path string, modal bool) error {
@@ -160,7 +164,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 		return nil
 	}
 	v := DocumentationViewNew(zgeo.SizeD(980, 800))
-	path = makeURL(path)
+	path = makeURL(path, false)
 	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
 	attr := zpresent.AttributesNew()
@@ -205,35 +209,42 @@ func addItem(currentPath []zdocs.PathPart, title string, items *[]zdocs.Searchab
 
 func (v *DocumentationIconView) getMarkdownAsSearchableItems(currentPath []zdocs.PathPart) {
 	params := zhttp.MakeParameters()
-	surl := makeURL(v.docPath)
+	surl := makeURL(v.docPath, true)
 	var text string
 	_, err := zhttp.Get(surl, params, &text)
 	if zlog.OnError(err, surl, currentPath) {
 		return
 	}
+	docPath := zdocs.AddedPath(currentPath, zdocs.StaticField, "Docs", "Docs")
 	var lines []string
 	var items []zdocs.SearchableItem
 	var start int
 	var title string
-	zstr.RangeStringLines(text, false, func(s string) bool {
+	zstr.RangeStringLines(text, false, func(sline string) bool {
 		var rest string
-		pre := zstr.HeadUntilWithRest(s, " ", &rest)
+		pre := zstr.HeadUntilWithRest(sline, " ", &rest)
 		count := strings.Count(pre, "#")
-		if count == len(pre) { // it's all ## to start
+		if count > 0 && count == len(pre) { // it's all ## to start
+			if title != "" {
+				addItem(docPath, title, &items, &start, &lines)
+			}
 			title = rest
-			addItem(currentPath, title, &items, &start, &lines)
-			lines = append(lines, s)
+		} else {
+			lines = append(lines, sline)
 		}
 		return true
 	})
-	addItem(currentPath, title, &items, &start, &lines)
-	v.cachedSearchableItems = items
+	addItem(docPath, title, &items, &start, &lines)
+	cachedSearchableItems[v.docPath] = items
+	// zlog.Info("DocumentationIconView.getMarkdownAsSearchableItems", v.docPath, len(items))
 }
 
 func (v *DocumentationIconView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
-	if len(v.cachedSearchableItems) != 0 {
-		return v.cachedSearchableItems
+	// zlog.Info("DocumentationIconView.GetSearchableItems", v.docPath, len(cachedSearchableItems))
+	items, got := cachedSearchableItems[v.docPath]
+	if got {
+		return items
 	}
-	go v.getMarkdownAsSearchableItems()
+	go v.getMarkdownAsSearchableItems(currentPath)
 	return nil // parts
 }
