@@ -9,37 +9,44 @@ import (
 	"strings"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
 )
 
-type MenuedSetOwner[A any] struct {
+type MenuedSetOwner[A zstr.NameGetter] struct {
 	MenuedOwner
-	MakeItemFunc   func() A
-	DeleteItemFunc func(id int64, a A)
-	AddTitle       string
-	AddPromptText  string
-	values         map[int64]storage[A]
-	itemStoreKey   string
+	MakeItemFunc    func(name string) A
+	DeleteItemFunc  func(id int64, a A)
+	EditSetItemFunc func(id int64, a A, edited func(a A)) zdocs.SearchableItemsGetter
+	AddTitle        string
+	AddPromptText   string
+	HasCustom       bool
+
+	values       map[int64]storage[A]
+	itemStoreKey string
 }
 
-type storage[A any] struct {
+type storage[A zstr.NameGetter] struct {
 	Name  string
 	Value A
 }
 
 const (
-	deleteValue = "$delete"
-	addValue    = "$add"
-	customName  = "Custom"
+	// deleteValue = "$delete"
+	// addValue    = "$add"
+	customName = "Custom"
 )
 
 var CustomID int64 = -1 // must be int64 not const, as set to any which assumes in64
 
-func NewSetOwner[A any](storeKey string) *MenuedSetOwner[A] {
+func NewSetOwner[A zstr.NameGetter](storeKey string) *MenuedSetOwner[A] {
 	o := &MenuedSetOwner[A]{}
 	o.Init(storeKey)
+	o.HasCustom = true
 	return o
 }
 
@@ -104,6 +111,7 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 		dupID
 		saveID
 		delAllID
+		editID
 	)
 	var items []MenuedOItem
 	var selID int64
@@ -111,12 +119,12 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 	if o.SelectedValue() != nil {
 		selID = o.SelectedValue().(int64)
 	}
-	isCustom := (selID == CustomID)
-	// if o.DefaultSelected == CustomID {
-	// zlog.Info("MSO items:", isCustom, selID)
-	items = append(items, MenuedOItem{Name: customName, Value: CustomID, Selected: isCustom})
-	items = append(items, MenuedOItemSeparator)
-	// }
+	var isCustom bool
+	if o.HasCustom {
+		isCustom = (selID == CustomID)
+		items = append(items, MenuedOItem{Name: customName, Value: CustomID, Selected: isCustom})
+		items = append(items, MenuedOItemSeparator)
+	}
 	ids, store := zmap.SortedKeyValues(o.values, func(a, b storage[A]) bool {
 		return strings.Compare(a.Name, b.Name) < 0
 	})
@@ -129,7 +137,7 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 		items = append(items, MenuedOItem{Name: name, Value: id, Selected: id == selID})
 		// zlog.Info("MSO add:", name, id, id == selID)
 	}
-	if len(o.values) > 1 {
+	if len(ids) > 0 {
 		items = append(items, MenuedOItemSeparator)
 	}
 	add := MenuedAction("Add…", addID)
@@ -139,10 +147,16 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 			id := rand.Int63()
 			result.Name = str
 			if o.MakeItemFunc != nil {
-				result.Value = o.MakeItemFunc()
+				result.Value = o.MakeItemFunc(str)
+			}
+			var a zstr.NameGetter
+			a = result.Value
+			ns, _ := a.(zstr.NameSetter)
+			if ns != nil {
+				ns.SetName(str)
 			}
 			o.values[id] = result
-			// zlog.Info("MSO Added1:", len(o.values), id)
+			zlog.Info("MSO Added1:", len(o.values), id, result.Value)
 			o.SetSelectedValue(id)
 			o.saveToStore()
 			// zlog.Info("MSO Added:", len(o.values), id)
@@ -174,6 +188,27 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 			}
 		}
 		items = append(items, del)
+		if o.EditSetItemFunc != nil {
+			edit := MenuedAction("Edit "+qname+"…", editID)
+			if zdocs.IsGettingSearchItems {
+				var a A
+				edit.SearchableSubView = o.EditSetItemFunc(0, a, nil)
+			} else {
+				edit.Function = func() {
+					id := selectedItem.Value.(int64)
+					if id != 0 {
+						v := o.values[id]
+						o.EditSetItemFunc(id, v.Value, func(e A) {
+							v.Value = e
+							v.Name = e.GetName()
+							o.values[id] = v
+							o.saveToStore()
+						})
+					}
+				}
+			}
+			items = append(items, edit)
+		}
 		rename := MenuedAction("Rename "+qname+"…", renameID)
 		rename.Function = func() {
 			id := selectedItem.Value.(int64)

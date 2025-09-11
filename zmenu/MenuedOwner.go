@@ -59,6 +59,7 @@ type MenuedOwner struct {
 	ClosedFunc                func()
 	EditFunc                  func(item *MenuedOItem, action EditAction)
 	PluralableWord            string // if set, used instead of GetTitle, and pluralized
+	TitleForNoneSelected      string
 	TitleIsValueIfOne         bool   // if set and IsMultiple, name of value used as title if only one set
 	TitleIsAll                string // if != "", all items are listed in title, separated by TitleIsAll string
 	Font                      *zgeo.Font
@@ -82,17 +83,18 @@ type MenuedOwner struct {
 }
 
 type MenuedOItem struct {
-	Name        string
-	Value       any
-	Selected    bool
-	LabelColor  zgeo.Color
-	TextColor   zgeo.Color
-	Shortcut    zkeyboard.KeyMod
-	IsDisabled  bool
-	IsAction    bool
-	IsSeparator bool
-	IsDebug     bool
-	Function    func()
+	Name              string
+	Value             any
+	Selected          bool
+	LabelColor        zgeo.Color
+	TextColor         zgeo.Color
+	Shortcut          zkeyboard.KeyMod
+	IsDisabled        bool
+	IsAction          bool
+	IsSeparator       bool
+	IsDebug           bool
+	Function          func()
+	SearchableSubView zdocs.SearchableItemsGetter
 }
 
 var (
@@ -304,6 +306,10 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 				total++
 			}
 		}
+		if count == 0 && o.TitleForNoneSelected != "" {
+			o.SetTitleText(o.TitleForNoneSelected)
+			return
+		}
 		// zlog.Info("MO UpdateTitleAndImage:", len(o.items), o.TitleIsValueIfOne, count)
 		if !(o.TitleIsValueIfOne && count == 1) {
 			if o.PluralableWord != "" {
@@ -414,7 +420,7 @@ func (o *MenuedOwner) ChangeSelected(val any, selected, edited bool) {
 	}
 }
 
-func (o *MenuedOwner) SetSelectedValuesAndEdited(vals []any, edited bool) {
+func (o *MenuedOwner) SetSelectedValuesAndEdited(vals []any, edited, callHandler bool) {
 	// zlog.Info("SetSelectedValues1", vals, o.Name)
 outer:
 	for i, item := range o.getItems() {
@@ -430,13 +436,13 @@ outer:
 	}
 	// zlog.Info("SetSelectedValues", vals, o.Name, zlog.Full(o.items), o.SelectedItem())
 	o.UpdateTitleAndImage()
-	if o.SelectedHandlerFunc != nil {
+	if callHandler && o.SelectedHandlerFunc != nil {
 		o.SelectedHandlerFunc(edited)
 	}
 }
 
 func (o *MenuedOwner) SetSelectedValues(vals []any) {
-	o.SetSelectedValuesAndEdited(vals, false)
+	o.SetSelectedValuesAndEdited(vals, false, true)
 }
 
 func (o *MenuedOwner) SetSelectedValue(val any) {
@@ -953,7 +959,6 @@ func (o *MenuedOwner) Dump() {
 }
 
 func (o *MenuedOwner) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
-	zdocs.IsCreatingActionMenu = true
 	var parts []zdocs.SearchableItem
 	items := o.getItems()
 	for _, ditem := range items {
@@ -962,7 +967,18 @@ func (o *MenuedOwner) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.S
 		}
 		key := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", ditem.Name)
 		parts = append(parts, key)
+		if ditem.SearchableSubView != nil {
+			view := ditem.SearchableSubView.(zview.View)
+			r, _ := view.(zview.ReadyToShowType)
+			if r != nil {
+				r.ReadyToShow(true)
+				r.ReadyToShow(false)
+			}
+			subPath := zdocs.AddedPath(currentPath, zdocs.StaticField, ditem.Name, ditem.Name)
+			items := ditem.SearchableSubView.GetSearchableItems(subPath)
+			parts = append(parts, items...)
+			view.Native().PerformAddRemoveFuncs(false)
+		}
 	}
-	zdocs.IsCreatingActionMenu = false
 	return parts
 }
