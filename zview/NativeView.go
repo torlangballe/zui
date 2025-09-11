@@ -56,11 +56,11 @@ func (v *NativeView) IsSearchable() bool {
 }
 
 func (v *NativeView) SetSearchable(on bool) {
-	zbits.ChangeBit(&v.Flags, NotSearchableFlag, !on)
+	zbits.ChangeBits(&v.Flags, NotSearchableFlag, !on)
 }
 
 func (v *NativeView) SetDimUsable(dim bool) {
-	zbits.ChangeBit(&v.Flags, ViewNoDimUsableFlag, !dim)
+	zbits.ChangeBits(&v.Flags, ViewNoDimUsableFlag, !dim)
 }
 
 // AddOnRemoveFunc adds a function to call when the v is removed from its parent.

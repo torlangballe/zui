@@ -416,7 +416,7 @@ func (v *NativeView) SetUsable(usable bool) bool {
 	if usable == v.IsUsable() {
 		return false
 	}
-	zbits.ChangeBit(&v.Flags, ViewUsableFlag, usable)
+	zbits.ChangeBits(&v.Flags, ViewUsableFlag, usable)
 	v.setUsableAttributes(usable)
 	// zlog.Info("SetUsable:", v.Hierarchy(), usable, "->", v.Element.Get("disabled"))
 	RangeChildrenFunc(v, false, true, func(view View) bool {
