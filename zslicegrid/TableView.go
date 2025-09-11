@@ -142,7 +142,7 @@ func (v *TableView[S]) ArrangeChildren() {
 
 func (v *TableView[S]) calculateColumns(size zgeo.Size) {
 	var s S
-	// zlog.Info("TableView.calculateColumns:", v.ObjectName(), v.Grid.MaxColumns, v.FieldViewParameters.UseInValues)
+	// zlog.Info("TableView.calculateColumns:", v.ObjectName(), v.Grid.MaxColumns, zdebug.CallingStackString())
 	// view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
 	view := v.createRowFromStruct(&s, v.ObjectName()+"-TableRow") // So we can if for it when debugging
 	fv := view.(zfields.FieldViewOwner).GetFieldView()
@@ -243,6 +243,7 @@ func (v *TableView[S]) ReadyToShow(beforeWindow bool) {
 				v.FieldViewParameters.CreateActionMenuItemsFunc = func(sid string) []zmenu.MenuedOItem {
 					return v.CreateActionMenuItemsFunc([]string{sid}, zbool.Not("global"))
 				}
+				// zlog.Info("Table Action", each.Field.Name, v.FieldViewParameters.CreateActionMenuItemsFunc != nil)
 				return false
 			}
 			return true
@@ -273,7 +274,6 @@ func (tr *TableRow[S]) GetFieldView() *zfields.FieldView {
 
 func (tr *TableRow[S]) ArrangeChildren() {
 	if tr.table.recalcRows {
-		// zlog.Info("TR.Arrange:", tr.Rect())
 		tr.table.calculateColumns(tr.Rect().Size)
 	}
 	freeOnly := true
@@ -289,6 +289,7 @@ func (tr *TableRow[S]) ArrangeChildren() {
 
 func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	params := v.FieldViewParameters
+	// zlog.Info("createRowFromStruct:", v.ObjectName(), zlog.Pointer(v), id, v.FieldViewParameters.CreateActionMenuItemsFunc != nil, zdebug.CallingStackString())
 	params.ImmediateEdit = false
 	params.Styling.Spacing = 0
 	params.AllStatic = (v.Grid.Selectable || v.Grid.MultiSelectable)
