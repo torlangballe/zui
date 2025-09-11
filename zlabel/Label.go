@@ -239,6 +239,6 @@ func (v *Label) SearchForDocs(match string, cell zdocs.PathPart) []zdocs.SearchR
 */
 
 func (v *Label) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
-	item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName(), v.Text())
+	item := zdocs.MakeSearchableItem(currentPath, zdocs.StaticField, "", "", v.Text())
 	return []zdocs.SearchableItem{item}
 }
