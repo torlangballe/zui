@@ -42,32 +42,32 @@ import (
 
 type GridListView struct {
 	zscrollview.ScrollView
-	Spacing                   zgeo.Size
-	Selectable                bool
-	MultiSelectable           bool
-	MakeFullSize              bool
-	RecreateCells             bool // RecreateCells forces creation of new cells on next layout
-	MaxColumns                int
-	MinColumns                int
-	MinRowsForFullSize        int
-	MaxRowsForFullSize        int
-	BorderColor               zgeo.Color
-	CellColor                 zgeo.Color
-	CellColorFunc             func(id string) zgeo.Color // Always set
-	MultiplyColorAlternate    float32
-	PressedColor              zgeo.Color
-	SelectColor               zgeo.Color
-	HoverColor                zgeo.Color
-	BranchToggleType          zwidgets.BranchToggleType
-	OpenBranches              map[string]bool
-	CurrentHoverID            string
-	FocusWidth                float64
-	HorizontalFirst           bool // HorizontalFirst means 1 2 3 on first row, not down first
-	RestoreOffsetOnNextLayout bool
-	UpdateOnceOnSetRect       bool
-	DeselectOnEscape          bool
-	DisabledCells             map[string]bool
-
+	Spacing                    zgeo.Size
+	Selectable                 bool
+	MultiSelectable            bool
+	MakeFullSize               bool
+	RecreateCells              bool // RecreateCells forces creation of new cells on next layout
+	MaxColumns                 int
+	MinColumns                 int
+	MinRowsForFullSize         int
+	MaxRowsForFullSize         int
+	BorderColor                zgeo.Color
+	CellColor                  zgeo.Color
+	CellColorFunc              func(id string) zgeo.Color // Always set
+	MultiplyColorAlternate     float32
+	PressedColor               zgeo.Color
+	SelectColor                zgeo.Color
+	HoverColor                 zgeo.Color
+	BranchToggleType           zwidgets.BranchToggleType
+	OpenBranches               map[string]bool
+	CurrentHoverID             string
+	FocusWidth                 float64
+	HorizontalFirst            bool // HorizontalFirst means 1 2 3 on first row, not down first
+	RestoreOffsetOnNextLayout  bool
+	UpdateOnceOnSetRect        bool
+	DeselectOnEscape           bool
+	DisabledCells              map[string]bool
+	ChildMinWidth              float64 // if ChildWidth is set, it and CellHeightFunc are used to calculate a cell, not creating one
 	CellCountFunc              func() int
 	IDAtIndexFunc              func(i int) string
 	CreateCellFunc             func(grid *GridListView, id string) zview.View
@@ -767,13 +767,19 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 		return v.cachedChildSize
 	}
 	cid := v.IDAtIndexFunc(0)
-	// zlog.Info("getAChildSize:CreateCellFunc", v.CreateCellFunc != nil)
-	child := v.CreateCellFunc(v, cid)
-	s, _ := child.CalculatedSize(total)
+	var s zgeo.Size
+	if false { //v.ChildMinWidth != 0 {
+		s.W = v.ChildMinWidth
+		zlog.Assert(v.CellHeightFunc != nil)
+	} else {
+		// zlog.Info("getAChildSize:CreateCellFunc", v.CreateCellFunc != nil)
+		child := v.CreateCellFunc(v, cid)
+		s, _ = child.CalculatedSize(total)
+		child.Native().PerformAddRemoveFuncs(false)
+	}
 	if v.CellHeightFunc != nil {
 		zfloat.Maximize(&s.H, v.CellHeightFunc(cid))
 	}
-	child.Native().PerformAddRemoveFuncs(false)
 	zfloat.Maximize(&s.W, v.MinSize().W)
 	v.cachedChildSize = s
 	return s
@@ -989,6 +995,7 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
+	zlog.Info("GLV.Layout:", v.Hierarchy(), v.CellCountFunc())
 	var oy float64
 	var topID string
 	if v.RestoreOffsetOnNextLayout { // || v.RestoreTopSelectedRowOnNextLayout {
@@ -1336,7 +1343,7 @@ func (v *GridListView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus 
 }
 
 func (v *GridListView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
-	zlog.Info("GridListView.GetSearchableItems", v.ObjectName(), v.IsSearchable(), v.CellCountFunc())
+	// zlog.Info("GridListView.GetSearchableItems", v.ObjectName(), v.IsSearchable(), v.CellCountFunc())
 	if !v.IsSearchable() {
 		return nil
 	}
