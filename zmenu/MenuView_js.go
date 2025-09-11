@@ -157,6 +157,9 @@ func (v *MenuView) SelectWithValue(value any) bool {
 			// zlog.Info("MV SelectWithValue Set:", i, v.ObjectName(), len(v.items), options, value)
 			o := options.Index(i)
 			o.Set("selected", "true")
+			if v.selectedHandler != nil {
+				v.selectedHandler()
+			}
 			return true
 		}
 	}
