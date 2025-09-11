@@ -341,6 +341,6 @@ func makeButton(shape, col string) *zimageview.ImageView {
 
 func (v *FieldSliceView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {
 	// var parts []zdocs.SearchableItem
-	zlog.Info("FieldSliceView.GetSearchableItems", v.ObjectName())
+	// zlog.Info("FieldSliceView.GetSearchableItems", v.ObjectName())
 	return nil
 }

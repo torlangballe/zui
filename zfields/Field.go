@@ -17,7 +17,6 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
-	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
@@ -82,7 +81,7 @@ const (
 )
 
 // The FlagType stores Field boolean options, based on the tag it is created from.
-type FlagType zbits.NamedBit
+type FlagType int64
 
 const (
 	FlagIsStatic                 FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
@@ -227,54 +226,54 @@ var EmptyField = Field{
 	// CustomFields: map[string]string{},
 }
 
-var flagsNameMap = zbits.NamedBitMap{
-	"HasSeconds":               uint64(FlagHasSeconds),
-	"HasMinutes":               uint64(FlagHasMinutes),
-	"HasHours":                 uint64(FlagHasHours),
-	"HasDays":                  uint64(FlagHasDays),
-	"HasMonths":                uint64(FlagHasMonths),
-	"HasYears":                 uint64(FlagHasYears),
-	"IsImage":                  uint64(FlagIsImage),
-	"IsFixed":                  uint64(FlagIsFixed),
-	"IsButton":                 uint64(FlagIsButton),
-	"IsStatic":                 uint64(FlagIsStatic),
-	"HasHeaderImage":           uint64(FlagHasHeaderImage),
-	"NoTitle":                  uint64(FlagNoTitle),
-	"ToClipboard":              uint64(FlagToClipboard),
-	"IsPassword":               uint64(FlagIsPassword),
-	"IsDuration":               uint64(FlagIsDuration),
-	"IsOpaque":                 uint64(FlagIsOpaque),
-	"IsActions":                uint64(FlagIsActions),
-	"FrameIsTitled":            uint64(FlagFrameIsTitled),
-	"IsGroup":                  uint64(FlagIsGroup),
-	"HasFrame":                 uint64(FlagHasFrame),
-	"SkipIndicator":            uint64(FlagSkipIndicator),
-	"LongPress":                uint64(FlagLongPress),
-	"Press":                    uint64(FlagPress),
-	"DisableAutofill":          uint64(FlagDisableAutofill),
-	"FlagIsTableSearchable":    uint64(FlagIsTableSearchable),
-	"FlagIsNotGUISearchable":   uint64(FlagIsNotGUISearchable),
-	"IsUseInValue":             uint64(FlagIsUseInValue),
-	"AllowEmptyAsZero":         uint64(FlagAllowEmptyAsZero),
-	"ZeroIsBig":                uint64(FlagZeroIsBig),
-	"IsForZDebugOnly":          uint64(FlagIsForZDebugOnly),
-	"IsRebuildAllOnChange":     uint64(FlagIsRebuildAllOnChange),
-	"IsURL":                    uint64(FlagIsURL),
-	"IsDocumentation":          uint64(FlagIsDocumentation),
-	"IsDownload":               uint64(FlagIsDownload),
-	"IsLabelize":               uint64(FlagIsLabelize),
-	"LabelizeWithDescriptions": uint64(FlagLabelizeWithDescriptions),
-	"IsLockable":               uint64(FlagIsLockable),
-	"HeaderLockable":           uint64(FlagHeaderLockable),
-	"DontJustifyHeader":        uint64(FlagDontJustifyHeader),
-	"CheckerCell":              uint64(FlagCheckerCell),
-	"FutureInvalid":            uint64(FlagFutureInvalid),
-	"PastInvalid":              uint64(FlagPastInvalid),
-	"HasDefault":               uint64(FlagHasDefault),
-	"IsOpen":                   uint64(FlagIsOpen),
-	"FlagIsOpener":             uint64(FlagIsOpener),
-	"FlagDontLabelize":         uint64(FlagDontLabelize),
-	"FlagOmitZero":             uint64(FlagOmitZero),
+var flagsNameMap = map[FlagType]string{
+	FlagHasSeconds:               "HasSeconds",
+	FlagHasMinutes:               "HasMinutes",
+	FlagHasHours:                 "HasHours",
+	FlagHasDays:                  "HasDays",
+	FlagHasMonths:                "HasMonths",
+	FlagHasYears:                 "HasYears",
+	FlagIsImage:                  "IsImage",
+	FlagIsFixed:                  "IsFixed",
+	FlagIsButton:                 "IsButton",
+	FlagIsStatic:                 "IsStatic",
+	FlagHasHeaderImage:           "HasHeaderImage",
+	FlagNoTitle:                  "NoTitle",
+	FlagToClipboard:              "ToClipboard",
+	FlagIsPassword:               "IsPassword",
+	FlagIsDuration:               "IsDuration",
+	FlagIsOpaque:                 "IsOpaque",
+	FlagIsActions:                "IsActions",
+	FlagFrameIsTitled:            "FrameIsTitled",
+	FlagIsGroup:                  "IsGroup",
+	FlagHasFrame:                 "HasFrame",
+	FlagSkipIndicator:            "SkipIndicator",
+	FlagLongPress:                "LongPress",
+	FlagPress:                    "Press",
+	FlagDisableAutofill:          "DisableAutofill",
+	FlagIsTableSearchable:        "FlagIsTableSearchable",
+	FlagIsNotGUISearchable:       "FlagIsNotGUISearchable",
+	FlagIsUseInValue:             "IsUseInValue",
+	FlagAllowEmptyAsZero:         "AllowEmptyAsZero",
+	FlagZeroIsBig:                "ZeroIsBig",
+	FlagIsForZDebugOnly:          "IsForZDebugOnly",
+	FlagIsRebuildAllOnChange:     "IsRebuildAllOnChange",
+	FlagIsURL:                    "IsURL",
+	FlagIsDocumentation:          "IsDocumentation",
+	FlagIsDownload:               "IsDownload",
+	FlagIsLabelize:               "IsLabelize",
+	FlagLabelizeWithDescriptions: "LabelizeWithDescriptions",
+	FlagIsLockable:               "IsLockable",
+	FlagHeaderLockable:           "HeaderLockable",
+	FlagDontJustifyHeader:        "DontJustifyHeader",
+	FlagCheckerCell:              "CheckerCell",
+	FlagFutureInvalid:            "FutureInvalid",
+	FlagPastInvalid:              "PastInvalid",
+	FlagHasDefault:               "HasDefault",
+	FlagIsOpen:                   "IsOpen",
+	FlagIsOpener:                 "FlagIsOpener",
+	FlagDontLabelize:             "FlagDontLabelize",
+	FlagOmitZero:                 "FlagOmitZero",
 }
 
 var (
@@ -283,7 +282,7 @@ var (
 )
 
 func (f FlagType) String() string {
-	return zbits.NamedBit(f).ToString(flagsNameMap)
+	return flagsNameMap[f]
 }
 
 func (f *Field) DebugName() string {
@@ -952,15 +951,7 @@ func SetEnumIntRange[N ~int](name string, from, to N) {
 }
 
 func SetEnumItems(name string, nameValPairs ...any) {
-	var items zdict.Items
-
-	for i := 0; i < len(nameValPairs); i += 2 {
-		var di zdict.Item
-		di.Name = fmt.Sprint(nameValPairs[i])
-		di.Value = nameValPairs[i+1]
-		items = append(items, di)
-	}
-	fieldEnums[name] = items
+	fieldEnums[name] = zdict.MakeItems(nameValPairs...)
 }
 
 func AppendEnumItem(enum, key string, value any) {

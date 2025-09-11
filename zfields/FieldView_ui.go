@@ -1738,10 +1738,10 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 		}
 		return v.makeButton(rval, f), false
 	}
-	// zlog.Info("CreateSpecial?", f.Name, v.Parameters().UseInValues)
 	if f.HasFlag(FlagIsActions) && rval.Kind() == reflect.Bool {
 		if v.isRows() {
-			zlog.Assert(v.params.CreateActionMenuItemsFunc != nil)
+			// zlog.Info("CreateSpecial action", zlog.Pointer(v), v.Hierarchy(), f.Name, v.params.CreateActionMenuItemsFunc != nil)
+			zlog.Assert(v.params.CreateActionMenuItemsFunc != nil, f.Name)
 			sget, _ := v.data.(zstr.StrIDer)
 			zlog.Assert(sget != nil, reflect.TypeOf(v.data))
 			return v.createActionMenu(f, sget.GetStrID()), false
