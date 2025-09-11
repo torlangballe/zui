@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/zstr"
@@ -60,7 +61,7 @@ type MatchedText struct {
 	Score            float64
 }
 
-var IsCreatingActionMenu bool
+var IsGettingSearchItems bool
 
 func PathSimpleString(p []PathPart) string {
 	return zstr.JoinFunc(p, ":", func(a PathPart) string {
@@ -181,6 +182,15 @@ func addMatch(score float64, lineWords []string, lwi, matches, line int) {
 		fmt.Print(lineWords[i], " ")
 	}
 	fmt.Println(zstr.EscNoColor)
+}
+
+func GetSearchableItems(root zview.View) []SearchableItem {
+	IsGettingSearchItems = true
+	sig, _ := root.(SearchableItemsGetter)
+	zlog.Assert(sig != nil)
+	items := sig.GetSearchableItems(nil) // add root here?
+	IsGettingSearchItems = false
+	return items
 }
 
 // <a href="#XXX"> Jump! </a>
