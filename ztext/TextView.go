@@ -64,6 +64,12 @@ func NewView(text string, style Style, cols, rows int) *TextView {
 	return v
 }
 
+func NewInteger(style Style, cols int) *TextView {
+	style.KeyboardType = zkeyboard.TypeInteger
+	v := NewView("", style, cols, 1)
+	return v
+}
+
 func (v *TextView) SelectAll() {
 	v.Select(0, -1)
 }
