@@ -622,6 +622,19 @@ func UpdateRows[S any](rows []S, onGrid any, orSlice *[]S) {
 	}
 }
 
+func (v *SliceGridView[S]) InsertRows(rows []S, selectRows bool) {
+	var ids []string
+	v.insertItemsIntoASlice(rows, v.slicePtr)
+	v.UpdateViewFunc(true, !selectRows)
+	if selectRows {
+		for _, r := range rows {
+			id := GetIDForItem(&r)
+			ids = append(ids, id)
+		}
+		v.Grid.SelectCells(ids, true, true)
+	}
+}
+
 func (v *SliceGridView[S]) UpdateSlice(s []S, arrange bool) {
 	update := v.ForceUpdateSlice
 	if !update {
@@ -849,48 +862,47 @@ func addHierarchy(stack *zcontainer.StackView) {
 
 func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bool) []zmenu.MenuedOItem {
 	var items []zmenu.MenuedOItem
-	// zlog.Info("CreateDefaultMenuItems", forSingleCell, zlog.CallingStackString())
-	if zdocs.IsCreatingActionMenu || v.Options&AllowNew != 0 && !forSingleCell {
+	if zdocs.IsGettingSearchItems || v.Options&AllowNew != 0 && !forSingleCell {
 		add := zmenu.MenuedSCFuncAction("Add New "+v.StructName+"…", 'N', 0, v.addNewItem)
 		items = append(items, add)
 	}
-	if v.Grid.CellCountFunc() > 0 || zdocs.IsCreatingActionMenu {
+	if v.Grid.CellCountFunc() > 0 || zdocs.IsGettingSearchItems {
 		if v.Grid.MultiSelectable && !forSingleCell {
 			all := zmenu.MenuedSCFuncAction("Select All", 'A', 0, func() {
 				v.Grid.SelectAll(true)
 			})
 			items = append(items, all)
 		}
-		if len(ids) > 0 || zdocs.IsCreatingActionMenu {
+		if len(ids) > 0 || zdocs.IsGettingSearchItems {
 			nitems := v.NameOfXItemsFunc(ids, true)
-			if v.Options&AllowDuplicate != 0 || zdocs.IsCreatingActionMenu {
+			if v.Options&AllowDuplicate != 0 || zdocs.IsGettingSearchItems {
 				del := zmenu.MenuedSCFuncAction("Duplicate "+nitems+"…", 'D', 0, func() {
 					v.duplicateItems(nitems, ids)
 				})
 				items = append(items, del)
 			}
-			if v.Options&AllowDelete != 0 || zdocs.IsCreatingActionMenu {
+			if v.Options&AllowDelete != 0 || zdocs.IsGettingSearchItems {
 				del := zmenu.MenuedSCFuncAction("Delete "+nitems+"…", zkeyboard.KeyBackspace, 0, func() {
 					v.HandleDeleteKey(true, ids)
 				})
 				items = append(items, del)
 			}
-			if v.Options&AllowEdit != 0 || zdocs.IsCreatingActionMenu {
+			if v.Options&AllowEdit != 0 || zdocs.IsGettingSearchItems {
 				edit := zmenu.MenuedSCFuncAction("Edit "+nitems, ' ', 0, func() {
 					// zlog.Info("SGV.Edit")
 					v.EditItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}
-			if v.Options&AllowView != 0 || zdocs.IsCreatingActionMenu {
+			if v.Options&AllowView != 0 || zdocs.IsGettingSearchItems {
 				edit := zmenu.MenuedSCFuncAction("View "+nitems, ' ', 0, func() {
 					v.ViewItemIDs(ids, false, nil)
 				})
 				items = append(items, edit)
 			}
 		}
-		if v.Options&AllowCopyPaste != 0 || zdocs.IsCreatingActionMenu {
-			if len(ids) > 0 || zdocs.IsCreatingActionMenu {
+		if v.Options&AllowCopyPaste != 0 || zdocs.IsGettingSearchItems {
+			if len(ids) > 0 || zdocs.IsGettingSearchItems {
 				nitems := v.NameOfXItemsFunc(ids, true)
 				copy := zmenu.MenuedFuncAction("Copy "+nitems+" to Clipboard", func() {
 					v.copyItemsToClipboard(ids)
@@ -898,7 +910,7 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 				copy.Shortcut = zkeyboard.CopyKeyMod
 				items = append(items, copy)
 			}
-			if !forSingleCell || zdocs.IsCreatingActionMenu {
+			if !forSingleCell || zdocs.IsGettingSearchItems {
 				name := "items"
 				if v.StructName != "" {
 					name = zwords.PluralizeEnglishWord(v.StructName)
@@ -1026,13 +1038,17 @@ func (v *SliceGridView[S]) GetSearchableItems(currentPath []zdocs.PathPart) []zd
 	if v.ActionMenu != nil {
 		path := zdocs.AddedPath(tablePath, zdocs.StaticField, "Action Menu", "menu")
 		items := v.ActionMenu.GetSearchableItems(path)
-		zlog.Info("slicegrid Make ActionMenu:", v.ObjectName(), len(*v.slicePtr), len(items), path)
 		parts = append(parts, items...)
 	}
 	if v.Options&RowsGUISearchable != 0 {
 		v.doFilter(*v.slicePtr) // we need to get filteredSlice set since it's what's acrtually used
 		path := zdocs.AddedPath(tablePath, zdocs.StaticField, "Rows", "Rows")
 		items := v.Grid.GetSearchableItems(path)
+		parts = append(parts, items...)
+	}
+	if v.Bar != nil {
+		path := zdocs.AddedPath(tablePath, zdocs.StaticField, "Bar", "Bar")
+		items := v.Bar.GetSearchableItems(path)
 		parts = append(parts, items...)
 	}
 	return parts
