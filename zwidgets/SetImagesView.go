@@ -4,7 +4,6 @@ package zwidgets
 
 // ImagesSetView uses a value that can give a String() as a|b|c, and shows it as a row of images,
 // where each image is found in images/flags/<prefix>/a.png etc.
-// It is typically used with zbits.NamedBit
 
 import (
 	"fmt"
