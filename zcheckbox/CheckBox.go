@@ -54,3 +54,14 @@ func NewWithLabel(def bool, title, storeKey string) (check *CheckBox, label *zla
 func (v *CheckBox) Toggle() {
 	v.SetOn(!v.On())
 }
+
+func MakeNextToView(view zview.View) (*CheckBox, *zcontainer.StackView) {
+	stack := zcontainer.StackViewHor(view.ObjectName() + ".check-stack")
+	check := New(zbool.False)
+	stack.Add(check, zgeo.CenterLeft)
+	stack.Add(view, zgeo.CenterLeft|zgeo.HorExpand)
+	check.SetValueHandler("$stacked-handler", func(edited bool) {
+		view.SetUsable(check.On())
+	})
+	return check, stack
+}
