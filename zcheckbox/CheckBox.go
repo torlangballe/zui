@@ -57,6 +57,7 @@ func (v *CheckBox) Toggle() {
 
 func MakeNextToView(view zview.View) (*CheckBox, *zcontainer.StackView) {
 	stack := zcontainer.StackViewHor(view.ObjectName() + ".check-stack")
+	stack.SetSpacing(1)
 	check := New(zbool.False)
 	stack.Add(check, zgeo.CenterLeft)
 	stack.Add(view, zgeo.CenterLeft|zgeo.HorExpand)
