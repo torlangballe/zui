@@ -3,12 +3,15 @@
 package ztext
 
 import (
+	"strconv"
+
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -45,6 +48,7 @@ type TextView struct {
 	rows          int
 	textStyle     Style
 	margin        zgeo.Rect
+	storeKey      string
 	UpdateSecs    float64
 	FilterFunc    func(str string) string // Filter changes text before .SetText() and .Text(). Also called on each key input. return 0 means no rune
 	editDone      func(canceled bool)
@@ -134,4 +138,34 @@ func (v *TextView) SetMaxLines(max int) {
 
 func (v *TextView) IsMinimumOneLineHight() bool {
 	return true
+}
+
+func (v *TextView) SetStoreKey(key, defaultValue string) {
+	v.storeKey = key
+	if zkeyvalue.DefaultStore != nil {
+		str, got := zkeyvalue.DefaultStore.GetString(v.storeKey)
+		if !got {
+			str = defaultValue
+		}
+		v.SetText(str)
+	}
+}
+
+func (v *TextView) Int64() (int64, error) {
+	str := v.Text()
+	return strconv.ParseInt(str, 10, 64)
+}
+
+func (v *TextView) SetInt64(n int64) {
+	str := strconv.FormatInt(n, 10)
+	v.SetText(str)
+}
+
+func (v *TextView) Int() (int, error) {
+	n, err := v.Int64()
+	return int(n), err
+}
+
+func (v *TextView) SetInt(n int) {
+	v.SetInt64(int64(n))
 }

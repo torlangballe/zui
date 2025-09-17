@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -73,7 +74,9 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	// style.Set("margin", "4px")
 	// v.SetMargin(DefaultMargin)
 	// }
-	v.JSSet("value", text)
+	if text != "" {
+		v.JSSet("value", text)
+	}
 	// v.JSSet("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
@@ -163,6 +166,10 @@ func (v *TextView) SetText(text string) {
 	if v.rawSetText(text) {
 		v.changed.CallAll(false)
 	}
+	if zkeyvalue.DefaultStore != nil && v.storeKey != "" {
+		zkeyvalue.DefaultStore.SetString(v.Text(), v.storeKey, true)
+	}
+
 }
 
 func (v *TextView) Text() string {
