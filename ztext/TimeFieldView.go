@@ -372,7 +372,6 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 	}
 	sdate := zstr.Concat("-", sday, smonth, syear)
 	str := zstr.Concat(" ", stime, sdate)
-	// zlog.Info("PARSE:", str)
 	fieldToView := map[ztime.TimeFieldFlags]zview.View{
 		ztime.TimeFieldHours:  v.hourText,
 		ztime.TimeFieldMins:   v.minuteText,
@@ -386,8 +385,7 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 	if !v.currentUse24Clock {
 		flags |= ztime.TimeFieldAMPM
 	}
-	t, faults, err := ztime.ParseDate(str, v.location, flags)
-	// zlog.Info("ParseDate:", str, t, faults, err)
+	t, faults, err := ztime.ParseDate(str, v.location, flags|ztime.TimeFieldZeroValueIfAllEmpty)
 	pink := zgeo.ColorNew(1, 0.7, 0.7, 1)
 	for _, f := range faults {
 		v := fieldToView[f]
