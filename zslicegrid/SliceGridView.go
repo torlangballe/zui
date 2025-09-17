@@ -354,23 +354,24 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 
 	v.DeleteItemsFunc = func(ids []string) {
-		if v.CallDeleteItemFunc == nil {
-			return
-		}
-		showErr := true
 		var deleteIDs []string
-		var wg sync.WaitGroup
-		for i, id := range ids {
-			wg.Add(1)
-			go func(id string, showErr *bool, i int) {
-				err := v.CallDeleteItemFunc(id, showErr, i == len(ids)-1)
-				if err == nil {
-					deleteIDs = append(deleteIDs, id)
-				}
-				wg.Done()
-			}(id, &showErr, i)
+		if v.CallDeleteItemFunc == nil {
+			deleteIDs = ids
+		} else {
+			var wg sync.WaitGroup
+			showErr := true
+			for i, id := range ids {
+				wg.Add(1)
+				go func(id string, showErr *bool, i int) {
+					err := v.CallDeleteItemFunc(id, showErr, i == len(ids)-1)
+					if err == nil {
+						deleteIDs = append(deleteIDs, id)
+					}
+					wg.Done()
+				}(id, &showErr, i)
+			}
+			wg.Wait()
 		}
-		wg.Wait()
 		v.RemoveItemsFromSlice(deleteIDs)
 		v.UpdateViewFunc(true, false)
 	}
@@ -385,7 +386,7 @@ func GetIDForItem[S any](item *S) string {
 	if g != nil {
 		return g.GetStrID()
 	}
-	// zlog.Fatal("Not a StrIDer!!!")
+	zlog.Fatal("Not a StrIDer!!!", reflect.TypeOf(a))
 	var sid string
 	zreflect.ForEachField(item, zreflect.FlattenIfAnonymous, func(each zreflect.FieldInfo) bool {
 		if each.StructField.Name == "ID" {
