@@ -73,7 +73,7 @@ type GridListView struct {
 	CreateCellFunc             func(grid *GridListView, id string) zview.View
 	UpdateCellFunc             func(grid *GridListView, id string)
 	UpdateCellSelectionFunc    func(grid *GridListView, id string)
-	CellHeightFunc             func(id string) float64 // only needed to have variable-height
+	CellHeightFunc             func(id string) float64 // only needed to have variable-height. If id is "" return generic height for minrows
 	HandleSelectionChangedFunc func()
 	HandleRowPressedFunc       func(id string) bool // this only gets called for non-selectable grids. Return if it eats press
 	HandleRowDoubleTappedFunc  func(id string)
@@ -489,6 +489,10 @@ func (v *GridListView) SetHoverID(id string) {
 	if v.HandleHoverOverFunc != nil {
 		v.HandleHoverOverFunc(id)
 	}
+}
+
+func (v *GridListView) HandleGripDrag(offset float64, id string, down zbool.BoolInd) {
+	zlog.Info("GLV: handleDragRow:", offset, id, down)
 }
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
@@ -967,6 +971,7 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 }
 
 func (v *GridListView) SetRect(rect zgeo.Rect) {
+	// zlog.Info("GLV:SetRect", v.Hierarchy(), rect, zdebug.CallingStackString())
 	if rect.Size.W == 0 {
 		// zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
 		return
@@ -995,7 +1000,7 @@ func (v *GridListView) ReplaceChild(child, with zview.View) {
 }
 
 func (v *GridListView) LayoutCells(updateCells bool) {
-	zlog.Info("GLV.Layout:", v.Hierarchy(), v.CellCountFunc())
+	// zlog.Info("GLV.Layout:", v.Hierarchy(), v.CellCountFunc())
 	var oy float64
 	var topID string
 	if v.RestoreOffsetOnNextLayout { // || v.RestoreTopSelectedRowOnNextLayout {
