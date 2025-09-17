@@ -26,18 +26,19 @@ type MenuType interface {
 
 type MenuView struct {
 	zview.NativeView
-	StoreKey        string
-	RowFormat       string
-	maxWidth        float64
-	selectedHandler func()
-	items           zdict.Items
-	currentValue    interface{}
-	storeKey        string
+	StoreKey                   string
+	RowFormat                  string
+	CurrentSelectIsProgramatic bool
+	maxWidth                   float64
+	selectedHandler            func()
+	items                      zdict.Items
+	currentValue               any
+	storeKey                   string
 }
 
 var menuViewHeight = 21.0
 
-func (v *MenuView) CurrentValue() interface{} {
+func (v *MenuView) CurrentValue() any {
 	return v.currentValue
 }
 
@@ -101,7 +102,10 @@ func (v *MenuView) SetMaxWidth(max float64) {
 	v.maxWidth = max
 }
 
-func (v *MenuView) SetStoreKey(key string) {
+func (v *MenuView) SetStoreKey(key string, def any) {
+	if zdocs.IsGettingSearchItems {
+		return
+	}
 	v.storeKey = key
 	a, got := zkeyvalue.DefaultStore.GetItemAsAny(v.storeKey)
 	if got {
@@ -110,7 +114,7 @@ func (v *MenuView) SetStoreKey(key string) {
 		}
 	}
 	if len(v.items) != 0 && v.currentValue == nil {
-		v.SelectWithValue(v.items[0].Value)
+		v.SelectWithValue(def)
 	}
 }
 
@@ -122,4 +126,12 @@ func (v *MenuView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.Sear
 		parts = append(parts, key)
 	}
 	return parts
+}
+
+func MenuViewCurrentValue(storeKey string, def any) any {
+	a, got := zkeyvalue.DefaultStore.GetItemAsAny(storeKey)
+	if !got {
+		return def
+	}
+	return a
 }

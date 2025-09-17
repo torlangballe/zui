@@ -127,7 +127,15 @@ func (v *MenuView) UpdateItems(items zdict.Items, value any, isAction bool) {
 	var str string
 	for _, item := range v.items {
 		rowStr := getRowString(v.RowFormat, item)
-		str += fmt.Sprintf(`<option value="%s">%s</option>\n`, html.EscapeString(fmt.Sprint(item.Value)), html.EscapeString(rowStr))
+		var attributes, inner string
+		if item.Name == MenuSeparatorID {
+			attributes = `disabled class="separator"`
+		} else {
+			attributes = fmt.Sprintf(`value="%s"`, html.EscapeString(fmt.Sprint(item.Value)))
+			inner = html.EscapeString(rowStr)
+		}
+		// zlog.Info("MV UpdateItems", v.ObjectName(), item.Name, attributes, inner)
+		str += fmt.Sprintf(`<option %s>%s</option>\n`, attributes, inner)
 	}
 	// We use HTML here to add all at once, or slow.
 	// zlog.Info(v.ObjectName(), "menu updateitems:", str)
@@ -158,7 +166,9 @@ func (v *MenuView) SelectWithValue(value any) bool {
 			o := options.Index(i)
 			o.Set("selected", "true")
 			if v.selectedHandler != nil {
+				v.CurrentSelectIsProgramatic = true
 				v.selectedHandler()
+				v.CurrentSelectIsProgramatic = false
 			}
 			return true
 		}
