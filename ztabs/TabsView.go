@@ -26,7 +26,6 @@ type CreateType int
 
 const (
 	Create CreateType = iota + 1
-	CreateTemp
 	Delete
 )
 
@@ -373,7 +372,7 @@ func (v *TabsView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.Sear
 	var got []zdocs.SearchableItem
 	tabPath := zdocs.AddedPath(currentPath, zdocs.StaticField, v.ObjectName(), v.ObjectName())
 	for _, item := range v.items {
-		view := item.create(item.id, CreateTemp)
+		view := item.create(item.id, Create)
 		if view.Native().IsSearchable() {
 			r, _ := view.(zview.ReadyToShowType)
 			if r != nil {
