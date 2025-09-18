@@ -486,17 +486,24 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			menuType = o
 		}
 	}
-	if menuType != nil && ((f.Enum != "") || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
+	_, isGetter := rval.Interface().(zdict.ItemsGetter)
+	if menuType != nil && (isGetter || f.Enum != "" || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
 			zslice.CopyTo(&enum, enum) // we make a copy of enum, or else global one is messed up
 			// zlog.Info("updateMenu2:", v.Hierarchy(), sf.Name, enum)
-		} else {
+		} else if f.LocalEnum != "" {
 			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
 			zlog.Assert(findex != -1, f.Name, f.LocalEnum)
 			var err error
 			enum, err = getDictItemsFromSlice(ei, f)
+			if err != nil {
+				return false
+			}
+		} else {
+			var err error
+			enum, err = getDictItemsFromSlice(rval, f)
 			if err != nil {
 				return false
 			}
@@ -696,13 +703,15 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		inMapRows--
 	}()
 	var mf Field
-	n, fname, typeName, tags, err := zreflect.ValueFromTypeFormatSuffixedName(key, mval.Interface())
-	if !zlog.OnError(err, key, mval.Interface()) && n != nil {
-		mval = reflect.ValueOf(n)
-		var pkg, field string
-		zstr.SplitN(typeName, ".", &pkg, &field)
-		mf.SetFromRVal(mval, tags, field, pkg, 0, FieldParameters{})
-		key = fname
+	if strings.Contains(key, ":") {
+		n, fname, typeName, tags, err := zreflect.ValueFromTypeFormatSuffixedName(key, mval.Interface())
+		if !zlog.OnError(err, key, mval.Interface()) && n != nil {
+			mval = reflect.ValueOf(n)
+			var pkg, field string
+			zstr.SplitN(typeName, ".", &pkg, &field)
+			mf.SetFromRVal(mval, tags, field, pkg, 0, FieldParameters{})
+			key = fname
+		}
 	}
 	if mf.Format == "" {
 		lkey := strings.ToLower(key)
