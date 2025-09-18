@@ -196,7 +196,6 @@ func (v *ContainerView) AddAlertButton(button zview.View) {
 }
 
 func (v *ContainerView) SetMargin(margin zgeo.Rect) {
-	// zlog.Info("CV SetMargin:", v.ObjectName(), margin)
 	v.margin = margin
 }
 
