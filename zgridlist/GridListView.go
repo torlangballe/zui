@@ -66,6 +66,7 @@ type GridListView struct {
 	RestoreOffsetOnNextLayout  bool
 	UpdateOnceOnSetRect        bool
 	DeselectOnEscape           bool
+	HalfSpaceAsMargin          bool
 	DisabledCells              map[string]bool
 	ChildMinWidth              float64 // if ChildWidth is set, it and CellHeightFunc are used to calculate a cell, not creating one
 	CellCountFunc              func() int
@@ -80,6 +81,7 @@ type GridListView struct {
 	HandleHoverOverFunc        func(id string) // this gets "" id when hovering out of a cell
 	HandleKeyFunc              func(km zkeyboard.KeyMod, down bool) bool
 	HierarchyLevelFunc         func(id string) (level int, leaf bool)
+	HandleGripDragRowFunc      func(id, ontoID string, dir zgeo.Alignment) // dir is top/bottom depending on where dropped
 
 	children    map[string]zview.View
 	selectedIDs map[string]bool
@@ -96,6 +98,11 @@ type GridListView struct {
 	selectedIndex    int
 	pressStartIndex  int
 	pressEndIndex    int
+
+	gripDragOffsetY   float64
+	gripDragID        string
+	gripDragTargetID  string
+	gripDragTargetDir zgeo.Alignment
 }
 
 var (
@@ -137,6 +144,7 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.MultiplyColorAlternate = 0.95
 	v.DeselectOnEscape = true
 	v.DisabledCells = map[string]bool{}
+	v.HalfSpaceAsMargin = true
 
 	v.SetCanTabFocus(true)
 	v.SetKeyHandler(v.handleKeyPressed)
@@ -355,14 +363,14 @@ func (v *GridListView) updateCellBackgrounds(ids []string) {
 		if ids == nil || zstr.StringsContain(ids, cid) {
 			child := v.children[cid]
 			if child != nil {
-				v.updateCellBackground(cid, x, y, child)
+				v.updateCellBackground(cid, x, y, child, zgeo.AlignmentNone)
 			}
 		}
 		return true
 	})
 }
 
-func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.View) {
+func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.View, grabDragDir zgeo.Alignment) {
 	if child == nil {
 		child = v.children[cid]
 		if child == nil {
@@ -391,8 +399,13 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 			child.SetBGColor(col)
 		}
 	}
-	if v.BorderColor.Valid {
-		child.Native().SetStrokeSide(1, v.BorderColor, zgeo.BottomRight, true) // we set if for non also, in case it moved
+	if grabDragDir != zgeo.AlignmentNone {
+		child.Native().SetStrokeSide(4, zgeo.ColorBlue, grabDragDir, true)
+	} else {
+		child.Native().SetStrokeSide(0, zgeo.ColorClear, zgeo.Top, true)
+		if v.BorderColor.Valid {
+			child.Native().SetStrokeSide(1, v.BorderColor, zgeo.BottomRight, true) // we set if for non also, in case it moved
+		}
 	}
 	if v.UpdateCellSelectionFunc != nil {
 		v.UpdateCellSelectionFunc(v, cid)
@@ -491,8 +504,27 @@ func (v *GridListView) SetHoverID(id string) {
 	}
 }
 
-func (v *GridListView) HandleGripDrag(offset float64, id string, down zbool.BoolInd) {
-	zlog.Info("GLV: handleDragRow:", offset, id, down)
+func (v *GridListView) HandleGripDrag(offset float64, id string, down zbool.BoolInd) bool {
+	zlog.Assert(v.HandleGripDragRowFunc != nil)
+	cell := v.CellView(id).Native()
+	if !down.IsFalse() {
+		v.gripDragID = id
+		v.gripDragOffsetY = offset
+		cell.SetAlpha(0.5)
+		cell.SetZIndex(zview.BaseZIndex + 5000)
+	} else {
+		v.gripDragID = ""
+		v.gripDragOffsetY = 0
+		cell.SetAlpha(1)
+		if v.gripDragTargetID != "" {
+			v.HandleGripDragRowFunc(id, v.gripDragTargetID, v.gripDragTargetDir)
+			v.gripDragTargetID = ""
+			v.gripDragTargetDir = zgeo.AlignmentNone
+		}
+		cell.SetZIndex(zview.BaseZIndex)
+	}
+	v.LayoutCells(false)
+	return true
 }
 
 func (v *GridListView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
@@ -772,7 +804,7 @@ func (v *GridListView) getAChildSize(total zgeo.Size) zgeo.Size {
 	}
 	cid := v.IDAtIndexFunc(0)
 	var s zgeo.Size
-	if false { //v.ChildMinWidth != 0 {
+	if v.ChildMinWidth != 0 {
 		s.W = v.ChildMinWidth
 		zlog.Assert(v.CellHeightFunc != nil)
 	} else {
@@ -909,21 +941,29 @@ func (v *GridListView) ForEachCell(got func(cellID string, outer, inner zgeo.Rec
 		lastx := (x == v.Columns-1)
 		lasty := (y == v.Rows-1)
 		var minx, maxx, miny, maxy float64
-		minx = v.Spacing.W / 2
+		if v.HalfSpaceAsMargin {
+			minx = v.Spacing.W / 2
+		}
 		if x == 0 {
 			minx += v.margin.Min().X
 		} else {
 			r.SetMinX(r.Pos.X)
 		}
-		maxx = -v.Spacing.W / 2
+		if v.HalfSpaceAsMargin {
+			maxx = -v.Spacing.W / 2
+		}
 		if lastx {
 			maxx += v.margin.Max().X
 		}
-		miny = v.Spacing.H / 2
+		if v.HalfSpaceAsMargin {
+			miny = v.Spacing.H / 2
+		}
 		if y == 0 {
 			miny += v.margin.Min().Y
 		}
-		maxy = -v.Spacing.H / 2
+		if v.HalfSpaceAsMargin {
+			maxy = -v.Spacing.H / 2
+		}
 		if lasty {
 			maxy += v.margin.Max().Y + 1
 		}
@@ -1046,6 +1086,14 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	// zlog.Info("LayoutCells", v.ObjectName(), updateCells, v.CellCountFunc(), v.Rect())
 	// start := time.Now()
 	var count int
+	gripDragY := zfloat.Undefined
+	if v.gripDragID != "" {
+		gripCell := v.CellView(v.gripDragID)
+		if gripCell != nil {
+			gripDragY = gripCell.Rect().Pos.Y + v.gripDragOffsetY
+		}
+	}
+	v.gripDragTargetID = ""
 	// zlog.Info("GridListView.LayoutCells", v.ObjectName(), v.CellCountFunc(), v.RestoreOffsetOnNextLayout, v.RestoreTopSelectedRowOnNextLayout, v.cellsView.Rect())
 	v.ForEachCell(func(cid string, outer, inner zgeo.Rect, x, y int, visible bool) bool {
 		if zstr.StringsContain(oldSelected, cid) {
@@ -1067,14 +1115,35 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 				ms.SetMargin(marg)
 			}
 			dirty := (v.DirtyIDs != nil && v.DirtyIDs[cid])
-			if dirty || !child.Native().HasSize() || child.Rect() != outer {
+			gripDragging := (cid == v.gripDragID)
+			if gripDragging || dirty || !child.Native().HasSize() || child.Rect() != outer {
+				if gripDragging {
+					outer.Pos.Y += v.gripDragOffsetY
+				}
 				// if count == 1 {
 				// zlog.Info("GridListView.LayoutCells first visible", v.ObjectName(), outer, cid)
 				// }
 				child.SetRect(outer)
 			}
 			// prof.Log("After Set Rect")
-			v.updateCellBackground(cid, x, y, child)
+			dragStrokeAlignment := zgeo.AlignmentNone
+			if !gripDragging && gripDragY != zfloat.Undefined {
+				h := outer.Size.H * 0.3
+				diff := gripDragY - outer.Pos.Y
+				if y == 0 && diff < 0 || math.Abs(diff) < h {
+					dragStrokeAlignment = zgeo.Top
+				} else {
+					diff = gripDragY - outer.Max().Y
+					if math.Abs(diff) < h || diff > 0 && y == v.Rows-1 {
+						dragStrokeAlignment = zgeo.Bottom
+					}
+				}
+				if dragStrokeAlignment != zgeo.AlignmentNone {
+					v.gripDragTargetID = cid
+					v.gripDragTargetDir = dragStrokeAlignment
+				}
+			}
+			v.updateCellBackground(cid, x, y, child, dragStrokeAlignment)
 			if v.UpdateCellFunc != nil && (updateCells || dirty) {
 				updateCount++
 				// zlog.Info("GridLayout cell", x, y)
@@ -1147,7 +1216,7 @@ func (v *GridListView) moveHover(incX, incY int, mod zkeyboard.Modifier) bool {
 		if append && len(v.selectedIDs) == 0 {
 			v.selectedIDs[fid] = true
 			v.CurrentHoverID = ""
-			v.updateCellBackground(fid, sx, sy, nil)
+			v.updateCellBackground(fid, sx, sy, nil, zgeo.AlignmentNone)
 			return true
 		} else {
 			nx := sx + incX

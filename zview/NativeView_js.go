@@ -130,7 +130,7 @@ func (v *NativeView) SetSize(size zgeo.Size) {
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
-	if rect.Pos.Y < -10 {
+	if rect.Pos.Y < -50 {
 		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}
 	rect = rect.ExpandedToInt()
@@ -1377,6 +1377,11 @@ func getMousePosRelative(v *NativeView, e js.Value) zgeo.Pos {
 	return pos.Minus(v.AbsoluteRect().Pos)
 }
 
+func getMousePosRelativeToPos(pos zgeo.Pos, e js.Value) zgeo.Pos {
+	mpos := getMousePos(e)
+	return mpos.Minus(pos)
+}
+
 func (v *NativeView) SetPointerEnterHandler(handleMoves bool, handler func(pos zgeo.Pos, inside zbool.BoolInd)) {
 	if zdebug.IsInTests {
 		return
@@ -1482,7 +1487,8 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			e.Call("stopPropagation")
 			return false
 		}
-		pos := getMousePosRelative(v, e)
+		absPos := v.AbsoluteRect().Pos
+		pos := getMousePosRelativeToPos(absPos, e)
 		v.SetStateOnPress(e)
 		// pos = getMousePos(e).Minus(v.AbsoluteRect().Pos)
 		movingPos = &pos
@@ -1495,7 +1501,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 		upFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 			// zlog.Info("SetPressUpDownMovedHandler up")
 			e := args[0]
-			upPos := getMousePosRelative(v, e)
+			upPos := getMousePosRelativeToPos(absPos, e)
 			movingPos = nil
 			v.ClearStateOnUpPress()
 			we.Call("removeEventListener", "mouseup", upFunc)
@@ -1516,7 +1522,7 @@ func (v *NativeView) SetPressUpDownMovedHandler(handler func(pos zgeo.Pos, down 
 			// v.SetListenerJSFunc("mousemove:updown", func(this js.Value, args []js.Value) any {
 			if movingPos != nil {
 				e := args[0]
-				pos := getMousePosRelative(v, e)
+				pos := getMousePosRelativeToPos(absPos, e)
 				zkeyboard.ModifiersAtPress = zkeyboard.ModifierFromEvent(e)
 				if handler(pos, zbool.Unknown) {
 					e.Call("stopPropagation")

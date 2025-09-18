@@ -10,7 +10,7 @@ import (
 )
 
 type GripDragHandler interface {
-	HandleGripDrag(offset float64, id string, down zbool.BoolInd)
+	HandleGripDrag(offset float64, id string, down zbool.BoolInd) bool
 }
 
 type GripDragView struct {
@@ -25,9 +25,10 @@ func NewGripDragView(id string, handler GripDragHandler) *GripDragView {
 	v.SetCursor(zcursor.Grab)
 	v.id = id
 	v.handler = handler
+	v.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
 	return v
 }
 
-func (v *GripDragView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) {
-	v.handler.HandleGripDrag(pos.Y, v.id, down)
+func (v *GripDragView) handleUpDownMovedHandler(pos zgeo.Pos, down zbool.BoolInd) bool {
+	return v.handler.HandleGripDrag(pos.Y, v.id, down)
 }

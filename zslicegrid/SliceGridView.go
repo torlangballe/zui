@@ -320,8 +320,19 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Grid.SetMargin(zgeo.RectFromXY2(6, 0, -6, -0))
 	v.Grid.MultiSelectable = true
 
-	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand)
-
+	v.Grid.HandleGripDragRowFunc = func(id, ontoID string, dir zgeo.Alignment) {
+		si := v.Grid.IndexOfID(id)
+		ei := v.Grid.IndexOfID(ontoID)
+		if dir == zgeo.Bottom {
+			ei++
+		}
+		if ei == si+1 {
+			return
+		}
+		// zlog.Info("DropMove:", si, ei)
+		zslice.MoveElement(*v.slicePtr, si, ei)
+		v.UpdateViewFunc(true, true)
+	}
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.ObjectName(), zdebug.CallingStackString())
 		if v.StoreChangedItemFunc == nil {
@@ -375,6 +386,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.RemoveItemsFromSlice(deleteIDs)
 		v.UpdateViewFunc(true, false)
 	}
+	v.Add(v.Grid, zgeo.TopLeft|zgeo.Expand)
 
 	return
 }
