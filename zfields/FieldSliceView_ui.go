@@ -288,7 +288,7 @@ func (v *FieldSliceView) GetNthSubFieldViewInNonStatic(n int, childName string) 
 	return view
 }
 
-func (v *FieldSliceView) handleMenuSelected() {
+func (v *FieldSliceView) handleMenuSelected(edited bool) {
 	v.selectItem(v.menu.CurrentValue().(int))
 }
 

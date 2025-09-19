@@ -36,7 +36,7 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}
 		if v.selectedHandler != nil {
-			v.selectedHandler()
+			v.selectedHandler(v.CurrentSelectIsProgramatic)
 		}
 		return nil
 	}))
@@ -156,7 +156,6 @@ func (v *MenuView) SelectWithValue(value any) bool {
 	// if zlog.ErrorIf(value == nil, v.ObjectName(), zlog.CallingStackString()) {
 	// 	return
 	// }
-	// zlog.Info("MV SelectWithValue:", v.ObjectName(), value)
 	for i, item := range v.items {
 		// zlog.Info("MV SelectWithValue Set?:", item.Value, value, reflect.TypeOf(item.Value), reflect.TypeOf(value))
 		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
@@ -167,7 +166,7 @@ func (v *MenuView) SelectWithValue(value any) bool {
 			o.Set("selected", "true")
 			if v.selectedHandler != nil {
 				v.CurrentSelectIsProgramatic = true
-				v.selectedHandler()
+				v.selectedHandler(false)
 				v.CurrentSelectIsProgramatic = false
 			}
 			return true
@@ -180,7 +179,7 @@ func (v *MenuView) SelectWithValue(value any) bool {
 // 	return v.oldID, v.currentValue
 // }
 
-func (v *MenuView) SetSelectedHandler(handler func()) {
+func (v *MenuView) SetSelectedHandler(handler func(edited bool)) {
 	v.selectedHandler = handler
 }
 

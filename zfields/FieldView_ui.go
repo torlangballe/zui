@@ -1214,18 +1214,22 @@ func (v *FieldView) makeSimpleMenu(rval reflect.Value, f *Field, items zdict.Ite
 	menu.SetMaxWidth(f.MaxWidth)
 	var view zview.View
 	view = menu
-	menu.SetSelectedHandler(func() {
+	menu.SetSelectedHandler(func(edited bool) {
 		val, _ := v.fieldToDataItem(f, menu)
 		isZero := true
 		if val.IsValid() {
 			isZero = val.IsZero()
 		}
+		action := DataChangedAction
+		if edited {
+			action = EditedAction
+		}
 		// zlog.Info("Menu Edited", v.Hierarchy(), f.Name, isZero, val, menu.CurrentValue())
 		v.updateShowEnableFromZeroer(isZero, true, menu.ObjectName())
 		v.updateShowEnableFromZeroer(isZero, false, menu.ObjectName())
-		ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+		ap := ActionPack{Field: f, Action: action, RVal: rval, View: &view}
 		v.callTriggerHandler(ap)
-		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
+		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: rval, View: &view})
 	})
 	return view
 }
@@ -1518,11 +1522,15 @@ func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.Vi
 	if zlog.OnError(err) {
 		return
 	}
-	ap := ActionPack{Field: f, Action: EditedAction, RVal: rval, View: &view}
+	action := DataChangedAction
+	if edited {
+		action = EditedAction
+	}
+	ap := ActionPack{Field: f, Action: action, RVal: rval, View: &view}
 	if v.callTriggerHandler(ap) {
 		return
 	}
-	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: rval, View: &view})
+	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: rval, View: &view})
 }
 
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {

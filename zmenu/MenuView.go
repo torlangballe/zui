@@ -30,7 +30,7 @@ type MenuView struct {
 	RowFormat                  string
 	CurrentSelectIsProgramatic bool
 	maxWidth                   float64
-	selectedHandler            func()
+	selectedHandler            func(edited bool)
 	items                      zdict.Items
 	currentValue               any
 	storeKey                   string
