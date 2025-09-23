@@ -71,7 +71,7 @@ func (v *NativeView) AddOnRemoveFunc(f func()) {
 
 // AddOnAddFunc adds a function to call when v is added to its parent
 // Some views don't get these functions called until visible, so always create timers etc on a view
-// with AddOnAddFunc and use timer.Stop with AddOnRemoveFunc to ensure they are added/removed correctly
+// with AddOnAddFunc and use timer.Stop() with AddOnRemoveFunc to ensure they are added/removed correctly
 func (v *NativeView) AddOnAddFunc(f func()) {
 	v.DoOnAdd = append(v.DoOnAdd, f)
 }
