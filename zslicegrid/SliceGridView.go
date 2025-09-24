@@ -72,6 +72,7 @@ type SliceGridView[S any] struct {
 	HandleShortCutInRowFunc         func(rowID string, sc zkeyboard.KeyMod, isInFocusView bool) bool // Called if key pressed when row selected, and row-cell  or action menu doesn't handle it
 	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error                  // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 	CreateActionMenuItemsFunc       func(sids []string, isGlobal bool) []zmenu.MenuedOItem           // Used to set ActionMenu and FieldViewParameters.CreateActionMenuItemsFunc
+	HandleRowDragOrderFunc          func()
 	CurrentLowerCaseSearchText      string
 	EditDialogDocumentationPath     string
 	FilterSkipCache                 map[string]bool
@@ -332,6 +333,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		// zlog.Info("DropMove:", si, ei)
 		zslice.MoveElement(*v.slicePtr, si, ei)
 		v.UpdateViewFunc(true, true)
+		if v.HandleRowDragOrderFunc != nil {
+			v.HandleRowDragOrderFunc()
+		}
 	}
 	v.StoreChangedItemsFunc = func(items []S) {
 		// zlog.Info("StoreChangedItemsFunc", len(items), v.ObjectName(), zdebug.CallingStackString())
