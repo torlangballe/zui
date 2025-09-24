@@ -106,9 +106,7 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
-	// if v.ObjectName() == "block-stack" {
-	// 	zlog.Info("CalcSize:", total, v.MinSize())
-	// }
+
 	var ws float64
 	if len(v.Cells) != 0 {
 		// if v.MaxColumns > 0 {
