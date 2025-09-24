@@ -8,6 +8,7 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrpc"
@@ -18,12 +19,21 @@ import (
 type nativeApp struct {
 }
 
+const offsetKey = "zui.ServerTimeOffset"
+
 var (
 	ServerTimeDifference time.Duration
 	getTimeCount         int
 )
 
 func NewCurrentTimeLabel() *zlabel.Label {
+	if zlocale.IsDisplayServerTime.Get() && ServerTimezoneName == "" {
+		offset, got := zkeyvalue.DefaultStore.GetInt(offsetKey, 0)
+		if !got {
+			_, offset = time.Now().In(time.Local).Zone()
+		}
+		ztime.ServerTimezoneOffsetSecs = offset
+	}
 	label := zlabel.New("")
 	label.SetObjectName("time")
 	label.SetFont(zgeo.FontDefault(0))
@@ -57,11 +67,12 @@ func fetchTimeInfo() bool {
 	since := time.Since(start)
 	ServerTimezoneName = info.ZoneName
 	ztime.ServerTimezoneOffsetSecs = info.ZoneOffsetSeconds
+	zkeyvalue.DefaultStore.SetInt(info.ZoneOffsetSeconds, offsetKey, true)
+	// zlog.Info("fetchTimeInfo:", ServerTimezoneName, ztime.ServerTimezoneOffsetSecs)
 	if since > time.Second {
 		return false
 	}
 	t, err := time.Parse(ztime.JavascriptISO, info.JSISOTimeString)
-	// zlog.Info("fetchTimeInfo:", t, err, since, ServerTimezoneName, info.ZoneOffsetSeconds)
 	if err != nil {
 		zlog.Error("parse", err)
 		return false
