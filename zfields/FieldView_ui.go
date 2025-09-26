@@ -2006,7 +2006,9 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			if rval.Kind() != reflect.Pointer && rval.CanAddr() {
 				rval = rval.Addr()
 			}
-			view = v.NewSliceView(rval.Interface(), f)
+			fieldCopy := *f
+			fieldCopy.ClearFlag(FlagShowIfExtraSpace) // we don't want sub-views to be built with this ... and probably other things...
+			view = v.NewSliceView(rval.Interface(), &fieldCopy)
 
 		case zreflect.KindTime:
 			columns := f.Columns
