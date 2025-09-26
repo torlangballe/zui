@@ -141,10 +141,16 @@ func (v *TableView[S]) ArrangeChildren() {
 }
 
 func (v *TableView[S]) calculateColumns(size zgeo.Size) {
-	var s S
+	var so S
+	var s *S
 	// zlog.Info("TableView.calculateColumns:", v.ObjectName(), v.Grid.MaxColumns, zdebug.CallingStackString())
 	// view := v.createRowFromStruct(&s, zstr.GenerateRandomHexBytes(10))
-	view := v.createRowFromStruct(&s, v.ObjectName()+"-TableRow") // So we can if for it when debugging
+	if len(*v.slicePtr) == 0 {
+		s = &so
+	} else {
+		s = &(*v.slicePtr)[0]
+	}
+	view := v.createRowFromStruct(s, v.ObjectName()+"-TableRow") // So we can if for it when debugging
 	fv := view.(zfields.FieldViewOwner).GetFieldView()
 	// total := v.LocalRect().Plus(v.Margin())
 	// total = total.Expanded(zgeo.SizeD(-v.RowInset, 0))
