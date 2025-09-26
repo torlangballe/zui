@@ -2186,7 +2186,12 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			title += "*"
 		}
 		label, lstack, cell, _ = zguiutil.Labelize(view, title, f.FieldName, 0, a, desc)
-		cell.Alignment |= zgeo.HorShrink
+		_, is := view.(*FieldSliceView)
+		if is {
+			cell.Alignment |= zgeo.HorExpand
+		} else {
+			cell.Alignment |= zgeo.HorShrink
+		}
 		if f.HasFlag(FlagIsLockable) {
 			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
 				lock := zguiutil.CreateLockIconForView(view)
