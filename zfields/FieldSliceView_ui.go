@@ -15,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zbits"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zguiutil"
@@ -231,6 +232,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		})
 		itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	} else {
+		zbits.ChangeBits(&v.field.Alignment, zgeo.Expand, false)
 		simple := v.buildItem(v.field, rval, -1, zgeo.CenterLeft, zgeo.Size{}, false)
 		simple.SetObjectName(fmt.Sprintf("%s.%d", v.ObjectName(), i))
 		setter, _ := simple.(zview.AnyValueSetter)
@@ -331,6 +333,9 @@ func (v *FieldSliceView) UpdateSlice(f *Field, slicePtr any) {
 		if focused != nil {
 			focused.Native().Focus(true)
 		}
+	}
+	if v.IsPresented() {
+		v.ArrangeChildren()
 	}
 }
 
