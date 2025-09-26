@@ -2188,7 +2188,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		label, lstack, cell, _ = zguiutil.Labelize(view, title, f.FieldName, 0, a, desc)
 		_, is := view.(*FieldSliceView)
 		if is {
-			cell.Alignment |= zgeo.HorExpand
+			cell.Alignment |= zgeo.Expand
 		} else {
 			cell.Alignment |= zgeo.HorShrink
 		}

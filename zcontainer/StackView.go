@@ -329,7 +329,7 @@ func (v *StackView) ArrangeChildren() {
 		}
 		r := rects[j]
 		if !r.IsNull() {
-			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
+			if !c.View.Native().IsShown() { // c.ShowIfExtraSpace != 0 &&
 				c.View.Show(true)
 			}
 			c.View.SetRect(r)

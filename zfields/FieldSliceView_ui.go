@@ -49,6 +49,7 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	if rt.Kind() == reflect.Pointer {
 		rt = rt.Elem()
 	}
+	v.SetMinSize(zgeo.SizeBoth(10))
 	if rt.Len() == 0 {
 		rt = zslice.MakeAnElementOfSliceRValType(rt)
 	} else {
@@ -232,7 +233,7 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		})
 		itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	} else {
-		zbits.ChangeBits(&v.field.Alignment, zgeo.Expand, false)
+		zbits.ChangeBits(&v.field.Alignment, zgeo.HorExpand, false)
 		simple := v.buildItem(v.field, rval, -1, zgeo.CenterLeft, zgeo.Size{}, false)
 		simple.SetObjectName(fmt.Sprintf("%s.%d", v.ObjectName(), i))
 		setter, _ := simple.(zview.AnyValueSetter)
