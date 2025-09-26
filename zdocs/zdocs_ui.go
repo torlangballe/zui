@@ -1,4 +1,11 @@
+//go:build zui
+
 package zdocs
+
+import (
+	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zlog"
+)
 
 type GUIPartOpener interface {
 	OpenGUIFromPathParts(parts []PathPart) bool
@@ -21,3 +28,12 @@ func NewLinkPartsView(address string) *LinkPartsView {
 	return v
 }
 */
+
+func GetSearchableItems(root zview.View) []SearchableItem {
+	IsGettingSearchItems = true
+	sig, _ := root.(SearchableItemsGetter)
+	zlog.Assert(sig != nil)
+	items := sig.GetSearchableItems(nil) // add root here?
+	IsGettingSearchItems = false
+	return items
+}

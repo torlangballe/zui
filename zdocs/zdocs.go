@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmath"
 	"github.com/torlangballe/zutil/zstr"
@@ -183,15 +182,3 @@ func addMatch(score float64, lineWords []string, lwi, matches, line int) {
 	}
 	fmt.Println(zstr.EscNoColor)
 }
-
-func GetSearchableItems(root zview.View) []SearchableItem {
-	IsGettingSearchItems = true
-	sig, _ := root.(SearchableItemsGetter)
-	zlog.Assert(sig != nil)
-	items := sig.GetSearchableItems(nil) // add root here?
-	IsGettingSearchItems = false
-	return items
-}
-
-// <a href="#XXX"> Jump! </a>
-// <label id="XXX" style="background-color:yellow">corresponds</label>
