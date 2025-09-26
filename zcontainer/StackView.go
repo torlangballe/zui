@@ -125,6 +125,7 @@ func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 		s, max = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
 		zfloat.Maximize(&s.W, ws) // why for W only?
 	}
+
 	ms := v.Margin().Size.Negative()
 	s.Add(ms)
 	if v.NoCalculatedMaxSize.W {
@@ -328,10 +329,10 @@ func (v *StackView) ArrangeChildren() {
 		}
 		r := rects[j]
 		if !r.IsNull() {
-			c.View.SetRect(r)
 			if c.ShowIfExtraSpace != 0 && !c.View.Native().IsShown() {
 				c.View.Show(true)
 			}
+			c.View.SetRect(r)
 		} else {
 			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
 				c.View.SetRect(zgeo.RectFromXYWH(-100, 0, 100, 20))
