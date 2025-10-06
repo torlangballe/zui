@@ -73,6 +73,7 @@ type SliceGridView[S any] struct {
 	CallDeleteItemFunc              func(id string, showErr *bool, last bool) error                  // CallDeleteItemFunc is called from default DeleteItemsFunc, with id of each item. They are not removed from slice.
 	CreateActionMenuItemsFunc       func(sids []string, isGlobal bool) []zmenu.MenuedOItem           // Used to set ActionMenu and FieldViewParameters.CreateActionMenuItemsFunc
 	HandleRowDragOrderFunc          func()
+	HandleRowsChangeFunc            func() // Called if rows deleted, added, updated
 	CurrentLowerCaseSearchText      string
 	EditDialogDocumentationPath     string
 	FilterSkipCache                 map[string]bool
@@ -313,6 +314,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if len(newSIDs) != 0 {
 			v.Grid.SelectCells(newSIDs, restoreSelectionScroll, false)
 		}
+		if v.HandleRowsChangeFunc != nil {
+			v.HandleRowsChangeFunc()
+		}
 		// prof.End("After UpdateWidgets")
 	}
 	if hasHierarchy {
@@ -335,6 +339,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.UpdateViewFunc(true, true)
 		if v.HandleRowDragOrderFunc != nil {
 			v.HandleRowDragOrderFunc()
+		}
+		if v.HandleRowsChangeFunc != nil {
+			v.HandleRowsChangeFunc()
 		}
 	}
 	v.StoreChangedItemsFunc = func(items []S) {
