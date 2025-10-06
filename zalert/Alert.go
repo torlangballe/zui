@@ -247,6 +247,8 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 	return button
 }
 
+const DisableOKCancelKeyDefaults = 1
+
 func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, footer zview.View, done func(ok bool) (close bool)) {
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetBGColor(zstyle.DefaultBGColor())
@@ -266,8 +268,10 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
 	okButton := addButton(bar, stack, "OK", true, done)
-	okButton.MakeReturnKeyDefault()
-	cancelButton.MakeEscapeCanceler()
+	if att.CustomFlags&DisableOKCancelKeyDefaults == 0 {
+		okButton.MakeReturnKeyDefault()
+		cancelButton.MakeEscapeCanceler()
+	}
 	att.Modal = true
 	if title != "" {
 		zpresent.PresentTitledView(stack, title, att, nil, nil)

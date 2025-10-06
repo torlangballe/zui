@@ -53,6 +53,7 @@ type Attributes struct {
 	TitledMargin             zgeo.Rect
 	PlaceOverView            zview.View
 	FocusView                zview.View // TODO: Use new zcontainer.InitialFocusedView instead?
+	CustomFlags              int64      // CustomFlags is for setting other attributes not used by zpresent
 	PresentedFunc            func(win *zwindow.Window)
 	ClosedFunc               func(dismissed bool)
 }
