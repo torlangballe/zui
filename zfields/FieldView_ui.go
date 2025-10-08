@@ -287,9 +287,9 @@ func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, label, labelS
 		if strings.HasPrefix(n, "$labelize.") {
 			s, _ := c.(*zcontainer.StackView)
 			if s != nil {
-				view, _ = s.FindViewWithName(name, true)
+				view, _ = s.FindViewWithName(name, false)
 				if view != nil {
-					label, _ = s.FindViewWithName("$labelize.label."+name, true)
+					label, _ = s.FindViewWithName("$labelize.label."+name, false)
 					return view, label, s
 				}
 			}
@@ -2502,7 +2502,6 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			}
 			text := tv.Text()
 			str := finfo.ReflectValue.Addr().Interface().(*string)
-			// zlog.Info("fieldToData:", f.Name, text)
 			*str = text
 			v.updateShowEnableFromZeroer(finfo.ReflectValue.IsZero(), false, tv.ObjectName())
 		}
