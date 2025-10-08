@@ -367,7 +367,7 @@ func setTransition(n *zview.NativeView, transition zanimation.Transition, screen
 	n.SetRect(out)
 }
 
-func AttributesNew() Attributes {
+func AttributesDefault() Attributes {
 	a := Attributes{}
 	a.DurationSecs = 0.5
 	a.MakeFull = false
@@ -571,13 +571,13 @@ func init() {
 		PresentTitledView(v, title, att, nil, nil)
 	}
 	zimageview.PresentTitledViewFunc = func(title string, view zview.View) {
-		att := AttributesNew()
+		att := AttributesDefault()
 		att.Modal = true
 		att.ModalCloseOnOutsidePress = true
 		PresentTitledView(view, title, att, nil, nil)
 	}
 	ztext.PopupViewFunc = func(view, on zview.View) {
-		att := AttributesNew()
+		att := AttributesDefault()
 		att.Alignment = zgeo.TopRight | zgeo.HorOut
 		att.PlaceOverMargin = zgeo.SizeD(-8, -4)
 		att.FocusView = view

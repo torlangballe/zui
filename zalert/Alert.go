@@ -226,7 +226,7 @@ func (a *Alert) Show(handle func(result Result)) {
 	a.addButtonIfNotEmpty(stack, bar, a.OKButton, handle, OK)
 
 	a.DialogView = stack
-	att := zpresent.AttributesNew()
+	att := zpresent.AttributesDefault()
 	att.Modal = true
 	zpresent.PresentView(stack, att)
 }

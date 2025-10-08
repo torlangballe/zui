@@ -167,7 +167,7 @@ func DocumentationViewPresent(path string, modal bool) error {
 	path = makeURL(path, false)
 	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
-	attr := zpresent.AttributesNew()
+	attr := zpresent.AttributesDefault()
 	attr.Options = opts
 	attr.FocusView = v.WebView.Bar
 	if modal {

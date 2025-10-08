@@ -2247,7 +2247,7 @@ func (fv *FieldView) popupContent(target zview.View, f *Field) bool {
 	if str == "" {
 		return false
 	}
-	att := zpresent.AttributesNew()
+	att := zpresent.AttributesDefault()
 	att.Alignment = zgeo.TopLeft // | zgeo.HorOut
 	att.PlaceOverMargin = zgeo.SizeD(-8, -4)
 	stack := zcontainer.StackViewVert("popup")

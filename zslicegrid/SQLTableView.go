@@ -135,7 +135,7 @@ func (v *SQLTableView[S]) doEdit(ids []string, clearPrimary, initStruct, insert 
 }
 
 func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
-	zfields.EditStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesNew(), func(ok bool) bool {
+	zfields.EditStructSlice(&rows, v.EditParameters, "Edit "+v.StructName, zpresent.AttributesDefault(), func(ok bool) bool {
 		if !ok {
 			return true
 		}

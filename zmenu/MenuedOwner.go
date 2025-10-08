@@ -706,7 +706,7 @@ func (o *MenuedOwner) popup() {
 		list.UnselectAll(false)
 		o.saveToStore()
 	}
-	att := zpresent.AttributesNew()
+	att := zpresent.AttributesDefault()
 	att.Modal = true
 	att.ModalDimBackground = false
 	att.ModalCloseOnOutsidePress = true
