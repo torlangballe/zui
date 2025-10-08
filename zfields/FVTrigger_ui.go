@@ -53,7 +53,6 @@ func (v *FieldView) callTriggerHandler(ap ActionPack) bool {
 	if ap.FieldView == nil {
 		ap.FieldView = v
 	}
-	// zlog.Info("callTriggerHandler", v.Hierarchy(), ap.Field.Name, ap.Action)
 	if ap.Action == EditedAction {
 		defer v.rebuildFieldViewIfUseInValueChangedOrIsRebuild(ap.Field)
 	}

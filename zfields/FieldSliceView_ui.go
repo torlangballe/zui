@@ -224,12 +224,11 @@ func (v *FieldSliceView) addItem(i int, rval reflect.Value, collapse bool) {
 		// 	return false
 		// })
 		v.params.AddTrigger("*", EditedAction, func(ap ActionPack) bool {
-			// zlog.Info("Trigger:", fv.Hierarchy(), f.FieldName, zlog.Pointer(v.data))
-			if ap.Field.FieldName == v.indicatorFieldName {
+			if ap.FieldView == &v.FieldView && ap.Field.FieldName == v.indicatorFieldName {
 				v.updateMenu()
 			}
 			// v.callEditedAction() // we return false below instead
-			return false
+			return true
 		})
 		itemStack.Add(add, zgeo.TopLeft|exp).Collapsed = collapse
 	} else {
@@ -278,13 +277,18 @@ func (v *FieldSliceView) handleDeleteItem(i int) {
 	v.callEditedAction()
 }
 
-func (v *FieldSliceView) GetNthSubFieldViewInNonStatic(n int, childName string) zview.View {
+func (v *FieldSliceView) GetNthSubFieldView(n int, childName string) zview.View {
 	if n >= len(v.stack.Cells) {
 		return nil
 	}
-	itemStack := v.stack.Cells[n].View.(*zcontainer.StackView)
-	zlog.Assert(len(itemStack.Cells) == 2)
-	view := itemStack.Cells[0].View
+	var view zview.View
+	itemStack, _ := v.stack.Cells[n].View.(*zcontainer.StackView)
+	if itemStack != nil {
+		zlog.Assert(len(itemStack.Cells) == 2)
+		view = itemStack.Cells[0].View
+	} else {
+		view = v.stack.Cells[n].View
+	}
 	if childName != "" {
 		view, _ = zcontainer.ContainerOwnerFindViewWithName(view, childName, false)
 	}
