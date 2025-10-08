@@ -48,7 +48,7 @@ func (v *ScreensView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.Vi
 	}
 	intoRect := zgeo.Rect{Size: union.Size.ScaledTo(v.MinSize())}
 	tinfo := ztextinfo.New()
-	tinfo.Font = zgeo.FontNice(intoRect.Size.H/8, zgeo.FontStyleNormal)
+	tinfo.Font = zgeo.FontNice(intoRect.Size.H/4, zgeo.FontStyleNormal)
 	tinfo.Alignment = zgeo.Center
 	for id, r := range v.Rects {
 		srect := zgeo.TranslateRectInSystems(union, intoRect, r)
