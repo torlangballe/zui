@@ -36,14 +36,15 @@ func newDiv(storeKey string, defaultRatio float64) *DividerView {
 	v.SetDrawHandler(v.draw)
 	v.storeKey = "zcontainer.Div." + storeKey
 	v.startRatio = defaultRatio
+	var height, divPos float64
 	v.SetPressUpDownMovedHandler(func(pos zgeo.Pos, down zbool.BoolInd) bool {
-		ar := v.Parent().AbsoluteRect()
-		height := ar.Size.Element(v.Vertical)
-		divPos := v.AbsoluteRect().Pos.Y - ar.Pos.Y
 		switch down {
 		case zbool.False:
 			zview.SkipEnterHandler = false
 		case zbool.True:
+			ar := v.Parent().AbsoluteRect()
+			height = ar.Size.Element(v.Vertical)
+			divPos = v.AbsoluteRect().Pos.Y - ar.Pos.Y
 			zview.SkipEnterHandler = true
 			since := ztime.Since(v.downAt)
 			if since > 1 {
