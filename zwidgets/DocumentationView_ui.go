@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zpresent"
-	"github.com/torlangballe/zui/zshape"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zweb"
 	"github.com/torlangballe/zui/zwindow"
@@ -29,7 +28,7 @@ import (
 // https://dillinger.io
 
 type DocumentationIconView struct {
-	zshape.ShapeView
+	zimageview.XImageView
 	docPath string
 	Modal   bool
 }
@@ -45,18 +44,8 @@ var (
 
 func DocumentationIconViewNew(docPath string) *DocumentationIconView {
 	v := &DocumentationIconView{}
-	v.ShapeView.Init(v, zshape.TypeCircle, zgeo.SizeD(22, 22), "documentation:"+docPath)
-	v.MaxSize = v.MinSize()
-	v.SetText("?")
+	v.XImageView.Init(v, "documentation:"+docPath, "images/zcore/docs-icon.png", zgeo.SizeBoth(20))
 	v.SetColor(DocumentationDefaultIconColor())
-	m := v.Margin()
-	m.Pos.X += 1
-	// m.Pos.Y -= 0
-	v.SetMargin(m)
-	v.SetTextAlignment(zgeo.Center)
-	v.SetFont(zgeo.FontNice(15, zgeo.FontStyleNormal))
-	v.StrokeColor = zgeo.ColorNewGray(0.3, 1)
-	v.StrokeWidth = 2
 	v.Modal = DocumentationViewDefaultModal
 	v.docPath = docPath
 	v.SetPressedHandler("", zkeyboard.ModifierNone, func() {
