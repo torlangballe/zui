@@ -36,7 +36,7 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 			zkeyvalue.DefaultStore.SetItem(v.storeKey, v.currentValue, true)
 		}
 		if v.selectedHandler != nil {
-			v.selectedHandler(v.CurrentSelectIsProgramatic)
+			v.selectedHandler(!v.CurrentSelectIsProgramatic)
 		}
 		return nil
 	}))
