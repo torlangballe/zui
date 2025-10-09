@@ -50,6 +50,8 @@ type TextView struct {
 	margin        zgeo.Rect
 	storeKey      string
 	UpdateSecs    float64
+	minValue      float64
+	maxValue      float64
 	FilterFunc    func(str string) string // Filter changes text before .SetText() and .Text(). Also called on each key input. return 0 means no rune
 	editDone      func(canceled bool)
 }
@@ -72,6 +74,14 @@ func NewInteger(style Style, cols int) *TextView {
 	style.KeyboardType = zkeyboard.TypeInteger
 	v := NewView("", style, cols, 1)
 	return v
+}
+
+func (v *TextView) SetMinValue(m float64) {
+	v.minValue = m
+}
+
+func (v *TextView) SetMaxValue(m float64) {
+	v.maxValue = m
 }
 
 func (v *TextView) SelectAll() {
@@ -168,4 +178,14 @@ func (v *TextView) Int() (int, error) {
 
 func (v *TextView) SetInt(n int) {
 	v.SetInt64(int64(n))
+}
+
+func (v *TextView) Double() (float64, error) {
+	str := v.Text()
+	return strconv.ParseFloat(str, 64)
+}
+
+func (v *TextView) SetDouble(n float64) {
+	str := strconv.FormatFloat(n, 'f', -1, 64)
+	v.SetText(str)
 }

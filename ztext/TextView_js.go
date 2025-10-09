@@ -1,14 +1,17 @@
 package ztext
 
 import (
+	"strconv"
 	"syscall/js"
 	"unicode/utf8"
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -50,6 +53,8 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 		// zlog.Info("TextView:", v.Hierarchy(), stype)
 		v.JSSet("type", stype)
 	}
+	v.minValue = zfloat.Undefined
+	v.maxValue = zfloat.Undefined
 	//!! v.SetMargin(zgeo.RectFromXY2(0, 2, -10, -5))
 	v.SetObjectName("textview")
 	// zlog.Info("TV.Init", v.Hierarchy(), cols, rows)
@@ -235,6 +240,28 @@ func (v *TextView) setHandlers() {
 				v.changed.CallAll(true)
 				i := utf8.RuneCountInString(ftext)
 				v.Select(i, i)
+			}
+		}
+		if (v.textStyle.KeyboardType == zkeyboard.TypeInteger || v.textStyle.KeyboardType == zkeyboard.TypeFloat) && v.minValue != zfloat.Undefined || v.maxValue != zfloat.Undefined {
+			f, err := strconv.ParseFloat(v.Text(), 64)
+			zlog.Info("Max?", f, err, v.minValue, v.maxValue)
+			n := f
+			if err == nil {
+				if v.minValue != zfloat.Undefined && n < v.minValue {
+					n = v.minValue
+					zlog.Info("Min:", f, n)
+				} else if v.maxValue != zfloat.Undefined && n > v.maxValue {
+					zlog.Info("Max:", f, n)
+					n = v.maxValue
+				}
+			}
+			if n != f {
+				zlog.Info("n!=f:", f, n)
+				if v.textStyle.KeyboardType == zkeyboard.TypeInteger {
+					v.SetInt64(int64(n))
+				} else {
+					v.SetDouble(n)
+				}
 			}
 		}
 		if v.UpdateSecs < 0 {
