@@ -174,7 +174,18 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if smime != "" {
 		w.Header().Set("Content-Type", smime)
 	}
-	_, err = io.Copy(w, f)
+	urlTick := req.URL.Query().Get("zurltick")
+	if spath == "index.html" {
+		zlog.Info("TICK:", urlTick)
+		data, err := io.ReadAll(f)
+		if zlog.OnError(err, spath, fpath) {
+			return
+		}
+		sdata := strings.Replace(string(data), "{{.WasmPostfix}}", "?tick="+urlTick, -1)
+		_, err = w.Write([]byte(sdata))
+	} else {
+		_, err = io.Copy(w, f)
+	}
 	zlog.OnError(err, spath, fpath)
 }
 
