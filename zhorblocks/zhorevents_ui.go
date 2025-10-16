@@ -1063,8 +1063,10 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 	axis.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
 		// zlog.Info("Axis draw:", blockIndex, rect, start, end)
 		beyond := true
-		dark := v.IsDark
-		zdraw.DrawHorTimeAxis(canvas, rect, start, end, beyond, dark)
+		col := zstyle.DefaultFGColorFunc(v.IsDark)
+		isBottom := false
+		font := zgeo.FontNice(14, zgeo.FontStyleNormal)
+		zdraw.DrawHorTimeAxis(canvas, rect, start, end, beyond, isBottom, col, zgeo.ColorOrange, font)
 	})
 	axis.ExposeIn(0.1)
 	axis.SetPressedHandler("marker", 0, func() {
