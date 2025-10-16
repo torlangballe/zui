@@ -48,6 +48,15 @@ var (
 	customStylePrefixes   = []string{"-moz-", "-webkit-", ""}
 )
 
+func (v *NativeView) MakeElementFromHTML(view View, html string) {
+	template := zdom.DocumentJS.Call("createElement", "template")
+	template.Set("innerHTML", html)
+	v.Element = template.Get("content").Get("firstChild")
+	v.JSStyle().Set("position", "absolute")
+	v.JSStyle().Set("zIndex", BaseZIndex)
+	v.View = view
+}
+
 func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element = zdom.DocumentJS.Call("createElement", etype)
 	v.Element.Set("style", "position:absolute")
