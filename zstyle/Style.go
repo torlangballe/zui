@@ -12,11 +12,13 @@ import (
 )
 
 var (
-	Dark              bool
-	DefaultFGColor    = GrayF(0.2, 0.8)
-	DefaultBGColor    = GrayF(0.8, 0.2)
-	DefaultHoverColor = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
-	DefaultFocusColor = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
+	Dark               bool
+	DefaultFGColorFunc = GrayFunc(0.2, 0.8)
+	DefaultBGColorFunc = GrayFunc(0.8, 0.2)
+	DefaultFGColor     = GrayF(DefaultFGColorFunc)
+	DefaultBGColor     = GrayF(DefaultBGColorFunc)
+	DefaultHoverColor  = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
+	DefaultFocusColor  = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
 
 	DebugBackgroundColor  = zgeo.ColorNew(1, 0.9, 0.9, 1)
 	DefaultRowRightMargin = 6.0
@@ -81,6 +83,12 @@ func ColFor(l, d zgeo.Color, dark bool) zgeo.Color {
 	return useInvertedIfInvalid(l, d)
 }
 
+func ColCur(l, d zgeo.Color) func() zgeo.Color {
+	return func() zgeo.Color {
+		return ColFor(l, d, Dark)
+	}
+}
+
 func ColF(l, d zgeo.Color) func() zgeo.Color {
 	return func() zgeo.Color {
 		return Col(l, d)
@@ -106,9 +114,27 @@ func GrayFor(l, d float32, dark bool) zgeo.Color {
 	return ColFor(zgeo.ColorNewGray(l, 1), zgeo.ColorNewGray(d, 1), dark)
 }
 
-func GrayF(l, d float32) func() zgeo.Color {
+func GrayCur(l, d float32) func() zgeo.Color {
 	return func() zgeo.Color {
-		return Gray(l, d)
+		return GrayFor(l, d, Dark)
+	}
+}
+
+func GrayF(f func(dark bool) zgeo.Color) func() zgeo.Color {
+	return func() zgeo.Color {
+		return f(Dark)
+	}
+}
+
+func GrayFunc(l, d float32) func(dark bool) zgeo.Color {
+	return func(dark bool) zgeo.Color {
+		return GrayFor(l, d, dark)
+	}
+}
+
+func ColFunc(l, d zgeo.Color) func(dark bool) zgeo.Color {
+	return func(dark bool) zgeo.Color {
+		return ColFor(l, d, dark)
 	}
 }
 

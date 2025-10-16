@@ -35,7 +35,7 @@ type DocumentationIconView struct {
 
 var (
 	DocumentationPathPrefix       = "doc/"
-	DocumentationDefaultIconColor = zstyle.GrayF(0.9, 0.5)
+	DocumentationDefaultIconColor = zstyle.GrayCur(0.9, 0.5)
 	DocumentationViewDefaultModal = false
 	DocumentationShowInBrowser    bool
 	DocumentationCookieMap        map[string]string

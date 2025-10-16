@@ -99,10 +99,10 @@ type MenuedOItem struct {
 
 var (
 	MenuedOItemSeparator        = MenuedOItem{IsSeparator: true}
-	MenuedOwnerDefaultBGColor   = zstyle.ColF(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
-	MenuedOwnerDefaultTextColor = zstyle.GrayF(0.1, 0.9)
+	MenuedOwnerDefaultBGColor   = zstyle.ColCur(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
+	MenuedOwnerDefaultTextColor = zstyle.GrayCur(0.1, 0.9)
 	//	MenuedOwnerDefaultHightlightColor = zstyleColF(zgeo.ColorNewGray(0, 0.7), zgeo.ColorNewGray(1, 0.7))
-	MenuedOwnerDefaultHightlightColor = zstyle.ColF(zgeo.ColorNew(0.035, 0.29, 0.85, 1), zgeo.ColorNew(0.8, 0.8, 1, 1))
+	MenuedOwnerDefaultHightlightColor = zstyle.ColCur(zgeo.ColorNew(0.035, 0.29, 0.85, 1), zgeo.ColorNew(0.8, 0.8, 1, 1))
 	menuOwnersMap                     = map[zview.View]*MenuedOwner{}
 )
 

@@ -59,8 +59,8 @@ type TextView struct {
 var (
 	DefaultMargin      = zgeo.RectFromXY2(4, 3, -3, -2)
 	DefaultColor       = zstyle.DefaultFGColor
-	DefaultBGColor     = zstyle.GrayF(0.95, 0.3)
-	DefaultBorderColor = zstyle.GrayF(0.3, 0.5)
+	DefaultBGColor     = zstyle.GrayCur(0.95, 0.3)
+	DefaultBorderColor = zstyle.GrayCur(0.3, 0.5)
 )
 
 func NewView(text string, style Style, cols, rows int) *TextView {

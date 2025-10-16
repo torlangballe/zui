@@ -63,8 +63,8 @@ const (
 
 var (
 	DefaultButtonName           = "gray-tab"
-	DefaultTextColor            = zstyle.GrayF(0.1, 0.9)
-	DefaultSelectedImageBGColor = zstyle.ColF(zgeo.ColorNew(0, 0, 1, 0.2), zgeo.ColorNew(0, 0, 9, 0.2))
+	DefaultTextColor            = zstyle.GrayCur(0.1, 0.9)
+	DefaultSelectedImageBGColor = zstyle.ColCur(zgeo.ColorNew(0, 0, 1, 0.2), zgeo.ColorNew(0, 0, 9, 0.2))
 )
 
 func TabsViewNew(storeName string, buttons bool) *TabsView {
