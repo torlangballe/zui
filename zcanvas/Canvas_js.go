@@ -109,6 +109,7 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 }
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
+	c.font = *font
 	str := zdom.GetFontStyle(font)
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
@@ -352,12 +353,11 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 	c.context.Call(name, text, pos.X, pos.Y)
 }
 
-func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
+func (c *Canvas) MeasureText(text string) zgeo.Size {
 	var size zgeo.Size
-	c.SetFont(font, nil)
 	var metrics = c.context.Call("measureText", text)
 	size.W = math.Ceil(metrics.Get("width").Float())
-	size.H = font.LineHeight() * 1.1
+	size.H = c.font.LineHeight() * 1.1
 	// if zdevice.CurrentWasmBrowser != zdevice.Chrome {
 	// 	emTopDiff = metrics.Get("emHeightAscent").Float() - abba
 	// }

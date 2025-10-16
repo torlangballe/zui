@@ -19,7 +19,6 @@ import (
 
 type canvasNative struct {
 	context *gg.Context
-	setFont zgeo.Font
 }
 
 func New() *Canvas {
@@ -74,11 +73,11 @@ var fontMutex sync.Mutex
 
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 	zlog.Assert(c.context != nil, zlog.Pointer(c))
-	if *font == c.setFont {
+	if *font == c.font {
 		return nil
 	}
 	// fmt.Printf("CANVAS SETFONT: %p %+v %+v %s\n", c, *font, c.setFont, zlog.GetCallingStackString())
-	c.setFont = *font
+	c.font = *font
 	var err error
 	name := font.Name
 	if font.Style&zgeo.FontStyleBold != 0 {
@@ -92,7 +91,11 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 		paths = append(paths, "/System/Library/Fonts/")
 	}
 	if zdebug.IsInTests {
-		paths = append(paths, "../Fonts/")
+		dir := "../Fonts/"
+		if zfile.NotExists("../go.mod") {
+			dir = "../" + dir
+		}
+		paths = append(paths, dir)
 	}
 	for _, path := range paths {
 		for _, ext := range []string{".ttf", ".ttc"} {
@@ -110,7 +113,7 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 			}
 		}
 	}
-	return zlog.Error("couldn't load font, not found", font.Name, paths)
+	return zlog.Error("couldn't load font, not found", name, paths)
 }
 
 func (c *Canvas) SetMatrix(matrix zgeo.Matrix) {
@@ -224,8 +227,7 @@ func (c *Canvas) DrawTextInPos(pos zgeo.Pos, text string, strokeWidth float64) {
 	fontMutex.Unlock()
 }
 
-func (c *Canvas) MeasureText(text string, font *zgeo.Font) zgeo.Size {
-	c.SetFont(font, nil)
+func (c *Canvas) MeasureText(text string) zgeo.Size {
 	fontMutex.Lock()
 	w, h := c.context.MeasureString(text)
 	fontMutex.Unlock()

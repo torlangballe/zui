@@ -10,12 +10,25 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zmath"
 )
 
 //	Created by Tor Langballe on /21/10/15.
 //
 // Check out: https://github.com/tdewolff/canvas
+
+type BaseCanvaser interface {
+	SetColor(col zgeo.Color)
+	SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error
+	PushState()
+	PopState()
+	FillRect(r zgeo.Rect, corner float64)
+	DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment)
+	ClipPath(path *zgeo.Path, eofill bool)
+}
+
 type Canvas struct {
+	font zgeo.Font
 	size zgeo.Size
 	canvasNative
 	currentMatrix    zgeo.Matrix // is currentTransform...
@@ -93,8 +106,8 @@ func (c *Canvas) drawInsetImage(image *zimage.Image, inset, dest zgeo.Rect, opac
 	c.drawInsetRow(image, inset, dest, size.H+inset.Max().Y, -inset.Max().Y, dest.Max().Y+inset.Max().Y, -inset.Max().Y, opacity)
 }
 
-func (c *Canvas) FillRect(rect zgeo.Rect) {
-	path := zgeo.PathNewRect(rect, zgeo.SizeNull)
+func (c *Canvas) FillRect(rect zgeo.Rect, corner float64) {
+	path := zgeo.PathNewRect(rect, zgeo.SizeBoth(corner))
 	c.FillPath(path)
 }
 
@@ -128,7 +141,8 @@ func GetTextSize(text string, font *zgeo.Font) zgeo.Size {
 		measureCanvas = New()
 		measureCanvas.SetSize(zgeo.SizeD(800, 100))
 	}
-	s = measureCanvas.MeasureText(text, font)
+	measureCanvas.SetFont(font, nil)
+	s = measureCanvas.MeasureText(text)
 	measuredTexts.Set(hash, s)
 	measureLock.Unlock()
 	return s
@@ -154,4 +168,18 @@ func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color)
 	colors := []zgeo.Color{col1, col2}
 	path := zgeo.PathNewRect(rect, zgeo.SizeNull)
 	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
+}
+
+func (c *Canvas) DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment) zmath.RangeF64 {
+	s := c.MeasureText(text)
+	if !align.Has(zgeo.Left) {
+		if align.Has(zgeo.Right) {
+			pos.X -= s.W
+		} else {
+			pos.X -= s.W / 2
+		}
+	}
+	c.DrawTextInPos(pos, text, strokeWidth)
+	r := zmath.MakeRange(pos.X, pos.X+s.W)
+	return r
 }
