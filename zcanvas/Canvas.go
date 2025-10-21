@@ -23,8 +23,11 @@ type BaseCanvaser interface {
 	PushState()
 	PopState()
 	FillRect(r zgeo.Rect, corner float64)
-	DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment)
+	DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment, angleDeg float64) zmath.RangeF64
 	ClipPath(path *zgeo.Path, eofill bool)
+	StrokePath(path *zgeo.Path, width float64, ltype zgeo.PathLineType)
+	StrokeHorizontal(x1, x2, y float64, width float64, ltype zgeo.PathLineType)
+	StrokeVertical(x, y1, y2 float64, width float64, ltype zgeo.PathLineType)
 }
 
 type Canvas struct {
@@ -170,7 +173,7 @@ func (c *Canvas) DrawRectGradientVertical(rect zgeo.Rect, col1, col2 zgeo.Color)
 	c.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
 }
 
-func (c *Canvas) DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment) zmath.RangeF64 {
+func (c *Canvas) DrawTextAlignedInPos(pos zgeo.Pos, text string, strokeWidth float64, align zgeo.Alignment, angleDeg float64) zmath.RangeF64 {
 	s := c.MeasureText(text)
 	if !align.Has(zgeo.Left) {
 		if align.Has(zgeo.Right) {

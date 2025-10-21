@@ -2,21 +2,39 @@ package zdom
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/torlangballe/zutil/zgeo"
+	"html"
+	"strings"
 )
 
-func GetFontStyle(font *zgeo.Font) string {
-	var parts []string
-	if font.Style&zgeo.FontStyleBold != 0 {
-		parts = append(parts, "bold")
+func CSSFontStyle(s zgeo.FontStyle) string {
+	if s&zgeo.FontStyleBold != 0 {
+		return "bold"
 	}
-	if font.Style&zgeo.FontStyleItalic != 0 {
-		parts = append(parts, "italic")
+	if s&zgeo.FontStyleItalic != 0 {
+		return "italic"
 	}
-	parts = append(parts, fmt.Sprintf("%dpx", int(font.Size)))
-	parts = append(parts, font.Name)
+	return "normal"
+}
 
-	return strings.Join(parts, " ")
+func GetFontCSSKeyValues(font *zgeo.Font) map[string]string {
+	return map[string]string{
+		"font-style":  CSSFontStyle(font.Style),
+		"font-family": font.Name,
+		// "font-family": "-apple-system",
+		"font-size": fmt.Sprintf("%dpx", int(font.Size)),
+	}
+}
+
+func CSSStringFromMap(m map[string]string) string {
+	var out string
+	for k, v := range m {
+		v = html.EscapeString(v)
+		if strings.Contains(v, " ") {
+			v = `"` + v + `"`
+		}
+		a := fmt.Sprintf("%s: %s; ", k, v)
+		out += a
+	}
+	return out
 }

@@ -108,9 +108,23 @@ func (c *Canvas) FillPathEO(path *zgeo.Path) {
 	c.context.Call("fill", "evenodd")
 }
 
+func getFontParamters(font *zgeo.Font) string {
+	var parts []string
+	if font.Style&zgeo.FontStyleBold != 0 {
+		parts = append(parts, "bold")
+	}
+	if font.Style&zgeo.FontStyleItalic != 0 {
+		parts = append(parts, "italic")
+	}
+	parts = append(parts, fmt.Sprintf("%dpx", int(font.Size)))
+	parts = append(parts, font.Name)
+
+	return strings.Join(parts, " ")
+}
+
 func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 	c.font = *font
-	str := zdom.GetFontStyle(font)
+	str := getFontParamters(font)
 	// zlog.Info("canvas set font:", str)
 	c.context.Set("font", str)
 	return nil

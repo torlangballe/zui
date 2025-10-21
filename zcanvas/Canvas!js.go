@@ -91,11 +91,15 @@ func (c *Canvas) SetFont(font *zgeo.Font, matrix *zgeo.Matrix) error {
 		paths = append(paths, "/System/Library/Fonts/")
 	}
 	if zdebug.IsInTests {
-		dir := "../Fonts/"
-		if zfile.NotExists("../go.mod") {
+		dir := ".."
+		count := 0
+		fdir := dir + "/Fonts/"
+		for zfile.NotExists(fdir) && count < 5 {
 			dir = "../" + dir
+			fdir = dir + "/Fonts/"
+			count++
 		}
-		paths = append(paths, dir)
+		paths = append(paths, fdir)
 	}
 	for _, path := range paths {
 		for _, ext := range []string{".ttf", ".ttc"} {
