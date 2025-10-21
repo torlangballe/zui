@@ -654,29 +654,10 @@ func (v *NativeView) SetTextLine(under bool) {
 }
 
 func (v *NativeView) SetFont(font *zgeo.Font) {
-	cssStyle := v.JSStyle()
-	if font.Style == zgeo.FontStyleUndef {
-		font.Style = zgeo.FontStyleNormal
+	css := v.JSStyle()
+	for k, s := range zdom.GetFontCSSKeyValues(font) {
+		css.Set(k, s)
 	}
-	// zlog.Debug("font-style:", v.ObjectName(), (font.Style & zgeo.FontStyleItalic).String())
-	cssStyle.Set("font-style", (font.Style & zgeo.FontStyleItalic).String())
-	str := (font.Style & (zgeo.FontStyleBold | zgeo.FontStyleNormal)).String()
-	cssStyle.Set("font-weight", str)
-	// zlog.Info("NS font-weight", v.Hierarchy(), str)
-	cssStyle.Set("font-family", font.Name)
-	cssStyle.Set("font-size", fmt.Sprintf("%gpx", font.Size))
-
-	// zlog.Info("NS font-style", v.Hierarchy(), font.Style&zgeo.FontStyleItalic)
-
-	// cssText := cssStyle.Get("cssText").String()
-	// cssText += fmt.Sprintf(";font-style:%v;font-weight:%v;font-family:%s;font-size:%gpx",
-	// 	font.Style&FontStyleItalic,
-	// 	font.Style&FontStyleBold,
-	// 	font.Name,
-	// 	font.Size,
-	// )
-	// // zlog.Info("Font csstext:", cssText)
-	// cssStyle.Set("cssText", cssText)
 }
 
 func (v *NativeView) Font() *zgeo.Font {
