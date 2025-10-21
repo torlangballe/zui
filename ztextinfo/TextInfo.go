@@ -278,7 +278,7 @@ func (tin *Info) Draw(canvas *zcanvas.Canvas) zgeo.Rect {
 	if !tin.Rect.IsNull() {
 		canvas.PushState()
 		path := zgeo.PathNewRect(tin.Rect.ExpandedD(1), zgeo.SizeNull)
-		canvas.ClipPath(path, false)
+		canvas.ClipPath(path, false) // this seems to not be popped on non-js??? But rendering thumb badging works???
 	}
 	if ti.Type == Stroke {
 		w = ti.StrokeWidth
