@@ -683,6 +683,10 @@ func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
 	var style ztext.Style
 	tv := ztext.NewView(str, style, 20, 1)
+	lines := (len(str) + 79) / 80
+	if lines > 1 {
+		tv.SetMaxLines(lines)
+	}
 	tv.SetObjectName(name)
 	// f.SetFont(tv, nil)
 	tv.SetPlaceholder(name)
