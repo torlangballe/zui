@@ -109,7 +109,7 @@ func (v *Label) SetMaxLines(max int) {
 		// style.Set("text-overflow", "ellipsis")
 		style.Set("whiteSpace", "nowrap")
 	} else {
-		// zlog.Info("Label.SetMaxLines here2!")
+		style.Set("overflow", "hidden")
 		style.Set("textOverflow", "initial")
 		style.Set("whiteSpace", "pre-wrap")
 	}

@@ -135,6 +135,7 @@ func (v *Label) GetTextInfo() ztextinfo.Info {
 	if v.maxWidth != 0 {
 		t.SetWidthFreeHight(v.maxWidth)
 	}
+	t.MinLines = v.maxLines
 	t.MaxLines = v.maxLines
 	// t.MinLines = v.maxLines
 	return *t
@@ -144,6 +145,7 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var widths []float64
 	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
+	ti.Rect.Size = total
 	if v.Columns != 0 {
 		s = ti.GetColumnsSize(v.Columns)
 	} else {

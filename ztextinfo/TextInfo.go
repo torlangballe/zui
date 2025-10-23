@@ -172,16 +172,10 @@ func (ti *Info) SetWidthFreeHight(w float64) {
 // It is placed within ti.Rect using alignment
 // TODO: Make it handle multi-line with some home-made wrapping stuff.
 func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64) {
-	// zlog.PushTimingLog()
 	maxLines := ti.MaxLines
-	// if ti.Wrap != WrapNone {
-	// 	maxLines = 1
-	// }
 	lines := zstr.SplitByAnyOf(ti.Text, ti.SplitItems, false)
 	for _, str := range lines {
 		s := zcanvas.GetTextSize(str, ti.Font)
-		// zlog.Info("TI GetBounds:", str, ti.Font, s)
-		// zlog.PrintTimingLog("ti bounds:", str, s.W, s.H, ti.Font.Size)
 		if maxLines != 1 && ti.Rect.Size.W != 0 {
 			split := s.W / ti.Rect.Size.W
 			if split > 1 {
@@ -202,10 +196,8 @@ func (ti *Info) GetBounds() (size zgeo.Size, allLines []string, widths []float64
 		}
 		zfloat.Maximize(&size.W, s.W)
 		zfloat.Maximize(&size.H, s.H)
-		// zlog.Info("TI GetBounds:", str, size.W, s.W)
 	}
-	// zlog.PrintTimingLog("ti bounds looped")
-	if maxLines == 1 { //|| ti.Rect.Size.W == 0 {
+	if maxLines == 1 {
 		allLines = []string{ti.Text}
 		widths = []float64{size.W}
 	} else {

@@ -683,10 +683,6 @@ func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 func makeMapTextView(fv *FieldView, stackFV *FieldView, f *Field, str, name string) *ztext.TextView {
 	var style ztext.Style
 	tv := ztext.NewView(str, style, 20, 1)
-	lines := (len(str) + 79) / 80
-	if lines > 1 {
-		tv.SetMaxLines(lines)
-	}
 	tv.SetObjectName(name)
 	// f.SetFont(tv, nil)
 	tv.SetPlaceholder(name)
@@ -763,10 +759,13 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		if f.IsStatic() {
 			view.Native().SetUsable(true)
 			setter, _ := view.(zview.InteractiveSetter)
-			_, isLabel := view.(*zlabel.Label)
+			label, isLabel := view.(*zlabel.Label)
 			_, isStack := view.(zcontainer.ChildrenOwner)
 			if setter != nil && !isLabel && !isStack {
 				setter.SetInteractive(false)
+			}
+			if label != nil {
+				label.SetMaxLines(0)
 			}
 		}
 		return view, mf
