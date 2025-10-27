@@ -21,7 +21,7 @@ type MenuedSetOwner[A zstr.NameGetter] struct {
 	MenuedOwner
 	MakeItemFunc    func(name string) A
 	DeleteItemFunc  func(id int64, a A)
-	EditSetItemFunc func(id int64, a A, edited func(a A)) zdocs.SearchableItemsGetter
+	EditSetItemFunc func(id int64, a A, edited func(a A, toCustom bool)) zdocs.SearchableItemsGetter
 	AddTitle        string
 	AddPromptText   string
 	HasCustom       bool
@@ -198,7 +198,11 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 					id := selectedItem.Value.(int64)
 					if id != 0 {
 						v := o.values[id]
-						o.EditSetItemFunc(id, v.Value, func(e A) {
+						o.EditSetItemFunc(id, v.Value, func(e A, toCustom bool) {
+							if toCustom {
+								id = CustomID
+								v = o.values[id]
+							}
 							v.Value = e
 							v.Name = e.GetName()
 							o.values[id] = v
