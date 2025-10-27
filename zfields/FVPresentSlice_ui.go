@@ -212,8 +212,12 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 		zpresent.PresentTitledView(fview, title, att, nil, nil)
 		return
 	}
+	var barViews []zview.View
+	if wildCards != nil {
+		barViews = append(barViews, wildCards)
+	}
 	// zlog.Info("EDIT Struct:", zlog.Full(originalStruct))
-	zalert.PresentOKCanceledView(fview, title, att, wildCards, func(ok bool) (close bool) {
+	zalert.PresentOKCanceledView(fview, title, att, barViews, func(ok bool) (close bool) {
 		var doClose = new(zbool.BoolInd)
 		if ok {
 			err := fview.ToData(true)

@@ -249,7 +249,7 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 
 const DisableOKCancelKeyDefaults = 1
 
-func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, footer zview.View, done func(ok bool) (close bool)) {
+func PresentOKCanceledView(view zview.View, title string, att zpresent.Attributes, barViews []zview.View, done func(ok bool) (close bool)) {
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetBGColor(zstyle.DefaultBGColor())
 	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
@@ -257,13 +257,6 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 	stack.Add(view, zgeo.TopCenter|zgeo.Expand)
 	bar := zcontainer.StackViewHor("bar")
 	bar.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
-	if footer != nil {
-		// zlog.Info("OKCancel:", footer != nil, stack != nil)
-		if footer != nil {
-			// zlog.Info("OKCancel2:", footer.Native() != nil)
-		}
-		stack.Add(footer, zgeo.TopLeft|zgeo.HorExpand, zgeo.SizeD(0, 2))
-	}
 	stack.Add(bar, zgeo.TopRight|zgeo.HorExpand, zgeo.SizeD(0, 2))
 
 	cancelButton := addButton(bar, stack, "Cancel", false, done)
@@ -271,6 +264,9 @@ func PresentOKCanceledView(view zview.View, title string, att zpresent.Attribute
 	if att.CustomFlags&DisableOKCancelKeyDefaults == 0 {
 		okButton.MakeReturnKeyDefault()
 		cancelButton.MakeEscapeCanceler()
+	}
+	for _, v := range barViews {
+		bar.Add(v, zgeo.TopLeft)
 	}
 	att.Modal = true
 	if title != "" {
