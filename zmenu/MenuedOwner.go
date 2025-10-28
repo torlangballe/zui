@@ -169,15 +169,12 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 	}
 	o.View = view
 	if view != nil {
-		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
+		f := func() { // SetPressedDownHandler doesn't fire for some reaspm. so using SetPressedHandler.
 			o.MinWidth = view.Rect().Size.W
-			// if o.CreateItemsFunc != nil {
-			// 	o.items = o.CreateItemsFunc()
-			// }
-			// if len(o.items) != 0 {
 			o.popup()
-			// }
-		})
+		}
+		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, f)
+		view.Native().SetPressedHandler("", zkeyboard.ModifierAlt, f)
 	}
 	isFirst := (items == nil)
 	if isFirst {
@@ -437,11 +434,21 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 	if o.CreateItemsFunc != nil {
 		o.items = o.CreateItemsFunc()
 	}
+	items := zslice.Copy(o.items)
+	if zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt {
+		items = zslice.Filtered(items, func(i MenuedOItem) bool {
+			if strings.HasSuffix(i.Name, "†") && !i.Selected {
+				return false
+			}
+			return true
+		})
+	}
+	// zlog.Info("GetItems:", o.Name, zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt, len(items), zdebug.CallingStackString())
 	if o.EditFunc != nil {
 		if o.CreateItemsFunc == nil {
-			for i, item := range o.items {
+			for i, item := range items {
 				if item.IsSeparator {
-					o.items = o.items[:i]
+					items = items[:i]
 					break
 				}
 			}
@@ -458,11 +465,11 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 				var nitem MenuedOItem
 				nitem.Name = s
 				o.EditFunc(&nitem, EditCreate)
-				o.items = append([]MenuedOItem{nitem}, o.items...)
-				for i, item := range o.items {
+				items = append([]MenuedOItem{nitem}, items...)
+				for i, item := range items {
 					if item.IsSeparator {
-						sort.Slice(o.items[:i], func(i, j int) bool {
-							return strings.Compare(o.items[i].Name, o.items[j].Name) < 0
+						sort.Slice(items[:i], func(i, j int) bool {
+							return strings.Compare(items[i].Name, items[j].Name) < 0
 						})
 						break
 					}
@@ -489,14 +496,14 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 					s, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
 					o.EditFunc(s, EditDelete)
-					zslice.RemoveAt(&o.items, si)
+					zslice.RemoveAt(&items, si)
 				})
 			})
 			o.AddMOItem(rename)
 			o.AddMOItem(del)
 		}
 	}
-	return o.items
+	return items
 }
 
 func (o *MenuedOwner) itemForValue(value any) (*MenuedOItem, int) {
@@ -535,8 +542,8 @@ const (
 func (o *MenuedOwner) popup() {
 	allAction := true
 	o.hasShortcut = false
-	o.getItems()
-	for _, item := range o.items {
+	items := o.getItems()
+	for _, item := range items {
 		if !item.IsAction {
 			allAction = false
 		}
@@ -567,7 +574,7 @@ func (o *MenuedOwner) popup() {
 	list.DeselectOnEscape = false
 	list.CellColorFunc = func(id string) zgeo.Color {
 		i := list.IndexOfID(id)
-		if o.items[i].IsDebug {
+		if items[i].IsDebug {
 			return zstyle.DebugBackgroundColor
 		}
 		return list.CellColor
@@ -576,20 +583,20 @@ func (o *MenuedOwner) popup() {
 	lineHeight := o.Font.LineHeight() + 6
 	list.CellHeightFunc = func(id string) float64 {
 		i, _ := strconv.Atoi(id)
-		if o.items[i].IsSeparator {
+		if items[i].IsSeparator {
 			return 1
 		}
 		return lineHeight
 	}
 	list.CellCountFunc = func() int {
-		return len(o.items)
+		return len(items)
 	}
 	list.IDAtIndexFunc = func(i int) string {
 		return strconv.Itoa(i)
 	}
 	list.UpdateCellSelectionFunc = o.updateCellSelection
 
-	for i, item := range o.items {
+	for i, item := range items {
 		if item.IsDisabled {
 			list.DisabledCells[strconv.Itoa(i)] = true
 		}
@@ -600,7 +607,7 @@ func (o *MenuedOwner) popup() {
 	}
 	list.CreateCellFunc = o.createRow
 	var max string
-	for _, item := range o.items {
+	for _, item := range items {
 		if len(item.Name) > len(max) {
 			max = item.Name
 		}
@@ -618,7 +625,7 @@ func (o *MenuedOwner) popup() {
 	w += 40 // test
 	zfloat.Maximize(&w, o.MinWidth)
 	list.SetMinSize(zgeo.SizeD(w, 0))
-	if len(o.items) < 20 {
+	if len(items) < 20 {
 		list.ShowBar = false
 	}
 
@@ -627,7 +634,7 @@ func (o *MenuedOwner) popup() {
 			list.SelectCell(list.CurrentHoverID, true, false)
 			return true
 		}
-		for i, item := range o.items {
+		for i, item := range items {
 			if item.Shortcut.Key == km.Key && item.Shortcut.Modifier == km.Modifier {
 				list.SelectCell(strconv.Itoa(i), true, false)
 				return true
@@ -648,13 +655,13 @@ func (o *MenuedOwner) popup() {
 		ids := list.SelectedIDs()
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
-			item := o.items[i]
+			item := items[i]
 			if item.IsSeparator {
 				zpresent.Close(stack, false, nil)
 				return
 			}
 			if item.IsAction {
-				// o.items[i].Selected = false
+				// items[i].Selected = false
 				if item.Function != nil {
 					zpresent.Close(stack, false, nil)
 					item.Function()
