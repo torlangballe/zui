@@ -242,7 +242,6 @@ func (v *TimeFieldView) toggleAMPM() {
 func (v *TimeFieldView) popCalendar() {
 	cal := zcalendar.New("")
 	val, err := v.Value()
-	// zlog.Info("popCalendar:", val, err)
 	if err != nil {
 		return
 	}
@@ -253,6 +252,9 @@ func (v *TimeFieldView) popCalendar() {
 		t := time.Date(ct.Year(), ct.Month(), ct.Day(), val.Hour(), val.Minute(), val.Second(), 0, v.location)
 		CloseViewFunc(cal, true)
 		v.SetValue(t)
+		if v.HandleValueChangedFunc != nil {
+			v.HandleValueChangedFunc()
+		}
 	}
 	cal.JSSet("className", "znofocus")
 	PopupViewFunc(cal, v)
@@ -297,7 +299,7 @@ func (v *TimeFieldView) SetValue(t time.Time) {
 	v.location = t.Location()
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	if v.ampmLabel != nil && !v.currentUse24Clock {
-		hour, am := ztime.GetHourAndAM(t)
+		hour, am := ztime.HourAMForTime(t)
 		setInt(v.hourText, hour, "%d")
 		setPM(v, !am)
 	} else {
@@ -367,7 +369,7 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 
 	v.currentUse24Clock = zlocale.IsUse24HourClock.Get()
 	stime := zstr.Concat(":", shour, smin, ssec)
-	if !v.currentUse24Clock {
+	if !v.currentUse24Clock && v.ampmLabel != nil {
 		stime += v.ampmLabel.Text()
 	}
 	sdate := zstr.Concat("-", sday, smonth, syear)
@@ -382,7 +384,7 @@ func (v *TimeFieldView) Value() (time.Time, error) {
 		ztime.TimeFieldAMPM:   v.ampmLabel,
 	}
 	flags := ztime.TimeFieldNotFutureIfAmbiguous
-	if !v.currentUse24Clock {
+	if !v.currentUse24Clock && v.ampmLabel != nil {
 		flags |= ztime.TimeFieldAMPM
 	}
 	t, faults, err := ztime.ParseDate(str, v.location, flags|ztime.TimeFieldZeroValueIfAllEmpty)

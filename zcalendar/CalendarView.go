@@ -216,6 +216,9 @@ func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, o
 		check.SetValueHandler("", func(edited bool) {
 			v.updateAfterSettings = updateAfter
 			option.Set(check.On(), true)
+			if v.HandleValueChangedFunc != nil {
+				v.HandleValueChangedFunc()
+			}
 		})
 	}
 	return check
