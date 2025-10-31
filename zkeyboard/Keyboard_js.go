@@ -5,7 +5,6 @@ import (
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zutil/zdevice"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -114,9 +113,6 @@ func GetKeyModFromEvent(event js.Value) KeyMod {
 		km.Key = KeyEnd
 	case "Home":
 		km.Key = KeyHome
-	}
-	if km.Key == 0 {
-		zlog.Info("KM:", scode, key)
 	}
 	return km
 }
