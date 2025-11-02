@@ -273,7 +273,7 @@ func (v *HeaderView) FitToRowStack(stack *zcontainer.StackView, xdiff float64) {
 
 	hr := v.Rect()
 	for _, c := range stack.Cells {
-		if c.View.Native().IsShown() && !c.Collapsed && !c.Free && c.View.Rect().Max().X < hr.Max().X {
+		if c.View.Native().IsShown() && !c.Collapsed && !c.Free && c.View.Rect().Min().X < hr.Max().X {
 			// zlog.Info("Add:", c.View.ObjectName(), c.View.Rect().Max().X, hr.Max().X)
 			cells = append(cells, c)
 		} else {
