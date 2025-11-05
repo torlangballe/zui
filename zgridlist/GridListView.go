@@ -825,6 +825,7 @@ func (v *GridListView) GetChildren(collapsed bool) (children []zview.View) {
 	for _, c := range v.children {
 		children = append(children, c)
 	}
+	children = append(children, v.cellsView)
 	return
 }
 
