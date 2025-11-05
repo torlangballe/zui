@@ -945,7 +945,6 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 				return true
 			})
 			if foundChild != nil {
-				// zlog.Info("Pressed Child Found:", found.Hierarchy(), foundChild.IsUsable(), foundChild.IsInteractive())
 				if foundChild.IsUsable() && foundChild.IsInteractive() {
 					return nil
 				}
