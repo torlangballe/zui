@@ -235,6 +235,7 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 	m.Dir = "www/doc/"
 	m.FileSystem = AllWebFS
 	m.HeaderMD = InlineDocumentationHeaderMD + "\n"
+	m.PartNames = []string{"zusers_shared.md"}
 	return m
 }
 
