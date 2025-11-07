@@ -1489,7 +1489,7 @@ func setDocumentationLink(label *zlabel.Label, rval reflect.Value) {
 		label.SetText(str)
 	}
 	label.SetFont(label.Font().NewWithStyle(zgeo.FontStyleBold))
-	label.SetTextLine(true)
+	label.SetTextUnderline(true)
 	label.SetCursor(zcursor.Pointer)
 	col := label.Color().Mixed(zgeo.ColorBlue, 0.3)
 	label.SetColor(col)

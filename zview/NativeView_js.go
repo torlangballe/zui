@@ -645,8 +645,8 @@ func (v *NativeView) RemoveFromParent(callRemoveFuncs bool) {
 	v.parent = nil
 }
 
-func (v *NativeView) SetTextLine(under bool) {
-	str := "overline"
+func (v *NativeView) SetTextUnderline(under bool) {
+	str := "none"
 	if under {
 		str = "underline"
 	}
