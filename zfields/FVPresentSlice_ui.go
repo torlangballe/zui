@@ -154,7 +154,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 				break
 			}
 		}
-		// zlog.Info("ForEach:", each.Field.Name, each.ReflectValue.Type(), each.ReflectValue.Interface(), notEqual, each.Field.Enum)
+		// zlog.Info("ForEach2:", each.Field.Name, each.ReflectValue.Type(), each.ReflectValue.Interface(), notEqual, each.Field.Enum)
 		if notEqual {
 			if each.ReflectValue.Kind() == reflect.Bool {
 				unknownBoolViewIDs[each.StructField.Name] = true
