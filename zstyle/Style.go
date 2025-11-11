@@ -8,7 +8,6 @@ import (
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -54,9 +53,6 @@ var EmptyStyling = Styling{
 	Spacing:       zfloat.Undefined,
 }
 
-func init() {
-	Dark, _ = zkeyvalue.DefaultStore.GetBool("zstyle.DarkMode", true)
-}
 func useInvertedIfInvalid(c, alt zgeo.Color) zgeo.Color {
 	if c.Valid {
 		return c

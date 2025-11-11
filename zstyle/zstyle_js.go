@@ -2,7 +2,12 @@ package zstyle
 
 import (
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zkeyvalue"
 )
+
+func init() {
+	Dark, _ = zkeyvalue.DefaultStore.GetBool("zstyle.DarkMode", true)
+}
 
 func SetStyling(v zview.View, style Styling) {
 	nv := v.Native()
