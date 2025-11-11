@@ -2,6 +2,7 @@ package zbutton
 
 import (
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
@@ -33,7 +34,8 @@ func New(text string) *Button {
 }
 
 func (v *Button) MakeReturnKeyDefault() {
-	v.SetStroke(2, zgeo.ColorNew(0.4, 0.4, 1, 1), true)
+	col := zstyle.Col(zgeo.ColorNew(0.4, 0.4, 1, 1), zgeo.ColorNew(0.8, 0.8, 1, 1))
+	v.SetStroke(2, col, true)
 	v.SetCorner(6)
 
 	// style := v.JSStyle()
@@ -78,10 +80,10 @@ func (v *Button) SetMargin(m zgeo.Rect) {
 	v.margin = m
 }
 
-func (v *Button) SetRect(r zgeo.Rect) {
-	rm := r.Plus(zgeo.RectFromMarginSize(zgeo.SizeBoth(3)))
-	v.NativeView.SetRect(rm)
-}
+// func (v *Button) SetRect(r zgeo.Rect) {
+// 	rm := r.Plus(zgeo.RectFromMarginSize(zgeo.SizeBoth(3)))
+// 	v.NativeView.SetRect(rm)
+// }
 
 func (v *Button) Text() string {
 	return v.NativeView.InnerText()

@@ -54,7 +54,7 @@ func (v *IconView) popEditor() {
 	}
 	// zlog.Info("NewIconEditorView", cols, rows)
 	ev := zcode.NewEditorView(v.editText, cols, rows)
-	att := zpresent.ModalConfirmAttributes
+	att := zpresent.ModalConfirmAttributes()
 	zalert.PresentOKCanceledView(ev, "Edit "+v.field.Name, att, nil, func(ok bool) bool {
 		if ok {
 			v.editText = ev.Text()

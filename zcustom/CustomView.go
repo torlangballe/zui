@@ -165,21 +165,6 @@ func zConvertViewSizeThatFitstToSize(view *zview.NativeView, sizeIn zgeo.Size) z
 	return zgeo.SizeNull
 }
 
-func (v *CustomView) GetStateColor(col zgeo.Color) zgeo.Color {
-	if v.isHighlighted {
-		g := col.GrayScale()
-		if g < 0.5 {
-			col = col.Mixed(zgeo.ColorWhite, 0.5)
-		} else {
-			col = col.Mixed(zgeo.ColorBlack, 0.5)
-		}
-	}
-	if !v.IsUsable() {
-		col = col.WithOpacity(0.3)
-	}
-	return col
-}
-
 func (v *CustomView) Focus(focus bool) {
 	v.NativeView.Focus(focus)
 	// zlog.Info("FOCUS:", v.ObjectName(), focus)

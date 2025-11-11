@@ -238,7 +238,9 @@ func (v *NativeView) SetCursor(cursor zcursor.Type) {
 
 func (v *NativeView) Color() zgeo.Color {
 	str := v.JSStyle().Get("color").String()
-
+	if str == "" {
+		return zgeo.Color{}
+	}
 	col := zgeo.ColorFromString(str)
 	return col
 

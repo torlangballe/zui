@@ -158,6 +158,10 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	v.Options = options
 	if options&AddBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
+		// v.Bar.SetBGColor(zstyle.Gray(0.9, 0.2))
+		if options&AddBarInHeader == 0 {
+			v.Bar.SetBGColor(zstyle.DefaultBGColor())
+		}
 		v.Bar.NoCalculatedMaxSize.W = true
 		v.Bar.SetMargin(zgeo.RectFromXY2(6, 3, 0, -3))
 		if options&AddBarInHeader == 0 {
@@ -181,6 +185,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			key = storeName + ".layout"
 		}
 		v.Layout = zimageview.NewValuesView(zgeo.SizeD(31, 19), key)
+		v.Layout.MixColorForDarkMode = zgeo.ColorNewGray(0.5, 1)
 		v.Layout.SetObjectName("layout")
 		v.Layout.AddVariant(LayoutSingleRowsType, "images/zcore/order-single-rows.png")
 		v.Layout.AddVariant(LayoutHorizontalFirstType, "images/zcore/order-hor-first.png")
@@ -192,6 +197,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 	}
 	if options&AddMenu != 0 {
 		actions := zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.SizeD(18, 18))
+		if options&AddBarInHeader == 0 {
+			actions.MixColorForDarkMode = zgeo.ColorNewGray(0.5, 1)
+		}
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
@@ -735,9 +743,9 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 	if isEditOnNewStruct {
 		params.HideStatic = true
 	}
-	att := zpresent.ModalConfirmAttributes
+	att := zpresent.ModalConfirmAttributes()
 	if isReadOnly {
-		att = zpresent.ModalPopupAttributes
+		att = zpresent.ModalPopupAttributes()
 		att.ModalDimBackground = true
 	}
 	att.DocumentationIconPath = v.EditDialogDocumentationPath

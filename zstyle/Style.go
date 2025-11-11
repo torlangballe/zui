@@ -8,21 +8,8 @@ import (
 	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zstr"
-)
-
-var (
-	Dark               bool
-	DefaultFGColorFunc = GrayFunc(0.2, 0.8)
-	DefaultBGColorFunc = GrayFunc(0.8, 0.2)
-	DefaultFGColor     = GrayF(DefaultFGColorFunc)
-	DefaultBGColor     = GrayF(DefaultBGColorFunc)
-	DefaultHoverColor  = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
-	DefaultFocusColor  = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
-
-	DebugBackgroundColor  = zgeo.ColorNew(1, 0.9, 0.9, 1)
-	DefaultRowRightMargin = 6.0
-	DefaultRowLeftMargin  = 6.0
 )
 
 type Styling struct {
@@ -41,18 +28,35 @@ type Styling struct {
 	Spacing       float64
 }
 
+const DarkModeKey = "zstyle.DarkMode"
+
 var (
-	EmptyStyling = Styling{
-		Corner:        -1,
-		StrokeWidth:   -1,
-		StrokeIsInset: zbool.Unknown,
-		OutlineWidth:  -1,
-		OutlineOffset: -1,
-		Margin:        zgeo.RectUndef,
-		Spacing:       zfloat.Undefined,
-	}
+	Dark               bool
+	DefaultFGColorFunc = GrayFunc(0.2, 0.8)
+	DefaultBGColorFunc = GrayFunc(0.8, 0.2)
+	DefaultFGColor     = GrayF(DefaultFGColorFunc)
+	DefaultBGColor     = GrayF(DefaultBGColorFunc)
+	DefaultHoverColor  = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
+	DefaultFocusColor  = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
+
+	DebugBackgroundColor  = Col(zgeo.ColorNew(1, 0.9, 0.9, 1), zgeo.ColorNew(0.8, 0.4, 0.4, 1))
+	DefaultRowRightMargin = 6.0
+	DefaultRowLeftMargin  = 6.0
 )
 
+var EmptyStyling = Styling{
+	Corner:        -1,
+	StrokeWidth:   -1,
+	StrokeIsInset: zbool.Unknown,
+	OutlineWidth:  -1,
+	OutlineOffset: -1,
+	Margin:        zgeo.RectUndef,
+	Spacing:       zfloat.Undefined,
+}
+
+func init() {
+	Dark, _ = zkeyvalue.DefaultStore.GetBool("zstyle.DarkMode", true)
+}
 func useInvertedIfInvalid(c, alt zgeo.Color) zgeo.Color {
 	if c.Valid {
 		return c
@@ -208,4 +212,12 @@ func (s Styling) SpacingOrMax(max float64) float64 {
 		return max
 	}
 	return math.Max(max, s.Spacing)
+}
+
+func DropShadowDefault() zgeo.DropShadow {
+	gray := zgeo.ColorNewGray(0, 0.7)
+	if Dark {
+		gray = zgeo.ColorNewGray(0.5, 0.2)
+	}
+	return zgeo.DropShadow{Delta: zgeo.SizeBoth(3), Blur: 3, Color: gray}
 }

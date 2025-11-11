@@ -23,6 +23,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zscreen"
+	"github.com/torlangballe/zutil/zsettings"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -67,18 +68,37 @@ var (
 	DocumentationIconViewNewFunc func(path string) zview.View
 )
 
-var ModalConfirmAttributes = Attributes{
-	Modal:              true,
-	ModalDimBackground: true,
-	ModalDropShadows:   []zgeo.DropShadow{zgeo.DropShadowDefault},
-	// ModalDismissOnEscapeKey: true, // The view needs to have a special escape key do dismiss on escape
+func ModalConfirmAttributes() Attributes {
+	a := Attributes{
+		Modal:              true,
+		ModalDimBackground: true,
+		ModalDropShadows:   []zgeo.DropShadow{zstyle.DropShadowDefault()},
+		// ModalDismissOnEscapeKey: true, // The view needs to have a special escape key do dismiss on escape
+	}
+	if zstyle.Dark {
+		a.ModalStrokeColor = zgeo.ColorDarkGray
+		a.ModalStrokeWidth = 1
+	}
+	return a
 }
 
-var ModalPopupAttributes = Attributes{
-	Modal:                    true,
-	ModalCloseOnOutsidePress: true,
-	ModalDismissOnEscapeKey:  true,
-	ModalDropShadows:         []zgeo.DropShadow{zgeo.DropShadowDefault},
+func ModalPopupAttributes() Attributes {
+	a := Attributes{
+		Modal:                    true,
+		ModalCloseOnOutsidePress: true,
+		ModalDismissOnEscapeKey:  true,
+		ModalDropShadows:         []zgeo.DropShadow{zstyle.DropShadowDefault()},
+	}
+	if zstyle.Dark {
+		a.ModalStrokeColor = zgeo.ColorDarkGray
+		a.ModalStrokeWidth = 1
+	}
+	return a
+}
+
+var BarGradientColors = []zgeo.Color{
+	zstyle.Col(zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.20, 0.23, 0.20, 1)),
+	zstyle.Col(zgeo.ColorNew(0.69, 0.72, 0.76, 1), zgeo.ColorNew(0.29, 0.32, 0.29, 1)),
 }
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.
@@ -474,6 +494,7 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.SetBGColor(zstyle.DefaultBGColor())
+	stack.SetBGColor(zgeo.ColorOrange)
 	//!! if att.TitledMargin.H != 0 {
 	// 	stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
 	// }
@@ -517,15 +538,14 @@ func MakeBar(stitle string, titleAlign zgeo.Alignment) (*zcontainer.StackView, *
 	bar.SetSpacing(2)
 	bar.SetMargin(zgeo.RectFromXY2(6, 4, -6, -7))
 	bar.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-		colors := []zgeo.Color{zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.69, 0.72, 0.76, 1)}
 		path := zgeo.PathNewRect(rect, zgeo.SizeNull)
-		canvas.DrawGradient(path, colors, rect.Min(), rect.BottomLeft(), nil)
+		canvas.DrawGradient(path, BarGradientColors, rect.Min(), rect.BottomLeft(), nil)
 	})
 	stitle = zstr.TruncatedMiddle(stitle, 160, "…")
 	titleLabel := zlabel.New(stitle)
 	titleLabel.SetTextAlignment(titleAlign)
 	titleLabel.SetFont(zgeo.FontNew("Arial", zgeo.FontDefaultSize+1, zgeo.FontStyleBold))
-	titleLabel.SetColor(zgeo.ColorNewGray(0.2, 1))
+	titleLabel.SetColor(zstyle.Gray1(0.2))
 	bar.Add(titleLabel, titleAlign|zgeo.VertCenter|zgeo.HorExpand)
 
 	return bar, titleLabel
@@ -564,7 +584,7 @@ func init() {
 			Close(v, true, nil)
 			got(text)
 		})
-		att := ModalPopupAttributes
+		att := ModalPopupAttributes()
 		att.ModalStrokeWidth = 1
 		att.ModalStrokeColor = zgeo.ColorDarkGray
 		title := "Paste into this text field from clipboard"
@@ -576,13 +596,15 @@ func init() {
 		att.ModalCloseOnOutsidePress = true
 		PresentTitledView(view, title, att, nil, nil)
 	}
-	ztext.PopupViewFunc = func(view, on zview.View) {
+	f := func(view, on zview.View) {
 		att := AttributesDefault()
 		att.Alignment = zgeo.TopRight | zgeo.HorOut
 		att.PlaceOverMargin = zgeo.SizeD(-8, -4)
 		att.FocusView = view
 		PopupView(view, on, att)
 	}
+	ztext.PopupViewFunc = f
+	zsettings.PopupViewFunc = f
 	ztext.CloseViewFunc = func(view zview.View, dismiss bool) {
 		Close(view, dismiss, nil)
 	}

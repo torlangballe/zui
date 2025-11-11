@@ -47,7 +47,6 @@ type HorEventsView struct {
 	MixOddBlocksColor         zgeo.Color // If Valid, is mixed a tiny bit with odd background block color to show borders
 	GutterWidth               zmath.RangeF64
 	OddLaneColor              zgeo.Color
-	IsDark                    bool
 	GetEventViewsFunc         func(blockIndex int, isNewBlockView bool, got func(childView zview.View, x int, cellBox zgeo.Size, laneID, rowType int64, blockDone bool) bool)
 	MakeRowBackgroundViewFunc func(blockIndex int, laneID int64, row *Row, size zgeo.Size) *zcontainer.ContainerView
 	MakeLaneActionIconFunc    func(laneID int64) *zimageview.ImageView
@@ -119,7 +118,6 @@ type EventOptions struct {
 	ShowNowPole          bool
 	GutterWidth          zmath.RangeF64
 	TimeAxisHeight       float64
-	IsDark               bool
 	BGColor              zgeo.Color
 }
 
@@ -172,7 +170,6 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.GutterWidth = opts.GutterWidth
 	v.timeAxisHeight = opts.TimeAxisHeight
 	v.storeKey = opts.StoreKey
-	v.IsDark = opts.IsDark
 	v.zoomLevels = []zoomLevel{
 		zoomLevel{"24 Hours", time.Hour * 24},
 		zoomLevel{"1 Hour", time.Hour * 1},
@@ -210,7 +207,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 	v.setStartTime(t)
 	v.SetSpacing(0)
 	v.Bar = zcontainer.StackViewHor("bar")
-	v.Bar.SetBGColor(zstyle.GrayFor(0.9, 0.4, v.IsDark))
+	v.Bar.SetBGColor(zstyle.GrayFor(0.9, 0.4, zstyle.Dark))
 	v.Bar.SetMarginS(zgeo.SizeD(8, 3))
 	v.Bar.SetSpacing(8)
 	v.Add(v.Bar, zgeo.TopLeft|zgeo.HorExpand)
@@ -647,14 +644,14 @@ func (v *HorEventsView) makeButtons() {
 			leftKey = zkeyboard.KeyMod{Key: zkeyboard.KeyLeftArrow, Modifier: pan.modifier}
 			rightKey = zkeyboard.KeyMod{Key: zkeyboard.KeyRightArrow, Modifier: pan.modifier}
 		}
-		stack := makeButtonPairInStack(int(pan.duration), "zcore/triangle-left-light-gray", "go back in time by "+pan.name, leftKey, "zcore/triangle-right-light-gray", "go forward in time by "+pan.name, rightKey, pan.name, 0, 0, 3, v.IsDark, v.panPressed)
+		stack := makeButtonPairInStack(int(pan.duration), "zcore/triangle-left-light-gray", "go back in time by "+pan.name, leftKey, "zcore/triangle-right-light-gray", "go forward in time by "+pan.name, rightKey, pan.name, 0, 0, 3, zstyle.Dark, v.panPressed)
 		stack.SetCorner(3)
 		v.panDurations[i].stack = stack
 		v.Bar.Add(stack, zgeo.CenterLeft)
 	}
 	outKey := zkeyboard.KeyMod{Key: zkeyboard.KeyMinus}
 	inKey := zkeyboard.KeyMod{Key: zkeyboard.KeyPlus}
-	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "Zoom", 4, 28, -1, v.IsDark, v.zoomPressed)
+	v.zoomStack = makeButtonPairInStack(-2, "zcore/zoom-out-gray", "zoom out", outKey, "zcore/zoom-in-gray", "zoom in", inKey, "Zoom", 4, 28, -1, zstyle.Dark, v.zoomPressed)
 	title, _ := v.zoomStack.FindViewWithName("title", true)
 	title.SetColor(zgeo.ColorOrange)
 	v.Bar.Add(v.zoomStack, zgeo.CenterLeft)
@@ -957,7 +954,7 @@ func (v *HorEventsView) createLanes() {
 	bgWidth := v.ViewWidth //+ v.PoleWidth*2
 	var y float64
 	for i, lane := range v.lanes {
-		title := makeTextTitle(lane.Name, 2, lane.TextColor, v.IsDark)
+		title := makeTextTitle(lane.Name, 2, lane.TextColor, zstyle.Dark)
 		titleSize, _ := title.CalculatedSize(v.Rect().Size)
 		zslice.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
@@ -975,7 +972,7 @@ func (v *HorEventsView) createLanes() {
 		// zlog.Info("SetLaneY:", lane.Name, lane.ID, y, len(lane.Rows))
 		for j, r := range lane.Rows {
 			y = r.y
-			rowTitle := makeTextTitle(r.Name, 0, zgeo.Color{}, v.IsDark)
+			rowTitle := makeTextTitle(r.Name, 0, zgeo.Color{}, zstyle.Dark)
 			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
@@ -1063,7 +1060,7 @@ func (v *HorEventsView) makeAxisRow(blockIndex int) zview.View {
 	axis.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, drawView zview.View) {
 		// zlog.Info("Axis draw:", blockIndex, rect, start, end)
 		beyond := true
-		col := zstyle.DefaultFGColorFunc(v.IsDark)
+		col := zstyle.DefaultFGColorFunc(zstyle.Dark)
 		isBottom := false
 		drawAxis := false
 		font := zgeo.FontNice(14, zgeo.FontStyleNormal)

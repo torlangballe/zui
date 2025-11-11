@@ -21,6 +21,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
+	"github.com/torlangballe/zutil/zsettings"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -58,7 +59,7 @@ func (v *CalendarView) Init(view zview.View) {
 	v.SetMinSize(zgeo.SizeBoth(100))
 	v.SetStroke(1, zgeo.ColorDarkGray, false)
 	v.SetCanTabFocus(true)
-	v.SetBGColor(zgeo.ColorWhite)
+	v.SetBGColor(zstyle.Gray(0.9, 0.25))
 	v.days = map[zgeo.IPos]time.Time{}
 	v.navigator.HandleSelect = v.handleArrowMove
 	v.header = zcontainer.StackViewHor("header")
@@ -208,7 +209,7 @@ func showSettings(v *CalendarView, settings *zimageview.ImageView, show bool) {
 	bottom.Show(!show)
 }
 
-func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zkeyvalue.Option[bool], updateAfter bool) *zcheckbox.CheckBox {
+func (v *CalendarView) addSettingsCheck(s *zcontainer.StackView, title string, option *zkeyvalue.Option[bool], updateAfter bool, changedFunc func()) *zcheckbox.CheckBox {
 	check, _, stack := zcheckbox.NewWithLabel(false, title, "")
 	s.Add(stack, zgeo.CenterLeft)
 	if option != nil {
@@ -235,13 +236,13 @@ func (v *CalendarView) handleSettingsPressed() {
 	//!!!	backdrop-filter: url(filters.svg#filter) blur(4px) saturate(150%);
 	// https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter
 
-	v.addSettingsCheck(s, "Week Starts on Monday", zlocale.IsMondayFirstInWeek, true)
-	v.addSettingsCheck(s, "Show Week Numbers", zlocale.IsShowWeekNumbersInCalendars, true)
-	v.addSettingsCheck(s, "Use 24-hour Clock", zlocale.IsUse24HourClock, false)
-	v.addSettingsCheck(s, "Show Month before Day", zlocale.IsShowMonthBeforeDay, false)
+	zsettings.AddSettingsChecks(s, func() {
+		v.updateAfterSettings = true
+	})
 	h1 := zcontainer.StackViewHor("bottom-bar")
 	s.Add(h1, zgeo.BottomRight|zgeo.HorExpand)
 	label := zlabel.New("Reopen any view with a time or\ndate to see effect")
+	label.SetColor(zgeo.ColorDarkGray)
 	label.SetFont(zgeo.FontDefault(-3))
 	h1.Add(label, zgeo.TopLeft)
 	close := zimageview.NewWithCachedPath("images/zcore/cross-circled.png", zgeo.SizeD(20, 20))
@@ -337,7 +338,7 @@ func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.La
 	isToday := (year == today.Year() && month == today.Month() && day == today.Day())
 	isSelectedDay := (year == v.value.Year() && month == v.value.Month() && day == v.value.Day())
 	bg := zgeo.ColorClear
-	fg := zstyle.DefaultFGColor()
+	fg := zstyle.Gray1(0.2)
 	width := 0.0
 	// zlog.Info("setColors", zlog.Pointer(v.navigator.CurrentFocused), zlog.Pointer(box), label.Text())
 	if box == v.navigator.CurrentFocused {
@@ -347,8 +348,8 @@ func (v *CalendarView) setColors(box *zcontainer.ContainerView, label *zlabel.La
 	// box.Native().SetJSStyle("boxShadow", "0px 0px 0px 4px #4AA inset")
 
 	if isSelectedDay {
-		fg = zstyle.DefaultBGColor()
-		bg = zstyle.DefaultFGColor()
+		bg = fg
+		fg = zstyle.Gray1(0.8)
 	}
 	if isToday {
 		fg = zstyle.DefaultBGColor()
@@ -486,7 +487,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 			weekNo = strconv.Itoa(wn)
 		}
 		wlabel, _, _ := addLabel(v, grid, weekNo)
-		wlabel.SetColor(zgeo.ColorNew(0, 0, 0.5, 0.4))
+		wlabel.SetColor(zstyle.Col(zgeo.ColorNew(0, 0, 0.5, 0.4), zgeo.ColorNew(0.4, 0.4, 1, 1)))
 		wlabel.SetFont(wlabel.Font().NewWithSize(-2))
 		grid.Add(nil, zgeo.TopLeft)
 		for d := 0; d < 7; d++ {

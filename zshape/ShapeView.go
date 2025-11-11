@@ -190,6 +190,21 @@ func (v *ShapeView) IsLoading() bool {
 	return v.loading
 }
 
+func (v *ShapeView) getStateColor(col zgeo.Color) zgeo.Color {
+	if v.IsHighlighted() {
+		g := col.GrayScale()
+		if g < 0.5 {
+			col = col.Mixed(zgeo.ColorWhite, 0.5)
+		} else {
+			col = col.Mixed(zgeo.ColorBlack, 0.5)
+		}
+	}
+	if !v.IsUsable() {
+		col = col.WithOpacity(0.3)
+	}
+	return col
+}
+
 func (v *ShapeView) SetNamedCapImage(pathedName string, insets zgeo.Size) {
 	s := ""
 	if zscreen.MainScale() >= 2 {
@@ -224,7 +239,9 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		if !v.IsUsable() {
 			o *= 0.6
 		}
-		canvas.SetColor(v.GetStateColor(col.WithOpacity(o)))
+		fillCol := v.getStateColor(col.WithOpacity(o))
+		// zlog.Info("Col:", v.Hierarchy(), fillCol, col)
+		canvas.SetColor(fillCol)
 		canvas.FillPath(path)
 	}
 	if v.StrokeWidth != 0 {
@@ -232,7 +249,7 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 		if !v.IsUsable() {
 			o *= 0.6
 		}
-		canvas.SetColor(v.GetStateColor(v.StrokeColor).WithOpacity(o))
+		canvas.SetColor(v.getStateColor(v.StrokeColor).WithOpacity(o))
 		canvas.StrokePath(path, v.StrokeWidth, v.PathLineType)
 	}
 }
@@ -256,7 +273,7 @@ func (v *ShapeView) UpdateText() {
 		// zlog.Info("SV.SetTXT:", v.textInfo.Alignment, v.ObjectName(), v.textInfo.Text)
 		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
 		v.TextLabel.SetFont(v.Font())
-		v.TextLabel.SetColor(v.GetStateColor(v.textInfo.Color))
+		v.TextLabel.SetColor(v.getStateColor(v.textInfo.Color))
 		v.TextLabel.SetText(v.textInfo.Text)
 		if v.IsPresented() {
 			v.ArrangeChildren()
@@ -277,7 +294,7 @@ func (v *ShapeView) SetFont(font *zgeo.Font) {
 
 func (v *ShapeView) SetColor(c zgeo.Color) {
 	v.NativeView.SetColor(c)
-	// zlog.Info("SV.SetColor:", v.Hierarchy(), c, v.Color())
+	// zlog.Info("SV.SetColor:", zlog.Pointer(v), v.Hierarchy(), c, v.Color(), zdebug.CallingStackString())
 }
 
 func (v *ShapeView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zbutton"
 	"github.com/torlangballe/zui/zcheckbox"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zcursor"
@@ -584,7 +585,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 				// zlog.Info("INVALID:", valStr, f.FieldName, t, since, f.HasFlag(FlagPastInvalid), f.HasFlag(FlagFutureInvalid))
 				foundView.SetColor(zgeo.ColorRed)
 			} else {
-				foundView.SetColor(zgeo.ColorBlack)
+				foundView.SetColor(zstyle.DefaultFGColor())
 			}
 		}
 		to := foundView.(ztext.TextOwner)
@@ -1059,25 +1060,23 @@ func (v *FieldView) FindFieldWithFieldName(fn string) *Field {
 	return nil
 }
 
-func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButtonView {
+func (fv *FieldView) makeButton(rval reflect.Value, f *Field) zview.View {
 	format := f.Format
 	if format == "" {
 		format = "%v"
 	}
-	color := "gray"
+	textCol := zstyle.DefaultFGColor()
+	var color string
 	if len(f.Colors) > 0 {
 		color = f.Colors[0]
-	}
-	var textCol zgeo.Color
-	if len(f.Colors) > 1 {
-		textCol = zgeo.ColorFromString(f.Colors[1])
-	}
-	if !textCol.Valid {
-		fg := zgeo.ColorFromString(color)
-		if fg.Valid {
-			textCol = fg.ContrastingGray()
-		} else {
-			textCol = zgeo.ColorBlack
+		if len(f.Colors) > 1 {
+			textCol = zgeo.ColorFromString(f.Colors[1])
+		}
+		if !textCol.Valid {
+			fg := zgeo.ColorFromString(color)
+			if fg.Valid {
+				textCol = fg.ContrastingGray()
+			}
 		}
 	}
 	name := f.Title
@@ -1088,16 +1087,25 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) *zshape.ImageButto
 	if f.Height != 0 {
 		s.H = f.Height
 	}
-	button := zshape.ImageButtonViewNew(name, color, s, zgeo.SizeNull)
-	button.SetTextColor(textCol)
-	button.SetSpacing(0)
+	var view zview.View
+	if color != "" {
+		button := zshape.ImageButtonViewNew(name, color, s, zgeo.SizeNull)
+		button.SetTextColor(textCol)
+		button.SetSpacing(0)
+		view = button
+	} else {
+		button := zbutton.New(name)
+		button.SetColor(zgeo.ColorBlack)
+		view = button
+	}
+
 	if f.HasFlag(FlagIsURL) {
-		button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
+		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			surl := ReplaceDoubleSquiggliesWithFields(fv, f, f.Path)
 			zwindow.GetMain().SetLocation(surl)
 		})
 	}
-	return button
+	return view
 }
 
 func maybeAskBeforeAction(f *Field, action func()) {
@@ -1610,11 +1618,21 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 }
 
 func setColorFromField(view zview.View, f *Field) {
-	col := zstyle.DefaultFGColor()
+	// col := zstyle.DefaultFGColor()
 	if f.Styling.FGColor.Valid {
-		col = f.Styling.FGColor
+		col := f.Styling.FGColor
+		view.SetColor(col)
+		return
 	}
-	view.SetColor(col)
+	_, is := view.(ztext.TextOwner)
+	if !is {
+		return
+	}
+	col := view.Native().Color()
+	if col.Valid {
+		return
+	}
+	view.Native().SetColor(zstyle.DefaultFGColor())
 }
 
 func (v *FieldView) updateOldTime(label *zlabel.Label, f *Field) {
@@ -1738,6 +1756,7 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 		size = f.Size
 	}
 	actions := zimageview.NewWithCachedPath("images/zcore/gear.png", size)
+	actions.MixColorForDarkMode = zgeo.ColorNewGray(0.5, 1)
 	actions.DownsampleImages = true
 	menu := zmenu.NewMenuedOwner()
 	menu.Build(actions, nil) // do we need to do this?
@@ -2110,16 +2129,18 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		nv.SetDropShadow(f.Styling.DropShadow)
 	}
 	view.SetObjectName(f.FieldName)
-	if f.Styling.FGColor.Valid {
-		view.SetColor(f.Styling.FGColor)
-	}
+	setColorFromField(view, f)
 	if f.Styling.BGColor.Valid {
 		view.SetBGColor(f.Styling.BGColor)
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
 		view.SetBGColor(zstyle.DebugBackgroundColor)
 	} else if f.HasFlag(FlagCheckerCell) {
 		if !v.lastCheckered {
-			view.SetBGColor(zgeo.ColorNewGray(0, 0.05))
+			lum := float32(0)
+			if zstyle.Dark {
+				lum = 1
+			}
+			view.SetBGColor(zgeo.ColorNewGray(lum, 0.05))
 		}
 		v.lastCheckered = !v.lastCheckered
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
@@ -361,14 +362,17 @@ func (win *Window) AddStyle() {
 	.znoscrollbar::-webkit-scrollbar { display: none; }
 	.zdarkscroll::-webkit-scrollbar { background-color: #555; }
 	.zdarkscroll::-webkit-scrollbar-thumb { background-color: #888; }
-	/* body { overflow-x: hidden; } */
-}
 `
 	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
 		input[type=number]:focus { border: 2px solid rgb(147,180,248); }
 		input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 `
+	}
+	if zstyle.Dark {
+		styleStr += `input[type="checkbox"] { filter: brightness(80%); }` + "\n"
+		styleStr += `button { filter: brightness(80%); }` + "\n"
+		styleStr += `select { border-radius: 2px; background-color: #444; color: white; border: 0; }` + "\n"
 	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")

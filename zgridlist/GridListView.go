@@ -107,7 +107,7 @@ type GridListView struct {
 
 var (
 	DefaultCellColor    = zgeo.ColorNewGray(0.95, 1)
-	DefaultBorderColor  = zgeo.ColorDarkGray
+	DefaultBorderColor  = zstyle.Gray1(0.25)
 	DefaultPressedColor = zstyle.DefaultFGColor().WithOpacity(0.6)
 	DefaultSelectColor  = zstyle.Col(zgeo.ColorNew(0.6, 0.9, 0.8, 1), zgeo.ColorNew(0.2, 0.5, 0.4, 1))
 	DefaultHoverColor   = DefaultPressedColor
@@ -142,6 +142,9 @@ func (v *GridListView) Init(view zview.View, storeName string) {
 	v.BranchToggleType = zwidgets.BranchToggleTriangle
 	v.Spacing = zgeo.SizeD(14, 6)
 	v.MultiplyColorAlternate = 0.95
+	if zstyle.Dark {
+		v.MultiplyColorAlternate = 1.2
+	}
 	v.DeselectOnEscape = true
 	v.DisabledCells = map[string]bool{}
 	v.HalfSpaceAsMargin = true

@@ -25,7 +25,7 @@ func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
 	RegisterWidgeter("zamount-circle", AmountCircleWidgeter{})
 	RegisterWidgeter("zactivity", ActivityWidgeter{})
-	RegisterWidgeter("images-set", ImagesSetWidgeter{})
+	RegisterWidgeter("zimages-set", ImagesSetWidgeter{})
 	RegisterWidgeter("zcolor", ColorWidgeter{})
 	RegisterWidgeter("zscreens", ScreensViewWidgeter{})
 	RegisterCreator("zerrors.ContextError", buildContextError)
@@ -56,7 +56,7 @@ func (a AmountCircleWidgeter) Create(fv *FieldView, f *Field) zview.View {
 	}
 	view := zwidgets.AmountViewCircleNew()
 	view.SetMinSize(f.Size)
-	view.SetColor(zgeo.ColorNew(0, 0.8, 0, 1))
+	// view.SetColor(zgeo.ColorNew(0, 0.8, 0, 1))
 	for i, n := range []float64{0, 70, 90} {
 		if len(f.Colors) > 1 {
 			if i < len(f.Colors) {

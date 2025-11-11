@@ -53,7 +53,6 @@ type TabsView struct {
 	currentChild       zview.View
 	header             *zcontainer.StackView
 	ChangedHandlerFunc func(newID string)
-	Dark               bool
 }
 
 const (
@@ -62,7 +61,7 @@ const (
 )
 
 var (
-	DefaultButtonName           = "gray-tab"
+	DefaultButtonName           = "gray-tab{-dark?}"
 	DefaultTextColor            = zstyle.GrayCur(0.1, 0.9)
 	DefaultSelectedImageBGColor = zstyle.ColCur(zgeo.ColorNew(0, 0, 1, 0.2), zgeo.ColorNew(0, 0, 9, 0.2))
 )
@@ -72,8 +71,8 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 	v.StackView.Init(v, true, storeName)
 	v.SetBGColor(zstyle.DefaultBGColor())
 	v.SetSpacing(0) // note: for vertical stack v
-	v.Dark = zstyle.Dark
 	v.header = zcontainer.StackViewHor("header")
+	v.header.SetBGColor(zgeo.ColorClear)
 	if buttons {
 		v.ButtonName = DefaultButtonName
 		v.header.SetMargin(zgeo.RectFromXY2(2, 4, 0, 0))
@@ -169,9 +168,9 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	}
 	button.MaxSize.H = 26
 	button.SetObjectName(id)
-	if imagePath != "" {
-		button.SetImage(nil, true, zgeo.SizeNull, imagePath, zgeo.SizeNull, nil)
-	}
+	// if imagePath != "" {
+	// 	button.SetImage(nil, true, zgeo.SizeNull, imagePath, zgeo.SizeNull, nil)
+	// }
 	button.SetPressedHandler("", zkeyboard.ModifierAny, func() {
 		i := v.FindItem(id)
 		item := v.items[i]
@@ -333,17 +332,18 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 		button, _ := view.(*zshape.ImageButtonView)
 		if button != nil {
 			str := DefaultButtonName
-			if selected != v.Dark {
+			if selected {
 				str += "-selected"
 			}
 			button.SetImageName(str, zgeo.SizeD(11, 8))
+			col := DefaultTextColor()
 			if v.InvertSelectedTabText {
-				col := DefaultTextColor()
-				if selected != v.Dark {
-					col = col.ContrastingGray()
-				}
-				button.SetTextColor(col)
+				col = col.ContrastingGray()
 			}
+			if !selected {
+				col = col.WithOpacity(0.6)
+			}
+			button.SetTextColor(col)
 		} else { // image only
 			v.header.Expose()
 		}

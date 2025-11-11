@@ -99,7 +99,7 @@ type MenuedOItem struct {
 
 var (
 	MenuedOItemSeparator        = MenuedOItem{IsSeparator: true}
-	MenuedOwnerDefaultBGColor   = zstyle.ColCur(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.12, 0.11, 0.1, 1))
+	MenuedOwnerDefaultBGColor   = zstyle.ColCur(zgeo.ColorNew(0.92, 0.91, 0.90, 1), zgeo.ColorNew(0.22, 0.22, 0.2, 1))
 	MenuedOwnerDefaultTextColor = zstyle.GrayCur(0.1, 0.9)
 	//	MenuedOwnerDefaultHightlightColor = zstyleColF(zgeo.ColorNewGray(0, 0.7), zgeo.ColorNewGray(1, 0.7))
 	MenuedOwnerDefaultHightlightColor = zstyle.ColCur(zgeo.ColorNew(0.035, 0.29, 0.85, 1), zgeo.ColorNew(0.8, 0.8, 1, 1))
@@ -817,9 +817,9 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 	item := o.items[i]
 	if item.IsSeparator {
 		v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-			canvas.SetColor(zgeo.ColorWhite)
+			canvas.SetColor(zstyle.DefaultBGColor())
 			canvas.StrokeHorizontal(rect.Min().X, rect.Max().X+1, rect.Center().Y+1, 1, zgeo.PathLineButt)
-			canvas.SetColor(zgeo.ColorGray)
+			canvas.SetColor(zstyle.DefaultFGColor())
 			canvas.StrokeHorizontal(rect.Min().X, rect.Max().X+1, rect.Center().Y, 1, zgeo.PathLineButt)
 		})
 		return v
@@ -915,7 +915,8 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.SetSpacing(4)
 	v.SetMinSize(zgeo.SizeD(20, 22))
 	v.TextMargin = zgeo.RectFromXY2(8, 0, -20, 0)
-	v.SetColor(zstyle.DefaultBGColor().Mixed(zgeo.ColorWhite, 0.2))
+	v.SetColor(zstyle.Gray(0.97, 0.3))
+
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.5)
 	v.StrokeWidth = 1
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)

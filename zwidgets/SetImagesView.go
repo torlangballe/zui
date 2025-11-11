@@ -24,6 +24,10 @@ type ImagesSetView struct {
 	imageSize zgeo.Size
 }
 
+type PathsGetter interface {
+	ImagePaths() []string
+}
+
 func NewImagesSetView(name, imagePathPrefix string, imageSize zgeo.Size, styling *zstyle.Styling) *ImagesSetView {
 	if imageSize.IsNull() {
 		imageSize = zgeo.SizeBoth(16)
@@ -43,8 +47,13 @@ func NewImagesSetView(name, imagePathPrefix string, imageSize zgeo.Size, styling
 
 func (v *ImagesSetView) SetValueWithAny(bitset any) {
 	v.RemoveAllChildren()
-	stringer := bitset.(fmt.Stringer)
-	parts := strings.Split(stringer.String(), "|")
+	var parts []string
+	getter, _ := bitset.(PathsGetter)
+	if getter != nil {
+		parts = getter.ImagePaths()
+	} else {
+		strings.Split(fmt.Sprint(bitset), "|")
+	}
 	sort.Strings(parts)
 	for _, part := range parts {
 		path := zstr.Concat("/", "images/flags", v.prefix, part) + ".png"

@@ -107,7 +107,7 @@ func (v *FieldSliceView) build(addItems bool) {
 		if v.field.Description != "" {
 			label := zlabel.New("desc")
 			label.SetFont(zgeo.FontNice(-3, zgeo.FontStyleNormal))
-			label.SetColor(zgeo.ColorDarkGray.WithOpacity(0.7))
+			label.SetColor(zstyle.Gray1(0.25).WithOpacity(0.7))
 			label.SetText(v.field.Description)
 			label.SetTextAlignment(zgeo.BottomRight)
 			v.Add(label, zgeo.BottomRight|zgeo.HorExpand)

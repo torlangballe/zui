@@ -8,6 +8,7 @@ import (
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcustom"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdraw"
 	"github.com/torlangballe/zutil/zfloat"
@@ -73,7 +74,7 @@ func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *zcanvas.Canvas, view zvi
 func AmountViewCircleNew() *AmountView {
 	v := &AmountView{}
 	v.CustomView.Init(v, "amount")
-	v.StrokeColor = zgeo.ColorDarkGray
+	v.StrokeColor = zstyle.Gray(0.25, 0.6)
 	v.SetColor(zgeo.ColorNewGray(0.7, 1))
 	v.CustomView.SetMinSize(zgeo.SizeBoth(AmountViewCircleDefaultDiameter))
 	v.StrokeWidth = 2

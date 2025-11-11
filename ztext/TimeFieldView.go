@@ -13,6 +13,7 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdevice"
 	"github.com/torlangballe/zutil/zgeo"
@@ -58,7 +59,7 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 	v.SetMinSize(zgeo.SizeD(20, 30))
 	v.SetMargin(zgeo.RectFromXY2(4, 2, -2, -2))
 	v.SetCorner(6)
-	v.SetBGColor(zgeo.ColorNewGray(0.7, 1))
+	v.SetBGColor(zstyle.Gray(0.7, 0.4))
 	v.SetSearchable(false)
 	if false && zdevice.WasmBrowser() == zdevice.Safari { // this is a hack because on safari, first number field's focus doesn't show when in popup
 		style := Style{KeyboardType: zkeyboard.TypeInteger}
@@ -157,6 +158,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string, max 
 	style := Style{KeyboardType: zkeyboard.TypeInteger}
 	tv := NewView("", style, columns, 1)
 	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
+	tv.SetColor(zstyle.DefaultFGColor())
 	tv.UpdateSecs = 0
 	tv.SetPlaceholder(placeholder)
 	tv.SetMin(0)

@@ -47,7 +47,7 @@ func PresentSlicePicker[S zstr.TitleOwner](title string, slice []S, keepPicking 
 		})
 		return true
 	}
-	att := zpresent.ModalPopupAttributes
+	att := zpresent.ModalPopupAttributes()
 	att.ClosedFunc = func(dismissed bool) {
 		var s S
 		got(s, true)

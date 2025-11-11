@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
@@ -64,9 +65,14 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
 	// if zwindow.FromNativeView(&v.NativeView) == zwindow.GetMain() {
+	if zstyle.Dark {
+		css.Set("border", "none")
+	} else {
+		css.Set("border", "1px solid gray")
+	}
 	css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
 	// }
-	css.Set("-webkitBoxShadow", "none") // doesn't work
+	//!!	css.Set("-webkitBoxShadow", "none") // doesn't work
 	// css.Set("outlineOffset", "-2px")
 	// css.Set("overflow", "visible")
 	// css.Set("margin-top", "1px")

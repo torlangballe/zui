@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
@@ -37,7 +38,7 @@ func NewCurrentTimeLabel() *zlabel.Label {
 	label := zlabel.New("")
 	label.SetObjectName("time")
 	label.SetFont(zgeo.FontDefault(0))
-	label.SetColor(zgeo.ColorNewGray(0.3, 1))
+	label.SetColor(zstyle.DefaultFGColor())
 	label.SetMinWidth(145)
 	label.SetTextAlignment(zgeo.Right)
 	label.SetPressedDownHandler("", 0, func() bool {
@@ -99,7 +100,7 @@ func updateCurrentTime(label *zlabel.Label) {
 		str = "☁️"
 	}
 	str += t.Format(format)
-	col := zgeo.ColorBlack
+	col := zstyle.DefaultFGColor()
 	if ServerTimeDifference > time.Second*2 {
 		col = zgeo.ColorRed
 	}

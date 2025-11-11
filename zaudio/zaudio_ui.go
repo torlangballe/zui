@@ -7,6 +7,7 @@ import (
 	"github.com/torlangballe/zui/zfields"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zgeo"
@@ -50,7 +51,7 @@ func NewAudioIconView(size zgeo.Size, path string) *AudioIconView {
 	}
 	v.SetMinSize(size)
 
-	v.activity = zwidgets.NewActivityView(size, zgeo.ColorBlack)
+	v.activity = zwidgets.NewActivityView(size, zstyle.Gray1(0.1))
 	v.Add(v.activity, zgeo.Center)
 
 	v.imageView = zimageview.NewWithCachedPath("images/zcore/speaker.png", size)

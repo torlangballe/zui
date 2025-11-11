@@ -44,8 +44,9 @@ func (v *Button) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 		zfloat.Minimize(&s.W, v.maxWidth)
 	}
 	s = s.Ceil()
+	s.W += 4
 	// zlog.Info("Button CS:", v.ObjectName(), s)
-	return s, zgeo.SizeD(0, s.H)
+	return s, zgeo.SizeD(0, s.H-2)
 }
 
 func (v *Button) MinWidth() float64 {
