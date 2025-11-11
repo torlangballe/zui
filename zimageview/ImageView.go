@@ -4,12 +4,14 @@ package zimageview
 
 import (
 	"path"
+	"strings"
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zfocus"
 	"github.com/torlangballe/zui/zimage"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
@@ -22,20 +24,21 @@ import (
 
 type ImageView struct {
 	zcontainer.ContainerView
-	image              *zimage.Image
-	fitSize            zgeo.Size
-	alignment          zgeo.Alignment
-	imageCorner        float64
-	strokeWidth        float64
-	strokeColor        zgeo.Color
-	strokeInset        bool
-	loading            bool
-	UseDownsampleCache bool
-	CapInsetCorner     zgeo.Size
-	EmptyColor         zgeo.Color
-	TintColor          zgeo.Color
-	MixColor           zgeo.Color // Alpha is used to specify amount to mix, and used as 1
-	LoadedFunc         func(img *zimage.Image)
+	image               *zimage.Image
+	fitSize             zgeo.Size
+	alignment           zgeo.Alignment
+	imageCorner         float64
+	strokeWidth         float64
+	strokeColor         zgeo.Color
+	strokeInset         bool
+	loading             bool
+	UseDownsampleCache  bool
+	CapInsetCorner      zgeo.Size
+	EmptyColor          zgeo.Color
+	TintColor           zgeo.Color
+	MixColorForDarkMode zgeo.Color
+	MixColor            zgeo.Color // Alpha is used to specify amount to mix, and used as 1
+	LoadedFunc          func(img *zimage.Image)
 }
 
 func NewWithCachedPath(imagePath string, fitSize zgeo.Size) *ImageView {
@@ -154,6 +157,27 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 
 func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
 	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
+	has := strings.Contains(path, "{")
+	path = zstr.ReplaceInSquigglyBrackets(path, func(s string) string {
+		var pre string
+		if zstr.HasSuffix(s, "dark", &pre) {
+			if zstyle.Dark {
+				return pre + "4dark"
+			}
+			return pre + "4light"
+		}
+		if zstr.HasSuffix(s, "dark?", &pre) {
+			if zstyle.Dark {
+				return pre + "4dark"
+			} else {
+				return ""
+			}
+		}
+		return "<?>"
+	})
+	if has {
+		// zlog.Info("SSquggle:", path, zstyle.Dark)
+	}
 	v.JSSet("href", path)
 	v.SetExposed(false)
 	if image != nil {
@@ -211,8 +235,11 @@ func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 			v.image.TintedWithColor(col, 1, func(ti *zimage.Image) { // we tint with 1 because we assume amount is in alpha of col
 				v.drawImage(canvas, ti, rect)
 			})
-		} else if v.MixColor.Valid {
+		} else if v.MixColor.Valid || v.MixColorForDarkMode.Valid {
 			col = v.MixColor
+			if v.MixColorForDarkMode.Valid && zstyle.Dark {
+				col = v.MixColorForDarkMode.Mixed(col, 0.5)
+			}
 			amount := col.Colors.A
 			col.Colors.A = 1
 			v.image.MixedWithColor(col, amount, func(ti *zimage.Image) { // we tint with 1 because we assume amount is in alpha of col
