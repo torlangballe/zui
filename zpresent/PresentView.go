@@ -494,10 +494,6 @@ func PresentTitledView(view zview.View, stitle string, att Attributes, barViews 
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
 	stack.SetBGColor(zstyle.DefaultBGColor())
-	stack.SetBGColor(zgeo.ColorOrange)
-	//!! if att.TitledMargin.H != 0 {
-	// 	stack.SetMargin(zgeo.RectFromXY2(0, 0, 0, -att.TitledMargin.H))
-	// }
 
 	a := zgeo.Left
 	if len(barViews) == 0 {
