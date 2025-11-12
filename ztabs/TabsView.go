@@ -341,7 +341,7 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 				col = col.ContrastingGray()
 			}
 			if !selected {
-				col = col.WithOpacity(0.6)
+				col = col.WithOpacity(0.8)
 			}
 			button.SetTextColor(col)
 		} else { // image only
