@@ -843,16 +843,19 @@ func (v *NativeView) DoMouseDown(id string, mods zkeyboard.Modifier) {
 
 func (v *NativeView) ClickAll() {
 	globalForceClick = true
+	var invoked bool
 	for n, f := range v.jsFuncs {
-		if strings.HasPrefix(n, pressMouseDownPrefix) {
+		if strings.HasPrefix(n, pressMouseDownPrefix) { // "click" ||
 			f.Value.Invoke(f.Value)
+			invoked = true
 		}
 	}
-	globalForceClick = false
-	children := v.JSGet("children")
-	if children.IsUndefined() {
+	if invoked {
 		return
 	}
+	v.Element.Call("click")
+	globalForceClick = false
+	children := v.JSGet("children")
 	if children.Length() > 0 {
 		node := children.Index(0)
 		if node.IsUndefined() {
