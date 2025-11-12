@@ -176,11 +176,11 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	urlTick := req.URL.Query().Get("zurltick")
 	if spath == "index.html" {
-		zlog.Info("TICK:", urlTick)
-		data, err := io.ReadAll(f)
+		data, rerr := io.ReadAll(f)
 		if zlog.OnError(err, spath, fpath) {
 			return
 		}
+		err = rerr
 		sdata := strings.Replace(string(data), "{{.WasmPostfix}}", "?tick="+urlTick, -1)
 		_, err = w.Write([]byte(sdata))
 	} else {
