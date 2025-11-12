@@ -177,7 +177,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	urlTick := req.URL.Query().Get("zurltick")
 	if spath == "index.html" {
 		data, rerr := io.ReadAll(f)
-		if zlog.OnError(err, spath, fpath) {
+		if zlog.OnError(rerr, spath, fpath) {
 			return
 		}
 		err = rerr
