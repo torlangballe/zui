@@ -493,7 +493,11 @@ func makeEmbeddingViewAndAddToWindow(win *zwindow.Window, v zview.View, attribut
 func PresentTitledView(view zview.View, stitle string, att Attributes, barViews map[zview.View]zgeo.Alignment, ready func(stack, bar *zcontainer.StackView, title *zlabel.Label)) {
 	stack := zcontainer.StackViewVert("$titled")
 	stack.SetSpacing(0)
-	stack.SetBGColor(zstyle.DefaultBGColor())
+	col := view.Native().Color()
+	if !col.Valid {
+		col = zstyle.DefaultBGColor()
+	}
+	stack.SetBGColor(col)
 
 	a := zgeo.Left
 	if len(barViews) == 0 {
