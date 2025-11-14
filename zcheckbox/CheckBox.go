@@ -55,12 +55,12 @@ func (v *CheckBox) Toggle() {
 	v.SetOn(!v.On())
 }
 
-func MakeNextToView(view zview.View) (*CheckBox, *zcontainer.StackView) {
+func MakeNextToViewAddBoth(view zview.View) (*CheckBox, *zcontainer.StackView) {
 	stack := zcontainer.StackViewHor(view.ObjectName() + ".check-stack")
 	stack.SetSpacing(1)
 	check := New(zbool.False)
 	stack.Add(check, zgeo.CenterLeft)
-	stack.Add(view, zgeo.CenterLeft|zgeo.HorExpand)
+	stack.Add(view, zgeo.CenterLeft)
 	check.SetValueHandler("$stacked-handler", func(edited bool) {
 		view.SetUsable(check.On())
 	})
