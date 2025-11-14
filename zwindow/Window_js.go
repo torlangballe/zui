@@ -372,7 +372,7 @@ func (win *Window) AddStyle() {
 	if zstyle.Dark {
 		styleStr += `input[type="checkbox"] { filter: brightness(80%); }` + "\n"
 		styleStr += `button { filter: brightness(80%); }` + "\n"
-		styleStr += `select { border-radius: 2px; background-color: #444; color: white; border: 0; }` + "\n"
+		styleStr += `select { filter: brightness(80%); }` + "\n"
 	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")
