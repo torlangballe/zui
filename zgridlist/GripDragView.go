@@ -3,8 +3,7 @@
 package zgridlist
 
 import (
-	"github.com/torlangballe/zui/zcursor"
-	"github.com/torlangballe/zui/zimageview"
+	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -14,15 +13,15 @@ type GripDragHandler interface {
 }
 
 type GripDragView struct {
-	zimageview.ImageView
+	zwidgets.GripView
 	id      string
 	handler GripDragHandler
 }
 
 func NewGripDragView(id string, handler GripDragHandler) *GripDragView {
 	v := &GripDragView{}
-	v.Init(v, true, nil, "images/zcore/grip-hor.png", zgeo.SizeD(20, 14))
-	v.SetCursor(zcursor.Grab)
+	v.GripView.Init()
+	v.GripView.SetMinSize(zgeo.SizeD(40, 14))
 	v.id = id
 	v.handler = handler
 	v.SetPressUpDownMovedHandler(v.handleUpDownMovedHandler)
