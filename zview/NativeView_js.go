@@ -339,7 +339,11 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 		v.SetJSStyle("border", "none")
 		return
 	}
-	str := fmt.Sprintf("%dpx solid %s", int(width), c.Hex())
+	scol := "none"
+	if c.Valid {
+		scol = c.Hex()
+	}
+	str := fmt.Sprintf("%dpx solid %s", int(width), scol)
 	if inset {
 		str += " inset"
 	}
@@ -348,7 +352,7 @@ func (v *NativeView) SetStroke(width float64, c zgeo.Color, inset bool) {
 
 func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment, inset bool) {
 	str := "none"
-	if width != 0 {
+	if width != 0 && c.Valid {
 		str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
 	}
 	style := v.JSStyle()
@@ -1538,11 +1542,14 @@ func (v *NativeView) MakeLink(surl, name string) {
 	v.JSSet("href", surl)
 }
 
-func (v *NativeView) SetTilePath(spath string) {
+func (v *NativeView) SetTilePath(spath string, size zgeo.Size) {
 	// spath2 := zimage.MakeImagePathWithAddedScale(spath, 2)
 	// format := `-webkit-image-set(url("%s") 1x, url("%s") 2x)`
 	// s := fmt.Sprintf(format, spath, spath2)
-	// v.JSStyle().Set("backgroundImage", s)
+	v.JSStyle().Set("background-image", fmt.Sprintf(`url("%s")`, spath))
+	if !size.IsNull() {
+		v.JSStyle().Set("background-size", fmt.Sprintf("%dpx %dpx", int(size.W), int(size.H)))
+	}
 }
 
 // SetHandleExposed sets a handler for v that is called with intersectsViewport=true, when v becomes visible.
