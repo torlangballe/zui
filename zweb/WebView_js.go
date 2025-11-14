@@ -57,6 +57,11 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 	v.AddOnRemoveFunc(repeater.Stop)
 }
 
+func (v *WebView) SetRect(r zgeo.Rect) {
+	v.NativeView.SetRect(r)
+	v.SetJSStyle("height", "auto")
+}
+
 func (v *WebView) updateWidgets() {
 	if v.Back != nil {
 		v.Back.SetUsable(len(v.History) > 1)
@@ -101,7 +106,7 @@ func (v *WebView) SetURL(surl string) {
 
 func (v *WebView) FetchHTMLAndSet(surl string) {
 	var html string
-	zlog.Info("WebView.FetchHTMLAndSet:", surl)
+	// zlog.Info("WebView.FetchHTMLAndSet:", surl)
 	params := zhttp.MakeParameters()
 	_, err := zhttp.Get(surl, params, &html)
 	if err != nil {
@@ -112,6 +117,7 @@ func (v *WebView) FetchHTMLAndSet(surl string) {
 }
 
 func (v *WebView) SetHTMLContent(html string) {
+	// zlog.Info("WebView.SetHTML", len(html))
 	v.Element.Set("innerHTML", html)
 }
 
