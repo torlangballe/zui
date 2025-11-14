@@ -169,7 +169,7 @@ func (v *TableView[S]) calculateColumns(size zgeo.Size) {
 	for _, child := range (fv.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		fname := child.ObjectName()
 		r := child.Native().Rect()
-		r.Pos.Y += v.Grid.Spacing.H / 2
+		r.Pos.Y += v.Grid.CellSpacing.H / 2
 		v.fieldRects[fname] = r
 		// cell, _ := fv.FindCellWithView(child)
 		// zlog.Info("ArrangeCalc:", rowSize.H, total, fname, v.fieldRects[fname], cell.Alignment)
