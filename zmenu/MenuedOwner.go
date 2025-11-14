@@ -443,7 +443,7 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 			return true
 		})
 	}
-	// zlog.Info("GetItems:", o.Name, zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt, len(items), zdebug.CallingStackString())
+	// zlog.Info("GetItems:", o.Name, o.EditFunc != nil, o.View.Native().Hierarchy())
 	if o.EditFunc != nil {
 		if o.CreateItemsFunc == nil {
 			for i, item := range items {
@@ -459,32 +459,32 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 		if item.Name != "" {
 			name = item.Name
 		}
-		o.AddMOItem(MenuedOItemSeparator)
+		items = append(items, MenuedOItemSeparator)
 		add := MenuedFuncAction("Add "+name, func() {
 			zalert.PromptForText("Name of "+name, "", func(s string) {
 				var nitem MenuedOItem
 				nitem.Name = s
 				o.EditFunc(&nitem, EditCreate)
-				items = append([]MenuedOItem{nitem}, items...)
-				for i, item := range items {
-					if item.IsSeparator {
-						sort.Slice(items[:i], func(i, j int) bool {
-							return strings.Compare(items[i].Name, items[j].Name) < 0
+				o.items = append([]MenuedOItem{nitem}, o.items...)
+				for i, item := range o.items {
+					if item.IsSeparator { // sort until separator
+						sort.Slice(o.items[:i], func(i, j int) bool {
+							return strings.Compare(items[i].Name, o.items[j].Name) < 0
 						})
 						break
 					}
 				}
 			})
 		})
-		o.AddMOItem(add)
+		items = append(items, add)
 		sel := o.SelectedItem()
 		if sel != nil && sel.Value != nil && !reflect.ValueOf(sel.Value).IsZero() {
 			rename := MenuedFuncAction(`Rename "`+sel.Name+`"`, func() {
 				zalert.PromptForText("Change name of "+sel.Name, sel.Name, func(answer string) {
-					s, si := o.itemForValue(sel.Value)
+					_, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
-					s.Name = answer
-					o.EditFunc(s, EditRename)
+					o.items[si].Name = answer
+					o.EditFunc(&o.items[si], EditRename)
 					o.UpdateTitleAndImage()
 				})
 			})
@@ -493,15 +493,15 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 					if !ok {
 						return
 					}
-					s, si := o.itemForValue(sel.Value)
+					_, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
-					o.EditFunc(s, EditDelete)
-					zslice.RemoveAt(&items, si)
+					o.EditFunc(&o.items[si], EditDelete)
+					zslice.RemoveAt(&o.items, si)
 				})
 			})
-			o.AddMOItem(rename)
-			o.AddMOItem(del)
+			items = append(items, rename, del)
 		}
+		o.items = zslice.Copy(items)
 	}
 	return items
 }
@@ -509,6 +509,7 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 func (o *MenuedOwner) itemForValue(value any) (*MenuedOItem, int) {
 	for i, item := range o.items {
 		if reflect.DeepEqual(item.Value, value) {
+			// zlog.Info("itemForValue:", i, item.Name, zlog.Pointer(&o.items[i]))
 			return &o.items[i], i
 		}
 	}
