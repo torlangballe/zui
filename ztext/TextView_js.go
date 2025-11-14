@@ -80,6 +80,8 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
 	}
+	v.SetNativePadding(zgeo.RectFromXY2(1, 0, -1, 0))
+
 	// if rows <= 1 {
 	// style := v.JSStyle()
 	// style.Set("margin", "4px")
@@ -99,6 +101,9 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	}))
 	if DefaultBGColor().Valid {
 		v.SetBGColor(DefaultBGColor())
+	}
+	if zstyle.Dark {
+		v.SetColor(zstyle.DefaultFGColor())
 	}
 	v.setHandlers()
 }

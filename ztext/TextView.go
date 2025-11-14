@@ -73,6 +73,9 @@ func NewView(text string, style Style, cols, rows int) *TextView {
 func NewInteger(style Style, cols int) *TextView {
 	style.KeyboardType = zkeyboard.TypeInteger
 	v := NewView("", style, cols, 1)
+	v.SetNativePadding(zgeo.RectFromXY2(2, 0, -2, 0))
+	v.SetTextAlignment(zgeo.Right)
+
 	return v
 }
 
