@@ -155,8 +155,7 @@ func (v *TimeFieldView) handleReturn(km zkeyboard.KeyMod, down bool) bool {
 }
 
 func addText(v *TimeFieldView, columns int, placeholder string, pre string, max int) *TextView {
-	style := Style{KeyboardType: zkeyboard.TypeInteger}
-	tv := NewView("", style, columns, 1)
+	tv := NewInteger(Style{}, columns)
 	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	tv.SetColor(zstyle.DefaultFGColor())
 	tv.UpdateSecs = 0
@@ -190,7 +189,6 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string, max 
 			return false
 		})
 	}
-	tv.SetTextAlignment(zgeo.Right)
 	v.Add(tv, zgeo.TopLeft, zgeo.SizeD(2, 2))
 	tv.SetKeyHandler(v.handleReturn)
 	return tv
