@@ -345,8 +345,7 @@ func Current() *Window {
 
 func (win *Window) AddStyle() {
 	styleStr := `
-	input.rounded:focus { border: 2px solid rgb(147,180,248); }
-	.zfocus:focus { outline: solid 4px rgb(147,180,248); }
+	.rounded:focus { border: 2px solid rgb(147,180,248); }
 	.znofocus:focus { outline: none; }
 	input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
 	input[type=number] { -moz-appearance: textfield; }
@@ -362,6 +361,7 @@ func (win *Window) AddStyle() {
 	.znoscrollbar::-webkit-scrollbar { display: none; }
 	.zdarkscroll::-webkit-scrollbar { background-color: #555; }
 	.zdarkscroll::-webkit-scrollbar-thumb { background-color: #888; }
+	.zfocus:focus { outline: solid 4px rgb(147,180,248); }
 `
 	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
@@ -370,9 +370,11 @@ func (win *Window) AddStyle() {
 `
 	}
 	if zstyle.Dark {
-		styleStr += `input[type="checkbox"] { filter: brightness(80%); }` + "\n"
-		styleStr += `button { filter: brightness(80%); }` + "\n"
-		styleStr += `select { filter: brightness(80%); }` + "\n"
+		styleStr += `input[type="checkbox"] { filter: brightness(80%); }
+		button { filter: brightness(80%); }
+		select { filter: brightness(80%); }
+		.zfocus:focus { outline: solid 4px rgb(97,140,198); }
+		`
 	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")

@@ -98,7 +98,7 @@ func ModalPopupAttributes() Attributes {
 
 var BarGradientColors = []zgeo.Color{
 	zstyle.Col(zgeo.ColorNew(0.85, 0.88, 0.91, 1), zgeo.ColorNew(0.20, 0.23, 0.20, 1)),
-	zstyle.Col(zgeo.ColorNew(0.69, 0.72, 0.76, 1), zgeo.ColorNew(0.29, 0.32, 0.29, 1)),
+	zstyle.Col(zgeo.ColorNew(0.72, 0.72, 0.72, 1), zgeo.ColorNew(0.3, 0.3, 0.3, 1)),
 }
 
 // PresentView presents the view v either in a new window, or a modal window which might be just a view on top of the current window.

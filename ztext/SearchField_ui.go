@@ -30,7 +30,6 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	// tv.SetMargin(zgeo.RectFromXY2(0, 3, -24, -10))
 	tv.SetNativePadding(zgeo.RectFromXY2(16, 0, 0, 0))
 	tv.JSSet("inputmode", "search")
-	tv.SetJSStyle("border", "2px")
 	tv.UpdateSecs = 0.2
 	iv := zimageview.NewWithCachedPath("images/zcore/magnifier.png", zgeo.SizeD(12, 12))
 	iv.MixColorForDarkMode = zgeo.ColorLightGray

@@ -51,46 +51,23 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 		if textStyle.Type == Date {
 			stype = "date"
 		}
-		// zlog.Info("TextView:", v.Hierarchy(), stype)
 		v.JSSet("type", stype)
 	}
 	v.minValue = zfloat.Undefined
 	v.maxValue = zfloat.Undefined
-	//!! v.SetMargin(zgeo.RectFromXY2(0, 2, -10, -5))
 	v.SetObjectName("textview")
-	// zlog.Info("TV.Init", v.Hierarchy(), cols, rows)
-
 	v.Columns = cols
 	css := v.JSStyle()
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
-	// if zwindow.FromNativeView(&v.NativeView) == zwindow.GetMain() {
-	if zstyle.Dark {
-		css.Set("border", "none")
-	} else {
-		css.Set("border", "1px solid gray")
-	}
 	css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
-	// }
-	//!!	css.Set("-webkitBoxShadow", "none") // doesn't work
-	// css.Set("outlineOffset", "-2px")
-	// css.Set("overflow", "visible")
-	// css.Set("margin-top", "1px")
-
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
 	}
 	v.SetNativePadding(zgeo.RectFromXY2(1, 0, -1, 0))
-
-	// if rows <= 1 {
-	// style := v.JSStyle()
-	// style.Set("margin", "4px")
-	// v.SetMargin(DefaultMargin)
-	// }
 	if text != "" {
 		v.JSSet("value", text)
 	}
-	// v.JSSet("className", "texter")
 	v.View = view
 	v.UpdateSecs = 1
 	f := zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
