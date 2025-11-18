@@ -117,3 +117,14 @@ func MakeSingleCallJSCallback(call func(this js.Value, args []js.Value) any) js.
 	})
 	return f
 }
+
+func ObjectKeys(obj js.Value) []string {
+	var out []string
+	keys := js.Global().Get("Object").Call("keys", obj)
+	len := keys.Length()
+	for i := range len {
+		key := keys.Index(i)
+		out = append(out, key.String())
+	}
+	return out
+}
