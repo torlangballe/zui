@@ -517,12 +517,15 @@ func (v *GridListView) SetHoverID(id string) {
 func (v *GridListView) HandleGripDrag(offset float64, id string, down zbool.BoolInd) bool {
 	zlog.Assert(v.HandleGripDragRowFunc != nil)
 	cell := v.CellView(id).Native()
-	if !down.IsFalse() {
+	switch down {
+	case zbool.True: // up
 		v.gripDragID = id
+		cell.SetZIndex(zview.BaseZIndex + 5000)
+		break
+	case zbool.Unknown: // moving
 		v.gripDragOffsetY = offset
 		cell.SetAlpha(0.5)
-		cell.SetZIndex(zview.BaseZIndex + 5000)
-	} else {
+	case zbool.False: // down
 		v.gripDragID = ""
 		v.gripDragOffsetY = 0
 		cell.SetAlpha(1)
@@ -1101,7 +1104,7 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 	if v.gripDragID != "" {
 		gripCell := v.CellView(v.gripDragID)
 		if gripCell != nil {
-			gripDragY = gripCell.Rect().Pos.Y + v.gripDragOffsetY
+			gripDragY = gripCell.Rect().Pos.Y //+ v.gripDragOffsetY
 		}
 	}
 	v.gripDragTargetID = ""
@@ -1139,13 +1142,13 @@ func (v *GridListView) LayoutCells(updateCells bool) {
 			// prof.Log("After Set Rect")
 			dragStrokeAlignment := zgeo.AlignmentNone
 			if !gripDragging && gripDragY != zfloat.Undefined {
-				h := outer.Size.H * 0.3
+				hMid := outer.Size.H * 0.5
 				diff := gripDragY - outer.Pos.Y
-				if y == 0 && diff < 0 || math.Abs(diff) < h {
+				if y == 0 && diff < 0 || math.Abs(diff) < hMid {
 					dragStrokeAlignment = zgeo.Top
 				} else {
 					diff = gripDragY - outer.Max().Y
-					if math.Abs(diff) < h || diff > 0 && y == v.Rows-1 {
+					if math.Abs(diff) < hMid || diff > 0 && y == v.Rows-1 {
 						dragStrokeAlignment = zgeo.Bottom
 					}
 				}
