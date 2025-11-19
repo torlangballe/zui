@@ -760,11 +760,11 @@ func (o *MenuedOwner) ClosePopup() {
 	}
 }
 
-func (o *MenuedOwner) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
-	if !isWithinFocus {
-		return false
-	}
+func (o *MenuedOwner) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 	for i, item := range o.getItems() {
+		if item.IsDisabled {
+			continue
+		}
 		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {
 				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above

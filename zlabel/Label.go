@@ -7,6 +7,7 @@ import (
 
 	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcursor"
+	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/ztextinfo"
@@ -34,7 +35,7 @@ type Label struct {
 
 	Columns                      int
 	IsDocSearchable              bool // If IsDocSearchable, it is part of what is found when searching GUI for documentation, sp typically a title and not just data
-	KeyboardShortcut             zkeyboard.KeyMod
+	KeyboardShortcut             zkeyboard.ShortCut
 	pressWithModifierToClipboard zkeyboard.Modifier
 }
 
@@ -81,7 +82,7 @@ func (v *Label) MakeZAppLink(path string) {
 func (v *Label) GetToolTipAddition() string {
 	var str string
 	if !v.KeyboardShortcut.IsNull() {
-		str = zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
+		str = zview.GetShortCutTooltipAddition(v.KeyboardShortcut.KeyMod)
 	}
 	if v.pressWithModifierToClipboard == -1 {
 		return str
@@ -218,8 +219,20 @@ func (v *Label) LongPressedHandler() func() {
 	return v.longPressed
 }
 
-func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
-	if isWithinFocus && !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut && v.PressedHandler() != nil {
+// func (v *Label) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+// 	if isWithinFocus && !v.KeyboardShortcut.IsNull() && sc == v.KeyboardShortcut && v.PressedHandler() != nil {
+// 		v.PressedHandler()()
+// 		return true
+// 	}
+// 	return false
+// }
+
+func (v *Label) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
+	if v.PressedHandler() == nil {
+		return false
+	}
+	used := zcustom.OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut.KeyMod, sc)
+	if used {
 		v.PressedHandler()()
 		return true
 	}

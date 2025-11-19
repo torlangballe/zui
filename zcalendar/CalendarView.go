@@ -13,7 +13,6 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
-	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zbool"
@@ -83,24 +82,24 @@ func (v *CalendarView) Init(view zview.View) {
 	monthAdd := makeHeaderLabel("▼", zgeo.Right)
 	// monthAdd.SetObjectName("month-add")
 	v.header.Add(monthAdd, zgeo.CenterRight, zgeo.SizeD(0, 0)) //.Free = true
-	monthAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
+	monthAdd.KeyboardShortcut.KeyMod = zkeyboard.KMod(zkeyboard.KeyDownArrow, zkeyboard.ModifierShift)
 	monthAdd.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(1, 0)
 	})
 	yearAdd := makeHeaderLabel("⏵⏵", zgeo.Right)
-	yearAdd.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
+	yearAdd.KeyboardShortcut.KeyMod = zkeyboard.KMod(zkeyboard.KeyRightArrow, zkeyboard.ModifierShift)
 	v.header.Add(yearAdd, zgeo.CenterRight, zgeo.SizeD(0, 0)) //.Free = true
 	yearAdd.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(0, 1)
 	})
 	yearSub := makeHeaderLabel("⏴⏴", zgeo.Left)
-	yearSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
+	yearSub.KeyboardShortcut.KeyMod = zkeyboard.KMod(zkeyboard.KeyLeftArrow, zkeyboard.ModifierShift)
 	v.header.Add(yearSub, zgeo.CenterLeft, zgeo.SizeD(0, 0)) //.Free = true
 	yearSub.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(0, -1)
 	})
 	monthSub := makeHeaderLabel("▲", zgeo.Left)
-	monthSub.KeyboardShortcut = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
+	monthSub.KeyboardShortcut.KeyMod = zkeyboard.KMod(zkeyboard.KeyUpArrow, zkeyboard.ModifierShift)
 	v.header.Add(monthSub, zgeo.CenterLeft, zgeo.SizeD(0, 0)) //.Free = true
 	monthSub.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		v.Increase(-1, 0)
@@ -125,7 +124,8 @@ func (v *CalendarView) Init(view zview.View) {
 		if v.navigator.HandleKey(km, down) {
 			return true
 		}
-		return zshortcuts.HandleOutsideShortcutRecursively(v, km, zbool.Unknown)
+		return false
+		// return zshortcuts.HandleShortcut(v, km, v.IsInAFocusedView())
 	})
 }
 

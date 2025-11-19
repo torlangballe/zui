@@ -15,6 +15,7 @@ import (
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zlabel"
+	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/ztext"
 	"github.com/torlangballe/zui/zview"
@@ -105,6 +106,14 @@ var BarGradientColors = []zgeo.Color{
 // If opening fails (on browsers it can fail for non-modal if popups are blocked), presented, and closed (if != nil) are called.
 // closed (if != nil) is called when the window is closed programatically or by user interaction.
 func PresentView(v zview.View, attributes Attributes) {
+	if !FirstPresented {
+		v.Native().SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+			if !down {
+				return false
+			}
+			return zshortcuts.HandleShortcut(v, km, false)
+		})
+	}
 	if attributes.ClosedFunc != nil {
 		presentCloseFuncs[v] = attributes.ClosedFunc
 	}

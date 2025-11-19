@@ -15,7 +15,7 @@ type CustomView struct {
 	zview.NativeView
 	OpaqueDraw       bool // if OpaqueDraw set, drawing does not clear canvas first, assuming total coverage during draw
 	DownsampleImages bool
-	KeyboardShortcut zkeyboard.KeyMod
+	KeyboardShortcut zkeyboard.ShortCut
 	canvas           *zcanvas.Canvas
 	minSize          zgeo.Size
 	pressed          func()
@@ -83,24 +83,38 @@ func (v *CustomView) SetPressedHandler(id string, mods zkeyboard.Modifier, handl
 		// zlog.Info("IV Pressed", v.KeyboardShortcut.IsNull(), f != nil)
 		if !v.KeyboardShortcut.IsNull() {
 			ztimer.StartIn(0.1, func() { // otherwise it does handler that might block shortcut animation
-				ShowShortCutHelperForViewFunc(v, v.KeyboardShortcut)
+				ShowShortCutHelperForViewFunc(v, v.KeyboardShortcut.KeyMod)
 			})
 		}
 		handler()
 	})
 }
 
-func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
-	used := OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut, sc)
-	if !used && v.ShortCutHandler != nil {
-		return v.ShortCutHandler.HandleOutsideShortcut(sc, isWithinFocus)
+// func (v *CustomView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+// 	used := OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut, sc)
+// 	if !used && v.ShortCutHandler != nil {
+// 		return v.ShortCutHandler.HandleOutsideShortcut(sc, isWithinFocus)
+// 	}
+// 	return used
+// }
+
+func (v *CustomView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
+	if !inFocus && !v.KeyboardShortcut.NoNeedFocus {
+		return false
 	}
-	return used
+	used := OutsideShortcutInformativeDisplayFunc(v, v.KeyboardShortcut.KeyMod, sc)
+	if used {
+		return true
+	}
+	if v.ShortCutHandler != nil {
+		return v.ShortCutHandler.HandleShortcut(sc, inFocus)
+	}
+	return false
 }
 
 func (v *CustomView) GetToolTipAddition() string {
 	if !v.KeyboardShortcut.IsNull() {
-		return zview.GetShortCutTooltipAddition(v.KeyboardShortcut)
+		return zview.GetShortCutTooltipAddition(v.KeyboardShortcut.KeyMod)
 	}
 	return ""
 }

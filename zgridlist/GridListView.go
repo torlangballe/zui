@@ -1417,17 +1417,16 @@ func (v *GridListView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	return true
 }
 
-func (v *GridListView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
+func (v *GridListView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 	selID := v.SelectedID()
 	if selID == "" {
 		return false
 	}
 	cell := v.CellView(selID)
 	if cell != nil {
-		return zshortcuts.HandleOutsideShortcutRecursively(cell, sc, zbool.True)
+		return zshortcuts.HandleShortcut(cell, sc, inFocus)
 	}
 	return false
-
 }
 
 func (v *GridListView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.SearchableItem {

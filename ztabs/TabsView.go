@@ -10,10 +10,8 @@ import (
 	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zshape"
-	"github.com/torlangballe/zui/zshortcuts"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
-	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
@@ -112,12 +110,13 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 			}
 		})
 	}
-	v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
-		if !down {
-			return false
-		}
-		return zshortcuts.HandleOutsideShortcutRecursively(v, km, zbool.Unknown)
-	})
+	// v.SetKeyHandler(func(km zkeyboard.KeyMod, down bool) bool {
+	// 	if !down {
+	// 		return false
+	// 	}
+	// 	zlog.Info("TabKey:", v.IsInAFocusedView())
+	// 	return zshortcuts.HandleShortcut(v, km, v.IsInAFocusedView())
+	// })
 	return v
 }
 
@@ -189,7 +188,8 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 	ilen := len(v.items)
 	if ilen < 10 {
 		key := zkeyboard.Key('0' + ilen)
-		button.KeyboardShortcut = zkeyboard.KMod(key, 0)
+		button.KeyboardShortcut.KeyMod = zkeyboard.KMod(key, 0)
+		button.KeyboardShortcut.NoNeedFocus = true
 	}
 	if v.CurrentID == id {
 		v.SelectItem(id, nil)

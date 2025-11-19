@@ -721,7 +721,7 @@ func (v *HorEventsView) gotoNowScrollTime() {
 func makeImageView(pathStub string, shortCut zkeyboard.KeyMod, left bool, id int, tip string, isDark bool, pressed func(left bool, id int)) *imageView {
 	v := &imageView{}
 	v.Init(v, true, nil, "images/"+pathStub+".png", zgeo.SizeBoth(20))
-	v.KeyboardShortcut = shortCut
+	v.KeyboardShortcut.KeyMod = shortCut
 	v.left = left
 	v.pressed = pressed
 	v.id = id
@@ -807,21 +807,17 @@ func (v *HorEventsView) UpdateWidgets() {
 	v.Bar.CollapseChild(v.GotoLockedButton, v.LockedTime.IsZero(), true)
 }
 
-func (v *HorEventsView) HandleOutsideShortcut(sc zkeyboard.KeyMod, isWithinFocus bool) bool {
-	if !isWithinFocus {
-		return false
+func (v *HorEventsView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
+	if sc.Modifier == zkeyboard.ModifierNone {
+		if sc.Key == zkeyboard.KeyLeftArrow {
+			v.panPressed(true, -1)
+			return true
+		}
+			v.panPressed(false, -1)
+			return true
+		}
 	}
-	if sc.Modifier != zkeyboard.ModifierNone {
-		return false
-	}
-	var left bool
-	if sc.Key == zkeyboard.KeyLeftArrow {
-		left = true
-	} else if sc.Key != zkeyboard.KeyRightArrow {
-		return false
-	}
-	v.panPressed(left, -1)
-	return true
+	return v.StackView.HandleShortcut(sc, inFocus)
 }
 
 func (v *HorEventsView) panPressed(left bool, id int) {

@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zdocs"
 	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zkeyboard"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
@@ -826,6 +827,32 @@ func (v *ContainerView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 				if handled {
 					return true
 				}
+			}
+		}
+	}
+	return false
+}
+
+func (v *ContainerView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
+	// zlog.Info("HandleOutsideShortcutRecursively1", view.Native().Hierarchy(), hasFocus)
+	// var handled bool
+	// if hasFocus.IsUnknown() {
+	// 	if view.Native().IsInAFocusedView() {
+	// 		hasFocus = zbool.True
+	// 	}
+	// }
+	focused := v.RootParent(true).GetFocusedChildView(true)
+	isInFocus := (focused != nil && (focused == v || focused.Native().IsParentOf(&v.NativeView)))
+	if v.CustomView.HandleShortcut(sc, isInFocus) {
+		return true
+	}
+	includeCollapsed := false
+	children := v.GetChildren(includeCollapsed)
+	for _, childView := range children {
+		handler, _ := childView.(zkeyboard.ShortcutHandler)
+		if handler != nil {
+			if handler.HandleShortcut(sc, isInFocus) {
+				return true
 			}
 		}
 	}

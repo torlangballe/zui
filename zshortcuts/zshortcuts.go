@@ -12,7 +12,6 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwindow"
-	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -24,7 +23,7 @@ var (
 )
 
 func init() {
-	zcustom.OutsideShortcutInformativeDisplayFunc = HandleShortcut
+	zcustom.OutsideShortcutInformativeDisplayFunc = showShortcutInfoForKey
 	zcustom.ShowShortCutHelperForViewFunc = ShowShortCutHelperForView
 }
 
@@ -113,33 +112,41 @@ func ShowShortCutHelperForView(view zview.View, scut zkeyboard.KeyMod) {
 	})
 }
 
-func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod, hasFocus zbool.BoolInd) bool {
-	// zlog.Info("HandleOutsideShortcutRecursively1", view.Native().Hierarchy(), hasFocus)
-	var handled bool
-	if hasFocus.IsUnknown() {
-		if view.Native().IsInAFocusedView() {
-			hasFocus = zbool.True
-		}
+// func HandleOutsideShortcutRecursively(view zview.View, sc zkeyboard.KeyMod, hasFocus zbool.BoolInd) bool {
+// 	// zlog.Info("HandleOutsideShortcutRecursively1", view.Native().Hierarchy(), hasFocus)
+// 	var handled bool
+// 	if hasFocus.IsUnknown() {
+// 		if view.Native().IsInAFocusedView() {
+// 			hasFocus = zbool.True
+// 		}
+// 	}
+// 	sh, _ := view.(zkeyboard.ShortcutHandler)
+// 	if sh != nil && sh.HandleOutsideShortcut(sc, hasFocus.IsTrue()) {
+// 		return true
+// 	}
+// 	zcontainer.ViewRangeChildren(view, false, false, func(childView zview.View) bool {
+// 		focused := childView.Native().RootParent(true).GetFocusedChildView(true)
+// 		if focused == nil {
+// 			return true
+// 		}
+// 		if HandleOutsideShortcutRecursively(childView, sc, hasFocus) {
+// 			handled = true
+// 			return false
+// 		}
+// 		return true
+// 	})
+// 	return handled
+// }
+
+func HandleShortcut(view zview.View, sc zkeyboard.KeyMod, isInFocus bool) bool {
+	h, _ := view.(zkeyboard.ShortcutHandler)
+	if h == nil {
+		return false
 	}
-	sh, _ := view.(zkeyboard.ShortcutHandler)
-	if sh != nil && sh.HandleOutsideShortcut(sc, hasFocus.IsTrue()) {
-		return true
-	}
-	zcontainer.ViewRangeChildren(view, false, false, func(childView zview.View) bool {
-		focused := childView.Native().RootParent(true).GetFocusedChildView(true)
-		if focused == nil {
-			return true
-		}
-		if HandleOutsideShortcutRecursively(childView, sc, hasFocus) {
-			handled = true
-			return false
-		}
-		return true
-	})
-	return handled
+	return h.HandleShortcut(sc, isInFocus)
 }
 
-func HandleShortcut(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool {
+func showShortcutInfoForKey(view zview.View, viewSC, pressedSC zkeyboard.KeyMod) bool {
 	if viewSC.IsNull() {
 		return false
 	}
