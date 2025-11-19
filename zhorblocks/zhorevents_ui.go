@@ -813,9 +813,8 @@ func (v *HorEventsView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 			v.panPressed(true, -1)
 			return true
 		}
-			v.panPressed(false, -1)
-			return true
-		}
+		v.panPressed(false, -1)
+		return true
 	}
 	return v.StackView.HandleShortcut(sc, inFocus)
 }
