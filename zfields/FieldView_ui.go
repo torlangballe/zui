@@ -635,7 +635,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		v.setText(f, valStr, foundView)
 		label, _ := foundView.(*zlabel.Label)
 		if label != nil {
-			updateOldDuration(label, dur, f)
+			updateOldDurationColor(label, dur, f)
 			if tip != "" {
 				label.SetToolTip(tip)
 			}
@@ -746,7 +746,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		if lineFeeds > 0 {
 			mf.Rows = min(4, lineFeeds+1)
 		} else {
-			mf.Wrap = ztextinfo.WrapTailTruncate.String()
+			// mf.Wrap = ztextinfo.WrapTailTruncate.String()
 		}
 		if mval.Kind() == reflect.Interface {
 			mval = mval.Elem()
@@ -1408,7 +1408,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			label.SetToolTip(tip)
 		}
 		if f.Wrap == ztextinfo.WrapTailTruncate.String() || v.isRows() {
-			label.SetWrap(ztextinfo.WrapTailTruncate)
+			// label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
 		if !v.isRows() {
@@ -1430,7 +1430,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		f.SetFont(label, nil)
 		label.SetTextAlignment(j)
 		if f.Rows <= 1 || inMapRows > 0 {
-			label.SetWrap(ztextinfo.WrapTailTruncate)
+			// label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		if !v.isRows() && f.Flags&FlagToClipboard != 0 {
 			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
@@ -1618,7 +1618,6 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 }
 
 func setColorFromField(view zview.View, f *Field) {
-	// col := zstyle.DefaultFGColor()
 	if f.Styling.FGColor.Valid {
 		col := f.Styling.FGColor
 		view.SetColor(col)
@@ -1628,23 +1627,22 @@ func setColorFromField(view zview.View, f *Field) {
 	if !is {
 		return
 	}
-	col := view.Native().Color()
-	if col.Valid {
-		return
-	}
 	view.Native().SetColor(zstyle.DefaultFGColor())
 }
 
-func (v *FieldView) updateOldTime(label *zlabel.Label, f *Field) {
+func (v *FieldView) updateOldTimeColor(label *zlabel.Label, f *Field) {
 	finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, f.FieldName)
 	if found {
 		t := finfo.ReflectValue.Interface().(time.Time)
-		updateOldDuration(label, time.Since(t), f)
+		if !t.IsZero() {
+			updateOldDurationColor(label, time.Since(t), f)
+		}
 	}
 }
 
-func updateOldDuration(label *zlabel.Label, dur time.Duration, f *Field) {
+func updateOldDurationColor(label *zlabel.Label, dur time.Duration, f *Field) {
 	if f.OldSecs != 0 && ztime.DurSeconds(dur) > float64(f.OldSecs) {
+		// zlog.Info("updateOldDurationColor1", f.Name, dur, f.OldSecs)
 		label.SetColor(zgeo.ColorRed)
 	} else {
 		setColorFromField(label, f)
@@ -1885,6 +1883,7 @@ func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
 }
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
+	// zlog.Info("FV.BuildStack", v.ID, v.Hierarchy())
 	if v.params.Styling.Spacing != zfloat.Undefined {
 		v.SetSpacing(v.params.Styling.Spacing)
 	}
@@ -2043,18 +2042,18 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				label := view.(*zlabel.Label)
 				label.Columns = columns
 				if f.Flags&FlagIsDuration != 0 || f.OldSecs != 0 {
-					timer := ztimer.RepeatNow(1, func() bool {
-						// zlog.Info("Repeat time update", zlog.Pointer(nat), nat.Hierarchy())
+					timer := ztimer.RepeatForever(1, func() {
 						nlabel := view.(*zlabel.Label)
 						if f.Flags&FlagIsDuration != 0 {
 							v.updateSinceTime(nlabel, f)
 						} else {
-							v.updateOldTime(nlabel, f)
+							v.updateOldTimeColor(nlabel, f)
 						}
-						return true
 					})
 					// v.AddOnRemoveFunc(timer.Stop)
-					view.Native().AddOnRemoveFunc(timer.Stop)
+					view.Native().AddOnRemoveFunc(func() {
+						timer.Stop()
+					})
 				} else {
 					if f.Format == "nice" {
 						timer := ztimer.StartAt(ztime.OnThisHour(time.Now(), 1), func() {
