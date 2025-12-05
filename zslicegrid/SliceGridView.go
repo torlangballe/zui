@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -416,10 +417,23 @@ func GetIDForItem[S any](item *S) string {
 	if g != nil {
 		return g.GetStrID()
 	}
-	zlog.Fatal("Not a StrIDer!!!", reflect.TypeOf(a))
+	// zlog.Fatal("Not a StrIDer!!!", reflect.TypeOf(a))
+
 	var sid string
 	zreflect.ForEachField(item, zreflect.FlattenIfAnonymous, func(each zreflect.FieldInfo) bool {
-		if each.StructField.Name == "ID" {
+		tagKV, skip := each.TagKeyValuesForKey("zobj")
+		if !skip {
+			_, fi := zstr.KeyValuesFindForKey(tagKV, "id")
+			if fi != -1 {
+				if each.ReflectValue.Kind() == reflect.String {
+					sid = each.ReflectValue.String()
+				} else {
+					sid = strconv.FormatInt(each.ReflectValue.Int(), 10)
+				}
+				return false
+			}
+		}
+		if sid == "" && each.StructField.Name == "ID" {
 			if each.StructField.Type.Kind() == reflect.String {
 				sid = reflect.ValueOf(item).Elem().Field(each.FieldIndex).String()
 				return false
