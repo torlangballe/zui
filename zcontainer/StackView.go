@@ -83,7 +83,6 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 	row, heights := v.getGridLayoutRow(total)
 	vertical := false
 	sl, _ := zgeo.LayoutGetCellsStackedSize(v.ObjectName(), vertical, v.spacing, row)
-	// zlog.Info("calculateGridSize grid1:", v.Hierarchy(), row, sl)
 	s.W = sl.W
 	j := 0
 	for _, vc := range v.Cells {
@@ -106,7 +105,6 @@ func (v *StackView) calculateGridSize(total zgeo.Size) zgeo.Size {
 }
 
 func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
-
 	var ws float64
 	if len(v.Cells) != 0 {
 		// if v.MaxColumns > 0 {
@@ -123,6 +121,11 @@ func (v *StackView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 			spacing = v.GridVerticalSpace
 		}
 		s, max = zgeo.LayoutGetCellsStackedSize(v.ObjectName(), v.Vertical, spacing, lays)
+		// if v.ObjectName() == "Context.FV" {
+		// 	for i, lay := range lays {
+		// 		zlog.Info("CalculatedSize:", i, v.Hierarchy(), total, "->", lay.Name, lay.OriginalSize, lay.MinSize, lay.MaxSize)
+		// 	}
+		// }
 		zfloat.Maximize(&s.W, ws) // why for W only?
 	}
 
