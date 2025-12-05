@@ -182,6 +182,7 @@ func (v *TableView[S]) calculateColumns(size zgeo.Size) {
 			v.Header.FitToRowStack(&fv.StackView, xOffset)
 		}
 	}
+	view.Native().PerformAddRemoveFuncs(false)
 	v.recalcRows = false
 }
 
