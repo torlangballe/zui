@@ -150,6 +150,8 @@ func presentLoaded(win *zwindow.Window, v, outer zview.View, attributes Attribut
 		s = zscreen.GetMain().UsableRect.ExpandedD(-10).Size
 	}
 	size, _ := v.CalculatedSize(s)
+
+	// zlog.Info("Present.CalcSize:", s, "->", size, v.Native().Hierarchy())
 	// size.MultiplyD(win.Scale)
 
 	if attributes.Modal || FirstPresented {
