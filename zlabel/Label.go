@@ -146,11 +146,17 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	var widths []float64
 	to := v.View.(ztextinfo.Owner)
 	ti := to.GetTextInfo()
+	if v.maxWidth != 0 {
+		zfloat.Minimize(&total.W, v.maxWidth)
+	}
 	ti.Rect.Size = total
 	if v.Columns != 0 {
 		s = ti.GetColumnsSize(v.Columns)
 	} else {
 		s, _, widths = ti.GetBounds()
+		// if v.ObjectName() == "Error" {
+		// 	zlog.Info("Label.CalculatedSize:", v.Hierarchy(), v.Columns, total, "->", s, ti.MaxLines, widths)
+		// }
 	}
 	s.Add(v.margin.Size.Negative())
 	zfloat.Maximize(&s.W, v.minWidth)
