@@ -459,3 +459,84 @@ pre tt {
     border: none;
 }
 
+/* Dark theme overrides */
+
+body {
+    font-family: Helvetica, arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 30px;
+    background-color: #353533;
+    color: #c9d1d9;
+}
+
+/* Links */
+a {
+    color: #58a6ff;
+}
+a.absent {
+    color: #f85149;
+}
+
+/* Headings */
+h1 {
+    font-size: 28px;
+    color: #f0f6fc;
+}
+h2 {
+    font-size: 24px;
+    border-bottom: 1px solid #30363d;
+    color: #f0f6fc;
+}
+h3, h4, h5 {
+    color: #e6edf3;
+}
+h6 {
+    color: #8b949e;
+}
+
+/* Horizontal rule */
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #30363d;
+}
+
+/* Blockquotes */
+blockquote {
+    border-left: 4px solid #30363d;
+    color: #8b949e;
+}
+
+/* Tables */
+table tr {
+    border-top: 1px solid #30363d;
+    background-color: #161b22;
+}
+table tr:nth-child(2n) {
+    background-color: #0d1117;
+}
+table tr th,
+table tr td {
+    border: 1px solid #30363d;
+    padding: 6px 13px;
+}
+
+/* Inline code */
+code,
+tt {
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background-color: #161b22;
+    color: #c9d1d9;
+}
+
+/* Code blocks */
+pre,
+.highlight pre {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+}
+

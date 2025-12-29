@@ -135,6 +135,9 @@ func makeURL(docPath string, rawMarkdown bool) string {
 	if rawMarkdown {
 		args["raw"] = "1"
 	}
+	if zstyle.Dark {
+		args["dark"] = "1"
+	}
 	surl, _ := zhttp.MakeURLWithArgs(docPath, args)
 	return surl
 }
