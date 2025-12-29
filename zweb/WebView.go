@@ -27,13 +27,12 @@ type WebView struct {
 	URLChangedFunc  func(surl, oldURL string)
 	HandleErrorFunc func(code int)
 
-	TitleLabel *zlabel.Label
-	Back       *zimageview.ImageView
-	Forward    *zimageview.ImageView
-	Refresh    *zimageview.ImageView
-	Bar        *zcontainer.StackView
-
-	// Padding zgeo.Size
+	TitleLabel    *zlabel.Label
+	Back          *zimageview.ImageView
+	Forward       *zimageview.ImageView
+	Refresh       *zimageview.ImageView
+	Bar           *zcontainer.StackView
+	UseAutoHeight bool
 }
 
 func NewView(minSize zgeo.Size, isFrame, makeBar bool) (webView *WebView) {

@@ -59,7 +59,9 @@ func (v *WebView) init(minSize zgeo.Size, isFrame bool) {
 
 func (v *WebView) SetRect(r zgeo.Rect) {
 	v.NativeView.SetRect(r)
-	v.SetJSStyle("height", "auto")
+	if v.UseAutoHeight {
+		v.SetJSStyle("height", "auto")
+	}
 }
 
 func (v *WebView) updateWidgets() {
