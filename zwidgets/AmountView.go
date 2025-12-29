@@ -74,7 +74,7 @@ func (v *AmountView) drawCircle(rect zgeo.Rect, canvas *zcanvas.Canvas, view zvi
 func AmountViewCircleNew() *AmountView {
 	v := &AmountView{}
 	v.CustomView.Init(v, "amount")
-	v.StrokeColor = zstyle.Gray(0.25, 0.6)
+	v.StrokeColor = zstyle.Gray(0.25, 0.4)
 	v.SetColor(zgeo.ColorNewGray(0.7, 1))
 	v.CustomView.SetMinSize(zgeo.SizeBoth(AmountViewCircleDefaultDiameter))
 	v.StrokeWidth = 2
