@@ -66,15 +66,16 @@ type ActionType string
 type DocumentationLink string
 
 const (
-	NoAction              ActionType = ""             // Add a trigger for this to get ALL actions
-	DataChangedActionPre  ActionType = "changed-pre"  // called on struct before DataChangedAction on fields
-	DataChangedAction     ActionType = "changed"      // called when value changed, typically programmatically or edited. Called on fields with id, then on struct
-	EditedAction          ActionType = "edited"       // called when value edited by user, DataChangedAction will also be called
-	SetupFieldAction      ActionType = "setup"        // called when a field is being set up from a struct, view will be nil
-	PressedAction         ActionType = "pressed"      // called when view is pressed, view is valid
-	LongPressedAction     ActionType = "long-pressed" // called when view is long-pressed, view is valid
-	CreateFieldViewAction ActionType = "create-view"  // called to create view, view is pointer to view and is returned in it
-	CreatedViewAction     ActionType = "created-view" // called after view created, view is pointer to newly created view.
+	NoAction              ActionType = ""               // Add a trigger for this to get ALL actions
+	DataChangedActionPre  ActionType = "changed-pre"    // called on struct before DataChangedAction on fields
+	DataChangedAction     ActionType = "changed"        // called when value changed, typically programmatically or edited. Called on fields with id, then on struct
+	EditedAction          ActionType = "edited"         // called when value edited by user, DataChangedAction will also be called
+	SetupFieldAction      ActionType = "setup"          // called when a field is being set up from a struct, view will be nil
+	PressedAction         ActionType = "pressed"        // called when view is pressed, view is valid
+	LongPressedAction     ActionType = "long-pressed"   // called when view is long-pressed, view is valid
+	CreateFieldViewAction ActionType = "create-view"    // called to create view, view is pointer to view and is returned in it
+	CreatedViewAction     ActionType = "created-view"   // called after view created, view is pointer to newly created view.
+	FromClipboardAction   ActionType = "from-clipboard" // called when view is requested to get value from clipboard
 
 	RowUseInSpecialName    = "$row"
 	DialogUseInSpecialName = "$dialog"
@@ -97,6 +98,7 @@ const (
 	FlagHasHeaderImage                                // FlagHasHeaderImage is true true if it has a an image for showing in header
 	FlagNoTitle                                       // FlagNoTitle i set when we don't use FieldName as a title, show nothing
 	FlagToClipboard                                   // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
+	FlagFromClipboard                                 // FlagFromClipboard: Item is selectable and can be pasted to from clipboard with long press
 	FlagIsPassword                                    // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc. password:existing sets FlagIsFixed, is's an existing password.
 	FlagIsDuration                                    // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
 	FlagIsOpaque                                      // FlagIsOpaque means entire view will be covered when drawn
@@ -240,6 +242,7 @@ var flagsNameMap = map[FlagType]string{
 	FlagHasHeaderImage:           "HasHeaderImage",
 	FlagNoTitle:                  "NoTitle",
 	FlagToClipboard:              "ToClipboard",
+	FlagFromClipboard:            "FromClipboard",
 	FlagIsPassword:               "IsPassword",
 	FlagIsDuration:               "IsDuration",
 	FlagIsOpaque:                 "IsOpaque",
@@ -720,6 +723,8 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			f.SetFlag(FlagCheckerCell)
 		case "2clip":
 			f.Flags |= FlagToClipboard
+		case "fromclip":
+			f.Flags |= FlagFromClipboard
 		case "labelize":
 			f.Flags |= FlagIsLabelize
 			if kv.Value == "withdesc" {

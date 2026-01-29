@@ -74,7 +74,7 @@ type FieldViewParameters struct {
 	EditWithoutCallbacks      bool                                 // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
 	IsEditOnNewStruct         bool                                 // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
 	triggerHandlers           map[trigger]func(ap ActionPack) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
-	CreateActionMenuItemsFunc func(sid string) []zmenu.MenuedOItem
+	CreateActionMenuItemsFunc func(sid string) []zmenu.MenuedOItem // If a field with FlagIsActions is found, this func is called to create the action items.
 }
 
 type ActionPack struct {
@@ -541,7 +541,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	}
 	switch f.Kind {
 	case zreflect.KindMap:
-		if setCountString(f, foundView, rval) {
+		if v.setCountString(f, foundView, rval) {
 			return true
 		} else {
 			v.updateMapList(f, rval, foundView)
@@ -552,7 +552,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			v.updateSeparatedStringWithSlice(f, rval, foundView)
 			break
 		}
-		if setCountString(f, foundView, rval) {
+		if v.setCountString(f, foundView, rval) {
 			return true
 		}
 		// zlog.Info("updateFieldSlice:", v.Hierarchy(), sf.Name)
@@ -668,7 +668,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	return true
 }
 
-func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
+func (v *FieldView) setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 	if f.HasFlag(FlagShowSliceCount) {
 		label, _ := foundView.(*zlabel.Label)
 		str := strconv.Itoa(rval.Len())
@@ -676,6 +676,7 @@ func setCountString(f *Field, foundView zview.View, rval reflect.Value) bool {
 			str = f.ZeroText
 		}
 		label.SetText(str)
+		v.maybeMakeLabelHandleFromClipboard(f, label, str, rval)
 		return true
 	}
 	return false
@@ -1040,12 +1041,14 @@ func callActionHandlerFunc(ap ActionPack) bool {
 			// 	// zlog.Fatal("Not CHANGED!", ap.Field.FN())
 			// }
 		}
-		aih, _ := ap.RVal.Interface().(ActionHandler)
-		if aih == nil && fieldAddress != nil {
-			aih, _ = fieldAddress.(ActionHandler)
-		}
-		if aih != nil {
-			result = aih.HandleAction(ap)
+		if !ap.RVal.IsZero() {
+			aih, _ := ap.RVal.Interface().(ActionHandler)
+			if aih == nil && fieldAddress != nil {
+				aih, _ = fieldAddress.(ActionHandler)
+			}
+			if aih != nil {
+				result = aih.HandleAction(ap)
+			}
 		}
 	}
 	return result
@@ -1330,42 +1333,69 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (text, tip string, d
 	}
 	format := f.Format
 	significant := f.FractionDecimals
-
-	//TODO: Handle float
-	b, err := zint.GetAny(rval.Interface())
-	if err != nil {
-		return fmt.Sprint(rval.Interface()), "", 0
+	if significant == 0 {
+		significant = -1
 	}
-	if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
-		return f.ZeroText, "", 0
-	}
-	if f.MaxText != "" && b == math.MaxInt64 {
-		return f.MaxText, "", 0
-	}
-	tip = fmt.Sprint(b)
-	switch format {
-	case MemoryFormat:
-		return zwords.GetMemoryString(b, "", significant), tip, 0
-	case StorageFormat:
-		return zwords.GetStorageSizeString(b, "", significant), tip, 0
-	case BPSFormat:
-		return zwords.GetBandwidthString(b, "", significant), tip, 0
-	case HumanFormat:
-		return zint.MakeHumanFriendly(b), "", 0
+	if f.Kind == zreflect.KindFloat {
+		n, err := zfloat.FromAnyFloat(rval.Interface())
+		if err != nil {
+			return fmt.Sprint(rval.Interface()), "", 0
+		}
+		if n == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+			return f.ZeroText, "", 0
+		}
+		if f.MaxText != "" && n == math.MaxFloat32 { // should be MaxFloat64?
+			return f.MaxText, "", 0
+		}
+		str := zwords.NiceFloat(n, significant)
+		return str, "", 0
+	} else {
+		b, err := zint.FromAnyInt(rval.Interface())
+		if err != nil {
+			return fmt.Sprint(rval.Interface()), "", 0
+		}
+		if b == 0 && f.Flags&FlagAllowEmptyAsZero != 0 {
+			return f.ZeroText, "", 0
+		}
+		if f.MaxText != "" && b == math.MaxInt64 {
+			return f.MaxText, "", 0
+		}
+		tip = fmt.Sprint(b)
+		if significant <= 0 && (format == MemoryFormat || format == StorageFormat || format == BPSFormat) {
+			significant = 1
+		}
+		switch format {
+		case MemoryFormat:
+			return zwords.GetMemoryString(b, "", significant), tip, 0
+		case StorageFormat:
+			return zwords.GetStorageSizeString(b, "", significant), tip, 0
+		case BPSFormat:
+			return zwords.GetBandwidthString(b, "", significant), tip, 0
+		case HumanFormat:
+			return zint.MakeHumanFriendly(b), "", 0
+		}
 	}
 	if format == "" {
 		format = "%v"
 	}
-	ni, err := zint.FromAnyInt(rval.Interface())
 	// zlog.Info("FInt:", ni, err, f.FieldName, rval.Interface())
-	if err == nil {
-		return strconv.FormatInt(ni, 10), "", 0
-	}
-	n, err := zfloat.GetAny(rval.Interface())
-	if err == nil {
-		return zwords.NiceFloat(n, significant), "", 0
-	}
 	return fmt.Sprintf(format, rval.Interface()), "", 0
+}
+
+func (v *FieldView) maybeMakeLabelHandleFromClipboard(f *Field, label *zlabel.Label, str string, rval reflect.Value) {
+	if v.isRows() || f.Flags&FlagFromClipboard == 0 {
+		return
+	}
+	add := "➕"
+	if !strings.Contains(str, add) {
+		label.SetText(str + " " + add)
+	}
+	label.SetPressedHandler("zfromclip", 0, func() {
+		zlog.Info("FromClipboard pressed for field:", f.FieldName)
+		view := label.View
+		ap := ActionPack{Field: f, Action: FromClipboardAction, RVal: rval, View: &view}
+		v.invokeAction(ap)
+	})
 }
 
 func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.View {
@@ -1395,12 +1425,12 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 				}
 			}
 			str = f.Prefix + str + f.Suffix
-			// zlog.Info(""makeText":", f.Name, str, f.Prefix)
 			if isLink {
 				label = zlabel.NewLink(str, surl, true)
 			} else {
 				label = zlabel.New(str)
 			}
+			v.maybeMakeLabelHandleFromClipboard(f, label, str, rval)
 		}
 		setDocumentationLink(label, rval)
 
@@ -1436,6 +1466,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
 		}
 		label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
+
 		return label
 	}
 	var style ztext.Style
@@ -1525,6 +1556,14 @@ func getFilterFuncFromFilterNames(names []string, f *Field) func(string) string 
 	}
 }
 
+func (v *FieldView) invokeAction(ap ActionPack) {
+	if v.callTriggerHandler(ap) {
+		return
+	}
+	ap.FieldView = v
+	callActionHandlerFunc(ap)
+}
+
 func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.View) {
 	if !edited {
 		return
@@ -1538,10 +1577,7 @@ func (v *FieldView) fieldHandleValueChanged(f *Field, edited bool, view zview.Vi
 		action = EditedAction
 	}
 	ap := ActionPack{Field: f, Action: action, RVal: rval, View: &view}
-	if v.callTriggerHandler(ap) {
-		return
-	}
-	callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: rval, View: &view})
+	v.invokeAction(ap)
 }
 
 func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
@@ -1627,6 +1663,10 @@ func setColorFromField(view zview.View, f *Field) {
 	if !is {
 		return
 	}
+	_, is = view.(*zshape.ShapeView)
+	if is {
+		return // ShapeView is a TextOwner, this is all a bit of a hack
+	}
 	view.Native().SetColor(zstyle.DefaultFGColor())
 }
 
@@ -1697,7 +1737,11 @@ func getDictItemsFromSlice(slice reflect.Value, f *Field) (zdict.Items, error) {
 	getter, _ := slice.Interface().(zdict.ItemsGetter)
 	items := zdict.ItemsFromRowGetterSlice(slice.Interface())
 	if getter == nil && items == nil {
-		return zdict.Items{}, zlog.Error("field isn't enum, not Item(s)Getter type", f.Name, f.LocalEnum)
+		items = &zdict.Items{}
+		for i := 0; i < slice.Len(); i++ {
+			item := slice.Index(i)
+			*items = append(*items, zdict.Item{Value: item.Interface(), Name: fmt.Sprint(item.Interface())})
+		}
 	}
 	if items == nil {
 		return getter.GetItems(), nil
@@ -1904,7 +1948,6 @@ func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMar
 }
 
 func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) zview.View {
-	// zlog.Info("FV.buildItem", v.Hierarchy(), f.Name)
 	if f.WhenMods != zkeyboard.ModifierNone {
 		if zkeyboard.ModifiersAtPress != f.WhenMods {
 			return nil

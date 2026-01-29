@@ -340,6 +340,8 @@ func EditOrViewStructSlice[S any](structSlicePtr *[]S, isReadOnly bool, params F
 	EditOrViewStructAnySlice(structSlicePtr, isReadOnly, params, title, att, done)
 }
 
+// Edit/View Struct functions are in FieldView_ui.go
+
 func getFocusedEmptyTextView(parent *zview.NativeView) *ztext.TextView {
 	tv, _ := parent.GetFocusedChildView(false).(*ztext.TextView)
 	if tv != nil && tv.Text() == "" {
