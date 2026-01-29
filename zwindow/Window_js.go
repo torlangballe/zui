@@ -119,7 +119,8 @@ func Open(o Options) *Window {
 		}
 		if win.ProgrammaticView != nil {
 			pnv := win.ProgrammaticView.Native()
-			pnv.PerformAddRemoveFuncs(true)
+			add := false
+			pnv.PerformAddRemoveFuncs(add)
 		}
 		// zlog.Info("Window Closed!", win.ID, win.AnimationFrames)
 		if win.HandleClosed != nil {
@@ -276,7 +277,7 @@ func (win *Window) AddKeyPressHandler(view zview.View, km zkeyboard.KeyMod, down
 		// zlog.Info("KeyPress:", zlog.Pointer(view), top.Hierarchy(), root.Hierarchy(), root == top)
 		eventTimestamp := args[0].Get("timeStamp").Int()
 		if eventTimestamp == win.doneKeyEventMS {
-			zlog.Info("KeyPress Skip event already handled:", eventTimestamp, view.Native().Hierarchy())
+			// zlog.Info("KeyPress Skip event already handled:", eventTimestamp, view.Native().Hierarchy())
 			return nil
 		}
 		if !zview.HasViewCallback(view, id) {
