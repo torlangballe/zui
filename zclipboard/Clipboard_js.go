@@ -28,7 +28,6 @@ func SetString(str string) {
 func GetString(got func(s string)) {
 	if zwindow.Current().IsSecureContext() {
 		clip := js.Global().Get("navigator").Get("clipboard")
-		zlog.Info("zclip.GetString", clip)
 		if !clip.IsUndefined() {
 			promise := clip.Call("readText")
 			zdom.Resolve(promise, func(resolved js.Value, err error) {
@@ -36,7 +35,8 @@ func GetString(got func(s string)) {
 					zlog.Error("play", err)
 					return
 				}
-				got(resolved.String())
+				str := resolved.String()
+				got(str)
 			})
 			return
 		}
