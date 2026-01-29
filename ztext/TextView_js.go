@@ -12,7 +12,6 @@ import (
 	"github.com/torlangballe/zutil/zfloat"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
-	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -60,11 +59,13 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	css := v.JSStyle()
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
-	css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	// css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	// css.Set("border", "2px")
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
 	}
-	v.SetNativePadding(zgeo.RectFromXY2(1, 0, -1, 0))
+	// v.SetNativePadding(zgeo.RectFromXY2(1, 0, -1, 0))
+	v.SetIdent(zgeo.Rect{})
 	if text != "" {
 		v.JSSet("value", text)
 	}
@@ -83,6 +84,11 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 		v.SetColor(zstyle.DefaultFGColor())
 	}
 	v.setHandlers()
+}
+
+func (v *TextView) SetIdent(m zgeo.Rect) {
+	r := m.Expanded(zgeo.SizeD(-1, 0))
+	v.SetNativePadding(r)
 }
 
 func (v *TextView) Select(from, to int) {
@@ -232,19 +238,15 @@ func (v *TextView) setHandlers() {
 		}
 		if (v.textStyle.KeyboardType == zkeyboard.TypeInteger || v.textStyle.KeyboardType == zkeyboard.TypeFloat) && v.minValue != zfloat.Undefined || v.maxValue != zfloat.Undefined {
 			f, err := strconv.ParseFloat(v.Text(), 64)
-			zlog.Info("Max?", f, err, v.minValue, v.maxValue)
 			n := f
 			if err == nil {
 				if v.minValue != zfloat.Undefined && n < v.minValue {
 					n = v.minValue
-					zlog.Info("Min:", f, n)
 				} else if v.maxValue != zfloat.Undefined && n > v.maxValue {
-					zlog.Info("Max:", f, n)
 					n = v.maxValue
 				}
 			}
 			if n != f {
-				zlog.Info("n!=f:", f, n)
 				if v.textStyle.KeyboardType == zkeyboard.TypeInteger {
 					v.SetInt64(int64(n))
 				} else {

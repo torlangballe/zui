@@ -111,9 +111,11 @@ func (v *TextView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	s.W += 6
 	// s.H -= 2
 	zfloat.Maximize(&s.H, 22)
+	zfloat.Maximize(&s.W, v.minWidth)
 	if v.maxWidth != 0 {
 		max.W = s.W
 	}
+	// s.Maximize(v.CustomView.MinSize())
 	return s, max
 }
 
