@@ -65,7 +65,7 @@ func NewAudioIconView(size zgeo.Size, path string) *AudioIconView {
 	v.imageView.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 		zlog.Info("Pressed", v.path)
 		if v.audio == nil {
-			v.audio = AudioNew(v.path)
+			v.audio = New(v.path)
 			v.audio.SetHandleFinished(func() {
 				zlog.Info("finished")
 				v.stop()
