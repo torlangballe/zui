@@ -442,7 +442,7 @@ func (v *CalendarView) updateShowMonth(t time.Time, dir zgeo.Alignment) {
 
 	v.navigator.Clear()
 	cols := 9
-	grid := zcontainer.GridViewNew("days", cols)
+	grid := zcontainer.NewGridView("days", cols)
 	grid.SetMargin(zgeo.RectFromXY2(3, 3, -3, -3))
 	grid.Spacing = zgeo.SizeD(0, 0)
 
