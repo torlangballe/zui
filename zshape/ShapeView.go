@@ -240,7 +240,6 @@ func (v *ShapeView) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View
 			o *= 0.6
 		}
 		fillCol := v.getStateColor(col.WithOpacity(o))
-		// zlog.Info("Col:", v.Hierarchy(), fillCol, col)
 		canvas.SetColor(fillCol)
 		canvas.FillPath(path)
 	}
