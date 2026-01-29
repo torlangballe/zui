@@ -220,7 +220,7 @@ func (v *StackView) arrangeChildrenInGrid() {
 						continue
 					}
 					zfloat.Maximize(&box.Size.H, heights[j])
-					box = box.MovedInto(rbox) // TODO: Why do we need to do this? Cause must be in  LayoutCellsInStack?
+					box = box.MovedInto(rbox) // TODO: Why do we need to do this? Cause must be in LayoutCellsInStack?
 					if i >= len(rowCells) {
 						continue
 					}
@@ -338,7 +338,7 @@ func (v *StackView) ArrangeChildren() {
 			c.View.SetRect(r)
 		} else {
 			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
-				c.View.SetRect(zgeo.RectFromXYWH(-100, 0, 100, 20))
+				c.View.SetRect(zgeo.RectFromXYWH(rm.Max().X+100, 0, 100, 20))
 				c.View.Show(false)
 			}
 		}
