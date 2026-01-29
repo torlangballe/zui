@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/torlangballe/zui/zcolor"
+	"github.com/torlangballe/zui/zconsole"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
@@ -20,6 +21,7 @@ type ActivityWidgeter struct{}
 type ImagesSetWidgeter struct{}
 type ColorWidgeter struct{}
 type ScreensViewWidgeter struct{}
+type ConsoleViewWidgeter struct{}
 
 func init() {
 	RegisterWidgeter("zamount-bar", AmountBarWidgeter{})
@@ -29,6 +31,7 @@ func init() {
 	RegisterWidgeter("zcolor", ColorWidgeter{})
 	RegisterWidgeter("zscreens", ScreensViewWidgeter{})
 	RegisterCreator("zerrors.ContextError", buildContextError)
+	RegisterWidgeter("zconsole", ConsoleViewWidgeter{})
 }
 
 func (a AmountBarWidgeter) Create(fv *FieldView, f *Field) zview.View {
@@ -113,6 +116,18 @@ func (ScreensViewWidgeter) Create(fv *FieldView, f *Field) zview.View {
 		minSize = f.Size
 	}
 	return zwidgets.NewScreensView(minSize)
+}
+
+func (ConsoleViewWidgeter) Create(fv *FieldView, f *Field) zview.View {
+	cols := 80
+	if f.Columns != 0 {
+		cols = f.Columns
+	}
+	rows := 10
+	if f.Rows != 0 {
+		rows = f.Rows
+	}
+	return zconsole.NewView("", cols, rows)
 }
 
 func buildContextError(in *FieldView, f *Field, val any) zview.View {
