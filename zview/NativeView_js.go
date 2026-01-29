@@ -855,6 +855,7 @@ func (v *NativeView) ClickAll() {
 		}
 	}
 	if invoked {
+		globalForceClick = false
 		return
 	}
 	v.Element.Call("click")
@@ -980,6 +981,9 @@ func (v *NativeView) setMouseDownForPress(id string, mods zkeyboard.Modifier, pr
 		}
 		var fup js.Func
 		fup = js.FuncOf(func(this js.Value, args []js.Value) any {
+			if mods != zkeyboard.ModifierAny && zkeyboard.ModifiersAtPress != mods {
+				return nil // don't call stopPropagation, we aren't handling it
+			}
 			lastPressedEvent = args[0]
 			if !globalLongPressState.cancelPress && press != nil && v.IsUsable() {
 				defer zdebug.RecoverFromPanic(true, invokeFunc)
