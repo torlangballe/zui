@@ -112,7 +112,6 @@ func (v *Label) SetPressWithModifierToClipboard(mod zkeyboard.Modifier) {
 		v.SetToolTip(tip) // will add key-press tip even if tip is empty
 	}
 	v.SetPressedHandler("$copy2clip", mod, func() {
-		// zlog.Info("LABEL PRESSED:", zkeyboard.ModifiersAtPress)
 		text := v.Text()
 		if strings.HasPrefix(text, "📋 ") {
 			return
