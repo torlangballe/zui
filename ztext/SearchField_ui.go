@@ -17,14 +17,15 @@ type SearchField struct {
 func SearchFieldNew(style Style, chars int) *SearchField {
 	s := &SearchField{}
 	s.StackView.Init(s, false, "search-stack")
-	// s.SetMargin(zgeo.RectFromXY2(5, 5, -5, -5))
+	s.SetCorner(11)
+	// s.SetMargin(zgeo.RectFromXY2(-2, -2, 0, 12))
 	// s.SetMinSize(zgeo.SizeD(0, 34))
 	style.Type = Search
 	tv := NewView("", style, chars, 1)
 	tv.SetColor(zstyle.DefaultFGColor())
 	tv.JSSet("className", "rounded")
 	s.TextView = tv
-	tv.SetCorner(14)
+	tv.SetCorner(11)
 	tv.SetObjectName("search")
 	// tv.SetMargin(zgeo.RectFromXY2(0, 3, -24, -10))
 	// tv.SetMargin(zgeo.RectFromXY2(0, 3, -24, -10))
@@ -34,7 +35,7 @@ func SearchFieldNew(style Style, chars int) *SearchField {
 	iv := zimageview.NewWithCachedPath("images/zcore/magnifier.png", zgeo.SizeD(12, 12))
 	iv.MixColorForDarkMode = zgeo.ColorLightGray
 	iv.SetAlpha(0.4)
-	s.Add(tv, zgeo.CenterLeft|zgeo.VertExpand)
+	s.Add(tv, zgeo.CenterRight|zgeo.Expand, zgeo.SizeD(16, 0))
 	s.Add(iv, zgeo.CenterLeft, zgeo.SizeD(6, 0)).Free = true
 	tv.SetValueHandler("zsearch.showCross", func(edited bool) {
 		iv.Show(tv.Text() == "")
