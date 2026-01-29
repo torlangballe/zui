@@ -78,12 +78,14 @@ func TimeFieldNew(name string, flags ztime.TimeFieldFlags) *TimeFieldView {
 			v.secondsText = addText(v, 2, "S", ":", 59)
 		}
 		v.ampmLabel = zlabel.New("AM")
+		v.ampmLabel.SetTextAlignment(zgeo.Center)
 		v.ampmLabel.SetCanTabFocus(true)
 		v.ampmLabel.View.SetObjectName("ampm")
 		v.ampmLabel.SetFont(zgeo.FontNice(-2, zgeo.FontStyleBold))
 		v.ampmLabel.SetColor(zgeo.ColorNew(0, 0, 0.1, 1))
 		v.ampmLabel.SetPressedHandler("", zkeyboard.ModifierNone, v.toggleAMPM)
-		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(2, 0))
+		// v.ampmLabel.SetMinWidth(20)
+		v.Add(v.ampmLabel, zgeo.CenterLeft, zgeo.SizeD(14, 0))
 		v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
 		zlocale.IsUse24HourClock.AddChangedHandler(func() {
 			changed := v.CollapseChild(v.ampmLabel, zlocale.IsUse24HourClock.Get(), false)
@@ -158,7 +160,9 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string, max 
 	tv := NewInteger(Style{}, columns)
 	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	tv.SetColor(zstyle.DefaultFGColor())
+	tv.SetIdent(zgeo.RectFromXY2(0, 0, -8, 0))
 	tv.UpdateSecs = 0
+	tv.SetMinWidth(24)
 	tv.SetPlaceholder(placeholder)
 	tv.SetMin(0)
 	if max != -1 {
