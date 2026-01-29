@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/torlangballe/zui/zalert"
+	"github.com/torlangballe/zui/zaudio"
 	"github.com/torlangballe/zui/zclipboard"
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zdocs"
@@ -117,6 +118,7 @@ const (
 	AddShortHelperArea                          // Adds an view where what you could have pressed to invoke shortcuts is shown
 	RowsGUISearchable                           // Allows rows to be part of gui search
 	AddNameAsSearchItem                         // If true, this table adds ObjectName() to currentPath for searching
+	AddDetachedBar                              // Adds a detached bar to be placed elsewhere. Sets AddBar.
 	LastBaseOption
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
@@ -157,7 +159,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		options |= AddBar
 	}
 	v.Options = options
-	if options&AddBar != 0 {
+	if options&AddBar != 0 || options&AddDetachedBar != 0 {
 		v.Bar = zcontainer.StackViewHor("bar")
 		// v.Bar.SetBGColor(zstyle.Gray(0.9, 0.2))
 		if options&AddBarInHeader == 0 {
@@ -754,7 +756,7 @@ func (v *SliceGridView[S]) editOrViewItems(ns []S, isReadOnly bool, title string
 	}
 	params.IsEditOnNewStruct = isEditOnNewStruct
 	if isEditOnNewStruct {
-		params.HideStatic = true
+		// params.HideStatic = true
 	}
 	att := zpresent.ModalConfirmAttributes()
 	if isReadOnly {
@@ -973,23 +975,9 @@ func (v *SliceGridView[S]) CreateDefaultMenuItems(ids []string, forSingleCell bo
 
 func (v *SliceGridView[S]) pasteItemsFromClipboard() {
 	zclipboard.GetString(func(str string) {
-		line, body := zstr.SplitInTwo(str, "\n")
-		var stype string
-		if !zstr.HasPrefix(line, "zcopyitem: ", &stype) {
-			zalert.ShowError(nil, "Paste buffer doesn't contain items to paste")
-			return
-		}
-		var s S
-		rtype := reflect.TypeOf(s)
-		stype2 := zreflect.MakeTypeNameWithPackage(rtype)
-		if stype != stype2 {
-			zalert.ShowError(nil, "Paste type is not the same as wanted receive type\n", stype, "\n", stype2)
-			return
-		}
-		var slice []S
-		err := json.Unmarshal([]byte(body), &slice)
+		slice, err := zreflect.PasteRegisteredItemsFromClipboardString[[]S](str)
 		if err != nil {
-			zalert.ShowError(nil, "Couldn't unpack paste data")
+			zalert.ShowError(err)
 			return
 		}
 		v.ValidateClipboardPasteItemsFunc(&slice, func() {
@@ -1019,6 +1007,7 @@ func (v *SliceGridView[S]) copyItemsToClipboard(ids []string) {
 	str := "zcopyitem: " + zreflect.MakeTypeNameWithPackage(rtype) + "\n"
 	str += string(djson)
 	zclipboard.SetString(str)
+	zaudio.Play("audio/zcore/scissors.mp3")
 }
 
 func (o OptionType) String() string {
