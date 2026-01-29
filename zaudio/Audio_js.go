@@ -12,8 +12,9 @@ type audioNative struct {
 	audio js.Value
 }
 
-func AudioNew(path string) *Audio {
+func New(path string) *Audio {
 	a := &Audio{}
+	zlog.Info("PLAY AUDIO:", path)
 	audioF := js.Global().Get("Audio")
 	a.audio = audioF.New(path)
 	return a

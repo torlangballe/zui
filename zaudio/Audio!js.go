@@ -24,7 +24,7 @@ func MP4DurationSecs(reader io.ReadSeeker, size int64) (float64, error) {
 	// return durationSec, nil
 }
 
-func AudioNew(path string) *Audio {
+func New(path string) *Audio {
 	return nil
 }
 
