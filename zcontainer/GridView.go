@@ -21,7 +21,7 @@ type GridView struct {
 	addPos         zgeo.IPos
 }
 
-func GridViewNew(name string, cols int) *GridView {
+func NewGridView(name string, cols int) *GridView {
 	v := &GridView{}
 	v.Init(v, name, cols)
 	return v
@@ -60,6 +60,7 @@ func (v *GridView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	s.Maximize(v.MinSize())
 	s.Subtract(v.Margin().Size)
+	// zlog.Info("GridView.CalculatedSize:", v.ObjectName(), s)
 	return s, zgeo.Size{}
 }
 
