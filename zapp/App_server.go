@@ -114,22 +114,24 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if spath == "main.wasm" {
 		var enc string
 		var filesystem string
-		es := []string{"gz"}
+		es := []string{".gz", ""}
 		if canBrotly(req) {
-			es = append([]string{"br"}, es...) // we want if first, to use if possible
+			es = append([]string{".br"}, es...) // we want if first, to use if possible
 		}
 	allWebFS:
 		for _, f := range AllWebFS {
 			for _, ext := range es {
-				wpath := fpath + "." + ext
+				wpath := fpath + ext
 				exists := zfile.CanOpenInFS(f.FS, wpath)
 				// zlog.Info("wasm?", wpath, exists, f.FSName)
 				if exists {
 					filesystem = f.FSName
 					fpath = wpath
 					enc = ext
-					if ext == "gz" {
-						enc = "gzip"
+					if ext == ".gz" {
+						enc = "gzip" // what about brotly?
+					} else if ext == "" {
+						enc = "wasm"
 					}
 					break allWebFS
 				}
