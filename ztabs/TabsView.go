@@ -45,11 +45,11 @@ type TabsView struct {
 	InvertSelectedTabText bool
 	CurrentID             string
 	DefaultID             string
+	Header                *zcontainer.StackView
 
 	storeKey           string
 	items              []Item
 	currentChild       zview.View
-	header             *zcontainer.StackView
 	ChangedHandlerFunc func(newID string)
 }
 
@@ -69,14 +69,14 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 	v.StackView.Init(v, true, storeName)
 	v.SetBGColor(zstyle.DefaultBGColor())
 	v.SetSpacing(0) // note: for vertical stack v
-	v.header = zcontainer.StackViewHor("header")
-	v.header.SetBGColor(zgeo.ColorClear)
+	v.Header = zcontainer.StackViewHor("header")
+	v.Header.SetBGColor(zgeo.ColorClear)
 	if buttons {
 		v.ButtonName = DefaultButtonName
-		v.header.SetMargin(zgeo.RectFromXY2(2, 4, 0, 0))
+		v.Header.SetMargin(zgeo.RectFromXY2(2, 4, 0, 0))
 	} else {
 		v.MaxImageSize = zgeo.SizeD(60, 24)
-		v.header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
+		v.Header.SetMargin(zgeo.RectFromXY2(8, 6, -8, -6))
 	}
 	v.storeKey = storeName
 	if storeName != "" {
@@ -85,23 +85,23 @@ func TabsViewNew(storeName string, buttons bool) *TabsView {
 			v.CurrentID = str
 		}
 	}
-	v.header.SetSpacing(12) // note: for header
-	v.Add(v.header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
+	v.Header.SetSpacing(12) // note: for header
+	v.Add(v.Header, zgeo.Left|zgeo.Top|zgeo.HorExpand)
 	v.selectedImageBGColor = DefaultSelectedImageBGColor()
 	// v.SetIndicatorSelectionFunc = v.setButtonOn
 	if !buttons {
-		v.header.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-			sv, i := v.header.FindViewWithName(v.CurrentID, false)
+		v.Header.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+			sv, i := v.Header.FindViewWithName(v.CurrentID, false)
 			if sv != nil {
 				r := sv.Rect()
 				r.Pos.Y = 0
 				r.Size.H = rect.Size.H
-				r.SetMinX(r.Min().X - v.header.Spacing()/2)
-				r.SetMaxX(r.Max().X + v.header.Spacing()/2)
+				r.SetMinX(r.Min().X - v.Header.Spacing()/2)
+				r.SetMaxX(r.Max().X + v.Header.Spacing()/2)
 				if i == 0 {
 					r.SetMinX(rect.Min().X)
 				}
-				if i == v.header.CountChildren() && r.Max().X > rect.Max().X-8 {
+				if i == v.Header.CountChildren() && r.Max().X > rect.Max().X-8 {
 					r.SetMaxX(rect.Max().X)
 				}
 				canvas.SetColor(v.selectedImageBGColor)
@@ -183,7 +183,7 @@ func (v *TabsView) AddItem(id, title, imagePath string, view zview.View, create 
 			v.SetCursor(zcursor.Default)
 		})
 	})
-	v.header.Add(view, zgeo.BottomLeft)
+	v.Header.Add(view, zgeo.BottomLeft)
 	v.items = append(v.items, Item{id: id, create: create, title: title})
 	ilen := len(v.items)
 	if ilen < 10 {
@@ -286,15 +286,11 @@ func (v *TabsView) RemoveItem(id string) {
 	}
 }
 
-func (v *TabsView) GetHeader() *zcontainer.StackView {
-	return v.header
-}
-
 func (v *TabsView) AddSeparatorLine(thickness float64, color zgeo.Color, corner float64, forIDs []string) {
 	cv := zcustom.NewView(tabSeparatorID)
 	cv.SetMinSize(zgeo.SizeD(10, thickness))
 	cv.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-		selectedView, _ := v.header.FindViewWithName(v.CurrentID, false)
+		selectedView, _ := v.Header.FindViewWithName(v.CurrentID, false)
 		canvas.SetColor(color)
 		if selectedView != nil {
 			r := selectedView.Rect()
@@ -327,7 +323,7 @@ func (v *TabsView) FindItem(id string) int {
 }
 
 func (v *TabsView) setButtonOn(id string, selected bool) {
-	view, _ := v.header.FindViewWithName(id, false)
+	view, _ := v.Header.FindViewWithName(id, false)
 	if view != nil {
 		button, _ := view.(*zshape.ImageButtonView)
 		if button != nil {
@@ -345,13 +341,13 @@ func (v *TabsView) setButtonOn(id string, selected bool) {
 			}
 			button.SetTextColor(col)
 		} else { // image only
-			v.header.Expose()
+			v.Header.Expose()
 		}
 	}
 }
 
 func (v *TabsView) SetButtonAlignment(id string, a zgeo.Alignment) {
-	cell, _ := v.header.FindCellWithName(id)
+	cell, _ := v.Header.FindCellWithName(id)
 	cell.Alignment = a
 }
 
