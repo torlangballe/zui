@@ -376,7 +376,7 @@ func (o *MenuedOwner) AddMOItem(item MenuedOItem) {
 	o.items = append(o.items, item)
 }
 
-func (o *MenuedOwner) AddSeparator(item MenuedOItem) {
+func (o *MenuedOwner) AddSeparator() {
 	var i MenuedOItem
 	i.IsSeparator = true
 	o.AddMOItem(i)
@@ -784,6 +784,7 @@ func (o *MenuedOwner) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 }
 
 func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id string) {
+	// zlog.Info("updateCellSelection:", id)
 	i, _ := strconv.Atoi(id)
 	item := o.items[i]
 	col := o.TextColor
@@ -917,7 +918,6 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.SetMinSize(zgeo.SizeD(20, 22))
 	v.TextMargin = zgeo.RectFromXY2(8, 0, -20, 0)
 	v.SetColor(zstyle.Gray(0.97, 0.3))
-
 	v.StrokeColor = zgeo.ColorNewGray(0, 0.5)
 	v.StrokeWidth = 1
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)
