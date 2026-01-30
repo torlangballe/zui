@@ -416,8 +416,8 @@ func (v *GridListView) updateCellBackground(cid string, x, y int, child zview.Vi
 		}
 	}
 	child.Native().SetStrokeSide(1, v.CellStrokeColor, sidesLeft, true) // we set if for non also, in case it moved
-	// zlog.Info("StrokeSide:", v.ObjectName(), sidesLeft)
 	if v.UpdateCellSelectionFunc != nil {
+		// zlog.Info("UpdateCellSelectionFunc:", cid)
 		v.UpdateCellSelectionFunc(v, cid)
 	}
 }
