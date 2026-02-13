@@ -1438,7 +1438,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			label.SetToolTip(tip)
 		}
 		if f.Wrap == ztextinfo.WrapTailTruncate.String() || v.isRows() {
-			// label.SetWrap(ztextinfo.WrapTailTruncate)
+			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
 		if !v.isRows() {
