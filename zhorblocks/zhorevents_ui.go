@@ -244,7 +244,7 @@ func NewEventsView(v *HorEventsView, opts EventOptions) *HorEventsView {
 		v.Add(line, zgeo.AlignmentNone)
 	}
 	v.loadMarkerButtons()
-	v.updateNowRepeater = ztimer.RepeaterNew()
+	v.updateNowRepeater = ztimer.NewRepeater()
 	v.AddOnRemoveFunc(v.updateNowRepeater.Stop)
 	v.horInfinite.SetMaxIndex(1)
 	v.UpdateWidgets()

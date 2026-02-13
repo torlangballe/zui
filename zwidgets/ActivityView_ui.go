@@ -38,7 +38,7 @@ func NewActivityView(size zgeo.Size, col zgeo.Color) *ActivityView {
 	}
 	v.Init(v, true, nil, path, size)
 	v.rotationSecs = 1.5
-	v.repeater = ztimer.RepeaterNew()
+	v.repeater = ztimer.NewRepeater()
 	v.SetInteractive(false)
 	v.SetAlpha(0)
 	return v

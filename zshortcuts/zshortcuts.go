@@ -50,7 +50,7 @@ func StrokeViewToShowHandling(view zview.View, viewKM zkeyboard.KeyMod, scut zke
 	// vm := viewMod{nv.View, scut}
 	timer := highlightTimers[nv.View]
 	if timer == nil {
-		timer = ztimer.RepeaterNew()
+		timer = ztimer.NewRepeater()
 		highlightTimers[nv.View] = timer
 	}
 	id := zwindow.FromNativeView(nv).AddFocusHandler(nv, false, func() {
