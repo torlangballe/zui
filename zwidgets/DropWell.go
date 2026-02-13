@@ -10,7 +10,6 @@ import (
 	"github.com/torlangballe/zui/ztextinfo"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 type DropWell struct {
@@ -29,11 +28,11 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Init(v, "dropwell")
 	v.SetMinSize(size)
 	v.Styling.Corner = 7
-	v.Styling.BGColor = zgeo.ColorNewGray(0.95, 1)
-	v.Styling.FGColor = zgeo.ColorNewGray(0, 0.05)
+	v.Styling.BGColor = zstyle.Gray(0.79, 0.35)
 	v.Styling.StrokeWidth = 1
 	v.Styling.StrokeColor = zgeo.ColorNewGray(0.7, 1)
-	v.Styling.DropShadow = zgeo.DropShadow{Delta: zgeo.SizeBoth(5), Blur: 5, Color: zgeo.ColorNewGray(0, 0.7)}
+	dropCol := zstyle.Gray(0, 0.1).WithOpacity(0.7)
+	v.Styling.DropShadow = zgeo.MakeDropShadow(5, 5, 5, dropCol)
 	v.ImageAlignment = zgeo.Center | zgeo.Shrink
 	v.SetPlaceholder(placeHolder)
 	v.SetMinSize(size)
@@ -42,7 +41,6 @@ func NewDropWell(placeHolder string, size zgeo.Size) *DropWell {
 	v.Activity = NewActivityView(zgeo.SizeD(12, 12), zgeo.ColorBlack)
 	v.Add(v.Activity, zgeo.CenterRight, zgeo.SizeD(4, 0))
 	v.SetPointerDropHandler(func(dtype zview.DragType, data []byte, name string, pos zgeo.Pos) bool {
-		zlog.Info("Well HandleDropish:", name, dtype)
 		if v.HandleDropPreflight != nil && dtype == zview.DragDropFilePreflight {
 			r := v.HandleDropPreflight(name)
 			// zlog.Info("HandleDropPreflight:", name, r)
@@ -80,8 +78,7 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 	// zlog.Info("DropWell draw", rect)
 	const corner = 7
 	path := zgeo.PathNewRect(rect.ExpandedD(-1), zgeo.SizeBoth(v.Styling.Corner))
-	canvas.SetColor(v.Styling.BGColor)
-	fillCol := v.Styling.FGColor
+	fillCol := v.Styling.BGColor
 	if v.IsHighlighted() {
 		fillCol = zgeo.ColorYellow
 	}
@@ -92,7 +89,7 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 	canvas.ClipPath(path, false)
 	path.AddRect(rect.ExpandedD(20), zgeo.SizeNull) // add an outer box, so drop-shadow is an inset
 	canvas.SetDropShadow(v.Styling.DropShadow)
-	canvas.SetColor(v.Styling.StrokeColor)
+	// canvas.SetColor(zgeo.ClearColor)
 	canvas.FillPathEO(path)
 	canvas.PopState()
 
@@ -105,7 +102,7 @@ func (v *DropWell) draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View)
 		ti.Rect = rect.Plus(zgeo.RectFromXY2(0, 6, 0, 0))
 		ti.Text = v.placeHolder
 		ti.Alignment = zgeo.Center
-		ti.Color = zgeo.ColorNewGray(0, 0.5)
+		ti.Color = zstyle.DefaultFGColor()
 		ti.Draw(canvas)
 	}
 	if v.image != nil {
