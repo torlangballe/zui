@@ -90,7 +90,7 @@ func Open(o Options) *Window {
 	// zlog.Info("OPEN WIN:", o.URL, specs)
 	win.Element = zdom.WindowJS.Call("open", o.URL, "_blank", strings.Join(specs, ","))
 	if win.Element.IsNull() {
-		zlog.Error("open window failed", o.URL)
+		zlog.Error("open window failed", o.URL, zlog.Full(specs))
 		return nil
 	}
 	win.updateScale()
