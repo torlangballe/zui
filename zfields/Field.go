@@ -58,6 +58,10 @@ type FieldParameters struct {
 	IgnoreUseInAndINTags bool
 }
 
+type EnumGetter interface {
+	GetEnum(fieldName string) zdict.Items
+}
+
 // ActionType are the types of actions any type can handle an HandleAction method with type of.
 // This allows a type to handle its  Field setup, its creation, editing, data changed and more.
 type ActionType string
@@ -140,6 +144,7 @@ const (
 	FlagShowIfExtraSpace                              // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
 	FlagDontLabelize                                  // When we are labelizing items, use full space with no label for this one.
 	FlagOmitZero                                      // Like for json, skip an item if it is zero, but only if static
+	FlagEmptyEnum                                     // Is set if enum tag with no value, if struct is an EnumGetter, that is used.
 )
 
 const (
@@ -277,6 +282,7 @@ var flagsNameMap = map[FlagType]string{
 	FlagIsOpener:                 "FlagIsOpener",
 	FlagDontLabelize:             "FlagDontLabelize",
 	FlagOmitZero:                 "FlagOmitZero",
+	FlagEmptyEnum:                "EmptyEnum",
 }
 
 var (
@@ -699,6 +705,10 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			}
 			f.Radio = kv.Value
 		case "enum":
+			if kv.Value == "" {
+				f.Flags |= FlagEmptyEnum
+				break
+			}
 			if zstr.HasPrefix(kv.Value, "./", &f.LocalEnum) {
 			} else {
 				_, got := fieldEnums[kv.Value]
