@@ -42,7 +42,7 @@ type AppCalls zrpc.CallsBase
 
 // filesRedirector is a type that can handle serving files
 type filesRedirector struct {
-	Override func(w http.ResponseWriter, req *http.Request, filepath string) bool // Override is a method to handle special cases of files, return true if handled
+	Override func(w http.ResponseWriter, req *http.Request, filepath *string) bool // Override is a method to handle special cases of files, return true if handled
 	Router   *mux.Router
 }
 
@@ -55,9 +55,10 @@ var (
 	InlineDocumentationHeaderMD string
 	CanBrotlyFunc               func(req *http.Request) bool
 	HandleGUIErrorFunc          func(ci *zrpc.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
+	DefaultWasmPath             string = "main.wasm"
 )
 
-func Init(executor *zrpc.Executor) {
+func Init(executor zrpc.Executioner) {
 	if executor != nil {
 		executor.Register(AppCalls{})
 	}
@@ -86,20 +87,22 @@ func canBrotly(req *http.Request) bool {
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
 func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	spath := req.URL.Path
-	// zlog.Info("FilesRedir:", spath)
+	zlog.Info("FilesRedir:", spath)
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
 		localRedirect(w, req, zrest.AppURLPrefix)
 		req.Body.Close()
 		return
 	}
-	// zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
 	if r.Override != nil {
-		if r.Override(w, req, spath) {
+		zlog.Info("FilesRedir0:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
+		if r.Override(w, req, &spath) {
+			zlog.Info("FilesRedir2:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 			req.Body.Close()
 			return
 		}
 	}
+	zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	if strings.HasSuffix(spath, ".md") {
 		m := MakeMarkdownConverter()
 		m.ServeAsHTML(w, req, "www/"+spath)
@@ -111,7 +114,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	smime := mime.TypeByExtension(path.Ext(spath))
 	fpath := "www/" + spath
-	if spath == "main.wasm" {
+	if spath == DefaultWasmPath {
 		var enc string
 		var filesystem string
 		es := []string{".gz", ""}
@@ -200,7 +203,7 @@ func localRedirect(w http.ResponseWriter, r *http.Request, newPath string) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
-func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath string) bool) {
+func ServeZUIWasm(router *mux.Router, serveDirs bool, override func(w http.ResponseWriter, req *http.Request, filepath *string) bool) {
 	RequestRedirector = &filesRedirector{
 		Override: override,
 	}
