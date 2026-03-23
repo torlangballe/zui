@@ -59,8 +59,8 @@ func (v *TextView) Init(view zview.View, text string, textStyle Style, cols, row
 	css := v.JSStyle()
 	css.Set("position", "absolute")
 	css.Set("resize", "none")
-	// css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
-	// css.Set("border", "2px")
+	css.Set("boxSizing", "border-box") // this is incredibly important; Otherwise a box outside actual rect is added. But NOT in programatically made windows!!
+	css.Set("border", "1px gray solid")
 	if textStyle.DisableAutoComplete {
 		v.JSSet("autocomplete", "off")
 	}
