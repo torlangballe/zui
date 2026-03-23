@@ -13,15 +13,33 @@ import (
 	"github.com/torlangballe/zutil/zstr"
 )
 
+func GetDescriptionFromZUIField(structure any) string {
+	var desc string
+	ForEachField(structure, FieldParameters{}, nil, func(each FieldInfo) bool {
+		if each.Field.Name == "Description" {
+			desc = each.Field.Description
+			return false
+		}
+		return true
+	})
+	return desc
+}
+
 func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 	var args []zstr.KeyValue
 	ForEachField(s, FieldParameters{}, nil, func(each FieldInfo) bool {
 		kind := zreflect.KindFromReflectKindAndType(each.ReflectValue.Kind(), each.ReflectValue.Type())
 		isPointer := (kind == zreflect.KindPointer)
-		name := strings.ToLower(each.Field.FieldName)
+		name := each.Field.FieldName
+		if name == "Description" && each.Field.Description != "" {
+			arg := zstr.KeyValue{Key: "Description", Value: each.Field.Description}
+			args = append(args, arg)
+			return true
+		}
 		if each.Field.Title != "" {
 			name = each.Field.Title
 		}
+		name = strings.ToLower(name)
 		var arg zstr.KeyValue
 		if isPointer {
 			eval := reflect.New(each.ReflectValue.Type().Elem()).Elem()
@@ -30,7 +48,7 @@ func GetCommandArgsHelpForStructFields(s any) []zstr.KeyValue {
 			if len(name) == 1 && kind == zreflect.KindBool {
 				arg.Key = fmt.Sprintf("[-%s]", name)
 			} else {
-				arg.Key = fmt.Sprintf("[--%s=<%s>]", name, kind)
+				arg.Key = fmt.Sprintf("[--%s <%s>]", name, kind)
 			}
 		} else {
 			arg.Key = fmt.Sprintf("%s", name)
@@ -61,26 +79,30 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 		// kind := zreflect.KindFromReflectKindAndType(each.ReflectValue.Kind(), each.ReflectValue.Type())
 		kind := each.ReflectValue.Kind()
 		isPointer := (kind == reflect.Pointer)
-		name := strings.ToLower(each.Field.FieldName)
+		name := each.Field.FieldName
+		if name == "Description" {
+			return true
+		}
+		name = strings.ToLower(name)
 		if each.Field.Title != "" {
 			name = each.Field.Title
 		}
-		// zlog.Info("ParseCommandArgsToStructFields:", name, isPointer)
 		if isPointer {
 			if len(args) == 0 {
 				return false
 			}
 			for i, a := range args {
-				var set string
 				if kind == reflect.Bool && a == "-"+name {
 					each.ReflectValue.SetBool(true)
 					zslice.RemoveAt(&args, i)
 					break
 				}
-				// zlog.Info("ParseCommandArgsToStructFields:", a, name)
-				if zstr.HasPrefix(a, "--"+name+"=", &set) {
+				zlog.Info("ParseCommandArgsToStructFields:", a, each.ReflectValue.Type(), name)
+				if a == "--"+name {
+					i++
+					a = args[i]
 					each.ReflectValue.Set(reflect.New(each.ReflectValue.Type().Elem())) // we make it point to an new'ed instance
-					err = setStrToRVal(set, each.Field, each.ReflectValue.Elem(), name)
+					err = setStrToRVal(a, each.Field, each.ReflectValue.Elem(), name)
 					if err != nil {
 						zlog.OnError(err)
 						return false
@@ -108,10 +130,23 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 		} else {
 			arg = zstr.ExtractFirstString(&args)
 		}
-		// zlog.Info("setStr2Val", arg, kind, each.ReflectValue.Type(), name)
-		err = setStrToRVal(arg, each.Field, each.ReflectValue, name)
-		if err != nil {
-			return false
+		isSlice := each.ReflectValue.Kind() == reflect.Slice
+		for {
+			serr := setStrToRVal(arg, each.Field, each.ReflectValue, name)
+			if serr != nil {
+				if isSlice {
+					break
+				}
+				err = serr
+				return true
+			}
+			if !isSlice {
+				break
+			}
+			arg = zstr.ExtractFirstString(&args)
+			if arg == "" {
+				break
+			}
 		}
 		return true
 	})
@@ -119,7 +154,13 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 }
 
 func setStrToRVal(arg string, f *Field, rval reflect.Value, name string) error {
+	var sliceVal reflect.Value
+	if rval.Kind() == reflect.Slice {
+		sliceVal = rval
+		rval = zslice.MakeAnElementOfSliceRValType(sliceVal)
+	}
 	kind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
+
 	switch kind {
 	case zreflect.KindString:
 		rval.SetString(arg)
@@ -143,6 +184,9 @@ func setStrToRVal(arg string, f *Field, rval reflect.Value, name string) error {
 		rval.SetFloat(r)
 	default:
 		return zlog.NewError("unsupported arg type:", kind, "for", name, "argument")
+	}
+	if sliceVal.IsValid() {
+		zslice.RValAddAtEnd(sliceVal.Addr(), rval)
 	}
 	return nil // never gets here
 }
