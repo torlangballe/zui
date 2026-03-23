@@ -160,7 +160,7 @@ func addText(v *TimeFieldView, columns int, placeholder string, pre string, max 
 	tv := NewInteger(Style{}, columns)
 	tv.SetFont(zgeo.FontNice(14, zgeo.FontStyleNormal))
 	tv.SetColor(zstyle.DefaultFGColor())
-	tv.SetIdent(zgeo.RectFromXY2(0, 0, -8, 0))
+	tv.SetIdent(zgeo.RectFromXY2(0, 0, -2, 0))
 	tv.UpdateSecs = 0
 	tv.SetMinWidth(24)
 	tv.SetPlaceholder(placeholder)
