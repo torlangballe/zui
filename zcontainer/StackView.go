@@ -202,7 +202,7 @@ func (v *StackView) arrangeChildrenInGrid() {
 				cellsOwner, _ := vc.View.(CellsOwner)
 				zlog.Assert(cellsOwner != nil, v.Hierarchy())
 				rowCells := slices.Clone(*cellsOwner.GetCells())
-				zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
+				zslice.RemoveFromFunc(&rowCells, func(c Cell) bool {
 					return c.Collapsed || c.Free || c.View == nil
 				})
 				rowView := vc.View
@@ -255,7 +255,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 		cellsOwner, _ := vc.View.(CellsOwner)
 		zlog.Assert(cellsOwner != nil, v.Hierarchy())
 		rowCells := slices.Clone(*cellsOwner.GetCells())
-		zslice.DeleteFromFunc(&rowCells, func(c Cell) bool {
+		zslice.RemoveFromFunc(&rowCells, func(c Cell) bool {
 			return c.Collapsed || c.Free || c.View == nil
 		})
 		i := 0
