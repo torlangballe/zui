@@ -87,7 +87,7 @@ func canBrotly(req *http.Request) bool {
 // filesRedirector's ServeHTTP serves everything in zrest.StaticFolderPathFunc()
 func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	spath := req.URL.Path
-	zlog.Info("FilesRedir:", spath)
+	// zlog.Info("FilesRedir:", spath)
 	if spath == strings.TrimRight(zrest.AppURLPrefix, "/") {
 		localRedirect(w, req, zrest.AppURLPrefix)
 		req.Body.Close()
@@ -95,14 +95,12 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
 	if r.Override != nil {
-		zlog.Info("FilesRedir0:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 		if r.Override(w, req, &spath) {
 			zlog.Info("FilesRedir2:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 			req.Body.Close()
 			return
 		}
 	}
-	zlog.Info("FilesRedir1:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 	if strings.HasSuffix(spath, ".md") {
 		m := MakeMarkdownConverter()
 		m.ServeAsHTML(w, req, "www/"+spath)
