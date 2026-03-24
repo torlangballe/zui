@@ -16,7 +16,7 @@ import (
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -635,7 +635,7 @@ func (v *ContainerView) RemoveChildrenFunc(remove func(cell Cell) bool) {
 		c := v.Cells[i]
 		if remove(c) {
 			v.CustomView.RemoveChild(c.View, true)
-			zslice.RemoveAt(&v.Cells, i)
+			zslices.RemoveAt(&v.Cells, i)
 			i--
 		}
 	}
@@ -654,7 +654,7 @@ func (v *ContainerView) RemoveAllChildren() {
 func (v *ContainerView) DetachChild(subView zview.View) {
 	for i, c := range v.Cells {
 		if c.View == subView {
-			zslice.RemoveAt(&v.Cells, i)
+			zslices.RemoveAt(&v.Cells, i)
 			break
 		}
 	}

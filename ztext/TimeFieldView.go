@@ -19,7 +19,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zint"
 	"github.com/torlangballe/zutil/zlocale"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -231,7 +231,7 @@ func flipDayMonth(v *TimeFieldView, arrange bool) {
 	if mi < di != zlocale.IsShowMonthBeforeDay.Get() {
 		min, max := zint.MinMax(di, mi)
 		v.Cells[max].View.Native().InsertBefore(v.Cells[min].View.Native())
-		zslice.Swap(v.Cells, di, mi)
+		zslices.Swap(v.Cells, di, mi)
 		if arrange {
 			v.ArrangeChildren()
 		}

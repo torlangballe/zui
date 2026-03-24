@@ -8,7 +8,7 @@ package zview
 
 import (
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 )
 
 type View interface {
@@ -133,7 +133,7 @@ func RemoveAViewCallback(view View, id int64) bool {
 				if c.delete != nil {
 					c.delete()
 				}
-				zslice.RemoveAt(&s, i)
+				zslices.RemoveAt(&s, i)
 				viewCallbacks[view] = s
 				return true
 			}

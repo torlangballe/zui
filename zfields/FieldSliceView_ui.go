@@ -23,7 +23,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -51,7 +51,7 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 	}
 	v.SetMinSize(zgeo.SizeBoth(10))
 	if rt.Len() == 0 {
-		rt = zslice.MakeAnElementOfSliceRValType(rt)
+		rt = zslices.MakeAnElementOfSliceRValType(rt)
 	} else {
 		rt = rt.Index(0)
 		if rt.Kind() == reflect.Interface {
@@ -183,7 +183,7 @@ func (v *FieldSliceView) updateMenu() {
 }
 
 func (v *FieldSliceView) handleAddItem() {
-	i := zslice.AddEmptyElementAtEnd(v.data)
+	i := zslices.AddEmptyElementAtEnd(v.data)
 	e := reflect.ValueOf(v.data).Elem().Index(i)
 	CallStructInitializer(e.Addr().Interface())
 	v.addItem(i, e, false)
@@ -269,7 +269,7 @@ func (v *FieldSliceView) callEditedAction() {
 
 func (v *FieldSliceView) handleDeleteItem(i int) {
 	zlog.Assert(i >= 0 && i < len(v.stack.Cells), i, len(v.stack.Cells))
-	zslice.RemoveAt(v.data, i)
+	zslices.RemoveAt(v.data, i)
 	cell := v.stack.Cells[i]
 	v.stack.RemoveChild(cell.View, true)
 	v.currentIndex = -1

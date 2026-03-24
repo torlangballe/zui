@@ -33,7 +33,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/ztimer"
 	"github.com/torlangballe/zutil/zwords"
 )
@@ -406,7 +406,7 @@ outer:
 		for j, v := range vals {
 			if reflect.DeepEqual(item.Value, v) {
 				o.items[i].Selected = true
-				zslice.RemoveAt(&vals, j)
+				zslices.RemoveAt(&vals, j)
 				continue outer
 			}
 		}
@@ -434,9 +434,9 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 	if o.CreateItemsFunc != nil {
 		o.items = o.CreateItemsFunc()
 	}
-	items := zslice.Copy(o.items)
+	items := zslices.Copy(o.items)
 	if zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt {
-		items = zslice.Filtered(items, func(i MenuedOItem) bool {
+		items = zslices.Filtered(items, func(i MenuedOItem) bool {
 			if strings.HasSuffix(i.Name, "†") && !i.Selected {
 				return false
 			}
@@ -496,12 +496,12 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 					_, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
 					o.EditFunc(&o.items[si], EditDelete)
-					zslice.RemoveAt(&o.items, si)
+					zslices.RemoveAt(&o.items, si)
 				})
 			})
 			items = append(items, rename, del)
 		}
-		o.items = zslice.Copy(items)
+		o.items = zslices.Copy(items)
 	}
 	return items
 }

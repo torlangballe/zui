@@ -26,7 +26,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zwords"
 )
 
@@ -116,7 +116,7 @@ func (v *HeaderView) handleButtonPressed(button *zshape.ImageButtonView, h Heade
 		si := v.findSortInfo(h.FieldName)
 		sorting := v.SortOrder[si]
 		sorting.SmallFirst = !sorting.SmallFirst
-		zslice.RemoveAt(&v.SortOrder, si)
+		zslices.RemoveAt(&v.SortOrder, si)
 		v.SortOrder = append([]zfields.SortInfo{sorting}, v.SortOrder...)
 		for _, c := range v.GetChildren(false) {
 			ib, _ := c.(*zshape.ImageButtonView)
@@ -147,7 +147,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		pri       int
 	}
 	v.SortOrder = getUserAdjustedSortOrder(v.ObjectName())
-	zslice.RemoveFromFunc(&v.SortOrder, func(si zfields.SortInfo) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
+	zslices.RemoveFromFunc(&v.SortOrder, func(si zfields.SortInfo) bool { // let's remove any incorrect id's from user stored sort order, in case we changed field names
 		for _, h := range headers {
 			if si.FieldName == h.FieldName {
 				return false

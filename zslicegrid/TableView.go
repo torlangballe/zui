@@ -20,7 +20,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -188,7 +188,7 @@ func (v *TableView[S]) calculateColumns(size zgeo.Size) {
 
 func (v *TableView[S]) updateStoredFields() {
 	// zlog.Info("updateStoredFields")
-	s := zslice.MakeAnElementOfSliceType(v.slicePtr)
+	s := zslices.MakeAnElementOfSliceType(v.slicePtr)
 	v.fields = []zfields.Field{}
 	params := v.FieldViewParameters.FieldParameters
 	zstr.AddToSet(&params.UseInValues, "$fullrow")

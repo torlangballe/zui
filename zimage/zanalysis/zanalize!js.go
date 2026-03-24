@@ -10,7 +10,7 @@ import (
 
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zmath"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 )
 
 type SimpleAnalytics struct {
@@ -208,14 +208,14 @@ func getBlockFrequencyAndOffset(print bool, counts []count, frame zgeo.IRect) (f
 		for j := 0; j < len(order) && i < len(order); j++ {
 			if i != j && order[j].freq >= order[i].freq && order[j].freq%order[i].freq == 0 && order[j].offset%order[i].freq == 0 {
 				order[i].amount += order[j].amount
-				zslice.RemoveAt(&order, j)
+				zslices.RemoveAt(&order, j)
 				j--
 			}
 		}
 	}
 	for i := 0; i < len(order); i++ {
 		if order[i].amount == 0 {
-			zslice.RemoveAt(&order, i)
+			zslices.RemoveAt(&order, i)
 			i--
 		}
 	}
@@ -373,7 +373,7 @@ func (info *ImageInfo) AnalyzeSquares(img image.Image, squareSize int, minArea, 
 		}
 		yc++
 	}
-	sorted, _ := zslice.SortByFrequency(freqs)
+	sorted, _ := zslices.SortByFrequency(freqs)
 	if len(sorted) != 0 {
 		freq = sorted[0]
 	}

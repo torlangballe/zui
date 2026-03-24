@@ -8,7 +8,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -96,7 +96,7 @@ func (v *WebView) SetURL(surl string) {
 	v.Element.Set("src", surl)
 	old := v.url
 	v.url = surl
-	if len(v.History) == 0 || zslice.Top(v.History) != surl {
+	if len(v.History) == 0 || zslices.Top(v.History) != surl {
 		v.History = append(v.History, surl)
 		v.updateWidgets()
 	}

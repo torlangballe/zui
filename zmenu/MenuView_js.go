@@ -11,7 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 )
 
 func NewView(name string, items zdict.Items, value any) *MenuView {
@@ -105,7 +105,7 @@ func (v *MenuView) RemoveItemByValue(value any) {
 	options := v.JSGet("options")
 	for i, item := range v.items {
 		if fmt.Sprint(item.Value) == sval {
-			zslice.RemoveAt(&v.items, i)
+			zslices.RemoveAt(&v.items, i)
 			break
 		}
 	}

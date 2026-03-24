@@ -35,7 +35,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/zwords"
 )
@@ -345,7 +345,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			return
 		}
 		// zlog.Info("DropMove:", si, ei)
-		zslice.MoveElement(*v.slicePtr, si, ei)
+		zslices.MoveElement(*v.slicePtr, si, ei)
 		v.UpdateViewFunc(true, true)
 		if v.HandleRowDragOrderFunc != nil {
 			v.HandleRowDragOrderFunc()
@@ -520,7 +520,7 @@ func (v *SliceGridView[S]) RemoveItemsFromSlice(ids []string) {
 		id := GetIDForItem(&(*v.slicePtr)[i])
 		delete(v.FilterSkipCache, id)
 		if zstr.StringsContain(ids, id) {
-			zslice.RemoveAt(v.slicePtr, i)
+			zslices.RemoveAt(v.slicePtr, i)
 			i--
 		}
 	}

@@ -30,7 +30,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmath"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -321,7 +321,7 @@ func (v *HorEventsView) makeMarkerButton(t time.Time) {
 	})
 	button.SetPressedHandler("clear", zkeyboard.ModifierShift, func() {
 		i := slices.Index(v.markerTimes, t)
-		zslice.RemoveAt(&v.markerTimes, i)
+		zslices.RemoveAt(&v.markerTimes, i)
 		v.Bar.RemoveChild(button, true)
 		v.Bar.ArrangeChildren()
 		v.saveMarkerButtons()
@@ -953,14 +953,14 @@ func (v *HorEventsView) createLanes() {
 	for i, lane := range v.lanes {
 		title := makeTextTitle(lane.Name, 2, lane.TextColor, zstyle.Dark)
 		titleSize, _ := title.CalculatedSize(v.Rect().Size)
-		zslice.Add(&v.lanes[i].overlayViews, title)
+		zslices.Add(&v.lanes[i].overlayViews, title)
 		y = lane.y
 		titlePos := zgeo.PosD(v.GutterWidth.Min+2, lane.y+v.timeAxisHeight)
 		v.horInfinite.VertOverlay.Add(title, zgeo.TopLeft, titlePos.Size()).Free = true
 		if v.MakeLaneActionIconFunc != nil {
 			icon := v.MakeLaneActionIconFunc(lane.ID)
 			icon.SetInteractive(true)
-			zslice.Add(&v.lanes[i].overlayViews, icon.View)
+			zslices.Add(&v.lanes[i].overlayViews, icon.View)
 			iconPos := titlePos //.PlusX(-2)
 			iconPos.X -= icon.FitSize().W
 			titleSize.W += icon.FitSize().W + 8
@@ -970,7 +970,7 @@ func (v *HorEventsView) createLanes() {
 		for j, r := range lane.Rows {
 			y = r.y
 			rowTitle := makeTextTitle(r.Name, 0, zgeo.Color{}, zstyle.Dark)
-			zslice.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
+			zslices.Add(&v.lanes[i].Rows[j].overlayViews, rowTitle)
 			rowTitlePos := titlePos
 			rowTitlePos.Y = r.y + v.timeAxisHeight
 			if j == 0 {
@@ -981,7 +981,7 @@ func (v *HorEventsView) createLanes() {
 				icon := v.MakeLaneRowActionIconFunc(lane.ID, r.ID)
 				icon.SetZIndex(99999)
 				icon.SetInteractive(true)
-				zslice.Add(&v.lanes[i].overlayViews, icon.View)
+				zslices.Add(&v.lanes[i].overlayViews, icon.View)
 				iconPos := rowTitlePos.PlusX(-16)
 				v.horInfinite.VertOverlay.Add(icon, zgeo.TopLeft, iconPos.Size()).Free = true
 			}
@@ -994,7 +994,7 @@ func (v *HorEventsView) createLanes() {
 				bgView.SetObjectName(OverlayBackgroundViewName)
 				bgView.Native().SetDimUsable(false)
 				// bgView.Native().SetUsable(false)
-				zslice.Add(&v.lanes[i].Rows[j].overlayViews, bgView.View)
+				zslices.Add(&v.lanes[i].Rows[j].overlayViews, bgView.View)
 				v.horInfinite.VertOverlay.Add(bgView, zgeo.TopLeft, zgeo.SizeD(0, r.y-1+v.timeAxisHeight)).Free = true
 			}
 			rowTitlePos.Y += laneTitleHeight

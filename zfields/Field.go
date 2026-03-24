@@ -26,7 +26,7 @@ import (
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -1206,10 +1206,10 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 			return true
 		}
 		if !params.IgnoreUseInAndINTags {
-			usePlain, useDollar := zslice.SplitWithFunc(f.UseIn, func(s string) bool {
+			usePlain, useDollar := zslices.SplitWithFunc(f.UseIn, func(s string) bool {
 				return strings.HasPrefix(s, "$")
 			})
-			hasPlain, hasDollar := zslice.SplitWithFunc(params.UseInValues, func(s string) bool {
+			hasPlain, hasDollar := zslices.SplitWithFunc(params.UseInValues, func(s string) bool {
 				return strings.HasPrefix(s, "$")
 			})
 			if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
@@ -1227,7 +1227,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 }
 
 func FindIndicatorOfSlice(slicePtr any) string {
-	s := zslice.MakeAnElementOfSliceType(slicePtr)
+	s := zslices.MakeAnElementOfSliceType(slicePtr)
 	_, f, got := FindIndicatorRValOfStruct(s)
 	if got {
 		return f.Name
@@ -1270,7 +1270,7 @@ func getField(val reflect.Value, indent, desc string) string {
 		str += indent + "}\n"
 		return str
 	case zreflect.KindSlice:
-		e := zslice.MakeAnElementOfSliceRValType(val)
+		e := zslices.MakeAnElementOfSliceRValType(val)
 		sliceKind := zreflect.KindFromReflectKindAndType(e.Kind(), e.Type())
 		if sliceKind != zreflect.KindStruct {
 			return "[ <" + string(sliceKind) + "*> ]" + dstr + "\n"

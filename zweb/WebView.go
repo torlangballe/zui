@@ -13,7 +13,7 @@ import (
 	"github.com/torlangballe/zui/zwindow"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 )
 
 var DefaultBarIconSize float64 = 20
@@ -113,8 +113,8 @@ func OpenFullScreenWebViewInScreenID(screenID int64, surl string) {
 }
 
 func (v *WebView) handleBack() {
-	zslice.Pop(&v.History)
-	topURL := zslice.Top(v.History)
+	zslices.Pop(&v.History)
+	topURL := zslices.Top(v.History)
 	v.SetURL(topURL)
 	v.updateWidgets()
 }

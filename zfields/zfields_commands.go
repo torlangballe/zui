@@ -9,7 +9,7 @@ import (
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -94,7 +94,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 			for i, a := range args {
 				if kind == reflect.Bool && a == "-"+name {
 					each.ReflectValue.SetBool(true)
-					zslice.RemoveAt(&args, i)
+					zslices.RemoveAt(&args, i)
 					break
 				}
 				zlog.Info("ParseCommandArgsToStructFields:", a, each.ReflectValue.Type(), name)
@@ -107,7 +107,7 @@ func ParseCommandArgsToStructFields(args []string, rval reflect.Value) error {
 						zlog.OnError(err)
 						return false
 					}
-					zslice.RemoveAt(&args, i)
+					zslices.RemoveAt(&args, i)
 					break
 				}
 			}
@@ -157,7 +157,7 @@ func setStrToRVal(arg string, f *Field, rval reflect.Value, name string) error {
 	var sliceVal reflect.Value
 	if rval.Kind() == reflect.Slice {
 		sliceVal = rval
-		rval = zslice.MakeAnElementOfSliceRValType(sliceVal)
+		rval = zslices.MakeAnElementOfSliceRValType(sliceVal)
 	}
 	kind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 
@@ -186,7 +186,7 @@ func setStrToRVal(arg string, f *Field, rval reflect.Value, name string) error {
 		return zlog.NewError("unsupported arg type:", kind, "for", name, "argument")
 	}
 	if sliceVal.IsValid() {
-		zslice.RValAddAtEnd(sliceVal.Addr(), rval)
+		zslices.RValAddAtEnd(sliceVal.Addr(), rval)
 	}
 	return nil // never gets here
 }

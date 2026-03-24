@@ -17,7 +17,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -32,7 +32,7 @@ func accumulateSlice(accSlice, fromSlice reflect.Value) {
 			}
 		}
 		if !has {
-			zslice.AddAtEnd(accSlice.Addr().Interface(), av)
+			zslices.AddAtEnd(accSlice.Addr().Interface(), av)
 		}
 	}
 }
@@ -44,7 +44,7 @@ func reduceLocalEnumField(editStructPtr any, enumField reflect.Value, index int,
 	if zlog.ErrorIf(findex == -1, f.Name, f.LocalEnum) {
 		return
 	}
-	zslice.CopyTo(ei.Addr().Interface(), ei.Interface())
+	zslices.CopyTo(ei.Addr().Interface(), ei.Interface())
 	zlog.Assert(ei.Kind() == reflect.Slice)
 	field := zreflect.FieldForIndex(fromStruct.Interface(), FlattenIfAnonymousOrZUITag, findex)
 	fromVal := field.ReflectValue
@@ -61,7 +61,7 @@ func reduceLocalEnumField(editStructPtr any, enumField reflect.Value, index int,
 		if has {
 			i++
 		} else {
-			zslice.RemoveAt(ei.Addr().Interface(), i)
+			zslices.RemoveAt(ei.Addr().Interface(), i)
 		}
 	}
 }
@@ -81,12 +81,12 @@ func reduceSliceField(reduceSlice, fromSlice reflect.Value) {
 		if has {
 			i++
 		} else {
-			zslice.RemoveAt(reduceSlice.Addr().Interface(), i)
+			zslices.RemoveAt(reduceSlice.Addr().Interface(), i)
 			reduced = true
 		}
 	}
 	if reduced {
-		zslice.AddEmptyElementAtEnd(reduceSlice.Addr().Interface())
+		zslices.AddEmptyElementAtEnd(reduceSlice.Addr().Interface())
 	}
 }
 
@@ -104,7 +104,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	if sliceVal.Kind() == reflect.Pointer {
 		sliceVal = sliceVal.Elem()
 	}
-	editStructRVal := zslice.MakeAnElementOfSliceRValType(sliceVal)
+	editStructRVal := zslices.MakeAnElementOfSliceRValType(sliceVal)
 	editStructRVal.Set(sliceVal.Index(0)) // we make a copy, not just first
 	editStruct := editStructRVal.Addr().Interface()
 	sliceLength := sliceVal.Len()
@@ -158,7 +158,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 		if notEqual {
 			if each.ReflectValue.Kind() == reflect.Bool {
 				unknownBoolViewIDs[each.StructField.Name] = true
-				// zslice.AddEmptyElementAtEnd(val.Addr().Interface())
+				// zslices.AddEmptyElementAtEnd(val.Addr().Interface())
 			}
 		} else if notZero {
 			wasAllNotZero[each.StructField.Name] = true

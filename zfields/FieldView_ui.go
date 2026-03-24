@@ -45,7 +45,7 @@ import (
 	"github.com/torlangballe/zutil/zmap"
 	"github.com/torlangballe/zutil/zreflect"
 	"github.com/torlangballe/zutil/zrpc"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
@@ -492,7 +492,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		var enum zdict.Items
 		if f.Enum != "" {
 			enum, _ = fieldEnums[f.Enum]
-			zslice.CopyTo(&enum, enum) // we make a copy of enum, or else global one is messed up
+			zslices.CopyTo(&enum, enum) // we make a copy of enum, or else global one is messed up
 			// zlog.Info("updateMenu2:", v.Hierarchy(), sf.Name, enum)
 		} else if f.LocalEnum != "" {
 			ei, findex := FindLocalFieldWithFieldName(v.data, f.LocalEnum)
@@ -1188,9 +1188,9 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 				if menuOwner.IsMultiple {
 					allSelected := menuOwner.SelectedItems()
 					slicePtr := rval.Addr().Interface()
-					zslice.Empty(slicePtr)
+					zslices.Empty(slicePtr)
 					for _, item := range allSelected {
-						zslice.AddAtEnd(slicePtr, item.Value)
+						zslices.AddAtEnd(slicePtr, item.Value)
 					}
 					return
 				}
@@ -1209,9 +1209,9 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 	menuOwner.ClosedFunc = func() {
 		if menuOwner.IsMultiple {
 			zlog.Assert(isSlice)
-			zslice.Empty(rval.Addr().Interface())
+			zslices.Empty(rval.Addr().Interface())
 			for _, mi := range menuOwner.SelectedItems() {
-				zslice.AddAtEnd(rval.Addr().Interface(), mi.Value)
+				zslices.AddAtEnd(rval.Addr().Interface(), mi.Value)
 			}
 		}
 	}
@@ -2624,7 +2624,7 @@ func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
 	text := strings.Trim(tv.Text(), seps)
 	// a := rval.Interface()
 	e := reflect.New(rval.Type().Elem()).Elem()
-	zslice.Empty(rval.Addr().Interface())
+	zslices.Empty(rval.Addr().Interface())
 	if text == "" {
 		return
 	}
@@ -2647,7 +2647,7 @@ func separatedStringToData(sep string, view zview.View, rval reflect.Value) {
 		default:
 			return
 		}
-		zslice.AddAtEnd(rval.Addr().Interface(), e.Interface())
+		zslices.AddAtEnd(rval.Addr().Interface(), e.Interface())
 	}
 }
 

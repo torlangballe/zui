@@ -15,7 +15,7 @@ import (
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -274,7 +274,7 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 
 func (v *TabsView) RemoveItem(id string) {
 	i := v.FindItem(id)
-	zslice.RemoveAt(&v.items, i)
+	zslices.RemoveAt(&v.items, i)
 	item := v.items[i]
 	if item.create != nil {
 		item.create(id, Delete)

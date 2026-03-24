@@ -36,7 +36,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
-	"github.com/torlangballe/zutil/zslice"
+	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -294,7 +294,7 @@ func (v *GridListView) SelectCell(id string, scrollToSelected bool, animate bool
 }
 
 func (v *GridListView) SelectCells(ids []string, scrollToSelected bool, animate bool) (scrolledTo bool) {
-	changedIDs := zslice.Exclusion(v.SelectedIDs(), ids)
+	changedIDs := zslices.Exclusion(v.SelectedIDs(), ids)
 	v.selectedIDs = map[string]bool{}
 	for _, id := range ids {
 		v.selectedIDs[id] = true
