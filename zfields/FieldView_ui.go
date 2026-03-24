@@ -128,13 +128,13 @@ func init() {
 	RegisterTextFilter("$trim", strings.TrimSpace)
 	RegisterTextFilter("$lower", strings.ToLower)
 	RegisterTextFilter("$upper", strings.ToLower)
-	RegisterTextFilter("$uuid", zstr.CreateFilterFunc(zstr.IsRuneValidInUUID))
-	RegisterTextFilter("$hex", zstr.CreateFilterFunc(zstr.IsRuneHex))
-	RegisterTextFilter("$alpha", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlpha))
-	RegisterTextFilter("$num", zstr.CreateFilterFunc(zstr.IsRuneASCIINumeric))
-	RegisterTextFilter("$alphanum", zstr.CreateFilterFunc(zstr.IsRuneASCIIAlphaNumeric))
-	RegisterTextFilter("$headerkey", zstr.CreateFilterFunc(zhttp.IsRuneValidForHeaderKey))
-	RegisterTextFilter("$ascii", zstr.CreateFilterFunc(zstr.IsRuneASCIIPrintable))
+	RegisterTextFilter("$uuid", zstr.CreateFilterFunction(zstr.IsRuneValidInUUID))
+	RegisterTextFilter("$hex", zstr.CreateFilterFunction(zstr.IsRuneHex))
+	RegisterTextFilter("$alpha", zstr.CreateFilterFunction(zstr.IsRuneASCIIAlpha))
+	RegisterTextFilter("$num", zstr.CreateFilterFunction(zstr.IsRuneASCIINumeric))
+	RegisterTextFilter("$alphanum", zstr.CreateFilterFunction(zstr.IsRuneASCIIAlphaNumeric))
+	RegisterTextFilter("$headerkey", zstr.CreateFilterFunction(zhttp.IsRuneValidForHeaderKey))
+	RegisterTextFilter("$ascii", zstr.CreateFilterFunction(zstr.IsRuneASCIIPrintable))
 
 }
 
