@@ -167,8 +167,8 @@ func (v *Label) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	}
 	if len(widths) == 1 {
 	}
-	// if strings.HasPrefix(v.ObjectName(), "https://ew-ottcdn") {
-	// 	zlog.Info("Label.CalculatedSize:", s, v.MaxLines(), v.Text(), ti.Font.Size/5)
+	// if strings.HasPrefix(v.ObjectName(), "Text") {
+	// 	zlog.Info("Label.CalculatedSize:", v.ObjectName(), s, v.maxWidth, v.maxCalculateWidth)
 	// }
 	s = s.Ceil()
 	s.W += 3
