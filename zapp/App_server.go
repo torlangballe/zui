@@ -96,7 +96,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	zstr.HasPrefix(spath, zrest.AppURLPrefix, &spath)
 	if r.Override != nil {
 		if r.Override(w, req, &spath) {
-			zlog.Info("FilesRedir2:", req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
+			// zlog.Info("FilesRedir2:", req.Method, req.URL.Path, spath, strings.Trim(zrest.AppURLPrefix, "/"))
 			req.Body.Close()
 			return
 		}
