@@ -125,7 +125,7 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 		items = append(items, MenuedOItem{Name: customName, Value: CustomID, Selected: isCustom})
 		items = append(items, MenuedOItemSeparator)
 	}
-	ids, store := zmap.SortedKeyValues(o.values, func(a, b storage[A]) bool {
+	stores, ids := zmap.SortedValuesFunc(o.values, func(a, b storage[A]) bool {
 		return strings.Compare(a.Name, b.Name) < 0
 	})
 	// zlog.Info("MSO items1:", len(o.values), o.values, selID, isCustom, ids, store)
@@ -133,7 +133,7 @@ func (o *MenuedSetOwner[A]) createItems() []MenuedOItem {
 		if id == -1 {
 			continue
 		}
-		name := store[i].Name
+		name := stores[i].Name
 		items = append(items, MenuedOItem{Name: name, Value: id, Selected: id == selID})
 		// zlog.Info("MSO add:", name, id, id == selID)
 	}
