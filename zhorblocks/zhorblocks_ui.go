@@ -157,7 +157,6 @@ func (v *HorBlocksView) SetFloatingCurrentIndex(fi float64) {
 	sci := strconv.Itoa(ni)
 	v.currentIndex = int(fi)
 	_, fract := math.Modf(fi)
-	// zlog.Info("SetFloatingCurrentIndex1", fi, "->", fract)
 	v.VertStack.SetXContentOffset(0) //!!!!
 	v.SetMaxIndex(ni + 1)
 	v.update() // fract * v.viewSize.W)
