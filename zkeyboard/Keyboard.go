@@ -277,6 +277,10 @@ func (key Key) AsString(singleLetterKey bool) string {
 		return "⇩"
 	case KeyTab:
 		return "⇥"
+	case KeyMinus:
+		return "-"
+	case KeyPlus:
+		return "+"
 	}
 	return string(rune(key))
 }
