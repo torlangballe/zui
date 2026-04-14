@@ -402,7 +402,6 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlic
 	if data != nil { // must be after fv.IsEditedRecently, or we set new data without update slice pointers and maybe more????
 		v.data = data
 	}
-	// zlog.Info("FV.Update:", v.Hierarchy(), zlog.Full(v.data))
 	recentEdit := (dontOverwriteEdited && v.IsEditedRecently())
 	fh, _ := v.data.(ActionHandler)
 	sview := v.View
@@ -1639,8 +1638,8 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 			val.SetBool(on)
 			v.Update(nil, false, false)
 			ap := ActionPack{FieldView: v, Field: f, Action: EditedAction, RVal: val, View: &iv.View} // Set FieldView as used in callActionHandlerFunc
+			callActionHandlerFunc(ap)                                                                 // call action handler first, then triggers. This may be arbitrary, but affects order things are delt with that can have concequences, so mush be fixed once decided on order.
 			v.callTriggerHandler(ap)
-			callActionHandlerFunc(ap)
 		})
 		return iv
 	}

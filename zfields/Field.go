@@ -83,6 +83,9 @@ const (
 
 	RowUseInSpecialName    = "$row"
 	DialogUseInSpecialName = "$dialog"
+	EditingSpecialName     = "$editing"
+	ViewingSpecialName     = "$viewing"
+	FirstEditSpecialName   = "$firstedit"
 )
 
 // The FlagType stores Field boolean options, based on the tag it is created from.
@@ -1179,7 +1182,6 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 			if !f.SetFromRValAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
-			// zlog.Info("UseIn:", f.Name, f.UseIn, params.UseInValues)
 			fields = append(fields, f)
 			return true
 		})
@@ -1206,14 +1208,29 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 			return true
 		}
 		if !params.IgnoreUseInAndINTags {
-			usePlain, useDollar := zslices.SplitWithFunc(f.UseIn, func(s string) bool {
+			useDollar, usePlain := zslices.SplitWithFunc(f.UseIn, func(s string) bool {
 				return strings.HasPrefix(s, "$")
 			})
-			hasPlain, hasDollar := zslices.SplitWithFunc(params.UseInValues, func(s string) bool {
+			hasDollar, hasPlain := zslices.SplitWithFunc(params.UseInValues, func(s string) bool {
 				return strings.HasPrefix(s, "$")
 			})
+			// zlog.Info("useDollar1:", each.StructField.Name, hasDollar, useDollar, "Plain:", hasPlain, usePlain)
 			if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
 				return true
+			}
+			// zlog.Info("useDollar:", each.StructField.Name, useDollar, "hasDollar:", hasDollar, params.UseInValues)
+			if len(useDollar) != 0 {
+				for _, u := range zslices.Copy(useDollar) {
+					var rest string
+					if zstr.HasPrefix(u, "$!", &rest) {
+						rest = "$" + rest
+						// zlog.Info("useDollar2:", each.StructField.Name, hasDollar, rest)
+						if zstr.StringsContain(hasDollar, rest) {
+							return true
+						}
+						zstr.RemoveFromSet(&useDollar, u)
+					}
+				}
 			}
 			if len(useDollar) != 0 && !zstr.SlicesIntersect(useDollar, hasDollar) {
 				return true

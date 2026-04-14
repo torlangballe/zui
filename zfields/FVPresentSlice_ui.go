@@ -109,7 +109,16 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	editStruct := editStructRVal.Addr().Interface()
 	sliceLength := sliceVal.Len()
 	unknownBoolViewIDs := map[string]bool{}
-	params.FieldParameters.UseInValues = []string{DialogUseInSpecialName}
+
+	ve := EditingSpecialName
+	if isReadOnly {
+		ve = ViewingSpecialName
+	}
+	zslices.Add(&params.FieldParameters.UseInValues, DialogUseInSpecialName, ve)
+	if params.IsEditOnNewStruct {
+		zslices.Add(&params.FieldParameters.UseInValues, FirstEditSpecialName)
+	}
+
 	params.MultiSliceEditInProgress = (sliceLength > 1)
 	wasAllNotZero := map[string]bool{}
 

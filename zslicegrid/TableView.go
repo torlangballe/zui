@@ -70,6 +70,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 		} else {
 			v.StoreChangedItemsFunc([]S{s})
 		}
+		ap.FieldView.ClearEditedRecently() // clear it again once we know backend got change, so we can get new change back.
 		return false
 	})
 
