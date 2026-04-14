@@ -120,7 +120,6 @@ var DefaultFieldViewParameters = FieldViewParameters{
 func init() {
 	var dl DocumentationLink
 	zreflect.DefaultTypeRegistrar.Register(dl, nil)
-	zlog.RegisterEnabler("zfields.LogGUI", &EnableLog)
 
 	RegisterTextFilter("$nowhite", func(s string) string {
 		return zstr.WhitespaceRemover.Replace(s)
