@@ -786,6 +786,9 @@ func (o *MenuedOwner) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id string) {
 	// zlog.Info("updateCellSelection:", id)
 	i, _ := strconv.Atoi(id)
+	if zlog.ErrorIf(i >= len(o.items), i, len(o.items)) {
+		return
+	}
 	item := o.items[i]
 	col := o.TextColor
 	if grid.IsHoverCell(id) {
