@@ -757,6 +757,12 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 		view := stackFV.buildItem(&mf, mval, i, a, zgeo.Size{}, true)
 		// zlog.Info(f.Name, "map buildItem:", mf.Name, reflect.TypeOf(view))
 		if f.IsStatic() {
+			if view == nil {
+				zlog.Error("map buildItem is nil:", f.Name, mf.Name)
+			}
+			if view.Native() == nil {
+				zlog.Error("map buildItem native is nil:", f.Name, mf.Name)
+			}
 			view.Native().SetUsable(true)
 			setter, _ := view.(zview.InteractiveSetter)
 			label, isLabel := view.(*zlabel.Label)
