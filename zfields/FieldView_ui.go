@@ -431,7 +431,9 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		return true
 	}
 	v.updateShowEnableOnView(foundView, true, foundView.ObjectName())
-	v.updateShowEnableOnView(foundView, false, foundView.ObjectName())
+	if !f.IsStatic() {
+		v.updateShowEnableOnView(foundView, false, foundView.ObjectName())
+	}
 	var called bool
 	tri, _ := rval.Interface().(TriggerDataChangedTriggerer)
 	if tri != nil {
@@ -1605,6 +1607,9 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		}
 		callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: action, RVal: val, View: &view})
 	})
+	if f.IsStatic() {
+		cv.SetUsable(false)
+	}
 	if !v.params.Field.HasFlag(FlagIsLabelize) && !v.isRows() {
 		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
@@ -1612,9 +1617,6 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 		}
 		_, stack := zcheckbox.Labelize(cv, title)
 		return stack
-	}
-	if f.IsStatic() {
-		cv.SetUsable(false)
 	}
 	return cv
 }
