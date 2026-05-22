@@ -236,11 +236,14 @@ func addButton(bar *zcontainer.StackView, view zview.View, title string, isOKBut
 	button.SetMinWidth(80)
 	bar.Add(button, zgeo.TopRight)
 	button.SetPressedHandler("", zkeyboard.ModifierNone, func() {
+		button.SetUsable(false)
 		parent := view.Native().Parent()
 		go func() {
 			close := done(isOKButton)
 			if close {
 				zpresent.Close(parent, !isOKButton, nil)
+			} else {
+				button.SetUsable(true)
 			}
 		}()
 	})
