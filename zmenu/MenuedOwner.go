@@ -436,7 +436,7 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 	}
 	items := zslices.Copy(o.items)
 	if zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt {
-		items = zslices.Filtered(items, func(i MenuedOItem) bool {
+		items = zslices.FilteredFunc(items, func(i MenuedOItem) bool {
 			if strings.HasSuffix(i.Name, "†") && !i.Selected {
 				return false
 			}
