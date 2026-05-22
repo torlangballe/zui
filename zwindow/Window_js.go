@@ -211,6 +211,20 @@ func (w *Window) SetTitle(title string) {
 	w.Element.Get("document").Set("title", title)
 }
 
+func (w *Window) MakeFullScreen(ready func()) {
+	promise := w.Element.Get("document").Get("documentElement").Call("requestFullscreen")
+	zdom.Resolve(promise, func(resolved js.Value, err error) {
+		if err != nil {
+			zlog.Error("MakeFullScreen:", err)
+			return
+		}
+		str := resolved.String()
+		zlog.Info("MakeFullScreen resolved:", str)
+		ready()
+	})
+
+}
+
 func setDarkCSSStylings(doc js.Value) {
 	// not used yet
 	// 	css := `
