@@ -473,7 +473,11 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 				f.Styling.FGColor.SetFromString(f.Colors[0])
 			}
 		case "bgcolor":
-			f.Styling.BGColor.SetFromString(kv.Value)
+			scol := kv.Value
+			if len(barParts) == 2 && zstyle.Dark {
+				scol = barParts[1]
+			}
+			f.Styling.BGColor.SetFromString(scol)
 		case "download":
 			f.Flags |= FlagIsDownload
 			f.Path = kv.Value
