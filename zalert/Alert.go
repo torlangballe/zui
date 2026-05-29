@@ -113,7 +113,7 @@ func ShowError(err error, items ...interface{}) {
 	}
 	a := New(str)
 	a.Show(nil)
-	zlog.Error(str, err)
+	zlog.Error(zlog.StackAdjust(1), str, err)
 }
 
 func (a *Alert) ShowOK(handle func()) {
