@@ -40,9 +40,10 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 	// v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
 	v.SetColor(zgeo.Color{})
 	v.SetImageName(imageName, insets)
+	v.SetTextColor(zgeo.ColorBlack)
 	v.textInfo.Text = title
 	v.textInfo.Font = zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal)
-	v.textInfo.Color = zgeo.ColorBlack
+	// v.textInfo.Color = zgeo.ColorBlack
 	v.SetMaxLines(1) // we force label update here
 }
 

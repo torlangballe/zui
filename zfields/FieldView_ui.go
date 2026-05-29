@@ -1103,8 +1103,10 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) zview.View {
 		button.SetSpacing(0)
 		view = button
 	} else {
+		f.Styling.FGColor = zgeo.ColorBlack
+		// zlog.Info("MakeButton:", rval.Interface(), f.Name, color, textCol)
 		button := zbutton.New(name)
-		button.SetColor(zgeo.ColorBlack)
+		// button.SetColor(zgeo.ColorBlack)
 		view = button
 	}
 
