@@ -199,10 +199,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		v.Bar.Add(v.Layout, zgeo.CenterLeft)
 	}
 	if options&AddMenu != 0 {
-		actions := zimageview.NewWithCachedPath("images/zcore/gear.png", zgeo.SizeD(18, 18))
-		if options&AddBarInHeader == 0 {
-			actions.MixColorForDarkMode = zgeo.ColorNewGray(0.5, 1)
-		}
+		actions := zimageview.NewWithCachedPath("images/zcore/gear-light-gray.png", zgeo.SizeD(18, 18))
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
