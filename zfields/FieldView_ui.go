@@ -415,7 +415,7 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlic
 	})
 	// call general one with no id. Needs to be after above loop, so values set
 	if fh != nil {
-		fh.HandleAction(ActionPack{FieldView: v, Action: DataChangedAction, View: &sview})
+		fh.HandleAction(ActionPack{FieldView: v, Field: &v.params.Field, Action: DataChangedAction, View: &sview})
 	}
 }
 
@@ -1936,6 +1936,7 @@ func findNameOfEnumForRVal(rval reflect.Value, enum zdict.Items) string {
 
 func (v *FieldView) BuildStack(name string, defaultAlign zgeo.Alignment, cellMargin zgeo.Size, useMinWidth bool) {
 	// zlog.Info("FV.BuildStack", v.ID, v.Hierarchy())
+	callActionHandlerFunc(ActionPack{FieldView: v, Action: CreatedViewAction, Field: &v.params.Field, RVal: reflect.ValueOf(v.data), View: &v.View})
 	if v.params.Styling.Spacing != zfloat.Undefined {
 		v.SetSpacing(v.params.Styling.Spacing)
 	}
