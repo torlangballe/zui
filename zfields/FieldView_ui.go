@@ -2184,7 +2184,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if f.Styling.BGColor.Valid {
 		view.SetBGColor(f.Styling.BGColor)
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
-		view.SetBGColor(zstyle.DebugBackgroundColor)
+		view.SetBGColor(zstyle.DebugBackgroundColor())
 	} else if f.HasFlag(FlagCheckerCell) {
 		if !v.lastCheckered {
 			lum := float32(0)
@@ -2276,7 +2276,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			}
 		}
 		if f.HasFlag(FlagIsForZDebugOnly) {
-			label.SetBGColor(zstyle.DebugBackgroundColor)
+			label.SetBGColor(zstyle.DebugBackgroundColor())
 			label.SetCorner(4)
 		}
 		updateToolTip(f, v.data, lstack)

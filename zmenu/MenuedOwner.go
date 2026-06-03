@@ -576,7 +576,7 @@ func (o *MenuedOwner) popup() {
 	list.CellColorFunc = func(id string) zgeo.Color {
 		i := list.IndexOfID(id)
 		if items[i].IsDebug {
-			return zstyle.DebugBackgroundColor
+			return zstyle.DebugBackgroundColor()
 		}
 		return list.CellColor
 	}

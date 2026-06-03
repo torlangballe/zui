@@ -38,7 +38,7 @@ var (
 	DefaultHoverColor  = Col(zgeo.ColorNew(0.2, 0.6, 1, 1), zgeo.Color{})
 	DefaultFocusColor  = Col(zgeo.ColorNew(0.58, 0.71, 0.97, 1), zgeo.Color{})
 
-	DebugBackgroundColor  = Col(zgeo.ColorNew(1, 0.9, 0.9, 1), zgeo.ColorNew(0.8, 0.4, 0.4, 1))
+	DebugBackgroundColor  = ColF(zgeo.ColorNew(1, 0.9, 0.9, 1), zgeo.ColorNew(0.7, 0.3, 0.3, 1))
 	DefaultRowRightMargin = 6.0
 	DefaultRowLeftMargin  = 6.0
 )
