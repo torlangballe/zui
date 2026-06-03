@@ -360,7 +360,7 @@ func Current() *Window {
 
 func (win *Window) AddStyle() {
 	styleStr := `
-	.rounded:focus { border: 2px solid rgb(147,180,248); }
+	.rounded:focus { outline: solid 3px rgb(147,180,248); outline-offset: -3px; }
 	.znofocus:focus { outline: none; }
 	input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
 	input[type=number] { -moz-appearance: textfield; }
@@ -387,9 +387,7 @@ func (win *Window) AddStyle() {
 	if zstyle.Dark {
 		styleStr += `input[type="checkbox"] { filter: brightness(80%); }
 		button { filter: brightness(80%); }
-		select { filter: brightness(80%); }
-		.zfocus:focus { outline: solid 4px rgb(97,140,198); }
-		`
+		select { filter: brightness(80%); }`
 	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")
