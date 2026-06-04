@@ -331,7 +331,6 @@ func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool
 	if not {
 		zero = !zero
 	}
-	// zlog.Info("LocalDisable", view.Native().Hierarchy(), rval, isShow, zero)
 	if isShow {
 		view.Show(!zero)
 	} else {
