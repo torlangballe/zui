@@ -16,7 +16,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zweb"
 	"github.com/torlangballe/zui/zwindow"
-	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
@@ -143,9 +142,10 @@ func makeURL(docPath string, rawMarkdown bool) string {
 }
 
 func DocumentationViewPresent(path string, modal bool) error {
+	path = makeURL(path, false)
 	if DocumentationShowInBrowser {
 		opts := zwindow.Options{
-			URL: zfile.JoinPathParts(DocumentationPathPrefix, path),
+			URL: path,
 		}
 		zwindow.Open(opts)
 		return nil
@@ -156,8 +156,6 @@ func DocumentationViewPresent(path string, modal bool) error {
 		return nil
 	}
 	v := DocumentationViewNew(zgeo.SizeD(980, 800))
-	path = makeURL(path, false)
-	//	isMarkdown := zstr.HasSuffix(title, ".md", &title)
 
 	attr := zpresent.AttributesDefault()
 	attr.Options = opts
