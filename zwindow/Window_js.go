@@ -384,10 +384,19 @@ func (win *Window) AddStyle() {
 		input[type=number] { border: 1px solid gray; -webkit-box-shadow:none; }
 `
 	}
+	// maybe need this for webgl stuff:
+	// wasm_js_listener = function(event) { goEventHandler(event); };
+	// wasm_js_renderer = function(canvas) { goSceneRenderer(canvas); }
 	if zstyle.Dark {
 		styleStr += `input[type="checkbox"] { filter: brightness(80%); }
 		button { filter: brightness(80%); }
-		select { filter: brightness(80%); }`
+		select { filter: brightness(80%); }
+
+		input[type="search"]::-webkit-search-cancel-button {
+    		filter: invert(1); /* Inverts it to be light/white */
+		    opacity: 0.8;      /* Fades it for a lighter look */
+		}
+		`
 	}
 	doc := win.Element.Get("document")
 	styleTag := doc.Call("createElement", "style")
