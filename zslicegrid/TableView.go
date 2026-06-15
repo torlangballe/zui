@@ -43,6 +43,11 @@ type TableView[S any] struct {
 	recalcRows                 bool
 }
 
+type TableRow[S any] struct {
+	Table *TableView[S]
+	zfields.FieldView
+}
+
 func TableViewNew[S zstr.StrIDer](s *[]S, storeName string, options OptionType) *TableView[S] {
 	v := &TableView[S]{}
 	v.Init(v, s, storeName, options)
@@ -75,7 +80,7 @@ func (v *TableView[S]) Init(view zview.View, s *[]S, storeName string, options O
 	})
 
 	cell, _ := v.FindCellWithView(v.Grid)
-	cell.Margin.SetMinX(1) // this seems to make no 1-space beteen header and table
+	cell.Margin.SetMinX(1) // this seems to make no 1-space beteen header and tablerow
 	v.Grid.CreateCellFunc = func(grid *zgridlist.GridListView, id string) zview.View {
 		r := v.createRow(id)
 		return r
@@ -271,25 +276,20 @@ func (v *TableView[S]) createRow(id string) zview.View {
 	return view
 }
 
-type TableRow[S any] struct {
-	table *TableView[S]
-	zfields.FieldView
-}
-
 func (tr *TableRow[S]) GetFieldView() *zfields.FieldView {
 	return &tr.FieldView
 }
 
 func (tr *TableRow[S]) ArrangeChildren() {
-	if tr.table.recalcRows {
-		tr.table.calculateColumns(tr.Rect().Size)
+	if tr.Table.recalcRows {
+		tr.Table.calculateColumns(tr.Rect().Size)
 	}
 	freeOnly := true
 	tr.FieldView.ArrangeAdvanced(freeOnly)
 
 	for _, child := range (tr.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		fname := child.ObjectName()
-		r := tr.table.fieldRects[fname]
+		r := tr.Table.fieldRects[fname]
 		child.SetRect(r)
 		// zlog.Info("TR.ArrangeChildren:", fname, tr.Rect(), r)
 	}
@@ -314,7 +314,7 @@ func (v *TableView[S]) createRowFromStruct(s *S, id string) zview.View {
 	useWidth := true //(v.Header != nil)
 	name := "row " + id
 	tr := &TableRow[S]{}
-	tr.table = v
+	tr.Table = v
 	fv.View = tr
 	tr.FieldView = *fv
 	// zlog.Info("createRowFromStruct:", id, v.Grid.MaxColumns, params.UseInValues, tr.FieldView.Parameters().FieldParameters.UseInValues)
