@@ -11,9 +11,9 @@ func NewView(name string, items zdict.Items, value any) *MenuView {
 	return &MenuView{}
 }
 
-func (v *MenuView) SetSelectedHandler(handler func()) {}
-func (v *MenuView) Empty()                            {}
-func (v *MenuView) AddSeparator()                     {}
+func (v *MenuView) SetSelectedHandler(handler func(edited bool)) {}
+func (v *MenuView) Empty()                                       {}
+func (v *MenuView) AddSeparator()                                {}
 
 func (v *MenuView) SelectWithValue(value any) bool                          { return true }
 func (v *MenuView) SetFont(font *zgeo.Font)                                 {}
