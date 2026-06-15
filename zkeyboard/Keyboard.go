@@ -157,21 +157,27 @@ func (m Modifier) IsNull() bool {
 	return m == ModifierNone
 }
 
-func (m *Modifier) FromString(str string) {
+func ModifiersFromString(str string) Modifier {
+	var m Modifier
 	for _, p := range strings.Split(str, "|") {
 		switch p {
 		case "shift":
-			*m |= ModifierShift
+			m |= ModifierShift
 		case "alt":
-			*m |= ModifierAlt
+			m |= ModifierAlt
 		case "control":
-			*m |= ModifierControl
+			m |= ModifierControl
 		case "command":
-			*m |= ModifierCommand
+			m |= ModifierCommand
 		case "meta":
-			*m |= ModifierMeta
+			m |= ModifierMeta
 		}
 	}
+	return m
+}
+
+func (m *Modifier) FromString(str string) {
+	*m = ModifiersFromString(str)
 }
 
 func (m Modifier) String() string {
