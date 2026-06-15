@@ -69,10 +69,11 @@ type FieldViewParameters struct {
 	Field
 	FieldParameters
 	BuildChildrenHidden       bool
-	ImmediateEdit             bool                                 // ImmediateEdit forces immediate write-to-data when editing a field.
-	MultiSliceEditInProgress  bool                                 // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
-	EditWithoutCallbacks      bool                                 // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
-	IsEditOnNewStruct         bool                                 // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
+	ImmediateEdit             bool // ImmediateEdit forces immediate write-to-data when editing a field.
+	MultiSliceEditInProgress  bool // MultiSliceEditInProgress is on if the field represents editing multiple structs in a list. Checkboxes can be indeterminate etc.
+	EditWithoutCallbacks      bool // Set so not get edit/changed callbacks when editing. Example: Dialog box editing edits a copy, so no callbacks needed.
+	IsEditOnNewStruct         bool // IsEditOnNewStruct when an just-created struct is being edited. Menus can have a storage key-value to set last-used option then for example
+	CheckerOddItems           bool
 	triggerHandlers           map[trigger]func(ap ActionPack) bool // triggerHandlers is a map of functions to call if an action occurs in this FieldView. Somewhat replacing ActionHandler
 	CreateActionMenuItemsFunc func(sid string) []zmenu.MenuedOItem // If a field with FlagIsActions is found, this func is called to create the action items.
 }
@@ -171,8 +172,12 @@ func (v *FieldView) Data() any {
 	return v.data
 }
 
-func (v *FieldView) isRows() bool {
-	return zstr.StringsContain(v.params.UseInValues, RowUseInSpecialName)
+func (fp FieldViewParameters) IsRow() bool {
+	return zstr.StringsContain(fp.UseInValues, RowUseInSpecialName)
+}
+
+func (v *FieldView) IsRows() bool {
+	return v.params.IsRow()
 }
 
 func (v *FieldView) IsSlice() bool {
@@ -304,8 +309,8 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 	}
 	for _, f := range v.Fields {
 		var id string
-		local, neg := getLocalFromShowOrEnable(isShow, &f)
-		if zstr.HasPrefix(local, "./", &id) && id == toID {
+		localPath, _, neg := getLocalPathFromShowOrEnable(isShow, &f)
+		if zstr.HasPrefix(localPath, "./", &id) && id == toID {
 			// _, foundView := v.FindNamedViewOrInLabelized(f.FieldName)
 			foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
 			if foundView == nil {
@@ -326,8 +331,11 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 	//TODO: handle ../ and substruct/id style
 }
 
-func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool) {
+func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool, value string) {
 	zero := rval.IsZero()
+	if value != "" {
+		zero = rval.String() != value
+	}
 	if not {
 		zero = !zero
 	}
@@ -338,23 +346,24 @@ func doShowEnableItem(rval reflect.Value, isShow bool, view zview.View, not bool
 	}
 }
 
-func getLocalFromShowOrEnable(isShow bool, f *Field) (local string, neg bool) {
+func getLocalPathFromShowOrEnable(isShow bool, f *Field) (localPath, value string, neg bool) {
 	if isShow {
 		if f.LocalShow != "" {
-			local = f.LocalShow
+			localPath = f.LocalShow
 		} else {
-			local = f.LocalHide
+			localPath = f.LocalHide
 			neg = true
 		}
 	} else {
 		if f.LocalEnable != "" {
-			local = f.LocalEnable
+			localPath = f.LocalEnable
 		} else {
-			local = f.LocalDisable
+			localPath = f.LocalDisable
 			neg = true
 		}
 	}
-	return
+	zstr.SplitN(localPath, ":", &localPath, &value)
+	return localPath, value, neg
 }
 
 func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toFieldName string) {
@@ -366,30 +375,31 @@ func (v *FieldView) updateShowEnableOnView(view zview.View, isShow bool, toField
 			continue
 		}
 		var prefix, fname string
-		local, neg := getLocalFromShowOrEnable(isShow, &f)
-		if zstr.HasPrefix(local, "./", &fname) {
+		localPath, value, neg := getLocalPathFromShowOrEnable(isShow, &f)
+		// zlog.Info("updateShowEnableOnView:", v.Hierarchy(), f.FieldName, localPath, value, neg)
+		if zstr.HasPrefix(localPath, "./", &fname) {
 			finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
 			if found {
-				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg, value)
 			}
 			continue
 		}
-		if zstr.SplitN(local, "/", &prefix, &fname) && prefix == f.FieldName {
+		if zstr.SplitN(localPath, "/", &prefix, &fname) && prefix == f.FieldName {
 			fv := viewToFieldView(view)
 			if fv == nil {
-				zlog.Error("updateShowOrEnable: not field view:", f.FieldName, local, v.ObjectName)
+				zlog.Error("updateShowOrEnable: not field view:", f.FieldName, localPath, v.ObjectName)
 				return
 			}
 			finfo, found := zreflect.FieldForName(v.data, FlattenIfAnonymousOrZUITag, fname)
 			if found {
-				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg, value)
 			}
 			continue
 		}
-		if zstr.HasPrefix(local, "../", &fname) && v.ParentFV != nil {
+		if zstr.HasPrefix(localPath, "../", &fname) && v.ParentFV != nil {
 			finfo, found := zreflect.FieldForName(v.ParentFV.Data(), FlattenIfAnonymousOrZUITag, fname)
 			if found {
-				doShowEnableItem(finfo.ReflectValue, isShow, view, neg)
+				doShowEnableItem(finfo.ReflectValue, isShow, view, neg, value)
 			}
 			continue
 		}
@@ -487,10 +497,10 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		}
 	}
 	_, isGetter := rval.Interface().(zdict.ItemsGetter)
-	if menuType != nil && (isGetter || f.Enum != "" || f.LocalEnum != "") { // && f.Kind != zreflect.KindSlice
+	if menuType != nil && (isGetter || f.Enum != "" || f.LocalEnum != "" || f.HasFlag(FlagEmptyEnum)) { // && f.Kind != zreflect.KindSlice
 		var enum zdict.Items
 		if f.Enum != "" {
-			enum, _ = fieldEnums[f.Enum]
+			enum = GetEnum(f.Enum)
 			zslices.CopyTo(&enum, enum) // we make a copy of enum, or else global one is messed up
 			// zlog.Info("updateMenu2:", v.Hierarchy(), sf.Name, enum)
 		} else if f.LocalEnum != "" {
@@ -501,6 +511,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 			if err != nil {
 				return false
 			}
+		} else if f.HasFlag(FlagEmptyEnum) {
+			enum, _ = GetEnumFromNameOrGetter(f, f.Enum, v.data, rval)
 		} else {
 			var err error
 			enum, err = getDictItemsFromSlice(rval, f)
@@ -1120,12 +1132,12 @@ func (fv *FieldView) makeButton(rval reflect.Value, f *Field) zview.View {
 
 func maybeAskBeforeAction(f *Field, action func()) {
 	if f.Ask == "" {
-		go action()
+		action()
 		return
 	}
 	zalert.Ask(f.Ask, func(ok bool) {
 		if ok {
-			go action()
+			action()
 		}
 	})
 }
@@ -1227,7 +1239,7 @@ func (v *FieldView) makeMenuedOwner(static, isSlice, isEdit bool, rval reflect.V
 
 func (v *FieldView) makeSimpleMenu(rval reflect.Value, f *Field, items zdict.Items) zview.View {
 	name := f.Name + "Menu"
-	if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !v.isRows() {
+	if v.params.IsEditOnNewStruct && f.ValueStoreKey != "" && !v.IsRows() {
 		name = "key:" + f.ValueStoreKey
 	}
 	menu := zmenu.NewView(name, items, rval.Interface())
@@ -1390,7 +1402,7 @@ func getTextFromNumberishItem(rval reflect.Value, f *Field) (text, tip string, d
 }
 
 func (v *FieldView) maybeMakeLabelHandleFromClipboard(f *Field, label *zlabel.Label, str string, rval reflect.Value) {
-	if v.isRows() || f.Flags&FlagFromClipboard == 0 {
+	if v.IsRows() || f.Flags&FlagFromClipboard == 0 {
 		return
 	}
 	add := "➕"
@@ -1419,7 +1431,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 			})
 		} else {
 			surl := ReplaceDoubleSquiggliesWithFields(v, f, f.Path)
-			isLink := f.HasFlag(FlagIsURL) && !v.isRows()
+			isLink := f.HasFlag(FlagIsURL) && !v.IsRows()
 			if isLink {
 				if surl == "" {
 					surl = rval.String()
@@ -1444,11 +1456,11 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if tip != "" {
 			label.SetToolTip(tip)
 		}
-		if f.Wrap == ztextinfo.WrapTailTruncate.String() || v.isRows() {
+		if f.Wrap == ztextinfo.WrapTailTruncate.String() || v.IsRows() {
 			label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
 		label.Columns = f.Columns
-		if !v.isRows() {
+		if !v.IsRows() {
 			label.SetMaxLines(f.Rows)
 		}
 		if f.MaxWidth != 0 {
@@ -1469,7 +1481,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 		if f.Rows <= 1 || inMapRows > 0 {
 			// label.SetWrap(ztextinfo.WrapTailTruncate)
 		}
-		if !v.isRows() && f.Flags&FlagToClipboard != 0 {
+		if !v.IsRows() && f.Flags&FlagToClipboard != 0 {
 			label.SetPressWithModifierToClipboard(zkeyboard.ModifierNone)
 		}
 		label.SetPressWithModifierToClipboard(zkeyboard.ModifierAlt)
@@ -1479,7 +1491,7 @@ func (v *FieldView) makeText(rval reflect.Value, f *Field, noUpdate bool) zview.
 	var style ztext.Style
 	cols := f.Columns
 	if cols == 0 {
-		cols = 20
+		cols = 33 // 20
 	}
 	zkind := zreflect.KindFromReflectKindAndType(rval.Kind(), rval.Type())
 	if f.Flags&FlagIsPassword != 0 {
@@ -1611,7 +1623,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	if f.IsStatic() {
 		cv.SetUsable(false)
 	}
-	if !v.params.Field.HasFlag(FlagIsLabelize) && !v.isRows() {
+	if !v.params.Field.HasFlag(FlagIsLabelize) && !v.IsRows() {
 		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
@@ -1820,14 +1832,14 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 	if f.Transformer != "" {
 		return v.makeText(rval, f, false), false
 	}
-	if f.Flags&FlagIsButton != 0 {
+	if f.HasFlag(FlagIsButton) {
 		if v.params.HideStatic {
 			return nil, true
 		}
 		return v.makeButton(rval, f), false
 	}
 	if f.HasFlag(FlagIsActions) && rval.Kind() == reflect.Bool {
-		if v.isRows() {
+		if v.IsRows() {
 			// zlog.Info("CreateSpecial action", zlog.Pointer(v), v.Hierarchy(), f.Name, v.params.CreateActionMenuItemsFunc != nil)
 			zlog.Assert(v.params.CreateActionMenuItemsFunc != nil, f.Name)
 			sget, _ := v.data.(zstr.StrIDer)
@@ -1899,8 +1911,12 @@ func (v *FieldView) createSpecialView(rval reflect.Value, f *Field) (view zview.
 			return nil, true
 		}
 		return menu, false
+	} else if f.HasFlag(FlagEmptyEnum) {
+		if f.LocalEnum != "" || f.Enum != "" || f.HasFlag(FlagEmptyEnum) {
+			view = v.makeMenu(rval, f, nil)
+		}
 	}
-	if f.Enum != "" {
+	if f.Enum != "" || f.HasFlag(FlagEmptyEnum) {
 		if f.IsStatic() || v.params.AllStatic {
 			enum := GetEnum(f.Enum)
 			str := findNameOfEnumForRVal(rval, enum)
@@ -2034,7 +2050,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			if f.Flags&FlagIsImage != 0 {
 				view = v.makeImage(rval, f)
 			} else {
-				if (f.MaxWidth != f.MinWidth || f.MaxWidth != 0) && f.Flags&FlagIsButton == 0 {
+				if (f.MaxWidth != f.MinWidth || f.MaxWidth != 0) && f.HasFlag(FlagIsButton) {
 					exp = zgeo.HorExpand
 				}
 				view = v.makeText(rval, f, false)
@@ -2044,7 +2060,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			view = v.BuildMapList(rval, f, "")
 
 		case zreflect.KindSlice:
-			if !f.HasFlag(FlagIsGroup) || v.isRows() {
+			if !f.HasFlag(FlagIsGroup) || v.IsRows() {
 				if f.StringSep != "" {
 					noUpdate := true
 					rv := reflect.ValueOf("")
@@ -2136,15 +2152,15 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		}
 	}
 	zlog.Assert(view != nil)
-	if f.HasFlag(f.Flags&FlagLongPress | FlagPress | FlagShowPopup) {
+	if len(f.Presses) != 0 || f.HasFlag(FlagShowPopup) {
 		nowItem := rval // store item in nowItem so closures below uses right item
 		if f.HasFlag(FlagShowPopup) {
 			view.Native().SetPressedDownHandler("zfields.ShowPopup", 0, func() bool {
 				return v.popupContent(view, f)
 			})
 		} else {
-			if f.Flags&FlagPress != 0 {
-				view.Native().SetPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
+			for _, mods := range f.Presses {
+				view.Native().SetPressedHandler("zfield.CallAction", mods, func() {
 					if f.RPCCall != "" {
 						maybeAskBeforeAction(f, func() {
 							var reply string
@@ -2163,13 +2179,13 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: PressedAction, RVal: nowItem, View: &view})
 					})
 				})
-			}
-			if f.Flags&FlagLongPress != 0 {
-				view.Native().SetLongPressedHandler("zfield.CallAction", zkeyboard.ModifierNone, func() {
-					maybeAskBeforeAction(f, func() {
-						callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view})
+				if f.Flags&FlagLongPress != 0 {
+					view.Native().SetLongPressedHandler("zfield.CallAction", mods, func() {
+						maybeAskBeforeAction(f, func() {
+							callActionHandlerFunc(ActionPack{FieldView: v, Field: f, Action: LongPressedAction, RVal: nowItem, View: &view})
+						})
 					})
-				})
+				}
 			}
 		}
 	}
@@ -2184,7 +2200,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 		view.SetBGColor(f.Styling.BGColor)
 	} else if f.HasFlag(FlagIsForZDebugOnly) {
 		view.SetBGColor(zstyle.DebugBackgroundColor())
-	} else if f.HasFlag(FlagCheckerCell) {
+	} else if v.params.CheckerOddItems {
 		if !v.lastCheckered {
 			lum := float32(0)
 			if zstyle.Dark {
@@ -2232,6 +2248,18 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	}
 	// doLabelize := (labelizeWidth != 0 || f.LabelizeWidth < 0) && !f.HasFlag(FlagNoLabel)
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
+	if f.HasFlag(FlagIsLockable) {
+		if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
+			h1 := zcontainer.StackViewHor("lockhor")
+			h1.Add(view, zgeo.CenterLeft|zgeo.HorExpand)
+			lock := zguiutil.CreateLockIconForView(view)
+			// mr := zgeo.RectFromXY2(0, 2, 2, 0)
+			h1.Add(lock, zgeo.CenterRight).Free = true
+			// lstack.AddAdvanced(lock, zgeo.TopRight, mr, zgeo.Size{}, -1, true) //RelativeToName = view.ObjectName()
+			// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
+			view = h1
+		}
+	}
 	var lstack *zcontainer.StackView
 	isLabelize := (v.params.Field.HasFlag(FlagIsLabelize) && !f.HasFlag(FlagDontLabelize))
 	if isLabelize {
@@ -2265,14 +2293,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 			cell.Alignment |= zgeo.Expand
 		} else {
 			cell.Alignment |= zgeo.HorShrink
-		}
-		if f.HasFlag(FlagIsLockable) {
-			if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
-				lock := zguiutil.CreateLockIconForView(view)
-				mr := zgeo.RectFromXY2(0, 2, 2, 0)
-				lstack.AddAdvanced(lock, zgeo.CenterRight, mr, zgeo.Size{}, -1, true).RelativeToName = view.ObjectName()
-				// zlog.Info("Lock relative:", view.ObjectName(), len(lstack.GetChildren(true)))
-			}
 		}
 		if f.HasFlag(FlagIsForZDebugOnly) {
 			label.SetBGColor(zstyle.DebugBackgroundColor())
@@ -2463,7 +2483,7 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		err = e
 		return
 	}
-	if f.Enum != "" || f.LocalEnum != "" {
+	if f.Enum != "" || f.LocalEnum != "" || f.HasFlag(FlagEmptyEnum) {
 		mv, _ := view.(*zmenu.MenuView)
 		if mv != nil {
 			iface := mv.CurrentValue()
@@ -2569,10 +2589,10 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 		break
 
 	case zreflect.KindString:
-		if (!f.IsStatic() && !v.params.AllStatic) && f.Flags&FlagIsImage == 0 {
+		if (!f.IsStatic() && !v.params.AllStatic) && !f.HasFlag(FlagIsImage) {
 			tv, _ := view.(*ztext.TextView)
 			if tv == nil {
-				zlog.Fatal("Copy Back string not TV:", f.Name)
+				zlog.Fatal("Copy Back string not TV:", f.Name, reflect.TypeOf(view))
 			}
 			text := tv.Text()
 			str := finfo.ReflectValue.Addr().Interface().(*string)

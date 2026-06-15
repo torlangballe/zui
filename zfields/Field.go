@@ -92,62 +92,61 @@ const (
 type FlagType int64
 
 const (
-	FlagIsStatic                 FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
-	FlagHasSeconds                                    // FlagHasSeconds means its a time/duration where seconds should be shown/used
-	FlagHasMinutes                                    // FlagHasMinutes is the same but for minutes
-	FlagHasHours                                      // FlagHasMinutes is the same but for hours
-	FlagHasDays                                       // FlagHasMinutes is the same but for days of the month
-	FlagHasMonths                                     // FlagHasMinutes is the same but for months
-	FlagHasYears                                      // FlagHasMinutes is the same but for years
-	FlagIsImage                                       // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
-	FlagIsFixed                                       // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from. Or it can mean an existing password.
-	FlagIsButton                                      // FlagIsButton means the field is actually a button. its type is irrelevant. Will call the PressedAction
-	FlagHasHeaderImage                                // FlagHasHeaderImage is true true if it has a an image for showing in header
-	FlagNoTitle                                       // FlagNoTitle i set when we don't use FieldName as a title, show nothing
-	FlagToClipboard                                   // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
-	FlagFromClipboard                                 // FlagFromClipboard: Item is selectable and can be pasted to from clipboard with long press
-	FlagIsPassword                                    // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc. password:existing sets FlagIsFixed, is's an existing password.
-	FlagIsDuration                                    // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
-	FlagIsOpaque                                      // FlagIsOpaque means entire view will be covered when drawn
-	FlagIsActions                                     // FlagIsActions means a menu created from an enum is actions and not a value to set
-	FlagHasFrame                                      // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
-	FlagIsGroup                                       // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
-	FlagGroupSingle                                   // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
-	FlagFrameIsTitled                                 // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
-	FlagFrameTitledOnFrame                            // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
-	FlagSkipIndicator                                 // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
-	FlagPress                                         // If FlagLongPress is set this button/image etc handles press
-	FlagLongPress                                     // If FlagLongPress is set this button/image etc handles long-press
-	FlagDisableAutofill                               // FlagDisableAutofill if set makes a text field not autofill
-	FlagIsTableSearchable                             // This field can be used to search in tables etc
-	FlagIsNotGUISearchable                            // This field should NOT be part of searching for anything in GUI
-	FlagIsUseInValue                                  // ????This value is set as a string to InNames before entire struct is created
-	FlagAllowEmptyAsZero                              // This shows the empty value as nothing. So int 0 would be shown as "" in text
-	FlagZeroIsBig                                     // If set, a zero value is considered big, currenlty used in sorting
-	FlagIsForZDebugOnly                               // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
-	FlagIsRebuildAllOnChange                          // If set, and this item is edited, rebuild the FieldView
-	FlagIsURL                                         // (Field is string, and it's a url) OR (it has Path set to fixed URL)
-	FlagIsDocumentation                               // It is a .Path link to Documentation view.
-	FlagIsDownload                                    // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
-	FlagIsLabelize                                    // Set to force rows of <label> view [desc] in children
-	FlagLabelizeWithDescriptions                      // Set to make labelized rows add a description to far right, if FlagIsLabelize
-	FlagShowSliceCount                                // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
-	FlagShowPopup                                     // press to show a popup of contents
-	FlagIsLockable                                    // Show a lock icon to right of item when labelized. Disables/Hides.
-	FlagHeaderLockable                                // Show a lock icon on header, for locking selected rows.
-	FlagIsStart                                       // This field represents a start value, probably a time, and so far for if FlagHeaderLockable.
-	FlagIsEnd                                         // This field represents an end value, probably a time, and so far for if FlagHeaderLockable.
-	FlagDontJustifyHeader                             // If set, header is default justified, not using Field.Justify
-	FlagCheckerCell                                   // Ever other column with this is darkened a bit.
-	FlagFutureInvalid                                 // For time, show red if time is future.
-	FlagPastInvalid                                   // For time, show red if time is future.
-	FlagHasDefault                                    // If true Field.Default string is used for default value of field. Can be parsed to numbers too.
-	FlagIsOpen                                        // This field can open the struct if in a table or something else that handles it.
-	FlagIsOpener                                      // Flag IsOpen, and is set to a view or edit icon by table or something.
-	FlagShowIfExtraSpace                              // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
-	FlagDontLabelize                                  // When we are labelizing items, use full space with no label for this one.
-	FlagOmitZero                                      // Like for json, skip an item if it is zero, but only if static
-	FlagEmptyEnum                                     // Is set if enum tag with no value, if struct is an EnumGetter, that is used.
+	FlagIsStatic           FlagType = 1 << iota // FlagIsStatic means this this field should not be editable
+	FlagHasSeconds                              // FlagHasSeconds means its a time/duration where seconds should be shown/used
+	FlagHasMinutes                              // FlagHasMinutes is the same but for minutes
+	FlagHasHours                                // FlagHasMinutes is the same but for hours
+	FlagHasDays                                 // FlagHasMinutes is the same but for days of the month
+	FlagHasMonths                               // FlagHasMinutes is the same but for months
+	FlagHasYears                                // FlagHasMinutes is the same but for years
+	FlagIsImage                                 // FlagIsImage means the field is an image. It is typically a string with a local served image file, or an external URL.
+	FlagIsFixed                                 // FlagIsFixed means that an image's path/url has a fixed url in tag, not in field's string value, or an editable slice can't be added to/removed from. Or it can mean an existing password.
+	FlagIsButton                                // FlagIsButton means the field is actually a button. its type is irrelevant. Will call the PressedAction
+	FlagHasHeaderImage                          // FlagHasHeaderImage is true true if it has a an image for showing in header
+	FlagNoTitle                                 // FlagNoTitle i set when we don't use FieldName as a title, show nothing
+	FlagToClipboard                             // FlagToClipboard: If gui item is pressed, contents pasted to clipboard, with copy icon shown briefly
+	FlagFromClipboard                           // FlagFromClipboard: Item is selectable and can be pasted to from clipboard with long press
+	FlagIsPassword                              // Set if a text field is a password, shown as •••• and with special keyboard and auto password fill etc. password:existing sets FlagIsFixed, is's an existing password.
+	FlagIsDuration                              // Means a time should be shown as a duration. If it is static or OldSecs is set, it will repeatedly show the duration since it
+	FlagIsOpaque                                // FlagIsOpaque means entire view will be covered when drawn
+	FlagIsActions                               // FlagIsActions means a menu created from an enum is actions and not a value to set
+	FlagHasFrame                                // FlagHasFrame is set if for the "frame" tag on a struct. A border is drawn around it.
+	FlagIsGroup                                 // The "group" tag on a slice sets FlagIsGroup, and one of slice items is shown with a menu to choose between them. FlagHasFrame is set.
+	FlagGroupSingle                             // if The "group" tag has "single" option, a group of slices is shown one at a time with a menu to choose which one to view.
+	FlagFrameIsTitled                           // If FlagFrameIsTitled is set the frame has a title shown, set if "titled specified for group or frame tag"
+	FlagFrameTitledOnFrame                      // FlagFrameTitledOnFrame is set if the group or frame zui tag have the "ontag" value. The title is drawn inset into frame border then.
+	FlagSkipIndicator                           // If FlagSkipIndicator is set as value on a group tag, the indicator field is not shown within, as it is shown in the menu.
+	// FlagPress                                         // If FlagLongPress is set this button/image etc handles press
+	FlagLongPress                // If FlagLongPress is set this button/image etc handles long-press
+	FlagDisableAutofill          // FlagDisableAutofill if set makes a text field not autofill
+	FlagIsTableSearchable        // This field can be used to search in tables etc
+	FlagIsNotGUISearchable       // This field should NOT be part of searching for anything in GUI
+	FlagIsUseInValue             // This value is set as a string to InNames before entire struct is created
+	FlagAllowEmptyAsZero         // This shows the empty value as nothing. So int 0 would be shown as "" in text
+	FlagZeroIsBig                // If set, a zero value is considered big, currenlty used in sorting
+	FlagIsForZDebugOnly          // Set if "zdebug" tag. Only used if zui.DebugOwnerMode true
+	FlagIsRebuildAllOnChange     // If set, and this item is edited, rebuild the FieldView
+	FlagIsURL                    // (Field is string, and it's a url) OR (it has Path set to fixed URL)
+	FlagIsDocumentation          // It is a .Path link to Documentation view.
+	FlagIsDownload               // If set, the gui control made can be pressed to download, using "path", is audio, it might need to be long-pressed as pressing plays
+	FlagIsLabelize               // Set to force rows of <label> view [desc] in children
+	FlagLabelizeWithDescriptions // Set to make labelized rows add a description to far right, if FlagIsLabelize
+	FlagShowSliceCount           // Set to show a count of items in slice. Typically used on rows. Sets FlagIsStatic.
+	FlagShowPopup                // press to show a popup of contents
+	FlagIsLockable               // Show a lock icon to right of item when labelized. Disables/Hides.
+	FlagHeaderLockable           // Show a lock icon on header, for locking selected rows.
+	FlagIsStart                  // This field represents a start value, probably a time, and so far for if FlagHeaderLockable.
+	FlagIsEnd                    // This field represents an end value, probably a time, and so far for if FlagHeaderLockable.
+	FlagDontJustifyHeader        // If set, header is default justified, not using Field.Justify
+	FlagFutureInvalid            // For time, show red if time is future.
+	FlagPastInvalid              // For time, show red if time is future.
+	FlagHasDefault               // If true Field.Default string is used for default value of field. Can be parsed to numbers too.
+	FlagIsOpen                   // This field can open the struct if in a table or something else that handles it.
+	FlagIsOpener                 // Flag IsOpen, and is set to a view or edit icon by table or something.
+	FlagShowIfExtraSpace         // When building a row (for now), field is added with ShowIfExtraSpace of sum of widths of self and similar onces before it
+	FlagDontLabelize             // When we are labelizing items, use full space with no label for this one.
+	FlagOmitZero                 // Like for json, skip an item if it is zero, but only if static
+	FlagEmptyEnum                // Is set if enum tag with no value, if struct is an EnumGetter, that is used.
 )
 
 const (
@@ -219,7 +218,8 @@ type Field struct {
 	Required             string            // If set, fields must be non-zero after editing. If Required is not RequiredSingleValue, it is a group id where at least one field with this Required group has to be non-zero.
 	Radio                string            // If set, value is an enum name. Field must be value type of enum.
 	WhenMods             zkeyboard.Modifier
-	Transformer          string // A transformer that turns this field, if static, to a string, registed with RegisterFieldTransformer()
+	Transformer          string               // A transformer that turns this field, if static, to a string, registed with RegisterFieldTransformer()
+	Presses              []zkeyboard.Modifier // One or more modifier masks that make this a button: button: none|shift-alt|alt|control-command|command|meta etc
 }
 
 const (
@@ -237,30 +237,30 @@ var EmptyField = Field{
 }
 
 var flagsNameMap = map[FlagType]string{
-	FlagHasSeconds:               "HasSeconds",
-	FlagHasMinutes:               "HasMinutes",
-	FlagHasHours:                 "HasHours",
-	FlagHasDays:                  "HasDays",
-	FlagHasMonths:                "HasMonths",
-	FlagHasYears:                 "HasYears",
-	FlagIsImage:                  "IsImage",
-	FlagIsFixed:                  "IsFixed",
-	FlagIsButton:                 "IsButton",
-	FlagIsStatic:                 "IsStatic",
-	FlagHasHeaderImage:           "HasHeaderImage",
-	FlagNoTitle:                  "NoTitle",
-	FlagToClipboard:              "ToClipboard",
-	FlagFromClipboard:            "FromClipboard",
-	FlagIsPassword:               "IsPassword",
-	FlagIsDuration:               "IsDuration",
-	FlagIsOpaque:                 "IsOpaque",
-	FlagIsActions:                "IsActions",
-	FlagFrameIsTitled:            "FrameIsTitled",
-	FlagIsGroup:                  "IsGroup",
-	FlagHasFrame:                 "HasFrame",
-	FlagSkipIndicator:            "SkipIndicator",
-	FlagLongPress:                "LongPress",
-	FlagPress:                    "Press",
+	FlagHasSeconds:     "HasSeconds",
+	FlagHasMinutes:     "HasMinutes",
+	FlagHasHours:       "HasHours",
+	FlagHasDays:        "HasDays",
+	FlagHasMonths:      "HasMonths",
+	FlagHasYears:       "HasYears",
+	FlagIsImage:        "IsImage",
+	FlagIsFixed:        "IsFixed",
+	FlagIsStatic:       "IsStatic",
+	FlagHasHeaderImage: "HasHeaderImage",
+	FlagNoTitle:        "NoTitle",
+	FlagToClipboard:    "ToClipboard",
+	FlagFromClipboard:  "FromClipboard",
+	FlagIsPassword:     "IsPassword",
+	FlagIsDuration:     "IsDuration",
+	FlagIsOpaque:       "IsOpaque",
+	FlagIsActions:      "IsActions",
+	FlagFrameIsTitled:  "FrameIsTitled",
+	FlagIsGroup:        "IsGroup",
+	FlagHasFrame:       "HasFrame",
+	FlagSkipIndicator:  "SkipIndicator",
+	FlagLongPress:      "LongPress",
+	FlagIsButton:       "IsButton",
+	// FlagPress:                    "Press",
 	FlagDisableAutofill:          "DisableAutofill",
 	FlagIsTableSearchable:        "FlagIsTableSearchable",
 	FlagIsNotGUISearchable:       "FlagIsNotGUISearchable",
@@ -277,7 +277,6 @@ var flagsNameMap = map[FlagType]string{
 	FlagIsLockable:               "IsLockable",
 	FlagHeaderLockable:           "HeaderLockable",
 	FlagDontJustifyHeader:        "DontJustifyHeader",
-	FlagCheckerCell:              "CheckerCell",
 	FlagFutureInvalid:            "FutureInvalid",
 	FlagPastInvalid:              "PastInvalid",
 	FlagHasDefault:               "HasDefault",
@@ -359,7 +358,6 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 	f.SetEdited = true
 	f.Vertical = zbool.Unknown
 	f.PackageName = rval.Type().PkgPath()
-	var skipping bool
 	// zlog.Info("Packagename:", f.PackageName, f.FieldName)
 	// zlog.Info("Field:", f.ID)
 
@@ -371,423 +369,18 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			return false
 		}
 	}
+	var skip bool
 	for _, kv := range keyVals {
-		// key := kv.Key
-		// val := kv.Value
 		barParts := strings.Split(kv.Value, "|")
 		if kv.Key == "IN" {
-			skipping = !zstr.SlicesIntersect(params.UseInValues, barParts)
+			skip = !zstr.SlicesIntersect(params.UseInValues, barParts)
+		}
+		if skip {
 			continue
 		}
-		if skipping {
-			continue
-		}
-		n, floatErr := strconv.ParseFloat(kv.Value, 32)
-		flag := zbool.FromString(kv.Value, false)
-		switch kv.Key {
-		case "search":
-			f.Flags |= FlagIsTableSearchable
-		case "noguisearch":
-			f.Flags |= FlagIsNotGUISearchable
-		case "password":
-			f.Flags |= FlagIsPassword
-			if kv.Value == "existing" {
-				f.Flags |= FlagIsFixed
-			}
-		case "setedited":
-			f.SetEdited = flag
-		case "format":
-			f.Format = kv.Value
-		case "vertical":
-			f.Vertical = zbool.True
-		case "horizontal":
-			f.Vertical = zbool.False
-		case "align":
-			f.Alignment = zgeo.AlignmentFromString(kv.Value)
-			// zlog.Info("ALIGN:", f.Name, kv.Value, a)
-		// case "cannil"
-		// f.Flags |= flagAllowNil
-		case "celljustify", "justify":
-			if kv.Value == "" {
-				f.Justify = f.Alignment
-			} else {
-				f.Justify = zgeo.AlignmentFromString(kv.Value)
-			}
-			if kv.Key == "celljustify" {
-				f.SetFlag(FlagDontJustifyHeader)
-			}
-		case "wrap":
-			f.Wrap = kv.Value
-			if kv.Value == "" {
-				f.Wrap = "tailtrunc"
-			}
-		case "name":
-			f.Name = kv.Value
-		case "title":
-			f.Title = kv.Value
-		case "header":
-			f.Header = kv.Value
-		case "prefix":
-			f.Prefix = kv.Value
-		case "suffix":
-			f.Suffix = kv.Value
-		case "url":
-			f.Path = kv.Value
-			f.Flags |= FlagIsURL
-		case "doc":
-			f.Path = kv.Value
-			f.Flags |= FlagIsDocumentation
-		case "usein":
-			f.UseIn = barParts
-		case "rebuild":
-			f.Flags |= FlagIsRebuildAllOnChange
-		case "sep":
-			f.StringSep = kv.Value
-			if kv.Value == "" {
-				f.StringSep = " "
-			}
-		case "mod":
-			f.WhenMods.FromString(kv.Value)
-		case "hlockable":
-			f.SetFlag(FlagHeaderLockable)
-			if kv.Value == "start" {
-				f.SetFlag(FlagIsStart)
-			} else if kv.Value == "end" {
-				f.SetFlag(FlagIsEnd)
-			}
-		case "lockable":
-			f.SetFlag(FlagIsLockable)
-		case "filter":
-			f.Filters = barParts
-		case "trans":
-			f.Transformer = kv.Value
-		case "count":
-			f.SetFlag(FlagShowSliceCount | FlagIsStatic)
-		case "isuseinval":
-			f.Flags |= FlagIsUseInValue
-		case "popup":
-			f.Flags |= FlagShowPopup
-		case "color":
-			f.Colors = barParts
-			if len(f.Colors) == 1 {
-				f.Styling.FGColor.SetFromString(f.Colors[0])
-			}
-		case "bgcolor":
-			scol := kv.Value
-			if len(barParts) == 2 && zstyle.Dark {
-				scol = barParts[1]
-			}
-			f.Styling.BGColor.SetFromString(scol)
-		case "download":
-			f.Flags |= FlagIsDownload
-			f.Path = kv.Value
-		case "zrpc":
-			f.RPCCall = kv.Value
-		case "zdebug":
-			f.Flags |= FlagIsForZDebugOnly
-		case "height":
-			if floatErr == nil {
-				f.Height = n
-			}
-		case "width":
-			if floatErr == nil {
-				f.MinWidth = n
-				f.MaxWidth = n
-			}
-		case "cols":
-			if floatErr == nil {
-				f.Columns = int(n)
-			}
-		case "rows":
-			if floatErr == nil {
-				f.Rows = int(n)
-			}
-		case "optional":
-			f.Flags |= FlagShowIfExtraSpace
-			if floatErr == nil && n > 0 {
-				f.MinWidth = n
-			}
-		case "widget":
-			f.WidgetName = kv.Value
-		case "descending", "ascending":
-			if kv.Key == "ascending" {
-				f.SortSmallFirst = zbool.True
-			} else {
-				f.SortSmallFirst = zbool.False
-			}
-			for _, part := range barParts {
-				if part == "bigzero" {
-					f.Flags |= FlagZeroIsBig
-				} else {
-					f.SortPriority, _ = strconv.Atoi(part)
-				}
-			}
-		case "actions":
-			f.Flags |= FlagIsActions
-		case "noautofill":
-			f.Flags |= FlagDisableAutofill
-		case "size":
-			f.Size, _ = zgeo.SizeFromString(kv.Value)
-			if f.Size.IsNull() {
-				f.Size = zgeo.SizeBoth(n)
-			}
-		case "marg":
-			var err error
-			f.Margin, err = zgeo.SizeFromString(kv.Value)
-			zlog.OnError(err, kv.Value)
-		case "minwidth":
-			if floatErr == nil {
-				f.MinWidth = n
-			}
-		case "spacing":
-			if floatErr == nil {
-				f.Styling.Spacing = n
-			}
-		case "storekey":
-			f.ValueStoreKey = kv.Value
-		case "default":
-			f.Default = kv.Value
-			f.SetFlag(FlagHasDefault)
-		case "allowempty":
-			f.Flags |= FlagAllowEmptyAsZero
-		case "omitzero":
-			f.Flags |= FlagOmitZero
-		case "required":
-			f.Required = kv.Value
-			if kv.Value == "" {
-				f.Required = RequiredSingleValue
-			}
-		case "zerotext":
-			f.ZeroText = kv.Value
-		case "maxtext":
-			f.MaxText = kv.Value
-		case "invalid":
-			switch kv.Value {
-			case "past":
-				f.SetFlag(FlagPastInvalid)
-			case "future":
-				f.SetFlag(FlagFutureInvalid)
-			default:
-				zlog.Error("invalid: bad val:", kv.Value)
-			}
-		case "open":
-			f.Flags |= FlagIsOpen
-		case "static":
-			if flag || kv.Value == "" {
-				f.Flags |= FlagIsStatic
-			}
-		case "fracts":
-			f.FractionDecimals = int(n)
-		case "secs":
-			f.Flags |= FlagHasSeconds
-		case "oldsecs":
-			f.OldSecs = int(n)
-		case "mins":
-			f.Flags |= FlagHasMinutes
-		case "hours":
-			f.Flags |= FlagHasHours
-		case "maxwidth":
-			if floatErr == nil {
-				f.MaxWidth = n
-			}
-		case "press":
-			f.Flags |= FlagPress
-		case "longpress":
-			f.Flags |= FlagLongPress
-		case "group":
-			for _, part := range barParts {
-				switch part {
-				case "titled":
-					f.Flags |= FlagFrameIsTitled
-				case "skipindicator":
-					f.Flags |= FlagSkipIndicator
-				case "onframe":
-					f.Flags |= FlagFrameTitledOnFrame
-				case "single":
-					f.Flags |= FlagGroupSingle
-				}
-			}
-			f.Flags |= FlagIsGroup | FlagHasFrame
-		case "frame":
-			// zlog.Info("Frame:", f.Name, f.FieldName)
-			f.Flags |= FlagHasFrame
-			for _, part := range strings.Split(kv.Value, "|") {
-				switch part {
-				case "titled":
-					f.Flags |= FlagFrameIsTitled
-				case "onframe":
-					f.Flags |= FlagFrameTitledOnFrame
-				}
-			}
-		case "fixed":
-			f.Flags |= FlagIsFixed
-		case "opaque":
-			f.Flags |= FlagIsOpaque
-		case "shadow":
-			for _, part := range strings.Split(kv.Value, "|") {
-				got := false
-				if f.Styling.DropShadow.Delta.IsNull() {
-					var err error
-					f.Styling.DropShadow.Delta, err = zgeo.SizeFromString(part)
-					if err == nil {
-						got = true
-					} else {
-						num, err := strconv.ParseFloat(part, 32)
-						if err != nil {
-							f.Styling.DropShadow.Delta = zgeo.SizeBoth(num)
-							got = true
-						}
-					}
-				}
-				if !got && f.Styling.DropShadow.Blur == 0 {
-					num, err := strconv.ParseFloat(part, 32)
-					if err != nil {
-						f.Styling.DropShadow.Blur = num
-						got = true
-					}
-				}
-				if !got && !f.Styling.DropShadow.Color.Valid {
-					f.Styling.DropShadow.Color.SetFromString(part)
-				}
-			}
-
-		case "font":
-			var sign int
-			for _, part := range strings.Split(kv.Value, "|") {
-				if zstr.HasPrefix(part, "+", &part) {
-					sign = 1
-				}
-				if zstr.HasPrefix(part, "-", &part) {
-					sign = -1
-				}
-				n, _ := strconv.Atoi(part)
-				if n != 0 {
-					if sign != 0 {
-						f.Styling.Font.Size = float64(n*sign) + zgeo.FontDefaultSize
-					} else {
-						f.Styling.Font.Size = float64(n)
-					}
-				} else {
-					f.Styling.Font.Style = zgeo.FontStyleFromStr(part)
-					if f.Styling.Font.Style == zgeo.FontStyleUndef {
-						f.Styling.Font.Name = part
-					}
-				}
-			}
-
-		case "path":
-			f.Path = kv.Value
-		case "off":
-			f.OffImagePath = "images/" + kv.Value
-		case "opener":
-			f.Flags |= FlagIsOpen | FlagIsOpener | FlagNoTitle | FlagIsImage
-			f.MinWidth = 20
-			f.MaxWidth = 20
-		case "image", "himage":
-			var size zgeo.Size
-			var path string
-			for _, part := range barParts {
-				var s zgeo.Size
-				s, err := zgeo.SizeFromString(part)
-				if err == nil {
-					size = s
-					// zlog.Info("Got size:", part, size)
-				} else if part != "" {
-					path = "images/" + part
-				}
-			}
-			if kv.Key == "image" {
-				f.Size = size
-				f.Flags |= FlagIsImage
-				f.ImageFixedPath = path
-			} else {
-				f.Flags |= FlagHasHeaderImage
-				f.HeaderSize = size
-				f.HeaderImageFixedPath = path
-			}
-		case "radio":
-			_, got := fieldEnums[kv.Value]
-			if !got {
-				zlog.Error("no such radio:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
-			}
-			f.Radio = kv.Value
-		case "enum":
-			if kv.Value == "" {
-				f.Flags |= FlagEmptyEnum
-				break
-			}
-			if zstr.HasPrefix(kv.Value, "./", &f.LocalEnum) {
-			} else {
-				_, got := fieldEnums[kv.Value]
-				if !got {
-					zlog.Error("no such enum:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
-				}
-				f.Enum = kv.Value
-			}
-		case "notitle":
-			f.Flags |= FlagNoTitle
-		case "tip":
-			f.Tooltip = kv.Value
-		case "desc":
-			f.Description = kv.Value
-		case "immediate":
-			f.UpdateSecs = 0
-		case "upsecs":
-			if floatErr == nil && n > 0 {
-				f.UpdateSecs = n
-			}
-		case "checker":
-			f.SetFlag(FlagCheckerCell)
-		case "2clip":
-			f.Flags |= FlagToClipboard
-		case "fromclip":
-			f.Flags |= FlagFromClipboard
-		case "labelize":
-			f.Flags |= FlagIsLabelize
-			if kv.Value == "withdesc" {
-				f.Flags |= FlagLabelizeWithDescriptions
-			}
-		case "unlabled":
-			f.SetFlag(FlagDontLabelize)
-		case "button":
-			f.Flags |= FlagIsButton | FlagPress
-		case "ask":
-			f.Ask = kv.Value
-		case "enable":
-			f.LocalEnable = kv.Value
-		case "disable":
-			if kv.Value != "" {
-				f.LocalDisable = kv.Value
-			} else {
-				f.Disabled = true // not used yet
-			}
-		case "show":
-			if kv.Value == "" {
-				f.Visible = true
-			} else {
-				f.LocalShow = kv.Value
-			}
-		case "hide":
-			if kv.Value == "" {
-				f.Visible = false
-			} else {
-				f.LocalHide = kv.Value
-			}
-		case "placeholder":
-			if kv.Value != "" {
-				f.Placeholder = kv.Value
-			} else {
-				f.Placeholder = "$HAS$" // set to this special value to set to name once set
-			}
-		case "dur":
-			f.Flags |= FlagIsDuration
-		case "since":
-			f.Flags |= FlagIsStatic | FlagIsDuration
-		default:
-			if f.CustomFields == nil {
-				f.CustomFields = map[string]string{}
-			}
-			f.CustomFields[kv.Key] = kv.Value
+		splitKeys := strings.Split(kv.Key, "|") // this is to allow same value for multiple keys separated by pipe. eg key1|key2:value
+		for _, kv.Key = range splitKeys {
+			setFromSingleKeyVal(f, rval, kv, params, barParts)
 		}
 	}
 	if rval.Type() == reflect.TypeOf(zgeo.Color{}) {
@@ -851,7 +444,7 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 			zfloat.Maximize(&f.MinWidth, f.HeaderSize.W)
 			zfloat.Maximize(&f.MaxWidth, f.HeaderSize.W)
 		}
-		if f.MinWidth == 0 && f.Flags&FlagIsButton == 0 && f.Enum == "" && f.Radio == "" && f.LocalEnum == "" {
+		if f.MinWidth == 0 && f.HasFlag(FlagIsButton) && f.Enum == "" && f.Radio == "" && f.LocalEnum == "" {
 			f.MinWidth = 20
 		}
 	case zreflect.KindTime:
@@ -912,6 +505,428 @@ func (f *Field) SetFromRVal(rval reflect.Value, zuiTagPart string, sfName, sfPkg
 	}
 	// zlog.Info("Field:", f.Name, f.Columns)
 	return true
+}
+
+func setFromSingleKeyVal(f *Field, rval reflect.Value, kv zstr.KeyValue, params FieldParameters, barParts []string) {
+	n, floatErr := strconv.ParseFloat(kv.Value, 32)
+	flag := zbool.FromString(kv.Value, false)
+	switch kv.Key {
+	case "search":
+		f.Flags |= FlagIsTableSearchable
+	case "noguisearch":
+		f.Flags |= FlagIsNotGUISearchable
+	case "password":
+		f.Flags |= FlagIsPassword
+		if kv.Value == "existing" {
+			f.Flags |= FlagIsFixed
+		}
+	case "setedited":
+		f.SetEdited = flag
+	case "format":
+		f.Format = kv.Value
+	case "vertical":
+		f.Vertical = zbool.True
+	case "horizontal":
+		f.Vertical = zbool.False
+	case "align":
+		f.Alignment = zgeo.AlignmentFromString(kv.Value)
+		// zlog.Info("ALIGN:", f.Name, kv.Value, a)
+	// case "cannil"
+	// f.Flags |= flagAllowNil
+	case "celljustify", "justify":
+		if kv.Value == "" {
+			f.Justify = f.Alignment
+		} else {
+			f.Justify = zgeo.AlignmentFromString(kv.Value)
+		}
+		if kv.Key == "celljustify" {
+			f.SetFlag(FlagDontJustifyHeader)
+		}
+	case "wrap":
+		f.Wrap = kv.Value
+		if kv.Value == "" {
+			f.Wrap = "tailtrunc"
+		}
+	case "name":
+		f.Name = kv.Value
+	case "title":
+		f.Title = kv.Value
+	case "header":
+		f.Header = kv.Value
+	case "prefix":
+		f.Prefix = kv.Value
+	case "suffix":
+		f.Suffix = kv.Value
+	case "url":
+		f.Path = kv.Value
+		f.Flags |= FlagIsURL
+	case "doc":
+		f.Path = kv.Value
+		f.Flags |= FlagIsDocumentation
+	case "usein":
+		f.UseIn = barParts
+	case "rebuild":
+		f.Flags |= FlagIsRebuildAllOnChange
+	case "sep":
+		f.StringSep = kv.Value
+		if kv.Value == "" {
+			f.StringSep = " "
+		}
+	case "mod":
+		f.WhenMods.FromString(kv.Value)
+	case "hlockable":
+		f.SetFlag(FlagHeaderLockable)
+		if kv.Value == "start" {
+			f.SetFlag(FlagIsStart)
+		} else if kv.Value == "end" {
+			f.SetFlag(FlagIsEnd)
+		}
+	case "lockable":
+		f.SetFlag(FlagIsLockable)
+	case "filter":
+		f.Filters = barParts
+	case "trans":
+		f.Transformer = kv.Value
+	case "count":
+		f.SetFlag(FlagShowSliceCount | FlagIsStatic)
+	case "isuseinval":
+		f.Flags |= FlagIsUseInValue
+	case "popup":
+		f.Flags |= FlagShowPopup
+	case "color":
+		f.Colors = barParts
+		if len(f.Colors) == 1 {
+			f.Styling.FGColor.SetFromString(f.Colors[0])
+		}
+	case "bgcolor":
+		scol := kv.Value
+		if len(barParts) == 2 && zstyle.Dark {
+			scol = barParts[1]
+		}
+		f.Styling.BGColor.SetFromString(scol)
+	case "download":
+		f.Flags |= FlagIsDownload
+		f.Path = kv.Value
+	case "zrpc":
+		f.RPCCall = kv.Value
+	case "zdebug":
+		f.Flags |= FlagIsForZDebugOnly
+	case "height":
+		if floatErr == nil {
+			f.Height = n
+		}
+	case "width":
+		if floatErr == nil {
+			f.MinWidth = n
+			f.MaxWidth = n
+		}
+	case "cols":
+		if floatErr == nil {
+			f.Columns = int(n)
+		}
+	case "rows":
+		if floatErr == nil {
+			f.Rows = int(n)
+		}
+	case "optional":
+		f.Flags |= FlagShowIfExtraSpace
+		if floatErr == nil && n > 0 {
+			f.MinWidth = n
+		}
+	case "widget":
+		f.WidgetName = kv.Value
+	case "descending", "ascending":
+		if kv.Key == "ascending" {
+			f.SortSmallFirst = zbool.True
+		} else {
+			f.SortSmallFirst = zbool.False
+		}
+		for _, part := range barParts {
+			if part == "bigzero" {
+				f.Flags |= FlagZeroIsBig
+			} else {
+				f.SortPriority, _ = strconv.Atoi(part)
+			}
+		}
+	case "actions":
+		f.Flags |= FlagIsActions
+	case "noautofill":
+		f.Flags |= FlagDisableAutofill
+	case "size":
+		f.Size, _ = zgeo.SizeFromString(kv.Value)
+		if f.Size.IsNull() {
+			f.Size = zgeo.SizeBoth(n)
+		}
+	case "marg":
+		var err error
+		f.Margin, err = zgeo.SizeFromString(kv.Value)
+		zlog.OnError(err, kv.Value)
+	case "minwidth":
+		if floatErr == nil {
+			f.MinWidth = n
+		}
+	case "spacing":
+		if floatErr == nil {
+			f.Styling.Spacing = n
+		}
+	case "storekey":
+		f.ValueStoreKey = kv.Value
+	case "default":
+		f.Default = kv.Value
+		f.SetFlag(FlagHasDefault)
+	case "allowempty":
+		f.Flags |= FlagAllowEmptyAsZero
+	case "omitzero":
+		f.Flags |= FlagOmitZero
+	case "required":
+		f.Required = kv.Value
+		if kv.Value == "" {
+			f.Required = RequiredSingleValue
+		}
+	case "zerotext":
+		f.ZeroText = kv.Value
+	case "maxtext":
+		f.MaxText = kv.Value
+	case "invalid":
+		switch kv.Value {
+		case "past":
+			f.SetFlag(FlagPastInvalid)
+		case "future":
+			f.SetFlag(FlagFutureInvalid)
+		default:
+			zlog.Error("invalid: bad val:", kv.Value)
+		}
+	case "open":
+		f.Flags |= FlagIsOpen
+	case "static":
+		if flag || kv.Value == "" {
+			f.Flags |= FlagIsStatic
+		}
+	case "fracts":
+		f.FractionDecimals = int(n)
+	case "secs":
+		f.Flags |= FlagHasSeconds
+	case "oldsecs":
+		f.OldSecs = int(n)
+	case "mins":
+		f.Flags |= FlagHasMinutes
+	case "hours":
+		f.Flags |= FlagHasHours
+	case "maxwidth":
+		if floatErr == nil {
+			f.MaxWidth = n
+		}
+	case "button":
+		f.Flags |= FlagIsButton
+		f.GetPressed(barParts)
+	case "press":
+		f.GetPressed(barParts)
+	case "longpress":
+		f.Flags |= FlagLongPress
+		f.GetPressed(barParts)
+	case "group":
+		for _, part := range barParts {
+			switch part {
+			case "titled":
+				f.Flags |= FlagFrameIsTitled
+			case "skipindicator":
+				f.Flags |= FlagSkipIndicator
+			case "onframe":
+				f.Flags |= FlagFrameTitledOnFrame
+			case "single":
+				f.Flags |= FlagGroupSingle
+			}
+		}
+		f.Flags |= FlagIsGroup | FlagHasFrame
+	case "frame":
+		// zlog.Info("Frame:", f.Name, f.FieldName)
+		f.Flags |= FlagHasFrame
+		for _, part := range strings.Split(kv.Value, "|") {
+			switch part {
+			case "titled":
+				f.Flags |= FlagFrameIsTitled
+			case "onframe":
+				f.Flags |= FlagFrameTitledOnFrame
+			}
+		}
+	case "fixed":
+		f.Flags |= FlagIsFixed
+	case "opaque":
+		f.Flags |= FlagIsOpaque
+	case "shadow":
+		for _, part := range strings.Split(kv.Value, "|") {
+			got := false
+			if f.Styling.DropShadow.Delta.IsNull() {
+				var err error
+				f.Styling.DropShadow.Delta, err = zgeo.SizeFromString(part)
+				if err == nil {
+					got = true
+				} else {
+					num, err := strconv.ParseFloat(part, 32)
+					if err != nil {
+						f.Styling.DropShadow.Delta = zgeo.SizeBoth(num)
+						got = true
+					}
+				}
+			}
+			if !got && f.Styling.DropShadow.Blur == 0 {
+				num, err := strconv.ParseFloat(part, 32)
+				if err != nil {
+					f.Styling.DropShadow.Blur = num
+					got = true
+				}
+			}
+			if !got && !f.Styling.DropShadow.Color.Valid {
+				f.Styling.DropShadow.Color.SetFromString(part)
+			}
+		}
+
+	case "font":
+		var sign int
+		for _, part := range strings.Split(kv.Value, "|") {
+			if zstr.HasPrefix(part, "+", &part) {
+				sign = 1
+			}
+			if zstr.HasPrefix(part, "-", &part) {
+				sign = -1
+			}
+			n, _ := strconv.Atoi(part)
+			if n != 0 {
+				if sign != 0 {
+					f.Styling.Font.Size = float64(n*sign) + zgeo.FontDefaultSize
+				} else {
+					f.Styling.Font.Size = float64(n)
+				}
+			} else {
+				f.Styling.Font.Style = zgeo.FontStyleFromStr(part)
+				if f.Styling.Font.Style == zgeo.FontStyleUndef {
+					f.Styling.Font.Name = part
+				}
+			}
+		}
+
+	case "path":
+		f.Path = kv.Value
+	case "off":
+		f.OffImagePath = "images/" + kv.Value
+	case "opener":
+		f.Flags |= FlagIsOpen | FlagIsOpener | FlagNoTitle | FlagIsImage
+		f.MinWidth = 20
+		f.MaxWidth = 20
+	case "image", "himage":
+		var size zgeo.Size
+		var path string
+		for _, part := range barParts {
+			var s zgeo.Size
+			s, err := zgeo.SizeFromString(part)
+			if err == nil {
+				size = s
+				// zlog.Info("Got size:", part, size)
+			} else if part != "" {
+				path = "images/" + part
+			}
+		}
+		if kv.Key == "image" {
+			f.Size = size
+			f.Flags |= FlagIsImage
+			f.ImageFixedPath = path
+		} else {
+			f.Flags |= FlagHasHeaderImage
+			f.HeaderSize = size
+			f.HeaderImageFixedPath = path
+		}
+	case "radio":
+		_, got := fieldEnums[kv.Value]
+		if !got {
+			zlog.Error("no such radio:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
+		}
+		f.Radio = kv.Value
+	case "enum":
+		if kv.Value == "" {
+			f.Flags |= FlagEmptyEnum
+			break
+		}
+		if zstr.HasPrefix(kv.Value, "./", &f.LocalEnum) {
+		} else {
+			_, got := fieldEnums[kv.Value]
+			if !got {
+				zlog.Error("no such enum:", kv.Value, fieldEnums, f.FieldName, zdebug.CallingStackString())
+			}
+			f.Enum = kv.Value
+		}
+	case "notitle":
+		f.Flags |= FlagNoTitle
+	case "tip":
+		f.Tooltip = kv.Value
+	case "desc":
+		f.Description = kv.Value
+	case "immediate":
+		f.UpdateSecs = 0
+	case "upsecs":
+		if floatErr == nil && n > 0 {
+			f.UpdateSecs = n
+		}
+	case "2clip":
+		f.Flags |= FlagToClipboard
+	case "fromclip":
+		f.Flags |= FlagFromClipboard
+	case "labelize":
+		f.Flags |= FlagIsLabelize
+		if kv.Value == "withdesc" {
+			f.Flags |= FlagLabelizeWithDescriptions
+		}
+	case "unlabled":
+		f.SetFlag(FlagDontLabelize)
+	case "ask":
+		f.Ask = kv.Value
+	case "enable":
+		f.LocalEnable = kv.Value
+	case "disable":
+		if kv.Value != "" {
+			f.LocalDisable = kv.Value
+		} else {
+			f.Disabled = true // not used yet
+		}
+	case "show":
+		if kv.Value == "" {
+			f.Visible = true
+		} else {
+			f.LocalShow = kv.Value
+		}
+	case "hide":
+		if kv.Value == "" {
+			f.Visible = false
+		} else {
+			f.LocalHide = kv.Value
+		}
+	case "placeholder":
+		if kv.Value != "" {
+			f.Placeholder = kv.Value
+		} else {
+			f.Placeholder = "$HAS$" // set to this special value to set to name once set
+		}
+	case "dur":
+		f.Flags |= FlagIsDuration
+	case "since":
+		f.Flags |= FlagIsStatic | FlagIsDuration
+	default:
+		if f.CustomFields == nil {
+			f.CustomFields = map[string]string{}
+		}
+		f.CustomFields[kv.Key] = kv.Value
+	}
+}
+
+func (f *Field) GetPressed(barParts []string) {
+	if len(barParts) == 0 {
+		f.Presses = []zkeyboard.Modifier{zkeyboard.ModifierNone}
+	} else {
+		for _, part := range barParts {
+			str := strings.ReplaceAll(part, "-", "|") // ModifiersFromString expects separation by |, but we want to allow - since | used for each set. So replace - with | before parsing.
+			mod := zkeyboard.ModifiersFromString(str)
+			f.Presses = append(f.Presses, mod)
+		}
+	}
 }
 
 // MergeInField copies in values from the Field *n* to *f*, overwriting except where *n* has undefined value
@@ -1348,4 +1363,26 @@ func FieldsToDict(structure any, dict *zdict.Dict, fieldParams FieldParameters) 
 		(*dict)[each.Field.Name] = each.ReflectValue.Interface()
 		return true
 	})
+}
+
+func GetEnumFromNameOrGetter(f *Field, enumName string, owner any, rval reflect.Value) (enum zdict.Items, selected zdict.Item) {
+	// istr := fmt.Sprint(value)
+	if f.HasFlag(FlagEmptyEnum) {
+		eg, _ := owner.(EnumGetter)
+		if zlog.ErrorIf(eg == nil, "field is empty enum but does not implement EnumGetter", f.FieldName, rval.Type()) {
+			return nil, zdict.Item{}
+		}
+		enum = eg.GetEnum(f.FieldName)
+		// zlog.Info("getValueString: got enum for field", f.Name, "enum:", zlog.Full(enum))
+	} else if f.LocalEnum != "" {
+		enum = GetEnum(f.Enum)
+	}
+	if len(enum) > 0 {
+		for _, e := range enum {
+			if rval.Equal(reflect.ValueOf(e.Value)) {
+				return enum, e
+			}
+		}
+	}
+	return enum, zdict.Item{}
 }
