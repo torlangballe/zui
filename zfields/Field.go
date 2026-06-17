@@ -1369,7 +1369,7 @@ func GetEnumFromNameOrGetter(f *Field, enumName string, owner any, rval reflect.
 	// istr := fmt.Sprint(value)
 	if f.HasFlag(FlagEmptyEnum) {
 		eg, _ := owner.(EnumGetter)
-		if zlog.ErrorIf(eg == nil, "field is empty enum but does not implement EnumGetter", f.FieldName, rval.Type()) {
+		if zlog.ErrorIf(eg == nil, "field is empty enum but does not implement EnumGetter", f.FieldName, rval.Type(), reflect.TypeOf(owner)) {
 			return nil, zdict.Item{}
 		}
 		enum = eg.GetEnum(f.FieldName)
