@@ -13,8 +13,8 @@ import (
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/xrpc"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zsql"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
@@ -149,7 +149,7 @@ func (v *SQLTableView[S]) editRows(rows []S, insert bool) {
 }
 
 func (o *SQLOwner[S]) InsertRows(slice any) {
-	err := zrpc.MainClient.Call(o.rpcCallerName+".InsertRows", slice, nil)
+	err := xrpc.MainCaller().Call(o.rpcCallerName+".InsertRows", slice, nil)
 	if err != nil {
 		zalert.ShowError(err, "inserting")
 		return
@@ -163,10 +163,10 @@ func (v *SQLTableView[S]) deleteItems(ids []string) {
 			ids[i] = zsql.QuoteString(ids[i])
 		}
 	}
-	zrpc.MainClient.Call(v.Owner.rpcCallerName+".PreDeleteRows", ids, nil)
+	xrpc.MainCaller().Call(v.Owner.rpcCallerName+".PreDeleteRows", ids, nil)
 
 	query := "DELETE FROM " + v.Owner.TableName + " WHERE id IN (" + strings.Join(ids, ",") + ")"
-	err := zrpc.MainClient.Call("SQLCalls.ExecuteQuery", query, &affected)
+	err := xrpc.MainCaller().Call("SQLCalls.ExecuteQuery", query, &affected)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 	}
@@ -230,7 +230,7 @@ func (o *SQLOwner[S]) GetAndUpdate() {
 
 	q.Table = o.TableName
 	q.Constraints = o.createConstraints()
-	err := zrpc.MainClient.Call(o.rpcCallerName+".Select", q, &slice)
+	err := xrpc.MainCaller().Call(o.rpcCallerName+".Select", q, &slice)
 	if err != nil {
 		zlog.Error("select", q.Constraints, o.limit, o.offset, err)
 		return
@@ -249,7 +249,7 @@ func (o *SQLOwner[S]) PushRowsToServer(items []S) {
 	// zlog.Info("UpdateItems:", o.TableName, zlog.Full(items))
 	// v.SetItemsInSlice(items)
 	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
-	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", items, nil)
+	err := xrpc.MainCaller().Call(o.rpcCallerName+".UpdateRows", items, nil)
 	if err != nil {
 		zalert.ShowError(err, "updating")
 		return
@@ -259,7 +259,7 @@ func (o *SQLOwner[S]) PushRowsToServer(items []S) {
 func (o *SQLOwner[S]) PushRowsToServerWithAnySlice(slice any) {
 	// v.SetItemsInSlice(items)
 	// v.UpdateViewFunc() // here we call UpdateViewFunc and not updateView, as just sorted in line above
-	err := zrpc.MainClient.Call(o.rpcCallerName+".UpdateRows", slice, nil)
+	err := xrpc.MainCaller().Call(o.rpcCallerName+".UpdateRows", slice, nil)
 	zlog.Info("PushRowsToServerWithAnySlice:", o.TableName, reflect.TypeOf(slice), err, zlog.Full(slice))
 	if err != nil {
 		zalert.ShowError(err, "updating")

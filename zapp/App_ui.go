@@ -8,11 +8,11 @@ import (
 	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/xrpc"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlocale"
 	"github.com/torlangballe/zutil/zlog"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/ztime"
 	"github.com/torlangballe/zutil/ztimer"
 )
@@ -61,7 +61,7 @@ func NewCurrentTimeLabel() *zlabel.Label {
 func fetchTimeInfo() bool {
 	var info TimeInfo
 	start := time.Now()
-	err := zrpc.MainClient.Call("AppCalls.GetTimeInfo", nil, &info)
+	err := xrpc.MainCaller().Call("AppCalls.GetTimeInfo", nil, &info)
 	if zlog.OnError(err) {
 		return false
 	}

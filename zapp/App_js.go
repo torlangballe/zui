@@ -7,13 +7,14 @@ import (
 	"github.com/torlangballe/zui"
 	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zwidgets"
+	"github.com/torlangballe/zutil/xrpc"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zerrors"
+	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 )
 
@@ -66,12 +67,12 @@ func guiRestartHandler(err error) {
 	}
 	dict := zdict.Dict{}
 	ce := zerrors.MakeContextError(dict, "GUI Restart", err)
-	callErr := zrpc.MainClient.Call("AppCalls.SetGUIError", ce, nil)
+	callErr := xrpc.MainCaller().Call("AppCalls.SetGUIError", ce, nil)
 	zlog.OnError(callErr)
 }
 
 // SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
-func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
+func SetUIDefaults(rpcPort int) (path string, args map[string]string) {
 	url := URL()
 	args = map[string]string{}
 	for k, v := range url.Query() {
@@ -87,11 +88,12 @@ func SetUIDefaults(useRPC bool) (path string, args map[string]string) {
 	if zbool.FromString(args["ztest"], false) {
 		zdebug.IsInTests = true // for testing gui
 	}
-	if useRPC {
-		surl := url.String()
-		zstr.HasSuffix(surl, zrest.AppURLPrefix, &surl)
-		zrpc.MainClient = zrpc.NewClient(surl, "")
+	if rpcPort != 0 {
+		serverURL := zfile.JoinPathParts(URL().Host, zrest.AppURLPrefix)
+		xrpc.MainClientID = "zui-webclient-" + zstr.GenerateRandomHexBytes(14)
+		xrpc.SetupSimpleClient(rpcPort, serverURL, xrpc.MainClientID)
 		zdebug.HandleRestartFunc = guiRestartHandler
+		xrpc.MainRPC.Start()
 	}
 	return
 }

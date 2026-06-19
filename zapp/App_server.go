@@ -28,8 +28,8 @@ import (
 	"github.com/torlangballe/zutil/zhttp"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmarkdown"
+	"github.com/torlangballe/zutil/znamedfuncs"
 	"github.com/torlangballe/zutil/zrest"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
 )
@@ -38,7 +38,7 @@ import (
 type nativeApp struct {
 }
 
-type AppCalls zrpc.CallsBase
+type AppCalls struct{}
 
 // filesRedirector is a type that can handle serving files
 type filesRedirector struct {
@@ -54,11 +54,11 @@ var (
 	RequestRedirector           *filesRedirector
 	InlineDocumentationHeaderMD string
 	CanBrotlyFunc               func(req *http.Request) bool
-	HandleGUIErrorFunc          func(ci *zrpc.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
+	HandleGUIErrorFunc          func(ci *znamedfuncs.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
 	DefaultWasmPath             string = "main.wasm"
 )
 
-func Init(executor zrpc.Executioner) {
+func Init(executor znamedfuncs.Executioner) {
 	if executor != nil {
 		executor.Register(AppCalls{})
 	}
@@ -164,7 +164,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
 	}
 	f, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
-	if zlog.OnError(err, fpath) {
+	if zlog.OnError(err, fpath, req.URL.String()) {
 		return
 	}
 	info, _, err := AllWebFS.Stat(fpath)
@@ -245,7 +245,7 @@ func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 func appNew(a *App) {
 }
 
-func (AppCalls) SetGUIError(ci *zrpc.ClientInfo, ce zerrors.ContextError) error {
+func (AppCalls) SetGUIError(ci *znamedfuncs.ClientInfo, ce zerrors.ContextError) error {
 	zlog.Info("Got gui error:", zlog.Full(ce), ci.IPAddress)
 	if HandleGUIErrorFunc != nil {
 		dict := zdict.Dict{
@@ -278,7 +278,7 @@ func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) erro
 	return returnErr
 }
 
-func (AppCalls) GetTimeInfo(a zrpc.Unused, info *TimeInfo) error {
+func (AppCalls) GetTimeInfo(a struct{}, info *TimeInfo) error {
 	t := time.Now()
 	ServerTimezoneName, info.ZoneOffsetSeconds = t.Zone()
 	// zlog.Info("AppCall.GetTimeInfo:", t, ServerTimezoneName, info.ZoneOffsetSeconds)

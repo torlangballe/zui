@@ -31,6 +31,7 @@ import (
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zui/zwidgets"
 	"github.com/torlangballe/zui/zwindow"
+	"github.com/torlangballe/zutil/xrpc"
 	"github.com/torlangballe/zutil/zbool"
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
@@ -44,7 +45,6 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zmap"
 	"github.com/torlangballe/zutil/zreflect"
-	"github.com/torlangballe/zutil/zrpc"
 	"github.com/torlangballe/zutil/zslices"
 	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztime"
@@ -2165,7 +2165,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 						maybeAskBeforeAction(f, func() {
 							var reply string
 							a := reflect.ValueOf(v.data).Elem().Interface()
-							err := zrpc.MainClient.Call(f.RPCCall, a, &reply)
+							err := xrpc.MainCaller().Call(f.RPCCall, a, &reply)
 							if err != nil {
 								zalert.ShowError(err)
 							}
