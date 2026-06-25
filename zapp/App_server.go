@@ -164,7 +164,7 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// w.Header().Set("ETag", zstr.HashTo64Hex(zbuild.Build.At.Format(time.RFC1123)))
 	}
 	f, err := zfile.ReaderFromFileInFS(AllWebFS, fpath)
-	if zlog.OnError(err, fpath, req.URL.String()) {
+	if zlog.OnError(err, fpath, req.URL.String(), req.RemoteAddr) {
 		return
 	}
 	info, _, err := AllWebFS.Stat(fpath)
@@ -278,7 +278,7 @@ func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) erro
 	return returnErr
 }
 
-func (AppCalls) GetTimeInfo(a struct{}, info *TimeInfo) error {
+func (AppCalls) GetTimeInfox(a struct{}, info *TimeInfo) error {
 	t := time.Now()
 	ServerTimezoneName, info.ZoneOffsetSeconds = t.Zone()
 	// zlog.Info("AppCall.GetTimeInfo:", t, ServerTimezoneName, info.ZoneOffsetSeconds)
