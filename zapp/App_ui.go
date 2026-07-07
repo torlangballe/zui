@@ -69,7 +69,6 @@ func fetchTimeInfo() bool {
 	ServerTimezoneName = info.ZoneName
 	ztime.ServerTimezoneOffsetSecs = info.ZoneOffsetSeconds
 	zkeyvalue.DefaultStore.SetInt(info.ZoneOffsetSeconds, offsetKey, true)
-	// zlog.Info("fetchTimeInfo:", ServerTimezoneName, ztime.ServerTimezoneOffsetSecs)
 	if since > time.Second {
 		return false
 	}

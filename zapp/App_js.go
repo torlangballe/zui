@@ -89,7 +89,8 @@ func SetUIDefaults(rpcPort int) (path string, args map[string]string) {
 		zdebug.IsInTests = true // for testing gui
 	}
 	if rpcPort != 0 {
-		serverURL := zfile.JoinPathParts(URL().Host, zrest.AppURLPrefix)
+		hostOnly := url.Hostname()
+		serverURL := zfile.JoinPathParts(hostOnly, zrest.AppURLPrefix)
 		xrpc.MainClientID = "zui-webclient-" + zstr.GenerateRandomHexBytes(14)
 		xrpc.SetupSimpleClient(rpcPort, serverURL, xrpc.MainClientID)
 		zdebug.HandleRestartFunc = guiRestartHandler
