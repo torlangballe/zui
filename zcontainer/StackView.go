@@ -332,9 +332,6 @@ func (v *StackView) ArrangeChildren() {
 		}
 		r := rects[j]
 		if !r.IsNull() {
-			if !c.View.Native().IsShown() { // c.ShowIfExtraSpace != 0 &&
-				c.View.Show(true)
-			}
 			c.View.SetRect(r)
 		} else {
 			if c.View != nil && !c.Collapsed && c.Alignment != zgeo.AlignmentNone {
