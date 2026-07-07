@@ -1365,24 +1365,26 @@ func FieldsToDict(structure any, dict *zdict.Dict, fieldParams FieldParameters) 
 	})
 }
 
-func GetEnumFromNameOrGetter(f *Field, enumName string, owner any, rval reflect.Value) (enum zdict.Items, selected zdict.Item) {
-	// istr := fmt.Sprint(value)
+func GetEnumFromNameOrGetter(f *Field, enumName string, owner any, rval reflect.Value) (enum zdict.Items, selected zdict.Items) {
 	if f.HasFlag(FlagEmptyEnum) {
 		eg, _ := owner.(EnumGetter)
 		if zlog.ErrorIf(eg == nil, "field is empty enum but does not implement EnumGetter", f.FieldName, rval.Type(), reflect.TypeOf(owner)) {
-			return nil, zdict.Item{}
+			return nil, zdict.Items{}
 		}
 		enum = eg.GetEnum(f.FieldName)
-		// zlog.Info("getValueString: got enum for field", f.Name, "enum:", zlog.Full(enum))
 	} else if f.LocalEnum != "" {
 		enum = GetEnum(f.Enum)
 	}
 	if len(enum) > 0 {
+		isMultiSelect := (rval.Kind() == reflect.Slice)
+		var sel zdict.Items
 		for _, e := range enum {
-			if rval.Equal(reflect.ValueOf(e.Value)) {
-				return enum, e
+			renumVal := reflect.ValueOf(e.Value)
+			if rval.Equal(renumVal) || isMultiSelect && zslices.ReflectIndexOf(rval, renumVal) != -1 {
+				sel = append(sel, e)
 			}
 		}
+		return enum, sel
 	}
-	return enum, zdict.Item{}
+	return enum, zdict.Items{}
 }
