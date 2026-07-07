@@ -278,7 +278,7 @@ func (AppCalls) CheckServeFilesExists(paths []string, existPaths *[]string) erro
 	return returnErr
 }
 
-func (AppCalls) GetTimeInfox(a struct{}, info *TimeInfo) error {
+func (AppCalls) GetTimeInfo(a struct{}, info *TimeInfo) error {
 	t := time.Now()
 	ServerTimezoneName, info.ZoneOffsetSeconds = t.Zone()
 	// zlog.Info("AppCall.GetTimeInfo:", t, ServerTimezoneName, info.ZoneOffsetSeconds)
