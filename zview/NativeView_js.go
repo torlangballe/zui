@@ -1052,6 +1052,8 @@ func (v *NativeView) setJSFunc(name string, isListener, isRemove bool, fn func(t
 			outFunc = f
 			if isListener {
 				v.JSCall("removeEventListener", nameEventPart, f)
+			} else {
+				v.JSSet(name, js.Null())
 			}
 			f.Release()
 		}
@@ -1067,6 +1069,8 @@ func (v *NativeView) setJSFunc(name string, isListener, isRemove bool, fn func(t
 		if isListener {
 			// zlog.Info("addEventListener", name, v.Hierarchy())
 			v.JSCall("addEventListener", nameEventPart, outFunc)
+		} else {
+			v.JSSet(name, outFunc)
 		}
 		v.jsFuncs[name] = outFunc
 	}
