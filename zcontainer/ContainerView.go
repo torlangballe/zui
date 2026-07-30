@@ -343,8 +343,9 @@ func (v *ContainerView) ArrangeChild(c Cell, r zgeo.Rect) zgeo.Rect {
 }
 
 func ContainerIsLoading(ct ChildrenOwner) bool {
-	// zlog.Info("ContainerIsLoading1", ct.(View).ObjectName(), len(ct.GetChildren(false)))
-	for _, v := range ct.GetChildren(false) {
+	// zlog.Info("ContainerIsLoading1", ct.(zview.View).ObjectName(), len(ct.GetChildren(false)))
+	for _, v := range ct.GetChildren(true) {
+		// zlog.Info("ContainerIsLoading Child", v.ObjectName())
 		iloader, got := v.(zimage.Loader)
 		if got {
 			loading := iloader.IsLoading()
@@ -357,7 +358,7 @@ func ContainerIsLoading(ct ChildrenOwner) bool {
 			// zlog.Info("CV Sub IsLoading:", v.ObjectName(), v.ObjectName(), ct != nil)
 			if ct != nil {
 				if ContainerIsLoading(ct) {
-					// zlog.Info("ContainerIsLoading sub loading", len(ct.GetChildren()))
+					// zlog.Info("ContainerIsLoading sub loading", len(ct.GetChildren(false)))
 					return true
 				}
 			}
@@ -377,7 +378,7 @@ func WhenContainerLoaded(ct ChildrenOwner, done func(waited bool)) {
 			return true
 		}
 		if done != nil {
-			// zlog.Info("Waited:", time.Since(start), ct.(View).ObjectName())
+			// zlog.Info("Waited:", time.Since(start), ct.(zview.View).ObjectName())
 			done(true)
 		}
 		return false

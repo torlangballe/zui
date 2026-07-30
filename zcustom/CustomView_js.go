@@ -56,9 +56,9 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 	if v.HasSize() {
 		s = v.Rect().Size
 	}
-	// zlog.Info("CV SetRect", r, rect)
 	v.NativeView.SetRect(r)
-	if v.canvas != nil && s != r.Size {
+	if s.Floor() != r.Size.Floor() {
+		v.makeCanvas()
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale()
 		v.setCanvasSize(s, scale)
@@ -100,6 +100,7 @@ func (v *CustomView) makeCanvas() {
 }
 
 func (v *CustomView) drawSelf() {
+	// zlog.Info("DrawSelf:", v.ObjectName(), v.drawing, IsPresentingFunc(), v.Parent() != nil, v.HasSize())
 	// v.canvas.SetColor(zgeo.ColorRandom())
 	// v.canvas.FillRect(v.LocalRect())
 	if !v.drawing && !IsPresentingFunc() && v.draw != nil && v.Parent() != nil && v.HasSize() { //&& v.exposed
