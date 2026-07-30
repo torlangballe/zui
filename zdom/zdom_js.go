@@ -102,10 +102,23 @@ func Resolve(val js.Value, done func(resolved js.Value, err error)) {
 		str := fmt.Sprint(args[0].Call("toString").String()) // ???
 		zlog.Info("CATCH!", str, args[0].String(), this)
 		if done != nil {
-			done(js.Undefined(), errors.New(str))
+			done(args[0], errors.New(str))
 		}
 		return nil
 	}))
+}
+
+func ResolveInPlace(val js.Value) (js.Value, error) {
+	done := make(chan struct{})
+	var resolved js.Value
+	var err error
+	Resolve(val, func(res js.Value, e error) {
+		resolved = res
+		err = e
+		close(done)
+	})
+	<-done
+	return resolved, err
 }
 
 func MakeSingleCallJSCallback(call func(this js.Value, args []js.Value) any) js.Func {
@@ -127,4 +140,39 @@ func ObjectKeys(obj js.Value) []string {
 		out = append(out, key.String())
 	}
 	return out
+}
+
+func DebugString(obj js.Value) string {
+	var out string
+	for _, key := range ObjectKeys(obj) {
+		val := obj.Get(key)
+		str := fmt.Sprint(val)
+		out += fmt.Sprintf("%s=%s\n", key, str)
+	}
+	return out
+}
+
+func ObjectToMap(obj js.Value) map[string]any {
+	out := make(map[string]any)
+	for _, key := range ObjectKeys(obj) {
+		out[key] = obj.Get(key).String()
+	}
+	return out
+}
+
+func ObjectToJSONString(obj js.Value) string {
+	return js.Global().Get("JSON").Call("stringify", obj).String()
+}
+
+// ForEach calls forEach on an an item. This is not the same as getting key/values from an object or items in an array. I think.
+func ForEach(item js.Value, got func(v js.Value)) {
+	jfunc := js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) == 0 {
+			return nil
+		}
+		got(args[0])
+		return nil
+	})
+	item.Call("forEach", jfunc)
+	jfunc.Release()
 }
