@@ -156,7 +156,6 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 }
 
 func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
-	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
 	has := strings.Contains(path, "{")
 	path = zstr.ReplaceInSquigglyBrackets(path, func(s string) string {
 		var pre string
@@ -222,6 +221,7 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 }
 
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
+	// zlog.Info("IV Draw:", v.ObjectName(), rect)
 	if rect.Size.Area() == 0 {
 		return
 	}
