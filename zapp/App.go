@@ -14,7 +14,6 @@ import (
 
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zprocess"
-	"github.com/torlangballe/zutil/ztime"
 )
 
 type App struct {
@@ -61,10 +60,6 @@ func Version() (string, float32, int) { // version string, version with comma 1.
 
 func Quit() {
 	os.Exit(-1)
-}
-
-func (a *App) GetRuntimeSecs() float64 {
-	return ztime.DurSeconds(time.Since(a.activationTime))
 }
 
 // New creates an app
