@@ -600,8 +600,12 @@ func setFromSingleKeyVal(f *Field, rval reflect.Value, kv zstr.KeyValue, params 
 		}
 	case "bgcolor":
 		scol := kv.Value
-		if len(barParts) == 2 && zstyle.Dark {
-			scol = barParts[1]
+		if len(barParts) == 2 {
+			if zstyle.Dark {
+				scol = barParts[1]
+			} else {
+				scol = barParts[0]
+			}
 		}
 		f.Styling.BGColor.SetFromString(scol)
 	case "download":
