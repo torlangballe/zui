@@ -202,7 +202,7 @@ func (a *Alert) Show(handle func(result Result)) {
 
 	stack := zcontainer.StackViewVert("alert")
 	stack.SetMargin(zgeo.RectFromXY2(borderMargin, borderMargin, -borderMargin, -borderMargin))
-	stack.SetBGColor(zgeo.ColorWhite)
+	stack.SetBGColor(zstyle.DefaultBGColor())
 
 	label := zlabel.New(a.Text)
 	label.SetFont(zgeo.FontNice(zgeo.FontDefaultSize, zgeo.FontStyleNormal))
