@@ -172,10 +172,6 @@ func (v *FieldView) Data() any {
 	return v.data
 }
 
-func (fp FieldViewParameters) IsRow() bool {
-	return zstr.StringsContain(fp.UseInValues, RowUseInSpecialName)
-}
-
 func (v *FieldView) IsRows() bool {
 	return v.params.IsRow()
 }

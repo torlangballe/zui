@@ -1227,7 +1227,7 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 		if f == nil {
 			return true
 		}
-		if f.HasFlag(FlagIsForZDebugOnly) && !zui.DebugOwnerMode {
+		if f.HasFlag(FlagIsForZDebugOnly) && (!zui.DebugOwnerMode || params.IsRow()) {
 			return true
 		}
 		if !params.IgnoreUseInAndINTags {
@@ -1391,4 +1391,8 @@ func GetEnumFromNameOrGetter(f *Field, enumName string, owner any, rval reflect.
 		return enum, sel
 	}
 	return enum, zdict.Items{}
+}
+
+func (fp FieldParameters) IsRow() bool {
+	return zstr.StringsContain(fp.UseInValues, RowUseInSpecialName)
 }
