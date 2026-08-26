@@ -124,7 +124,6 @@ func (r filesRedirector) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			for _, ext := range es {
 				wpath := fpath + ext
 				exists := zfile.CanOpenInFS(f.FS, wpath)
-				// zlog.Info("wasm?", wpath, exists, f.FSName)
 				if exists {
 					filesystem = f.FSName
 					fpath = wpath

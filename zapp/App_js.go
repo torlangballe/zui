@@ -12,7 +12,6 @@ import (
 	"github.com/torlangballe/zutil/zdebug"
 	"github.com/torlangballe/zutil/zdict"
 	"github.com/torlangballe/zutil/zerrors"
-	"github.com/torlangballe/zutil/zfile"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
@@ -89,8 +88,10 @@ func SetUIDefaults(rpcPort int) (path string, args map[string]string) {
 		zdebug.IsInTests = true // for testing gui
 	}
 	if rpcPort != 0 {
-		hostOnly := url.Hostname()
-		serverURL := zfile.JoinPathParts(hostOnly, zrest.AppURLPrefix)
+		serverURL := zrest.AppURLPrefix
+		if !strings.HasPrefix(serverURL, "/") {
+			serverURL = "/" + serverURL
+		}
 		xrpc.MainClientID = "zui-webclient-" + zstr.GenerateRandomHexBytes(14)
 		xrpc.SetupSimpleClient(rpcPort, serverURL, xrpc.MainClientID)
 		zdebug.HandleRestartFunc = guiRestartHandler
