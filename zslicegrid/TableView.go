@@ -344,6 +344,9 @@ func makeHeaderFields(fields []zfields.Field) []zheader.Header {
 				h.ImageSize = zgeo.SizeBoth(20)
 			}
 			h.ImagePath = f.HeaderImageFixedPath
+			if f.HasFlag(zfields.FlagDarkModeLighten) {
+				h.LightenForDarkMode = true
+			}
 		}
 		if f.Flags&(zfields.FlagHasHeaderImage|zfields.FlagNoTitle) == 0 {
 			if f.Header != "" {

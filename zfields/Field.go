@@ -147,6 +147,7 @@ const (
 	FlagDontLabelize             // When we are labelizing items, use full space with no label for this one.
 	FlagOmitZero                 // Like for json, skip an item if it is zero, but only if static
 	FlagEmptyEnum                // Is set if enum tag with no value, if struct is an EnumGetter, that is used.
+	FlagDarkModeLighten          // If set, the image is lightened in dark mode, to make it more visible.
 )
 
 const (
@@ -821,6 +822,11 @@ func setFromSingleKeyVal(f *Field, rval reflect.Value, kv zstr.KeyValue, params 
 		var size zgeo.Size
 		var path string
 		for _, part := range barParts {
+			if part == "dlight" {
+				zlog.Info("Setting dark mode lighten for image:", f.FieldName)
+				f.SetFlag(FlagDarkModeLighten)
+				continue
+			}
 			var s zgeo.Size
 			s, err := zgeo.SizeFromString(part)
 			if err == nil {

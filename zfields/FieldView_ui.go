@@ -1639,6 +1639,9 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 	if f.Styling.FGColor.Valid {
 		iv.EmptyColor = f.Styling.FGColor
 	}
+	if f.HasFlag(FlagDarkModeLighten) {
+		iv.MixColorForDarkMode = DarkModeWhiten
+	}
 	if f.HasFlag(FlagIsURL) {
 		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			surl := ReplaceDoubleSquiggliesWithFields(v, f, f.Path)
@@ -1812,8 +1815,8 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 	if !f.Size.IsNull() {
 		size = f.Size
 	}
-	actions := zimageview.NewWithCachedPath("images/zcore/gear.png", size)
-	actions.MixColorForDarkMode = zgeo.ColorNewGray(0.5, 1)
+	actions := zimageview.NewWithCachedPath("images/zcore/gear-gray.png", size)
+	actions.MixColorForDarkMode = DarkModeWhiten
 	actions.DownsampleImages = true
 	menu := zmenu.NewMenuedOwner()
 	menu.Build(actions, nil) // do we need to do this?

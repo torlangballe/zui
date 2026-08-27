@@ -203,7 +203,6 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		if v.Options&AddBarInHeader != 0 || zstyle.Dark {
 			name = "gear-white"
 		}
-		zlog.Info("gear:", name)
 		actions := zimageview.NewWithCachedPath("images/zcore/"+name+".png", zgeo.SizeD(18, 18))
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true

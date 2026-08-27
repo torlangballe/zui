@@ -36,15 +36,16 @@ type Header struct {
 	Align     zgeo.Alignment
 	Justify   zgeo.Alignment
 	// Height         float64
-	ImagePath        string
-	MinWidth         float64
-	MaxWidth         float64
-	ImageSize        zgeo.Size
-	Tip              string
-	SortSmallFirst   zbool.BoolInd
-	ShowIfExtraSpace bool
-	SortPriority     int
-	Lockable         bool
+	ImagePath          string
+	LightenForDarkMode bool
+	MinWidth           float64
+	MaxWidth           float64
+	ImageSize          zgeo.Size
+	Tip                string
+	SortSmallFirst     zbool.BoolInd
+	ShowIfExtraSpace   bool
+	SortPriority       int
+	Lockable           bool
 }
 
 type HeaderView struct {
@@ -196,6 +197,9 @@ func (v *HeaderView) Populate(headers []Header) {
 		button.SetTextAlignment(j)
 		if h.ImagePath != "" {
 			iv := zimageview.NewWithCachedPath(h.ImagePath, h.ImageSize)
+			if h.LightenForDarkMode {
+				iv.MixColorForDarkMode = zfields.DarkModeWhiten
+			}
 			iv.SetMinSize(h.ImageSize)
 			iv.SetObjectName(h.FieldName + ".image")
 			button.Add(iv, zgeo.Center, zgeo.SizeNull)
