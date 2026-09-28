@@ -57,7 +57,7 @@ func (v *NativeView) Font() *zgeo.Font                                       { r
 func (v *NativeView) SetText(text string)                                    {}
 func (v *NativeView) Text() string                                           { return "" }
 func (v *NativeView) InsertBefore(before View)                               {}
-func (v *NativeView) AddChild(child View, index int)                         {}
+func (v *NativeView) AddChild(child, before View)                            {}
 func (v *NativeView) RemoveChild(child View)                                 {}
 func (v *NativeView) SetDropShadow(shadow zstyle.DropShadow)                 {}
 func (v *NativeView) SetToolTip(str string)                                  {}
