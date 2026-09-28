@@ -424,6 +424,24 @@ func (v *FieldView) Update(data any, dontOverwriteEdited, forceUpdateOnFieldSlic
 	}
 }
 
+func (v *FieldView) SetValueOfNamedField(name string, value any) {
+	view, _ := v.FindViewWithName(name, true)
+	if zlog.ErrorIf(view == nil, name, v.Hierarchy()) {
+		return
+	}
+	tv, _ := view.(*ztext.TextView)
+	if tv != nil {
+		tv.SetText(value.(string))
+		return
+	}
+	mv, _ := view.(*zmenu.MenuView)
+	if mv != nil {
+		mv.SelectWithValue(value.(string))
+		return
+	}
+	zlog.Fatal("SetValueForNamedField: unsupported view type for field:", name, v.Hierarchy())
+}
+
 func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited, forceUpdateOnFieldSlice bool) bool {
 	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
 	var valStr string
@@ -968,15 +986,17 @@ func FieldViewNew(id string, data any, params FieldViewParameters) *FieldView {
 // }
 
 func (v *FieldView) Rebuild() {
-	// zlog.Info("FV.Rebuild:", v.data != nil, reflect.ValueOf(v.data).Kind())
 	fview := FieldViewNew(v.ID, v.data, v.params)
 	fview.Build(true)
-	rep, _ := v.Parent().View.(zview.ChildReplacer)
-	if rep != nil {
-		rep.ReplaceChild(v, fview)
+	for _, c := range v.GetChildren(true) {
+		v.RemoveChild(c, true)
 	}
-	toModalWindowRootOnly := false
-	zcontainer.ArrangeChildrenAtRootContainer(v, toModalWindowRootOnly)
+	for _, c := range fview.GetChildren(true) {
+		fview.NativeView.RemoveChild(c, true)
+		v.AddChild(c, nil)
+	}
+	v.Cells = fview.Cells // Use fview's cells that point to new views
+	v.ArrangeChildren()
 }
 
 func (v *FieldView) CallFieldAction(fieldID string, action ActionType, fieldValue interface{}) {
@@ -1619,7 +1639,7 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 	if f.IsStatic() {
 		cv.SetUsable(false)
 	}
-	if !v.params.Field.HasFlag(FlagIsLabelize) && !v.IsRows() {
+	if !v.IsRows() && (!v.params.Field.HasFlag(FlagIsLabelize) || f.HasFlag(FlagDontLabelize)) {
 		title := f.TitleOrName()
 		if f.HasFlag(FlagNoTitle) {
 			title = ""
@@ -1979,7 +1999,6 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	if rval.Kind() == reflect.Interface {
 		rval = rval.Elem()
 	}
-	// 	zlog.Info("BuildItem:", f.Name, f.Size, f.Flags, f.ImageFixedPath)
 	if !f.Margin.IsNull() {
 		cellMargin = f.Margin
 	}
