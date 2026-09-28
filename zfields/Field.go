@@ -1244,6 +1244,18 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 				return strings.HasPrefix(s, "$")
 			})
 			// zlog.Info("useDollar1:", each.StructField.Name, hasDollar, useDollar, "Plain:", hasPlain, usePlain)
+			if len(usePlain) != 0 {
+				for _, u := range zslices.Copy(usePlain) {
+					var rest string
+					if zstr.HasPrefix(u, "!", &rest) {
+						// zlog.Info("usePlain2:", each.StructField.Name, hasPlain, rest)
+						if zstr.StringsContain(hasPlain, rest) {
+							return true
+						}
+						zstr.RemoveFromSet(&usePlain, u)
+					}
+				}
+			}
 			if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
 				return true
 			}
