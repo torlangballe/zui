@@ -662,7 +662,6 @@ func (v *ContainerView) DetachChild(subView zview.View) {
 }
 
 func (v *ContainerView) ReplaceChild(child, with zview.View) {
-	// zlog.Info("CV ReplaceChild:", v.Hierarchy())
 	c, _ := v.FindCellWithView(child)
 	if c == nil {
 		zlog.Error("CV ReplaceChild: old not found:", child.Native().Hierarchy(), "in:", v.Hierarchy(), zdebug.CallingStackString())
