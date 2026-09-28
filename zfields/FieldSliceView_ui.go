@@ -42,7 +42,7 @@ type FieldSliceView struct {
 }
 
 func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
-	vert := !f.Vertical.Bool()
+	vert := f.Vertical.Bool()
 	v := &FieldSliceView{}
 	v.data = slicePtr
 	rt := reflect.ValueOf(slicePtr)
@@ -63,10 +63,9 @@ func (fv *FieldView) NewSliceView(slicePtr any, f *Field) *FieldSliceView {
 
 	// _, isDict := slice.Rval.
 	v.isCompositeItems = (kind == reflect.Struct || kind == reflect.Slice)
-	if !v.isCompositeItems && inMapRows == 0 {
+	if !v.isCompositeItems && inMapRows == 0 && f.Vertical.IsUnknown() {
 		v.params.Field.ClearFlag(FlagIsLabelize)
 		vert = false
-		// zlog.Info("NewSliceView2", fv.ObjectName(), kind, f.Name, vert)
 	}
 	v.Init(v, vert, f.FieldName)
 	v.field = f
