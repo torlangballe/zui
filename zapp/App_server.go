@@ -9,6 +9,7 @@ package zapp
 import (
 	"embed"
 	"fmt"
+	"html/template"
 	"io"
 	"io/fs"
 	"mime"
@@ -31,6 +32,7 @@ import (
 	"github.com/torlangballe/zutil/znamedfuncs"
 	"github.com/torlangballe/zutil/zrest"
 	"github.com/torlangballe/zutil/zstr"
+	"github.com/torlangballe/zutil/ztelemetry"
 	"github.com/torlangballe/zutil/ztime"
 )
 
@@ -56,6 +58,7 @@ var (
 	CanBrotlyFunc               func(req *http.Request) bool
 	HandleGUIErrorFunc          func(ci *znamedfuncs.ClientInfo, ce zerrors.ContextError, dict zdict.Dict)
 	DefaultWasmPath             string = "main.wasm"
+	DocsFuncMap                        = template.FuncMap{}
 )
 
 func Init(executor znamedfuncs.Executioner) {
@@ -234,8 +237,11 @@ func SetVerboseLogHandler(router *mux.Router) {
 func MakeMarkdownConverter() zmarkdown.MarkdownConverter {
 	var m zmarkdown.MarkdownConverter
 	m.Variables = GetDocumentationValues()
+	m.FuncMap = DocsFuncMap
+	m.FuncMap["ZTelemetryMD"] = ztelemetry.GetDocumentationMD
 	m.Dir = "www/doc/"
 	m.FileSystem = AllWebFS
+
 	m.HeaderMD = InlineDocumentationHeaderMD + "\n"
 	m.PartNames = []string{"zusers_shared.md"}
 	return m
