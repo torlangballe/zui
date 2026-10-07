@@ -135,7 +135,7 @@ func ArrangeAncestorContainer(view zview.View) {
 		zlog.Error("no parent arranger", view.Native().Hierarchy(), zdebug.CallingStackString())
 		return
 	}
-	a.ArrangeChildren()
+	ArrangeChildrenOptimized(a.(zview.View))
 }
 
 func FindAncestorArranger(view zview.View) Arranger {
@@ -857,4 +857,14 @@ func (v *ContainerView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 		}
 	}
 	return false
+}
+
+func ArrangeChildrenOptimized(v zview.View) {
+	// a, _ := v.(Arranger)
+	// zlog.Assert(a != nil)
+	// v.Native().SetJSStyle("display", "none")
+	// start := time.Now()
+	a.ArrangeChildren()
+	// zlog.Info("ArrangeChildrenOptimized done:", v.Native().Hierarchy(), "took:", time.Since(start))
+	// v.Native().SetJSStyle("display", "")
 }

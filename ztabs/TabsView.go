@@ -16,7 +16,6 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslices"
-	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -202,6 +201,11 @@ func (v *TabsView) SelectItem(id string, done func()) bool {
 }
 
 func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) bool {
+	zlog.Info("SelectOrReloadItem", id)
+	prof := zlog.NewProfile(0.1, "Tabs.Load")
+	prof.Log("start")
+	defer prof.End("End")
+
 	ni := v.FindItem(id)
 	if ni == -1 {
 		return false
@@ -253,19 +257,24 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 	if v.currentChild.Native().CanTabFocus() {
 		marg = zgeo.SizeBoth(3)
 	}
+	prof.Log("Before add")
 	v.Add(v.currentChild, zgeo.Center|zgeo.Expand, marg)
-	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
-	arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
+	prof.Log("After add")
+	// hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
+	// arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
+	// v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 	if v.IsPresented() {
+		prof.Log("Before arrange")
 		zcontainer.ArrangeAncestorContainer(v)
 	}
+	prof.Log("After Ancestor")
 	if v.ChangedHandlerFunc != nil {
 		v.ChangedHandlerFunc(id)
 	}
 	if done != nil {
 		done()
 	}
+	prof.Log("After done")
 	ztimer.StartIn(0.02, func() {
 		v.SetRootYContentOffset(0) // in case old tab's view caused scroll offset, set back to 0
 	})
