@@ -1205,39 +1205,48 @@ type FieldInfo struct {
 }
 
 func ForEachField(structure any, params FieldParameters, fields []Field, got func(each FieldInfo) bool) {
-	if len(fields) == 0 {
-		zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
-			f := EmptyField
+	var fis []FieldInfo
+	addFields := (len(fields) == 0)
+	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		var f *Field
+		if addFields {
+			f = new(EmptyField)
 			if !f.SetFromRValAndStructField(each.ReflectValue, each.StructField, each.FieldIndex, params) {
 				return true
 			}
-			fields = append(fields, f)
-			return true
-		})
-	}
-	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
-		f := findFieldWithIndex(&fields, each.FieldIndex)
-		if f == nil {
-			return true
+		} else {
+			f = findFieldWithIndex(&fields, each.FieldIndex)
+			if f == nil {
+				return true // might be zui:"-" etc
+			}
 		}
-		if f.HasFlag(FlagIsUseInValue) {
-			zstr.AddToSet(&params.UseInValues, fmt.Sprint(each.ReflectValue.Interface()))
-		}
+		fis = append(fis, FieldInfo{FieldInfo: each, Field: f})
 		return true
 	})
-	zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
-		if zstr.IndexOf(each.StructField.Name, params.SkipFieldNames) != -1 {
-			return true
+	for _, fi := range fis {
+		// zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		// 	f := findFieldWithIndex(&fields, each.FieldIndex)
+		// 	if f == nil {
+		// 		return true
+		// 	}
+		if fi.Field.HasFlag(FlagIsUseInValue) {
+			zstr.AddToSet(&params.UseInValues, fmt.Sprint(fi.FieldInfo.ReflectValue.Interface()))
 		}
-		f := findFieldWithIndex(&fields, each.FieldIndex)
-		if f == nil {
-			return true
+	}
+	for _, fi := range fis {
+		// zreflect.ForEachField(structure, FlattenIfAnonymousOrZUITag, func(each zreflect.FieldInfo) bool {
+		if zstr.IndexOf(fi.FieldInfo.StructField.Name, params.SkipFieldNames) != -1 {
+			continue
 		}
-		if f.HasFlag(FlagIsForZDebugOnly) && (!zui.DebugOwnerMode || params.IsRow()) {
-			return true
+		// f := findFieldWithIndex(&fields, each.FieldIndex)
+		// if f == nil {
+		// 	return true
+		// }
+		if fi.Field.HasFlag(FlagIsForZDebugOnly) && (!zui.DebugOwnerMode || params.IsRow()) {
+			continue
 		}
 		if !params.IgnoreUseInAndINTags {
-			useDollar, usePlain := zslices.SplitWithFunc(f.UseIn, func(s string) bool {
+			useDollar, usePlain := zslices.SplitWithFunc(fi.Field.UseIn, func(s string) bool {
 				return strings.HasPrefix(s, "$")
 			})
 			hasDollar, hasPlain := zslices.SplitWithFunc(params.UseInValues, func(s string) bool {
@@ -1250,14 +1259,14 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 					if zstr.HasPrefix(u, "!", &rest) {
 						// zlog.Info("usePlain2:", each.StructField.Name, hasPlain, rest)
 						if zstr.StringsContain(hasPlain, rest) {
-							return true
+							continue
 						}
 						zstr.RemoveFromSet(&usePlain, u)
 					}
 				}
 			}
 			if len(usePlain) != 0 && !zstr.SlicesIntersect(usePlain, hasPlain) {
-				return true
+				continue
 			}
 			// zlog.Info("useDollar:", each.StructField.Name, useDollar, "hasDollar:", hasDollar, params.UseInValues)
 			if len(useDollar) != 0 {
@@ -1267,21 +1276,23 @@ func ForEachField(structure any, params FieldParameters, fields []Field, got fun
 						rest = "$" + rest
 						// zlog.Info("useDollar2:", each.StructField.Name, hasDollar, rest)
 						if zstr.StringsContain(hasDollar, rest) {
-							return true
+							continue
 						}
 						zstr.RemoveFromSet(&useDollar, u)
 					}
 				}
 			}
 			if len(useDollar) != 0 && !zstr.SlicesIntersect(useDollar, hasDollar) {
-				return true
+				continue
 			}
 		}
-		var finfo FieldInfo
-		finfo.FieldInfo = each
-		finfo.Field = f
-		return got(finfo)
-	})
+		// var finfo FieldInfo
+		// finfo.FieldInfo = each
+		// finfo.Field = f
+		if !got(fi) {
+			break
+		}
+	}
 }
 
 func FindIndicatorOfSlice(slicePtr any) string {
