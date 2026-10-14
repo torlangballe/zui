@@ -100,7 +100,6 @@ func ViewStructAnySlice(structSlicePtr any, params FieldViewParameters, title st
 
 func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
 	sliceVal := reflect.ValueOf(structSlicePtr)
-	// zlog.Info("PresentEditOrViewStructAnySlice:", sliceVal.Type())
 	if sliceVal.Kind() == reflect.Pointer {
 		sliceVal = sliceVal.Elem()
 	}
@@ -307,7 +306,6 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 					}
 					return true
 				}
-				// zlog.Info("each.ReflectValue:", each.Field.Name, each.ReflectValue.Interface())
 				//				if !(origFieldReflectValue.IsZero() && each.ReflectValue.IsZero()) || sliceLength == 1 || isCheck {
 				if (!each.ReflectValue.IsZero() || wasAllNotZero[each.StructField.Name]) || sliceLength == 1 || isCheck {
 					for i := 0; i < sliceLength; i++ {

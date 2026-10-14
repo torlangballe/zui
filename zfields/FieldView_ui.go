@@ -443,7 +443,7 @@ func (v *FieldView) SetValueOfNamedField(name string, value any) {
 }
 
 func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.StructField, dontOverwriteEdited, forceUpdateOnFieldSlice bool) bool {
-	// zlog.Info("updateField:", v.Hierarchy(), sf.Name)
+	// zlog.Info("updateField:", v.Hierarchy(), sf.Name, rval.Interface())
 	var valStr string
 	f := findFieldWithIndex(&v.Fields, index)
 	if f == nil {
@@ -503,6 +503,29 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 		return true
 	}
 
+	if f.HasFlag(FlagShowPopup) {
+		titler, _ := foundView.(ztext.TextOwner)
+		if titler != nil {
+			ForEachField(rval.Interface(), FieldParameters{}, nil, func(each FieldInfo) bool {
+				tags, skip := each.TagKeyValuesForKey("zui")
+				if !skip {
+					_, i := zstr.KeyValuesFindForKey(tags, "enabler")
+					if i != -1 {
+						on := !each.ReflectValue.IsZero()
+						str := "Edit"
+						if f.IsStatic() {
+							str = "View"
+						}
+						if on {
+							str = "✓ " + str
+						}
+						titler.SetText(str)
+					}
+				}
+				return true
+			})
+		}
+	}
 	menuType, _ := foundView.(zmenu.MenuType)
 	if menuType == nil {
 		o := zmenu.OwnerForView(foundView)
@@ -629,7 +652,7 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 
 	case zreflect.KindBool:
 		if f.Flags&FlagIsImage != 0 && f.IsImageToggle() && rval.Kind() == reflect.Bool {
-			iv, _ := foundView.(*zimageview.ImageView) // it might be a button or something instead
+			iv, _ := foundView.(*zimageview.XImageView) // it might be a button or something instead
 			path := f.OffImagePath
 			val, _ := v.fieldToDataItem(f, iv)
 			on := val.Bool()
@@ -1651,16 +1674,18 @@ func (v *FieldView) makeCheckbox(f *Field, b zbool.BoolInd) zview.View {
 }
 
 func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
-	iv := zimageview.NewWithCachedPath("", f.Size)
+	// iv := zimageview.NewWithCachedPath("", f.Size)
+	iv := zimageview.XNew(f.FieldName, "", f.Size)
+
 	iv.DownsampleImages = true
 	iv.SetMinSize(f.Size)
 	iv.SetObjectName(f.FieldName)
 	iv.OpaqueDraw = (f.Flags&FlagIsOpaque != 0)
 	if f.Styling.FGColor.Valid {
-		iv.EmptyColor = f.Styling.FGColor
+		// iv.EmptyColor = f.Styling.FGColor
 	}
 	if f.HasFlag(FlagDarkModeLighten) {
-		iv.MixColorForDarkMode = DarkModeWhiten
+		iv.SetLightenAmountInDarkMode(0.5)
 	}
 	if f.HasFlag(FlagIsURL) {
 		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
@@ -1835,9 +1860,10 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 	if !f.Size.IsNull() {
 		size = f.Size
 	}
-	actions := zimageview.NewWithCachedPath("images/zcore/gear-gray.png", size)
-	actions.MixColorForDarkMode = DarkModeWhiten
-	actions.DownsampleImages = true
+	actions := zimageview.XNew("actionMenuX", "images/zcore/gear-gray.png", size)
+	actions.SetLightenAmountInDarkMode(0.5)
+	// actions.MixColorForDarkMode = DarkModeWhiten
+	// actions.DownsampleImages = true
 	menu := zmenu.NewMenuedOwner()
 	menu.Build(actions, nil) // do we need to do this?
 	menu.CreateItemsFunc = func() []zmenu.MenuedOItem {
@@ -2336,28 +2362,48 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	return view
 }
 
-func (fv *FieldView) freshRValue(fieldName string) reflect.Value {
+func (fv *FieldView) freshRValue(fieldName string) (reflect.Value, reflect.StructField) {
 	finfo, found := zreflect.FieldForName(fv.data, FlattenIfAnonymousOrZUITag, fieldName)
 	zlog.Assert(found, fieldName)
-	return finfo.ReflectValue
+	return finfo.ReflectValue, finfo.StructField
 }
 
 func (fv *FieldView) popupContent(target zview.View, f *Field) bool {
-	rval := fv.freshRValue(f.FieldName)
+	rval, structField := fv.freshRValue(f.FieldName)
 	a := rval.Interface()
-	str := fmt.Sprint(a)
 	zs, _ := a.(UIStringer)
+	str := fmt.Sprint(a)
+	var set bool
 	if zs != nil {
 		str = zs.ZUIString(f.HasFlag(FlagAllowEmptyAsZero))
+		set = true
+	} else {
+		d, _ := a.(zstr.Describer)
+		if d != nil {
+			set = true
+			desc := d.GetDescription()
+			str = zstr.Concat("\n", str, desc)
+		}
 	}
-	d, _ := a.(zstr.Describer)
-	if d != nil {
-		desc := d.GetDescription()
-		str = zstr.Concat("\n", str, desc)
-	}
-	// zlog.Info("popupContent:", str)
-	if str == "" {
-		return false
+	if !set && rval.Kind() == reflect.Struct {
+		att := zpresent.ModalConfirmAttributes()
+		att.PlaceOverView = target
+		att.Alignment = zgeo.TopLeft
+		params := fv.params
+		params.Field.MergeInField(f)
+		// params.Field.SetFlag(FlagIsLabelize)
+		title := f.Name
+		if !f.IsStatic() {
+			title = "Edit " + title
+		}
+		EditOrViewStruct(rval.Addr().Interface(), f.IsStatic(), params, title, att, func(ok bool) (close bool) {
+			if ok {
+				fv.updateField(f.Index, rval, structField, false, false)
+				zlog.Info("Update:", zlog.Pointer(fv.data), zlog.Pointer(rval.Addr().Interface()), reflect.TypeOf(rval.Addr().Interface()), rval.Addr().Interface())
+			}
+			return true
+		})
+		return true
 	}
 	att := zpresent.AttributesDefault()
 	att.Alignment = zgeo.TopLeft // | zgeo.HorOut
@@ -2521,6 +2567,10 @@ func (v *FieldView) fieldToDataItem(f *Field, view zview.View) (value reflect.Va
 			return
 		}
 		_, got := view.(*zimageview.ImageView)
+		if got {
+			break
+		}
+		_, got = view.(*zimageview.XImageView)
 		if got {
 			break
 		}
@@ -2729,12 +2779,14 @@ func ViewStruct[S any](structPtr *S, params FieldViewParameters, title string, a
 	EditOrViewStruct(structPtr, true, params, title, att, done)
 }
 
-func EditOrViewStruct[S any](structPtr *S, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
-	slice := []S{*structPtr}
-	EditOrViewStructSlice(&slice, isReadOnly, params, title, att, func(ok bool) (close bool) {
-		// zlog.Info("PresentOKCancelStruct:", ok, slice[0])
+// func EditOrViewStruct[S any](structPtr *S, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+func EditOrViewStruct(structPtr any, isReadOnly bool, params FieldViewParameters, title string, att zpresent.Attributes, done func(ok bool) (close bool)) {
+	e := reflect.ValueOf(structPtr).Elem()
+	slice := zslices.MakeEmptyRValSliceOfElement(e)
+	zslices.RValAddAtEnd(slice.Addr(), e)
+	EditOrViewStructAnySlice(slice.Interface(), isReadOnly, params, title, att, func(ok bool) (close bool) {
 		if ok {
-			*structPtr = slice[0]
+			e.Set(slice.Index(0))
 		}
 		return done(ok)
 	})
