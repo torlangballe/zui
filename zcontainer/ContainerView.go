@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/torlangballe/zui/zcustom"
 	"github.com/torlangballe/zui/zdocs"
@@ -390,7 +391,6 @@ func (v *ContainerView) ArrangeChildren() {
 }
 
 func (v *ContainerView) ArrangeAdvanced(freeOnly bool) {
-	// zlog.Info("*********** ContainerView.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells))
 	layouter, _ := v.View.(zview.Layouter)
 	if layouter != nil {
 		layouter.HandleBeforeLayout()
@@ -860,11 +860,11 @@ func (v *ContainerView) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 }
 
 func ArrangeChildrenOptimized(v zview.View) {
-	// a, _ := v.(Arranger)
-	// zlog.Assert(a != nil)
-	// v.Native().SetJSStyle("display", "none")
-	// start := time.Now()
+	a := v.(Arranger)
+	start := time.Now()
+	v.Native().SetJSStyle("display", "none")
+	zlog.Info("ArrangeChildrenOptimized	start")
 	a.ArrangeChildren()
-	// zlog.Info("ArrangeChildrenOptimized done:", v.Native().Hierarchy(), "took:", time.Since(start))
-	// v.Native().SetJSStyle("display", "")
+	v.Native().SetJSStyle("display", "")
+	zlog.Info("ArrangeChildrenOptimized done:", v.Native().Hierarchy(), "took:", time.Since(start))
 }

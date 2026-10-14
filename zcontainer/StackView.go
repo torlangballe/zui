@@ -293,7 +293,7 @@ func (v *StackView) getGridLayoutRow(total zgeo.Size) (row []zgeo.LayoutCell, he
 }
 
 func (v *StackView) ArrangeChildren() {
-	// zlog.Info("*********** Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v))
+	// zlog.Info("Stack.ArrangeChildren:", v.Hierarchy(), v.Rect(), len(v.Cells), reflect.TypeOf(v))
 	// zlog.PushProfile(v.ObjectName())
 	rm := v.LocalRect().Plus(v.Margin())
 	if v.GridVerticalSpace != zfloat.Undefined {
