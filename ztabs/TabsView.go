@@ -16,6 +16,7 @@ import (
 	"github.com/torlangballe/zutil/zkeyvalue"
 	"github.com/torlangballe/zutil/zlog"
 	"github.com/torlangballe/zutil/zslices"
+	"github.com/torlangballe/zutil/zstr"
 	"github.com/torlangballe/zutil/ztimer"
 )
 
@@ -201,7 +202,6 @@ func (v *TabsView) SelectItem(id string, done func()) bool {
 }
 
 func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) bool {
-	zlog.Info("SelectOrReloadItem", id)
 	prof := zlog.NewProfile(0.1, "Tabs.Load")
 	prof.Log("start")
 	defer prof.End("End")
@@ -260,9 +260,9 @@ func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, d
 	prof.Log("Before add")
 	v.Add(v.currentChild, zgeo.Center|zgeo.Expand, marg)
 	prof.Log("After add")
-	// hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
-	// arrange := true // don't arrange on collapse, as it is done below, or on present, and causes problems if done now
-	// v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
+	hasSeparator := zstr.StringsContain(v.separatorForIDs, id)
+	arrange := false
+	v.CollapseChildWithName(tabSeparatorID, !hasSeparator, arrange)
 	if v.IsPresented() {
 		prof.Log("Before arrange")
 		zcontainer.ArrangeAncestorContainer(v)
