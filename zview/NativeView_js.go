@@ -28,6 +28,7 @@ type baseNativeView struct {
 	transparency float32
 	parent       *NativeView
 	jsFuncs      map[string]js.Func
+	rect         zgeo.Rect
 }
 
 type AddHandler interface {
@@ -111,42 +112,73 @@ func (v *NativeView) Native() *NativeView {
 }
 
 func (v *NativeView) SetTop(top float64) {
+	if v.rect.Pos.Y == top {
+		return
+	}
+	v.rect.Pos.Y = top
 	v.SetJSStyle("top", fmt.Sprintf("%fpx", top))
 }
 
 func (v *NativeView) SetLeft(left float64) {
+	if v.rect.Pos.X == left {
+		return
+	}
+	v.rect.Pos.X = left
 	v.SetJSStyle("left", fmt.Sprintf("%fpx", left))
 }
 
 func (v *NativeView) SetWidth(w float64) {
+	if v.rect.Size.W == w {
+		return
+	}
+	v.rect.Size.W = w
 	v.SetJSStyle("width", fmt.Sprintf("%fpx", w))
 }
 
 func (v *NativeView) SetHeight(h float64) {
+	if v.rect.Size.H == h {
+		return
+	}
+	v.rect.Size.H = h
 	v.SetJSStyle("height", fmt.Sprintf("%fpx", h))
 }
 
 func (v *NativeView) SetPos(pos zgeo.Pos) {
+	if v.rect.Pos == pos {
+		return
+	}
+	v.rect.Pos = pos
 	style := v.JSGet("style")
 	style.Set("left", fmt.Sprintf("%fpx", pos.X))
 	style.Set("top", fmt.Sprintf("%fpx", pos.Y))
 }
 
 func (v *NativeView) SetSize(size zgeo.Size) {
+	if v.rect.Size == size {
+		return
+	}
+	v.rect.Size = size
 	style := v.JSGet("style")
 	style.Set("width", fmt.Sprintf("%fpx", size.W))
 	style.Set("height", fmt.Sprintf("%fpx", size.H))
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
+	rect = rect.ExpandedToInt()
+	if v.rect == rect {
+		return
+	}
 	if rect.Pos.Y < -50 {
 		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}
-	rect = rect.ExpandedToInt()
+	v.rect = rect
 	SetElementRect(v.Element, rect)
 }
 
 func (v *NativeView) HasSize() bool {
+	if v.rect.IsNull() {
+		return false
+	}
 	if v.JSStyle().Get("width").String() == "" {
 		return false
 	}
@@ -170,17 +202,6 @@ func (v *NativeView) parseElementCoord(value js.Value) float64 {
 	return 0
 }
 
-func (v *NativeView) Rect() zgeo.Rect {
-	var pos zgeo.Pos
-	style := v.JSStyle()
-	// pos.X = v.Element.Get("offsetLeft").Float()
-	// pos.Y = v.Element.Get("offsetTop").Float()
-	pos.X = v.parseElementCoord(style.Get("left"))
-	pos.Y = v.parseElementCoord(style.Get("top"))
-	size := v.LocalRect().Size
-	return zgeo.Rect{Pos: pos, Size: size}
-}
-
 func SetElementRect(e js.Value, rect zgeo.Rect) {
 	style := e.Get("style")
 	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
@@ -193,19 +214,29 @@ func (v *NativeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	return zgeo.SizeD(10, 10), zgeo.Size{}
 }
 
-func (v *NativeView) LocalRect() zgeo.Rect {
-	var w, h float64
-	style := v.JSStyle()
-	sw := style.Get("width")
-	sh := style.Get("height")
-	if sw.String() != "" {
-		h = v.parseElementCoord(sh)
-		w = v.parseElementCoord(sw)
-	} else if v.IsPresented() {
-		zlog.Error("parse empty Coord:", style.Get("left"), style.Get("right"), sw, sh, v.Hierarchy(), zdebug.CallingStackString())
+func (v *NativeView) Rect() zgeo.Rect {
+	if !v.rect.IsNull() {
+		return v.rect
 	}
+	var r zgeo.Rect
+	style := v.JSStyle()
+	r.Pos.X = v.parseElementCoord(style.Get("left"))
+	r.Pos.Y = v.parseElementCoord(style.Get("top"))
+	r.Size.W = v.parseElementCoord(style.Get("width"))
+	r.Size.H = v.parseElementCoord(style.Get("height"))
+	v.rect = r
+	return r
+}
 
-	return zgeo.RectMake(0, 0, w, h)
+func (v *NativeView) LocalRect() zgeo.Rect {
+	var r zgeo.Rect
+	if !v.rect.IsNull() {
+		r = v.rect
+	} else {
+		r = v.Rect()
+	}
+	r.Pos = zgeo.Pos{}
+	return r
 }
 
 func (v *NativeView) SetLocalRect(rect zgeo.Rect) {
