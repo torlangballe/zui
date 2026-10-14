@@ -1,8 +1,13 @@
 package zstyle
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/torlangballe/zui/zview"
+	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zkeyvalue"
+	"github.com/torlangballe/zutil/zstr"
 )
 
 func init() {
@@ -39,4 +44,40 @@ func SetStyling(v zview.View, style Styling) {
 			m.SetMargin(style.Margin)
 		}
 	}
+}
+
+func ChangedImagePathBasedOnDarkTags(path string) string {
+	if !strings.Contains(path, "{") {
+		return path
+	}
+	path = zstr.ReplaceInSquigglyBrackets(path, func(s string) string {
+		var pre string
+		if zstr.HasSuffix(s, "dark", &pre) {
+			if Dark {
+				return pre + "4dark"
+			}
+			return pre + "4light"
+		}
+		if zstr.HasSuffix(s, "dark?", &pre) {
+			if Dark {
+				return pre + "4dark"
+			} else {
+				return ""
+			}
+		}
+		return "<?>"
+	})
+	return path
+}
+
+func SetStyleAs9Slice(v *zview.NativeView, imagePath string, capInset zgeo.Size) {
+	path := ChangedImagePathBasedOnDarkTags(imagePath)
+	v.SetJSStyle("box-sizing", "border-box")
+	v.SetJSStyle("border-style", "solid")
+	v.SetJSStyle("border-width", "0")                                                    // need to set this to 0 and border-image-source to not have children offset
+	v.SetJSStyle("border-image-width", fmt.Sprintf("%gpx %gpx", capInset.H, capInset.W)) // top/bottom, left/right
+	v.SetJSStyle("border-image-source", fmt.Sprintf(`url("%s")`, path))
+	v.SetJSStyle("border-image-slice", fmt.Sprintf("%g %g fill", capInset.H, capInset.W))
+	// v.SetJSStyle("border-image-repeat", "round") //  maybe this is better sometimes?
+	// v.SetJSStyle("image-rendering", "auto") // and this?
 }

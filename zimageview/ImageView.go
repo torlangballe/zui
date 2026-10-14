@@ -4,7 +4,6 @@ package zimageview
 
 import (
 	"path"
-	"strings"
 
 	"github.com/torlangballe/zui/zcanvas"
 	"github.com/torlangballe/zui/zcontainer"
@@ -155,28 +154,8 @@ func (v *ImageView) SetAlignment(a zgeo.Alignment) {
 }
 
 func (v *ImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
-	has := strings.Contains(path, "{")
-	path = zstr.ReplaceInSquigglyBrackets(path, func(s string) string {
-		var pre string
-		if zstr.HasSuffix(s, "dark", &pre) {
-			if zstyle.Dark {
-				return pre + "4dark"
-			}
-			return pre + "4light"
-		}
-		if zstr.HasSuffix(s, "dark?", &pre) {
-			if zstyle.Dark {
-				return pre + "4dark"
-			} else {
-				return ""
-			}
-		}
-		return "<?>"
-	})
-	if has {
-		// zlog.Info("SSquggle:", path, zstyle.Dark)
-	}
 	v.JSSet("href", path)
+	path = zstyle.ChangedImagePathBasedOnDarkTags(path)
 	v.SetExposed(false)
 	if image != nil {
 		v.loading = false
@@ -220,7 +199,6 @@ func (v *ImageView) GetImageRect(inRect zgeo.Rect) zgeo.Rect {
 }
 
 func (v *ImageView) Draw(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
-	// zlog.Info("IV Draw:", v.ObjectName(), rect)
 	if rect.Size.Area() == 0 {
 		return
 	}

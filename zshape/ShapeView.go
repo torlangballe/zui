@@ -51,7 +51,7 @@ type ShapeView struct {
 	PathLineType zgeo.PathLineType
 	DropShadow   zgeo.DropShadow
 
-	ImageView *zimageview.ImageView
+	ImageView *zimageview.XImageView
 	TextLabel *zlabel.Label
 	loading   bool
 
@@ -156,19 +156,24 @@ func (v *ShapeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 }
 
 func (v *ShapeView) SetImage(image *zimage.Image, useCache bool, fitSize zgeo.Size, spath string, insets zgeo.Size, done func(i *zimage.Image)) {
+	if !insets.IsNull() {
+		zstyle.SetStyleAs9Slice(&v.NativeView, spath, insets)
+		return
+	}
 	if v.ImageView == nil {
-		v.ImageView = zimageview.New(nil, useCache, "", fitSize)
-		v.ImageView.SetInteractive(false)
-		v.ImageView.CapInsetCorner = insets
-		if v.IsImageFill {
-			v.ImageView.SetAlignment(zgeo.Expand | zgeo.Center)
-			// a := zgeo.Expand | zgeo.Center
-			v.AddAdvanced(v.ImageView, zgeo.AlignmentNone, zgeo.RectNull, zgeo.SizeNull, -1, true)
-			// zlog.Info("SVSetImage:", v.ObjectName(), spath)
-			// v.Add(v.ImageView, zgeo.AlignmentNone)
+		if insets.IsNull() {
+			v.ImageView = zimageview.XNew("image", spath, fitSize)
 		} else {
-			v.ImageView.SetAlignment(v.ImageAlign)
-			// zlog.Info("SVSetImage:", v.ObjectName(), spath, v.ImageAlign, v.ImageView.FitSize())
+			v.ImageView = zimageview.XNew9Slice("image", spath, fitSize, insets)
+		}
+		// v.ImageView = zimageview.New(nil, useCache, "", fitSize)
+		v.ImageView.SetInteractive(false)
+		// v.ImageView.CapInsetCorner = insets
+		if v.IsImageFill {
+			//!! v.ImageView.SetAlignment(zgeo.Expand | zgeo.Center)
+			v.AddAdvanced(v.ImageView, zgeo.AlignmentNone, zgeo.RectNull, zgeo.SizeNull, -1, true)
+		} else {
+			// v.ImageView.SetAlignment(v.ImageAlign)
 			v.Add(v.ImageView, v.ImageAlign, v.ImageMargin, v.ImageMaxSize)
 		}
 	}
@@ -269,7 +274,6 @@ func (v *ShapeView) UpdateText() {
 			c.Alignment = a
 			c.Margin = v.TextMargin
 		}
-		// zlog.Info("SV.SetTXT:", v.textInfo.Alignment, v.ObjectName(), v.textInfo.Text)
 		v.TextLabel.SetTextAlignment(v.textInfo.Alignment)
 		v.TextLabel.SetFont(v.Font())
 		v.TextLabel.SetColor(v.getStateColor(v.textInfo.Color))

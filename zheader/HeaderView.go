@@ -187,7 +187,7 @@ func (v *HeaderView) Populate(headers []Header) {
 		header := h
 		s := zgeo.SizeD(h.MinWidth, 26)
 		button := zshape.ImageButtonViewNew(h.Title, "gray-header", s, zshape.DefaultInsets)
-		button.TextMargin = zgeo.RectFromXY2(5, 0, 0, 0)
+		button.TextMargin = zgeo.RectFromXY2(6, 0, 0, 0)
 		// zlog.Info("HEADER:", h.Title, h.Justify, h.Align)
 		j := h.Justify
 		if j == zgeo.AlignmentNone {
@@ -226,12 +226,12 @@ func (v *HeaderView) Populate(headers []Header) {
 			lockLabel.SetTextAlignment(zgeo.Right)
 			lockLabel.SetColor(zgeo.ColorYellow)
 			lockLabel.Show(false)
-			button.Add(lockLabel, zgeo.CenterRight, zgeo.SizeD(-2, 0))
+			button.Add(lockLabel, zgeo.CenterRight, zgeo.SizeD(-6, -3))
 
 			lock := zimageview.NewWithCachedPath("images/zcore/lock.png", zgeo.SizeD(14, 20))
 			lock.SetObjectName("lock")
 			lock.Show(false)
-			button.Add(lock, zgeo.CenterRight, zgeo.SizeD(2, 0))
+			button.Add(lock, zgeo.CenterRight, zgeo.SizeD(-4, -5))
 			lock.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 				if zlog.ErrorIf(v.LockPressedFunc == nil, h.FieldName) {
 					return
@@ -243,7 +243,7 @@ func (v *HeaderView) Populate(headers []Header) {
 			triangle := zimageview.NewWithCachedPath("", zgeo.SizeD(6, 5))
 			triangle.SetObjectName("sort")
 			//			triangle.Show(false)
-			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(1, 3))
+			button.Add(triangle, zgeo.TopRight, zgeo.SizeD(2, 3))
 			v.updateTriangle(triangle, h.FieldName)
 		}
 		bcs, _ := button.CalculatedSize(zgeo.SizeNull)

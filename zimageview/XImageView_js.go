@@ -3,7 +3,11 @@
 package zimageview
 
 import (
+	"fmt"
+
 	"github.com/torlangballe/zui/zcontainer"
+	"github.com/torlangballe/zui/zimage"
+	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 )
@@ -22,12 +26,33 @@ func XNew(name, imagePath string, fitSize zgeo.Size) *XImageView {
 	return v
 }
 
+func XNew9Slice(name, imagePath string, size, capInset zgeo.Size) *XImageView {
+	v := &XImageView{}
+	v.InitWith9Slice(v, name, imagePath, size, capInset)
+	return v
+}
+
 func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSize zgeo.Size) {
 	v.StackView.Init(view, false, name+"#type:img")
 	v.minSize = fitSize
+	v.SetJSStyle("object-fit", "contain")
 	v.SetCanTabFocus(false)
 	v.alignment = zgeo.Center | zgeo.Proportional
 	v.SetURL(imagePath)
+}
+
+func (v *XImageView) InitWith9Slice(view zview.View, name string, imagePath string, size, capInset zgeo.Size) {
+	v.StackView.Init(view, false, name)
+	v.minSize = size
+	zstyle.SetStyleAs9Slice(&v.NativeView, imagePath, capInset)
+	v.SetCanTabFocus(false)
+	v.alignment = zgeo.Center | zgeo.Proportional
+}
+
+func (v *XImageView) SetLightenAmountInDarkMode(amount float64) {
+	if zstyle.Dark {
+		v.JSSet("filter", fmt.Sprintf("brightness(%.2f)", 1+amount))
+	}
 }
 
 func (v *XImageView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
@@ -68,7 +93,16 @@ func (v *XImageView) SetMinSize(s zgeo.Size) {
 
 func (v *XImageView) SetURL(path string) {
 	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
+	path = zstyle.ChangedImagePathBasedOnDarkTags(path)
 	v.JSSet("src", path)
+}
+
+func (v *XImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
+	v.SetURL(path)
+}
+
+func (v *XImageView) GetImage() *zimage.Image {
+	return nil
 }
 
 func (v *XImageView) SetStroke(width float64, c zgeo.Color, inset bool) {

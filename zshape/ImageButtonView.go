@@ -34,7 +34,6 @@ func (v *ImageButtonView) Init(title, imageName string, minSize zgeo.Size, inset
 		insets = DefaultInsets
 	}
 	v.SetCanTabFocus(false)
-	v.ImageAlign = zgeo.Expand | zgeo.Center
 	v.IsImageFill = true
 	v.SetMarginS(zgeo.SizeD(12, 0))
 	// v.SetNativePadding(zgeo.RectFromXY2(-8, -8, 8, 8))
