@@ -57,7 +57,7 @@ func (v *CustomView) SetRect(rect zgeo.Rect) {
 		s = v.Rect().Size
 	}
 	v.NativeView.SetRect(r)
-	if s.Floor() != r.Size.Floor() {
+	if s.Floor() != r.Size.Floor() && v.draw != nil {
 		v.makeCanvas()
 		s := v.LocalRect().Size
 		scale := zscreen.MainScale()
@@ -80,7 +80,7 @@ func (v *CustomView) MC() {
 }
 
 func (v *CustomView) makeCanvas() {
-	if v.canvas != nil {
+	if v.canvas != nil || v.draw == nil {
 		return
 	}
 	v.canvas = zcanvas.New()
