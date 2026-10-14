@@ -1030,7 +1030,7 @@ func (v *GridListView) SetRect(rect zgeo.Rect) {
 		// zlog.Info("GLV:SetRect rect.W==0:", v.Hierarchy(), rect)
 		return
 	}
-	r := rect.ExpandedD(-v.FocusWidth)
+	r := rect.Plus(zgeo.RectFromXY2(v.FocusWidth-1, v.FocusWidth, -v.FocusWidth+1, -v.FocusWidth+1))
 	s := v.CalculatedGridSize(r.Size)
 	w := r.Size.W - v.BarSize()
 	cs := zgeo.SizeD(w, s.H)
