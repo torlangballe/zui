@@ -212,7 +212,7 @@ func maybeAddDocToHeader(f *Field, header *zcontainer.StackView) {
 	}
 }
 
-func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string) (view zview.View, header *zcontainer.StackView) {
+func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string, wantHeader bool) (view zview.View, header *zcontainer.StackView) {
 	if !f.HasFlag(FlagHasFrame) {
 		return nil, nil
 	}
@@ -221,8 +221,8 @@ func makeFrameIfFlag(f *Field, fv *FieldView, overrideTitle string) (view zview.
 		title = f.TitleOrName()
 	}
 	fv.frameTitle = title
-	frame := zcontainer.StackViewVert("frame")
-	header = zguiutil.MakeStackATitledFrame(frame, title, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
+	frame := zcontainer.StackViewVert("frame." + f.FieldName)
+	header = zguiutil.MakeStackATitledFrame(frame, title, wantHeader, f.Flags&FlagFrameTitledOnFrame != 0, f.Styling, f.Styling)
 	maybeAddDocToHeader(f, header)
 	frame.Add(fv, zgeo.TopLeft|zgeo.Expand)
 	return frame, header
@@ -901,22 +901,13 @@ func BuildMapList(rval reflect.Value, f *Field, frameTitle string, params FieldV
 	stackFV.params.SetFlag(FlagIsLabelize)
 	fixed := f.HasFlag(FlagIsFixed)
 	f.SetFlag(FlagHasFrame)
-	frame, header := makeFrameIfFlag(f, stackFV, frameTitle)
+	frame, header := makeFrameIfFlag(f, stackFV, frameTitle, !fixed)
 	if frame != nil {
 		outView = frame
 	}
 	if !fixed {
-		frameContainer := frame.(*zcontainer.StackView)
 		add := makeButton("plus", "gray")
-		if header != nil {
-			header.Add(add, zgeo.CenterRight)
-		} else {
-			m := stackFV.Margin()
-			m.SetMinY(m.Pos.Y + 7)
-			stackFV.SetMargin(m)
-			frameContainer.SetMinSize(zgeo.SizeD(200, 40))
-			frameContainer.Add(add, zgeo.TopRight, zgeo.SizeD(-5, -9)).Free = true
-		}
+		header.Add(add, zgeo.TopRight)
 		add.SetPressedHandler("", zkeyboard.ModifierNone, func() {
 			i := rval.Len()
 			str := ""
@@ -2061,7 +2052,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 				params.AllStatic = true
 			}
 			fieldView := fieldViewNew(f.FieldName, vert, rval.Addr().Interface(), params, zgeo.SizeNull, v)
-			view, _ = makeFrameIfFlag(f, fieldView, "")
+			view, _ = makeFrameIfFlag(f, fieldView, "", false)
 			if view == nil {
 				view = fieldView
 			}

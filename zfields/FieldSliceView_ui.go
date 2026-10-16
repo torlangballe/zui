@@ -87,23 +87,19 @@ func (v *FieldSliceView) build(addItems bool) {
 	if sliceRval.Kind() == reflect.Pointer {
 		sliceRval = sliceRval.Elem()
 	}
-	if v.field.Flags&FlagHasFrame != 0 {
+	if v.field.HasFlag(FlagHasFrame) || v.field.HasFlag(FlagGroupSingle) || !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		var title string
 		if v.field.Flags&FlagFrameIsTitled != 0 {
 			title = v.field.TitleOrName()
 		}
-		header = zguiutil.MakeStackATitledFrame(&v.StackView, title, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
+		header = zguiutil.MakeStackATitledFrame(&v.StackView, title, true, v.field.Flags&FlagFrameTitledOnFrame != 0, v.field.Styling, v.field.Styling)
 		v.frameTitle = title
-	}
-	if header == nil && !v.field.IsStatic() {
-		header = zcontainer.StackViewHor("header")
-		v.Add(header, zgeo.TopLeft|zgeo.HorExpand)
 	}
 	maybeAddDocToHeader(v.field, header)
 	if v.field.IsStatic() {
 		v.stack = &v.StackView
 	} else {
-		if v.field.Description != "" {
+		if v.field.Description != "" && !v.FieldView.ParentFV.params.HasFlag(FlagIsLabelize) { // if labelize, it's in a labelize row already, so description will be at end for row already
 			label := zlabel.New("desc")
 			label.SetFont(zgeo.FontNice(-3, zgeo.FontStyleNormal))
 			label.SetColor(zstyle.Gray1(0.25).WithOpacity(0.7))
@@ -114,8 +110,9 @@ func (v *FieldSliceView) build(addItems bool) {
 		v.stack = zcontainer.StackViewNew(v.Vertical, "stack")
 		v.Add(v.stack, zgeo.TopLeft|zgeo.Expand)
 	}
+	v.SetMinSize(zgeo.SizeD(20, 28))
 	var collapse bool
-	if v.field.Flags&FlagGroupSingle != 0 && !v.field.IsStatic() {
+	if v.field.HasFlag(FlagGroupSingle) && !v.field.IsStatic() {
 		collapse = true
 		v.createMenu()
 		header.Add(v.menu, zgeo.CenterRight)
@@ -134,7 +131,7 @@ func (v *FieldSliceView) build(addItems bool) {
 	}
 	if !v.field.IsStatic() && !v.field.HasFlag(FlagIsFixed) {
 		v.addButton = makeButton("plus", "gray")
-		header.Add(v.addButton, zgeo.CenterRight)
+		header.Add(v.addButton, zgeo.TopRight)
 		v.addButton.SetPressedHandler("", zkeyboard.ModifierNone, v.handleAddItem)
 	}
 	if addItems {
