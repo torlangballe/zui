@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zutil/zlog"
 )
 
+// https://muratdemirci.com.tr/en/go-wasm/
 // https://github.com/teamortix/golang-wasm
 // https://pkg.go.dev/honnef.co/go/js/dom/v2
 
