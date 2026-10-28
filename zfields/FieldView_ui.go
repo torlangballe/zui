@@ -279,7 +279,27 @@ func (v *FieldView) Build(update bool) {
 	}
 }
 
-func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, label, labelStack zview.View) {
+// findViewWithinStack finds the main view within a stack,
+// for example if it's a stack cause it has a lock as well.
+// Could be one routine that does FindNamedViewOrInLabelized as well
+func findViewWithinStack(f *Field, name string, view zview.View) zview.View {
+	s, _ := view.(*zcontainer.StackView)
+	if s == nil {
+		return view
+	}
+	if f != nil {
+		if f.HasFlag(FlagIsLockable) {
+			for _, c := range s.GetChildren(false) {
+				if c.ObjectName() != "$lock" {
+					return c
+				}
+			}
+		}
+	}
+	return view
+}
+
+func (v *FieldView) FindNamedViewOrInLabelized(name string, f *Field) (view, label, labelStack zview.View) {
 	for _, c := range (v.View.(zcontainer.ChildrenOwner)).GetChildren(false) {
 		n := c.ObjectName()
 		if n == name {
@@ -290,6 +310,7 @@ func (v *FieldView) FindNamedViewOrInLabelized(name string) (view, label, labelS
 			if s != nil {
 				view, _ = s.FindViewWithName(name, false)
 				if view != nil {
+					view = findViewWithinStack(f, name, view)
 					label, _ = s.FindViewWithName("$labelize.label."+name, false)
 					return view, label, s
 				}
@@ -308,7 +329,7 @@ func (v *FieldView) updateShowEnableFromZeroer(isZero, isShow bool, toID string)
 		localPath, _, neg := getLocalPathFromShowOrEnable(isShow, &f)
 		if zstr.HasPrefix(localPath, "./", &id) && id == toID {
 			// _, foundView := v.FindNamedViewOrInLabelized(f.FieldName)
-			foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
+			foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName, &f)
 			if foundView == nil {
 				continue
 			}
@@ -449,7 +470,8 @@ func (v *FieldView) updateField(index int, rval reflect.Value, sf reflect.Struct
 	if f == nil {
 		return true
 	}
-	foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
+	foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName, f)
+
 	if foundView == nil {
 		return true
 	}
@@ -2285,7 +2307,7 @@ func (v *FieldView) buildItem(f *Field, rval reflect.Value, index int, defaultAl
 	// zlog.Info("CELLMARGIN:", f.Name, cellMargin, cell.Alignment)
 	if f.HasFlag(FlagIsLockable) {
 		if !zlog.ErrorIf(view.ObjectName() == "", f.FieldName) {
-			h1 := zcontainer.StackViewHor("lockhor")
+			h1 := zcontainer.StackViewHor(f.FieldName)
 			h1.Add(view, zgeo.CenterLeft|zgeo.HorExpand)
 			lock := zguiutil.CreateLockIconForView(view)
 			// mr := zgeo.RectFromXY2(0, 2, 2, 0)
@@ -2447,7 +2469,7 @@ func updateToolTip(f *Field, structure any, view zview.View) {
 
 func (v *FieldView) ToData(showError bool) (err error) {
 	for _, f := range v.Fields {
-		foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName)
+		foundView, _, _ := v.FindNamedViewOrInLabelized(f.FieldName, &f)
 		if foundView == nil {
 			continue
 		}
@@ -2793,7 +2815,7 @@ func (v *FieldView) CreateStoreKeyForField(f *Field, name string) string {
 
 func (v *FieldView) OpenGUIFromPathParts(parts []zdocs.PathPart) bool {
 	fieldName := parts[0].PathStub
-	child, _, _ := v.FindNamedViewOrInLabelized(fieldName)
+	child, _, _ := v.FindNamedViewOrInLabelized(fieldName, nil)
 	if child != nil {
 		if len(parts) == 1 {
 			old := v.BGColor()
@@ -2822,7 +2844,7 @@ func (v *FieldView) GetSearchableItems(currentPath []zdocs.PathPart) []zdocs.Sea
 		path = zdocs.AddedPath(currentPath, zdocs.StaticField, v.frameTitle, v.frameTitle)
 	}
 	ForEachField(v.data, v.params.FieldParameters, v.Fields, func(each FieldInfo) bool {
-		view, label, _ := v.FindNamedViewOrInLabelized(each.Field.FieldName)
+		view, label, _ := v.FindNamedViewOrInLabelized(each.Field.FieldName, each.Field)
 		var labelText string
 		if label != nil && label.Native().IsSearchable() {
 			labelText = each.Field.TitleOrName()

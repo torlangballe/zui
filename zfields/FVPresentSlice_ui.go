@@ -179,7 +179,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 	update := true
 	fview.Build(update)
 	for bid := range unknownBoolViewIDs {
-		view, _, _ := fview.FindNamedViewOrInLabelized(bid)
+		view, _, _ := fview.FindNamedViewOrInLabelized(bid, nil)
 		check, _ := view.(*zcheckbox.CheckBox)
 		if check != nil {
 			check.SetValue(zbool.Unknown)
@@ -261,7 +261,7 @@ func EditOrViewStructAnySlice(structSlicePtr any, isReadOnly bool, params FieldV
 
 				}
 				bid := each.StructField.Name
-				view, _, _ := fview.FindNamedViewOrInLabelized(bid)
+				view, _, _ := fview.FindNamedViewOrInLabelized(bid, each.Field)
 				check, _ := view.(*zcheckbox.CheckBox)
 				isCheck := (check != nil)
 				if isCheck && check.Value().IsUnknown() {
