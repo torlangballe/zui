@@ -4,6 +4,7 @@ package zimageview
 
 import (
 	"fmt"
+	"syscall/js"
 
 	"github.com/torlangballe/zui/zcontainer"
 	"github.com/torlangballe/zui/zimage"
@@ -16,8 +17,10 @@ import (
 
 type XImageView struct {
 	zcontainer.StackView
-	minSize   zgeo.Size
-	alignment zgeo.Alignment
+	minSize       zgeo.Size
+	alignment     zgeo.Alignment
+	currentPath   string
+	hiddenOnError bool
 }
 
 func XNew(name, imagePath string, fitSize zgeo.Size) *XImageView {
@@ -38,6 +41,12 @@ func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSiz
 	v.SetJSStyle("object-fit", "contain")
 	v.SetCanTabFocus(false)
 	v.alignment = zgeo.Center | zgeo.Proportional
+	v.SetListenerJSFunc("error-z", func(this js.Value, args []js.Value) any {
+		v.SetJSStyle("display", "none")
+		v.hiddenOnError = true
+		return nil
+	})
+
 	v.SetURL(imagePath)
 }
 
@@ -94,7 +103,14 @@ func (v *XImageView) SetMinSize(s zgeo.Size) {
 func (v *XImageView) SetURL(path string) {
 	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
 	path = zstyle.ChangedImagePathBasedOnDarkTags(path)
-	v.JSSet("src", path)
+	if v.currentPath != path {
+		if v.hiddenOnError {
+			v.hiddenOnError = false
+			v.SetJSStyle("display", "visible")
+		}
+		v.currentPath = path
+		v.JSSet("src", path)
+	}
 }
 
 func (v *XImageView) SetImage(image *zimage.Image, path string, got func(i *zimage.Image)) {
