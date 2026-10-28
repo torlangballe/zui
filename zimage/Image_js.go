@@ -57,14 +57,12 @@ func GetSynchronous(timeoutSecs float64, useCache bool, imagePaths ...interface{
 
 func FromPath(spath string, useCache bool, got func(*Image)) {
 	var cache *zcache.Cache
-
 	if useCache {
 		cache = remoteCache
 		if strings.HasPrefix(spath, "images/") {
 			cache = localCache
 		}
 	}
-
 	if spath == "" {
 		if got != nil {
 			got(nil)
