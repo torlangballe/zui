@@ -2,6 +2,7 @@ package zapp
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/torlangballe/zui"
@@ -70,9 +71,22 @@ func guiRestartHandler(err error) {
 	zlog.OnError(callErr)
 }
 
-// SetUIDefaults sets up an app, uncluding some sensible defaults for rpc communicated with server counterpart
+// SetUIDefaults sets up an app, including some sensible defaults for rpc communicated with server counterpart
+// if rpcPort is 0, it will be set to the port of the URL, or 80/443 depending on scheme.
+// if -1, no rpc client will be set up.
 func SetUIDefaults(rpcPort int) (path string, args map[string]string) {
 	url := URL()
+	ssl := (url.Scheme == "https")
+	if rpcPort == 0 {
+		if url.Port() != "" {
+			rpcPort, _ = strconv.Atoi(url.Port())
+		} else {
+			rpcPort = 80
+			if ssl {
+				rpcPort = 443
+			}
+		}
+	}
 	args = map[string]string{}
 	for k, v := range url.Query() {
 		if k == "zdev" && v[0] == "1" {
@@ -87,13 +101,13 @@ func SetUIDefaults(rpcPort int) (path string, args map[string]string) {
 	if zbool.FromString(args["ztest"], false) {
 		zdebug.IsInTests = true // for testing gui
 	}
-	if rpcPort != 0 {
+	if rpcPort > 0 {
 		serverURL := zrest.AppURLPrefix
 		if !strings.HasPrefix(serverURL, "/") {
 			serverURL = "/" + serverURL
 		}
 		xrpc.MainClientID = "zui-webclient-" + zstr.GenerateRandomHexBytes(14)
-		xrpc.SetupSimpleClient(rpcPort, serverURL, xrpc.MainClientID)
+		xrpc.SetupSimpleClient(rpcPort, ssl, serverURL, xrpc.MainClientID)
 		zdebug.HandleRestartFunc = guiRestartHandler
 		xrpc.MainRPC.Start()
 	}
