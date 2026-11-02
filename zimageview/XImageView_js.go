@@ -11,6 +11,7 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
+	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -41,12 +42,11 @@ func (v *XImageView) Init(view zview.View, name string, imagePath string, fitSiz
 	v.SetJSStyle("object-fit", "contain")
 	v.SetCanTabFocus(false)
 	v.alignment = zgeo.Center | zgeo.Proportional
-	v.SetListenerJSFunc("error-z", func(this js.Value, args []js.Value) any {
+	v.SetListenerJSFunc("error:zinit", func(this js.Value, args []js.Value) any {
 		v.SetJSStyle("display", "none")
 		v.hiddenOnError = true
 		return nil
 	})
-
 	v.SetURL(imagePath)
 }
 
@@ -104,12 +104,13 @@ func (v *XImageView) SetURL(path string) {
 	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
 	path = zstyle.ChangedImagePathBasedOnDarkTags(path)
 	if v.currentPath != path {
+		v.currentPath = path
+		v.JSSet("src", path)
+		zlog.Info("Image Set:", path)
 		if v.hiddenOnError {
 			v.hiddenOnError = false
 			v.SetJSStyle("display", "visible")
 		}
-		v.currentPath = path
-		v.JSSet("src", path)
 	}
 }
 
