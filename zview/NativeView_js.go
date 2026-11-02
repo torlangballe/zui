@@ -27,6 +27,7 @@ type baseNativeView struct {
 	Element      js.Value
 	transparency float32
 	parent       *NativeView
+	style        js.Value
 	jsFuncs      map[string]js.Func
 	rect         zgeo.Rect
 }
@@ -60,8 +61,9 @@ func (v *NativeView) MakeElementFromHTML(view View, html string) {
 
 func (v *NativeView) MakeJSElement(view View, etype string) {
 	v.Element = zdom.DocumentJS.Call("createElement", etype)
-	v.Element.Set("style", "position:absolute")
-	v.JSStyle().Set("zIndex", BaseZIndex)
+	v.SetJSStyle("position", "absolute")
+	v.SetJSStyle("zIndex", BaseZIndex)
+	zbits.ChangeBits(&v.Flags, ViewUsableFlag, true)
 	v.View = view
 	v.SetPressedHandler("$zdebug", zkeyboard.ModifierMenu|zkeyboard.ModifierAlt|zkeyboard.ModifierShift, func() {
 		if globalForceClick {
@@ -148,9 +150,8 @@ func (v *NativeView) SetPos(pos zgeo.Pos) {
 		return
 	}
 	v.rect.Pos = pos
-	style := v.JSGet("style")
-	style.Set("left", fmt.Sprintf("%fpx", pos.X))
-	style.Set("top", fmt.Sprintf("%fpx", pos.Y))
+	v.SetJSStyle("left", fmt.Sprintf("%fpx", pos.X))
+	v.SetJSStyle("top", fmt.Sprintf("%fpx", pos.Y))
 }
 
 func (v *NativeView) SetSize(size zgeo.Size) {
@@ -158,9 +159,8 @@ func (v *NativeView) SetSize(size zgeo.Size) {
 		return
 	}
 	v.rect.Size = size
-	style := v.JSGet("style")
-	style.Set("width", fmt.Sprintf("%fpx", size.W))
-	style.Set("height", fmt.Sprintf("%fpx", size.H))
+	v.SetJSStyle("width", fmt.Sprintf("%fpx", size.W))
+	v.SetJSStyle("height", fmt.Sprintf("%fpx", size.H))
 }
 
 func (v *NativeView) SetRect(rect zgeo.Rect) {
@@ -172,7 +172,7 @@ func (v *NativeView) SetRect(rect zgeo.Rect) {
 		zlog.Error("strange rect for view:", v.Hierarchy(), rect, zdebug.CallingStackString())
 	}
 	v.rect = rect
-	SetElementRect(v.Element, rect)
+	zdom.SetElementRect(v.Element, rect)
 }
 
 func (v *NativeView) HasSize() bool {
@@ -200,14 +200,6 @@ func (v *NativeView) parseElementCoord(value js.Value) float64 {
 		return n
 	}
 	return 0
-}
-
-func SetElementRect(e js.Value, rect zgeo.Rect) {
-	style := e.Get("style")
-	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
-	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))
-	style.Set("width", fmt.Sprintf("%fpx", rect.Size.W))
-	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
 }
 
 func (v *NativeView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
@@ -278,10 +270,13 @@ func (v *NativeView) Color() zgeo.Color {
 }
 
 func (v *NativeView) JSStyle() js.Value {
-	return v.JSGet("style")
+	if v.style.IsUndefined() {
+		v.style = v.JSGet("style")
+	}
+	return v.style
 }
 
-func (v *NativeView) SetJSStyle(key, value string) {
+func (v *NativeView) SetJSStyle(key string, value any) {
 	v.JSStyle().Set(key, value)
 }
 
@@ -311,9 +306,8 @@ func (v *NativeView) BGColor() zgeo.Color {
 }
 
 func (v *NativeView) SetStyleForAllPlatforms(key, value string) {
-	style := v.JSStyle()
 	for _, pre := range customStylePrefixes {
-		style.Set(pre+key, value)
+		v.SetJSStyle(pre+key, value)
 	}
 }
 
@@ -386,24 +380,23 @@ func (v *NativeView) SetStrokeSide(width float64, c zgeo.Color, a zgeo.Alignment
 	if width != 0 && c.Valid {
 		str = fmt.Sprintf("%dpx solid %s", int(width), zdom.MakeRGBAString(c))
 	}
-	style := v.JSStyle()
 	if a&zgeo.Left != 0 {
-		style.Set("borderLeft", str)
+		v.SetJSStyle("borderLeft", str)
 	}
 	if a&zgeo.Right != 0 {
-		style.Set("borderRight", str)
+		v.SetJSStyle("borderRight", str)
 	}
 	if a&zgeo.Top != 0 {
-		style.Set("borderTop", str)
+		v.SetJSStyle("borderTop", str)
 	}
 	if a&zgeo.Bottom != 0 {
-		style.Set("borderBottom", str)
+		v.SetJSStyle("borderBottom", str)
 	}
 	str = "content-box"
 	if inset {
 		str = "border-box"
 	}
-	style.Set("boxSizing", str)
+	v.SetJSStyle("boxSizing", str)
 }
 
 func (v *NativeView) SetOutline(width float64, c zgeo.Color, offset float64) {
@@ -480,7 +473,6 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 		v.JSSet("disabled", true)
 	}
 	// zlog.Info("setUsableAttributes", v.ObjectName(), usable)
-	style := v.JSStyle()
 	var alpha float32 = 0.4
 	if u || v.Flags&ViewNoDimUsableFlag != 0 {
 		alpha = 1 - v.transparency
@@ -489,8 +481,8 @@ func (v *NativeView) setUsableAttributes(usable bool) {
 	// if usable {
 	// 	str = "auto"
 	// }
-	// style.Set("pointerEvents", str)
-	style.Set("opacity", alpha)
+	// v.SetJSStyle("pointerEvents", str)
+	v.SetJSStyle("opacity", alpha)
 }
 
 func (v *NativeView) SetInteractive(interactive bool) {
@@ -1645,19 +1637,19 @@ func (v *NativeView) GetWindowElement() js.Value {
 }
 
 func (nv *NativeView) SetNativePadding(p zgeo.Rect) {
-	style := nv.JSStyle()
-	style.Set("padding-top", fmt.Sprintf("%dpx", int(p.Min().Y)))
-	style.Set("padding-left", fmt.Sprintf("%dpx", int(p.Min().X)))
-	style.Set("padding-bottom", fmt.Sprintf("%dpx", -int(p.Max().Y))) // trying remove minus
-	style.Set("padding-right", fmt.Sprintf("%dpx", -int(p.Max().X)))  // trying remove minus
+	// TODO: do these in one go:
+	nv.SetJSStyle("padding-top", fmt.Sprintf("%dpx", int(p.Min().Y)))
+	nv.SetJSStyle("padding-left", fmt.Sprintf("%dpx", int(p.Min().X)))
+	nv.SetJSStyle("padding-bottom", fmt.Sprintf("%dpx", -int(p.Max().Y))) // trying remove minus
+	nv.SetJSStyle("padding-right", fmt.Sprintf("%dpx", -int(p.Max().X)))  // trying remove minus
 }
 
 func (nv *NativeView) SetNativeMargin(m zgeo.Rect) {
-	style := nv.JSStyle()
-	style.Set("margin-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
-	style.Set("margin-left", fmt.Sprintf("%dpx", int(m.Min().X)))
-	style.Set("margin-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
-	style.Set("margin-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
+	// TODO: get these in one go:
+	nv.SetJSStyle("margin-top", fmt.Sprintf("%dpx", int(m.Min().Y)))
+	nv.SetJSStyle("margin-left", fmt.Sprintf("%dpx", int(m.Min().X)))
+	nv.SetJSStyle("margin-bottom", fmt.Sprintf("%dpx", -int(m.Max().Y)))
+	nv.SetJSStyle("margin-right", fmt.Sprintf("%dpx", -int(m.Max().X)))
 }
 
 func (nv *NativeView) ShowBackface(visible bool) {
