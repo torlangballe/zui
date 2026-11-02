@@ -377,7 +377,9 @@ func (win *Window) AddStyle() {
 	.zdarkscroll::-webkit-scrollbar { background-color: #555; }
 	.zdarkscroll::-webkit-scrollbar-thumb { background-color: #888; }
 	.zfocus:focus { outline: solid 3px rgb(147,180,248); }
-`
+
+	img:not([src]), img[src=""] { visibility: hidden; }
+	`
 	if zdevice.CurrentWasmBrowser == zdevice.Chrome {
 		styleStr += `input:focus { border: 3px solid rgb(147,180,248); }
 		input[type=number]:focus { border: 2px solid rgb(147,180,248); }
