@@ -2,6 +2,7 @@ package zcustom
 
 import (
 	"github.com/torlangballe/zui/zcanvas"
+	"github.com/torlangballe/zui/zdom"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
 	"github.com/torlangballe/zutil/zscreen"
@@ -29,7 +30,7 @@ func (v *CustomView) setCanvasSize(size zgeo.Size, scale float64) {
 	s := size.TimesD(scale)
 	v.canvas.SetSize(s)                              // scale?
 	v.canvas.JSContext().Call("scale", scale, scale) // this must be AFTER SetElementRectmentRect, doesn't do anything!
-	zview.SetElementRect(v.canvas.JSElement(), zgeo.Rect{Size: size})
+	zdom.SetElementRect(v.canvas.JSElement(), zgeo.Rect{Size: size})
 }
 
 func (v *CustomView) ReadyToShow(beforeWindow bool) {

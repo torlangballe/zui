@@ -177,3 +177,11 @@ func ForEach(item js.Value, got func(v js.Value)) {
 	item.Call("forEach", jfunc)
 	jfunc.Release()
 }
+
+func SetElementRect(e js.Value, rect zgeo.Rect) {
+	style := e.Get("style")
+	style.Set("left", fmt.Sprintf("%fpx", rect.Pos.X))
+	style.Set("top", fmt.Sprintf("%fpx", rect.Pos.Y))
+	style.Set("width", fmt.Sprintf("%fpx", rect.Size.W))
+	style.Set("height", fmt.Sprintf("%fpx", rect.Size.H))
+}
