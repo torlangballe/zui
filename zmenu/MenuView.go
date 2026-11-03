@@ -90,7 +90,7 @@ func (v *MenuView) CalculatedSize(total zgeo.Size) (s, max zgeo.Size) {
 	if v.maxWidth == 0 || len(v.items) == 0 {
 		max.W = 0
 	}
-	// zlog.Info("MV.CalculatedSize:", s, max, maxStr, len(v.items))
+	// zlog.Info("MV.CalculatedSize:", v.Hierarchy(), s, max, maxStr, len(v.items))
 	return s, max
 }
 
