@@ -11,7 +11,6 @@ import (
 	"github.com/torlangballe/zui/zstyle"
 	"github.com/torlangballe/zui/zview"
 	"github.com/torlangballe/zutil/zgeo"
-	"github.com/torlangballe/zutil/zlog"
 )
 
 //  Created by Tor Langballe on /20/10/15.
@@ -101,16 +100,14 @@ func (v *XImageView) SetMinSize(s zgeo.Size) {
 // }
 
 func (v *XImageView) SetURL(path string) {
-	// zlog.Info("IV SetImage", path, v.JSGet("id").String(), v.Rect(), v.image != nil)
 	path = zstyle.ChangedImagePathBasedOnDarkTags(path)
 	if v.currentPath != path {
-		v.currentPath = path
 		v.JSSet("src", path)
-		zlog.Info("Image Set:", path)
-		if v.hiddenOnError {
+		if v.hiddenOnError || v.currentPath == "" {
 			v.hiddenOnError = false
 			v.SetJSStyle("display", "visible")
 		}
+		v.currentPath = path
 	}
 }
 
