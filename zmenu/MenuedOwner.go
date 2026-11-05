@@ -75,7 +75,8 @@ type MenuedOwner struct {
 	HoverColor                zgeo.Color
 	MinWidth                  float64
 	DefaultSelected           any
-	items                     []MenuedOItem
+	popupItems                []MenuedOItem
+	fixedItems                []MenuedOItem
 	hasShortcut               bool
 	currentPopupStack         *zcontainer.StackView
 	needsSave                 bool
@@ -147,7 +148,8 @@ func (m *MenuedOItem) SetShortcut(key zkeyboard.Key, mods zkeyboard.Modifier) {
 }
 
 func (o *MenuedOwner) PopInPos(pos zgeo.Pos, items []MenuedOItem) {
-	o.Build(nil, items)
+	o.UpdateMenuedItems(items)
+	o.Build(nil)
 	o.PopPos = pos
 	o.popup()
 }
@@ -160,8 +162,7 @@ func (o *MenuedOwner) IsKeyStored() bool {
 	return got
 }
 
-func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
-	var isSet bool
+func (o *MenuedOwner) Build(view zview.View) {
 	if view != nil && o.View == nil {
 		view.Native().AddOnRemoveFunc(func() {
 			o.isRemoved = true
@@ -176,24 +177,20 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		view.Native().SetPressedHandler("", zkeyboard.ModifierNone, f)
 		view.Native().SetPressedHandler("", zkeyboard.ModifierAlt, f)
 	}
-	isFirst := (items == nil)
-	if isFirst {
-		if o.CreateItemsFunc != nil {
-			items = o.CreateItemsFunc()
-			isSet = true
-		}
+	if o.CreateItemsFunc != nil {
+		o.fixedItems = o.CreateItemsFunc()
 	}
+	items := o.fixedItems
 	if !o.needsSave && o.StoreKey != "" {
 		dict, got := zkeyvalue.DefaultStore.GetDict(o.StoreKey)
 		if got {
-			isSet = true
 			for i, item := range items {
 				str := fmt.Sprint(item.Value)
 				_, items[i].Selected = dict[str]
 			}
 		}
 	}
-	if isFirst && o.DefaultSelected != nil {
+	if o.DefaultSelected != nil {
 		var selected bool
 		var def *MenuedOItem
 		for i, item := range items {
@@ -217,7 +214,7 @@ func (o *MenuedOwner) Build(view zview.View, items []MenuedOItem) {
 		})
 		menuOwnersMap[view] = o
 	}
-	if isSet && o.SelectedHandlerFunc != nil {
+	if o.SelectedHandlerFunc != nil {
 		o.SelectedHandlerFunc(false)
 	}
 }
@@ -253,7 +250,7 @@ func (o *MenuedOwner) SelectedValues() []any {
 
 func (o *MenuedOwner) SelectedItems() zdict.Items {
 	var sitems zdict.Items
-	for _, item := range o.items {
+	for _, item := range o.fixedItems {
 		if item.Selected {
 			sitems = append(sitems, zdict.Item{Name: item.Name, Value: item.Value})
 		}
@@ -262,7 +259,7 @@ func (o *MenuedOwner) SelectedItems() zdict.Items {
 }
 
 func (o *MenuedOwner) Empty() {
-	o.items = o.items[:0]
+	o.fixedItems = o.fixedItems[:0]
 }
 
 func (o *MenuedOwner) SetTitleText(text string) {
@@ -279,7 +276,7 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 	if o.IsMultiple && !o.IsStatic {
 		if o.TitleIsAll != "" {
 			var s []string
-			for _, i := range o.items {
+			for _, i := range o.fixedItems {
 				if !i.IsAction && !i.IsSeparator && i.Selected {
 					s = append(s, i.Name)
 				}
@@ -288,7 +285,7 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 			return
 		}
 		var count, total int
-		for _, i := range o.items {
+		for _, i := range o.fixedItems {
 			if !i.IsAction && !i.IsSeparator {
 				if i.Selected {
 					count++
@@ -317,7 +314,7 @@ func (o *MenuedOwner) UpdateTitleAndImage() {
 		}
 	}
 	if o.GetTitleFunc != nil {
-		nstr = o.GetTitleFunc(len(o.items))
+		nstr = o.GetTitleFunc(len(o.fixedItems))
 		o.SetTitleText(nstr)
 		return
 	}
@@ -373,7 +370,7 @@ func (o *MenuedOwner) UpdateItems(items zdict.Items, values any, isAction bool) 
 }
 
 func (o *MenuedOwner) AddMOItem(item MenuedOItem) {
-	o.items = append(o.items, item)
+	o.fixedItems = append(o.fixedItems, item)
 }
 
 func (o *MenuedOwner) AddSeparator() {
@@ -383,14 +380,14 @@ func (o *MenuedOwner) AddSeparator() {
 }
 
 func (o *MenuedOwner) UpdateMenuedItems(items []MenuedOItem) {
-	o.items = items
+	o.fixedItems = items
 	o.UpdateTitleAndImage()
 }
 
 func (o *MenuedOwner) ChangeSelected(val any, selected, edited bool) {
 	for i, item := range o.getItems() {
 		if reflect.DeepEqual(item.Value, val) {
-			o.items[i].Selected = selected
+			o.fixedItems[i].Selected = selected
 			o.UpdateTitleAndImage()
 			if o.SelectedHandlerFunc != nil {
 				o.SelectedHandlerFunc(edited)
@@ -405,12 +402,12 @@ outer:
 	for i, item := range o.getItems() {
 		for j, v := range vals {
 			if reflect.DeepEqual(item.Value, v) {
-				o.items[i].Selected = true
+				o.fixedItems[i].Selected = true
 				zslices.RemoveAt(&vals, j)
 				continue outer
 			}
 		}
-		o.items[i].Selected = false
+		o.fixedItems[i].Selected = false
 	}
 	o.UpdateTitleAndImage()
 	if callHandler && o.SelectedHandlerFunc != nil {
@@ -431,10 +428,11 @@ func (o *MenuedOwner) RegenerateItems() {
 }
 
 func (o *MenuedOwner) getItems() []MenuedOItem {
+	items := o.fixedItems
 	if o.CreateItemsFunc != nil {
-		o.items = o.CreateItemsFunc()
+		items = o.CreateItemsFunc()
+		o.fixedItems = items
 	}
-	items := zslices.Copy(o.items)
 	if zkeyboard.ModifiersAtPress != zkeyboard.ModifierAlt {
 		items = zslices.FilteredFunc(items, func(i MenuedOItem) bool {
 			if strings.HasSuffix(i.Name, "†") && !i.Selected {
@@ -443,12 +441,12 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 			return true
 		})
 	}
-	// zlog.Info("GetItems:", o.Name, o.EditFunc != nil, o.View.Native().Hierarchy())
+	items = zslices.Copy(items)
 	if o.EditFunc != nil {
 		if o.CreateItemsFunc == nil {
 			for i, item := range items {
 				if item.IsSeparator {
-					items = items[:i]
+					items = o.fixedItems[:i]
 					break
 				}
 			}
@@ -465,11 +463,11 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 				var nitem MenuedOItem
 				nitem.Name = s
 				o.EditFunc(&nitem, EditCreate)
-				o.items = append([]MenuedOItem{nitem}, o.items...)
-				for i, item := range o.items {
+				items = append([]MenuedOItem{nitem}, items...)
+				for i, item := range items {
 					if item.IsSeparator { // sort until separator
-						sort.Slice(o.items[:i], func(i, j int) bool {
-							return strings.Compare(items[i].Name, o.items[j].Name) < 0
+						sort.Slice(items[:i], func(i, j int) bool {
+							return strings.Compare(items[i].Name, items[j].Name) < 0
 						})
 						break
 					}
@@ -483,8 +481,8 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 				zalert.PromptForText("Change name of "+sel.Name, sel.Name, func(answer string) {
 					_, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
-					o.items[si].Name = answer
-					o.EditFunc(&o.items[si], EditRename)
+					items[si].Name = answer
+					o.EditFunc(&items[si], EditRename)
 					o.UpdateTitleAndImage()
 				})
 			})
@@ -495,22 +493,21 @@ func (o *MenuedOwner) getItems() []MenuedOItem {
 					}
 					_, si := o.itemForValue(sel.Value)
 					zlog.Assert(si != -1)
-					o.EditFunc(&o.items[si], EditDelete)
-					zslices.RemoveAt(&o.items, si)
+					o.EditFunc(&items[si], EditDelete)
+					zslices.RemoveAt(&items, si)
 				})
 			})
 			items = append(items, rename, del)
 		}
-		o.items = zslices.Copy(items)
+		items = zslices.Copy(items)
 	}
 	return items
 }
 
 func (o *MenuedOwner) itemForValue(value any) (*MenuedOItem, int) {
-	for i, item := range o.items {
+	for i, item := range o.fixedItems {
 		if reflect.DeepEqual(item.Value, value) {
-			// zlog.Info("itemForValue:", i, item.Name, zlog.Pointer(&o.items[i]))
-			return &o.items[i], i
+			return &o.fixedItems[i], i
 		}
 	}
 	return nil, -1
@@ -520,9 +517,9 @@ func (o *MenuedOwner) ChangeNameForValue(name string, value any) {
 	if zlog.ErrorIf(value == nil, o.View.ObjectName()) {
 		return
 	}
-	for i, item := range o.items {
+	for i, item := range o.fixedItems {
 		if reflect.DeepEqual(item.Value, value) {
-			o.items[i].Name = name
+			o.fixedItems[i].Name = name
 			return
 		}
 	}
@@ -543,8 +540,8 @@ const (
 func (o *MenuedOwner) popup() {
 	allAction := true
 	o.hasShortcut = false
-	items := o.getItems()
-	for _, item := range items {
+	o.popupItems = o.getItems()
+	for _, item := range o.popupItems {
 		if !item.IsAction {
 			allAction = false
 		}
@@ -575,7 +572,7 @@ func (o *MenuedOwner) popup() {
 	list.DeselectOnEscape = false
 	list.CellColorFunc = func(id string) zgeo.Color {
 		i := list.IndexOfID(id)
-		if items[i].IsDebug {
+		if o.popupItems[i].IsDebug {
 			return zstyle.DebugBackgroundColor()
 		}
 		return list.CellColor
@@ -584,20 +581,20 @@ func (o *MenuedOwner) popup() {
 	lineHeight := o.Font.LineHeight() + 6
 	list.CellHeightFunc = func(id string) float64 {
 		i, _ := strconv.Atoi(id)
-		if items[i].IsSeparator {
+		if o.popupItems[i].IsSeparator {
 			return 1
 		}
 		return lineHeight
 	}
 	list.CellCountFunc = func() int {
-		return len(items)
+		return len(o.popupItems)
 	}
 	list.IDAtIndexFunc = func(i int) string {
 		return strconv.Itoa(i)
 	}
 	list.UpdateCellSelectionFunc = o.updateCellSelection
 
-	for i, item := range items {
+	for i, item := range o.popupItems {
 		if item.IsDisabled {
 			list.DisabledCells[strconv.Itoa(i)] = true
 		}
@@ -608,7 +605,7 @@ func (o *MenuedOwner) popup() {
 	}
 	list.CreateCellFunc = o.createRow
 	var max string
-	for _, item := range items {
+	for _, item := range o.popupItems {
 		if len(item.Name) > len(max) {
 			max = item.Name
 		}
@@ -626,7 +623,7 @@ func (o *MenuedOwner) popup() {
 	w += 40 // test
 	zfloat.Maximize(&w, o.MinWidth)
 	list.SetMinSize(zgeo.SizeD(w, 0))
-	if len(items) < 20 {
+	if len(o.popupItems) < 20 {
 		list.ShowBar = false
 	}
 
@@ -635,7 +632,7 @@ func (o *MenuedOwner) popup() {
 			list.SelectCell(list.CurrentHoverID, true, false)
 			return true
 		}
-		for i, item := range items {
+		for i, item := range o.popupItems {
 			if item.Shortcut.Key == km.Key && item.Shortcut.Modifier == km.Modifier {
 				list.SelectCell(strconv.Itoa(i), true, false)
 				return true
@@ -656,13 +653,13 @@ func (o *MenuedOwner) popup() {
 		ids := list.SelectedIDs()
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
-			item := items[i]
+			item := o.popupItems[i]
 			if item.IsSeparator {
 				zpresent.Close(stack, false, nil)
 				return
 			}
 			if item.IsAction {
-				// items[i].Selected = false
+				// o.popupItems[i].Selected = false
 				if item.Function != nil {
 					zpresent.Close(stack, false, nil)
 					item.Function()
@@ -686,16 +683,16 @@ func (o *MenuedOwner) popup() {
 		}
 		oldSelected := map[string]bool{}
 		if !o.IsMultiple {
-			for i := range o.items {
-				if o.items[i].Selected {
+			for i := range o.popupItems {
+				if o.popupItems[i].Selected {
 					oldSelected[strconv.Itoa(i)] = true
 				}
-				o.items[i].Selected = false
+				o.popupItems[i].Selected = false
 			}
 		}
 		if len(ids) == 1 {
 			i, _ := strconv.Atoi(ids[0])
-			o.items[i].Selected = !o.items[i].Selected
+			o.popupItems[i].Selected = !o.popupItems[i].Selected
 			list.LayoutCells(true)
 			if !o.IsMultiple {
 				zpresent.Close(stack, false, nil)
@@ -703,6 +700,14 @@ func (o *MenuedOwner) popup() {
 		}
 		for _, id := range ids {
 			oldSelected[id] = true
+		}
+		for _, pitem := range o.popupItems {
+			for j, sitem := range o.fixedItems {
+				if reflect.DeepEqual(pitem.Value, sitem.Value) {
+					o.fixedItems[j].Selected = pitem.Selected
+					break
+				}
+			}
 		}
 		for id := range oldSelected {
 			list.UpdateCellSelectionFunc(list, id)
@@ -743,11 +748,6 @@ func (o *MenuedOwner) popup() {
 			if o.ClosedFunc != nil {
 				o.ClosedFunc()
 			}
-			if o.IsStatic {
-				// for i := range o.items {
-				// 	o.items[i].Selected = false
-				// }
-			}
 			o.UpdateTitleAndImage()
 		}
 	}
@@ -761,14 +761,15 @@ func (o *MenuedOwner) ClosePopup() {
 }
 
 func (o *MenuedOwner) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
-	for i, item := range o.getItems() {
+	items := o.getItems()
+	for i, item := range items {
 		if item.IsDisabled {
 			continue
 		}
 		if item.Shortcut.Matches(sc) {
 			if o.CreateItemsFunc != nil {
 				// o.items = o.CreateItemsFunc() // we need to re-generate menu items -- done in getItems above
-				item = o.items[i]
+				item = items[i]
 				if item.Function != nil {
 					go item.Function()
 					return true
@@ -786,10 +787,10 @@ func (o *MenuedOwner) HandleShortcut(sc zkeyboard.KeyMod, inFocus bool) bool {
 func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id string) {
 	// zlog.Info("updateCellSelection:", id)
 	i, _ := strconv.Atoi(id)
-	if zlog.ErrorIf(i >= len(o.items), i, len(o.items)) {
+	if zlog.ErrorIf(i >= len(o.popupItems), i, len(o.popupItems), o.Name) {
 		return
 	}
-	item := o.items[i]
+	item := o.popupItems[i]
 	col := o.TextColor
 	if grid.IsHoverCell(id) {
 		col = grid.HoverColor.ContrastingGray()
@@ -819,7 +820,7 @@ func (o *MenuedOwner) updateCellSelection(grid *zgridlist.GridListView, id strin
 func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.View {
 	v := zcontainer.New("id")
 	i, _ := strconv.Atoi(id)
-	item := o.items[i]
+	item := o.popupItems[i]
 	if item.IsSeparator {
 		v.SetDrawHandler(func(rect zgeo.Rect, canvas *zcanvas.Canvas, view zview.View) {
 			canvas.SetColor(zstyle.DefaultBGColor())
@@ -894,7 +895,7 @@ func (o *MenuedOwner) createRow(grid *zgridlist.GridListView, id string) zview.V
 func (o *MenuedOwner) saveToStore() {
 	if o.StoreKey != "" {
 		dict := zdict.Dict{}
-		for _, item := range o.items {
+		for _, item := range o.fixedItems {
 			if item.Selected {
 				str := fmt.Sprint(item.Value)
 				dict[str] = true
@@ -926,12 +927,13 @@ func MenuOwningButtonCreate(menu *MenuedOwner, items []MenuedOItem, shape zshape
 	v.SetTextWrap(ztextinfo.WrapTailTruncate)
 	v.SetTextColor(zstyle.DefaultFGColor())
 	v.SubPart = menu
-	menu.Build(v, items)
+	menu.UpdateMenuedItems(items)
+	menu.Build(v)
 	return v
 }
 
 func (o *MenuedOwner) Dump() {
-	for _, item := range o.items {
+	for _, item := range o.fixedItems {
 		zlog.Info("MDump:", item.Name, item.Selected)
 	}
 }
