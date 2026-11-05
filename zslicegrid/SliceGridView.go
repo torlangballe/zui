@@ -207,7 +207,7 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 		actions.SetObjectName("action-menu")
 		actions.DownsampleImages = true
 		v.ActionMenu = zmenu.NewMenuedOwner()
-		v.ActionMenu.Build(actions, nil)
+		v.ActionMenu.Build(actions)
 		v.ActionMenu.Name = v.ObjectName()
 		v.Bar.Add(actions, zgeo.CenterRight, zgeo.SizeNull)
 	}

@@ -202,7 +202,7 @@ func (v *TabsView) SelectItem(id string, done func()) bool {
 }
 
 func (v *TabsView) SelectOrReloadItem(id string, reloadIfAlreadySelected bool, done func()) bool {
-	prof := zlog.NewProfile(0.1, "Tabs.Load")
+	prof := zlog.NewProfile(0.7, "Tabs.Load")
 	prof.Log("start")
 	defer prof.End("End")
 

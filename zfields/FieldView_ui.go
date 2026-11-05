@@ -1878,7 +1878,7 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 	// actions.MixColorForDarkMode = DarkModeWhiten
 	// actions.DownsampleImages = true
 	menu := zmenu.NewMenuedOwner()
-	menu.Build(actions, nil) // do we need to do this?
+	menu.Build(actions) // do we need to do this?
 	menu.CreateItemsFunc = func() []zmenu.MenuedOItem {
 		return v.params.CreateActionMenuItemsFunc(sid)
 	}
