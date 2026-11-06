@@ -22,6 +22,7 @@ import (
 	"github.com/torlangballe/zui/zgridlist"
 	"github.com/torlangballe/zui/zimageview"
 	"github.com/torlangballe/zui/zkeyboard"
+	"github.com/torlangballe/zui/zlabel"
 	"github.com/torlangballe/zui/zmenu"
 	"github.com/torlangballe/zui/zpresent"
 	"github.com/torlangballe/zui/zshortcuts"
@@ -87,6 +88,7 @@ type SliceGridView[S any] struct {
 	SearchField   *ztext.SearchField
 	ActionMenu    *zmenu.MenuedOwner
 	Layout        *zimageview.ValuesView
+	countLabel    *zlabel.Label
 }
 
 type LayoutType string
@@ -119,6 +121,7 @@ const (
 	RowsGUISearchable                           // Allows rows to be part of gui search
 	AddNameAsSearchItem                         // If true, this table adds ObjectName() to currentPath for searching
 	AddDetachedBar                              // Adds a detached bar to be placed elsewhere. Sets AddBar.
+	ShowCountLabelInBar                         // Adds a label to the bar showing how many rows are selected
 	LastBaseOption
 	AllowAllEditing = AllowEdit | AllowNew | AllowDelete | AllowDuplicate
 )
@@ -151,6 +154,9 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 
 	if options&AllowAllEditing != 0 {
 		options |= AddMenu
+	}
+	if options&ShowCountLabelInBar != 0 {
+		options |= AddBar
 	}
 	if options&AddBarInHeader != 0 {
 		options |= AddHeader
@@ -197,6 +203,13 @@ func (v *SliceGridView[S]) Init(view zview.View, slice *[]S, storeName string, o
 			v.handleLayoutButton(v.Layout.Value())
 		}
 		v.Bar.Add(v.Layout, zgeo.CenterLeft)
+	}
+	if options&ShowCountLabelInBar != 0 {
+		v.countLabel = zlabel.New("")
+		v.countLabel.SetSearchable(false)
+		v.countLabel.SetObjectName("count-label")
+		v.countLabel.SetMinWidth(40)
+		v.Bar.Add(v.countLabel, zgeo.CenterLeft)
 	}
 	if options&AddMenu != 0 {
 		name := "gear-gray"
@@ -636,7 +649,7 @@ func (v *SliceGridView[S]) ReadyToShow(beforeWindow bool) {
 		v.doFilterAndSort(*v.slicePtr)
 		return
 	}
-	v.UpdateWidgets() // we do this here, so user can set up other widgets etc
+	v.UpdateWidgets() // we do this here, so user can set up other widgets etc after init
 	if v.Options&(AllowEdit|AllowView) != 0 {
 		v.Grid.HandleRowDoubleTappedFunc = func(id string) {
 			v.editOrViewItemIDs([]string{id}, false, v.Options&AllowView != 0, nil)
@@ -738,7 +751,14 @@ func (v *SliceGridView[S]) editOrViewItemIDs(ids []string, isEditOnNewStruct, is
 }
 
 func (v *SliceGridView[S]) UpdateWidgets() {
-	// ids := v.Grid.SelectedIDs()
+	if v.countLabel != nil {
+		str := fmt.Sprintf("%d", v.Grid.CellCountFunc())
+		sel := len(v.Grid.SelectedIDs())
+		if sel != 0 {
+			str = fmt.Sprintf("%d/%s", sel, str)
+		}
+		v.countLabel.SetText(str)
+	}
 }
 
 func (v *SliceGridView[S]) EditItems(ns []S, title string, isEditOnNewStruct, selectAfterEditing bool, after func(ok bool)) {
