@@ -1699,7 +1699,7 @@ func (v *FieldView) makeImage(rval reflect.Value, f *Field) zview.View {
 		// iv.EmptyColor = f.Styling.FGColor
 	}
 	if f.HasFlag(FlagDarkModeLighten) {
-		iv.SetLightenAmountInDarkMode(0.5)
+		iv.SetLightenAmountForMode(0.5)
 	}
 	if f.HasFlag(FlagIsURL) {
 		iv.SetPressedHandler("", zkeyboard.ModifierNone, func() {
@@ -1875,7 +1875,7 @@ func (v *FieldView) createActionMenu(f *Field, sid string) zview.View {
 		size = f.Size
 	}
 	actions := zimageview.XNew("actionMenuX", "images/zcore/gear-gray.png", size)
-	actions.SetLightenAmountInDarkMode(0.5)
+	actions.SetLightenAmountForMode(0.5)
 	// actions.MixColorForDarkMode = DarkModeWhiten
 	// actions.DownsampleImages = true
 	menu := zmenu.NewMenuedOwner()

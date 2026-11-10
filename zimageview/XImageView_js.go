@@ -57,7 +57,11 @@ func (v *XImageView) InitWith9Slice(view zview.View, name string, imagePath stri
 	v.alignment = zgeo.Center | zgeo.Proportional
 }
 
-func (v *XImageView) SetLightenAmountInDarkMode(amount float64) {
+func (v *XImageView) SetDefaultLightenAmountForMode() {
+	v.SetLightenAmountForMode(0.5)
+}
+
+func (v *XImageView) SetLightenAmountForMode(amount float64) {
 	if zstyle.Dark {
 		v.JSSet("filter", fmt.Sprintf("brightness(%.2f)", 1+amount))
 	}
