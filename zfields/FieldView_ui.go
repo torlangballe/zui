@@ -844,6 +844,7 @@ func buildMapRow(parent, stackFV *FieldView, i int, key string, mval reflect.Val
 			}
 			if label != nil {
 				label.SetMaxLines(0)
+				label.SetWrap(ztextinfo.WrapChar)
 			}
 		}
 		return view, mf
