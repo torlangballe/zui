@@ -757,7 +757,10 @@ func (v *SliceGridView[S]) UpdateWidgets() {
 		if sel != 0 {
 			str = fmt.Sprintf("%d/%s", sel, str)
 		}
-		v.countLabel.SetText(str)
+		if v.countLabel.Text() != str {
+			v.countLabel.SetText(str)
+			v.Bar.ArrangeChildren()
+		}
 	}
 }
 
