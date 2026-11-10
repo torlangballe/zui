@@ -93,7 +93,7 @@ func (v *Label) SetFont(font *zgeo.Font) {
 }
 
 func (v *Label) SetWrap(wrap ztextinfo.WrapType) {
-	zlog.Assert(wrap == ztextinfo.WrapTailTruncate)
+	zlog.Assert(wrap == ztextinfo.WrapTailTruncate || wrap == ztextinfo.WrapChar)
 	v.wrap = wrap
 	v.SetMaxLines(v.maxLines)
 }
@@ -116,6 +116,10 @@ func (v *Label) SetMaxLines(max int) {
 	if v.wrap == ztextinfo.WrapTailTruncate {
 		style.Set("overflow", "hidden")
 		style.Set("textOverflow", "ellipsis")
+	} else if v.wrap == ztextinfo.WrapChar {
+
+		style.Set("word-break", "break-all")
+		style.Set("textOverflow", "clip")
 	}
 	// v.SetStyleForAllPlatforms("line-clamp", fmt.Sprint(max))
 }
