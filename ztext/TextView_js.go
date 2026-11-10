@@ -166,9 +166,8 @@ func (v *TextView) SetText(text string) {
 		v.changed.CallAll(false)
 	}
 	if zkeyvalue.DefaultStore != nil && v.storeKey != "" {
-		zkeyvalue.DefaultStore.SetString(v.Text(), v.storeKey, true)
+		zkeyvalue.DefaultStore.SetString(text, v.storeKey, true)
 	}
-
 }
 
 func (v *TextView) Text() string {
